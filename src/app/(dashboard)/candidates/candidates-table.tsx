@@ -727,7 +727,7 @@ export default function CandidatesTable({
                       </p>
                     </Link>
                     {c.ai_summary && (
-                      <div className="pointer-events-none invisible absolute left-0 top-full z-20 mt-1.5 w-80 rounded-lg border border-slate-200 bg-white p-3 text-[12px] leading-relaxed text-slate-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover/name:visible group-hover/name:opacity-100">
+                      <div className="pointer-events-none invisible absolute left-0 bottom-full z-20 mb-1.5 w-80 rounded-lg border border-slate-200 bg-white p-3 text-[12px] leading-relaxed text-slate-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover/name:visible group-hover/name:opacity-100">
                         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600">AI summary</p>
                         {c.ai_summary}
                       </div>
