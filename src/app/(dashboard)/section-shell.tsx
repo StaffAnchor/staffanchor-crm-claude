@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   PauseCircle,
   XCircle,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,6 +31,7 @@ const ICONS: Record<string, LucideIcon> = {
   CheckCircle2,
   PauseCircle,
   XCircle,
+  Building2,
 };
 
 export type SidebarItem = {

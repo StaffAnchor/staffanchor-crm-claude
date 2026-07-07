@@ -30,7 +30,7 @@ export default async function DashboardLayout({
   const navLinks = [
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
-    { href: "/clients", label: "Clients", enabled: false },
+    { href: "/clients", label: "Clients", enabled: true },
     { href: "/interviews", label: "Interviews", enabled: false },
     { href: "/reports", label: "Reports", enabled: false },
     ...(profile?.role === "admin" ? [{ href: "/team", label: "Team", enabled: true }] : []),

@@ -5,7 +5,6 @@ import ShortlistLinkPanel from "./shortlist-link-panel";
 import AlignCandidatesPanel from "./align-candidates-panel";
 import PublicListingPanel from "./public-listing-panel";
 import JobDescriptionPanel from "./job-description-panel";
-import ClientPortalAccessPanel from "./client-portal-access-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import DeleteMandateButton from "./delete-mandate-button";
 
@@ -24,22 +23,6 @@ export default async function MandateDetailPage({
     .from("candidate_mandate_links")
     .select("id, stage, in_shortlist, candidates(id, full_name, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment)")
     .eq("mandate_id", id);
-
-  let clientInvites: { id: string; email: string; created_at: string; consumed_at: string | null }[] = [];
-  let clientUsers: { id: string; email: string; full_name: string | null; created_at: string }[] = [];
-  if (mandate.client_id) {
-    const { data: invites } = await supabase
-      .from("client_invites")
-      .select("id, email, created_at, consumed_at")
-      .eq("client_id", mandate.client_id)
-      .order("created_at", { ascending: false });
-    clientInvites = invites ?? [];
-    const { data: users } = await supabase
-      .from("client_users")
-      .select("id, email, full_name, created_at")
-      .eq("client_id", mandate.client_id);
-    clientUsers = users ?? [];
-  }
 
   const { data: existingToken } = await supabase
     .from("shortlist_tokens")
@@ -94,12 +77,15 @@ export default async function MandateDetailPage({
         <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />
         <ShortlistLinkPanel mandateId={id} existingToken={existingToken?.token ?? null} />
         {mandate.client_id && (
-          <ClientPortalAccessPanel
-            clientId={mandate.client_id}
-            clientName={mandate.client_name}
-            initialInvites={clientInvites}
-            initialUsers={clientUsers}
-          />
+          <Link
+            href={`/clients/${mandate.client_id}`}
+            className="block bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-sm text-slate-700"
+          >
+            <span className="font-medium text-blue-600">Manage {mandate.client_name} →</span>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Client details, contacts, and portal access are managed once per client, not per mandate.
+            </p>
+          </Link>
         )}
       </div>
     </div>
