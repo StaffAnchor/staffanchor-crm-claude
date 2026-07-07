@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const { data: candidate, error } = await supabase
     .from("candidates")
     .select(
-      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, segment_data, self_assessment, recruiter_assessment"
+      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, industries, segment_data, self_assessment, recruiter_assessment"
     )
     .eq("id", candidateId)
     .single();
@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
     current_fixed_ctc_lakhs: candidate.current_fixed_ctc,
     current_variable_ctc_lakhs: candidate.current_variable_ctc,
     expected_fixed_ctc_lakhs: candidate.expected_fixed_ctc,
+    skills: candidate.skills,
+    industries_worked_in: candidate.industries,
     self_reported_segment_data: candidate.segment_data,
     self_assessment_writeups: candidate.self_assessment,
     recruiter_scorecard: candidate.recruiter_assessment,
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
 Use ONLY the facts given below — never invent employers, numbers, skills, or achievements that are not present.
 If a field is missing, simply omit it rather than guessing.
 Write 4-6 sentences, plain prose, no headings, no bullet points, professional and neutral tone.
-Cover: who they are and current role, relevant sales background/sub-domain, experience level, compensation expectations if present, and any notable recruiter assessment notes if present.
+Cover: who they are and current role, relevant sales background/sub-domain, key skills (if present, name a few of the actual listed skills rather than saying "various skills"), industries worked in if present, experience level, compensation expectations if present, and any notable recruiter assessment notes if present.
 
 Candidate data (JSON):
 ${JSON.stringify(factSheet, null, 2)}`;

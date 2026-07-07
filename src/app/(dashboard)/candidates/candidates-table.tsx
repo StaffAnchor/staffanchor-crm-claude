@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ResumePreview from "./[id]/resume-preview";
 import {
   ArrowUpRight,
   Settings2,
@@ -40,6 +41,7 @@ export type CandidateRow = {
   status: string;
   recruiter_assessment: Record<string, unknown> | null;
   segment_data: Record<string, unknown> | null;
+  resume_file_url: string | null;
   created_at: string;
 };
 
@@ -101,6 +103,50 @@ function initialsFor(name: string) {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function ScoreCell({ value }: { value: number | undefined }) {
+  if (!value) return <span className="text-[11px] text-slate-300">—</span>;
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span
+          key={n}
+          className={`h-1.5 w-1.5 rounded-full ${n <= value ? "bg-blue-500" : "bg-slate-200"}`}
+        />
+      ))}
+      <span className="ml-1 text-[11px] text-slate-500 tabular-nums">{value}/5</span>
+    </span>
+  );
+}
+
+function ResumeCell({ resumeFileUrl }: { resumeFileUrl: string | null }) {
+  const supabase = createClient();
+  const [url, setUrl] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!resumeFileUrl) return;
+    let cancelled = false;
+    const cleanPath = resumeFileUrl.replace(/^resumes\//, "");
+    supabase.storage
+      .from("resumes")
+      .createSignedUrl(cleanPath, 60 * 60)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        setUrl(error ? null : data?.signedUrl ?? null);
+        setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeFileUrl]);
+
+  if (!resumeFileUrl) return <span className="text-[11px] text-slate-300">—</span>;
+  if (!loaded) return <span className="text-[11px] text-slate-400">Loading…</span>;
+  if (!url) return <span className="text-[11px] text-red-500">Not found</span>;
+  return <ResumePreview signedUrl={url} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
 }
 
 function roleLevelFor(c: CandidateRow): string {
@@ -216,6 +262,79 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Notice Period",
     render: (c) => <span className="text-slate-600 whitespace-nowrap">{c.notice_period ?? "—"}</span>,
   },
+  {
+    key: "resume",
+    label: "Resume",
+    render: (c) => <ResumeCell resumeFileUrl={c.resume_file_url} />,
+  },
+  {
+    key: "communication_score",
+    label: "Communication",
+    render: (c) => <ScoreCell value={c.recruiter_assessment?.["communication_score"] as number | undefined} />,
+  },
+  {
+    key: "confidence_score",
+    label: "Confidence",
+    render: (c) => <ScoreCell value={c.recruiter_assessment?.["confidence_score"] as number | undefined} />,
+  },
+  {
+    key: "coachability_score",
+    label: "Attitude / Coachability",
+    render: (c) => <ScoreCell value={c.recruiter_assessment?.["coachability_score"] as number | undefined} />,
+  },
+  {
+    key: "job_stability",
+    label: "Job Stability",
+    render: (c) => (
+      <span className="text-slate-600 whitespace-nowrap">
+        {(c.recruiter_assessment?.["job_stability"] as string | undefined) ?? "—"}
+      </span>
+    ),
+  },
+  {
+    key: "relocation_verified",
+    label: "Relocation — Verified",
+    render: (c) => (
+      <span className="text-slate-600 whitespace-nowrap">
+        {(c.recruiter_assessment?.["relocation_verified"] as string | undefined) ?? "—"}
+      </span>
+    ),
+  },
+  {
+    key: "notice_verified",
+    label: "Notice — Verified",
+    render: (c) => (
+      <span className="text-slate-600 truncate block max-w-[140px]">
+        {(c.recruiter_assessment?.["notice_verified"] as string | undefined) ?? "—"}
+      </span>
+    ),
+  },
+  {
+    key: "compensation_verified",
+    label: "Compensation — Verified",
+    render: (c) => (
+      <span className="text-slate-600 truncate block max-w-[160px]">
+        {(c.recruiter_assessment?.["compensation_verified"] as string | undefined) ?? "—"}
+      </span>
+    ),
+  },
+  {
+    key: "red_flags",
+    label: "Red Flags",
+    render: (c) => {
+      const flags = (c.recruiter_assessment?.["red_flags"] as string[] | undefined) ?? [];
+      if (flags.length === 0) return <span className="text-[11px] text-slate-300">None</span>;
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[200px]">
+          {flags.map((f) => (
+            <span key={f} className="text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              {f}
+            </span>
+          ))}
+        </div>
+      );
+    },
+  },
 ];
 
 const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
@@ -233,6 +352,7 @@ const DEFAULT_VISIBLE = new Set([
   "role_level",
   "recommendation",
   "status",
+  "resume",
 ]);
 
 const STORAGE_KEY = "sa_candidates_columns_v1";

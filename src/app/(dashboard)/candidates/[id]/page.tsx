@@ -242,6 +242,37 @@ export default async function CandidateDetailPage({
                   content: (
                     <div className="space-y-6">
                       <AiSummaryPanel candidateId={candidate.id} initialSummary={candidate.ai_summary} />
+                      {(candidate.skills || (candidate.industries && candidate.industries.length > 0)) && (
+                        <div>
+                          <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Skills &amp; industries</h3>
+                          <div className="space-y-3">
+                            {candidate.skills && (
+                              <div>
+                                <p className="text-[11px] text-slate-400 mb-1.5">Skills</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {candidate.skills.split(",").map((s: string) => s.trim()).filter(Boolean).map((skill: string) => (
+                                    <span key={skill} className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {candidate.industries && candidate.industries.length > 0 && (
+                              <div>
+                                <p className="text-[11px] text-slate-400 mb-1.5">Industries worked in</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {candidate.industries.map((i: string) => (
+                                    <span key={i} className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                      {i}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       {segmentEntries.length > 0 && (
                         <div>
                           <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Sales profile</h3>

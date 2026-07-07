@@ -45,6 +45,10 @@ const RECOMMENDATIONS = ["Strong Fit", "Fit with Reservations", "Not a Fit"];
 
 const NOTICE_PERIODS = ["Immediate", "15 days", "30 days", "60 days", "90 days"];
 
+const JOB_STABILITY_OPTIONS = ["Stable", "Some Movement", "Frequent Job-Hopper"];
+const RELOCATION_VERIFIED_OPTIONS = ["Yes", "No", "Conditional"];
+const SCORE_OPTIONS = [1, 2, 3, 4, 5];
+
 type SearchParams = {
   q?: string;
   category?: string;
@@ -55,6 +59,11 @@ type SearchParams = {
   recommendation?: string;
   sub_domain?: string;
   notice_period?: string;
+  job_stability?: string;
+  relocation_verified?: string;
+  min_communication?: string;
+  min_confidence?: string;
+  min_coachability?: string;
 };
 
 export default async function CandidatesPage({
@@ -68,7 +77,7 @@ export default async function CandidatesPage({
   let query = supabase
     .from("candidates")
     .select(
-      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, status, recruiter_assessment, segment_data, created_at"
+      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, status, recruiter_assessment, segment_data, resume_file_url, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -87,6 +96,21 @@ export default async function CandidatesPage({
   if (params.notice_period) query = query.eq("notice_period", params.notice_period);
   if (params.recommendation) {
     query = query.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
+  }
+  if (params.job_stability) {
+    query = query.eq("recruiter_assessment->>job_stability", params.job_stability);
+  }
+  if (params.relocation_verified) {
+    query = query.eq("recruiter_assessment->>relocation_verified", params.relocation_verified);
+  }
+  if (params.min_communication) {
+    query = query.gte("recruiter_assessment->>communication_score", params.min_communication);
+  }
+  if (params.min_confidence) {
+    query = query.gte("recruiter_assessment->>confidence_score", params.min_confidence);
+  }
+  if (params.min_coachability) {
+    query = query.gte("recruiter_assessment->>coachability_score", params.min_coachability);
   }
 
   const { data: candidates, error } = await query;
@@ -336,6 +360,81 @@ export default async function CandidatesPage({
                   {NOTICE_PERIODS.map((n) => (
                     <option key={n} value={n}>
                       {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Job stability</label>
+                <select
+                  name="job_stability"
+                  defaultValue={params.job_stability ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {JOB_STABILITY_OPTIONS.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Relocation — verified</label>
+                <select
+                  name="relocation_verified"
+                  defaultValue={params.relocation_verified ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {RELOCATION_VERIFIED_OPTIONS.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min communication score</label>
+                <select
+                  name="min_communication"
+                  defaultValue={params.min_communication ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {SCORE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}+
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min confidence score</label>
+                <select
+                  name="min_confidence"
+                  defaultValue={params.min_confidence ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {SCORE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}+
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min coachability score</label>
+                <select
+                  name="min_coachability"
+                  defaultValue={params.min_coachability ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {SCORE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}+
                     </option>
                   ))}
                 </select>
