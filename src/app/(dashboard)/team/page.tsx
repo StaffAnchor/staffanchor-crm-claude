@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CreateUserForm from "./create-user-form";
 import RoleControl from "./role-control";
+import ResetPasswordButton from "./reset-password-button";
 
 export default async function TeamPage() {
   const supabase = await createClient();
@@ -39,6 +40,7 @@ export default async function TeamPage() {
                 <th className="text-left px-4 py-2.5">Name</th>
                 <th className="text-left px-4 py-2.5">Email</th>
                 <th className="text-left px-4 py-2.5">Role</th>
+                <th className="text-left px-4 py-2.5">Password</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -48,6 +50,9 @@ export default async function TeamPage() {
                   <td className="px-4 py-3 text-slate-600">{p.email}</td>
                   <td className="px-4 py-3">
                     <RoleControl userId={p.id} currentRole={p.role} disabled={p.id === user.id} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <ResetPasswordButton userId={p.id} name={p.full_name ?? p.email} />
                   </td>
                 </tr>
               ))}

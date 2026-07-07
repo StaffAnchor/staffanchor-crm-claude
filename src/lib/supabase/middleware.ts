@@ -28,8 +28,14 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
+  const isPasswordResetRoute =
+    request.nextUrl.pathname.startsWith("/forgot-password") ||
+    request.nextUrl.pathname.startsWith("/reset-password") ||
+    request.nextUrl.pathname.startsWith("/auth/callback");
   const isPublicRoute =
-    isAuthRoute || request.nextUrl.pathname.startsWith("/shortlist");
+    isAuthRoute ||
+    isPasswordResetRoute ||
+    request.nextUrl.pathname.startsWith("/shortlist");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
