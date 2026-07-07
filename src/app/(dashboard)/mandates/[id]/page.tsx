@@ -7,6 +7,7 @@ import PublicListingPanel from "./public-listing-panel";
 import JobDescriptionPanel from "./job-description-panel";
 import ClientPortalAccessPanel from "./client-portal-access-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
+import DeleteMandateButton from "./delete-mandate-button";
 
 export default async function MandateDetailPage({
   params,
@@ -60,12 +61,15 @@ export default async function MandateDetailPage({
         <Link href="/mandates" className="text-xs text-slate-500 hover:text-slate-800">
           ← All mandates
         </Link>
-        <div className="bg-white border border-slate-200 rounded-xl p-6 mt-2 shadow-sm">
-          <h1 className="text-xl font-semibold text-slate-900">{mandate.role_title}</h1>
-          <p className="text-sm text-slate-500">
-            {mandate.client_name} · {mandate.city ?? "—"} ·{" "}
-            {mandate.category?.replace("_", " ")} / {mandate.sub_domain}
-          </p>
+        <div className="bg-white border border-slate-200 rounded-xl p-6 mt-2 shadow-sm flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">{mandate.role_title}</h1>
+            <p className="text-sm text-slate-500">
+              {mandate.client_name} · {mandate.city ?? "—"} ·{" "}
+              {mandate.category?.replace("_", " ")} / {mandate.sub_domain}
+            </p>
+          </div>
+          <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
         </div>
 
         <MandateCandidatesTable
