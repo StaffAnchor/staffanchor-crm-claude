@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Plus, Bell, ChevronDown } from "lucide-react";
 import SignOutButton from "./sign-out-button";
@@ -22,8 +22,16 @@ export default function TopNav({
   initials: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  function handleSearchKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && search.trim()) {
+      router.push(`/candidates?q=${encodeURIComponent(search.trim())}`);
+    }
+  }
 
   return (
     <header className="bg-[#12141c] text-slate-200 sticky top-0 z-30">
@@ -72,7 +80,10 @@ export default function TopNav({
         <div className="hidden lg:flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.09] transition-colors rounded-lg px-3 py-1.5 w-64 border border-white/[0.06]">
           <Search className="w-3.5 h-3.5 text-slate-500" strokeWidth={2} />
           <input
-            placeholder="Search candidates, mandates..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleSearchKey}
+            placeholder="Search candidates... (Enter)"
             className="bg-transparent text-[13px] text-slate-200 placeholder:text-slate-500 outline-none flex-1"
           />
           <kbd className="text-[10px] text-slate-500 bg-white/[0.06] rounded px-1 py-0.5">/</kbd>

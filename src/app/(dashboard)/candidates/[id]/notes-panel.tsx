@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { MessageSquare } from "lucide-react";
 
 type Note = {
   id: string;
@@ -38,19 +39,25 @@ export default function NotesPanel({
       note_type: noteType,
       content: content.trim(),
     });
+    await supabase.from("audit_log").insert({
+      actor: user?.id,
+      action: "note_added",
+      entity: "candidate",
+      entity_id: candidateId,
+      detail: { note_type: noteType },
+    });
     setContent("");
     setSaving(false);
     router.refresh();
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6">
-      <h2 className="text-sm font-semibold text-slate-900 mb-3">Notes</h2>
+    <div>
       <div className="flex gap-2 mb-4">
         <select
           value={noteType}
           onChange={(e) => setNoteType(e.target.value)}
-          className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
+          className="rounded-lg border border-slate-200 px-2 py-1.5 text-[12px] bg-slate-50"
         >
           {NOTE_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -61,25 +68,31 @@ export default function NotesPanel({
         <input
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           placeholder="Add a note after this interaction..."
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          className="flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         />
         <button
           onClick={handleAdd}
           disabled={saving}
-          className="rounded-lg bg-slate-900 text-white text-sm px-4 py-1.5 disabled:opacity-60"
+          className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] px-4 py-1.5 disabled:opacity-60"
         >
           Add
         </button>
       </div>
       <div className="space-y-3">
-        {notes.length === 0 && <p className="text-sm text-slate-400">No notes yet.</p>}
+        {notes.length === 0 && (
+          <div className="text-center py-8">
+            <MessageSquare className="w-5 h-5 text-slate-300 mx-auto mb-2" />
+            <p className="text-[13px] text-slate-400">No notes yet — add one after your first call.</p>
+          </div>
+        )}
         {notes.map((n) => (
           <div key={n.id} className="border-l-2 border-slate-200 pl-3">
-            <p className="text-xs text-slate-400">
+            <p className="text-[11px] text-slate-400 uppercase tracking-wide">
               {n.note_type.replace(/_/g, " ")} · {new Date(n.created_at).toLocaleString()}
             </p>
-            <p className="text-sm text-slate-700">{n.content}</p>
+            <p className="text-[13px] text-slate-700 mt-0.5">{n.content}</p>
           </div>
         ))}
       </div>

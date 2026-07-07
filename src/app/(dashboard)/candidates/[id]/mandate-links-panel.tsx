@@ -76,9 +76,7 @@ export default function MandateLinksPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6">
-      <h2 className="text-sm font-semibold text-slate-900 mb-3">Mandates</h2>
-
+    <div>
       <div className="space-y-3 mb-4">
         {links.length === 0 && <p className="text-sm text-slate-400">Not linked to any mandate yet.</p>}
         {links.map((l) => (
