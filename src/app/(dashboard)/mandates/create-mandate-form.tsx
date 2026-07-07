@@ -15,6 +15,8 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     city: "",
     budget_min: "",
     budget_max: "",
+    experience_min: "",
+    experience_max: "",
     hide_client: false,
     public_client_label: "",
     job_description: "",
@@ -34,6 +36,8 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       city: form.city || null,
       budget_min: form.budget_min ? Number(form.budget_min) : null,
       budget_max: form.budget_max ? Number(form.budget_max) : null,
+      experience_min: form.experience_min ? Number(form.experience_min) : null,
+      experience_max: form.experience_max ? Number(form.experience_max) : null,
       show_client_name: !form.hide_client,
       public_client_label: form.hide_client ? form.public_client_label || null : null,
       job_description: form.job_description || null,
@@ -51,6 +55,8 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       city: "",
       budget_min: "",
       budget_max: "",
+      experience_min: "",
+      experience_max: "",
       hide_client: false,
       public_client_label: "",
       job_description: "",
@@ -117,6 +123,22 @@ export default function CreateMandateForm({ existingClients }: { existingClients
           placeholder="Budget max (L)"
           value={form.budget_max}
           onChange={(e) => setForm((f) => ({ ...f, budget_max: e.target.value }))}
+          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+        />
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          placeholder="Experience min (yrs)"
+          value={form.experience_min}
+          onChange={(e) => setForm((f) => ({ ...f, experience_min: e.target.value }))}
+          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+        />
+        <input
+          type="number"
+          placeholder="Experience max (yrs)"
+          value={form.experience_max}
+          onChange={(e) => setForm((f) => ({ ...f, experience_max: e.target.value }))}
           className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
         />
       </div>
