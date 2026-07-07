@@ -8,6 +8,8 @@ import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
 import Tabs from "./tabs";
 import Timeline from "./timeline";
+import AiSummaryPanel from "./ai-summary-panel";
+import SendInviteButton from "./send-invite-button";
 
 const CATEGORY_COLOR: Record<string, string> = {
   b2b_sales: "from-blue-400 to-blue-600",
@@ -151,7 +153,10 @@ export default async function CandidateDetailPage({
               </div>
             </div>
           </div>
-          <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
+          <div className="flex items-start gap-2">
+            {candidate.status === "awaiting_input" && <SendInviteButton candidateId={candidate.id} />}
+            <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
+          </div>
         </div>
 
         <div className="flex items-center gap-2 mt-4">
@@ -217,14 +222,7 @@ export default async function CandidateDetailPage({
                   label: "Overview",
                   content: (
                     <div className="space-y-6">
-                      <div>
-                        <h3 className="text-[13px] font-semibold text-slate-900 mb-2">
-                          AI summary <span className="text-[11px] font-normal text-slate-400">(editable, never sent to a client unedited)</span>
-                        </h3>
-                        <p className="text-[13px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-lg p-3">
-                          {candidate.ai_summary || "Not generated yet."}
-                        </p>
-                      </div>
+                      <AiSummaryPanel candidateId={candidate.id} initialSummary={candidate.ai_summary} />
                       {segmentEntries.length > 0 && (
                         <div>
                           <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Sales profile</h3>
