@@ -31,6 +31,9 @@ export default async function MandatesPage({
 
   const { data: mandates } = await query;
 
+  const { data: clientRows } = await supabase.from("mandates").select("client_name").not("client_name", "is", null);
+  const existingClients = Array.from(new Set((clientRows ?? []).map((r) => r.client_name).filter(Boolean))).sort();
+
   const { data: links } = await supabase.from("candidate_mandate_links").select("mandate_id, stage");
   const countsByMandate: Record<string, number> = {};
   const submittedByMandate: Record<string, number> = {};
@@ -122,7 +125,7 @@ export default async function MandatesPage({
       <div>
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-20">
           <h2 className="text-sm font-semibold text-slate-900 mb-3">New mandate</h2>
-          <CreateMandateForm />
+          <CreateMandateForm existingClients={existingClients} />
         </div>
       </div>
     </div>

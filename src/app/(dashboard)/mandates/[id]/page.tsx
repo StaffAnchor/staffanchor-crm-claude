@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ShortlistLinkPanel from "./shortlist-link-panel";
+import AlignCandidatesPanel from "./align-candidates-panel";
+import PublicListingPanel from "./public-listing-panel";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 text-slate-700",
@@ -35,6 +37,14 @@ export default async function MandateDetailPage({
     .select("token")
     .eq("mandate_id", id)
     .maybeSingle();
+
+  const linkedCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean));
+  const { data: allCandidates } = await supabase
+    .from("candidates")
+    .select("id, full_name, category, sub_domain, current_employer")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  const availableCandidates = (allCandidates ?? []).filter((c) => !linkedCandidateIds.has(c.id));
 
   return (
     <div className="grid grid-cols-3 gap-6">
@@ -106,7 +116,14 @@ export default async function MandateDetailPage({
         </div>
       </div>
 
-      <div>
+      <div className="space-y-6">
+        <PublicListingPanel
+          mandateId={id}
+          initialShowClientName={mandate.show_client_name ?? true}
+          initialPublicClientLabel={mandate.public_client_label}
+          clientName={mandate.client_name}
+        />
+        <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />
         <ShortlistLinkPanel mandateId={id} existingToken={existingToken?.token ?? null} />
       </div>
     </div>
