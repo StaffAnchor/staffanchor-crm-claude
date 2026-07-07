@@ -91,6 +91,12 @@ export default async function CandidatesPage({
 
   const { data: candidates, error } = await query;
 
+  const { data: openMandates } = await supabase
+    .from("mandates")
+    .select("id, role_title, client_name")
+    .eq("status", "open")
+    .order("created_at", { ascending: false });
+
   const { data: subDomainRows } = await supabase
     .from("candidates")
     .select("sub_domain")
@@ -346,7 +352,7 @@ export default async function CandidatesPage({
         <p className="text-sm text-red-600 mb-4">Error loading candidates: {error.message}</p>
       )}
 
-      <CandidatesTable candidates={(candidates ?? []) as never} />
+      <CandidatesTable candidates={(candidates ?? []) as never} openMandates={openMandates ?? []} />
     </div>
   );
 }

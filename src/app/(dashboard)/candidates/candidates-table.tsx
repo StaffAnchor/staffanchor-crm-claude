@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   ArrowUpRight,
   Settings2,
@@ -10,7 +12,17 @@ import {
   ChevronDown,
   RotateCcw,
   X,
+  Trash2,
+  Link2,
+  Send as SendIcon,
+  Loader2,
 } from "lucide-react";
+
+export type OpenMandate = {
+  id: string;
+  role_title: string;
+  client_name: string;
+};
 
 export type CandidateRow = {
   id: string;
@@ -243,11 +255,24 @@ function loadPrefs(): { order: string[]; hidden: string[] } {
   }
 }
 
-export default function CandidatesTable({ candidates }: { candidates: CandidateRow[] }) {
+export default function CandidatesTable({
+  candidates,
+  openMandates,
+}: {
+  candidates: CandidateRow[];
+  openMandates: OpenMandate[];
+}) {
+  const router = useRouter();
+  const supabase = createClient();
   const [order, setOrder] = useState<string[]>(COLUMN_KEYS);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [panelOpen, setPanelOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [chosenMandate, setChosenMandate] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const prefs = loadPrefs();
@@ -292,6 +317,105 @@ export default function CandidatesTable({ candidates }: { candidates: CandidateR
   function resetDefaults() {
     setOrder(COLUMN_KEYS);
     setHidden(new Set(COLUMN_KEYS.filter((k) => !DEFAULT_VISIBLE.has(k))));
+  }
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((prev) => (prev.size === candidates.length ? new Set() : new Set(candidates.map((c) => c.id))));
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+    setBulkMessage(null);
+  }
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return;
+    const confirmed = window.confirm(
+      `Delete ${selected.size} candidate${selected.size === 1 ? "" : "s"}? This cannot be undone.`
+    );
+    if (!confirmed) return;
+    setBulkBusy(true);
+    setBulkMessage(null);
+    const { error } = await supabase.from("candidates").delete().in("id", Array.from(selected));
+    setBulkBusy(false);
+    if (error) {
+      setBulkMessage(`Failed to delete: ${error.message}`);
+      return;
+    }
+    setSelected(new Set());
+    router.refresh();
+  }
+
+  async function handleBulkMap() {
+    if (!chosenMandate || selected.size === 0) return;
+    setBulkBusy(true);
+    setBulkMessage(null);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const rows = Array.from(selected).map((candidate_id) => ({
+      candidate_id,
+      mandate_id: chosenMandate,
+      added_by: user?.id ?? null,
+    }));
+    const { error } = await supabase.from("candidate_mandate_links").upsert(rows, {
+      onConflict: "candidate_id,mandate_id",
+      ignoreDuplicates: true,
+    });
+    setBulkBusy(false);
+    if (error) {
+      setBulkMessage(`Failed to map: ${error.message}`);
+      return;
+    }
+    setMapModalOpen(false);
+    setChosenMandate("");
+    setBulkMessage(`Mapped ${rows.length} candidate${rows.length === 1 ? "" : "s"} to the mandate.`);
+    setSelected(new Set());
+    router.refresh();
+  }
+
+  async function handleBulkInvite() {
+    if (selected.size === 0) return;
+    const targets = candidates.filter((c) => selected.has(c.id) && c.status === "awaiting_input");
+    const skipped = selected.size - targets.length;
+    if (targets.length === 0) {
+      setBulkMessage("None of the selected candidates are Awaiting Input, so no invites were sent.");
+      return;
+    }
+    setBulkBusy(true);
+    setBulkMessage(null);
+    let sent = 0;
+    let failed = 0;
+    for (const c of targets) {
+      try {
+        const res = await fetch("/api/send-invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ candidateId: c.id }),
+        });
+        if (res.ok) sent += 1;
+        else failed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    setBulkBusy(false);
+    setBulkMessage(
+      `Sent ${sent} invite${sent === 1 ? "" : "s"}.` +
+        (failed ? ` ${failed} failed.` : "") +
+        (skipped ? ` ${skipped} skipped (not Awaiting Input).` : "")
+    );
+    setSelected(new Set());
+    router.refresh();
   }
 
   return (
@@ -367,10 +491,91 @@ export default function CandidatesTable({ candidates }: { candidates: CandidateR
         )}
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-blue-50 border-b border-blue-100">
+          <p className="text-[12px] font-semibold text-blue-800">{selected.size} selected</p>
+          <button
+            onClick={handleBulkInvite}
+            disabled={bulkBusy}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg px-2.5 py-1.5 disabled:opacity-50"
+          >
+            {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <SendIcon className="w-3.5 h-3.5" />}
+            Send profile completion emails
+          </button>
+          <button
+            onClick={() => setMapModalOpen(true)}
+            disabled={bulkBusy || openMandates.length === 0}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg px-2.5 py-1.5 disabled:opacity-50"
+            title={openMandates.length === 0 ? "No open mandates" : undefined}
+          >
+            <Link2 className="w-3.5 h-3.5" /> Map with a mandate
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            disabled={bulkBusy}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 rounded-lg px-2.5 py-1.5 disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete
+          </button>
+          <button onClick={clearSelection} className="text-[12px] text-slate-500 hover:text-slate-800 ml-auto">
+            Clear selection
+          </button>
+        </div>
+      )}
+
+      {bulkMessage && (
+        <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
+          <p className="text-[12px] text-slate-600">{bulkMessage}</p>
+        </div>
+      )}
+
+      {mapModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setMapModalOpen(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[14px] font-semibold text-slate-900 mb-1">Map {selected.size} candidate{selected.size === 1 ? "" : "s"} to a mandate</h3>
+            <p className="text-[12px] text-slate-400 mb-3">They'll appear on that mandate's page, sourced stage.</p>
+            <select
+              value={chosenMandate}
+              onChange={(e) => setChosenMandate(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-3"
+            >
+              <option value="">Select an open mandate...</option>
+              {openMandates.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.role_title} — {m.client_name}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMapModalOpen(false)}
+                className="flex-1 rounded-lg border border-slate-200 text-slate-600 text-[13px] font-medium py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkMap}
+                disabled={!chosenMandate || bulkBusy}
+                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+              >
+                {bulkBusy ? "Mapping..." : "Map"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead className="bg-slate-50/80 text-slate-400 text-[11px] uppercase tracking-wide">
             <tr>
+              <th className="px-4 py-2.5 w-8">
+                <input
+                  type="checkbox"
+                  checked={selected.size > 0 && selected.size === candidates.length}
+                  onChange={toggleAll}
+                />
+              </th>
               <th className="text-left px-4 py-2.5 font-medium whitespace-nowrap">Name</th>
               {visibleColumns.map((col) => (
                 <th key={col.key} className="text-left px-4 py-2.5 font-medium whitespace-nowrap">
@@ -382,7 +587,10 @@ export default function CandidatesTable({ candidates }: { candidates: CandidateR
           </thead>
           <tbody className="divide-y divide-slate-100">
             {candidates.map((c) => (
-              <tr key={c.id} className="group hover:bg-slate-50/70 transition-colors">
+              <tr key={c.id} className={`group hover:bg-slate-50/70 transition-colors ${selected.has(c.id) ? "bg-blue-50/50" : ""}`}>
+                <td className="px-4 py-3">
+                  <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleRow(c.id)} />
+                </td>
                 <td className="px-4 py-3">
                   <Link href={`/candidates/${c.id}`} className="flex items-center gap-3">
                     <div
