@@ -74,9 +74,10 @@ Candidate data (JSON):
 ${JSON.stringify(factSheet, null, 2)}`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Try a couple of free-tier model names in order, since quota availability
-  // varies by Google account/project even within the free tier.
-  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-2.0-flash"];
+  // gemini-1.5-* models have been retired (404 on this API version), so only
+  // try current models. Quota availability still varies by Google
+  // account/project even within the free tier.
+  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
 
   let lastError: unknown = null;
   for (const modelName of modelsToTry) {
@@ -107,7 +108,7 @@ ${JSON.stringify(factSheet, null, 2)}`;
 
   const message =
     lastError instanceof Error && lastError.message.includes("429")
-      ? "Google's free Gemini tier has no quota available for this API key right now (rate/quota limited). Try again in a minute, or enable billing on the Gemini API key for higher limits."
+      ? "This Gemini API key has 0 free-tier quota on Google's side (not a retry-in-a-minute rate limit -- the daily limit itself is 0). This usually means the key wasn't generated at aistudio.google.com/apikey, or the linked Google Cloud project has the free tier disabled for this region/account. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing on the project for standard paid-tier limits."
       : "AI summary generation failed. Please try again.";
   return NextResponse.json({ error: message }, { status: 500 });
 }

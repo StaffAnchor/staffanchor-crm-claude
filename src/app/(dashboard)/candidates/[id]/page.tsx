@@ -10,6 +10,7 @@ import Tabs from "./tabs";
 import Timeline from "./timeline";
 import AiSummaryPanel from "./ai-summary-panel";
 import SendInviteButton from "./send-invite-button";
+import ResumePreview from "./resume-preview";
 
 const CATEGORY_COLOR: Record<string, string> = {
   b2b_sales: "from-blue-400 to-blue-600",
@@ -55,6 +56,23 @@ export default async function CandidateDetailPage({
     .single();
 
   if (!candidate) notFound();
+
+  let resumeSignedUrl: string | null = null;
+  let resumeFileName: string | null = null;
+  if (candidate.resume_file_url) {
+    // Data has been inconsistent historically -- some rows store the path
+    // with a leading "resumes/" bucket-name prefix, some without. Strip it
+    // so we always pass a path relative to the bucket itself.
+    const rawPath = candidate.resume_file_url as string;
+    const cleanPath = rawPath.replace(/^resumes\//, "");
+    const { data: signed, error: signError } = await supabase.storage
+      .from("resumes")
+      .createSignedUrl(cleanPath, 60 * 60);
+    if (!signError && signed) {
+      resumeSignedUrl = signed.signedUrl;
+      resumeFileName = cleanPath.split("/").pop() ?? cleanPath;
+    }
+  }
 
   const { data: notes } = await supabase
     .from("recruiter_notes")
@@ -177,14 +195,13 @@ export default async function CandidateDetailPage({
           <a href={`mailto:${candidate.email}`} className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-3 py-1.5 transition-colors">
             <Mail className="w-3 h-3" /> Email
           </a>
-          {candidate.resume_file_url && (
-            <a
-              href={`https://qdbxrspvnglbrvzfqhhg.supabase.co/storage/v1/object/public/resumes/${candidate.resume_file_url}`}
-              target="_blank"
-              className="flex items-center gap-1.5 text-[12px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 transition-colors"
-            >
-              <FileText className="w-3 h-3" /> Resume
-            </a>
+          {resumeSignedUrl && resumeFileName && (
+            <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} />
+          )}
+          {candidate.resume_file_url && !resumeSignedUrl && (
+            <span className="flex items-center gap-1.5 text-[12px] font-medium text-red-600 bg-red-50 rounded-lg px-3 py-1.5">
+              <FileText className="w-3 h-3" /> Resume file not found
+            </span>
           )}
         </div>
 
