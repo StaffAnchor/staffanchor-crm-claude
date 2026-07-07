@@ -21,8 +21,8 @@ export default async function MandatesPage() {
   return (
     <div className="grid grid-cols-3 gap-6">
       <div className="col-span-2">
-        <h1 className="text-lg font-semibold text-slate-900 mb-4">Mandates</h1>
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <h1 className="text-xl font-semibold text-slate-900 mb-4">Mandates</h1>
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
               <tr>
@@ -60,7 +60,7 @@ export default async function MandatesPage() {
         </div>
       </div>
       <div>
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900 mb-3">New mandate</h2>
           <CreateMandateForm />
         </div>
