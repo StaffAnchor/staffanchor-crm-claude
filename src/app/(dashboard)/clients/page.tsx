@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Building2, MapPin, Briefcase, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CreateClientForm from "./create-client-form";
+import ClientLeaderboard, { type ClientLeaderRow } from "./client-leaderboard";
+import { computeFunnel } from "./funnel-utils";
 
 export default async function ClientsPage({
   searchParams,
@@ -19,7 +21,9 @@ export default async function ClientsPage({
   const { data: clients } = await query;
 
   const { data: mandates } = await supabase.from("mandates").select("id, client_id, status");
-  const { data: links } = await supabase.from("candidate_mandate_links").select("mandate_id, in_shortlist");
+  const { data: links } = await supabase
+    .from("candidate_mandate_links")
+    .select("mandate_id, in_shortlist, stage");
 
   const shortlistedByMandate: Record<string, number> = {};
   (links ?? []).forEach((l) => {
@@ -27,13 +31,28 @@ export default async function ClientsPage({
   });
 
   const statsByClient: Record<string, { open: number; total: number; shortlisted: number }> = {};
+  const clientIdByMandate: Record<string, string> = {};
   (mandates ?? []).forEach((m) => {
     if (!m.client_id) return;
+    clientIdByMandate[m.id] = m.client_id;
     const stats = (statsByClient[m.client_id] ??= { open: 0, total: 0, shortlisted: 0 });
     stats.total += 1;
     if (m.status === "open") stats.open += 1;
     stats.shortlisted += shortlistedByMandate[m.id] ?? 0;
   });
+
+  const stagesByClient: Record<string, (string | null)[]> = {};
+  (links ?? []).forEach((l) => {
+    const clientId = clientIdByMandate[l.mandate_id];
+    if (!clientId) return;
+    (stagesByClient[clientId] ??= []).push(l.stage);
+  });
+
+  const leaderRows: ClientLeaderRow[] = (clients ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    stats: computeFunnel(stagesByClient[c.id] ?? []),
+  }));
 
   return (
     <div className="grid grid-cols-3 gap-6">
@@ -46,6 +65,8 @@ export default async function ClientsPage({
             </p>
           </div>
         </div>
+
+        <ClientLeaderboard rows={leaderRows} />
 
         <form className="mb-4">
           <input

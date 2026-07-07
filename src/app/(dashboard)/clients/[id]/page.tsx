@@ -5,6 +5,8 @@ import ClientInfoPanel from "./client-info-panel";
 import ClientContactsPanel, { type ClientContact } from "./client-contacts-panel";
 import ClientPortalAccessPanel from "./client-portal-access-panel";
 import ClientMandatesRollup, { type ClientMandateRow } from "./client-mandates-rollup";
+import ClientFunnelPanel from "./client-funnel-panel";
+import { computeFunnel } from "../funnel-utils";
 
 export default async function ClientDetailPage({
   params,
@@ -25,8 +27,11 @@ export default async function ClientDetailPage({
 
   const mandateIds = (mandates ?? []).map((m) => m.id);
   const { data: links } = mandateIds.length
-    ? await supabase.from("candidate_mandate_links").select("mandate_id, in_shortlist").in("mandate_id", mandateIds)
-    : { data: [] as { mandate_id: string; in_shortlist: boolean }[] };
+    ? await supabase
+        .from("candidate_mandate_links")
+        .select("mandate_id, in_shortlist, stage")
+        .in("mandate_id", mandateIds)
+    : { data: [] as { mandate_id: string; in_shortlist: boolean; stage: string | null }[] };
 
   const linkedByMandate: Record<string, number> = {};
   const shortlistedByMandate: Record<string, number> = {};
@@ -34,6 +39,8 @@ export default async function ClientDetailPage({
     linkedByMandate[l.mandate_id] = (linkedByMandate[l.mandate_id] ?? 0) + 1;
     if (l.in_shortlist) shortlistedByMandate[l.mandate_id] = (shortlistedByMandate[l.mandate_id] ?? 0) + 1;
   });
+
+  const funnelStats = computeFunnel((links ?? []).map((l) => l.stage));
 
   const mandateRows: ClientMandateRow[] = (mandates ?? []).map((m) => ({
     id: m.id,
@@ -78,6 +85,8 @@ export default async function ClientDetailPage({
         </div>
 
         <ClientMandatesRollup rows={mandateRows} />
+
+        <ClientFunnelPanel stats={funnelStats} />
       </div>
 
       <div className="space-y-6">
