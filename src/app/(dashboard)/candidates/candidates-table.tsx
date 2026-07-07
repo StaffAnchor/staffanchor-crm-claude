@@ -38,6 +38,7 @@ export type CandidateRow = {
   total_experience_years: number | null;
   current_fixed_ctc: number | null;
   notice_period: string | null;
+  current_employment_status: string | null;
   status: string;
   recruiter_assessment: Record<string, unknown> | null;
   segment_data: Record<string, unknown> | null;
@@ -259,6 +260,11 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (c) => <span className="text-slate-600 truncate block max-w-[160px]">{c.sub_domain ?? "—"}</span>,
   },
   {
+    key: "current_employment_status",
+    label: "Employment Status",
+    render: (c) => <span className="text-slate-600 whitespace-nowrap">{c.current_employment_status ?? "—"}</span>,
+  },
+  {
     key: "notice_period",
     label: "Days to Join",
     render: (c) => <span className="text-slate-600 whitespace-nowrap">{c.notice_period ?? "—"}</span>,
@@ -351,6 +357,8 @@ const DEFAULT_VISIBLE = new Set([
   "category",
   "current_location",
   "role_level",
+  "current_employment_status",
+  "notice_period",
   "recommendation",
   "status",
   "resume",

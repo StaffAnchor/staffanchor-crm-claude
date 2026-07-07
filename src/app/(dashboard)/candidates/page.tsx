@@ -77,7 +77,7 @@ export default async function CandidatesPage({
   let query = supabase
     .from("candidates")
     .select(
-      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, status, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
+      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, current_employment_status, status, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -169,10 +169,10 @@ export default async function CandidatesPage({
 
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-5">
+      <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h1 className="text-[22px] font-semibold text-slate-900 tracking-tight">Candidates</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">
+          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Candidates</h1>
+          <p className="text-[12.5px] text-slate-500 mt-0.5">
             Search, assess, and shortlist your candidate database
           </p>
         </div>
@@ -184,18 +184,20 @@ export default async function CandidatesPage({
         </Link>
       </div>
 
-      <div className="grid grid-cols-6 gap-3 mb-5">
+      <div className="grid grid-cols-6 gap-2.5 mb-3">
         {kpis.map((k) => {
           const Icon = k.icon;
           const content = (
             <div
-              className={`bg-white border-l-[3px] ${k.accent} border-y border-r border-slate-200 rounded-lg p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150`}
+              className={`flex items-center gap-2.5 bg-white border-l-[3px] ${k.accent} border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150`}
             >
-              <div className="flex items-center justify-between mb-2">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
                 <Icon className={`w-4 h-4 ${k.iconColor}`} strokeWidth={2} />
               </div>
-              <p className="text-2xl font-semibold text-slate-900 tabular-nums">{k.value}</p>
-              <p className="text-[12px] text-slate-500 mt-0.5">{k.label}</p>
+              <div className="min-w-0">
+                <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{k.value}</p>
+                <p className="text-[11px] text-slate-500 truncate">{k.label}</p>
+              </div>
             </div>
           );
           return k.href ? (
@@ -208,14 +210,16 @@ export default async function CandidatesPage({
         })}
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-5 mb-5 shadow-sm">
-        <p className="text-[12px] font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Hiring pipeline
-        </p>
-        <div className="flex items-stretch gap-1.5">
+      <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-3 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+            Hiring pipeline
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
           {FUNNEL_STAGES.map((stage, i) => {
             const count = funnelCounts[stage.key] ?? 0;
-            const heightPct = Math.max(18, (count / funnelMax) * 100);
+            const widthPct = Math.max(6, (count / funnelMax) * 100);
             return (
               <Link
                 key={stage.key}
@@ -224,17 +228,17 @@ export default async function CandidatesPage({
                     ? "/candidates"
                     : `/candidates?status=${stage.key === "offer_placed" ? "offer" : stage.key}`
                 }
-                className="group flex-1 flex flex-col items-center"
+                className="group flex-1 flex items-center gap-2"
                 title={`${count} candidate${count === 1 ? "" : "s"} · ${stage.label}`}
               >
-                <div className="w-full h-16 flex items-end mb-2">
+                <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div
-                    className={`w-full rounded-md ${stage.color} opacity-80 group-hover:opacity-100 transition-all duration-200 group-hover:-translate-y-0.5`}
-                    style={{ height: `${heightPct}%` }}
+                    className={`h-full rounded-full ${stage.color} opacity-80 group-hover:opacity-100 transition-all duration-200`}
+                    style={{ width: `${widthPct}%` }}
                   />
                 </div>
-                <p className="text-sm font-semibold text-slate-900 tabular-nums">{count}</p>
-                <p className="text-[11px] text-slate-500 text-center">{stage.label}</p>
+                <span className="text-[12px] font-semibold text-slate-900 tabular-nums shrink-0">{count}</span>
+                <span className="text-[10.5px] text-slate-500 shrink-0 hidden lg:inline">{stage.label}</span>
                 {i < FUNNEL_STAGES.length - 1 && (
                   <span className="hidden" aria-hidden>
                     →
@@ -246,7 +250,7 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      <form className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
+      <form className="bg-white border border-slate-200 rounded-xl p-3 mb-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <input
             name="q"
