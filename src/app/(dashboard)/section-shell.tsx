@@ -3,12 +3,39 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  Clock,
+  Eye,
+  Star,
+  Send,
+  Archive,
+  Briefcase,
+  CheckCircle2,
+  PauseCircle,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
+
+const ICONS: Record<string, LucideIcon> = {
+  Users,
+  Clock,
+  Eye,
+  Star,
+  Send,
+  Archive,
+  Briefcase,
+  CheckCircle2,
+  PauseCircle,
+  XCircle,
+};
 
 export type SidebarItem = {
   label: string;
   href: string;
-  icon?: LucideIcon;
+  icon?: keyof typeof ICONS;
   matchParam?: { key: string; value: string };
 };
 
@@ -54,7 +81,7 @@ export default function SectionShell({
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const active = isActive(item);
-                  const Icon = item.icon;
+                  const Icon = item.icon ? ICONS[item.icon] : undefined;
                   return (
                     <Link
                       key={item.label}
