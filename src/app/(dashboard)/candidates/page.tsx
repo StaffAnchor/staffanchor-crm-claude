@@ -61,6 +61,10 @@ const CATEGORIES = [
   { value: "non_sales", label: "Non-Sales" },
 ];
 
+const RECOMMENDATIONS = ["Strong Fit", "Fit with Reservations", "Not a Fit"];
+
+const NOTICE_PERIODS = ["Immediate", "15 days", "30 days", "60 days", "90 days"];
+
 const RECOMMENDATION_RING: Record<string, { pct: number; ring: string; text: string }> = {
   "Strong Fit": { pct: 92, ring: "stroke-emerald-500", text: "text-emerald-700" },
   "Fit with Reservations": { pct: 60, ring: "stroke-amber-500", text: "text-amber-700" },
@@ -74,6 +78,9 @@ type SearchParams = {
   min_ctc?: string;
   max_ctc?: string;
   min_exp?: string;
+  recommendation?: string;
+  sub_domain?: string;
+  notice_period?: string;
 };
 
 function initialsFor(name: string) {
@@ -141,8 +148,19 @@ export default async function CandidatesPage({
   if (params.min_ctc) query = query.gte("current_fixed_ctc", Number(params.min_ctc));
   if (params.max_ctc) query = query.lte("current_fixed_ctc", Number(params.max_ctc));
   if (params.min_exp) query = query.gte("total_experience_years", Number(params.min_exp));
+  if (params.sub_domain) query = query.eq("sub_domain", params.sub_domain);
+  if (params.notice_period) query = query.eq("notice_period", params.notice_period);
+  if (params.recommendation) {
+    query = query.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
+  }
 
   const { data: candidates, error } = await query;
+
+  const { data: subDomainRows } = await supabase
+    .from("candidates")
+    .select("sub_domain")
+    .not("sub_domain", "is", null);
+  const subDomains = Array.from(new Set((subDomainRows ?? []).map((r) => r.sub_domain).filter(Boolean))).sort();
 
   const { data: allRows } = await supabase.from("candidates").select("status, created_at");
   const statusCounts: Record<string, number> = {};
@@ -336,6 +354,51 @@ export default async function CandidatesPage({
                 <label className="block text-[11px] font-medium text-slate-500 mb-1">Min experience</label>
                 <input name="min_exp" type="number" defaultValue={params.min_exp} className="w-20 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]" />
               </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Recruiter recommendation</label>
+                <select
+                  name="recommendation"
+                  defaultValue={params.recommendation ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {RECOMMENDATIONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Sub-domain</label>
+                <select
+                  name="sub_domain"
+                  defaultValue={params.sub_domain ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {subDomains.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Notice period</label>
+                <select
+                  name="notice_period"
+                  defaultValue={params.notice_period ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {NOTICE_PERIODS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button type="submit" className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium px-3 py-1.5">
                 Apply
               </button>
@@ -350,7 +413,7 @@ export default async function CandidatesPage({
 
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 text-slate-400 text-[11px] uppercase tracking-wide sticky top-14 z-10">
+          <thead className="bg-slate-50/80 text-slate-400 text-[11px] uppercase tracking-wide">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">Candidate</th>
               <th className="text-left px-4 py-2.5 font-medium">Category</th>
