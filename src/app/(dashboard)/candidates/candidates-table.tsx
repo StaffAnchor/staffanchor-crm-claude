@@ -42,6 +42,7 @@ export type CandidateRow = {
   recruiter_assessment: Record<string, unknown> | null;
   segment_data: Record<string, unknown> | null;
   resume_file_url: string | null;
+  ai_summary: string | null;
   created_at: string;
 };
 
@@ -712,18 +713,26 @@ export default function CandidatesTable({
                   <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleRow(c.id)} />
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/candidates/${c.id}`} className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-full bg-gradient-to-br ${
-                        CATEGORY_COLOR[c.category ?? ""] ?? "from-slate-400 to-slate-500"
-                      } flex items-center justify-center text-[11px] font-semibold text-white shrink-0`}
-                    >
-                      {initialsFor(c.full_name)}
-                    </div>
-                    <p className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate whitespace-nowrap">
-                      {c.full_name}
-                    </p>
-                  </Link>
+                  <div className="group/name relative">
+                    <Link href={`/candidates/${c.id}`} className="flex items-center gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${
+                          CATEGORY_COLOR[c.category ?? ""] ?? "from-slate-400 to-slate-500"
+                        } flex items-center justify-center text-[11px] font-semibold text-white shrink-0`}
+                      >
+                        {initialsFor(c.full_name)}
+                      </div>
+                      <p className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate whitespace-nowrap">
+                        {c.full_name}
+                      </p>
+                    </Link>
+                    {c.ai_summary && (
+                      <div className="pointer-events-none invisible absolute left-0 top-full z-20 mt-1.5 w-80 rounded-lg border border-slate-200 bg-white p-3 text-[12px] leading-relaxed text-slate-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover/name:visible group-hover/name:opacity-100">
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600">AI summary</p>
+                        {c.ai_summary}
+                      </div>
+                    )}
+                  </div>
                 </td>
                 {visibleColumns.map((col) => (
                   <td key={col.key} className="px-4 py-3">

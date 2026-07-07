@@ -77,7 +77,7 @@ export default async function CandidatesPage({
   let query = supabase
     .from("candidates")
     .select(
-      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, status, recruiter_assessment, segment_data, resume_file_url, created_at"
+      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, status, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100);
