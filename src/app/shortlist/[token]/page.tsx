@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import FeedbackButtons from "./feedback-buttons";
+import ResumePreview from "./resume-preview";
 
 type ShortlistRow = {
   link_id: string;
@@ -26,6 +27,26 @@ type ShortlistRow = {
   stage: string;
   client_feedback: string | null;
 };
+
+// Signed URLs are generated with the service-role key here, gated entirely by the
+// same token check the get_client_shortlist RPC already performs above -- this page
+// has no Supabase Auth session (it's a no-login link), so the private 'resumes'
+// bucket cannot otherwise be read by a candidate's shortlist card. Requires
+// SUPABASE_SERVICE_ROLE_KEY to be set in this project's environment; if it's
+// missing, resumes simply won't show a preview link rather than crashing the page.
+async function getResumeSignedUrls(paths: string[]): Promise<Record<string, string>> {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || paths.length === 0) return {};
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
+  const entries = await Promise.all(
+    paths.map(async (path) => {
+      const cleanPath = path.replace(/^resumes\//, "");
+      const { data, error } = await admin.storage.from("resumes").createSignedUrl(cleanPath, 3600);
+      return [path, error ? null : data?.signedUrl ?? null] as const;
+    })
+  );
+  return Object.fromEntries(entries.filter(([, url]) => url !== null)) as Record<string, string>;
+}
 
 export default async function ClientShortlistPage({
   params,
@@ -60,8 +81,15 @@ export default async function ClientShortlistPage({
   const rows = data as ShortlistRow[];
   const { client_name, role_title } = rows[0];
 
+  const resumePaths = rows.map((r) => r.resume_file_url).filter((p): p is string => !!p);
+  const resumeUrls = await getResumeSignedUrls(resumePaths);
+
   const recommended = rows.filter((r) => r.overall_recommendation === "Strong Fit");
   const others = rows.filter((r) => r.overall_recommendation !== "Strong Fit");
+
+  const interestedCount = rows.filter((r) => r.client_feedback === "interested").length;
+  const interviewCount = rows.filter((r) => r.client_feedback === "interview_requested").length;
+  const pendingCount = rows.filter((r) => !r.client_feedback).length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -76,12 +104,32 @@ export default async function ClientShortlistPage({
           <p className="text-sm text-slate-500 mt-1">
             {rows.length} candidate{rows.length === 1 ? "" : "s"} shortlisted for your review.
           </p>
+          <div className="flex flex-wrap gap-4 mt-4 text-xs">
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+              {recommended.length} recommended
+            </span>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700">
+              {interestedCount} interested
+            </span>
+            <span className="rounded-full bg-cyan-100 px-3 py-1 font-medium text-cyan-700">
+              {interviewCount} interview requested
+            </span>
+            <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
+              {pendingCount} awaiting your response
+            </span>
+          </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-4">
         {[...recommended, ...others].map((c) => (
-          <CandidateCard key={c.link_id} candidate={c} recommended={recommended.includes(c)} token={token} />
+          <CandidateCard
+            key={c.link_id}
+            candidate={c}
+            recommended={recommended.includes(c)}
+            token={token}
+            resumeUrl={c.resume_file_url ? resumeUrls[c.resume_file_url] : undefined}
+          />
         ))}
       </main>
     </div>
@@ -92,10 +140,12 @@ function CandidateCard({
   candidate,
   recommended,
   token,
+  resumeUrl,
 }: {
   candidate: ShortlistRow;
   recommended: boolean;
   token: string;
+  resumeUrl?: string;
 }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6">
@@ -117,14 +167,12 @@ function CandidateCard({
             {candidate.current_location} · {candidate.total_experience_years ?? "—"} yrs experience
           </p>
         </div>
-        {candidate.resume_file_url && (
-          <a
-            href={`https://qdbxrspvnglbrvzfqhhg.supabase.co/storage/v1/object/public/resumes/${candidate.resume_file_url}`}
-            target="_blank"
-            className="text-sm text-blue-600 hover:underline shrink-0"
-          >
-            Resume →
-          </a>
+        {candidate.resume_file_url && resumeUrl && (
+          <ResumePreview
+            signedUrl={resumeUrl}
+            fileName={candidate.resume_file_url.replace(/^resumes\//, "")}
+            label="Preview resume"
+          />
         )}
       </div>
 
@@ -151,6 +199,18 @@ function CandidateCard({
           <p className="text-xs text-slate-400">Notice period — verified</p>
           <p className="text-slate-700">{candidate.verified_notice ?? "—"}</p>
         </div>
+        {candidate.industries && candidate.industries.length > 0 && (
+          <div className="col-span-2">
+            <p className="text-xs text-slate-400">Industries</p>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {candidate.industries.map((i) => (
+                <span key={i} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                  {i}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <FeedbackButtons token={token} linkId={candidate.link_id} current={candidate.client_feedback} />
