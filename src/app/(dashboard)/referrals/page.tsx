@@ -31,7 +31,8 @@ export default async function ReferralsPage() {
     .select(
       `id, referred_name, referred_email, referred_phone, note, status, reward_amount, created_at, placed_at, paid_at,
       referrer:candidates!referrals_referrer_candidate_id_fkey(id, full_name, email),
-      referred:candidates!referrals_referred_candidate_id_fkey(id, full_name, status)`
+      referred:candidates!referrals_referred_candidate_id_fkey(id, full_name, status),
+      referral_mandates(mandates(id, role_title, status))`
     )
     .order("created_at", { ascending: false });
 
@@ -48,6 +49,7 @@ export default async function ReferralsPage() {
     paid_at: string | null;
     referrer: { id: string; full_name: string | null; email: string | null } | { id: string; full_name: string | null; email: string | null }[] | null;
     referred: { id: string; full_name: string | null; status: string } | { id: string; full_name: string | null; status: string }[] | null;
+    referral_mandates: { mandates: { id: string; role_title: string; status: string } | { id: string; role_title: string; status: string }[] | null }[] | null;
   };
 
   const rows = (referrals ?? []) as unknown as ReferralRow[];
@@ -95,6 +97,7 @@ export default async function ReferralsPage() {
               <tr>
                 <th className="text-left px-4 py-2.5">Referred by</th>
                 <th className="text-left px-4 py-2.5">Referred candidate</th>
+                <th className="text-left px-4 py-2.5">Role(s) referred for</th>
                 <th className="text-left px-4 py-2.5">Contact</th>
                 <th className="text-left px-4 py-2.5">Status & reward</th>
               </tr>
@@ -103,6 +106,9 @@ export default async function ReferralsPage() {
               {rows.map((r) => {
                 const referrer = Array.isArray(r.referrer) ? r.referrer[0] : r.referrer;
                 const referred = Array.isArray(r.referred) ? r.referred[0] : r.referred;
+                const mandates = (r.referral_mandates ?? [])
+                  .map((rm) => (Array.isArray(rm.mandates) ? rm.mandates[0] : rm.mandates))
+                  .filter((m): m is { id: string; role_title: string; status: string } => !!m);
                 return (
                   <tr key={r.id} className="hover:bg-slate-50 align-top">
                     <td className="px-4 py-3">
@@ -124,6 +130,26 @@ export default async function ReferralsPage() {
                         <p className="text-xs text-slate-400">Not registered yet</p>
                       )}
                       {r.note && <p className="text-xs text-slate-400 mt-0.5 max-w-xs">{r.note}</p>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {mandates.length === 0 ? (
+                        <span className="text-xs text-slate-400">—</span>
+                      ) : (
+                        <div className="space-y-1">
+                          {mandates.map((m) => (
+                            <Link
+                              key={m.id}
+                              href={`/mandates/${m.id}`}
+                              className="block text-xs text-blue-600 hover:underline"
+                            >
+                              {m.role_title}
+                              {m.status !== "open" && (
+                                <span className="ml-1 text-slate-400">({m.status.replace("_", " ")})</span>
+                              )}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       <p>{r.referred_email}</p>
