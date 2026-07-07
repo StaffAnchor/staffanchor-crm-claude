@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ResumePreview from "./[id]/resume-preview";
@@ -398,6 +398,37 @@ export default function CandidatesTable({
   const [panelOpen, setPanelOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [summaryTooltip, setSummaryTooltip] = useState<{
+    text: string;
+    left: number;
+    top?: number;
+    bottom?: number;
+  } | null>(null);
+
+  function handleNameHover(e: MouseEvent<HTMLDivElement>, summary: string | null) {
+    if (!summary) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const estTooltipHeight = 120;
+    const tooltipWidth = 320;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const showAbove = spaceAbove >= estTooltipHeight || spaceAbove > spaceBelow;
+
+    let left = rect.left;
+    const maxLeft = window.innerWidth - tooltipWidth - 12;
+    if (left > maxLeft) left = Math.max(12, maxLeft);
+
+    setSummaryTooltip({
+      text: summary,
+      left,
+      top: showAbove ? undefined : rect.bottom + 6,
+      bottom: showAbove ? window.innerHeight - rect.top + 6 : undefined,
+    });
+  }
+
+  function handleNameLeave() {
+    setSummaryTooltip(null);
+  }
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [chosenMandate, setChosenMandate] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -721,7 +752,11 @@ export default function CandidatesTable({
                   <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleRow(c.id)} />
                 </td>
                 <td className="px-4 py-3">
-                  <div className="group/name relative">
+                  <div
+                    className="relative"
+                    onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
+                    onMouseLeave={handleNameLeave}
+                  >
                     <Link href={`/candidates/${c.id}`} className="flex items-center gap-3">
                       <div
                         className={`w-8 h-8 rounded-full bg-gradient-to-br ${
@@ -734,12 +769,6 @@ export default function CandidatesTable({
                         {c.full_name}
                       </p>
                     </Link>
-                    {c.ai_summary && (
-                      <div className="pointer-events-none invisible absolute left-0 bottom-full z-20 mb-1.5 w-80 rounded-lg border border-slate-200 bg-white p-3 text-[12px] leading-relaxed text-slate-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover/name:visible group-hover/name:opacity-100">
-                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600">AI summary</p>
-                        {c.ai_summary}
-                      </div>
-                    )}
                   </div>
                 </td>
                 {visibleColumns.map((col) => (
@@ -767,6 +796,16 @@ export default function CandidatesTable({
           <Link href="/candidates" className="text-[13px] text-blue-600 hover:underline mt-1 inline-block">
             Clear filters
           </Link>
+        </div>
+      )}
+
+      {summaryTooltip && (
+        <div
+          className="fixed z-50 w-80 rounded-lg border border-slate-200 bg-white p-3 text-[12px] leading-relaxed text-slate-600 shadow-lg pointer-events-none"
+          style={{ left: summaryTooltip.left, top: summaryTooltip.top, bottom: summaryTooltip.bottom }}
+        >
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600">AI summary</p>
+          {summaryTooltip.text}
         </div>
       )}
     </div>
