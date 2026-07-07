@@ -64,6 +64,12 @@ type SearchParams = {
   min_communication?: string;
   min_confidence?: string;
   min_coachability?: string;
+  location?: string;
+  secondary_domain?: string;
+  from?: string;
+  to?: string;
+  recruiter?: string;
+  placed_only?: string;
 };
 
 export default async function CandidatesPage({
@@ -93,6 +99,17 @@ export default async function CandidatesPage({
   if (params.max_ctc) query = query.lte("current_fixed_ctc", Number(params.max_ctc));
   if (params.min_exp) query = query.gte("total_experience_years", Number(params.min_exp));
   if (params.sub_domain) query = query.eq("sub_domain", params.sub_domain);
+  if (params.location) query = query.ilike("current_location", `%${params.location}%`);
+  if (params.secondary_domain) query = query.contains("secondary_sub_domains", [params.secondary_domain]);
+  if (params.from) query = query.gte("created_at", params.from);
+  if (params.to) query = query.lte("created_at", `${params.to}T23:59:59.999`);
+  if (params.recruiter) {
+    let linkQuery = supabase.from("candidate_mandate_links").select("candidate_id").eq("added_by", params.recruiter);
+    if (params.placed_only) linkQuery = linkQuery.eq("stage", "placed");
+    const { data: recruiterLinks } = await linkQuery;
+    const candidateIds = Array.from(new Set((recruiterLinks ?? []).map((l) => l.candidate_id)));
+    query = query.in("id", candidateIds.length ? candidateIds : ["00000000-0000-0000-0000-000000000000"]);
+  }
   if (params.notice_period) query = query.eq("notice_period", params.notice_period);
   if (params.recommendation) {
     query = query.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
@@ -114,6 +131,16 @@ export default async function CandidatesPage({
   }
 
   const { data: candidates, error } = await query;
+
+  let recruiterName: string | null = null;
+  if (params.recruiter) {
+    const { data: recruiterProfile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", params.recruiter)
+      .single();
+    recruiterName = recruiterProfile?.full_name ?? recruiterProfile?.email ?? null;
+  }
 
   const { data: openMandates } = await supabase
     .from("mandates")
@@ -260,6 +287,12 @@ export default async function CandidatesPage({
           />
           {params.category && <input type="hidden" name="category" value={params.category} />}
           {params.status && <input type="hidden" name="status" value={params.status} />}
+          {params.location && <input type="hidden" name="location" value={params.location} />}
+          {params.secondary_domain && <input type="hidden" name="secondary_domain" value={params.secondary_domain} />}
+          {params.from && <input type="hidden" name="from" value={params.from} />}
+          {params.to && <input type="hidden" name="to" value={params.to} />}
+          {params.recruiter && <input type="hidden" name="recruiter" value={params.recruiter} />}
+          {params.placed_only && <input type="hidden" name="placed_only" value={params.placed_only} />}
           <button
             type="submit"
             className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium px-3.5 py-1.5"
@@ -288,6 +321,38 @@ export default async function CandidatesPage({
               className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
             >
               Status: {STATUS_LABEL[params.status] ?? params.status} ✕
+            </Link>
+          )}
+          {params.location && (
+            <Link
+              href={qs({ location: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              Location: {params.location} ✕
+            </Link>
+          )}
+          {params.secondary_domain && (
+            <Link
+              href={qs({ secondary_domain: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              Secondary domain: {params.secondary_domain} ✕
+            </Link>
+          )}
+          {(params.from || params.to) && (
+            <Link
+              href={qs({ from: undefined, to: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              Added: {params.from ?? "…"} → {params.to ?? "…"} ✕
+            </Link>
+          )}
+          {params.recruiter && (
+            <Link
+              href={qs({ recruiter: undefined, placed_only: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              {params.placed_only ? "Placed by" : "Linked by"} {recruiterName ?? "recruiter"} ✕
             </Link>
           )}
 
