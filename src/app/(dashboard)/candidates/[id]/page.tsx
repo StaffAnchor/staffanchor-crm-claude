@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import AssessmentForm from "./assessment-form";
 import NotesPanel from "./notes-panel";
 import StatusControl from "./status-control";
+import MandateLinksPanel from "./mandate-links-panel";
 
 export default async function CandidateDetailPage({
   params,
@@ -25,6 +26,16 @@ export default async function CandidateDetailPage({
     .select("id, note_type, content, created_at, author_id")
     .eq("candidate_id", id)
     .order("created_at", { ascending: false });
+
+  const { data: links } = await supabase
+    .from("candidate_mandate_links")
+    .select("id, mandate_id, stage, in_shortlist, rejection_reason, mandates(client_name, role_title)")
+    .eq("candidate_id", id);
+
+  const { data: openMandates } = await supabase
+    .from("mandates")
+    .select("id, client_name, role_title")
+    .eq("status", "open");
 
   const assessment = (candidate.recruiter_assessment ?? {}) as Record<string, unknown>;
   const segment = (candidate.segment_data ?? {}) as Record<string, unknown>;
@@ -123,6 +134,12 @@ export default async function CandidateDetailPage({
           </p>
           <AssessmentForm candidateId={candidate.id} assessment={assessment} />
         </div>
+
+        <MandateLinksPanel
+          candidateId={candidate.id}
+          links={(links ?? []) as never}
+          openMandates={openMandates ?? []}
+        />
       </div>
     </div>
   );
