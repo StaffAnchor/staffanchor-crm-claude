@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import ShortlistLinkPanel from "./shortlist-link-panel";
 import AlignCandidatesPanel from "./align-candidates-panel";
 import PublicListingPanel from "./public-listing-panel";
+import JobDescriptionPanel from "./job-description-panel";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 text-slate-700",
@@ -123,6 +124,7 @@ export default async function MandateDetailPage({
           initialPublicClientLabel={mandate.public_client_label}
           clientName={mandate.client_name}
         />
+        <JobDescriptionPanel mandateId={id} initialDescription={mandate.job_description} />
         <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />
         <ShortlistLinkPanel mandateId={id} existingToken={existingToken?.token ?? null} />
       </div>

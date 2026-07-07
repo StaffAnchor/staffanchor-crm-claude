@@ -17,6 +17,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     budget_max: "",
     hide_client: false,
     public_client_label: "",
+    job_description: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -35,6 +36,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       budget_max: form.budget_max ? Number(form.budget_max) : null,
       show_client_name: !form.hide_client,
       public_client_label: form.hide_client ? form.public_client_label || null : null,
+      job_description: form.job_description || null,
     });
     setSaving(false);
     if (error) {
@@ -51,6 +53,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       budget_max: "",
       hide_client: false,
       public_client_label: "",
+      job_description: "",
     });
     router.refresh();
   }
@@ -117,6 +120,14 @@ export default function CreateMandateForm({ existingClients }: { existingClients
           className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
         />
       </div>
+
+      <textarea
+        placeholder="Job description (shown to candidates on the public listing)"
+        value={form.job_description}
+        onChange={(e) => setForm((f) => ({ ...f, job_description: e.target.value }))}
+        rows={5}
+        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
+      />
 
       <div className="rounded-lg border border-slate-200 p-3 bg-slate-50">
         <label className="flex items-start gap-2 text-[12px] text-slate-700">
