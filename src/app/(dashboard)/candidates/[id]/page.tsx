@@ -211,7 +211,7 @@ export default async function CandidateDetailPage({
           <Field label="Category" value={candidate.category?.replace("_", " ")} />
           <Field label="Primary sub-domain" value={candidate.sub_domain} />
           <Field label="Experience" value={`${candidate.total_experience_years ?? "—"} yrs`} />
-          <Field label="Notice period" value={candidate.notice_period} />
+          <Field label="Days to join" value={candidate.notice_period} />
           <Field label="Current fixed CTC" value={candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "—"} />
           <Field label="Current variable CTC" value={candidate.current_variable_ctc ? `₹${candidate.current_variable_ctc}L` : "—"} />
           <Field label="Expected fixed CTC" value={candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "—"} />

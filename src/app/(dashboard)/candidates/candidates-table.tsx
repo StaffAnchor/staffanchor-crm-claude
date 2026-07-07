@@ -260,7 +260,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   },
   {
     key: "notice_period",
-    label: "Notice Period",
+    label: "Days to Join",
     render: (c) => <span className="text-slate-600 whitespace-nowrap">{c.notice_period ?? "—"}</span>,
   },
   {

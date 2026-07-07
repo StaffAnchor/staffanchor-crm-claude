@@ -350,7 +350,7 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Notice period</label>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Days to join</label>
                 <select
                   name="notice_period"
                   defaultValue={params.notice_period ?? ""}
