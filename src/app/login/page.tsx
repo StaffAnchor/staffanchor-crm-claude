@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,14 +14,20 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      setLoading(false);
       setError(error.message);
       return;
     }
-    router.replace("/candidates");
-    router.refresh();
+    if (!data.session) {
+      setLoading(false);
+      setError("Sign-in succeeded but no session was returned. Please try again.");
+      return;
+    }
+    // Hard navigation so the fresh session cookie is guaranteed to be sent
+    // on the next request and picked up by middleware/server components.
+    window.location.assign("/candidates");
   }
 
   return (
