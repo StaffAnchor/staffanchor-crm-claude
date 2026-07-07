@@ -6,10 +6,10 @@ import {
   Star,
   Send,
   Trophy,
-  ArrowUpRight,
   SlidersHorizontal,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import CandidatesTable from "./candidates-table";
 
 const STATUS_LABEL: Record<string, string> = {
   awaiting_input: "Awaiting Input",
@@ -25,20 +25,6 @@ const STATUS_LABEL: Record<string, string> = {
   inactive: "Inactive",
 };
 
-const STATUS_STYLE: Record<string, string> = {
-  awaiting_input: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  lead: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
-  registered: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-  under_review: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
-  shortlisted: "bg-teal-50 text-teal-700 ring-1 ring-teal-200",
-  submitted: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
-  client_interview: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
-  offer: "bg-lime-50 text-lime-700 ring-1 ring-lime-200",
-  placed: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-  alumni: "bg-slate-100 text-slate-500 ring-1 ring-slate-200",
-  inactive: "bg-red-50 text-red-600 ring-1 ring-red-200",
-};
-
 const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
   { key: "lead_registered", label: "New", color: "bg-slate-400" },
   { key: "under_review", label: "Under Review", color: "bg-violet-400" },
@@ -47,12 +33,6 @@ const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
   { key: "client_interview", label: "Interview", color: "bg-cyan-400" },
   { key: "offer_placed", label: "Offer / Placed", color: "bg-emerald-400" },
 ];
-
-const CATEGORY_COLOR: Record<string, string> = {
-  b2b_sales: "from-blue-400 to-blue-600",
-  b2c_sales: "from-fuchsia-400 to-fuchsia-600",
-  non_sales: "from-slate-400 to-slate-600",
-};
 
 const CATEGORIES = [
   { value: "", label: "All" },
@@ -64,12 +44,6 @@ const CATEGORIES = [
 const RECOMMENDATIONS = ["Strong Fit", "Fit with Reservations", "Not a Fit"];
 
 const NOTICE_PERIODS = ["Immediate", "15 days", "30 days", "60 days", "90 days"];
-
-const RECOMMENDATION_RING: Record<string, { pct: number; ring: string; text: string }> = {
-  "Strong Fit": { pct: 92, ring: "stroke-emerald-500", text: "text-emerald-700" },
-  "Fit with Reservations": { pct: 60, ring: "stroke-amber-500", text: "text-amber-700" },
-  "Not a Fit": { pct: 20, ring: "stroke-red-500", text: "text-red-700" },
-};
 
 type SearchParams = {
   q?: string;
@@ -83,45 +57,6 @@ type SearchParams = {
   notice_period?: string;
 };
 
-function initialsFor(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-function FitRing({ recommendation }: { recommendation?: string }) {
-  if (!recommendation || !RECOMMENDATION_RING[recommendation]) {
-    return <span className="text-xs text-slate-400">Not assessed</span>;
-  }
-  const { pct, ring, text } = RECOMMENDATION_RING[recommendation];
-  const r = 14;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference - (pct / 100) * circumference;
-  return (
-    <div className="flex items-center gap-2" title={recommendation}>
-      <svg width="32" height="32" viewBox="0 0 32 32" className="shrink-0 -rotate-90">
-        <circle cx="16" cy="16" r={r} className="stroke-slate-100" strokeWidth="3" fill="none" />
-        <circle
-          cx="16"
-          cy="16"
-          r={r}
-          className={ring}
-          strokeWidth="3"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <span className={`text-xs font-medium ${text}`}>{pct}%</span>
-    </div>
-  );
-}
-
 export default async function CandidatesPage({
   searchParams,
 }: {
@@ -133,7 +68,7 @@ export default async function CandidatesPage({
   let query = supabase
     .from("candidates")
     .select(
-      "id, full_name, email, current_location, current_employer, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, status, recruiter_assessment, created_at"
+      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, status, recruiter_assessment, segment_data, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -411,91 +346,7 @@ export default async function CandidatesPage({
         <p className="text-sm text-red-600 mb-4">Error loading candidates: {error.message}</p>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 text-slate-400 text-[11px] uppercase tracking-wide">
-            <tr>
-              <th className="text-left px-4 py-2.5 font-medium">Candidate</th>
-              <th className="text-left px-4 py-2.5 font-medium">Category</th>
-              <th className="text-left px-4 py-2.5 font-medium">Experience</th>
-              <th className="text-left px-4 py-2.5 font-medium">Fixed CTC</th>
-              <th className="text-left px-4 py-2.5 font-medium">Notice</th>
-              <th className="text-left px-4 py-2.5 font-medium">Fit</th>
-              <th className="text-left px-4 py-2.5 font-medium">Status</th>
-              <th className="px-4 py-2.5" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {(candidates ?? []).map((c) => {
-              const recommendation = (c.recruiter_assessment as Record<string, unknown> | null)?.[
-                "overall_recommendation"
-              ] as string | undefined;
-              return (
-                <tr key={c.id} className="group hover:bg-slate-50/70 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link href={`/candidates/${c.id}`} className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${
-                          CATEGORY_COLOR[c.category ?? ""] ?? "from-slate-400 to-slate-500"
-                        } flex items-center justify-center text-[11px] font-semibold text-white shrink-0`}
-                      >
-                        {initialsFor(c.full_name)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate">
-                          {c.full_name}
-                        </p>
-                        <p className="text-[12px] text-slate-500 truncate">
-                          {c.current_employer ?? c.email}
-                        </p>
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {c.category ? c.category.replace("_", " ") : "—"}
-                    <div className="text-[11px] text-slate-400">{c.sub_domain}</div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 tabular-nums">
-                    {c.total_experience_years ?? "—"} yrs
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 tabular-nums">
-                    {c.current_fixed_ctc ? `₹${c.current_fixed_ctc}L` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{c.notice_period ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <FitRing recommendation={recommendation} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                        STATUS_STYLE[c.status] ?? "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {STATUS_LABEL[c.status] ?? c.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/candidates/${c.id}`}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 text-[12px] text-blue-600 font-medium"
-                    >
-                      View <ArrowUpRight className="w-3 h-3" />
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {(candidates ?? []).length === 0 && (
-          <div className="py-16 text-center">
-            <p className="text-sm text-slate-500">No candidates match these filters.</p>
-            <Link href="/candidates" className="text-[13px] text-blue-600 hover:underline mt-1 inline-block">
-              Clear filters
-            </Link>
-          </div>
-        )}
-      </div>
+      <CandidatesTable candidates={(candidates ?? []) as never} />
     </div>
   );
 }
