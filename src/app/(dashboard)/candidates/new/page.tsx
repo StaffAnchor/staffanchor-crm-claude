@@ -84,6 +84,22 @@ export default function NewCandidatePage() {
       setError(error.message);
       return;
     }
+
+    // Fire-and-forget: if a resume was attached there's enough to work with
+    // for an AI summary right away, so generate it now instead of waiting
+    // for a recruiter to remember to click "Generate" later. Doesn't block
+    // navigation -- the candidate page will just show it once ready.
+    if (resumeFileUrl) {
+      fetch("/api/ai-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId: data.id }),
+      }).catch(() => {
+        // Best-effort; the recruiter can still click Generate manually on
+        // the candidate page if this silently fails.
+      });
+    }
+
     router.push(`/candidates/${data.id}`);
   }
 
