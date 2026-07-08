@@ -154,7 +154,35 @@ export default async function CandidateDetailPage({
               <p className="text-[13px] text-slate-500 mt-0.5">
                 {candidate.current_job_title}
                 {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
+                {candidate.current_industry ? ` · ${candidate.current_industry}` : ""}
               </p>
+              {(() => {
+                const former = ((candidate.industries as string[] | null) ?? []).filter(
+                  (i) => i !== candidate.current_industry
+                );
+                if (former.length === 0) return null;
+                const MAX_SHOWN = 4;
+                const shown = former.slice(0, MAX_SHOWN);
+                const overflow = former.length - shown.length;
+                return (
+                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                    <span className="text-[11px] text-slate-400 mr-0.5">Previously:</span>
+                    {shown.map((i) => (
+                      <span key={i} className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                        {i}
+                      </span>
+                    ))}
+                    {overflow > 0 && (
+                      <span
+                        className="text-[11px] text-slate-400"
+                        title={former.slice(MAX_SHOWN).join(", ")}
+                      >
+                        +{overflow} more
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex flex-wrap items-center gap-3 mt-2 text-[12px] text-slate-500">
                 <span className="flex items-center gap-1">
                   <Mail className="w-3 h-3" /> {candidate.email}

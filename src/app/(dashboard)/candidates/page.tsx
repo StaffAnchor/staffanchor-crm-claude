@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
+import { industryOptions } from "@/lib/candidate-options";
 
 const STATUS_LABEL: Record<string, string> = {
   awaiting_input: "Awaiting Input",
@@ -66,6 +67,8 @@ type SearchParams = {
   min_coachability?: string;
   location?: string;
   secondary_domain?: string;
+  current_industry?: string;
+  previous_industry?: string;
   from?: string;
   to?: string;
   recruiter?: string;
@@ -83,7 +86,7 @@ export default async function CandidatesPage({
   let query = supabase
     .from("candidates")
     .select(
-      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, notice_period, current_employment_status, status, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
+      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, current_industry, industries, total_experience_years, current_fixed_ctc, notice_period, current_employment_status, status, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -101,6 +104,10 @@ export default async function CandidatesPage({
   if (params.sub_domain) query = query.eq("sub_domain", params.sub_domain);
   if (params.location) query = query.ilike("current_location", `%${params.location}%`);
   if (params.secondary_domain) query = query.contains("secondary_sub_domains", [params.secondary_domain]);
+  if (params.current_industry) query = query.eq("current_industry", params.current_industry);
+  if (params.previous_industry) {
+    query = query.contains("industries", [params.previous_industry]).neq("current_industry", params.previous_industry);
+  }
   if (params.from) query = query.gte("created_at", params.from);
   if (params.to) query = query.lte("created_at", `${params.to}T23:59:59.999`);
   if (params.recruiter) {
@@ -289,6 +296,8 @@ export default async function CandidatesPage({
           {params.status && <input type="hidden" name="status" value={params.status} />}
           {params.location && <input type="hidden" name="location" value={params.location} />}
           {params.secondary_domain && <input type="hidden" name="secondary_domain" value={params.secondary_domain} />}
+          {params.current_industry && <input type="hidden" name="current_industry" value={params.current_industry} />}
+          {params.previous_industry && <input type="hidden" name="previous_industry" value={params.previous_industry} />}
           {params.from && <input type="hidden" name="from" value={params.from} />}
           {params.to && <input type="hidden" name="to" value={params.to} />}
           {params.recruiter && <input type="hidden" name="recruiter" value={params.recruiter} />}
@@ -337,6 +346,22 @@ export default async function CandidatesPage({
               className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
             >
               Secondary domain: {params.secondary_domain} ✕
+            </Link>
+          )}
+          {params.current_industry && (
+            <Link
+              href={qs({ current_industry: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+            >
+              Current industry: {params.current_industry} ✕
+            </Link>
+          )}
+          {params.previous_industry && (
+            <Link
+              href={qs({ previous_industry: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              Previous industry: {params.previous_industry} ✕
             </Link>
           )}
           {(params.from || params.to) && (
@@ -414,6 +439,36 @@ export default async function CandidatesPage({
                   {subDomains.map((d) => (
                     <option key={d} value={d}>
                       {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Current industry</label>
+                <select
+                  name="current_industry"
+                  defaultValue={params.current_industry ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {industryOptions.map((i) => (
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Previous industry</label>
+                <select
+                  name="previous_industry"
+                  defaultValue={params.previous_industry ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {industryOptions.map((i) => (
+                    <option key={i} value={i}>
+                      {i}
                     </option>
                   ))}
                 </select>
