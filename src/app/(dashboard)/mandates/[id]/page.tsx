@@ -5,6 +5,7 @@ import ShortlistLinkPanel from "./shortlist-link-panel";
 import AlignCandidatesPanel from "./align-candidates-panel";
 import PublicListingPanel from "./public-listing-panel";
 import JobDescriptionPanel from "./job-description-panel";
+import BasicDetailsPanel from "./basic-details-panel";
 import MustHavesPanel from "./must-haves-panel";
 import FindMatchesPanel from "./find-matches-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
@@ -97,6 +98,21 @@ export default async function MandateDetailPage({
       </div>
 
       <div className="space-y-6">
+        <BasicDetailsPanel
+          mandateId={id}
+          initial={{
+            role_title: mandate.role_title,
+            client_name: mandate.client_name,
+            category: mandate.category,
+            sub_domains: mandate.sub_domains ?? (mandate.sub_domain ? [mandate.sub_domain] : []),
+            cities: mandate.cities ?? (mandate.city ? [mandate.city] : []),
+            budget_min: mandate.budget_min,
+            budget_max: mandate.budget_max,
+            experience_min: mandate.experience_min,
+            experience_max: mandate.experience_max,
+            status: mandate.status,
+          }}
+        />
         <PublicListingPanel
           mandateId={id}
           initialShowClientName={mandate.show_client_name ?? true}
