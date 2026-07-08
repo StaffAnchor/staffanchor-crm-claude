@@ -241,7 +241,7 @@ export default async function CandidateDetailPage({
                   label: "Overview",
                   content: (
                     <div className="space-y-6">
-                      <AiSummaryPanel candidateId={candidate.id} initialSummary={candidate.ai_summary} />
+                      <AiSummaryPanel candidateId={candidate.id} initialSummary={candidate.ai_summary} initialPassport={candidate.ai_passport} />
                       {(candidate.skills || (candidate.industries && candidate.industries.length > 0)) && (
                         <div>
                           <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Skills &amp; industries</h3>

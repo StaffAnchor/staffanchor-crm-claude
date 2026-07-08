@@ -116,15 +116,23 @@ export async function POST(req: NextRequest) {
     recruiter_scorecard: candidate.recruiter_assessment,
   };
 
-  const prompt = `You are helping a recruiter write a concise, structured candidate passport for a sales-hiring CRM. This is shown to both recruiters and clients deciding whether to interview someone.
+  const firstName = (candidate.full_name as string | null)?.trim().split(/\s+/)[0] ?? "This candidate";
+
+  const prompt = `You are helping a recruiter write a concise, natural-sounding candidate passport for a sales-hiring CRM. This is shown to both recruiters and clients deciding whether to interview someone. It must read like a person wrote it, not like a data dump.
 
 Use ONLY facts given below (structured data + resume excerpt) -- never invent employers, numbers, skills, or achievements that are not present. If the structured data and resume excerpt conflict, trust the structured data. If a field is missing, omit it rather than guessing.
 
+Writing rules -- these matter as much as the facts:
+1. Use the candidate's first name ("${firstName}") only in the headline. Every sentence after that must use "they/their" instead of repeating the full name -- never write the full name more than once across the whole passport.
+2. Never just list raw numbers back-to-back. Synthesize. For achievement history specifically: don't dump every percentage range as a comma list -- describe the pattern instead, e.g. "consistently hitting 90%+ of target in 3 of the last 4 quarters, with one softer stretch at 50-75%" rather than "86-90%, 96-100%, 96-100%, and 50-75%".
+3. Each line should read as something a sharp recruiter would actually say out loud about this candidate, not a form filled in with data. Vary sentence structure across the three lines instead of repeating the same "X is Y" pattern each time.
+4. Keep every line to one sentence, tight and specific -- no filler like "is a great fit" or "has strong experience" without a fact backing it up.
+
 Return ONLY a JSON object (no markdown fence, no commentary) with exactly these keys:
-- "headline": one plain-English sentence -- who they are, current role/employer, and primary sales domain.
-- "compensation_line": one sentence on current and expected fixed CTC (and variable, if present). Omit key entirely if no CTC data exists.
-- "targets_line": one sentence on quota/target and achievement % if present in segment data (e.g. quarterly target, achievement history, best win). Omit key entirely if no target/achievement data exists.
-- "resume_highlights": an array of 2-4 short bullet-point strings pulled from the resume excerpt below -- concrete, factual points only (notable employers/clients, tenure pattern, certifications, named achievements). Omit key (or return empty array) if no resume excerpt is provided or nothing factual/notable is extractable.
+- "headline": one sentence -- ${firstName}'s current role/employer and primary sales domain, using their actual name once here.
+- "compensation_line": one sentence weaving together current and expected fixed CTC (and variable, if present) -- e.g. frame it as what they're looking for, not just "CTC is X". Omit key entirely if no CTC data exists.
+- "targets_line": one sentence synthesizing quota/target performance into a pattern or trend (see rule 2 above), drawing on segment data like quarterly target, achievement history, best win. Omit key entirely if no target/achievement data exists.
+- "resume_highlights": an array of 2-4 short bullet-point strings pulled from the resume excerpt below -- concrete, factual points only (notable employers/clients, tenure pattern, certifications, named achievements) that AREN'T already covered by the headline/compensation/targets lines. Omit key (or return empty array) if no resume excerpt is provided or nothing factual/notable is extractable.
 
 Structured candidate data (JSON):
 ${JSON.stringify(factSheet, null, 2)}

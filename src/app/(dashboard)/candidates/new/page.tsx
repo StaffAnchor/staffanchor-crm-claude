@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { cityOptions, cityStateMap, ctcOptions, subDomainsForCategory } from "@/lib/candidate-options";
 
 export default function NewCandidatePage() {
   const router = useRouter();
@@ -13,10 +14,16 @@ export default function NewCandidatePage() {
     phone: "",
     category: "",
     sub_domain: "",
+    sub_domain_other: "",
+    city: "",
+    city_other: "",
+    current_fixed_ctc: "",
     recruiter_seed_note: "",
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const subDomainOptions = subDomainsForCategory(form.category || null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +33,16 @@ export default function NewCandidatePage() {
       data: { user },
     } = await supabase.auth.getUser();
 
+    const resolvedSubDomain =
+      form.sub_domain === "Other" || form.sub_domain === "" ? form.sub_domain_other || null : form.sub_domain;
+
+    const resolvedLocation =
+      form.city === "Other"
+        ? form.city_other || null
+        : form.city
+          ? `${form.city}, ${cityStateMap[form.city]}`
+          : null;
+
     const { data, error } = await supabase
       .from("candidates")
       .insert({
@@ -33,7 +50,9 @@ export default function NewCandidatePage() {
         email: form.email,
         phone: form.phone || null,
         category: form.category || null,
-        sub_domain: form.sub_domain || null,
+        sub_domain: resolvedSubDomain,
+        current_location: resolvedLocation,
+        current_fixed_ctc: form.current_fixed_ctc ? Number(form.current_fixed_ctc) : null,
         recruiter_seed_note: form.recruiter_seed_note || null,
         status: "awaiting_input",
         created_by: "recruiter_created",
@@ -55,8 +74,8 @@ export default function NewCandidatePage() {
     <div className="max-w-lg">
       <h1 className="text-lg font-semibold text-slate-900 mb-1">Create candidate</h1>
       <p className="text-sm text-slate-500 mb-6">
-        Seed only what you know. Deep fields (comp, quota, deal size) come from the
-        candidate once you send them a completion invite.
+        Seed as much as you already know — everything below name/email is optional. Deeper fields (quota,
+        deal size, self-assessment) still come from the candidate once you send a completion invite.
       </p>
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
         <div>
@@ -86,11 +105,36 @@ export default function NewCandidatePage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
           />
         </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Location</label>
+          <select
+            value={form.city}
+            onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {cityOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          {form.city === "Other" && (
+            <input
+              value={form.city_other}
+              onChange={(e) => setForm((f) => ({ ...f, city_other: e.target.value }))}
+              placeholder="City, State"
+              className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+          )}
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Best-guess category</label>
           <select
             value={form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, sub_domain: "" }))}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
           >
             <option value="">Select...</option>
@@ -99,15 +143,59 @@ export default function NewCandidatePage() {
             <option value="non_sales">Non-Sales</option>
           </select>
         </div>
+
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Best-guess sub-domain</label>
-          <input
-            value={form.sub_domain}
-            onChange={(e) => setForm((f) => ({ ...f, sub_domain: e.target.value }))}
-            placeholder="e.g. SaaS Sales"
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-          />
+          <label className="block text-xs font-medium text-slate-600 mb-1">Best-guess domain</label>
+          {subDomainOptions.length > 0 ? (
+            <>
+              <select
+                value={form.sub_domain}
+                onChange={(e) => setForm((f) => ({ ...f, sub_domain: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">Select...</option>
+                {subDomainOptions.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
+              {form.sub_domain === "Other" && (
+                <input
+                  value={form.sub_domain_other}
+                  onChange={(e) => setForm((f) => ({ ...f, sub_domain_other: e.target.value }))}
+                  placeholder="e.g. SaaS Sales"
+                  className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                />
+              )}
+            </>
+          ) : (
+            <input
+              value={form.sub_domain_other}
+              onChange={(e) => setForm((f) => ({ ...f, sub_domain_other: e.target.value }))}
+              placeholder="Pick a category above to choose from the known list, or type here"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+          )}
         </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Current fixed CTC</label>
+          <select
+            value={form.current_fixed_ctc}
+            onChange={(e) => setForm((f) => ({ ...f, current_fixed_ctc: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {ctcOptions.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Note</label>
           <textarea

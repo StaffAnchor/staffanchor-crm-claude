@@ -2,19 +2,29 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, BadgeCheck } from "lucide-react";
+
+type AiPassport = {
+  headline?: string;
+  compensation_line?: string;
+  targets_line?: string;
+  resume_highlights?: string[];
+};
 
 export default function AiSummaryPanel({
   candidateId,
   initialSummary,
+  initialPassport,
 }: {
   candidateId: string;
   initialSummary: string | null;
+  initialPassport?: AiPassport | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState(initialSummary);
+  const [passport, setPassport] = useState<AiPassport | null>(initialPassport ?? null);
 
   async function handleGenerate() {
     setLoading(true);
@@ -30,6 +40,7 @@ export default function AiSummaryPanel({
         setError(json.error || "Something went wrong.");
       } else {
         setSummary(json.summary);
+        setPassport(json.passport ?? null);
         router.refresh();
       }
     } catch {
@@ -58,6 +69,21 @@ export default function AiSummaryPanel({
       <p className="text-[13px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-lg p-3">
         {summary || "Not generated yet — click Generate to summarize this candidate from their profile data."}
       </p>
+      {passport?.resume_highlights && passport.resume_highlights.length > 0 && (
+        <div className="mt-2 bg-slate-50 rounded-lg p-3">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+            From their resume
+          </p>
+          <ul className="space-y-1">
+            {passport.resume_highlights.map((h, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[12.5px] text-slate-600">
+                <BadgeCheck className="w-3.5 h-3.5 text-teal-500 mt-0.5 shrink-0" />
+                <span>{h}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
