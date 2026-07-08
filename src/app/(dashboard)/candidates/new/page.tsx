@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { UploadCloud, FileText, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cityOptions, cityStateMap, ctcOptions, subDomainsForCategory } from "@/lib/candidate-options";
 
@@ -20,6 +21,7 @@ export default function NewCandidatePage() {
     current_fixed_ctc: "",
     recruiter_seed_note: "",
   });
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -32,6 +34,20 @@ export default function NewCandidatePage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
+    let resumeFileUrl: string | null = null;
+    if (resumeFile) {
+      const path = `${crypto.randomUUID()}-${resumeFile.name}`;
+      const { error: uploadError } = await supabase.storage.from("resumes").upload(path, resumeFile, {
+        contentType: resumeFile.type || undefined,
+      });
+      if (uploadError) {
+        setSaving(false);
+        setError(`Resume upload failed: ${uploadError.message}`);
+        return;
+      }
+      resumeFileUrl = path;
+    }
 
     const resolvedSubDomain =
       form.sub_domain === "Other" || form.sub_domain === "" ? form.sub_domain_other || null : form.sub_domain;
@@ -53,6 +69,7 @@ export default function NewCandidatePage() {
         sub_domain: resolvedSubDomain,
         current_location: resolvedLocation,
         current_fixed_ctc: form.current_fixed_ctc ? Number(form.current_fixed_ctc) : null,
+        resume_file_url: resumeFileUrl,
         recruiter_seed_note: form.recruiter_seed_note || null,
         status: "awaiting_input",
         created_by: "recruiter_created",
@@ -194,6 +211,36 @@ export default function NewCandidatePage() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Resume</label>
+          {resumeFile ? (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-4 h-4 text-slate-500 shrink-0" />
+                <span className="text-sm text-slate-700 truncate">{resumeFile.name}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setResumeFile(null)}
+                className="text-slate-400 hover:text-slate-600 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500 hover:bg-slate-50 cursor-pointer">
+              <UploadCloud className="w-4 h-4 shrink-0" />
+              <span>Click to upload their CV (PDF, DOC, DOCX) — often the recruiter already has it on hand</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          )}
         </div>
 
         <div>
