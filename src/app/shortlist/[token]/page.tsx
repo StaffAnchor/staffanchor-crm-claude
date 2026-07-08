@@ -227,6 +227,8 @@ function CandidateCard({
         <p className="text-sm text-slate-700 mt-3 line-clamp-2">{candidate.ai_summary}</p>
       )}
       <ProfilePassportTrigger
+        candidateId={candidate.candidate_id}
+        token={token}
         fullName={candidate.full_name}
         currentJobTitle={candidate.current_job_title}
         currentEmployer={candidate.current_employer}

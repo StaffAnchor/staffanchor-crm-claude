@@ -39,6 +39,23 @@ export default function ClientPortalAccessPanel({
         .from("client_invites")
         .insert({ client_id: clientId, email: trimmed, invited_by: user?.id ?? null });
       if (insertError) throw new Error(insertError.message);
+
+      // The invite row above only grants access (checked by
+      // get_or_create_my_client_user) -- it doesn't itself notify anyone.
+      // Actually email them a sign-in link, same pattern as candidate invites.
+      const res = await fetch("/api/send-client-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId, email: trimmed }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        // Access was still granted -- just the email failed. Surface it so
+        // the recruiter knows to tell the client manually instead of
+        // assuming an email is on its way.
+        throw new Error(json.error || "Access granted, but the invite email failed to send.");
+      }
+
       setEmail("");
       setSent(true);
       router.refresh();
@@ -77,7 +94,7 @@ export default function ClientPortalAccessPanel({
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mt-1.5">{error}</p>}
-      {sent && <p className="text-xs text-emerald-700 mt-1.5">Invite created — they can now sign in with that email.</p>}
+      {sent && <p className="text-xs text-emerald-700 mt-1.5">Invite email sent — they can sign in with that email once it arrives.</p>}
 
       {(initialUsers.length > 0 || pendingInvites.length > 0) && (
         <div className="mt-4 border-t border-slate-100 pt-3 space-y-2">

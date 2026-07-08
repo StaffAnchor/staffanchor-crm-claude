@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles, BadgeCheck } from "lucide-react";
+import { X, Sparkles, BadgeCheck, Loader2 } from "lucide-react";
 
 type AiPassport = {
   headline?: string;
@@ -11,6 +11,8 @@ type AiPassport = {
 };
 
 export default function ProfilePassportTrigger({
+  candidateId,
+  token,
   fullName,
   currentJobTitle,
   currentEmployer,
@@ -21,9 +23,11 @@ export default function ProfilePassportTrigger({
   verifiedRelocation,
   verifiedNotice,
   industries,
-  aiSummary,
-  aiPassport,
+  aiSummary: initialAiSummary,
+  aiPassport: initialAiPassport,
 }: {
+  candidateId: string;
+  token: string;
   fullName: string;
   currentJobTitle: string | null;
   currentEmployer: string | null;
@@ -38,8 +42,47 @@ export default function ProfilePassportTrigger({
   aiPassport: AiPassport | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState(initialAiSummary);
+  const [aiPassport, setAiPassport] = useState(initialAiPassport);
 
-  if (!aiSummary && !aiPassport) return null;
+  async function handleGenerate() {
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      const res = await fetch("/api/public-ai-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId, token }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Could not generate a summary right now.");
+      setAiSummary(json.summary);
+      setAiPassport(json.passport);
+      setOpen(true);
+    } catch (e) {
+      setGenerateError(e instanceof Error ? e.message : "Could not generate a summary right now.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  if (!aiSummary && !aiPassport) {
+    return (
+      <div className="mt-1">
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-60"
+        >
+          {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+          {generating ? "Generating…" : "Generate AI passport"}
+        </button>
+        {generateError && <p className="text-xs text-rose-600 mt-1">{generateError}</p>}
+      </div>
+    );
+  }
 
   return (
     <>
