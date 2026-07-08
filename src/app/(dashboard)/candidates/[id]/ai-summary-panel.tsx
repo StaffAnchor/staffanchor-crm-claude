@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Loader2, BadgeCheck } from "lucide-react";
+import { Sparkles, Loader2, BadgeCheck, AlertTriangle } from "lucide-react";
 
 type AiPassport = {
   headline?: string;
   compensation_line?: string;
   targets_line?: string;
   resume_highlights?: string[];
+  profile_incomplete?: boolean;
 };
 
 export default function AiSummaryPanel({
@@ -66,6 +67,13 @@ export default function AiSummaryPanel({
         </button>
       </div>
       {error && <p className="text-[12px] text-rose-600 mb-2">{error}</p>}
+      {passport?.profile_incomplete && (
+        <p className="flex items-center gap-1.5 text-[11.5px] text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5 mb-2">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          Profile incomplete — this candidate hasn&apos;t finished registering yet, so the summary below is based on
+          limited information. It will regenerate automatically once they complete their profile.
+        </p>
+      )}
       <p className="text-[13px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-lg p-3">
         {summary || "Not generated yet — click Generate to summarize this candidate from their profile data."}
       </p>

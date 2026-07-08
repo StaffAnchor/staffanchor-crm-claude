@@ -37,14 +37,25 @@ export async function GET(req: NextRequest) {
 
   const admin = createSupabaseClient(supabaseUrl, serviceKey);
 
-  // Candidates who have completed enough of the form to count as
-  // registered (excludes bare quick_apply stubs and untouched leads) but
-  // don't have a summary yet.
+  // Two groups need a (re)generation pass:
+  //  1. Anyone with no summary at all yet, regardless of status -- this
+  //     includes thin quick_apply stubs and recruiter-seeded records still
+  //     awaiting their invite; generateAiPassportForCandidate flags these
+  //     as profile_incomplete rather than skipping them, so there's at
+  //     least something to look at.
+  //  2. Anyone now fully "registered" whose existing summary was generated
+  //     back when they were still incomplete (or before this tracking
+  //     column existed, hence the NULL check) -- their profile just got a
+  //     lot more complete, so the old thin summary is stale and worth
+  //     regenerating properly.
   const { data: pending, error } = await admin
     .from("candidates")
     .select("id, full_name")
-    .not("status", "in", "(awaiting_input,lead)")
-    .is("ai_summary", null)
+    .or(
+      "ai_summary.is.null," +
+        "and(status.eq.registered,ai_summary_generated_status.is.null)," +
+        "and(status.eq.registered,ai_summary_generated_status.neq.registered)"
+    )
     .order("created_at", { ascending: true })
     .limit(15); // bounded batch per run to keep this fast and cheap
 

@@ -9,6 +9,7 @@ import MustHavesPanel from "./must-haves-panel";
 import FindMatchesPanel from "./find-matches-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import DeleteMandateButton from "./delete-mandate-button";
+import { AlertTriangle } from "lucide-react";
 
 export default async function MandateDetailPage({
   params,
@@ -31,6 +32,18 @@ export default async function MandateDetailPage({
     .select("token")
     .eq("mandate_id", id)
     .maybeSingle();
+
+  // Same staleness check the daily email digest runs, but instant here --
+  // no need to wait for cron to see it once you're already on the page.
+  const STALE_DAYS = 4;
+  const staleCutoff = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { data: staleLinks } = await supabase
+    .from("candidate_mandate_links")
+    .select("shortlisted_at, candidates(full_name)")
+    .eq("mandate_id", id)
+    .eq("in_shortlist", true)
+    .is("client_feedback", null)
+    .lt("shortlisted_at", staleCutoff);
 
   const linkedCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean));
   const { data: allCandidates } = await supabase
@@ -56,6 +69,21 @@ export default async function MandateDetailPage({
           </div>
           <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
         </div>
+
+        {staleLinks && staleLinks.length > 0 && (
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <p className="text-[13px] text-amber-800">
+              <span className="font-medium">{mandate.client_name}</span> hasn&apos;t given feedback on{" "}
+              {staleLinks.length} candidate{staleLinks.length === 1 ? "" : "s"} shared {STALE_DAYS}+ days ago —
+              worth a follow-up:{" "}
+              {staleLinks
+                .map((l) => (l.candidates as unknown as { full_name: string } | null)?.full_name)
+                .filter(Boolean)
+                .join(", ")}
+            </p>
+          </div>
+        )}
 
         <MandateCandidatesTable
           rows={(links ?? [])

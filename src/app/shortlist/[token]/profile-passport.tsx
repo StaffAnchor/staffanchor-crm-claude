@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles, BadgeCheck, Loader2 } from "lucide-react";
+import { X, Sparkles, BadgeCheck, Loader2, AlertTriangle } from "lucide-react";
 
 type AiPassport = {
   headline?: string;
   compensation_line?: string;
   targets_line?: string;
   resume_highlights?: string[];
+  profile_incomplete?: boolean;
 };
 
 export default function ProfilePassportTrigger({
@@ -120,6 +121,13 @@ export default function ProfilePassportTrigger({
             </div>
 
             <div className="px-6 py-5 space-y-4">
+              {aiPassport?.profile_incomplete && (
+                <p className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  This candidate hasn&apos;t finished completing their profile yet, so this passport is based on
+                  limited information.
+                </p>
+              )}
               {aiPassport?.headline && <p className="text-sm text-slate-800">{aiPassport.headline}</p>}
               {!aiPassport?.headline && aiSummary && <p className="text-sm text-slate-800">{aiSummary}</p>}
 

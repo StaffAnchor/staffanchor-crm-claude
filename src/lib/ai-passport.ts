@@ -7,6 +7,11 @@ export type AiPassport = {
   compensation_line?: string;
   targets_line?: string;
   resume_highlights?: string[];
+  // Set programmatically (not by the model) whenever the candidate's status
+  // wasn't "registered" at generation time -- quick_apply and recruiter-seeded
+  // candidates who haven't finished their own profile yet. Surfaced in the UI
+  // as a caveat rather than silently presenting a thin profile as complete.
+  profile_incomplete?: boolean;
 };
 
 export type GenerateAiPassportResult =
@@ -45,7 +50,7 @@ export async function generateAiPassportForCandidate(
   const { data: candidate, error } = await supabase
     .from("candidates")
     .select(
-      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text"
+      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text, status"
     )
     .eq("id", candidateId)
     .single();
@@ -152,7 +157,25 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
       // fails for some reason -- better a slightly-off summary than none.
       const summary = passport ? passportToSummary(passport) || raw : raw;
 
-      await supabase.from("candidates").update({ ai_summary: summary, ai_passport: passport }).eq("id", candidateId);
+      // Candidate hasn't finished their own profile (quick_apply stub or a
+      // recruiter-seeded record awaiting a completion invite) -- flag this on
+      // the passport itself so anyone viewing it knows the data is partial,
+      // and record the status we generated against so a later sweep can tell
+      // this summary is stale once the profile actually completes.
+      const candidateStatus = (candidate.status as string | null) ?? null;
+      const isIncomplete = candidateStatus !== "registered";
+      const finalPassport: AiPassport | null = passport
+        ? { ...passport, profile_incomplete: isIncomplete || undefined }
+        : passport;
+
+      await supabase
+        .from("candidates")
+        .update({
+          ai_summary: summary,
+          ai_passport: finalPassport,
+          ai_summary_generated_status: candidateStatus,
+        })
+        .eq("id", candidateId);
 
       await supabase.from("audit_log").insert({
         actor: auditActor.actor ?? null,
@@ -162,7 +185,7 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         detail: { model: modelName, used_resume_text: !!resumeExcerpt, note: auditActor.note },
       });
 
-      return { ok: true, summary, passport };
+      return { ok: true, summary, passport: finalPassport };
     } catch (err) {
       lastError = err;
       console.error(`Gemini summary generation failed with model ${modelName}`, err);

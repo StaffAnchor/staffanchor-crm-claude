@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/auto-summarize",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/client-followup",
+      "schedule": "0 9 * * *"
     }
   ]
 }
