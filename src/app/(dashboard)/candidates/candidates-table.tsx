@@ -874,14 +874,14 @@ export default function CandidatesTable({
         <table className="w-full text-[13px]">
           <thead className="bg-slate-50/80 text-slate-400 text-[11px] uppercase tracking-wide">
             <tr>
-              <th className="px-4 py-2.5 w-8">
+              <th className="px-4 py-2.5 w-8 sticky left-0 z-20 bg-slate-50">
                 <input
                   type="checkbox"
                   checked={selected.size > 0 && selected.size === candidates.length}
                   onChange={toggleAll}
                 />
               </th>
-              <th className="text-left px-4 py-2.5 font-medium whitespace-nowrap">Name</th>
+              <th className="text-left px-4 py-2.5 font-medium whitespace-nowrap sticky left-[52px] z-20 bg-slate-50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
               {visibleColumns.map((col) => (
                 <th key={col.key} className="text-left px-4 py-2.5 font-medium whitespace-nowrap">
                   {col.label}
@@ -893,10 +893,10 @@ export default function CandidatesTable({
           <tbody className="divide-y divide-slate-100">
             {candidates.map((c) => (
               <tr key={c.id} className={`group hover:bg-slate-50/70 transition-colors ${selected.has(c.id) ? "bg-blue-50/50" : ""}`}>
-                <td className="px-4 py-3">
+                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white group-hover:bg-slate-50/70"}`}>
                   <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleRow(c.id)} />
                 </td>
-                <td className="px-4 py-3">
+                <td className={`px-4 py-3 sticky left-[52px] z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white group-hover:bg-slate-50/70"}`}>
                   <div
                     className="relative"
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
