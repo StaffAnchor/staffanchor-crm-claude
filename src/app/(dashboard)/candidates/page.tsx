@@ -192,7 +192,8 @@ export default async function CandidatesPage({
   const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
   const funnelCounts: Record<string, number> = {
-    lead_registered: (statusCounts["lead"] ?? 0) + (statusCounts["registered"] ?? 0),
+    lead_registered:
+      (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0) + (statusCounts["registered"] ?? 0),
     under_review: statusCounts["under_review"] ?? 0,
     shortlisted: statusCounts["shortlisted"] ?? 0,
     submitted: statusCounts["submitted"] ?? 0,
@@ -201,13 +202,17 @@ export default async function CandidatesPage({
   };
   const funnelMax = Math.max(1, ...Object.values(funnelCounts));
 
-  const kpis = [
-    { label: "Total candidates", value: totalCount, icon: Users, accent: "border-slate-300", iconColor: "text-slate-500" },
-    { label: "New today", value: newToday, icon: Sparkles, accent: "border-blue-300", iconColor: "text-blue-500" },
-    { label: "Under review", value: statusCounts["under_review"] ?? 0, icon: Eye, accent: "border-violet-300", iconColor: "text-violet-500", href: "/candidates?status=under_review" },
-    { label: "Shortlisted", value: statusCounts["shortlisted"] ?? 0, icon: Star, accent: "border-teal-300", iconColor: "text-teal-500", href: "/candidates?status=shortlisted" },
-    { label: "Submitted", value: statusCounts["submitted"] ?? 0, icon: Send, accent: "border-indigo-300", iconColor: "text-indigo-500", href: "/candidates?status=submitted" },
-    { label: "Placed", value: statusCounts["placed"] ?? 0, icon: Trophy, accent: "border-emerald-300", iconColor: "text-emerald-500", href: "/candidates?status=placed" },
+  const statTiles = [
+    { label: "Total candidates", value: totalCount, icon: Users, bg: "bg-slate-700 hover:bg-slate-800" },
+    { label: "New today", value: newToday, icon: Sparkles, bg: "bg-blue-600 hover:bg-blue-700" },
+    { label: "Under review", value: statusCounts["under_review"] ?? 0, icon: Eye, bg: "bg-violet-600 hover:bg-violet-700", href: "/candidates?status=under_review" },
+    { label: "Shortlisted", value: statusCounts["shortlisted"] ?? 0, icon: Star, bg: "bg-teal-600 hover:bg-teal-700", href: "/candidates?status=shortlisted" },
+    { label: "Submitted", value: statusCounts["submitted"] ?? 0, icon: Send, bg: "bg-purple-600 hover:bg-purple-700", href: "/candidates?status=submitted" },
+    { label: "Placed", value: statusCounts["placed"] ?? 0, icon: Trophy, bg: "bg-emerald-600 hover:bg-emerald-700", href: "/candidates?status=placed" },
+    { label: "Job Quick Apply", value: quickApplyCount, icon: Zap, bg: "bg-sky-600 hover:bg-sky-700", href: qs({ origin: "quick_apply" }) },
+    { label: "Job Portal", value: jobPortalCount, icon: Database, bg: "bg-indigo-600 hover:bg-indigo-700", href: qs({ origin: "self_registration" }) },
+    { label: "Recruiter Created", value: recruiterAddedCount, icon: Users, bg: "bg-fuchsia-600 hover:bg-fuchsia-700", href: qs({ origin: "recruiter_created" }) },
+    { label: "Incomplete profiles", value: incompleteCount, icon: AlertTriangle, bg: "bg-amber-500 hover:bg-amber-600", href: qs({ incomplete: "1" }) },
   ];
 
   function qs(overrides: Record<string, string | undefined>) {
@@ -237,20 +242,16 @@ export default async function CandidatesPage({
         </Link>
       </div>
 
-      <div className="grid grid-cols-6 gap-2.5 mb-3">
-        {kpis.map((k) => {
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        {statTiles.map((k) => {
           const Icon = k.icon;
           const content = (
             <div
-              className={`flex items-center gap-2.5 bg-white border-l-[3px] ${k.accent} border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150`}
+              className={`flex items-center gap-1.5 ${k.bg} text-white rounded-full pl-2 pr-3 py-1 shadow-sm transition-colors duration-150 cursor-pointer`}
             >
-              <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-                <Icon className={`w-4 h-4 ${k.iconColor}`} strokeWidth={2} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{k.value}</p>
-                <p className="text-[11px] text-slate-500 truncate">{k.label}</p>
-              </div>
+              <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
+              <span className="text-[13px] font-semibold tabular-nums leading-none">{k.value}</span>
+              <span className="text-[11px] font-medium leading-none opacity-90 whitespace-nowrap">{k.label}</span>
             </div>
           );
           return k.href ? (
@@ -261,57 +262,6 @@ export default async function CandidatesPage({
             <div key={k.label}>{content}</div>
           );
         })}
-      </div>
-
-      <div className="grid grid-cols-4 gap-2.5 mb-3">
-        <Link
-          href={qs({ origin: "quick_apply" })}
-          className="flex items-center gap-2.5 bg-white border-l-[3px] border-blue-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
-        >
-          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-blue-500" strokeWidth={2} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{quickApplyCount}</p>
-            <p className="text-[11px] text-slate-500 truncate">Job Quick Apply</p>
-          </div>
-        </Link>
-        <Link
-          href={qs({ origin: "self_registration" })}
-          className="flex items-center gap-2.5 bg-white border-l-[3px] border-indigo-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
-        >
-          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-            <Database className="w-4 h-4 text-indigo-500" strokeWidth={2} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{jobPortalCount}</p>
-            <p className="text-[11px] text-slate-500 truncate">Job Portal — Build Your Profile</p>
-          </div>
-        </Link>
-        <Link
-          href={qs({ origin: "recruiter_created" })}
-          className="flex items-center gap-2.5 bg-white border-l-[3px] border-violet-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
-        >
-          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-            <Users className="w-4 h-4 text-violet-500" strokeWidth={2} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{recruiterAddedCount}</p>
-            <p className="text-[11px] text-slate-500 truncate">Recruiter Created</p>
-          </div>
-        </Link>
-        <Link
-          href={qs({ incomplete: "1" })}
-          className="flex items-center gap-2.5 bg-white border-l-[3px] border-amber-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
-        >
-          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-            <AlertTriangle className="w-4 h-4 text-amber-500" strokeWidth={2} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{incompleteCount}</p>
-            <p className="text-[11px] text-slate-500 truncate">Incomplete profiles — need a nudge</p>
-          </div>
-        </Link>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-3 shadow-sm">
@@ -389,7 +339,7 @@ export default async function CandidatesPage({
               href={qs({ category: c.value || undefined })}
               className={`text-[12px] font-medium px-3 py-1 rounded-full transition-colors ${
                 (params.category ?? "") === c.value
-                  ? "bg-slate-900 text-white"
+                  ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >

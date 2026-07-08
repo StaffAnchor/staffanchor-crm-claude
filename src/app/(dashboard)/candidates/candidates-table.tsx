@@ -519,6 +519,7 @@ export default function CandidatesTable({
   const [panelOpen, setPanelOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [summaryTooltip, setSummaryTooltip] = useState<{
     text: string;
     left: number;
@@ -582,6 +583,16 @@ export default function CandidatesTable({
       if (swapWith < 0 || swapWith >= prev.length) return prev;
       const next = [...prev];
       [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
+      return next;
+    });
+  }
+
+  function reorderTo(draggedKeyValue: string, targetKey: string) {
+    if (draggedKeyValue === targetKey) return;
+    setOrder((prev) => {
+      const next = prev.filter((k) => k !== draggedKeyValue);
+      const targetIdx = next.indexOf(targetKey);
+      next.splice(targetIdx, 0, draggedKeyValue);
       return next;
     });
   }
@@ -735,7 +746,18 @@ export default function CandidatesTable({
                   return (
                     <div
                       key={key}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${isHidden ? "opacity-40" : ""} hover:bg-slate-50`}
+                      draggable
+                      onDragStart={() => setDraggedKey(key)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedKey) reorderTo(draggedKey, key);
+                        setDraggedKey(null);
+                      }}
+                      onDragEnd={() => setDraggedKey(null)}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing ${
+                        isHidden ? "opacity-40" : ""
+                      } ${draggedKey === key ? "opacity-30" : ""} hover:bg-slate-50`}
                     >
                       <GripVertical className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                       <input
