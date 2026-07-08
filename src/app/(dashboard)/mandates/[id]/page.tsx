@@ -103,7 +103,15 @@ export default async function MandateDetailPage({
           initialPublicClientLabel={mandate.public_client_label}
           clientName={mandate.client_name}
         />
-        <JobDescriptionPanel mandateId={id} initialDescription={mandate.job_description} />
+        <JobDescriptionPanel
+          mandateId={id}
+          initial={{
+            jd_overview: mandate.jd_overview,
+            jd_responsibilities: mandate.jd_responsibilities,
+            jd_candidate_profile: mandate.jd_candidate_profile,
+            jd_compensation_benefits: mandate.jd_compensation_benefits,
+          }}
+        />
         <MustHavesPanel
           mandateId={id}
           initialMustHaves={mandate.must_haves ?? []}

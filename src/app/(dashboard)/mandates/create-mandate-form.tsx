@@ -19,7 +19,10 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     experience_max: "",
     hide_client: false,
     public_client_label: "",
-    job_description: "",
+    jd_overview: "",
+    jd_responsibilities: "",
+    jd_candidate_profile: "",
+    jd_compensation_benefits: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -42,7 +45,10 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         experience_max: form.experience_max ? Number(form.experience_max) : null,
         show_client_name: !form.hide_client,
         public_client_label: form.hide_client ? form.public_client_label || null : null,
-        job_description: form.job_description || null,
+        jd_overview: form.jd_overview || null,
+        jd_responsibilities: form.jd_responsibilities || null,
+        jd_candidate_profile: form.jd_candidate_profile || null,
+        jd_compensation_benefits: form.jd_compensation_benefits || null,
       })
       .select("id")
       .single();
@@ -77,7 +83,10 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       experience_max: "",
       hide_client: false,
       public_client_label: "",
-      job_description: "",
+      jd_overview: "",
+      jd_responsibilities: "",
+      jd_candidate_profile: "",
+      jd_compensation_benefits: "",
     });
     router.refresh();
   }
@@ -161,13 +170,39 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         />
       </div>
 
-      <textarea
-        placeholder="Job description (shown to candidates on the public listing)"
-        value={form.job_description}
-        onChange={(e) => setForm((f) => ({ ...f, job_description: e.target.value }))}
-        rows={5}
-        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
-      />
+      <div>
+        <p className="text-xs font-medium text-slate-600 mb-2">Job description (shown to candidates on the public listing)</p>
+        <div className="space-y-2">
+          <textarea
+            placeholder="Overview (1-2 sentence intro to the role/company)"
+            value={form.jd_overview}
+            onChange={(e) => setForm((f) => ({ ...f, jd_overview: e.target.value }))}
+            rows={2}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
+          />
+          <textarea
+            placeholder={"Key Responsibilities (one per line)"}
+            value={form.jd_responsibilities}
+            onChange={(e) => setForm((f) => ({ ...f, jd_responsibilities: e.target.value }))}
+            rows={4}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
+          />
+          <textarea
+            placeholder={"Candidate Profile (one per line)"}
+            value={form.jd_candidate_profile}
+            onChange={(e) => setForm((f) => ({ ...f, jd_candidate_profile: e.target.value }))}
+            rows={4}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
+          />
+          <textarea
+            placeholder={"Compensation & Benefits (one per line)"}
+            value={form.jd_compensation_benefits}
+            onChange={(e) => setForm((f) => ({ ...f, jd_compensation_benefits: e.target.value }))}
+            rows={3}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
+          />
+        </div>
+      </div>
 
       <div className="rounded-lg border border-slate-200 p-3 bg-slate-50">
         <label className="flex items-start gap-2 text-[12px] text-slate-700">
