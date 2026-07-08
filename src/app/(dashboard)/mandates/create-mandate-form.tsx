@@ -28,24 +28,42 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     e.preventDefault();
     setSaving(true);
     setError("");
-    const { error } = await supabase.from("mandates").insert({
-      client_name: form.client_name,
-      role_title: form.role_title,
-      category: form.category || null,
-      sub_domain: form.sub_domain || null,
-      city: form.city || null,
-      budget_min: form.budget_min ? Number(form.budget_min) : null,
-      budget_max: form.budget_max ? Number(form.budget_max) : null,
-      experience_min: form.experience_min ? Number(form.experience_min) : null,
-      experience_max: form.experience_max ? Number(form.experience_max) : null,
-      show_client_name: !form.hide_client,
-      public_client_label: form.hide_client ? form.public_client_label || null : null,
-      job_description: form.job_description || null,
-    });
+    const { data, error } = await supabase
+      .from("mandates")
+      .insert({
+        client_name: form.client_name,
+        role_title: form.role_title,
+        category: form.category || null,
+        sub_domain: form.sub_domain || null,
+        city: form.city || null,
+        budget_min: form.budget_min ? Number(form.budget_min) : null,
+        budget_max: form.budget_max ? Number(form.budget_max) : null,
+        experience_min: form.experience_min ? Number(form.experience_min) : null,
+        experience_max: form.experience_max ? Number(form.experience_max) : null,
+        show_client_name: !form.hide_client,
+        public_client_label: form.hide_client ? form.public_client_label || null : null,
+        job_description: form.job_description || null,
+      })
+      .select("id")
+      .single();
     setSaving(false);
     if (error) {
       setError(error.message);
       return;
+    }
+
+    // Fire-and-forget: kick off candidate matching against the existing
+    // pool right away so suggestions are already sitting there by the time
+    // a recruiter opens this mandate, instead of requiring them to remember
+    // to click "Find matches" first.
+    if (data?.id) {
+      fetch("/api/mandate-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mandateId: data.id }),
+      }).catch(() => {
+        // Best-effort; recruiter can still click "Find matches" manually.
+      });
     }
     setForm({
       client_name: "",

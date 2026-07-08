@@ -30,5 +30,14 @@ export async function POST(req: NextRequest) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
+
+  // Cache the result on the mandate so it's already there next time someone
+  // opens this mandate's page -- both for the manual "Find matches" click
+  // and the auto-run fired right after mandate creation.
+  await supabase
+    .from("mandates")
+    .update({ auto_match_results: result.matches, auto_match_computed_at: new Date().toISOString() })
+    .eq("id", mandateId);
+
   return NextResponse.json({ matches: result.matches, scanned: result.scanned });
 }

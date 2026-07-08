@@ -109,7 +109,11 @@ export default async function MandateDetailPage({
           initialMustHaves={mandate.must_haves ?? []}
           initialGoodToHaves={mandate.good_to_haves ?? []}
         />
-        <FindMatchesPanel mandateId={id} />
+        <FindMatchesPanel
+          mandateId={id}
+          initialMatches={mandate.auto_match_results ?? null}
+          initialComputedAt={mandate.auto_match_computed_at ?? null}
+        />
         <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />
         <ShortlistLinkPanel mandateId={id} existingToken={existingToken?.token ?? null} />
         {mandate.client_id && (

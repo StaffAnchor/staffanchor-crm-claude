@@ -22,13 +22,22 @@ function scoreColor(score: number) {
   return "text-slate-600 bg-slate-100";
 }
 
-export default function FindMatchesPanel({ mandateId }: { mandateId: string }) {
+export default function FindMatchesPanel({
+  mandateId,
+  initialMatches,
+  initialComputedAt,
+}: {
+  mandateId: string;
+  initialMatches?: CandidateMatch[] | null;
+  initialComputedAt?: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [matches, setMatches] = useState<CandidateMatch[] | null>(null);
+  const [matches, setMatches] = useState<CandidateMatch[] | null>(initialMatches ?? null);
   const [scanned, setScanned] = useState(0);
+  const [computedAt, setComputedAt] = useState<string | null>(initialComputedAt ?? null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -48,6 +57,7 @@ export default function FindMatchesPanel({ mandateId }: { mandateId: string }) {
       } else {
         setMatches(json.matches ?? []);
         setScanned(json.scanned ?? 0);
+        setComputedAt(new Date().toISOString());
       }
     } catch {
       setError("Matching failed. Please try again.");
@@ -117,7 +127,9 @@ export default function FindMatchesPanel({ mandateId }: { mandateId: string }) {
         <>
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] text-slate-400">
-              {matches.length} suggested of {scanned} candidates scanned
+              {scanned > 0
+                ? `${matches.length} suggested of ${scanned} candidates scanned`
+                : `${matches.length} suggested${computedAt ? ` — auto-matched ${new Date(computedAt).toLocaleDateString()}` : ""}`}
             </p>
             <button
               onClick={runMatch}
