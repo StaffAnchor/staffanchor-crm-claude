@@ -50,7 +50,7 @@ export async function generateAiPassportForCandidate(
   const { data: candidate, error } = await supabase
     .from("candidates")
     .select(
-      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text, status"
+      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text, status"
     )
     .eq("id", candidateId)
     .single();
@@ -108,7 +108,10 @@ export async function generateAiPassportForCandidate(
     current_variable_ctc_lakhs: candidate.current_variable_ctc,
     expected_fixed_ctc_lakhs: candidate.expected_fixed_ctc,
     skills: candidate.skills,
-    industries_worked_in: candidate.industries,
+    current_industry: candidate.current_industry,
+    other_industries_worked_in: (candidate.industries as string[] | null)?.filter(
+      (i) => i !== candidate.current_industry
+    ),
     self_reported_segment_data: candidate.segment_data,
     self_assessment_writeups: candidate.self_assessment,
     recruiter_scorecard: candidate.recruiter_assessment,

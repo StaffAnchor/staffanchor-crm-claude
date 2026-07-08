@@ -242,7 +242,7 @@ export default async function CandidateDetailPage({
                   content: (
                     <div className="space-y-6">
                       <AiSummaryPanel candidateId={candidate.id} initialSummary={candidate.ai_summary} initialPassport={candidate.ai_passport} />
-                      {(candidate.skills || (candidate.industries && candidate.industries.length > 0)) && (
+                      {(candidate.skills || candidate.current_industry || (candidate.industries && candidate.industries.length > 0)) && (
                         <div>
                           <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Skills &amp; industries</h3>
                           <div className="space-y-3">
@@ -258,18 +258,33 @@ export default async function CandidateDetailPage({
                                 </div>
                               </div>
                             )}
-                            {candidate.industries && candidate.industries.length > 0 && (
+                            {candidate.current_industry && (
                               <div>
-                                <p className="text-[11px] text-slate-400 mb-1.5">Industries worked in</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {candidate.industries.map((i: string) => (
-                                    <span key={i} className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                                      {i}
-                                    </span>
-                                  ))}
-                                </div>
+                                <p className="text-[11px] text-slate-400 mb-1.5">Current industry</p>
+                                <span className="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
+                                  {candidate.current_industry}
+                                </span>
                               </div>
                             )}
+                            {(() => {
+                              const others = (candidate.industries ?? []).filter(
+                                (i: string) => i !== candidate.current_industry
+                              );
+                              return (
+                                others.length > 0 && (
+                                  <div>
+                                    <p className="text-[11px] text-slate-400 mb-1.5">Previous industries</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {others.map((i: string) => (
+                                        <span key={i} className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                          {i}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )
+                              );
+                            })()}
                           </div>
                         </div>
                       )}

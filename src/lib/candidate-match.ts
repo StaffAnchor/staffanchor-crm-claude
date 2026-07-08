@@ -29,6 +29,7 @@ type CandidateRow = {
   notice_period: string | null;
   expected_fixed_ctc: number | null;
   skills: string | null;
+  current_industry: string | null;
   industries: string[] | null;
   segment_data: Record<string, unknown> | null;
   self_assessment: Record<string, unknown> | null;
@@ -102,7 +103,7 @@ export async function matchCandidatesForMandate(
   let query = supabase
     .from("candidates")
     .select(
-      "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary"
+      "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary"
     )
     .neq("status", "awaiting_input")
     .limit(400);
@@ -167,7 +168,8 @@ export async function matchCandidatesForMandate(
     notice_period: c.notice_period,
     expected_fixed_ctc_lakhs: c.expected_fixed_ctc,
     skills: c.skills,
-    industries_worked_in: c.industries,
+    current_industry: c.current_industry,
+    other_industries_worked_in: (c.industries as string[] | null)?.filter((i) => i !== c.current_industry),
     self_reported_segment_data: c.segment_data,
     self_assessment_writeups: c.self_assessment,
     recruiter_scorecard: c.recruiter_assessment,
