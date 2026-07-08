@@ -5,6 +5,8 @@ import ShortlistLinkPanel from "./shortlist-link-panel";
 import AlignCandidatesPanel from "./align-candidates-panel";
 import PublicListingPanel from "./public-listing-panel";
 import JobDescriptionPanel from "./job-description-panel";
+import MustHavesPanel from "./must-haves-panel";
+import FindMatchesPanel from "./find-matches-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import DeleteMandateButton from "./delete-mandate-button";
 
@@ -74,6 +76,12 @@ export default async function MandateDetailPage({
           clientName={mandate.client_name}
         />
         <JobDescriptionPanel mandateId={id} initialDescription={mandate.job_description} />
+        <MustHavesPanel
+          mandateId={id}
+          initialMustHaves={mandate.must_haves ?? []}
+          initialGoodToHaves={mandate.good_to_haves ?? []}
+        />
+        <FindMatchesPanel mandateId={id} />
         <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />
         <ShortlistLinkPanel mandateId={id} existingToken={existingToken?.token ?? null} />
         {mandate.client_id && (
