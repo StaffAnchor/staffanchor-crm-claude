@@ -40,6 +40,9 @@ export type CandidateRow = {
   notice_period: string | null;
   current_employment_status: string | null;
   status: string;
+  current_industry: string | null;
+  industries: string[] | null;
+  created_by: string | null;
   recruiter_assessment: Record<string, unknown> | null;
   segment_data: Record<string, unknown> | null;
   resume_file_url: string | null;
@@ -74,6 +77,17 @@ const STATUS_STYLE: Record<string, string> = {
   alumni: "bg-slate-100 text-slate-500 ring-1 ring-slate-200",
   inactive: "bg-red-50 text-red-600 ring-1 ring-red-200",
 };
+
+const CREATED_BY_LABEL: Record<string, string> = {
+  quick_apply: "Quick Apply",
+  self_registration: "Job Portal",
+  recruiter_created: "Recruiter Added",
+};
+
+// Active = actively applying to a specific role right now (Quick Apply).
+// Passive = sitting in the general candidate pool -- built their own profile
+// or were sourced/seeded by a recruiter, not responding to a live opening.
+const CREATED_BY_ACTIVE = new Set(["quick_apply"]);
 
 const CATEGORY_COLOR: Record<string, string> = {
   b2b_sales: "from-blue-400 to-blue-600",
@@ -255,6 +269,65 @@ const COLUMN_DEFS: ColumnDef[] = [
     ),
   },
   {
+    key: "origin",
+    label: "Origin",
+    render: (c) => {
+      const isActive = c.created_by ? CREATED_BY_ACTIVE.has(c.created_by) : false;
+      const label = c.created_by ? CREATED_BY_LABEL[c.created_by] ?? c.created_by : "—";
+      return (
+        <div>
+          <span
+            className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${
+              isActive
+                ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200"
+                : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
+            }`}
+          >
+            {isActive ? "Active · Applicant" : "Passive · Normal"}
+          </span>
+          <div className="text-[10px] text-slate-400 mt-0.5 whitespace-nowrap">{label}</div>
+        </div>
+      );
+    },
+  },
+  {
+    key: "current_industry",
+    label: "Current Industry",
+    render: (c) =>
+      c.current_industry ? (
+        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+          {c.current_industry}
+        </span>
+      ) : (
+        <span className="text-[11px] text-slate-300">—</span>
+      ),
+  },
+  {
+    key: "previous_industries",
+    label: "Previous Industries",
+    render: (c) => {
+      const former = (c.industries ?? []).filter((i) => i !== c.current_industry);
+      if (former.length === 0) return <span className="text-[11px] text-slate-300">—</span>;
+      const MAX_SHOWN = 2;
+      const shown = former.slice(0, MAX_SHOWN);
+      const overflow = former.length - shown.length;
+      return (
+        <div className="flex flex-wrap items-center gap-1 max-w-[180px]">
+          {shown.map((i) => (
+            <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              {i}
+            </span>
+          ))}
+          {overflow > 0 && (
+            <span className="text-[10px] text-slate-400" title={former.slice(MAX_SHOWN).join(", ")}>
+              +{overflow}
+            </span>
+          )}
+        </div>
+      );
+    },
+  },
+  {
     key: "sub_domain",
     label: "Sub-domain",
     render: (c) => <span className="text-slate-600 truncate block max-w-[160px]">{c.sub_domain ?? "—"}</span>,
@@ -348,6 +421,7 @@ const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
 
 const DEFAULT_VISIBLE = new Set([
   "created_at",
+  "origin",
   "email",
   "phone",
   "current_fixed_ctc",
@@ -355,6 +429,8 @@ const DEFAULT_VISIBLE = new Set([
   "current_job_title",
   "current_employer",
   "category",
+  "current_industry",
+  "previous_industries",
   "current_location",
   "role_level",
   "current_employment_status",
@@ -545,10 +621,12 @@ export default function CandidatesTable({
 
   async function handleBulkInvite() {
     if (selected.size === 0) return;
-    const targets = candidates.filter((c) => selected.has(c.id) && c.status === "awaiting_input");
+    const targets = candidates.filter(
+      (c) => selected.has(c.id) && (c.status === "awaiting_input" || c.status === "lead")
+    );
     const skipped = selected.size - targets.length;
     if (targets.length === 0) {
-      setBulkMessage("None of the selected candidates are Awaiting Input, so no invites were sent.");
+      setBulkMessage("None of the selected candidates have an incomplete profile, so no invites were sent.");
       return;
     }
     setBulkBusy(true);

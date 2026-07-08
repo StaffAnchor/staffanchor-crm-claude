@@ -7,6 +7,9 @@ import {
   Send,
   Trophy,
   SlidersHorizontal,
+  Zap,
+  Database,
+  AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
@@ -24,6 +27,12 @@ const STATUS_LABEL: Record<string, string> = {
   placed: "Placed",
   alumni: "Alumni",
   inactive: "Inactive",
+};
+
+const ORIGIN_LABEL: Record<string, string> = {
+  quick_apply: "Quick Apply (Active)",
+  self_registration: "Job Portal — Build Profile (Passive)",
+  recruiter_created: "Recruiter Added (Passive)",
 };
 
 const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
@@ -69,6 +78,8 @@ type SearchParams = {
   secondary_domain?: string;
   current_industry?: string;
   previous_industry?: string;
+  origin?: string;
+  incomplete?: string;
   from?: string;
   to?: string;
   recruiter?: string;
@@ -86,7 +97,7 @@ export default async function CandidatesPage({
   let query = supabase
     .from("candidates")
     .select(
-      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, current_industry, industries, total_experience_years, current_fixed_ctc, notice_period, current_employment_status, status, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
+      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, current_industry, industries, total_experience_years, current_fixed_ctc, notice_period, current_employment_status, status, created_by, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -108,6 +119,8 @@ export default async function CandidatesPage({
   if (params.previous_industry) {
     query = query.contains("industries", [params.previous_industry]).neq("current_industry", params.previous_industry);
   }
+  if (params.origin) query = query.eq("created_by", params.origin);
+  if (params.incomplete) query = query.in("status", ["awaiting_input", "lead"]);
   if (params.from) query = query.gte("created_at", params.from);
   if (params.to) query = query.lte("created_at", `${params.to}T23:59:59.999`);
   if (params.recruiter) {
@@ -161,16 +174,22 @@ export default async function CandidatesPage({
     .not("sub_domain", "is", null);
   const subDomains = Array.from(new Set((subDomainRows ?? []).map((r) => r.sub_domain).filter(Boolean))).sort();
 
-  const { data: allRows } = await supabase.from("candidates").select("status, created_at");
+  const { data: allRows } = await supabase.from("candidates").select("status, created_at, created_by");
   const statusCounts: Record<string, number> = {};
+  const createdByCounts: Record<string, number> = {};
   let newToday = 0;
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   (allRows ?? []).forEach((r) => {
     statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
+    if (r.created_by) createdByCounts[r.created_by] = (createdByCounts[r.created_by] ?? 0) + 1;
     if (new Date(r.created_at) >= startOfToday) newToday += 1;
   });
   const totalCount = (allRows ?? []).length;
+  const activeCount = createdByCounts["quick_apply"] ?? 0;
+  const passiveCount =
+    (createdByCounts["self_registration"] ?? 0) + (createdByCounts["recruiter_created"] ?? 0);
+  const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
   const funnelCounts: Record<string, number> = {
     lead_registered: (statusCounts["lead"] ?? 0) + (statusCounts["registered"] ?? 0),
@@ -244,6 +263,42 @@ export default async function CandidatesPage({
         })}
       </div>
 
+      <div className="grid grid-cols-3 gap-2.5 mb-3">
+        <Link
+          href={qs({ origin: "quick_apply" })}
+          className="flex items-center gap-2.5 bg-white border-l-[3px] border-orange-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
+        >
+          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-orange-500" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{activeCount}</p>
+            <p className="text-[11px] text-slate-500 truncate">Active — Applicants (Quick Apply)</p>
+          </div>
+        </Link>
+        <div className="flex items-center gap-2.5 bg-white border-l-[3px] border-slate-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm">
+          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+            <Database className="w-4 h-4 text-slate-500" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{passiveCount}</p>
+            <p className="text-[11px] text-slate-500 truncate">Passive — Normal pool (Job Portal + Recruiter Added)</p>
+          </div>
+        </div>
+        <Link
+          href={qs({ incomplete: "1" })}
+          className="flex items-center gap-2.5 bg-white border-l-[3px] border-amber-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
+        >
+          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+            <AlertTriangle className="w-4 h-4 text-amber-500" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{incompleteCount}</p>
+            <p className="text-[11px] text-slate-500 truncate">Incomplete profiles — need a nudge</p>
+          </div>
+        </Link>
+      </div>
+
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-3 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
@@ -298,6 +353,8 @@ export default async function CandidatesPage({
           {params.secondary_domain && <input type="hidden" name="secondary_domain" value={params.secondary_domain} />}
           {params.current_industry && <input type="hidden" name="current_industry" value={params.current_industry} />}
           {params.previous_industry && <input type="hidden" name="previous_industry" value={params.previous_industry} />}
+          {params.origin && <input type="hidden" name="origin" value={params.origin} />}
+          {params.incomplete && <input type="hidden" name="incomplete" value={params.incomplete} />}
           {params.from && <input type="hidden" name="from" value={params.from} />}
           {params.to && <input type="hidden" name="to" value={params.to} />}
           {params.recruiter && <input type="hidden" name="recruiter" value={params.recruiter} />}
@@ -324,6 +381,16 @@ export default async function CandidatesPage({
               {c.label}
             </Link>
           ))}
+          <Link
+            href={qs({ incomplete: params.incomplete ? undefined : "1" })}
+            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-colors ${
+              params.incomplete
+                ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
+                : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+            }`}
+          >
+            ⚠ Incomplete profiles
+          </Link>
           {params.status && (
             <Link
               href={qs({ status: undefined })}
@@ -362,6 +429,14 @@ export default async function CandidatesPage({
               className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
             >
               Previous industry: {params.previous_industry} ✕
+            </Link>
+          )}
+          {params.origin && (
+            <Link
+              href={qs({ origin: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200"
+            >
+              Origin: {ORIGIN_LABEL[params.origin] ?? params.origin} ✕
             </Link>
           )}
           {(params.from || params.to) && (
@@ -469,6 +544,21 @@ export default async function CandidatesPage({
                   {industryOptions.map((i) => (
                     <option key={i} value={i}>
                       {i}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Origin</label>
+                <select
+                  name="origin"
+                  defaultValue={params.origin ?? ""}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {Object.entries(ORIGIN_LABEL).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
                   ))}
                 </select>
