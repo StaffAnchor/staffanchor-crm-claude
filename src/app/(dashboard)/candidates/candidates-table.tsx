@@ -505,12 +505,16 @@ function loadPrefs(): { order: string[]; hidden: string[] } {
   }
 }
 
+export type MandateLink = { mandate_id: string; role_title: string; client_name: string };
+
 export default function CandidatesTable({
   candidates,
   openMandates,
+  mandateLinksByCandidate = {},
 }: {
   candidates: CandidateRow[];
   openMandates: OpenMandate[];
+  mandateLinksByCandidate?: Record<string, MandateLink[]>;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -551,6 +555,7 @@ export default function CandidatesTable({
   function handleNameLeave() {
     setSummaryTooltip(null);
   }
+  const [mandatePopoverFor, setMandatePopoverFor] = useState<string | null>(null);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [chosenMandate, setChosenMandate] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -914,6 +919,40 @@ export default function CandidatesTable({
                         {c.full_name}
                       </p>
                     </Link>
+                    {(mandateLinksByCandidate[c.id] ?? []).length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setMandatePopoverFor(mandatePopoverFor === c.id ? null : c.id);
+                        }}
+                        className="absolute -top-1.5 left-4 flex items-center justify-center w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-semibold shadow-sm hover:bg-indigo-500"
+                        title="Mandates this candidate is linked to"
+                      >
+                        {(mandateLinksByCandidate[c.id] ?? []).length}
+                      </button>
+                    )}
+                    {mandatePopoverFor === c.id && (
+                      <div
+                        className="absolute z-30 top-full left-0 mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg p-2"
+                        onMouseLeave={() => setMandatePopoverFor(null)}
+                      >
+                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide px-1.5 pb-1">
+                          Applied / linked to
+                        </p>
+                        {(mandateLinksByCandidate[c.id] ?? []).map((m) => (
+                          <Link
+                            key={m.mandate_id}
+                            href={`/mandates/${m.mandate_id}`}
+                            className="block rounded-md px-1.5 py-1.5 hover:bg-slate-50"
+                          >
+                            <p className="text-[12.5px] font-medium text-slate-800 truncate">{m.role_title}</p>
+                            <p className="text-[11px] text-slate-400 truncate">{m.client_name}</p>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </td>
                 {visibleColumns.map((col) => (

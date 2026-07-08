@@ -152,6 +152,22 @@ export default async function CandidatesPage({
 
   const { data: candidates, error } = await query;
 
+  const candidateIds = (candidates ?? []).map((c) => c.id);
+  const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
+  if (candidateIds.length > 0) {
+    const { data: linkRows } = await supabase
+      .from("candidate_mandate_links")
+      .select("candidate_id, mandate_id, mandates(role_title, client_name)")
+      .in("candidate_id", candidateIds);
+    (linkRows ?? []).forEach((row) => {
+      const mandate = row.mandates as unknown as { role_title: string; client_name: string } | null;
+      if (!mandate) return;
+      const list = mandateLinksByCandidate[row.candidate_id] ?? [];
+      list.push({ mandate_id: row.mandate_id, role_title: mandate.role_title, client_name: mandate.client_name });
+      mandateLinksByCandidate[row.candidate_id] = list;
+    });
+  }
+
   let recruiterName: string | null = null;
   if (params.recruiter) {
     const { data: recruiterProfile } = await supabase
@@ -630,7 +646,11 @@ export default async function CandidatesPage({
         <p className="text-sm text-red-600 mb-4">Error loading candidates: {error.message}</p>
       )}
 
-      <CandidatesTable candidates={(candidates ?? []) as never} openMandates={openMandates ?? []} />
+      <CandidatesTable
+        candidates={(candidates ?? []) as never}
+        openMandates={openMandates ?? []}
+        mandateLinksByCandidate={mandateLinksByCandidate}
+      />
     </div>
   );
 }
