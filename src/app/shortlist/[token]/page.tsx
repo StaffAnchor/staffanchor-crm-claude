@@ -32,7 +32,7 @@ type ShortlistRow = {
   overall_recommendation: string | null;
   verified_relocation: string | null;
   verified_notice: string | null;
-  notice_period: number | null;
+  notice_period: string | null;
   resume_file_url: string | null;
   stage: string;
   client_feedback: string | null;
@@ -121,7 +121,11 @@ export default async function ClientShortlistPage({
 
   const ctcValues = rows.map((r) => r.expected_fixed_ctc).filter((v): v is number => v != null);
   const medianCtc = median(ctcValues);
-  const availableSoonCount = rows.filter((r) => r.notice_period != null && r.notice_period <= 15).length;
+  // notice_period is a categorical field ("Immediate", "15 days", "30 days", "90+ days"),
+  // not a raw day count -- only the first two buckets count as "soon".
+  const availableSoonCount = rows.filter(
+    (r) => r.notice_period === "Immediate" || r.notice_period === "15 days"
+  ).length;
 
   return (
     <div className="min-h-screen bg-slate-50">
