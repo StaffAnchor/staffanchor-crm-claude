@@ -111,7 +111,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
         className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
       >
-        <option value="">Category...</option>
+        <option value="">Function / Domain...</option>
         <option value="b2b_sales">B2B Sales</option>
         <option value="b2c_sales">B2C Sales</option>
         <option value="non_sales">Non-Sales</option>

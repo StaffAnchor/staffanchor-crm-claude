@@ -247,7 +247,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Category</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Function / Domain</label>
                 <select
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subDomain: "" }))}

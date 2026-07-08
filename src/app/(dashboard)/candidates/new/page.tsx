@@ -55,7 +55,7 @@ export default function NewCandidatePage() {
     if (!form.current_fixed_ctc) return "Current fixed CTC is required.";
     if (!form.total_experience_years) return "Total experience is required.";
     if (!form.notice_period) return "When they can join is required.";
-    if (!form.category) return "Category is required.";
+    if (!form.category) return "Function / Domain is required.";
     if (!form.sub_domain) return "Sub-domain is required.";
     if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the sub-domain.";
     if (!form.current_job_title.trim()) return "Current job title is required.";
@@ -227,7 +227,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Function / Domain *</label>
           <select
             required
             value={form.category}

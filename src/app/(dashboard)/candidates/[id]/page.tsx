@@ -238,7 +238,7 @@ export default async function CandidateDetailPage({
         </div>
 
         <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100 text-[13px]">
-          <Field label="Category" value={candidate.category?.replace("_", " ")} />
+          <Field label="Function / Domain" value={candidate.category?.replace("_", " ")} />
           <Field label="Primary sub-domain" value={candidate.sub_domain} />
           <Field label="Experience" value={`${candidate.total_experience_years ?? "—"} yrs`} />
           <Field label="Days to join" value={candidate.notice_period} />
