@@ -31,7 +31,7 @@ export default async function DashboardLayout({
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
-    { href: "/interviews", label: "Interviews", enabled: false },
+    { href: "/interviews", label: "Interviews", enabled: true },
     { href: "/reports", label: "Reports", enabled: true },
     { href: "/referrals", label: "Referrals", enabled: true },
     ...(profile?.role === "admin" ? [{ href: "/team", label: "Team", enabled: true }] : []),

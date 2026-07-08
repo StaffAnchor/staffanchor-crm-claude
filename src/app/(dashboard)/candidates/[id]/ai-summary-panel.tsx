@@ -43,7 +43,7 @@ export default function AiSummaryPanel({
     <div>
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[13px] font-semibold text-slate-900">
-          AI summary <span className="text-[11px] font-normal text-slate-400">(editable, never sent to a client unedited)</span>
+          AI summary <span className="text-[11px] font-normal text-slate-400">(shown to clients on the shortlist link/portal once generated)</span>
         </h3>
         <button
           onClick={handleGenerate}

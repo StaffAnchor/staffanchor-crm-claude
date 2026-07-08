@@ -1,6 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import FeedbackButtons from "./feedback-buttons";
 import ResumePreview from "./resume-preview";
+import ProfilePassportTrigger from "./profile-passport";
+
+type AiPassport = {
+  headline?: string;
+  compensation_line?: string;
+  targets_line?: string;
+  resume_highlights?: string[];
+};
 
 type ShortlistRow = {
   link_id: string;
@@ -20,13 +28,30 @@ type ShortlistRow = {
   secondary_sub_domains: string[] | null;
   industries: string[] | null;
   ai_summary: string | null;
+  ai_passport: AiPassport | null;
   overall_recommendation: string | null;
   verified_relocation: string | null;
   verified_notice: string | null;
+  notice_period: number | null;
   resume_file_url: string | null;
   stage: string;
   client_feedback: string | null;
+  requested_interview_at: string | null;
+  confirmed_interview_at: string | null;
 };
+
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+function passportRank(r: ShortlistRow): number {
+  const recommended = r.overall_recommendation === "Strong Fit" ? 0 : 2;
+  const pending = r.client_feedback ? 1 : 0;
+  return recommended + pending;
+}
 
 // Signed URLs are generated with the service-role key here, gated entirely by the
 // same token check the get_client_shortlist RPC already performs above -- this page
@@ -86,10 +111,17 @@ export default async function ClientShortlistPage({
 
   const recommended = rows.filter((r) => r.overall_recommendation === "Strong Fit");
   const others = rows.filter((r) => r.overall_recommendation !== "Strong Fit");
+  // Un-responded candidates float to the top of each group so a client isn't
+  // re-scanning past ones they've already actioned.
+  const orderedRows = [...rows].sort((a, b) => passportRank(a) - passportRank(b));
 
   const interestedCount = rows.filter((r) => r.client_feedback === "interested").length;
   const interviewCount = rows.filter((r) => r.client_feedback === "interview_requested").length;
   const pendingCount = rows.filter((r) => !r.client_feedback).length;
+
+  const ctcValues = rows.map((r) => r.expected_fixed_ctc).filter((v): v is number => v != null);
+  const medianCtc = median(ctcValues);
+  const availableSoonCount = rows.filter((r) => r.notice_period != null && r.notice_period <= 15).length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -122,7 +154,18 @@ export default async function ClientShortlistPage({
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-4">
-        {[...recommended, ...others].map((c) => (
+        {(medianCtc !== null || availableSoonCount > 0) && (
+          <p className="text-xs text-slate-500 bg-slate-100 rounded-lg px-3.5 py-2">
+            {medianCtc !== null && <>Median expected CTC in this shortlist: <span className="font-semibold text-slate-700">₹{medianCtc}L</span></>}
+            {medianCtc !== null && availableSoonCount > 0 && " · "}
+            {availableSoonCount > 0 && (
+              <>
+                <span className="font-semibold text-slate-700">{availableSoonCount}</span> of {rows.length} available within 15 days
+              </>
+            )}
+          </p>
+        )}
+        {orderedRows.map((c) => (
           <CandidateCard
             key={c.link_id}
             candidate={c}
@@ -177,8 +220,22 @@ function CandidateCard({
       </div>
 
       {candidate.ai_summary && (
-        <p className="text-sm text-slate-700 mt-3">{candidate.ai_summary}</p>
+        <p className="text-sm text-slate-700 mt-3 line-clamp-2">{candidate.ai_summary}</p>
       )}
+      <ProfilePassportTrigger
+        fullName={candidate.full_name}
+        currentJobTitle={candidate.current_job_title}
+        currentEmployer={candidate.current_employer}
+        currentLocation={candidate.current_location}
+        totalExperienceYears={candidate.total_experience_years}
+        subDomain={candidate.sub_domain}
+        expectedFixedCtc={candidate.expected_fixed_ctc}
+        verifiedRelocation={candidate.verified_relocation}
+        verifiedNotice={candidate.verified_notice}
+        industries={candidate.industries}
+        aiSummary={candidate.ai_summary}
+        aiPassport={candidate.ai_passport}
+      />
 
       <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
         <div>
@@ -213,7 +270,13 @@ function CandidateCard({
         )}
       </div>
 
-      <FeedbackButtons token={token} linkId={candidate.link_id} current={candidate.client_feedback} />
+      <FeedbackButtons
+        token={token}
+        linkId={candidate.link_id}
+        current={candidate.client_feedback}
+        requestedInterviewAt={candidate.requested_interview_at}
+        confirmedInterviewAt={candidate.confirmed_interview_at}
+      />
     </div>
   );
 }

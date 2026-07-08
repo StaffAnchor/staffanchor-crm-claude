@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { extractResumeText } from "@/lib/resume-text";
+
+type AiPassport = {
+  headline?: string;
+  compensation_line?: string;
+  targets_line?: string;
+  resume_highlights?: string[];
+};
+
+function parsePassportJson(raw: string): AiPassport | null {
+  // Gemini sometimes wraps JSON in a ```json fence despite instructions not to.
+  const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (parsed && typeof parsed === "object") return parsed as AiPassport;
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
+function passportToSummary(p: AiPassport): string {
+  return [p.headline, p.compensation_line, p.targets_line].filter(Boolean).join(" ");
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -29,7 +53,7 @@ export async function POST(req: NextRequest) {
   const { data: candidate, error } = await supabase
     .from("candidates")
     .select(
-      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, industries, segment_data, self_assessment, recruiter_assessment"
+      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text"
     )
     .eq("id", candidateId)
     .single();
@@ -45,6 +69,32 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
+
+  // Resume text is cached on the candidate row after first extraction so we
+  // don't re-download and re-parse the file every time a summary is regenerated.
+  let resumeText = candidate.resume_text as string | null;
+  if (!resumeText && candidate.resume_file_url) {
+    try {
+      const rawPath = candidate.resume_file_url as string;
+      const cleanPath = rawPath.replace(/^resumes\//, "");
+      const { data: signed } = await supabase.storage.from("resumes").createSignedUrl(cleanPath, 300);
+      if (signed?.signedUrl) {
+        const fileRes = await fetch(signed.signedUrl);
+        const buffer = await fileRes.arrayBuffer();
+        const extracted = await extractResumeText(buffer, cleanPath);
+        if (extracted) {
+          resumeText = extracted;
+          await supabase.from("candidates").update({ resume_text: extracted }).eq("id", candidateId);
+        }
+      }
+    } catch (err) {
+      console.error("Resume text extraction failed during summary generation", err);
+    }
+  }
+
+  // Truncate to keep prompt size/cost sane -- a few pages of resume text is
+  // plenty for pulling out achievements/employers, we don't need the whole thing.
+  const resumeExcerpt = resumeText ? resumeText.slice(0, 8000) : null;
 
   const factSheet = {
     name: candidate.full_name,
@@ -66,14 +116,21 @@ export async function POST(req: NextRequest) {
     recruiter_scorecard: candidate.recruiter_assessment,
   };
 
-  const prompt = `You are helping a recruiter write a concise internal candidate summary for a sales-hiring CRM.
-Use ONLY the facts given below — never invent employers, numbers, skills, or achievements that are not present.
-If a field is missing, simply omit it rather than guessing.
-Write 4-6 sentences, plain prose, no headings, no bullet points, professional and neutral tone.
-Cover: who they are and current role, relevant sales background/sub-domain, key skills (if present, name a few of the actual listed skills rather than saying "various skills"), industries worked in if present, experience level, compensation expectations if present, and any notable recruiter assessment notes if present.
+  const prompt = `You are helping a recruiter write a concise, structured candidate passport for a sales-hiring CRM. This is shown to both recruiters and clients deciding whether to interview someone.
 
-Candidate data (JSON):
-${JSON.stringify(factSheet, null, 2)}`;
+Use ONLY facts given below (structured data + resume excerpt) -- never invent employers, numbers, skills, or achievements that are not present. If the structured data and resume excerpt conflict, trust the structured data. If a field is missing, omit it rather than guessing.
+
+Return ONLY a JSON object (no markdown fence, no commentary) with exactly these keys:
+- "headline": one plain-English sentence -- who they are, current role/employer, and primary sales domain.
+- "compensation_line": one sentence on current and expected fixed CTC (and variable, if present). Omit key entirely if no CTC data exists.
+- "targets_line": one sentence on quota/target and achievement % if present in segment data (e.g. quarterly target, achievement history, best win). Omit key entirely if no target/achievement data exists.
+- "resume_highlights": an array of 2-4 short bullet-point strings pulled from the resume excerpt below -- concrete, factual points only (notable employers/clients, tenure pattern, certifications, named achievements). Omit key (or return empty array) if no resume excerpt is provided or nothing factual/notable is extractable.
+
+Structured candidate data (JSON):
+${JSON.stringify(factSheet, null, 2)}
+
+Resume excerpt (raw extracted text, may include formatting artifacts -- ignore those):
+${resumeExcerpt ?? "(no resume text available)"}`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
   // gemini-1.5-* models have been retired (404 on this API version), so only
@@ -86,11 +143,16 @@ ${JSON.stringify(factSheet, null, 2)}`;
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent(prompt);
-      const summary = result.response.text().trim();
+      const raw = result.response.text().trim();
+      const passport = parsePassportJson(raw);
+
+      // Fall back to treating the raw response as plain prose if JSON parsing
+      // fails for some reason -- better a slightly-off summary than none.
+      const summary = passport ? passportToSummary(passport) || raw : raw;
 
       await supabase
         .from("candidates")
-        .update({ ai_summary: summary })
+        .update({ ai_summary: summary, ai_passport: passport })
         .eq("id", candidateId);
 
       await supabase.from("audit_log").insert({
@@ -98,10 +160,10 @@ ${JSON.stringify(factSheet, null, 2)}`;
         action: "ai_summary_generated",
         entity: "candidate",
         entity_id: candidateId,
-        detail: { model: modelName },
+        detail: { model: modelName, used_resume_text: !!resumeExcerpt },
       });
 
-      return NextResponse.json({ summary });
+      return NextResponse.json({ summary, passport });
     } catch (err) {
       lastError = err;
       console.error(`Gemini summary generation failed with model ${modelName}`, err);
