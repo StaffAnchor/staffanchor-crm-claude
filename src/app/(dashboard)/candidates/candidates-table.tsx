@@ -901,7 +901,7 @@ export default function CandidatesTable({
                 <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white group-hover:bg-slate-50/70"}`}>
                   <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleRow(c.id)} />
                 </td>
-                <td className={`px-4 py-3 sticky left-[52px] z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white group-hover:bg-slate-50/70"}`}>
+                <td className={`px-4 py-3 sticky left-[52px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white group-hover:bg-slate-50/70"}`}>
                   <div
                     className="relative"
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
