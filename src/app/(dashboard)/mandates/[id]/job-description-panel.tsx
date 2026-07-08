@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { FileText, Check, Pencil } from "lucide-react";
+import { FileText, Check, Pencil, Sparkles } from "lucide-react";
 
 type JDFields = {
   jd_overview: string | null;
@@ -19,15 +19,31 @@ function bulletList(value: string) {
     .filter(Boolean);
 }
 
+type MandateContext = {
+  role_title: string | null;
+  category: string | null;
+  sub_domains: string[] | null;
+  cities: string[] | null;
+  experience_min: number | null;
+  experience_max: number | null;
+  budget_min: number | null;
+  budget_max: number | null;
+};
+
 export default function JobDescriptionPanel({
   mandateId,
   initial,
+  context,
 }: {
   mandateId: string;
   initial: JDFields;
+  context: MandateContext;
 }) {
   const router = useRouter();
   const supabase = createClient();
+  const [rawNotes, setRawNotes] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState("");
   const hasAnyContent = !!(
     initial.jd_overview ||
     initial.jd_responsibilities ||
@@ -41,6 +57,38 @@ export default function JobDescriptionPanel({
   const [benefits, setBenefits] = useState(initial.jd_compensation_benefits ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  async function handleGenerate() {
+    setGenError("");
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-jd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role_title: context.role_title,
+          category: context.category,
+          sub_domains: context.sub_domains ?? [],
+          cities: context.cities ?? [],
+          experience_min: context.experience_min ?? "",
+          experience_max: context.experience_max ?? "",
+          budget_min: context.budget_min ?? "",
+          budget_max: context.budget_max ?? "",
+          raw_notes: rawNotes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "AI generation failed.");
+      setOverview(data.overview ?? overview);
+      setResponsibilities((data.responsibilities ?? []).join("\n"));
+      setCandidateProfile((data.candidate_profile ?? []).join("\n"));
+      setBenefits((data.compensation_benefits ?? []).join("\n"));
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : "AI generation failed.");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -77,6 +125,25 @@ export default function JobDescriptionPanel({
 
       {editing ? (
         <div className="space-y-3 mb-2">
+          <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-3">
+            <p className="text-[11px] font-medium text-blue-700 mb-1.5">Paste rough notes and let AI structure it</p>
+            <textarea
+              value={rawNotes}
+              onChange={(e) => setRawNotes(e.target.value)}
+              rows={3}
+              placeholder="Paste a rough JD, bullet notes, or a client email..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y bg-white"
+            />
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={generating || !rawNotes.trim()}
+              className="mt-2 flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> {generating ? "Generating..." : "Generate with AI"}
+            </button>
+            {genError && <p className="text-[11px] text-red-600 mt-1.5">{genError}</p>}
+          </div>
           <div>
             <label className="block text-[11px] font-medium text-slate-500 mb-1">Overview</label>
             <textarea

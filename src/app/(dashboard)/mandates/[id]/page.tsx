@@ -111,6 +111,16 @@ export default async function MandateDetailPage({
             jd_candidate_profile: mandate.jd_candidate_profile,
             jd_compensation_benefits: mandate.jd_compensation_benefits,
           }}
+          context={{
+            role_title: mandate.role_title,
+            category: mandate.category,
+            sub_domains: mandate.sub_domains ?? (mandate.sub_domain ? [mandate.sub_domain] : []),
+            cities: mandate.cities ?? (mandate.city ? [mandate.city] : []),
+            experience_min: mandate.experience_min,
+            experience_max: mandate.experience_max,
+            budget_min: mandate.budget_min,
+            budget_max: mandate.budget_max,
+          }}
         />
         <MustHavesPanel
           mandateId={id}

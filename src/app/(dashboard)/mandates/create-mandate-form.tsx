@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Sparkles, X } from "lucide-react";
+import { cityOptions, subDomainsForCategory } from "@/lib/candidate-options";
 
 export default function CreateMandateForm({ existingClients }: { existingClients: string[] }) {
   const router = useRouter();
@@ -11,14 +13,18 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     client_name: "",
     role_title: "",
     category: "",
-    sub_domain: "",
-    city: "",
+    subDomains: [] as string[],
+    subDomainKeywords: "",
+    cities: [] as string[],
+    cityPick: "",
+    cityOther: "",
     budget_min: "",
     budget_max: "",
     experience_min: "",
     experience_max: "",
     hide_client: false,
     public_client_label: "",
+    jd_raw_notes: "",
     jd_overview: "",
     jd_responsibilities: "",
     jd_candidate_profile: "",
@@ -26,19 +32,89 @@ export default function CreateMandateForm({ existingClients }: { existingClients
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [generatingJd, setGeneratingJd] = useState(false);
+  const [jdError, setJdError] = useState("");
+
+  const subDomainOptions = subDomainsForCategory(form.category || null);
+  const isMultiSubDomain = form.category === "b2b_sales" || form.category === "b2c_sales";
+
+  function toggleSubDomain(value: string) {
+    setForm((f) => ({
+      ...f,
+      subDomains: f.subDomains.includes(value)
+        ? f.subDomains.filter((s) => s !== value)
+        : [...f.subDomains, value],
+    }));
+  }
+
+  function addCity(value: string) {
+    const v = value.trim();
+    if (!v || v === "Other") return;
+    setForm((f) => (f.cities.includes(v) ? f : { ...f, cities: [...f.cities, v] }));
+  }
+
+  function removeCity(value: string) {
+    setForm((f) => ({ ...f, cities: f.cities.filter((c) => c !== value) }));
+  }
+
+  function resolvedSubDomains(): string[] {
+    const keywords = form.subDomainKeywords
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean);
+    return Array.from(new Set([...form.subDomains, ...keywords]));
+  }
+
+  async function handleGenerateJd() {
+    setJdError("");
+    setGeneratingJd(true);
+    try {
+      const res = await fetch("/api/generate-jd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role_title: form.role_title,
+          category: form.category,
+          sub_domains: resolvedSubDomains(),
+          cities: form.cities,
+          experience_min: form.experience_min,
+          experience_max: form.experience_max,
+          budget_min: form.budget_min,
+          budget_max: form.budget_max,
+          raw_notes: form.jd_raw_notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "AI generation failed.");
+      setForm((f) => ({
+        ...f,
+        jd_overview: data.overview ?? f.jd_overview,
+        jd_responsibilities: (data.responsibilities ?? []).join("\n"),
+        jd_candidate_profile: (data.candidate_profile ?? []).join("\n"),
+        jd_compensation_benefits: (data.compensation_benefits ?? []).join("\n"),
+      }));
+    } catch (e) {
+      setJdError(e instanceof Error ? e.message : "AI generation failed.");
+    } finally {
+      setGeneratingJd(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError("");
+    const subDomains = resolvedSubDomains();
     const { data, error } = await supabase
       .from("mandates")
       .insert({
         client_name: form.client_name,
         role_title: form.role_title,
         category: form.category || null,
-        sub_domain: form.sub_domain || null,
-        city: form.city || null,
+        sub_domains: subDomains,
+        sub_domain: subDomains.join(", ") || null,
+        cities: form.cities,
+        city: form.cities[0] || null,
         budget_min: form.budget_min ? Number(form.budget_min) : null,
         budget_max: form.budget_max ? Number(form.budget_max) : null,
         experience_min: form.experience_min ? Number(form.experience_min) : null,
@@ -75,14 +151,18 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       client_name: "",
       role_title: "",
       category: "",
-      sub_domain: "",
-      city: "",
+      subDomains: [],
+      subDomainKeywords: "",
+      cities: [],
+      cityPick: "",
+      cityOther: "",
       budget_min: "",
       budget_max: "",
       experience_min: "",
       experience_max: "",
       hide_client: false,
       public_client_label: "",
+      jd_raw_notes: "",
       jd_overview: "",
       jd_responsibilities: "",
       jd_candidate_profile: "",
@@ -117,7 +197,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       />
       <select
         value={form.category}
-        onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+        onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subDomains: [] }))}
         className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
       >
         <option value="">Function / Domain...</option>
@@ -125,18 +205,109 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         <option value="b2c_sales">B2C Sales</option>
         <option value="non_sales">Non-Sales</option>
       </select>
-      <input
-        placeholder="Sub-domain"
-        value={form.sub_domain}
-        onChange={(e) => setForm((f) => ({ ...f, sub_domain: e.target.value }))}
-        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-      />
-      <input
-        placeholder="City"
-        value={form.city}
-        onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-        className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-      />
+
+      <div>
+        <p className="text-xs font-medium text-slate-600 mb-1.5">
+          Sub-domain{isMultiSubDomain ? " (select all this client would accept)" : ""}
+        </p>
+        {!form.category ? (
+          <p className="text-[12px] text-slate-400 rounded-lg border border-dashed border-slate-200 px-3 py-2">
+            Pick a Function / Domain above first.
+          </p>
+        ) : isMultiSubDomain ? (
+          <div className="grid gap-1.5 rounded-lg border border-slate-200 p-3">
+            {subDomainOptions.map((o) => (
+              <label key={o} className="flex items-center gap-2 text-[13px] text-slate-700">
+                <input type="checkbox" checked={form.subDomains.includes(o)} onChange={() => toggleSubDomain(o)} />
+                {o}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <select
+            value={form.subDomains[0] ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, subDomains: e.target.value ? [e.target.value] : [] }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {subDomainOptions.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        )}
+        <input
+          placeholder="Additional keywords (comma-separated, optional)"
+          value={form.subDomainKeywords}
+          onChange={(e) => setForm((f) => ({ ...f, subDomainKeywords: e.target.value }))}
+          className="w-full mt-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+        />
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-slate-600 mb-1.5">Location(s)</p>
+        {form.cities.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {form.cities.map((c) => (
+              <span
+                key={c}
+                className="flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 text-[12px] font-medium px-2.5 py-1"
+              >
+                {c}
+                <button type="button" onClick={() => removeCity(c)} className="text-slate-400 hover:text-slate-700">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <select
+            value={form.cityPick}
+            onChange={(e) => setForm((f) => ({ ...f, cityPick: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select city...</option>
+            {cityOptions
+              .filter((c) => c !== "Other")
+              .map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => {
+              addCity(form.cityPick);
+              setForm((f) => ({ ...f, cityPick: "" }));
+            }}
+            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-medium px-3"
+          >
+            Add
+          </button>
+        </div>
+        <div className="flex gap-2 mt-1.5">
+          <input
+            placeholder="Other location (manual entry)"
+            value={form.cityOther}
+            onChange={(e) => setForm((f) => ({ ...f, cityOther: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              addCity(form.cityOther);
+              setForm((f) => ({ ...f, cityOther: "" }));
+            }}
+            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-medium px-3"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
       <div className="flex gap-2">
         <input
           type="number"
@@ -172,6 +343,27 @@ export default function CreateMandateForm({ existingClients }: { existingClients
 
       <div>
         <p className="text-xs font-medium text-slate-600 mb-2">Job description (shown to candidates on the public listing)</p>
+
+        <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-3 mb-2">
+          <p className="text-[11px] font-medium text-blue-700 mb-1.5">Paste rough notes and let AI structure it</p>
+          <textarea
+            placeholder="Paste a rough JD, bullet notes, or a client email -- AI will turn it into a clean Overview / Key Responsibilities / Candidate Profile / Compensation & Benefits format below."
+            value={form.jd_raw_notes}
+            onChange={(e) => setForm((f) => ({ ...f, jd_raw_notes: e.target.value }))}
+            rows={4}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y bg-white"
+          />
+          <button
+            type="button"
+            onClick={handleGenerateJd}
+            disabled={generatingJd || !form.jd_raw_notes.trim()}
+            className="mt-2 flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> {generatingJd ? "Generating..." : "Generate with AI"}
+          </button>
+          {jdError && <p className="text-[11px] text-red-600 mt-1.5">{jdError}</p>}
+        </div>
+
         <div className="space-y-2">
           <textarea
             placeholder="Overview (1-2 sentence intro to the role/company)"
