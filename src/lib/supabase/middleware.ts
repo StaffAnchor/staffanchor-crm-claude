@@ -32,9 +32,17 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/forgot-password") ||
     request.nextUrl.pathname.startsWith("/reset-password") ||
     request.nextUrl.pathname.startsWith("/auth/callback");
+  const isPublicApiRoute =
+    // Authorizes itself (shortlist token or client bearer JWT) rather than
+    // relying on a staff cookie session -- called from the no-login
+    // shortlist link and cross-origin from the client portal, neither of
+    // which has a staff auth cookie to redirect-on-missing in the first
+    // place.
+    request.nextUrl.pathname.startsWith("/api/public-ai-summary");
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||
+    isPublicApiRoute ||
     request.nextUrl.pathname.startsWith("/shortlist");
 
   if (!user && !isPublicRoute) {
