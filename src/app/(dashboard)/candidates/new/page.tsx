@@ -64,6 +64,7 @@ export default function NewCandidatePage() {
     if (!form.current_industry) return "Current industry is required.";
     if (!form.role_type) return "IC / Team Lead is required.";
     if (form.role_type === "Leading a Team" && !form.team_size) return "Team size is required.";
+    if (!resumeFile) return "Resume is required.";
     return null;
   }
 
@@ -311,7 +312,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">When can they join? *</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Days to join *</label>
           <select
             required
             value={form.notice_period}
@@ -422,7 +423,7 @@ export default function NewCandidatePage() {
         )}
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Resume</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Resume *</label>
           {resumeFile ? (
             <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2">
               <div className="flex items-center gap-2 min-w-0">
