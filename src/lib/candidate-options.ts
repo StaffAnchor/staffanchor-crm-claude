@@ -88,6 +88,36 @@ export const ctcOptions: { value: number; label: string }[] = [
   { value: 121, label: "120L+" },
 ];
 
+export const experienceOptions: { value: number; label: string }[] = [
+  { value: 0, label: "Fresher" },
+  ...Array.from({ length: 40 }, (_, i) => {
+    const years = i + 1;
+    return { value: years, label: years === 1 ? "1 year" : `${years} years` };
+  }),
+  { value: 41, label: "40+ years" },
+];
+
+export const noticePeriodOptions = ["Immediate", "15 days", "30 days", "60 days", "90 days"];
+
+export const employmentStatusOptions = [
+  "Employed",
+  "Serving Notice",
+  "Self-Employed",
+  "Entrepreneur / Founder",
+  "Freelancing / Consulting",
+  "Career Break / Sabbatical",
+  "Between Jobs",
+  "First Job Seeker",
+];
+
+export const roleTypeOptions = ["Individual Contributor (IC)", "Leading a Team"] as const;
+
+export const teamSizeOptions = [
+  "1-5", "6-10", "11-20", "21-30", "31-40", "41-50",
+  "51-75", "76-100", "101-150", "151-200", "201-300",
+  "301-400", "401-500", "501-750", "751-1000", "1000+",
+];
+
 // Extensive industry taxonomy, matching the list used on the candidate-facing
 // forms (jobs.staffanchor.com Apply/profile-edit) for Current Industry /
 // Previous Industries, so recruiter-side filters line up with what

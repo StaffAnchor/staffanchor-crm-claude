@@ -4,7 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, FileText, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { cityOptions, cityStateMap, ctcOptions, subDomainsForCategory } from "@/lib/candidate-options";
+import {
+  cityOptions,
+  cityStateMap,
+  ctcOptions,
+  subDomainsForCategory,
+  experienceOptions,
+  noticePeriodOptions,
+  employmentStatusOptions,
+  industryOptions,
+  roleTypeOptions,
+  teamSizeOptions,
+} from "@/lib/candidate-options";
 
 export default function NewCandidatePage() {
   const router = useRouter();
@@ -19,6 +30,14 @@ export default function NewCandidatePage() {
     city: "",
     city_other: "",
     current_fixed_ctc: "",
+    total_experience_years: "",
+    notice_period: "",
+    current_job_title: "",
+    current_employer: "",
+    current_employment_status: "",
+    current_industry: "",
+    role_type: "",
+    team_size: "",
     recruiter_seed_note: "",
   });
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -27,9 +46,35 @@ export default function NewCandidatePage() {
 
   const subDomainOptions = subDomainsForCategory(form.category || null);
 
+  function validate(): string | null {
+    if (!form.full_name.trim()) return "Full name is required.";
+    if (!form.email.trim()) return "Email is required.";
+    if (!form.phone.trim()) return "Phone number is required.";
+    if (!form.city) return "Location is required.";
+    if (form.city === "Other" && !form.city_other.trim()) return "Please enter the city.";
+    if (!form.current_fixed_ctc) return "Current fixed CTC is required.";
+    if (!form.total_experience_years) return "Total experience is required.";
+    if (!form.notice_period) return "When they can join is required.";
+    if (!form.category) return "Category is required.";
+    if (!form.sub_domain) return "Sub-domain is required.";
+    if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the sub-domain.";
+    if (!form.current_job_title.trim()) return "Current job title is required.";
+    if (!form.current_employer.trim()) return "Current employer is required.";
+    if (!form.current_employment_status) return "Employment status is required.";
+    if (!form.current_industry) return "Current industry is required.";
+    if (!form.role_type) return "IC / Team Lead is required.";
+    if (form.role_type === "Leading a Team" && !form.team_size) return "Team size is required.";
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setSaving(true);
     const {
       data: { user },
@@ -59,6 +104,13 @@ export default function NewCandidatePage() {
           ? `${form.city}, ${cityStateMap[form.city]}`
           : null;
 
+    const segmentData: Record<string, unknown> = {
+      role_type: form.role_type === "Leading a Team" ? "Team Lead" : "IC",
+    };
+    if (form.role_type === "Leading a Team" && form.team_size) {
+      segmentData.team_size = form.team_size;
+    }
+
     const { data, error } = await supabase
       .from("candidates")
       .insert({
@@ -69,6 +121,14 @@ export default function NewCandidatePage() {
         sub_domain: resolvedSubDomain,
         current_location: resolvedLocation,
         current_fixed_ctc: form.current_fixed_ctc ? Number(form.current_fixed_ctc) : null,
+        total_experience_years: form.total_experience_years ? Number(form.total_experience_years) : null,
+        notice_period: form.notice_period || null,
+        current_job_title: form.current_job_title || null,
+        current_employer: form.current_employer || null,
+        current_employment_status: form.current_employment_status || null,
+        current_industry: form.current_industry || null,
+        industries: form.current_industry ? [form.current_industry] : [],
+        segment_data: segmentData,
         resume_file_url: resumeFileUrl,
         recruiter_seed_note: form.recruiter_seed_note || null,
         status: "awaiting_input",
@@ -107,8 +167,8 @@ export default function NewCandidatePage() {
     <div className="max-w-lg">
       <h1 className="text-lg font-semibold text-slate-900 mb-1">Create candidate</h1>
       <p className="text-sm text-slate-500 mb-6">
-        Seed as much as you already know — everything below name/email is optional. Deeper fields (quota,
-        deal size, self-assessment) still come from the candidate once you send a completion invite.
+        The fields below are mandatory for a recruiter-sourced profile. Deeper fields (quota, deal size,
+        self-assessment) still come from the candidate once you send a completion invite.
       </p>
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
         <div>
@@ -131,8 +191,9 @@ export default function NewCandidatePage() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Phone *</label>
           <input
+            required
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
@@ -140,8 +201,9 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Location</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Location *</label>
           <select
+            required
             value={form.city}
             onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
@@ -164,8 +226,9 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Best-guess category</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Category *</label>
           <select
+            required
             value={form.category}
             onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, sub_domain: "" }))}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
@@ -178,7 +241,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Best-guess domain</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Sub-domain *</label>
           {subDomainOptions.length > 0 ? (
             <>
               <select
@@ -214,8 +277,9 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Current fixed CTC</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Current fixed CTC *</label>
           <select
+            required
             value={form.current_fixed_ctc}
             onChange={(e) => setForm((f) => ({ ...f, current_fixed_ctc: e.target.value }))}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
@@ -228,6 +292,134 @@ export default function NewCandidatePage() {
             ))}
           </select>
         </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Total experience *</label>
+          <select
+            required
+            value={form.total_experience_years}
+            onChange={(e) => setForm((f) => ({ ...f, total_experience_years: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {experienceOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">When can they join? *</label>
+          <select
+            required
+            value={form.notice_period}
+            onChange={(e) => setForm((f) => ({ ...f, notice_period: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {noticePeriodOptions.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Current job title *</label>
+          <input
+            required
+            value={form.current_job_title}
+            onChange={(e) => setForm((f) => ({ ...f, current_job_title: e.target.value }))}
+            placeholder="e.g. Senior Account Executive"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Current employer *</label>
+          <input
+            required
+            value={form.current_employer}
+            onChange={(e) => setForm((f) => ({ ...f, current_employer: e.target.value }))}
+            placeholder="Company name"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Employment status *</label>
+          <select
+            required
+            value={form.current_employment_status}
+            onChange={(e) => setForm((f) => ({ ...f, current_employment_status: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {employmentStatusOptions.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Current industry *</label>
+          <select
+            required
+            value={form.current_industry}
+            onChange={(e) => setForm((f) => ({ ...f, current_industry: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {industryOptions.map((i) => (
+              <option key={i} value={i}>
+                {i}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">IC or leading a team? *</label>
+          <select
+            required
+            value={form.role_type}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, role_type: e.target.value, team_size: e.target.value === "Leading a Team" ? f.team_size : "" }))
+            }
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Select...</option>
+            {roleTypeOptions.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {form.role_type === "Leading a Team" && (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Team size *</label>
+            <select
+              required
+              value={form.team_size}
+              onChange={(e) => setForm((f) => ({ ...f, team_size: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            >
+              <option value="">Select...</option>
+              {teamSizeOptions.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Resume</label>

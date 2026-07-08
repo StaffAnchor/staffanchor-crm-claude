@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ResumePreview from "./[id]/resume-preview";
@@ -84,10 +84,11 @@ const CREATED_BY_LABEL: Record<string, string> = {
   recruiter_created: "Recruiter Added",
 };
 
-// Active = actively applying to a specific role right now (Quick Apply).
-// Passive = sitting in the general candidate pool -- built their own profile
-// or were sourced/seeded by a recruiter, not responding to a live opening.
-const CREATED_BY_ACTIVE = new Set(["quick_apply"]);
+const CREATED_BY_STYLE: Record<string, string> = {
+  quick_apply: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+  self_registration: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
+  recruiter_created: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
+};
 
 const CATEGORY_COLOR: Record<string, string> = {
   b2b_sales: "from-blue-400 to-blue-600",
@@ -163,6 +164,76 @@ function ResumeCell({ resumeFileUrl }: { resumeFileUrl: string | null }) {
   if (!loaded) return <span className="text-[11px] text-slate-400">Loading…</span>;
   if (!url) return <span className="text-[11px] text-red-500">Not found</span>;
   return <ResumePreview signedUrl={url} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
+}
+
+function PreviousIndustriesCell({
+  current,
+  industries,
+}: {
+  current: string | null;
+  industries: string[] | null;
+}) {
+  const [hover, setHover] = useState(false);
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const former = (industries ?? []).filter((i) => i !== current);
+
+  if (former.length === 0) return <span className="text-[11px] text-slate-300">—</span>;
+
+  const MAX_SHOWN = 2;
+  const shown = former.slice(0, MAX_SHOWN);
+  const overflow = former.length - shown.length;
+
+  function handleEnter() {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const estHeight = 44 + former.length * 22;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const showAbove = spaceAbove >= estHeight || spaceAbove > spaceBelow;
+    let left = rect.left;
+    const maxLeft = window.innerWidth - 272;
+    if (left > maxLeft) left = Math.max(12, maxLeft);
+    setPos({
+      left,
+      top: showAbove ? undefined : rect.bottom + 6,
+      bottom: showAbove ? window.innerHeight - rect.top + 6 : undefined,
+    });
+    setHover(true);
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      className="flex flex-wrap items-center gap-1 max-w-[180px] cursor-default"
+      onMouseEnter={handleEnter}
+      onMouseLeave={() => setHover(false)}
+    >
+      {shown.map((i) => (
+        <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+          {i}
+        </span>
+      ))}
+      {overflow > 0 && <span className="text-[10px] text-slate-400">+{overflow}</span>}
+      {hover && pos && (
+        <div
+          className="fixed z-[60] w-64 bg-white border border-slate-200 rounded-lg shadow-lg p-2.5"
+          style={{ left: pos.left, top: pos.top, bottom: pos.bottom }}
+        >
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+            All previous industries ({former.length})
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {former.map((i) => (
+              <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                {i}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function roleLevelFor(c: CandidateRow): string {
@@ -272,21 +343,15 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "origin",
     label: "Origin",
     render: (c) => {
-      const isActive = c.created_by ? CREATED_BY_ACTIVE.has(c.created_by) : false;
-      const label = c.created_by ? CREATED_BY_LABEL[c.created_by] ?? c.created_by : "—";
+      if (!c.created_by) return <span className="text-[11px] text-slate-300">—</span>;
       return (
-        <div>
-          <span
-            className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${
-              isActive
-                ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200"
-                : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
-            }`}
-          >
-            {isActive ? "Active · Applicant" : "Passive · Normal"}
-          </span>
-          <div className="text-[10px] text-slate-400 mt-0.5 whitespace-nowrap">{label}</div>
-        </div>
+        <span
+          className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${
+            CREATED_BY_STYLE[c.created_by] ?? "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
+          }`}
+        >
+          {CREATED_BY_LABEL[c.created_by] ?? c.created_by}
+        </span>
       );
     },
   },
@@ -305,27 +370,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "previous_industries",
     label: "Previous Industries",
-    render: (c) => {
-      const former = (c.industries ?? []).filter((i) => i !== c.current_industry);
-      if (former.length === 0) return <span className="text-[11px] text-slate-300">—</span>;
-      const MAX_SHOWN = 2;
-      const shown = former.slice(0, MAX_SHOWN);
-      const overflow = former.length - shown.length;
-      return (
-        <div className="flex flex-wrap items-center gap-1 max-w-[180px]">
-          {shown.map((i) => (
-            <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-              {i}
-            </span>
-          ))}
-          {overflow > 0 && (
-            <span className="text-[10px] text-slate-400" title={former.slice(MAX_SHOWN).join(", ")}>
-              +{overflow}
-            </span>
-          )}
-        </div>
-      );
-    },
+    render: (c) => <PreviousIndustriesCell current={c.current_industry} industries={c.industries} />,
   },
   {
     key: "sub_domain",

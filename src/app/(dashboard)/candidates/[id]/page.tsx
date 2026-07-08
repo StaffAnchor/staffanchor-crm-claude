@@ -12,6 +12,7 @@ import AiSummaryPanel from "./ai-summary-panel";
 import SendInviteButton from "./send-invite-button";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
+import EditProfileButton from "./edit-profile-button";
 
 const CATEGORY_COLOR: Record<string, string> = {
   b2b_sales: "from-blue-400 to-blue-600",
@@ -202,6 +203,7 @@ export default async function CandidateDetailPage({
           </div>
           <div className="flex items-start gap-2">
             {candidate.status === "awaiting_input" && <SendInviteButton candidateId={candidate.id} />}
+            <EditProfileButton candidate={candidate} />
             <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
             <DeleteCandidateButton candidateId={candidate.id} candidateName={candidate.full_name} />
           </div>

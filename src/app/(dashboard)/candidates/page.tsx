@@ -30,9 +30,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const ORIGIN_LABEL: Record<string, string> = {
-  quick_apply: "Quick Apply (Active)",
-  self_registration: "Job Portal — Build Profile (Passive)",
-  recruiter_created: "Recruiter Added (Passive)",
+  quick_apply: "Job Quick Apply",
+  self_registration: "Job Portal — Build Your Profile",
+  recruiter_created: "Recruiter Created",
 };
 
 const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
@@ -186,9 +186,9 @@ export default async function CandidatesPage({
     if (new Date(r.created_at) >= startOfToday) newToday += 1;
   });
   const totalCount = (allRows ?? []).length;
-  const activeCount = createdByCounts["quick_apply"] ?? 0;
-  const passiveCount =
-    (createdByCounts["self_registration"] ?? 0) + (createdByCounts["recruiter_created"] ?? 0);
+  const quickApplyCount = createdByCounts["quick_apply"] ?? 0;
+  const jobPortalCount = createdByCounts["self_registration"] ?? 0;
+  const recruiterAddedCount = createdByCounts["recruiter_created"] ?? 0;
   const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
   const funnelCounts: Record<string, number> = {
@@ -263,28 +263,43 @@ export default async function CandidatesPage({
         })}
       </div>
 
-      <div className="grid grid-cols-3 gap-2.5 mb-3">
+      <div className="grid grid-cols-4 gap-2.5 mb-3">
         <Link
           href={qs({ origin: "quick_apply" })}
-          className="flex items-center gap-2.5 bg-white border-l-[3px] border-orange-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
+          className="flex items-center gap-2.5 bg-white border-l-[3px] border-blue-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
         >
           <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-orange-500" strokeWidth={2} />
+            <Zap className="w-4 h-4 text-blue-500" strokeWidth={2} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{activeCount}</p>
-            <p className="text-[11px] text-slate-500 truncate">Active — Applicants (Quick Apply)</p>
+            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{quickApplyCount}</p>
+            <p className="text-[11px] text-slate-500 truncate">Job Quick Apply</p>
           </div>
         </Link>
-        <div className="flex items-center gap-2.5 bg-white border-l-[3px] border-slate-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm">
+        <Link
+          href={qs({ origin: "self_registration" })}
+          className="flex items-center gap-2.5 bg-white border-l-[3px] border-indigo-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
+        >
           <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-            <Database className="w-4 h-4 text-slate-500" strokeWidth={2} />
+            <Database className="w-4 h-4 text-indigo-500" strokeWidth={2} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{passiveCount}</p>
-            <p className="text-[11px] text-slate-500 truncate">Passive — Normal pool (Job Portal + Recruiter Added)</p>
+            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{jobPortalCount}</p>
+            <p className="text-[11px] text-slate-500 truncate">Job Portal — Build Your Profile</p>
           </div>
-        </div>
+        </Link>
+        <Link
+          href={qs({ origin: "recruiter_created" })}
+          className="flex items-center gap-2.5 bg-white border-l-[3px] border-violet-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
+        >
+          <div className="shrink-0 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+            <Users className="w-4 h-4 text-violet-500" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-semibold text-slate-900 tabular-nums leading-tight">{recruiterAddedCount}</p>
+            <p className="text-[11px] text-slate-500 truncate">Recruiter Created</p>
+          </div>
+        </Link>
         <Link
           href={qs({ incomplete: "1" })}
           className="flex items-center gap-2.5 bg-white border-l-[3px] border-amber-300 border-y border-r border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
