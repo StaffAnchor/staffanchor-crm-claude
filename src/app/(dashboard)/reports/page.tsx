@@ -1,5 +1,16 @@
 import Link from "next/link";
-import { BarChart3, MapPin, Wallet, Layers, Users2, TrendingUp } from "lucide-react";
+import {
+  BarChart3,
+  MapPin,
+  Wallet,
+  Layers,
+  Users2,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Trophy,
+  Sparkles,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ReportBarList, { type BarItem } from "./report-bar-list";
 import InflowTrend, { type InflowPoint } from "./inflow-trend";
@@ -37,6 +48,15 @@ function fyBounds(today: Date) {
   return { start: new Date(year, 3, 1), end: new Date(year + 1, 2, 31), label: `FY${year}-${String(year + 1).slice(-2)}` };
 }
 
+function pctOf(count: number, total: number) {
+  if (total <= 0) return 0;
+  return Math.round((count / total) * 100);
+}
+
+function withPct(items: BarItem[], total: number): BarItem[] {
+  return items.map((item) => ({ ...item, pct: pctOf(item.count, total) }));
+}
+
 export default async function ReportsPage({
   searchParams,
 }: {
@@ -51,6 +71,7 @@ export default async function ReportsPage({
     .select("id, category, sub_domain, secondary_sub_domains, current_fixed_ctc, current_location, created_at");
 
   const rows = candidates ?? [];
+  const totalCandidates = rows.length;
 
   const { data: links } = await supabase
     .from("candidate_mandate_links")
@@ -68,14 +89,17 @@ export default async function ReportsPage({
     if (!c.sub_domain) return;
     bySubDomain[c.sub_domain] = (bySubDomain[c.sub_domain] ?? 0) + 1;
   });
-  const primaryDomainItems: BarItem[] = Object.entries(bySubDomain)
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, count]) => ({
-      key: label,
-      label,
-      count,
-      href: `/candidates?sub_domain=${encodeURIComponent(label)}`,
-    }));
+  const primaryDomainItems: BarItem[] = withPct(
+    Object.entries(bySubDomain)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, count]) => ({
+        key: label,
+        label,
+        count,
+        href: `/candidates?sub_domain=${encodeURIComponent(label)}`,
+      })),
+    totalCandidates
+  );
 
   // ---- Category / segment ----
   const byCategory: Record<string, number> = {};
@@ -83,14 +107,17 @@ export default async function ReportsPage({
     if (!c.category) return;
     byCategory[c.category] = (byCategory[c.category] ?? 0) + 1;
   });
-  const categoryItems: BarItem[] = Object.entries(byCategory)
-    .sort((a, b) => b[1] - a[1])
-    .map(([key, count]) => ({
-      key,
-      label: CATEGORY_LABELS[key] ?? key,
-      count,
-      href: `/candidates?category=${encodeURIComponent(key)}`,
-    }));
+  const categoryItems: BarItem[] = withPct(
+    Object.entries(byCategory)
+      .sort((a, b) => b[1] - a[1])
+      .map(([key, count]) => ({
+        key,
+        label: CATEGORY_LABELS[key] ?? key,
+        count,
+        href: `/candidates?category=${encodeURIComponent(key)}`,
+      })),
+    totalCandidates
+  );
 
   // ---- Secondary domain (array, non-exclusive tags) ----
   const bySecondary: Record<string, number> = {};
@@ -99,28 +126,34 @@ export default async function ReportsPage({
       bySecondary[tag] = (bySecondary[tag] ?? 0) + 1;
     });
   });
-  const secondaryDomainItems: BarItem[] = Object.entries(bySecondary)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([label, count]) => ({
-      key: label,
-      label,
-      count,
-      href: `/candidates?secondary_domain=${encodeURIComponent(label)}`,
-    }));
+  const secondaryDomainItems: BarItem[] = withPct(
+    Object.entries(bySecondary)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([label, count]) => ({
+        key: label,
+        label,
+        count,
+        href: `/candidates?secondary_domain=${encodeURIComponent(label)}`,
+      })),
+    totalCandidates
+  );
 
   // ---- CTC band ----
-  const ctcItems: BarItem[] = CTC_BANDS.map((band) => {
-    const count = rows.filter(
-      (c) => c.current_fixed_ctc != null && c.current_fixed_ctc >= band.min && c.current_fixed_ctc < band.max
-    ).length;
-    return {
-      key: band.label,
-      label: band.label,
-      count,
-      href: `/candidates?min_ctc=${band.min}${band.max === Infinity ? "" : `&max_ctc=${band.max}`}`,
-    };
-  });
+  const ctcItems: BarItem[] = withPct(
+    CTC_BANDS.map((band) => {
+      const count = rows.filter(
+        (c) => c.current_fixed_ctc != null && c.current_fixed_ctc >= band.min && c.current_fixed_ctc < band.max
+      ).length;
+      return {
+        key: band.label,
+        label: band.label,
+        count,
+        href: `/candidates?min_ctc=${band.min}${band.max === Infinity ? "" : `&max_ctc=${band.max}`}`,
+      };
+    }),
+    totalCandidates
+  );
 
   // ---- Location (top cities) ----
   const byCity: Record<string, number> = {};
@@ -133,20 +166,22 @@ export default async function ReportsPage({
   const sortedCities = Object.entries(byCity).sort((a, b) => b[1] - a[1]);
   const topCities = sortedCities.slice(0, 8);
   const otherCitiesCount = sortedCities.slice(8).reduce((sum, [, c]) => sum + c, 0);
-  const locationItems: BarItem[] = topCities.map(([label, count]) => ({
+  const locationItemsRaw: BarItem[] = topCities.map(([label, count]) => ({
     key: label,
     label,
     count,
     href: `/candidates?location=${encodeURIComponent(label)}`,
   }));
   if (otherCitiesCount > 0) {
-    locationItems.push({ key: "__other", label: "Other cities", count: otherCitiesCount, href: "/candidates" });
+    locationItemsRaw.push({ key: "__other", label: "Other cities", count: otherCitiesCount, href: "/candidates" });
   }
+  const locationItems = withPct(locationItemsRaw, totalCandidates);
 
-  // ---- Inflow trend ----
+  // ---- Inflow trend (+ prior-period comparison where meaningful) ----
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   let inflowPoints: InflowPoint[] = [];
+  let priorPeriodCount: number | null = null;
 
   if (range === "month" || range === "fy") {
     if (range === "month") {
@@ -158,6 +193,18 @@ export default async function ReportsPage({
         const count = rows.filter((c) => c.created_at.slice(0, 10) === ds).length;
         return { key: ds, label: String(i + 1), count, href: `/candidates?from=${ds}&to=${ds}` };
       });
+      const prevMonthEnd = new Date(monthStart);
+      prevMonthEnd.setDate(0);
+      const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1);
+      const daysSoFar = Math.min(today.getDate(), daysInMonth);
+      const prevFrom = toDateStr(prevMonthStart);
+      const prevToDate = new Date(prevMonthStart);
+      prevToDate.setDate(Math.min(daysSoFar, prevMonthEnd.getDate()) - 1 + 1);
+      const prevTo = toDateStr(new Date(prevMonthStart.getFullYear(), prevMonthStart.getMonth(), Math.min(daysSoFar, prevMonthEnd.getDate())));
+      priorPeriodCount = rows.filter((c) => {
+        const cd = c.created_at.slice(0, 10);
+        return cd >= prevFrom && cd <= prevTo;
+      }).length;
     } else {
       const { start } = fyBounds(today);
       inflowPoints = Array.from({ length: 12 }, (_, i) => {
@@ -176,6 +223,14 @@ export default async function ReportsPage({
           href: `/candidates?from=${from}&to=${to}`,
         };
       });
+      const prevStart = new Date(start.getFullYear() - 1, start.getMonth(), 1);
+      const prevEnd = new Date(prevStart.getFullYear() + 1, prevStart.getMonth(), 0);
+      const prevFrom = toDateStr(prevStart);
+      const prevTo = toDateStr(prevEnd);
+      priorPeriodCount = rows.filter((c) => {
+        const cd = c.created_at.slice(0, 10);
+        return cd >= prevFrom && cd <= prevTo;
+      }).length;
     }
   } else {
     const days = Number(range) || 30;
@@ -191,10 +246,27 @@ export default async function ReportsPage({
         href: `/candidates?from=${ds}&to=${ds}`,
       };
     });
+    const prevEnd = new Date(today);
+    prevEnd.setDate(prevEnd.getDate() - days);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevStart.getDate() - (days - 1));
+    const prevFrom = toDateStr(prevStart);
+    const prevTo = toDateStr(prevEnd);
+    priorPeriodCount = rows.filter((c) => {
+      const cd = c.created_at.slice(0, 10);
+      return cd >= prevFrom && cd <= prevTo;
+    }).length;
   }
 
   const inflowTotal = inflowPoints.reduce((sum, p) => sum + p.count, 0);
   const currentRangeLabel = RANGES.find((r) => r.key === range)?.label ?? "Last 30 days";
+
+  let inflowDeltaPct: number | null = null;
+  if (priorPeriodCount !== null) {
+    if (priorPeriodCount === 0 && inflowTotal === 0) inflowDeltaPct = 0;
+    else if (priorPeriodCount === 0) inflowDeltaPct = 100;
+    else inflowDeltaPct = Math.round(((inflowTotal - priorPeriodCount) / priorPeriodCount) * 100);
+  }
 
   // ---- Recruiter productivity ----
   const linkedByRecruiter: Record<string, Set<string>> = {};
@@ -206,13 +278,23 @@ export default async function ReportsPage({
   });
   const recruiterIds = Array.from(new Set([...Object.keys(linkedByRecruiter), ...Object.keys(placedByRecruiter)]));
   const recruiterRows = recruiterIds
-    .map((id) => ({
-      id,
-      name: profileNames[id] ?? "Unknown recruiter",
-      linked: linkedByRecruiter[id]?.size ?? 0,
-      placed: placedByRecruiter[id]?.size ?? 0,
-    }))
-    .sort((a, b) => b.placed - a.placed || b.linked - a.linked);
+    .map((id) => {
+      const linked = linkedByRecruiter[id]?.size ?? 0;
+      const placed = placedByRecruiter[id]?.size ?? 0;
+      return {
+        id,
+        name: profileNames[id] ?? "Unknown recruiter",
+        linked,
+        placed,
+        conversion: linked > 0 ? Math.round((placed / linked) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.placed - a.placed || b.conversion - a.conversion || b.linked - a.linked);
+
+  const totalPlaced = recruiterRows.reduce((sum, r) => sum + r.placed, 0);
+  const topRecruiter = recruiterRows[0];
+  const topDomain = primaryDomainItems[0];
+  const topCategory = categoryItems[0];
 
   return (
     <div>
@@ -226,21 +308,108 @@ export default async function ReportsPage({
         </div>
       </div>
 
+      {/* Headline KPI strip */}
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">Total candidates</p>
+          <p className="text-[22px] font-semibold text-slate-900 tabular-nums leading-none">{totalCandidates}</p>
+          <p className="text-[11px] text-slate-400 mt-1.5">in the system</p>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">
+            New · {currentRangeLabel.toLowerCase()}
+          </p>
+          <p className="text-[22px] font-semibold text-slate-900 tabular-nums leading-none">{inflowTotal}</p>
+          {inflowDeltaPct !== null ? (
+            <p
+              className={`text-[11px] mt-1.5 flex items-center gap-1 font-medium ${
+                inflowDeltaPct > 0 ? "text-emerald-600" : inflowDeltaPct < 0 ? "text-rose-500" : "text-slate-400"
+              }`}
+            >
+              {inflowDeltaPct > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : inflowDeltaPct < 0 ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : (
+                <Minus className="w-3 h-3" />
+              )}
+              {inflowDeltaPct > 0 ? "+" : ""}
+              {inflowDeltaPct}% vs prior period
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-400 mt-1.5">&nbsp;</p>
+          )}
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">Leading domain</p>
+          {topDomain ? (
+            <>
+              <p className="text-[15px] font-semibold text-slate-900 leading-tight truncate">{topDomain.label}</p>
+              <p className="text-[11px] text-slate-500 mt-1.5">
+                {topDomain.count} candidates · {topDomain.pct}% of total
+              </p>
+            </>
+          ) : (
+            <p className="text-[13px] text-slate-400">No data yet.</p>
+          )}
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">Top recruiter</p>
+          {topRecruiter && topRecruiter.placed > 0 ? (
+            <>
+              <p className="text-[15px] font-semibold text-slate-900 leading-tight truncate flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                {topRecruiter.name}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-1.5">
+                {topRecruiter.placed} placed
+                {totalPlaced > 0 ? ` · ${pctOf(topRecruiter.placed, totalPlaced)}% of all placements` : ""}
+              </p>
+            </>
+          ) : (
+            <p className="text-[13px] text-slate-400">No placements yet.</p>
+          )}
+        </div>
+      </div>
+
+      {topCategory && topCategory.count > 0 && (
+        <div className="flex items-center gap-2 text-[12.5px] text-slate-600 bg-indigo-50/70 border border-indigo-100 rounded-lg px-3.5 py-2 mb-4">
+          <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+          <span>
+            <span className="font-semibold text-slate-900">{topCategory.label}</span> makes up{" "}
+            <span className="font-semibold text-slate-900">{topCategory.pct}%</span> of the candidate pool
+            {topDomain ? (
+              <>
+                {" "}
+                — the largest single domain is <span className="font-semibold text-slate-900">{topDomain.label}</span> at{" "}
+                <span className="font-semibold text-slate-900">{topDomain.pct}%</span>
+              </>
+            ) : null}
+            .
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Layers className="w-4 h-4 text-blue-500" />
             <h2 className="text-sm font-semibold text-slate-900">Primary domain</h2>
+            <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
-          <ReportBarList items={primaryDomainItems} colorClass="bg-blue-500/80" />
+          <ReportBarList items={primaryDomainItems} colorClass="bg-blue-500/80" highlightTop />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-4 h-4 text-violet-500" />
             <h2 className="text-sm font-semibold text-slate-900">Segment</h2>
+            <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
-          <ReportBarList items={categoryItems} colorClass="bg-violet-500/80" />
+          <ReportBarList items={categoryItems} colorClass="bg-violet-500/80" highlightTop />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
@@ -256,17 +425,19 @@ export default async function ReportsPage({
           <div className="flex items-center gap-2 mb-4">
             <Wallet className="w-4 h-4 text-emerald-500" />
             <h2 className="text-sm font-semibold text-slate-900">Current fixed CTC</h2>
+            <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
-          <ReportBarList items={ctcItems} colorClass="bg-emerald-500/80" />
+          <ReportBarList items={ctcItems} colorClass="bg-emerald-500/80" highlightTop />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm col-span-2">
           <div className="flex items-center gap-2 mb-4">
             <MapPin className="w-4 h-4 text-amber-500" />
             <h2 className="text-sm font-semibold text-slate-900">Location</h2>
+            <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
           <div className="grid grid-cols-2 gap-x-8">
-            <ReportBarList items={locationItems.slice(0, Math.ceil(locationItems.length / 2))} colorClass="bg-amber-500/80" />
+            <ReportBarList items={locationItems.slice(0, Math.ceil(locationItems.length / 2))} colorClass="bg-amber-500/80" highlightTop />
             <ReportBarList items={locationItems.slice(Math.ceil(locationItems.length / 2))} colorClass="bg-amber-500/80" />
           </div>
         </div>
@@ -280,6 +451,23 @@ export default async function ReportsPage({
             <span className="text-[11px] text-slate-400">
               {inflowTotal} registered · {currentRangeLabel}
             </span>
+            {inflowDeltaPct !== null && (
+              <span
+                className={`text-[11px] font-medium flex items-center gap-0.5 ${
+                  inflowDeltaPct > 0 ? "text-emerald-600" : inflowDeltaPct < 0 ? "text-rose-500" : "text-slate-400"
+                }`}
+              >
+                {inflowDeltaPct > 0 ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : inflowDeltaPct < 0 ? (
+                  <TrendingDown className="w-3 h-3" />
+                ) : (
+                  <Minus className="w-3 h-3" />
+                )}
+                {inflowDeltaPct > 0 ? "+" : ""}
+                {inflowDeltaPct}% vs prior period
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {RANGES.map((r) => (
@@ -302,6 +490,9 @@ export default async function ReportsPage({
         <div className="flex items-center gap-2 mb-4">
           <Users2 className="w-4 h-4 text-rose-500" />
           <h2 className="text-sm font-semibold text-slate-900">Recruiter productivity</h2>
+          {totalPlaced > 0 && (
+            <span className="text-[10.5px] text-slate-400 ml-auto">{totalPlaced} total placements</span>
+          )}
         </div>
         {recruiterRows.length === 0 ? (
           <p className="text-[13px] text-slate-400">
@@ -309,9 +500,12 @@ export default async function ReportsPage({
           </p>
         ) : (
           <div className="divide-y divide-slate-100">
-            {recruiterRows.map((r) => (
+            {recruiterRows.map((r, idx) => (
               <div key={r.id} className="flex items-center justify-between py-2.5">
-                <p className="text-[13px] font-medium text-slate-900">{r.name}</p>
+                <p className="text-[13px] font-medium text-slate-900 flex items-center gap-1.5">
+                  {idx === 0 && r.placed > 0 && <Trophy className="w-3.5 h-3.5 text-amber-500" />}
+                  {r.name}
+                </p>
                 <div className="flex items-center gap-4">
                   <Link
                     href={`/candidates?recruiter=${r.id}`}
@@ -325,6 +519,9 @@ export default async function ReportsPage({
                   >
                     <span className="font-semibold tabular-nums">{r.placed}</span> placed
                   </Link>
+                  <span className="text-[12px] text-slate-400 w-[70px] text-right tabular-nums">
+                    {r.linked > 0 ? `${r.conversion}% conv.` : "—"}
+                  </span>
                 </div>
               </div>
             ))}
