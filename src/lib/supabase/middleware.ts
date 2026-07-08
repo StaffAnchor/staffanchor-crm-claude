@@ -38,7 +38,11 @@ export async function updateSession(request: NextRequest) {
     // shortlist link and cross-origin from the client portal, neither of
     // which has a staff auth cookie to redirect-on-missing in the first
     // place.
-    request.nextUrl.pathname.startsWith("/api/public-ai-summary");
+    request.nextUrl.pathname.startsWith("/api/public-ai-summary") ||
+    // Vercel Cron hits this on a schedule with a CRON_SECRET bearer token,
+    // never a staff cookie -- same class of bug as public-ai-summary above,
+    // caught this time before it shipped rather than after a user hit it.
+    request.nextUrl.pathname.startsWith("/api/cron/");
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||
