@@ -5,6 +5,9 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ResumePreview from "./[id]/resume-preview";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   ArrowUpRight,
   Settings2,
@@ -64,18 +67,22 @@ const STATUS_LABEL: Record<string, string> = {
   inactive: "Inactive",
 };
 
-const STATUS_STYLE: Record<string, string> = {
-  awaiting_input: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  lead: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
-  registered: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-  under_review: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
-  shortlisted: "bg-teal-50 text-teal-700 ring-1 ring-teal-200",
-  submitted: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
-  client_interview: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
-  offer: "bg-lime-50 text-lime-700 ring-1 ring-lime-200",
-  placed: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-  alumni: "bg-slate-100 text-slate-500 ring-1 ring-slate-200",
-  inactive: "bg-red-50 text-red-600 ring-1 ring-red-200",
+// ROS Phase 3: statuses now map onto the shared 6-tone Badge system
+// instead of 11 bespoke one-off colors -- consolidates the palette per
+// the brief's "avoid too many colors" guidance while keeping open vs.
+// closed vs. at-risk states visually distinct.
+const STATUS_TONE: Record<string, BadgeTone> = {
+  awaiting_input: "warning",
+  lead: "neutral",
+  registered: "info",
+  under_review: "accent",
+  shortlisted: "success",
+  submitted: "accent",
+  client_interview: "info",
+  offer: "success",
+  placed: "success",
+  alumni: "neutral",
+  inactive: "danger",
 };
 
 const CREATED_BY_LABEL: Record<string, string> = {
@@ -84,10 +91,10 @@ const CREATED_BY_LABEL: Record<string, string> = {
   recruiter_created: "Recruiter Added",
 };
 
-const CREATED_BY_STYLE: Record<string, string> = {
-  quick_apply: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-  self_registration: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
-  recruiter_created: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
+const CREATED_BY_TONE: Record<string, BadgeTone> = {
+  quick_apply: "accent",
+  self_registration: "info",
+  recruiter_created: "neutral",
 };
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -102,10 +109,10 @@ const CATEGORY_LABEL: Record<string, string> = {
   non_sales: "Non-Sales",
 };
 
-const RECOMMENDATION_STYLE: Record<string, string> = {
-  "Strong Fit": "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-  "Fit with Reservations": "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  "Not a Fit": "bg-red-50 text-red-600 ring-1 ring-red-200",
+const RECOMMENDATION_TONE: Record<string, BadgeTone> = {
+  "Strong Fit": "success",
+  "Fit with Reservations": "warning",
+  "Not a Fit": "danger",
 };
 
 function initialsFor(name: string) {
@@ -324,9 +331,9 @@ const COLUMN_DEFS: ColumnDef[] = [
       const rec = (c.recruiter_assessment?.["overall_recommendation"] as string | undefined) ?? undefined;
       if (!rec) return <span className="text-[11px] text-slate-400">Not assessed</span>;
       return (
-        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${RECOMMENDATION_STYLE[rec] ?? "bg-slate-100 text-slate-600"}`}>
+        <Badge tone={RECOMMENDATION_TONE[rec] ?? "neutral"} size="sm" className="normal-case tracking-normal">
           {rec}
-        </span>
+        </Badge>
       );
     },
   },
@@ -334,9 +341,9 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "status",
     label: "Status",
     render: (c) => (
-      <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${STATUS_STYLE[c.status] ?? "bg-slate-100 text-slate-700"}`}>
+      <Badge tone={STATUS_TONE[c.status] ?? "neutral"} size="sm" className="normal-case tracking-normal">
         {STATUS_LABEL[c.status] ?? c.status}
-      </span>
+      </Badge>
     ),
   },
   {
@@ -345,13 +352,9 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (c) => {
       if (!c.created_by) return <span className="text-[11px] text-slate-300">—</span>;
       return (
-        <span
-          className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${
-            CREATED_BY_STYLE[c.created_by] ?? "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
-          }`}
-        >
+        <Badge tone={CREATED_BY_TONE[c.created_by] ?? "neutral"} size="sm" className="normal-case tracking-normal">
           {CREATED_BY_LABEL[c.created_by] ?? c.created_by}
-        </span>
+        </Badge>
       );
     },
   },
@@ -360,9 +363,9 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Current Industry",
     render: (c) =>
       c.current_industry ? (
-        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+        <Badge tone="success" size="sm" className="normal-case tracking-normal">
           {c.current_industry}
-        </span>
+        </Badge>
       ) : (
         <span className="text-[11px] text-slate-300">—</span>
       ),
@@ -718,7 +721,7 @@ export default function CandidatesTable({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-visible shadow-sm">
+    <div className="bg-white border border-slate-200 rounded-ros-lg overflow-visible shadow-ros-sm">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 relative">
         <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
           {candidates.length} candidate{candidates.length === 1 ? "" : "s"}
@@ -804,29 +807,35 @@ export default function CandidatesTable({
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-blue-50 border-b border-blue-100">
           <p className="text-[12px] font-semibold text-blue-800">{selected.size} selected</p>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleBulkInvite}
             disabled={bulkBusy}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg px-2.5 py-1.5 disabled:opacity-50"
+            icon={bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <SendIcon className="w-3.5 h-3.5" />}
           >
-            {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <SendIcon className="w-3.5 h-3.5" />}
             Send profile completion emails
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setMapModalOpen(true)}
             disabled={bulkBusy || openMandates.length === 0}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg px-2.5 py-1.5 disabled:opacity-50"
+            icon={<Link2 className="w-3.5 h-3.5" />}
             title={openMandates.length === 0 ? "No open mandates" : undefined}
           >
-            <Link2 className="w-3.5 h-3.5" /> Map with a mandate
-          </button>
-          <button
+            Map with a mandate
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
             onClick={handleBulkDelete}
             disabled={bulkBusy}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 rounded-lg px-2.5 py-1.5 disabled:opacity-50"
+            icon={<Trash2 className="w-3.5 h-3.5" />}
+            className="!bg-white !text-red-600 ring-1 ring-red-200 hover:!bg-red-50"
           >
-            <Trash2 className="w-3.5 h-3.5" /> Delete
-          </button>
+            Delete
+          </Button>
           <button onClick={clearSelection} className="text-[12px] text-slate-500 hover:text-slate-800 ml-auto">
             Clear selection
           </button>
@@ -975,12 +984,15 @@ export default function CandidatesTable({
       </div>
 
       {candidates.length === 0 && (
-        <div className="py-16 text-center">
-          <p className="text-sm text-slate-500">No candidates match these filters.</p>
-          <Link href="/candidates" className="text-[13px] text-blue-600 hover:underline mt-1 inline-block">
-            Clear filters
-          </Link>
-        </div>
+        <EmptyState
+          className="border-0 shadow-none py-16"
+          title="No candidates match these filters"
+          action={
+            <Link href="/candidates" className="text-[13px] text-blue-600 hover:underline">
+              Clear filters
+            </Link>
+          }
+        />
       )}
 
       {summaryTooltip && (

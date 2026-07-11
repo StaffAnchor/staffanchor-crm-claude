@@ -280,7 +280,7 @@ export default async function CandidatesPage({
         })}
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-3 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-ros-lg px-4 py-3 mb-3 shadow-ros-sm">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
             Hiring pipeline
@@ -320,7 +320,7 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      <form className="bg-white border border-slate-200 rounded-xl p-3 mb-3 shadow-sm">
+      <form className="bg-white border border-slate-200 rounded-ros-lg p-3 mb-3 shadow-ros-sm">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <input
             name="q"
