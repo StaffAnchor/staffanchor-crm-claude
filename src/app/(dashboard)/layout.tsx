@@ -28,6 +28,7 @@ export default async function DashboardLayout({
     .toUpperCase();
 
   const navLinks = [
+    { href: "/inbox", label: "🔥 Priority Actions", enabled: true },
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
