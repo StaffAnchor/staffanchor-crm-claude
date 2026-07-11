@@ -27,9 +27,6 @@ export default async function MandatesPage({
 
   const { data: mandates } = await query;
 
-  const { data: clientRows } = await supabase.from("mandates").select("client_name").not("client_name", "is", null);
-  const existingClients = Array.from(new Set((clientRows ?? []).map((r) => r.client_name).filter(Boolean))).sort();
-
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select("mandate_id, stage, in_shortlist, shortlisted_at, client_feedback");
@@ -51,10 +48,15 @@ export default async function MandatesPage({
     }
   });
 
-  // Also fetch the unfiltered set of mandates so the stat tiles above the
-  // list always reflect the whole board, not just whatever status filter
-  // is currently applied.
-  const { data: allMandates } = await supabase.from("mandates").select("id, status, created_at");
+  // Single unfiltered scan of the mandates table covering both the stat
+  // tiles (which need every mandate regardless of the status filter
+  // currently applied) and the "existing clients" autocomplete list for
+  // the New Mandate form -- these used to be two separate full-table
+  // round trips even though they're reading the same rows.
+  const { data: allMandates } = await supabase.from("mandates").select("id, client_name, status, created_at");
+  const existingClients = Array.from(
+    new Set((allMandates ?? []).map((r) => r.client_name).filter(Boolean))
+  ).sort();
   const statusCounts: Record<string, number> = {};
   let agingCount = 0;
   (allMandates ?? []).forEach((m) => {

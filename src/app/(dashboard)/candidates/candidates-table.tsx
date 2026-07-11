@@ -49,6 +49,10 @@ export type CandidateRow = {
   recruiter_assessment: Record<string, unknown> | null;
   segment_data: Record<string, unknown> | null;
   resume_file_url: string | null;
+  // Pre-computed server-side (candidates/page.tsx batches every visible
+  // row's resume into one createSignedUrls call) so this row never needs
+  // its own client-side Storage round trip -- see ResumeCell below.
+  resume_signed_url: string | null;
   ai_summary: string | null;
   created_at: string;
 };
@@ -138,33 +142,15 @@ function ScoreCell({ value }: { value: number | undefined }) {
   );
 }
 
-function ResumeCell({ resumeFileUrl }: { resumeFileUrl: string | null }) {
-  const supabase = createClient();
-  const [url, setUrl] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!resumeFileUrl) return;
-    let cancelled = false;
-    const cleanPath = resumeFileUrl.replace(/^resumes\//, "");
-    supabase.storage
-      .from("resumes")
-      .createSignedUrl(cleanPath, 60 * 60)
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        setUrl(error ? null : data?.signedUrl ?? null);
-        setLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeFileUrl]);
-
+// Signed URL is computed server-side for every row in one batched call
+// (see candidates/page.tsx) -- this used to be a per-row useEffect firing
+// its own createSignedUrl request on mount, which meant up to 100 separate
+// Storage API round trips on a full page of results. Now it's a pure
+// render with no network activity at all.
+function ResumeCell({ resumeFileUrl, resumeSignedUrl }: { resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
   if (!resumeFileUrl) return <span className="text-[11px] text-slate-300">—</span>;
-  if (!loaded) return <span className="text-[11px] text-slate-400">Loading…</span>;
-  if (!url) return <span className="text-[11px] text-red-500">Not found</span>;
-  return <ResumePreview signedUrl={url} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
+  if (!resumeSignedUrl) return <span className="text-[11px] text-red-500">Not found</span>;
+  return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
 }
 
 function PreviousIndustriesCell({
@@ -387,7 +373,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "resume",
     label: "Resume",
-    render: (c) => <ResumeCell resumeFileUrl={c.resume_file_url} />,
+    render: (c) => <ResumeCell resumeFileUrl={c.resume_file_url} resumeSignedUrl={c.resume_signed_url} />,
   },
   {
     key: "communication_score",

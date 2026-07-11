@@ -156,6 +156,31 @@ export default async function CandidatesPage({
 
   const { data: candidates, error } = await query;
 
+  // Batch-generate resume signed URLs in one Storage API call instead of
+  // leaving each table row to fire its own createSignedUrl request on
+  // mount -- with the Resume column visible (the default), that used to
+  // mean up to 100 separate client-side round trips per page load. One
+  // batched createSignedUrls call here covers every row's resume at once.
+  const resumePaths = Array.from(
+    new Set(
+      (candidates ?? [])
+        .map((c) => c.resume_file_url)
+        .filter((p): p is string => Boolean(p))
+        .map((p) => p.replace(/^resumes\//, ""))
+    )
+  );
+  const resumeUrlByPath: Record<string, string> = {};
+  if (resumePaths.length > 0) {
+    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60);
+    (signedBatch ?? []).forEach((s) => {
+      if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
+    });
+  }
+  const candidatesWithResumeUrls = (candidates ?? []).map((c) => ({
+    ...c,
+    resume_signed_url: c.resume_file_url ? resumeUrlByPath[c.resume_file_url.replace(/^resumes\//, "")] ?? null : null,
+  }));
+
   const candidateIds = (candidates ?? []).map((c) => c.id);
   const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
   if (candidateIds.length > 0) {
@@ -188,13 +213,14 @@ export default async function CandidatesPage({
     .eq("status", "open")
     .order("created_at", { ascending: false });
 
-  const { data: subDomainRows } = await supabase
-    .from("candidates")
-    .select("sub_domain")
-    .not("sub_domain", "is", null);
-  const subDomains = Array.from(new Set((subDomainRows ?? []).map((r) => r.sub_domain).filter(Boolean))).sort();
-
-  const { data: allRows } = await supabase.from("candidates").select("status, created_at, created_by");
+  // Single unfiltered scan of the candidates table covering both the
+  // sub-domain filter dropdown and the status/origin stat tiles -- these
+  // used to be two separate full-table round trips (one for sub_domain
+  // alone, one for status/created_at/created_by) even though they're
+  // reading the same rows; combining the column list into one query halves
+  // the redundant traffic without changing any of the derived numbers.
+  const { data: allRows } = await supabase.from("candidates").select("sub_domain, status, created_at, created_by");
+  const subDomains = Array.from(new Set((allRows ?? []).map((r) => r.sub_domain).filter(Boolean))).sort();
   const statusCounts: Record<string, number> = {};
   const createdByCounts: Record<string, number> = {};
   let newToday = 0;
@@ -685,7 +711,7 @@ export default async function CandidatesPage({
       )}
 
       <CandidatesTable
-        candidates={(candidates ?? []) as never}
+        candidates={candidatesWithResumeUrls as never}
         openMandates={openMandates ?? []}
         mandateLinksByCandidate={mandateLinksByCandidate}
       />
