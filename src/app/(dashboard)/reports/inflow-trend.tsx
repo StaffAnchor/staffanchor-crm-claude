@@ -30,7 +30,7 @@ export default function InflowTrend({ points }: { points: InflowPoint[] }) {
             )}
             <div className="w-full rounded-t-sm bg-slate-100 overflow-hidden flex items-end" style={{ height: "100%" }}>
               <div
-                className="w-full rounded-t-sm bg-indigo-500/80 group-hover:bg-indigo-500 transition-colors"
+                className="w-full rounded-t-sm bg-indigo-500/80 group-hover:bg-indigo-500 transition-colors duration-200 ease-ros"
                 style={{ height: `${heightPct}%` }}
               />
             </div>

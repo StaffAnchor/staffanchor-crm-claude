@@ -39,15 +39,15 @@ export default function ReportBarList({
             } — click to view`}
           >
             <span
-              className={`w-[132px] shrink-0 truncate text-[11.5px] transition-colors ${
+              className={`w-[132px] shrink-0 truncate text-[11.5px] transition-colors duration-200 ease-ros ${
                 isTop ? "font-semibold text-slate-800" : "text-slate-600"
               } group-hover:text-blue-600`}
             >
               {item.label}
             </span>
-            <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div className="flex-1 h-2 rounded-ros-full bg-slate-100 overflow-hidden">
               <div
-                className={`h-full rounded-full ${colorClass} transition-all duration-200 ${
+                className={`h-full rounded-ros-full ${colorClass} transition-all duration-200 ease-ros ${
                   isTop ? "opacity-100" : "opacity-70 group-hover:opacity-100"
                 }`}
                 style={{ width: `${widthPct}%` }}
