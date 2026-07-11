@@ -248,6 +248,16 @@ export default async function CandidatesPage({
     return s ? `/candidates?${s}` : "/candidates";
   }
 
+  // Whether any filter (basic or advanced) is currently active, so the
+  // "Clear all filters" control only shows up when there's actually
+  // something to clear.
+  const hasAnyFilter = Object.values(params).some((v) => Boolean(v));
+  // Keying the <details> panel to the current filter set forces it to
+  // remount (and therefore collapse back to closed, its default state)
+  // whenever the URL's search params change -- including right after
+  // "Clear all filters" navigates back to the bare /candidates route.
+  const filtersKey = JSON.stringify(params);
+
   return (
     <div>
       <div className="flex items-baseline justify-between mb-3">
@@ -448,7 +458,16 @@ export default async function CandidatesPage({
             </Link>
           )}
 
-          <details className="ml-auto group">
+          {hasAnyFilter && (
+            <Link
+              href="/candidates"
+              className="text-[12px] font-medium px-3 py-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200 ease-ros"
+            >
+              Clear all filters
+            </Link>
+          )}
+
+          <details key={filtersKey} className="ml-auto group">
             <summary className="list-none flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-800 cursor-pointer px-2 py-1">
               <SlidersHorizontal className="w-3 h-3" /> More filters
             </summary>
@@ -648,6 +667,14 @@ export default async function CandidatesPage({
               <button type="submit" className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium px-3 py-1.5">
                 Apply
               </button>
+              {hasAnyFilter && (
+                <Link
+                  href="/candidates"
+                  className="text-[12px] font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5"
+                >
+                  Clear all filters
+                </Link>
+              )}
             </div>
           </details>
         </div>
