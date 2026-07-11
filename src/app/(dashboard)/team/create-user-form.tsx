@@ -92,7 +92,7 @@ export default function CreateUserForm() {
         <option value="freelancer">Freelancer (limited access)</option>
       </select>
       <div>
-        <label className="block text-xs font-medium text-slate-500 mb-1">
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           Temporary password (share this with them)
         </label>
         <div className="flex gap-2">
@@ -104,7 +104,7 @@ export default function CreateUserForm() {
           <button
             type="button"
             onClick={() => setForm((f) => ({ ...f, password: generatePassword() }))}
-            className="text-xs px-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+            className="text-xs px-2 rounded-lg border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
           >
             Regenerate
           </button>

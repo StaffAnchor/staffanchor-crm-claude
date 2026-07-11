@@ -124,8 +124,8 @@ export default async function MandatesPage({
       <div className="col-span-2">
         <div className="flex items-baseline justify-between mb-3">
           <div>
-            <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Mandates</h1>
-            <p className="text-[12.5px] text-slate-500 mt-0.5">
+            <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Mandates</h1>
+            <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
               {(mandates ?? []).length} {status ? `${status.replace("_", " ")} ` : ""}client roles · click any card for a quick view
             </p>
           </div>
@@ -147,7 +147,7 @@ export default async function MandatesPage({
       </div>
       <div>
         <Card className="sticky top-20">
-          <h2 className="text-sm font-semibold text-slate-900 mb-3">New mandate</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New mandate</h2>
           <CreateMandateForm existingClients={existingClients} />
         </Card>
       </div>

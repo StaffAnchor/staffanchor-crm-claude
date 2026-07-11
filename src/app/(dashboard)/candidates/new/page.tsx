@@ -166,14 +166,14 @@ export default function NewCandidatePage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-lg font-semibold text-slate-900 mb-1">Create candidate</h1>
-      <p className="text-sm text-slate-500 mb-6">
+      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Create candidate</h1>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
         The fields below are mandatory for a recruiter-sourced profile. Deeper fields (quota, deal size,
         self-assessment) still come from the candidate once you send a completion invite.
       </p>
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 space-y-4">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Full name *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Full name *</label>
           <input
             required
             value={form.full_name}
@@ -182,7 +182,7 @@ export default function NewCandidatePage() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Email *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email *</label>
           <input
             required
             type="email"
@@ -192,7 +192,7 @@ export default function NewCandidatePage() {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Phone *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Phone *</label>
           <input
             required
             value={form.phone}
@@ -202,7 +202,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Location *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Location *</label>
           <select
             required
             value={form.city}
@@ -227,7 +227,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Function / Domain *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Function / Domain *</label>
           <select
             required
             value={form.category}
@@ -242,7 +242,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Sub-domain *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Sub-domain *</label>
           {subDomainOptions.length > 0 ? (
             <>
               <select
@@ -278,7 +278,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Current fixed CTC *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current fixed CTC *</label>
           <select
             required
             value={form.current_fixed_ctc}
@@ -295,7 +295,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Total experience *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Total experience *</label>
           <select
             required
             value={form.total_experience_years}
@@ -312,7 +312,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Days to join *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Days to join *</label>
           <select
             required
             value={form.notice_period}
@@ -329,7 +329,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Current job title *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current job title *</label>
           <input
             required
             value={form.current_job_title}
@@ -340,7 +340,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Current employer *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current employer *</label>
           <input
             required
             value={form.current_employer}
@@ -351,7 +351,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Employment status *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Employment status *</label>
           <select
             required
             value={form.current_employment_status}
@@ -368,7 +368,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Current industry *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current industry *</label>
           <select
             required
             value={form.current_industry}
@@ -385,7 +385,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">IC or leading a team? *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">IC or leading a team? *</label>
           <select
             required
             value={form.role_type}
@@ -405,7 +405,7 @@ export default function NewCandidatePage() {
 
         {form.role_type === "Leading a Team" && (
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Team size *</label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Team size *</label>
             <select
               required
               value={form.team_size}
@@ -423,12 +423,12 @@ export default function NewCandidatePage() {
         )}
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Resume *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Resume *</label>
           {resumeFile ? (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
               <div className="flex items-center gap-2 min-w-0">
-                <FileText className="w-4 h-4 text-slate-500 shrink-0" />
-                <span className="text-sm text-slate-700 truncate">{resumeFile.name}</span>
+                <FileText className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{resumeFile.name}</span>
               </div>
               <button
                 type="button"
@@ -439,7 +439,7 @@ export default function NewCandidatePage() {
               </button>
             </div>
           ) : (
-            <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500 hover:bg-slate-50 cursor-pointer">
+            <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 cursor-pointer">
               <UploadCloud className="w-4 h-4 shrink-0" />
               <span>Click to upload their CV (PDF, DOC, DOCX) — often the recruiter already has it on hand</span>
               <input
@@ -453,7 +453,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Note</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Note</label>
           <textarea
             value={form.recruiter_seed_note}
             onChange={(e) => setForm((f) => ({ ...f, recruiter_seed_note: e.target.value }))}

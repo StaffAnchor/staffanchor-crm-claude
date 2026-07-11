@@ -26,7 +26,7 @@ export default function InflowTrend({ points }: { points: InflowPoint[] }) {
             title={`${p.count} candidate${p.count === 1 ? "" : "s"} · ${p.label}`}
           >
             {!dense && (
-              <span className="text-[10px] font-semibold text-slate-600 mb-1 tabular-nums">{p.count}</span>
+              <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1 tabular-nums">{p.count}</span>
             )}
             <div className="w-full rounded-t-sm bg-slate-100 overflow-hidden flex items-end" style={{ height: "100%" }}>
               <div

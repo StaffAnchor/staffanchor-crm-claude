@@ -112,8 +112,8 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
   return true;
 };
 
-const SECTION_LABEL = "block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2.5";
-const FIELD_LABEL = "block text-xs font-medium text-slate-600 mb-1";
+const SECTION_LABEL = "block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5";
+const FIELD_LABEL = "block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1";
 const INPUT_CLS = "w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm";
 
 function CheckboxGroup({
@@ -137,7 +137,7 @@ function CheckboxGroup({
             className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
               active
                 ? "bg-blue-600 border-blue-600 text-white"
-                : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
+                : "bg-white dark:bg-slate-900 border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
             }`}
           >
             {opt}
@@ -475,7 +475,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         <Pencil className="w-3 h-3" /> Edit profile
       </button>
@@ -483,10 +483,10 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !saving && setOpen(false)}>
           <div
-            className="bg-white rounded-ros-lg shadow-ros-md w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-slate-900 rounded-ros-lg shadow-ros-md w-full max-w-3xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
               <h3 className="text-[14px] font-semibold text-slate-900">Edit profile</h3>
               <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
@@ -534,10 +534,10 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                   <div>
                     <label className={FIELD_LABEL}>Resume</label>
                     {candidate.resume_file_url && !resumeFile && (
-                      <p className="text-[12px] text-slate-500 mb-1 truncate">Currently on file</p>
+                      <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-1 truncate">Currently on file</p>
                     )}
-                    {resumeFile && <p className="text-[12px] text-slate-700 mb-1 truncate">{resumeFile.name} (replacing)</p>}
-                    <label className="flex items-center gap-1.5 text-[12px] text-slate-600 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 w-fit">
+                    {resumeFile && <p className="text-[12px] text-slate-700 dark:text-slate-300 mb-1 truncate">{resumeFile.name} (replacing)</p>}
+                    <label className="flex items-center gap-1.5 text-[12px] text-slate-600 dark:text-slate-400 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 w-fit">
                       <Upload className="w-3 h-3" />
                       {candidate.resume_file_url ? "Replace resume" : "Upload resume"}
                       <input
@@ -934,7 +934,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                   )}
 
                   <div className="mt-4 pt-4 border-t border-slate-100">
-                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2.5">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
                       Quarterly Targets &amp; Achievement (last 4 quarters)
                     </span>
                     {isTeamLead && (
@@ -1071,11 +1071,11 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
 
             {error && <p className="px-5 text-[12px] text-red-600 mb-2">{error}</p>}
 
-            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 sticky bottom-0 bg-white">
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white">
               <button
                 onClick={() => setOpen(false)}
                 disabled={saving}
-                className="text-[12px] font-medium text-slate-600 hover:text-slate-900 px-3 py-1.5"
+                className="text-[12px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 px-3 py-1.5"
               >
                 Cancel
               </button>

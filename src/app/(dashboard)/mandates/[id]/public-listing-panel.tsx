@@ -40,13 +40,13 @@ export default function PublicListingPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1 flex items-center gap-1.5">
         <Globe className="w-3.5 h-3.5 text-slate-400" /> Public listing (jobs.staffanchor.com)
       </h2>
       <p className="text-[12px] text-slate-400 mb-3">Controls what candidates see before applying.</p>
 
-      <label className="flex items-start gap-2 text-[13px] text-slate-700 mb-2">
+      <label className="flex items-start gap-2 text-[13px] text-slate-700 dark:text-slate-300 mb-2">
         <input type="checkbox" checked={!showClientName} onChange={(e) => setShowClientName(!e.target.checked)} className="mt-0.5" />
         Hide client name (&quot;{clientName}&quot;)
       </label>

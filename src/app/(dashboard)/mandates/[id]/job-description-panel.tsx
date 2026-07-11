@@ -110,9 +110,9 @@ export default function JobDescriptionPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5 text-slate-400" /> Job description
         </h2>
         {!editing && (
@@ -145,7 +145,7 @@ export default function JobDescriptionPanel({
             {genError && <p className="text-[11px] text-red-600 mt-1.5">{genError}</p>}
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Overview</label>
+            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Overview</label>
             <textarea
               value={overview}
               onChange={(e) => setOverview(e.target.value)}
@@ -155,7 +155,7 @@ export default function JobDescriptionPanel({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Key Responsibilities (one per line)</label>
+            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Key Responsibilities (one per line)</label>
             <textarea
               value={responsibilities}
               onChange={(e) => setResponsibilities(e.target.value)}
@@ -164,7 +164,7 @@ export default function JobDescriptionPanel({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Candidate Profile (one per line)</label>
+            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Candidate Profile (one per line)</label>
             <textarea
               value={candidateProfile}
               onChange={(e) => setCandidateProfile(e.target.value)}
@@ -173,7 +173,7 @@ export default function JobDescriptionPanel({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 mb-1">Compensation &amp; Benefits (one per line)</label>
+            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Compensation &amp; Benefits (one per line)</label>
             <textarea
               value={benefits}
               onChange={(e) => setBenefits(e.target.value)}
@@ -190,11 +190,11 @@ export default function JobDescriptionPanel({
           </button>
         </div>
       ) : (
-        <div className="text-[13px] text-slate-700 space-y-3">
+        <div className="text-[13px] text-slate-700 dark:text-slate-300 space-y-3">
           {overview && <p className="whitespace-pre-wrap">{overview}</p>}
           {responsibilities && (
             <div>
-              <p className="font-semibold text-slate-900 mb-1">Key Responsibilities</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Key Responsibilities</p>
               <ul className="list-disc pl-4 space-y-0.5">
                 {bulletList(responsibilities).map((line, i) => (
                   <li key={i}>{line}</li>
@@ -204,7 +204,7 @@ export default function JobDescriptionPanel({
           )}
           {candidateProfile && (
             <div>
-              <p className="font-semibold text-slate-900 mb-1">Candidate Profile</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Candidate Profile</p>
               <ul className="list-disc pl-4 space-y-0.5">
                 {bulletList(candidateProfile).map((line, i) => (
                   <li key={i}>{line}</li>
@@ -214,7 +214,7 @@ export default function JobDescriptionPanel({
           )}
           {benefits && (
             <div>
-              <p className="font-semibold text-slate-900 mb-1">Compensation &amp; Benefits</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Compensation &amp; Benefits</p>
               <ul className="list-disc pl-4 space-y-0.5">
                 {bulletList(benefits).map((line, i) => (
                   <li key={i}>{line}</li>

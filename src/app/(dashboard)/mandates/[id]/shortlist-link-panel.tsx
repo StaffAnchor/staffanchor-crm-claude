@@ -36,15 +36,15 @@ export default function ShortlistLinkPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900 mb-1">Client shortlist link</h2>
-      <p className="text-xs text-slate-500 mb-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Client shortlist link</h2>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
         A no-login link showing only candidates marked &quot;in client shortlist&quot; for this
         mandate. Notes, red flags, and raw assessment are never included.
       </p>
       {url ? (
         <div className="space-y-2">
-          <div className="text-xs font-mono text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-2 break-all">
+          <div className="text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 break-all">
             {url}
           </div>
           <button

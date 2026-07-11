@@ -22,7 +22,7 @@ const STATUSES = [
 // candidates table, rather than as a separate, harder-edged control.
 const STATUS_STYLE: Record<string, string> = {
   awaiting_input: "bg-amber-50 text-amber-700 ring-amber-200/60",
-  lead: "bg-slate-100 text-slate-600 ring-slate-200/60",
+  lead: "bg-slate-100 text-slate-600 dark:text-slate-400 ring-slate-200/60",
   registered: "bg-sky-50 text-sky-700 ring-sky-200/60",
   under_review: "bg-blue-50 text-blue-700 ring-blue-200/60",
   shortlisted: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
@@ -30,7 +30,7 @@ const STATUS_STYLE: Record<string, string> = {
   client_interview: "bg-sky-50 text-sky-700 ring-sky-200/60",
   offer: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
   placed: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
-  alumni: "bg-slate-100 text-slate-500 ring-slate-200/60",
+  alumni: "bg-slate-100 text-slate-500 dark:text-slate-400 ring-slate-200/60",
   inactive: "bg-rose-50 text-rose-600 ring-rose-200/60",
 };
 
@@ -65,7 +65,7 @@ export default function StatusControl({
       defaultValue={currentStatus}
       onChange={handleChange}
       className={`rounded-ros-md border-0 ring-1 px-3 py-1.5 text-[13px] font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] cursor-pointer ${
-        STATUS_STYLE[currentStatus] ?? "bg-slate-100 text-slate-700 ring-slate-200/60"
+        STATUS_STYLE[currentStatus] ?? "bg-slate-100 text-slate-700 dark:text-slate-300 ring-slate-200/60"
       }`}
     >
       {STATUSES.map((s) => (

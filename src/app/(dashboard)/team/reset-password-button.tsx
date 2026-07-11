@@ -48,7 +48,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
     return (
       <div className="text-xs bg-teal-50 border border-teal-200 rounded-lg p-2 max-w-[220px]">
         <p className="font-medium text-teal-900">New password set for {name}</p>
-        <p className="font-mono text-slate-800 mt-1 break-all">{password}</p>
+        <p className="font-mono text-slate-800 dark:text-slate-200 mt-1 break-all">{password}</p>
         <p className="text-teal-700 mt-1">Share this with them — it won&apos;t be shown again.</p>
         <button
           onClick={() => {
@@ -65,7 +65,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
   }
 
   return (
-    <div className="text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 max-w-[220px] space-y-1.5">
+    <div className="text-xs bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 max-w-[220px] space-y-1.5">
       <p className="font-medium text-slate-700">Reset password for {name}?</p>
       <div className="flex gap-1.5">
         <input
@@ -76,7 +76,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
         <button
           type="button"
           onClick={() => setPassword(generatePassword())}
-          className="px-1.5 rounded border border-slate-300 text-slate-600 hover:bg-slate-100 shrink-0"
+          className="px-1.5 rounded border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-100 shrink-0"
         >
           ↻
         </button>
@@ -90,7 +90,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
         >
           {saving ? "Setting..." : "Confirm reset"}
         </button>
-        <button onClick={() => setOpen(false)} className="text-slate-500 hover:underline px-1 py-1">
+        <button onClick={() => setOpen(false)} className="text-slate-500 dark:text-slate-400 hover:underline px-1 py-1">
           Cancel
         </button>
       </div>

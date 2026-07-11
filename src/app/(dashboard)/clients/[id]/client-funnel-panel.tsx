@@ -36,7 +36,7 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
   if (stats.total === 0) {
     return (
       <Card>
-        <h2 className="text-sm font-semibold text-slate-900 mb-1">Submission funnel</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Submission funnel</h2>
         <p className="text-[13px] text-slate-400">
           No candidates linked to this client's mandates yet — conversion analysis will appear once
           candidates are submitted.
@@ -75,12 +75,12 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
 
       <div className="grid grid-cols-2 gap-3">
         {rateCards.map((r) => (
-          <div key={r.label} className="rounded-ros-lg border border-slate-100 bg-slate-50/60 p-3">
+          <div key={r.label} className="rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 p-3">
             <div className="flex items-center gap-1.5 text-slate-400 mb-1">
               <r.icon className="w-3.5 h-3.5" />
               <span className="text-[10.5px] font-medium uppercase tracking-wide">{r.label}</span>
             </div>
-            <p className="text-lg font-semibold text-slate-900 leading-none">{pct(r.value)}</p>
+            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-none">{pct(r.value)}</p>
             <p className="text-[11px] text-slate-400 mt-1">{r.sub}</p>
           </div>
         ))}

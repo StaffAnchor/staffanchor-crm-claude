@@ -127,8 +127,8 @@ export default async function InterviewsPage() {
     <div>
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Interviews</h1>
-          <p className="text-[12.5px] text-slate-500 mt-0.5">
+          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Interviews</h1>
+          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
             Every candidate currently at the client-interview stage, across all mandates.
           </p>
         </div>
@@ -172,7 +172,7 @@ export default async function InterviewsPage() {
           <div className="space-y-5">
             {agendaGroups.map((g) => (
               <div key={g.key}>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
                   {g.label} <span className="font-normal normal-case text-slate-400">· {g.rows.length}</span>
                 </p>
                 <div className="divide-y divide-slate-100">
@@ -203,11 +203,11 @@ function InterviewListRow({ row }: { row: InterviewRow }) {
       <div className="min-w-0">
         <Link
           href={`/candidates/${row.candidate_id}`}
-          className="text-[13px] font-medium text-slate-900 hover:text-blue-600 transition-colors duration-200 ease-ros truncate"
+          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 transition-colors duration-200 ease-ros truncate"
         >
           {row.candidate_name}
         </Link>
-        <p className="text-[11.5px] text-slate-500 truncate">
+        <p className="text-[11.5px] text-slate-500 dark:text-slate-400 truncate">
           {row.role_title} ·{" "}
           <Link href={`/mandates/${row.mandate_id}`} className="hover:text-blue-600 transition-colors duration-200 ease-ros">
             {row.client_name}

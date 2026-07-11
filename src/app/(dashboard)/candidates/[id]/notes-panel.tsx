@@ -59,7 +59,7 @@ export default function NotesPanel({
         <select
           value={noteType}
           onChange={(e) => setNoteType(e.target.value)}
-          className="rounded-ros-md border border-slate-200 px-2 py-1.5 text-[12px] bg-slate-50 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[12px] bg-slate-50 dark:bg-slate-800/50 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         >
           {NOTE_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -72,7 +72,7 @@ export default function NotesPanel({
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           placeholder="Add a note after this interaction..."
-          className="flex-1 rounded-ros-md border border-slate-200 px-3 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         />
         <Button onClick={handleAdd} disabled={saving}>
           Add
@@ -88,11 +88,11 @@ export default function NotesPanel({
           />
         )}
         {notes.map((n) => (
-          <div key={n.id} className="border-l-2 border-slate-200 pl-3">
+          <div key={n.id} className="border-l-2 border-slate-200 dark:border-slate-700 pl-3">
             <p className="text-[11px] text-slate-400 uppercase tracking-wide">
               {n.note_type.replace(/_/g, " ")} · {new Date(n.created_at).toLocaleString()}
             </p>
-            <p className="text-[13px] text-slate-700 mt-0.5">{n.content}</p>
+            <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5">{n.content}</p>
           </div>
         ))}
       </div>

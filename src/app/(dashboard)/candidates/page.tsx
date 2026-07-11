@@ -288,8 +288,8 @@ export default async function CandidatesPage({
     <div>
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Candidates</h1>
-          <p className="text-[12.5px] text-slate-500 mt-0.5">
+          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Candidates</h1>
+          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
             Search, assess, and shortlist your candidate database
           </p>
         </div>
@@ -327,9 +327,9 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      <div className="bg-white border border-slate-100 rounded-ros-lg px-4 py-3 mb-3 shadow-ros-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg px-4 py-3 mb-3 shadow-ros-sm">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
             Hiring pipeline
           </p>
         </div>
@@ -354,8 +354,8 @@ export default async function CandidatesPage({
                     style={{ width: `${widthPct}%` }}
                   />
                 </div>
-                <span className="text-[12px] font-semibold text-slate-900 tabular-nums shrink-0">{count}</span>
-                <span className="text-[10.5px] text-slate-500 shrink-0 hidden lg:inline">{stage.label}</span>
+                <span className="text-[12px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums shrink-0">{count}</span>
+                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 shrink-0 hidden lg:inline">{stage.label}</span>
                 {i < FUNNEL_STAGES.length - 1 && (
                   <span className="hidden" aria-hidden>
                     →
@@ -367,13 +367,13 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      <form className="bg-white border border-slate-100 rounded-ros-lg p-3 mb-3 shadow-ros-sm">
+      <form className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-3 mb-3 shadow-ros-sm">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <input
             name="q"
             defaultValue={params.q}
             placeholder="Search candidates by name, email, employer..."
-            className="flex-1 min-w-[220px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300"
+            className="flex-1 min-w-[220px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 text-[13px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300"
           />
           {params.category && <input type="hidden" name="category" value={params.category} />}
           {params.status && <input type="hidden" name="status" value={params.status} />}
@@ -403,7 +403,7 @@ export default async function CandidatesPage({
               className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
                 (params.category ?? "") === c.value
                   ? "bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  : "bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
               }`}
             >
               {c.label}
@@ -487,23 +487,23 @@ export default async function CandidatesPage({
           {hasAnyFilter && (
             <Link
               href="/candidates"
-              className="text-[12px] font-medium px-3 py-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200 ease-ros"
+              className="text-[12px] font-medium px-3 py-1 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200 ease-ros"
             >
               Clear all filters
             </Link>
           )}
 
           <details key={filtersKey} className="ml-auto group">
-            <summary className="list-none flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-800 cursor-pointer px-2 py-1">
+            <summary className="list-none flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 cursor-pointer px-2 py-1">
               <SlidersHorizontal className="w-3 h-3" /> More filters
             </summary>
             <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-slate-100">
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Status</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
                 <select
                   name="status"
                   defaultValue={params.status ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">All</option>
                   {Object.entries(STATUS_LABEL).map(([value, label]) => (
@@ -514,23 +514,23 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min fixed CTC (L)</label>
-                <input name="min_ctc" type="number" defaultValue={params.min_ctc} className="w-20 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]" />
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min fixed CTC (L)</label>
+                <input name="min_ctc" type="number" defaultValue={params.min_ctc} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Max fixed CTC (L)</label>
-                <input name="max_ctc" type="number" defaultValue={params.max_ctc} className="w-20 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]" />
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Max fixed CTC (L)</label>
+                <input name="max_ctc" type="number" defaultValue={params.max_ctc} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min experience</label>
-                <input name="min_exp" type="number" defaultValue={params.min_exp} className="w-20 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]" />
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min experience</label>
+                <input name="min_exp" type="number" defaultValue={params.min_exp} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Recruiter recommendation</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Recruiter recommendation</label>
                 <select
                   name="recommendation"
                   defaultValue={params.recommendation ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {RECOMMENDATIONS.map((r) => (
@@ -541,11 +541,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Sub-domain</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Sub-domain</label>
                 <select
                   name="sub_domain"
                   defaultValue={params.sub_domain ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {subDomains.map((d) => (
@@ -556,11 +556,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Current industry</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Current industry</label>
                 <select
                   name="current_industry"
                   defaultValue={params.current_industry ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {industryOptions.map((i) => (
@@ -571,11 +571,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Previous industry</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Previous industry</label>
                 <select
                   name="previous_industry"
                   defaultValue={params.previous_industry ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {industryOptions.map((i) => (
@@ -586,11 +586,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Origin</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Origin</label>
                 <select
                   name="origin"
                   defaultValue={params.origin ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {Object.entries(ORIGIN_LABEL).map(([value, label]) => (
@@ -601,11 +601,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Days to join</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Days to join</label>
                 <select
                   name="notice_period"
                   defaultValue={params.notice_period ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {NOTICE_PERIODS.map((n) => (
@@ -616,11 +616,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Job stability</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Job stability</label>
                 <select
                   name="job_stability"
                   defaultValue={params.job_stability ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {JOB_STABILITY_OPTIONS.map((o) => (
@@ -631,11 +631,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Relocation — verified</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Relocation — verified</label>
                 <select
                   name="relocation_verified"
                   defaultValue={params.relocation_verified ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {RELOCATION_VERIFIED_OPTIONS.map((o) => (
@@ -646,11 +646,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min communication score</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min communication score</label>
                 <select
                   name="min_communication"
                   defaultValue={params.min_communication ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {SCORE_OPTIONS.map((n) => (
@@ -661,11 +661,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min confidence score</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min confidence score</label>
                 <select
                   name="min_confidence"
                   defaultValue={params.min_confidence ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {SCORE_OPTIONS.map((n) => (
@@ -676,11 +676,11 @@ export default async function CandidatesPage({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min coachability score</label>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min coachability score</label>
                 <select
                   name="min_coachability"
                   defaultValue={params.min_coachability ?? ""}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px]"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                 >
                   <option value="">Any</option>
                   {SCORE_OPTIONS.map((n) => (
@@ -696,7 +696,7 @@ export default async function CandidatesPage({
               {hasAnyFilter && (
                 <Link
                   href="/candidates"
-                  className="text-[12px] font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5"
+                  className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 px-3 py-1.5"
                 >
                   Clear all filters
                 </Link>

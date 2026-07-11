@@ -104,16 +104,16 @@ export default function BasicDetailsPanel({
 
   if (!editing) {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
             <Briefcase className="w-3.5 h-3.5 text-slate-400" /> Mandate details
           </h2>
           <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         </div>
-        <p className="text-[12px] text-slate-500 mt-1">
+        <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">
           Budget: {initial.budget_min ?? "—"}
           {initial.budget_max ? ` – ${initial.budget_max}` : ""} L · Experience: {initial.experience_min ?? "—"}
           {initial.experience_max ? ` – ${initial.experience_max}` : ""} yrs · Status: {initial.status}
@@ -128,9 +128,9 @@ export default function BasicDetailsPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-2.5">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm space-y-2.5">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
           <Briefcase className="w-3.5 h-3.5 text-slate-400" /> Edit mandate details
         </h2>
         <button onClick={() => setEditing(false)} className="text-slate-400 hover:text-slate-700">
@@ -163,11 +163,11 @@ export default function BasicDetailsPanel({
 
       {form.category && (
         <div>
-          <p className="text-xs font-medium text-slate-600 mb-1.5">
+          <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
             Sub-domain{isMultiSubDomain ? " (select all this client would accept)" : ""}
           </p>
           {isMultiSubDomain ? (
-            <div className="grid gap-1.5 rounded-lg border border-slate-200 p-3">
+            <div className="grid gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
               {subDomainOptions.map((o) => (
                 <label key={o} className="flex items-center gap-2 text-[13px] text-slate-700">
                   <input type="checkbox" checked={form.subDomains.includes(o)} onChange={() => toggleSubDomain(o)} />
@@ -193,13 +193,13 @@ export default function BasicDetailsPanel({
       )}
 
       <div>
-        <p className="text-xs font-medium text-slate-600 mb-1.5">Location(s)</p>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Location(s)</p>
         {form.cities.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {form.cities.map((c) => (
               <span
                 key={c}
-                className="flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 text-[12px] font-medium px-2.5 py-1"
+                className="flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-2.5 py-1"
               >
                 {c}
                 <button type="button" onClick={() => removeCity(c)} className="text-slate-400 hover:text-slate-700">
@@ -230,7 +230,7 @@ export default function BasicDetailsPanel({
               addCity(form.cityPick);
               setForm((f) => ({ ...f, cityPick: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
           >
             Add
           </button>
@@ -248,7 +248,7 @@ export default function BasicDetailsPanel({
               addCity(form.cityOther);
               setForm((f) => ({ ...f, cityOther: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
           >
             Add
           </button>

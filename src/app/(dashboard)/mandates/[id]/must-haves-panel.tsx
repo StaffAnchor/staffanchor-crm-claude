@@ -25,12 +25,12 @@ function TagEditor({
 
   return (
     <div className="mb-3">
-      <p className="text-[11px] font-medium text-slate-500 mb-1">{label}</p>
+      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</p>
       <div className="flex flex-wrap gap-1.5 mb-1.5">
         {items.map((item, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 text-[12px] px-2.5 py-1"
+            className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 dark:text-slate-300 text-[12px] px-2.5 py-1"
           >
             {item}
             <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-600">
@@ -55,7 +55,7 @@ function TagEditor({
         />
         <button
           onClick={add}
-          className="rounded-lg border border-slate-300 px-2 text-slate-500 hover:bg-slate-50"
+          className="rounded-lg border border-slate-300 px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -96,9 +96,9 @@ export default function MustHavesPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
           <ListChecks className="w-3.5 h-3.5 text-slate-400" /> Must haves / Good to haves
         </h2>
         {!editing && (
@@ -126,7 +126,7 @@ export default function MustHavesPanel({
       ) : (
         <div className="space-y-2">
           <div>
-            <p className="text-[11px] font-medium text-slate-500 mb-1">Must haves</p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Must haves</p>
             <div className="flex flex-wrap gap-1.5">
               {mustHaves.map((item, i) => (
                 <span key={i} className="rounded-full bg-red-50 text-red-700 text-[12px] px-2.5 py-1">
@@ -137,7 +137,7 @@ export default function MustHavesPanel({
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-medium text-slate-500 mb-1">Good to haves</p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Good to haves</p>
             <div className="flex flex-wrap gap-1.5">
               {goodToHaves.map((item, i) => (
                 <span key={i} className="rounded-full bg-blue-50 text-blue-700 text-[12px] px-2.5 py-1">

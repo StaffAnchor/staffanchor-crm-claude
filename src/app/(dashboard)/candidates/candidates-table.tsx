@@ -137,7 +137,7 @@ function ScoreCell({ value }: { value: number | undefined }) {
           className={`h-1.5 w-1.5 rounded-full ${n <= value ? "bg-blue-500" : "bg-slate-200"}`}
         />
       ))}
-      <span className="ml-1 text-[11px] text-slate-500 tabular-nums">{value}/5</span>
+      <span className="ml-1 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">{value}/5</span>
     </span>
   );
 }
@@ -197,22 +197,22 @@ function PreviousIndustriesCell({
       onMouseLeave={() => setHover(false)}
     >
       {shown.map((i) => (
-        <span key={i} className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+        <span key={i} className="text-[10px] bg-slate-100 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
           {i}
         </span>
       ))}
       {overflow > 0 && <span className="text-[10px] text-slate-400">+{overflow}</span>}
       {hover && pos && (
         <div
-          className="fixed z-[60] w-64 bg-white border border-slate-200 rounded-lg shadow-lg p-2.5"
+          className="fixed z-[60] w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2.5"
           style={{ left: pos.left, top: pos.top, bottom: pos.bottom }}
         >
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+          <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
             All previous industries ({former.length})
           </p>
           <div className="flex flex-wrap gap-1">
             {former.map((i) => (
-              <span key={i} className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              <span key={i} className="text-[10px] bg-slate-100 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                 {i}
               </span>
             ))}
@@ -244,23 +244,23 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "created_at",
     label: "Profile Created",
-    render: (c) => <span className="text-slate-500 whitespace-nowrap">{formatDate(c.created_at)}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{formatDate(c.created_at)}</span>,
   },
   {
     key: "email",
     label: "Email",
-    render: (c) => <span className="text-slate-500 truncate block max-w-[180px]">{c.email}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[180px]">{c.email}</span>,
   },
   {
     key: "phone",
     label: "Number",
-    render: (c) => <span className="text-slate-500 whitespace-nowrap">{c.phone ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.phone ?? "—"}</span>,
   },
   {
     key: "current_fixed_ctc",
     label: "Current Fixed CTC",
     render: (c) => (
-      <span className="text-slate-500 tabular-nums whitespace-nowrap">
+      <span className="text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
         {c.current_fixed_ctc ? `₹${c.current_fixed_ctc}L` : "—"}
       </span>
     ),
@@ -269,7 +269,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "total_experience_years",
     label: "Total Experience",
     render: (c) => (
-      <span className="text-slate-500 tabular-nums whitespace-nowrap">
+      <span className="text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
         {c.total_experience_years ?? "—"} yrs
       </span>
     ),
@@ -277,12 +277,12 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "current_job_title",
     label: "Current Title",
-    render: (c) => <span className="text-slate-500 truncate block max-w-[160px]">{c.current_job_title ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.current_job_title ?? "—"}</span>,
   },
   {
     key: "current_employer",
     label: "Current Company",
-    render: (c) => <span className="text-slate-500 truncate block max-w-[160px]">{c.current_employer ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.current_employer ?? "—"}</span>,
   },
   {
     key: "category",
@@ -297,12 +297,12 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "current_location",
     label: "Location",
-    render: (c) => <span className="text-slate-500 whitespace-nowrap">{c.current_location ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.current_location ?? "—"}</span>,
   },
   {
     key: "role_level",
     label: "IC / Team Lead",
-    render: (c) => <span className="text-slate-500 whitespace-nowrap">{roleLevelFor(c)}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{roleLevelFor(c)}</span>,
   },
   {
     key: "recommendation",
@@ -358,17 +358,17 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "sub_domain",
     label: "Sub-domain",
-    render: (c) => <span className="text-slate-500 truncate block max-w-[160px]">{c.sub_domain ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.sub_domain ?? "—"}</span>,
   },
   {
     key: "current_employment_status",
     label: "Employment Status",
-    render: (c) => <span className="text-slate-500 whitespace-nowrap">{c.current_employment_status ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.current_employment_status ?? "—"}</span>,
   },
   {
     key: "notice_period",
     label: "Days to Join",
-    render: (c) => <span className="text-slate-500 whitespace-nowrap">{c.notice_period ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.notice_period ?? "—"}</span>,
   },
   {
     key: "resume",
@@ -394,7 +394,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "job_stability",
     label: "Job Stability",
     render: (c) => (
-      <span className="text-slate-500 whitespace-nowrap">
+      <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">
         {(c.recruiter_assessment?.["job_stability"] as string | undefined) ?? "—"}
       </span>
     ),
@@ -403,7 +403,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "relocation_verified",
     label: "Relocation — Verified",
     render: (c) => (
-      <span className="text-slate-500 whitespace-nowrap">
+      <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">
         {(c.recruiter_assessment?.["relocation_verified"] as string | undefined) ?? "—"}
       </span>
     ),
@@ -412,7 +412,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "notice_verified",
     label: "Notice — Verified",
     render: (c) => (
-      <span className="text-slate-500 truncate block max-w-[140px]">
+      <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[140px]">
         {(c.recruiter_assessment?.["notice_verified"] as string | undefined) ?? "—"}
       </span>
     ),
@@ -421,7 +421,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "compensation_verified",
     label: "Compensation — Verified",
     render: (c) => (
-      <span className="text-slate-500 truncate block max-w-[160px]">
+      <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">
         {(c.recruiter_assessment?.["compensation_verified"] as string | undefined) ?? "—"}
       </span>
     ),
@@ -706,14 +706,14 @@ export default function CandidatesTable({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-ros-lg overflow-visible shadow-ros-sm">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 relative">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-ros-lg overflow-visible shadow-ros-sm">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 relative">
         <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
           {candidates.length} candidate{candidates.length === 1 ? "" : "s"}
         </p>
         <button
           onClick={() => setPanelOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg px-2.5 py-1.5 transition-colors"
+          className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg px-2.5 py-1.5 transition-colors"
         >
           <Settings2 className="w-3.5 h-3.5" /> Customize columns
         </button>
@@ -721,7 +721,7 @@ export default function CandidatesTable({
         {panelOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setPanelOpen(false)} />
-            <div className="absolute right-4 top-11 z-50 w-72 bg-white border border-slate-200 rounded-xl shadow-lg p-3">
+            <div className="absolute right-4 top-11 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-3">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[12px] font-semibold text-slate-800">Columns</p>
                 <button onClick={() => setPanelOpen(false)} className="text-slate-400 hover:text-slate-700">
@@ -759,7 +759,7 @@ export default function CandidatesTable({
                         onChange={() => toggle(key)}
                         className="shrink-0"
                       />
-                      <span className="text-[12px] text-slate-700 flex-1 truncate">{col.label}</span>
+                      <span className="text-[12px] text-slate-700 dark:text-slate-300 flex-1 truncate">{col.label}</span>
                       <button
                         onClick={() => move(key, -1)}
                         disabled={i === 0}
@@ -780,7 +780,7 @@ export default function CandidatesTable({
               </div>
               <button
                 onClick={resetDefaults}
-                className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-800 mt-2 pt-2 border-t border-slate-100 w-full"
+                className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 hover:text-slate-800 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 w-full"
               >
                 <RotateCcw className="w-3 h-3" /> Reset to default
               </button>
@@ -817,26 +817,26 @@ export default function CandidatesTable({
             onClick={handleBulkDelete}
             disabled={bulkBusy}
             icon={<Trash2 className="w-3.5 h-3.5" />}
-            className="!bg-white !text-red-600 ring-1 ring-red-200 hover:!bg-red-50"
+            className="!bg-white dark:bg-slate-900 !text-red-600 ring-1 ring-red-200 hover:!bg-red-50"
           >
             Delete
           </Button>
-          <button onClick={clearSelection} className="text-[12px] text-slate-500 hover:text-slate-800 ml-auto">
+          <button onClick={clearSelection} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 ml-auto">
             Clear selection
           </button>
         </div>
       )}
 
       {bulkMessage && (
-        <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100">
           <p className="text-[12px] text-slate-500">{bulkMessage}</p>
         </div>
       )}
 
       {mapModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setMapModalOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 mb-1">Map {selected.size} candidate{selected.size === 1 ? "" : "s"} to a mandate</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Map {selected.size} candidate{selected.size === 1 ? "" : "s"} to a mandate</h3>
             <p className="text-[12px] text-slate-400 mb-3">They'll appear on that mandate's page, sourced stage.</p>
             <select
               value={chosenMandate}
@@ -853,7 +853,7 @@ export default function CandidatesTable({
             <div className="flex gap-2">
               <button
                 onClick={() => setMapModalOpen(false)}
-                className="flex-1 rounded-lg border border-slate-200 text-slate-500 text-[13px] font-medium py-2"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
               >
                 Cancel
               </button>
@@ -881,7 +881,7 @@ export default function CandidatesTable({
                   className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
                 />
               </th>
-              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] z-20 bg-slate-50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
+              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] z-20 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
               {visibleColumns.map((col) => (
                 <th key={col.key} className="text-left px-4 py-2.5 font-semibold whitespace-nowrap">
                   {col.label}
@@ -898,7 +898,7 @@ export default function CandidatesTable({
                   selected.has(c.id) ? "bg-blue-50/50 ring-1 ring-inset ring-blue-500/20" : ""
                 }`}
               >
-                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white group-hover:bg-slate-50/70"}`}>
+                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70"}`}>
                   <input
                     type="checkbox"
                     checked={selected.has(c.id)}
@@ -906,7 +906,7 @@ export default function CandidatesTable({
                     className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
                   />
                 </td>
-                <td className={`px-4 py-3 sticky left-[52px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white group-hover:bg-slate-50/70"}`}>
+                <td className={`px-4 py-3 sticky left-[52px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70"}`}>
                   <div
                     className="relative"
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
@@ -921,10 +921,10 @@ export default function CandidatesTable({
                           the avatar too was pure noise, not signal (10 rows,
                           10 different gradient hues, no consistent meaning
                           a recruiter could actually read at a glance). */}
-                      <div className="w-8 h-8 rounded-full bg-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center text-[11px] font-semibold text-slate-600 shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center text-[11px] font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                         {initialsFor(c.full_name)}
                       </div>
-                      <p className="text-[14px] font-medium text-slate-900 group-hover:text-blue-600 transition-all duration-200 ease-ros truncate whitespace-nowrap">
+                      <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-all duration-200 ease-ros truncate whitespace-nowrap">
                         {c.full_name}
                       </p>
                     </Link>
@@ -944,7 +944,7 @@ export default function CandidatesTable({
                     )}
                     {mandatePopoverFor === c.id && (
                       <div
-                        className="absolute z-30 top-full left-0 mt-1 w-64 rounded-lg border border-slate-200 bg-white shadow-lg p-2"
+                        className="absolute z-30 top-full left-0 mt-1 w-64 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-2"
                         onMouseLeave={() => setMandatePopoverFor(null)}
                       >
                         <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide px-1.5 pb-1">
@@ -956,7 +956,7 @@ export default function CandidatesTable({
                             href={`/mandates/${m.mandate_id}`}
                             className="block rounded-md px-1.5 py-1.5 hover:bg-slate-50"
                           >
-                            <p className="text-[12.5px] font-medium text-slate-800 truncate">{m.role_title}</p>
+                            <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{m.role_title}</p>
                             <p className="text-[11px] text-slate-400 truncate">{m.client_name}</p>
                           </Link>
                         ))}
@@ -997,7 +997,7 @@ export default function CandidatesTable({
 
       {summaryTooltip && (
         <div
-          className="fixed z-50 w-80 rounded-lg border border-slate-200 bg-white p-3 text-[12px] leading-relaxed text-slate-500 shadow-lg pointer-events-none"
+          className="fixed z-50 w-80 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400 shadow-lg pointer-events-none"
           style={{ left: summaryTooltip.left, top: summaryTooltip.top, bottom: summaryTooltip.bottom }}
         >
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600">AI summary</p>

@@ -63,29 +63,29 @@ export default async function ReferralsPage() {
     <div>
       <div className="flex items-baseline justify-between mb-4">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Referrals</h1>
-          <p className="text-[12.5px] text-slate-500 mt-0.5">
+          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Referrals</h1>
+          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
             Candidates referring candidates — refer & earn up to ₹10,000 per placement retained 90 days.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-          <p className="text-lg font-semibold text-slate-900 tabular-nums">{rows.length}</p>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
+          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{rows.length}</p>
           <p className="text-[11px] text-slate-500">Total referrals</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-amber-600 tabular-nums">{pendingPayout}</p>
           <p className="text-[11px] text-slate-500">Placed — payout pending</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-emerald-600 tabular-nums">₹{totalPaid.toLocaleString("en-IN")}</p>
           <p className="text-[11px] text-slate-500">Paid out to date</p>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
         {rows.length === 0 ? (
           <div className="py-16 text-center">
             <Gift className="w-6 h-6 text-slate-300 mx-auto mb-2" />
@@ -93,7 +93,7 @@ export default async function ReferralsPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
               <tr>
                 <th className="text-left px-4 py-2.5">Referred by</th>
                 <th className="text-left px-4 py-2.5">Referred candidate</th>

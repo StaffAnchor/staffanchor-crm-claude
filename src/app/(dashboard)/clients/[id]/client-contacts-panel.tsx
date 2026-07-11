@@ -75,7 +75,7 @@ export default function ClientContactsPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-slate-900">Contacts</h2>
         <button
@@ -87,7 +87,7 @@ export default function ClientContactsPanel({
       </div>
 
       {formOpen && (
-        <div className="mb-4 space-y-2 border border-slate-100 rounded-lg p-3 bg-slate-50">
+        <div className="mb-4 space-y-2 border border-slate-100 dark:border-slate-800 rounded-lg p-3 bg-slate-50">
           <input
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -137,7 +137,7 @@ export default function ClientContactsPanel({
           {contacts.map((c) => (
             <div key={c.id} className="flex items-start justify-between gap-2 text-sm">
               <div>
-                <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                <p className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                   {c.full_name}
                   {c.is_primary && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
                 </p>

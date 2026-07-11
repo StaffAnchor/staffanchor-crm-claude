@@ -70,9 +70,9 @@ export default function ClientPortalAccessPanel({
   const pendingInvites = initialInvites.filter((i) => !i.consumed_at);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900 mb-1">Client portal access</h2>
-      <p className="text-xs text-slate-500 mb-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Client portal access</h2>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
         Give someone at {clientName} a login to jobs.staffanchor.com/client-portal, where they can see every open
         role for {clientName} and review shortlists themselves — no separate link per mandate needed.
       </p>
@@ -97,7 +97,7 @@ export default function ClientPortalAccessPanel({
       {sent && <p className="text-xs text-emerald-700 mt-1.5">Invite email sent — they can sign in with that email once it arrives.</p>}
 
       {(initialUsers.length > 0 || pendingInvites.length > 0) && (
-        <div className="mt-4 border-t border-slate-100 pt-3 space-y-2">
+        <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2">
           {initialUsers.map((u) => (
             <div key={u.id} className="flex items-center justify-between text-xs">
               <span className="text-slate-700">{u.email}</span>

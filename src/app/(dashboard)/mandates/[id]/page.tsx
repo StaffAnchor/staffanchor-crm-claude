@@ -67,10 +67,10 @@ export default async function MandateDetailPage({
   return (
     <div className="grid grid-cols-3 gap-6">
       <div className="col-span-2">
-        <Link href="/mandates" className="text-xs text-slate-500 hover:text-slate-800">
+        <Link href="/mandates" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800">
           ← All mandates
         </Link>
-        <div className="bg-white border border-slate-200 rounded-xl p-6 mt-2 shadow-sm flex items-start justify-between gap-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 mt-2 shadow-sm flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold text-slate-900">{mandate.role_title}</h1>
             <p className="text-sm text-slate-500">
@@ -170,10 +170,10 @@ export default async function MandateDetailPage({
         {mandate.client_id && (
           <Link
             href={`/clients/${mandate.client_id}`}
-            className="block bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-sm text-slate-700"
+            className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-sm text-slate-700"
           >
             <span className="font-medium text-blue-600">Manage {mandate.client_name} →</span>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Client details, contacts, and portal access are managed once per client, not per mandate.
             </p>
           </Link>

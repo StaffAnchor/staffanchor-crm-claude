@@ -214,7 +214,7 @@ export default async function CandidateDetailPage({
       <div className="flex items-center justify-between">
         <Link
           href={backHref}
-          className="text-[12px] text-slate-500 hover:text-slate-800 transition-colors duration-200 ease-ros"
+          className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 transition-colors duration-200 ease-ros"
         >
           ← All candidates
         </Link>
@@ -228,7 +228,7 @@ export default async function CandidateDetailPage({
               href={prevCandidate ? `/candidates/${prevCandidate.id}?from=${encodeURIComponent(from ?? "")}` : "#"}
               aria-disabled={!prevCandidate}
               title={prevCandidate ? `Previous: ${prevCandidate.full_name}` : undefined}
-              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 transition-all duration-200 ease-ros ${
+              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
                 prevCandidate
                   ? "hover:bg-slate-50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600"
                   : "opacity-30 pointer-events-none text-slate-400"
@@ -240,7 +240,7 @@ export default async function CandidateDetailPage({
               href={nextCandidate ? `/candidates/${nextCandidate.id}?from=${encodeURIComponent(from ?? "")}` : "#"}
               aria-disabled={!nextCandidate}
               title={nextCandidate ? `Next: ${nextCandidate.full_name}` : undefined}
-              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 transition-all duration-200 ease-ros ${
+              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
                 nextCandidate
                   ? "hover:bg-slate-50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600"
                   : "opacity-30 pointer-events-none text-slate-400"
@@ -257,19 +257,19 @@ export default async function CandidateDetailPage({
         <div className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-ros-full bg-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center text-lg font-semibold text-slate-600 shrink-0">
+              <div className="w-14 h-14 rounded-ros-full bg-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center text-lg font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                 {initialsFor(candidate.full_name)}
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-[19px] font-semibold text-slate-900 tracking-tight">{candidate.full_name}</h1>
+                  <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {recommendation && (
                     <Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">
                       {recommendation}
                     </Badge>
                   )}
                 </div>
-                <p className="text-[13px] text-slate-500 mt-0.5">
+                <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {candidate.current_job_title}
                   {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
                   {candidate.current_industry ? ` · ${candidate.current_industry}` : ""}
@@ -343,7 +343,7 @@ export default async function CandidateDetailPage({
             {candidate.phone && (
               <a
                 href={`tel:${candidate.phone}`}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
               >
                 <Phone className="w-3 h-3" /> Call
               </a>
@@ -352,14 +352,14 @@ export default async function CandidateDetailPage({
               <a
                 href={`https://wa.me/91${candidate.phone.replace(/\D/g, "").slice(-10)}`}
                 target="_blank"
-                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
               >
                 <MessageCircle className="w-3 h-3" /> WhatsApp
               </a>
             )}
             <a
               href={`mailto:${candidate.email}`}
-              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
             >
               <Mail className="w-3 h-3" /> Email
             </a>
@@ -374,7 +374,7 @@ export default async function CandidateDetailPage({
           </div>
 
           {/* Key stats -- the numbers a recruiter scans before opening a tab */}
-          <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100 text-[13px]">
+          <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 text-[13px]">
             <Field label="Function / Domain" value={candidate.category?.replace("_", " ")} />
             <Field label="Primary sub-domain" value={candidate.sub_domain} />
             <Field label="Experience" value={`${candidate.total_experience_years ?? "—"} yrs`} />
@@ -387,7 +387,7 @@ export default async function CandidateDetailPage({
 
           {candidate.secondary_sub_domains?.length > 0 && (
             <div className="mt-4">
-              <p className="text-[11px] text-slate-500 mb-1.5">Secondary sub-domains</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">Secondary sub-domains</p>
               <div className="flex flex-wrap gap-1.5">
                 {candidate.secondary_sub_domains.map((tag: string) => (
                   <Badge key={tag} tone="neutral" size="sm" className="normal-case tracking-normal">
@@ -416,7 +416,7 @@ export default async function CandidateDetailPage({
                     <div className="space-y-6">
                       {(candidate.skills || candidate.current_industry || (candidate.industries && candidate.industries.length > 0)) && (
                         <div>
-                          <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Skills &amp; industries</h3>
+                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills &amp; industries</h3>
                           <div className="space-y-3">
                             {candidate.skills && (
                               <div>
@@ -462,7 +462,7 @@ export default async function CandidateDetailPage({
                       )}
                       {segmentEntries.length > 0 && (
                         <div>
-                          <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Sales profile</h3>
+                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Sales profile</h3>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                             {segmentEntries.map(([k, v]) => (
                               <div key={k}>
@@ -475,12 +475,12 @@ export default async function CandidateDetailPage({
                       )}
                       {Object.keys(selfAssessment).length > 0 && (
                         <div>
-                          <h3 className="text-[13px] font-semibold text-slate-900 mb-2">Self-reported write-ups</h3>
+                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Self-reported write-ups</h3>
                           <div className="space-y-3">
                             {Object.entries(selfAssessment).map(([k, v]) => (
                               <div key={k}>
                                 <p className="text-[11px] font-medium text-slate-400 uppercase">{humanize(k)}</p>
-                                <p className="text-[13px] text-slate-700 whitespace-pre-wrap">{String(v)}</p>
+                                <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{String(v)}</p>
                               </div>
                             ))}
                           </div>
@@ -522,15 +522,15 @@ export default async function CandidateDetailPage({
                 </Badge>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 mb-4">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
               Internal only, never shown to clients. Fill after a real call using the standard scorecard.
             </p>
             {scores.length > 0 && (
               <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
                 {scores.map((s) => (
                   <div key={s.label} className="text-center">
-                    <p className="text-[17px] font-semibold text-slate-900 tabular-nums">{s.value}<span className="text-[11px] font-normal text-slate-400">/5</span></p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{s.label}</p>
+                    <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-[11px] font-normal text-slate-400">/5</span></p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -547,7 +547,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
       <p className="text-[11px] text-slate-400">{label}</p>
-      <p className="text-slate-800 font-medium">{value || "—"}</p>
+      <p className="text-slate-800 dark:text-slate-200 font-medium">{value || "—"}</p>
     </div>
   );
 }

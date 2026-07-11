@@ -51,12 +51,12 @@ export default function ClientInfoPanel({
 
   if (!editing) {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-slate-900">Client details</h2>
           <button
             onClick={() => setEditing(true)}
-            className="flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-900"
+            className="flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-900"
           >
             <Pencil className="w-3 h-3" /> Edit
           </button>
@@ -64,15 +64,15 @@ export default function ClientInfoPanel({
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between gap-3">
             <dt className="text-slate-400 text-[12px]">Industry</dt>
-            <dd className="text-slate-700 text-right">{initialIndustry || "—"}</dd>
+            <dd className="text-slate-700 dark:text-slate-300 text-right">{initialIndustry || "—"}</dd>
           </div>
           <div className="flex justify-between gap-3">
             <dt className="text-slate-400 text-[12px]">HQ city</dt>
-            <dd className="text-slate-700 text-right">{initialHqCity || "—"}</dd>
+            <dd className="text-slate-700 dark:text-slate-300 text-right">{initialHqCity || "—"}</dd>
           </div>
           <div className="flex justify-between gap-3">
             <dt className="text-slate-400 text-[12px]">Website</dt>
-            <dd className="text-slate-700 text-right truncate max-w-[180px]">
+            <dd className="text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px]">
               {initialWebsite ? (
                 <a href={initialWebsite} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
                   {initialWebsite}
@@ -85,7 +85,7 @@ export default function ClientInfoPanel({
           {initialNotes && (
             <div className="pt-2 border-t border-slate-100">
               <dt className="text-slate-400 text-[12px] mb-1">Notes</dt>
-              <dd className="text-slate-700 whitespace-pre-wrap">{initialNotes}</dd>
+              <dd className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{initialNotes}</dd>
             </div>
           )}
         </dl>
@@ -94,11 +94,11 @@ export default function ClientInfoPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900 mb-3">Edit client details</h2>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Edit client details</h2>
       <div className="space-y-3">
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 mb-1">Industry</label>
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industry</label>
           <input
             value={industry}
             onChange={(e) => setIndustry(e.target.value)}
@@ -106,7 +106,7 @@ export default function ClientInfoPanel({
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 mb-1">HQ city</label>
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">HQ city</label>
           <input
             value={hqCity}
             onChange={(e) => setHqCity(e.target.value)}
@@ -114,7 +114,7 @@ export default function ClientInfoPanel({
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 mb-1">Website</label>
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Website</label>
           <input
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
@@ -122,7 +122,7 @@ export default function ClientInfoPanel({
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 mb-1">Notes</label>
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -141,7 +141,7 @@ export default function ClientInfoPanel({
           </button>
           <button
             onClick={() => setEditing(false)}
-            className="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-3 py-2"
+            className="rounded-lg border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-sm font-medium px-3 py-2"
           >
             Cancel
           </button>

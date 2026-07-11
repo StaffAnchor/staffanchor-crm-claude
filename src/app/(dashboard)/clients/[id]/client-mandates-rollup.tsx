@@ -48,7 +48,7 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
             >
               <div>
                 <p className="text-sm font-medium text-slate-900">{m.role_title}</p>
-                <div className="flex items-center gap-3 text-[12px] text-slate-500 mt-0.5">
+                <div className="flex items-center gap-3 text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {m.city && (
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {m.city}

@@ -71,12 +71,12 @@ export default function AiSummaryPanel({
           limited information. It will regenerate automatically once they complete their profile.
         </p>
       )}
-      <p className="text-[13px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-ros-md p-3">
+      <p className="text-[13px] text-slate-600 dark:text-slate-400 whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/50 rounded-ros-md p-3">
         {summary || "Not generated yet — click Generate to summarize this candidate from their profile data."}
       </p>
       {passport?.resume_highlights && passport.resume_highlights.length > 0 && (
-        <div className="mt-2 bg-slate-50 rounded-ros-md p-3">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+        <div className="mt-2 bg-slate-50 dark:bg-slate-800/50 rounded-ros-md p-3">
+          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
             From their resume
           </p>
           <ul className="space-y-1">

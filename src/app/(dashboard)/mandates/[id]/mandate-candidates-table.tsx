@@ -94,7 +94,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mt-6 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mt-6 shadow-sm">
       {message && (
         <div className={`px-4 py-2 text-xs font-medium ${message.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
           {message.text}
@@ -125,7 +125,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
         </div>
       )}
       <table className="w-full text-sm">
-        <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
           <tr>
             <th className="px-4 py-2.5 w-8">
               <input
@@ -148,7 +148,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
               <td className="px-4 py-3">
-                <Link href={`/candidates/${l.candidate.id}`} className="font-medium text-slate-900 hover:text-blue-600">
+                <Link href={`/candidates/${l.candidate.id}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
                   {l.candidate.full_name}
                 </Link>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
@@ -168,7 +168,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
                 <button
                   onClick={() => toggleShortlist(l.id, !l.in_shortlist)}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                    l.in_shortlist ? "bg-teal-100 text-teal-800 hover:bg-teal-200" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    l.in_shortlist ? "bg-teal-100 text-teal-800 hover:bg-teal-200" : "bg-slate-100 text-slate-500 dark:text-slate-400 hover:bg-slate-200"
                   }`}
                 >
                   {l.in_shortlist ? "Yes — click to remove" : "No — click to add"}
@@ -179,7 +179,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
         </tbody>
       </table>
       {rows.length === 0 && (
-        <p className="text-sm text-slate-500 text-center py-10">
+        <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-10">
           No candidates linked yet. Link candidates from their profile page.
         </p>
       )}

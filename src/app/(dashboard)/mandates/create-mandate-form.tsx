@@ -207,15 +207,15 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       </select>
 
       <div>
-        <p className="text-xs font-medium text-slate-600 mb-1.5">
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
           Sub-domain{isMultiSubDomain ? " (select all this client would accept)" : ""}
         </p>
         {!form.category ? (
-          <p className="text-[12px] text-slate-400 rounded-lg border border-dashed border-slate-200 px-3 py-2">
+          <p className="text-[12px] text-slate-400 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2">
             Pick a Function / Domain above first.
           </p>
         ) : isMultiSubDomain ? (
-          <div className="grid gap-1.5 rounded-lg border border-slate-200 p-3">
+          <div className="grid gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             {subDomainOptions.map((o) => (
               <label key={o} className="flex items-center gap-2 text-[13px] text-slate-700">
                 <input type="checkbox" checked={form.subDomains.includes(o)} onChange={() => toggleSubDomain(o)} />
@@ -246,13 +246,13 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       </div>
 
       <div>
-        <p className="text-xs font-medium text-slate-600 mb-1.5">Location(s)</p>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Location(s)</p>
         {form.cities.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {form.cities.map((c) => (
               <span
                 key={c}
-                className="flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 text-[12px] font-medium px-2.5 py-1"
+                className="flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-2.5 py-1"
               >
                 {c}
                 <button type="button" onClick={() => removeCity(c)} className="text-slate-400 hover:text-slate-700">
@@ -283,7 +283,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
               addCity(form.cityPick);
               setForm((f) => ({ ...f, cityPick: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
           >
             Add
           </button>
@@ -301,7 +301,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
               addCity(form.cityOther);
               setForm((f) => ({ ...f, cityOther: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
           >
             Add
           </button>
@@ -342,7 +342,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       </div>
 
       <div>
-        <p className="text-xs font-medium text-slate-600 mb-2">Job description (shown to candidates on the public listing)</p>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Job description (shown to candidates on the public listing)</p>
 
         <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-3 mb-2">
           <p className="text-[11px] font-medium text-blue-700 mb-1.5">Paste rough notes and let AI structure it</p>
@@ -396,7 +396,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-200 p-3 bg-slate-50">
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50">
         <label className="flex items-start gap-2 text-[12px] text-slate-700">
           <input
             type="checkbox"

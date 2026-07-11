@@ -22,12 +22,15 @@ export function Tooltip({
       className="relative inline-flex"
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
     >
       {children}
       {visible && (
         <span
+          role="tooltip"
           className={cn(
-            "absolute left-1/2 -translate-x-1/2 z-50 whitespace-nowrap rounded-ros-sm bg-slate-900 text-white text-[11px] px-2 py-1 shadow-ros-md animate-fade-in pointer-events-none",
+            "absolute left-1/2 -translate-x-1/2 z-50 whitespace-nowrap rounded-ros-sm bg-slate-900 dark:bg-slate-700 text-white text-[11px] px-2 py-1 shadow-ros-md animate-fade-in pointer-events-none",
             side === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5"
           )}
         >

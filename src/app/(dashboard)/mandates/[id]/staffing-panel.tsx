@@ -66,21 +66,21 @@ export default function StaffingPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5 mb-3">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mb-3">
         <Users className="w-4 h-4 text-slate-400" /> Staffed on this mandate
       </h3>
 
       {assigned.length === 0 ? (
-        <p className="text-[12px] text-slate-500 mb-3">
+        <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
           Nobody's staffed yet -- Priority Actions for this mandate stay unassigned/team-wide until someone is.
         </p>
       ) : (
         <div className="space-y-1.5 mb-3">
           {assigned.map((p) => (
-            <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2.5 py-1.5">
+            <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1.5">
               <div className="min-w-0">
-                <p className="text-[13px] text-slate-800 truncate">{p.full_name ?? p.email}</p>
+                <p className="text-[13px] text-slate-800 dark:text-slate-200 truncate">{p.full_name ?? p.email}</p>
                 <p className="text-[10px] uppercase tracking-wide text-slate-400">{p.role}</p>
               </div>
               <button onClick={() => handleRemove(p.id)} className="text-slate-400 hover:text-red-600 shrink-0">

@@ -19,7 +19,7 @@ type CandidateMatch = {
 function scoreColor(score: number) {
   if (score >= 75) return "text-emerald-700 bg-emerald-50";
   if (score >= 50) return "text-amber-700 bg-amber-50";
-  return "text-slate-600 bg-slate-100";
+  return "text-slate-600 dark:text-slate-400 bg-slate-100";
 }
 
 export default function FindMatchesPanel({
@@ -93,9 +93,9 @@ export default function FindMatchesPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-purple-500" /> Find matching candidates
         </h2>
       </div>
@@ -151,13 +151,13 @@ export default function FindMatchesPanel({
               const isOpen = expanded.has(m.candidate_id);
               const added = addedIds.has(m.candidate_id);
               return (
-                <div key={m.candidate_id} className="border border-slate-200 rounded-lg p-3">
+                <div key={m.candidate_id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/candidates/${m.candidate_id}`}
-                          className="text-[13px] font-medium text-slate-900 hover:text-blue-600 truncate"
+                          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate"
                         >
                           {m.full_name}
                         </Link>
@@ -165,7 +165,7 @@ export default function FindMatchesPanel({
                           {m.score}
                         </span>
                       </div>
-                      <p className="text-[12px] text-slate-600 mt-0.5">{m.reason}</p>
+                      <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{m.reason}</p>
                     </div>
                     <button
                       onClick={() => toggleExpanded(m.candidate_id)}

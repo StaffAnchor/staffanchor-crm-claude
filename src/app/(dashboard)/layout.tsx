@@ -40,7 +40,16 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-200">
+      {/* Accessibility: lets keyboard-only users jump past the nav straight
+          to the page content instead of tabbing through every nav link
+          and toolbar button first. Visually hidden until focused. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-blue-600 focus:text-white focus:px-3 focus:py-2 focus:rounded-md focus:text-[13px] focus:font-medium"
+      >
+        Skip to main content
+      </a>
       <TopNav
         navLinks={navLinks}
         fullName={profile?.full_name ?? null}
@@ -49,7 +58,7 @@ export default async function DashboardLayout({
         initials={initials}
       />
       <CopilotPalette />
-      {children}
+      <main id="main-content">{children}</main>
     </div>
   );
 }

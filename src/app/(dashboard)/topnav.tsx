@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Plus, Bell, ChevronDown } from "lucide-react";
 import SignOutButton from "./sign-out-button";
+import ThemeToggle from "@/components/theme-toggle";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
@@ -52,7 +53,7 @@ export default function TopNav({
               return (
                 <span
                   key={link.label}
-                  className="px-3 py-1.5 rounded-md text-slate-600 cursor-not-allowed select-none"
+                  className="px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-400 cursor-not-allowed select-none"
                   title="Coming soon"
                 >
                   {link.label}
@@ -84,33 +85,52 @@ export default function TopNav({
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleSearchKey}
             placeholder="Search candidates... (Enter)"
+            aria-label="Search candidates"
             className="bg-transparent text-[13px] text-slate-200 placeholder:text-slate-500 outline-none flex-1"
           />
-          <kbd className="text-[10px] text-slate-500 bg-white/[0.06] rounded px-1 py-0.5">/</kbd>
+          <kbd className="text-[10px] text-slate-500 dark:text-slate-400 bg-white/[0.06] rounded px-1 py-0.5">/</kbd>
         </div>
 
         <div className="relative">
           <button
             onClick={() => setCreateOpen((v) => !v)}
             onBlur={() => setTimeout(() => setCreateOpen(false), 150)}
-            className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 transition-colors text-white text-[13px] font-medium rounded-lg pl-2.5 pr-2 py-1.5"
+            className="ros-focusable flex items-center gap-1 bg-blue-600 hover:bg-blue-500 transition-colors text-white text-[13px] font-medium rounded-lg pl-2.5 pr-2 py-1.5"
+            aria-label="Create new"
+            aria-haspopup="menu"
+            aria-expanded={createOpen}
           >
             <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
             <ChevronDown className="w-3 h-3 opacity-70" />
           </button>
           {createOpen && (
-            <div className="absolute right-0 mt-1.5 w-44 bg-white rounded-lg shadow-lg border border-slate-200 py-1 animate-fade-in">
-              <Link href="/candidates/new" className="block px-3 py-2 text-[13px] text-slate-700 hover:bg-slate-50">
+            <div
+              role="menu"
+              className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 animate-fade-in"
+            >
+              <Link
+                href="/candidates/new"
+                className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
                 New candidate
               </Link>
-              <Link href="/mandates" className="block px-3 py-2 text-[13px] text-slate-700 hover:bg-slate-50">
+              <Link
+                href="/mandates"
+                className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
                 New mandate
               </Link>
             </div>
           )}
         </div>
 
-        <button className="text-slate-400 hover:text-white transition-colors" title="Notifications">
+        <ThemeToggle />
+
+        <button
+          className="ros-focusable text-slate-400 hover:text-white transition-colors"
+          title="Notifications"
+          aria-label="Notifications"
+        >
           <Bell className="w-4 h-4" strokeWidth={2} />
         </button>
 
@@ -118,17 +138,23 @@ export default function TopNav({
           <button
             onClick={() => setMenuOpen((v) => !v)}
             onBlur={() => setTimeout(() => setMenuOpen(false), 150)}
-            className="flex items-center gap-2"
+            className="ros-focusable flex items-center gap-2"
+            aria-label="Account menu"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
           >
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[11px] font-semibold text-white">
               {initials}
             </div>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-1.5 animate-fade-in z-40">
-              <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-[13px] font-medium text-slate-900">{fullName ?? email}</p>
-                <p className="text-[11px] text-slate-500 capitalize">{role}</p>
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in z-40"
+            >
+              <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 dark:border-slate-700">
+                <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 dark:text-slate-100">{fullName ?? email}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">{role}</p>
               </div>
               <div className="px-3 py-2">
                 <SignOutButton />

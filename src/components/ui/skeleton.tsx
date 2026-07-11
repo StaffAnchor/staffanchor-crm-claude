@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-ros-skeleton rounded-ros-sm bg-slate-200", className)} />;
+  return <div className={cn("animate-ros-skeleton rounded-ros-sm bg-slate-200 dark:bg-slate-700", className)} />;
 }
 
 export function SkeletonRow({ columns = 4 }: { columns?: number }) {

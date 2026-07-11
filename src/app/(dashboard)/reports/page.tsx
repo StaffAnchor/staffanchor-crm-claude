@@ -352,8 +352,8 @@ export default async function ReportsPage({
     <div>
       <div className="flex items-baseline justify-between mb-4">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Reports</h1>
-          <p className="text-[12.5px] text-slate-500 mt-0.5">
+          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Reports</h1>
+          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
             Candidate composition, hiring inflow, and recruiter productivity. Click any bar to see the matching
             candidates.
           </p>
@@ -378,7 +378,7 @@ export default async function ReportsPage({
       <div className="grid grid-cols-4 gap-3 mb-4">
         <Card padded={false} className="p-4">
           <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">Total candidates</p>
-          <p className="text-[22px] font-semibold text-slate-900 tabular-nums leading-none">{totalCandidates}</p>
+          <p className="text-[22px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">{totalCandidates}</p>
           <p className="text-[11px] text-slate-400 mt-1.5">in the system</p>
         </Card>
 
@@ -386,7 +386,7 @@ export default async function ReportsPage({
           <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">
             New · {currentRangeLabel.toLowerCase()}
           </p>
-          <p className="text-[22px] font-semibold text-slate-900 tabular-nums leading-none">{inflowTotal}</p>
+          <p className="text-[22px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">{inflowTotal}</p>
           {inflowDeltaPct !== null ? (
             <p
               className={`text-[11px] mt-1.5 flex items-center gap-1 font-medium ${
@@ -412,8 +412,8 @@ export default async function ReportsPage({
           <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">Leading domain</p>
           {topDomain ? (
             <>
-              <p className="text-[15px] font-semibold text-slate-900 leading-tight truncate">{topDomain.label}</p>
-              <p className="text-[11px] text-slate-500 mt-1.5">
+              <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 leading-tight truncate">{topDomain.label}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
                 {topDomain.count} candidates · {topDomain.pct}% of total
               </p>
             </>
@@ -426,11 +426,11 @@ export default async function ReportsPage({
           <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">Top recruiter</p>
           {topRecruiter && topRecruiter.placed > 0 ? (
             <>
-              <p className="text-[15px] font-semibold text-slate-900 leading-tight truncate flex items-center gap-1.5">
+              <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 leading-tight truncate flex items-center gap-1.5">
                 <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 {topRecruiter.name}
               </p>
-              <p className="text-[11px] text-slate-500 mt-1.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
                 {topRecruiter.placed} placed
                 {totalPlaced > 0 ? ` · ${pctOf(topRecruiter.placed, totalPlaced)}% of all placements` : ""}
               </p>
@@ -458,7 +458,7 @@ export default async function ReportsPage({
               <Link
                 key={s.label}
                 href={s.href}
-                className="group flex flex-col gap-2 rounded-ros-lg border border-slate-100 bg-slate-50/60 p-3 transition-all duration-200 ease-ros hover:border-slate-200 hover:shadow-ros-sm hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+                className="group flex flex-col gap-2 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 p-3 transition-all duration-200 ease-ros hover:border-slate-200 hover:shadow-ros-sm hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
               >
                 <div className="flex items-center justify-between">
                   <Icon className={`w-3.5 h-3.5 ${s.value === 0 ? "text-slate-400" : "text-amber-500"}`} />
@@ -466,7 +466,7 @@ export default async function ReportsPage({
                     {s.value === 0 ? "Clear" : s.value}
                   </Badge>
                 </div>
-                <p className="text-[11.5px] font-medium text-slate-600 group-hover:text-blue-600 transition-colors duration-200 ease-ros leading-snug">
+                <p className="text-[11.5px] font-medium text-slate-600 dark:text-slate-400 group-hover:text-blue-600 transition-colors duration-200 ease-ros leading-snug">
                   {s.label}
                 </p>
               </Link>
@@ -476,7 +476,7 @@ export default async function ReportsPage({
       </Card>
 
       {topCategory && topCategory.count > 0 && (
-        <div className="flex items-center gap-2 text-[12.5px] text-slate-600 bg-indigo-50/70 border border-indigo-100 rounded-ros-lg px-3.5 py-2 mb-4">
+        <div className="flex items-center gap-2 text-[12.5px] text-slate-600 dark:text-slate-400 bg-indigo-50/70 border border-indigo-100 rounded-ros-lg px-3.5 py-2 mb-4">
           <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
           <span>
             <span className="font-semibold text-slate-900">{topCategory.label}</span> makes up{" "}
@@ -575,7 +575,7 @@ export default async function ReportsPage({
                 key={r.key}
                 href={`/reports?range=${r.key}`}
                 className={`text-[11.5px] font-medium px-2.5 py-1 rounded-ros-full transition-colors duration-200 ease-ros ${
-                  range === r.key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  range === r.key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
                 }`}
               >
                 {r.label}
@@ -602,14 +602,14 @@ export default async function ReportsPage({
           <div className="divide-y divide-slate-100">
             {recruiterRows.map((r, idx) => (
               <div key={r.id} className="flex items-center justify-between py-2.5">
-                <p className="text-[13px] font-medium text-slate-900 flex items-center gap-1.5">
+                <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                   {idx === 0 && r.placed > 0 && <Trophy className="w-3.5 h-3.5 text-amber-500" />}
                   {r.name}
                 </p>
                 <div className="flex items-center gap-4">
                   <Link
                     href={`/candidates?recruiter=${r.id}`}
-                    className="text-[12px] text-slate-600 hover:text-blue-600 transition-colors duration-200 ease-ros flex items-center gap-1"
+                    className="text-[12px] text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros flex items-center gap-1"
                   >
                     <span className="font-semibold tabular-nums">{r.linked}</span> linked
                   </Link>

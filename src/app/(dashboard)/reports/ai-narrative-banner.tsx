@@ -53,7 +53,7 @@ export default function AiNarrativeBanner({ stats }: { stats: ReportsNarrativeIn
           <div className="h-2.5 w-1/2 rounded-full bg-indigo-100 animate-pulse" />
         </div>
       ) : (
-        <p className="text-[13px] text-slate-700 leading-snug">{state.text}</p>
+        <p className="text-[13px] text-slate-700 dark:text-slate-300 leading-snug">{state.text}</p>
       )}
     </div>
   );

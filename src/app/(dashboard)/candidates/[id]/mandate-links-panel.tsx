@@ -93,7 +93,7 @@ export default function MandateLinksPanel({
                 className={`text-xs px-2 py-1 rounded-ros-full font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
                   l.in_shortlist
                     ? "bg-emerald-600 text-white"
-                    : "bg-slate-100 text-slate-600 border border-slate-200"
+                    : "bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200"
                 }`}
               >
                 {l.in_shortlist ? "In client shortlist" : "Add to shortlist"}
@@ -103,7 +103,7 @@ export default function MandateLinksPanel({
               <select
                 value={l.stage}
                 onChange={(e) => updateStage(l.id, e.target.value)}
-                className="text-xs rounded-ros-md border border-slate-200 px-2 py-1 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               >
                 {STAGES.map((s) => (
                   <option key={s} value={s}>
@@ -120,7 +120,7 @@ export default function MandateLinksPanel({
         <select
           value={selectedMandate}
           onChange={(e) => setSelectedMandate(e.target.value)}
-          className="flex-1 rounded-ros-md border border-slate-200 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         >
           <option value="">Link to a mandate...</option>
           {availableMandates.map((m) => (

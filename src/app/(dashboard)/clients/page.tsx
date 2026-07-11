@@ -100,8 +100,8 @@ export default async function ClientsPage({
       <div className="col-span-2">
         <div className="flex items-baseline justify-between mb-3">
           <div>
-            <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Clients</h1>
-            <p className="text-[12.5px] text-slate-500 mt-0.5">
+            <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Clients</h1>
+            <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
               {(clients ?? []).length} client{(clients ?? []).length === 1 ? "" : "s"} in your database
             </p>
           </div>
@@ -127,7 +127,7 @@ export default async function ClientsPage({
             name="q"
             defaultValue={q}
             placeholder="Search clients by name…"
-            className="w-full rounded-ros-md border border-slate-200 bg-white px-3.5 py-2.5 text-[13px] outline-none transition-colors duration-200 ease-ros focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300 shadow-ros-sm"
+            className="w-full rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[13px] outline-none transition-colors duration-200 ease-ros focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300 shadow-ros-sm"
           />
         </form>
 
@@ -146,14 +146,14 @@ export default async function ClientsPage({
               <Card key={c.id} interactive padded={false} className="p-0">
                 <Link href={`/clients/${c.id}`} className="block p-5">
                   <div className="flex items-start justify-between mb-2 gap-2">
-                    <p className="text-[15px] font-semibold text-slate-900 truncate">{c.name}</p>
+                    <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 truncate">{c.name}</p>
                     {c.industry && (
                       <Badge tone="neutral" size="sm" className="normal-case tracking-normal shrink-0">
                         {c.industry}
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-[12px] text-slate-500 mb-3">
+                  <div className="flex items-center gap-4 text-[12px] text-slate-500 dark:text-slate-400 mb-3">
                     {c.hq_city && (
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> {c.hq_city}
@@ -168,13 +168,13 @@ export default async function ClientsPage({
                   </div>
 
                   {funnel.submittedPlus > 0 && (
-                    <div className="flex items-center gap-4 text-[11.5px] text-slate-500 pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-4 text-[11.5px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100">
                       <span>
-                        <span className="font-semibold text-slate-900 tabular-nums">{pct(funnel.subToInterviewRate)}</span>{" "}
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{pct(funnel.subToInterviewRate)}</span>{" "}
                         sub → interview
                       </span>
                       <span>
-                        <span className="font-semibold text-slate-900 tabular-nums">{funnel.placed}</span> placed
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{funnel.placed}</span> placed
                       </span>
                     </div>
                   )}
@@ -203,7 +203,7 @@ export default async function ClientsPage({
 
       <div>
         <Card className="sticky top-20">
-          <h2 className="text-sm font-semibold text-slate-900 mb-3">New client</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New client</h2>
           <CreateClientForm />
         </Card>
       </div>

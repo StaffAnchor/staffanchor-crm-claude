@@ -7,12 +7,13 @@ export type BadgeTone = "neutral" | "accent" | "success" | "warning" | "danger" 
 // "modernize the bright pill" pass requested for the Candidates page,
 // applied here so every badge everywhere picks it up at once.
 const TONE_CLASSES: Record<BadgeTone, string> = {
-  neutral: "bg-slate-100 text-slate-600 ring-slate-200/60",
-  accent: "bg-blue-50 text-blue-700 ring-blue-200/60",
-  success: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
-  warning: "bg-amber-50 text-amber-700 ring-amber-200/60",
-  danger: "bg-rose-50 text-rose-700 ring-rose-200/60",
-  info: "bg-sky-50 text-sky-700 ring-sky-200/60",
+  neutral: "bg-slate-100 text-slate-600 dark:text-slate-400 ring-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700/60",
+  accent: "bg-blue-50 text-blue-700 ring-blue-200/60 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-800/60",
+  success:
+    "bg-emerald-50 text-emerald-700 ring-emerald-200/60 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800/60",
+  warning: "bg-amber-50 text-amber-700 ring-amber-200/60 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-800/60",
+  danger: "bg-rose-50 text-rose-700 ring-rose-200/60 dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-800/60",
+  info: "bg-sky-50 text-sky-700 ring-sky-200/60 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-800/60",
 };
 
 // Formalizes the "low-opacity tint bg + colored text + matching ring"

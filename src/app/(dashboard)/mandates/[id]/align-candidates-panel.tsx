@@ -74,8 +74,8 @@ export default function AlignCandidatesPanel({
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900 mb-3">Align existing candidates</h2>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Align existing candidates</h2>
       <div className="relative mb-3">
         <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
         <input

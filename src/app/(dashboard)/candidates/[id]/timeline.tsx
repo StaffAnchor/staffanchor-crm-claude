@@ -44,7 +44,7 @@ export default function Timeline({ events }: { events: TimelineEvent[] }) {
             </div>
             <div className="pb-5">
               <p className="text-[13px] text-slate-800">{e.label}</p>
-              {e.detail && <p className="text-[12px] text-slate-500 mt-0.5">{e.detail}</p>}
+              {e.detail && <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{e.detail}</p>}
               <p className="text-[11px] text-slate-400 mt-1">{new Date(e.at).toLocaleString()}</p>
             </div>
           </div>

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Phase 11: class-based dark mode -- toggled by adding/removing `.dark` on
+   <html> (see theme-toggle.tsx), rather than following the OS-level
+   prefers-color-scheme media query. This lets every `dark:` utility used
+   below and in src/components/ui respond to the in-app toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
@@ -62,6 +68,15 @@
   --ros-tone-info-ring: #bae6fd;
 }
 
+/* Phase 11: dark palette override for the same --background/--foreground
+   tokens above -- applied whenever .dark is present on <html>. Individual
+   components still use explicit `dark:` Tailwind utilities for their own
+   surfaces (Card/Badge/etc.); this covers the page-level canvas. */
+.dark {
+  --background: #0b1120;
+  --foreground: #e2e8f0;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -116,4 +131,13 @@ body {
 
 .animate-ros-skeleton {
   animation: ros-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+/* Phase 11 accessibility: a single consistent keyboard-focus ring, applied
+   via the `ros-focusable` class to interactive elements across the shared
+   ui/ primitives so Tab-key navigation is always visibly trackable
+   (mouse users never see it, thanks to :focus-visible). */
+.ros-focusable:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }

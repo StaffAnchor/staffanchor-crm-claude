@@ -27,7 +27,7 @@ type Assessment = {
 };
 
 const SELECT_CLS =
-  "w-full rounded-ros-md border border-slate-200 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30";
+  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 const INPUT_CLS = SELECT_CLS;
 
 export default function AssessmentForm({
@@ -63,7 +63,7 @@ export default function AssessmentForm({
 
   const scoreField = (label: string, key: "communication_score" | "confidence_score" | "coachability_score") => (
     <div>
-      <label className="block text-xs font-medium text-slate-600 mb-1">{label} (1-5)</label>
+      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{label} (1-5)</label>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
@@ -73,7 +73,7 @@ export default function AssessmentForm({
             className={`w-7 h-7 rounded-ros-md text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
               form[key] === n
                 ? "bg-blue-600 text-white"
-                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
             }`}
           >
             {n}
@@ -90,7 +90,7 @@ export default function AssessmentForm({
       {scoreField("Attitude / coachability", "coachability_score")}
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Job stability</label>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Job stability</label>
         <select value={form.job_stability ?? ""} onChange={(e) => set("job_stability", e.target.value)} className={SELECT_CLS}>
           <option value="">Select...</option>
           <option value="Stable">Stable</option>
@@ -100,7 +100,7 @@ export default function AssessmentForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Relocation — verified</label>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Relocation — verified</label>
         <select value={form.relocation_verified ?? ""} onChange={(e) => set("relocation_verified", e.target.value)} className={SELECT_CLS}>
           <option value="">Select...</option>
           <option value="Yes">Yes</option>
@@ -110,7 +110,7 @@ export default function AssessmentForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Notice period — verified</label>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Notice period — verified</label>
         <input
           value={form.notice_verified ?? ""}
           onChange={(e) => set("notice_verified", e.target.value)}
@@ -120,7 +120,7 @@ export default function AssessmentForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Compensation — verified</label>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Compensation — verified</label>
         <input
           value={form.compensation_verified ?? ""}
           onChange={(e) => set("compensation_verified", e.target.value)}
@@ -130,7 +130,7 @@ export default function AssessmentForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Red flags</label>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Red flags</label>
         <div className="flex flex-wrap gap-1.5">
           {RED_FLAG_OPTIONS.map((flag) => (
             <button
@@ -140,7 +140,7 @@ export default function AssessmentForm({
               className={`text-xs px-2 py-1 rounded-ros-full border transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
                 (form.red_flags ?? []).includes(flag)
                   ? "bg-rose-600 text-white border-rose-600"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
               }`}
             >
               {flag}
@@ -150,7 +150,7 @@ export default function AssessmentForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Overall recommendation</label>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Overall recommendation</label>
         <select value={form.overall_recommendation ?? ""} onChange={(e) => set("overall_recommendation", e.target.value)} className={SELECT_CLS}>
           <option value="">Select...</option>
           <option value="Strong Fit">Strong Fit</option>

@@ -84,25 +84,25 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setLoggingOutcome((s) => !s);
             setScheduling(false);
           }}
-          className="text-[11.5px] font-medium text-slate-500 hover:text-slate-700 transition-colors duration-200 ease-ros"
+          className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 transition-colors duration-200 ease-ros"
         >
           Log outcome
         </button>
       </div>
 
       {scheduling && (
-        <div className="flex items-center gap-1.5 mt-1 bg-slate-50 border border-slate-200 rounded-ros-md p-2">
+        <div className="flex items-center gap-1.5 mt-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-ros-md p-2">
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="text-[11.5px] rounded-ros-md border border-slate-200 px-1.5 py-1"
+            className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
           />
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="text-[11.5px] rounded-ros-md border border-slate-200 px-1.5 py-1"
+            className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
           />
           <button
             onClick={confirmSlot}
@@ -115,7 +115,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
       )}
 
       {loggingOutcome && (
-        <div className="flex flex-col gap-1.5 mt-1 bg-slate-50 border border-slate-200 rounded-ros-md p-2 w-56">
+        <div className="flex flex-col gap-1.5 mt-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-ros-md p-2 w-56">
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => logOutcome("offer")}
@@ -136,7 +136,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Rejection reason (optional)"
-            className="text-[11.5px] rounded-ros-md border border-slate-200 px-1.5 py-1"
+            className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
           />
         </div>
       )}

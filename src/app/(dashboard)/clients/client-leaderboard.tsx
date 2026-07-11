@@ -86,16 +86,16 @@ function LeaderRow({ row, rank, positive }: { row: ClientLeaderRow; rank?: numbe
   return (
     <Link
       href={`/clients/${row.id}`}
-      className="flex items-center justify-between gap-3 rounded-ros-md border border-slate-100 hover:border-slate-300 hover:bg-slate-50/70 px-3 py-2 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+      className="flex items-center justify-between gap-3 rounded-ros-md border border-slate-100 dark:border-slate-800 hover:border-slate-300 hover:bg-slate-50/70 px-3 py-2 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
     >
       <div className="flex items-center gap-2.5 min-w-0">
         {rank && (
-          <span className="w-5 h-5 shrink-0 rounded-ros-full bg-slate-100 text-slate-500 text-[10px] font-semibold flex items-center justify-center">
+          <span className="w-5 h-5 shrink-0 rounded-ros-full bg-slate-100 text-slate-500 dark:text-slate-400 text-[10px] font-semibold flex items-center justify-center">
             {rank}
           </span>
         )}
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-slate-900 truncate">{row.name}</p>
+          <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">{row.name}</p>
           <p className="text-[11px] text-slate-400">
             {row.stats.submittedPlus} submitted · {row.stats.placed} placed
           </p>
