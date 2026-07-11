@@ -1,14 +1,10 @@
 import Link from "next/link";
-import { Building2, MapPin, Users, Clock } from "lucide-react";
+import { Briefcase, CheckCircle2, PauseCircle, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CreateMandateForm from "./create-mandate-form";
-
-const STATUS_STYLE: Record<string, string> = {
-  open: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-  on_hold: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  closed: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
-  filled: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-};
+import MandatesGrid, { type MandateSummary, type HealthSignal } from "./mandates-grid";
+import { StatTile } from "@/components/ui/stat-tile";
+import { Card } from "@/components/ui/card";
 
 function daysOpen(createdAt: string) {
   const ms = Date.now() - new Date(createdAt).getTime();
@@ -34,99 +30,111 @@ export default async function MandatesPage({
   const { data: clientRows } = await supabase.from("mandates").select("client_name").not("client_name", "is", null);
   const existingClients = Array.from(new Set((clientRows ?? []).map((r) => r.client_name).filter(Boolean))).sort();
 
-  const { data: links } = await supabase.from("candidate_mandate_links").select("mandate_id, stage");
+  const { data: links } = await supabase
+    .from("candidate_mandate_links")
+    .select("mandate_id, stage, in_shortlist, shortlisted_at, client_feedback");
   const countsByMandate: Record<string, number> = {};
   const submittedByMandate: Record<string, number> = {};
+  const staleFeedbackByMandate: Record<string, number> = {};
+  // Same 4-day staleness threshold the mandate detail page's client-feedback
+  // nudge already uses -- surfaced here too so it's visible without opening
+  // every mandate one at a time.
+  const STALE_DAYS = 4;
+  const staleCutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
   (links ?? []).forEach((l) => {
     countsByMandate[l.mandate_id] = (countsByMandate[l.mandate_id] ?? 0) + 1;
     if (["submitted", "client_interview", "offer", "placed"].includes(l.stage)) {
       submittedByMandate[l.mandate_id] = (submittedByMandate[l.mandate_id] ?? 0) + 1;
     }
+    if (l.in_shortlist && !l.client_feedback && l.shortlisted_at && new Date(l.shortlisted_at).getTime() < staleCutoff) {
+      staleFeedbackByMandate[l.mandate_id] = (staleFeedbackByMandate[l.mandate_id] ?? 0) + 1;
+    }
   });
+
+  // Also fetch the unfiltered set of mandates so the stat tiles above the
+  // list always reflect the whole board, not just whatever status filter
+  // is currently applied.
+  const { data: allMandates } = await supabase.from("mandates").select("id, status, created_at");
+  const statusCounts: Record<string, number> = {};
+  let agingCount = 0;
+  (allMandates ?? []).forEach((m) => {
+    statusCounts[m.status] = (statusCounts[m.status] ?? 0) + 1;
+    if (m.status === "open" && daysOpen(m.created_at) >= 21 && !submittedByMandate[m.id]) {
+      agingCount += 1;
+    }
+  });
+
+  const mandateSummaries: MandateSummary[] = (mandates ?? []).map((m) => {
+    const linked = countsByMandate[m.id] ?? 0;
+    const submitted = submittedByMandate[m.id] ?? 0;
+    const stale = staleFeedbackByMandate[m.id] ?? 0;
+    const daysOpenNum = daysOpen(m.created_at);
+
+    const signals: HealthSignal[] = [];
+    if (m.status === "open" && linked === 0 && daysOpenNum >= 3) {
+      signals.push({ label: "Needs sourcing", tone: "warning" });
+    }
+    if (stale > 0) {
+      signals.push({ label: `${stale} awaiting client feedback`, tone: "danger" });
+    }
+    if (m.status === "open" && daysOpenNum >= 21 && submitted === 0) {
+      signals.push({ label: "Aging, no submissions", tone: "warning" });
+    }
+
+    return {
+      id: m.id,
+      client_name: m.client_name,
+      role_title: m.role_title,
+      category: m.category,
+      sub_domain: m.sub_domain,
+      city: m.city,
+      status: m.status,
+      created_at: m.created_at,
+      daysOpen: daysOpenNum,
+      linked,
+      submitted,
+      signals,
+    };
+  });
+
+  const statTiles = [
+    { label: "Open", value: statusCounts["open"] ?? 0, icon: CheckCircle2, accent: true, href: "/mandates?status=open" },
+    { label: "On hold", value: statusCounts["on_hold"] ?? 0, icon: PauseCircle, href: "/mandates?status=on_hold" },
+    { label: "Closed", value: statusCounts["closed"] ?? 0, icon: Briefcase, href: "/mandates?status=closed" },
+    { label: "Aging, no submissions", value: agingCount, icon: AlertTriangle },
+  ];
 
   return (
     <div className="grid grid-cols-3 gap-6">
       <div className="col-span-2">
-        <div className="flex items-baseline justify-between mb-5">
+        <div className="flex items-baseline justify-between mb-3">
           <div>
-            <h1 className="text-[22px] font-semibold text-slate-900 tracking-tight">Mandates</h1>
-            <p className="text-[13px] text-slate-500 mt-0.5">
-              {(mandates ?? []).length} open client roles
+            <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Mandates</h1>
+            <p className="text-[12.5px] text-slate-500 mt-0.5">
+              {(mandates ?? []).length} {status ? `${status.replace("_", " ")} ` : ""}client roles · click any card for a quick view
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {(mandates ?? []).map((m) => {
-            const linked = countsByMandate[m.id] ?? 0;
-            const submitted = submittedByMandate[m.id] ?? 0;
-            const progressPct = linked ? Math.round((submitted / linked) * 100) : 0;
-            return (
-              <Link
-                key={m.id}
-                href={`/mandates/${m.id}`}
-                className="group bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-150"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-[15px] font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
-                      {m.role_title}
-                    </p>
-                    <p className="text-[13px] text-slate-500 flex items-center gap-1 mt-0.5">
-                      <Building2 className="w-3 h-3" /> {m.client_name}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
-                      STATUS_STYLE[m.status] ?? "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {m.status.replace("_", " ")}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4 text-[12px] text-slate-500 mb-3">
-                  {m.city && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {m.city}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" /> {linked} linked
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {daysOpen(m.created_at)}d open
-                  </span>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                    <span>Pipeline progress</span>
-                    <span>{submitted}/{linked || 0} submitted+</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+        <div className="bg-slate-50/60 rounded-ros-lg p-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {statTiles.map((t) => {
+              const Icon = t.icon;
+              const tile = (
+                <StatTile label={t.label} value={t.value} icon={<Icon className="w-4 h-4" strokeWidth={2} />} accent={t.accent} className={t.href ? "cursor-pointer" : undefined} />
+              );
+              return t.href ? <Link key={t.label} href={t.href}>{tile}</Link> : <div key={t.label}>{tile}</div>;
+            })}
+          </div>
         </div>
 
-        {(mandates ?? []).length === 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl py-16 text-center shadow-sm">
-            <p className="text-sm text-slate-500">No mandates match this view.</p>
-          </div>
-        )}
+        <MandatesGrid mandates={mandateSummaries} />
       </div>
       <div>
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-20">
+        <Card className="sticky top-20">
           <h2 className="text-sm font-semibold text-slate-900 mb-3">New mandate</h2>
           <CreateMandateForm existingClients={existingClients} />
-        </div>
+        </Card>
       </div>
     </div>
   );
