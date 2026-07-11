@@ -14,6 +14,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
 import { industryOptions } from "@/lib/candidate-options";
+import { StatTile } from "@/components/ui/stat-tile";
 
 const STATUS_LABEL: Record<string, string> = {
   awaiting_input: "Awaiting Input",
@@ -35,13 +36,16 @@ const ORIGIN_LABEL: Record<string, string> = {
   recruiter_created: "Recruiter Created",
 };
 
+// ROS: a hiring funnel is inherently one progression, not six unrelated
+// categories -- so it reads calmer as one accent color deepening toward
+// the end of the pipeline (rainbow bars implied unrelated categories).
 const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
-  { key: "lead_registered", label: "New", color: "bg-slate-400" },
-  { key: "under_review", label: "Under Review", color: "bg-violet-400" },
-  { key: "shortlisted", label: "Shortlisted", color: "bg-teal-400" },
-  { key: "submitted", label: "Submitted", color: "bg-indigo-400" },
-  { key: "client_interview", label: "Interview", color: "bg-cyan-400" },
-  { key: "offer_placed", label: "Offer / Placed", color: "bg-emerald-400" },
+  { key: "lead_registered", label: "New", color: "bg-slate-300" },
+  { key: "under_review", label: "Under Review", color: "bg-blue-300" },
+  { key: "shortlisted", label: "Shortlisted", color: "bg-blue-400" },
+  { key: "submitted", label: "Submitted", color: "bg-blue-500" },
+  { key: "client_interview", label: "Interview", color: "bg-blue-600" },
+  { key: "offer_placed", label: "Offer / Placed", color: "bg-emerald-500" },
 ];
 
 const CATEGORIES = [
@@ -218,17 +222,20 @@ export default async function CandidatesPage({
   };
   const funnelMax = Math.max(1, ...Object.values(funnelCounts));
 
+  // ROS: neutral cards + one restrained accent (Total candidates, the
+  // single most important number in the row) instead of ten differently
+  // colored solid pills -- calmer, less "control panel," per the redesign.
   const statTiles = [
-    { label: "Total candidates", value: totalCount, icon: Users, bg: "bg-slate-700 hover:bg-slate-800" },
-    { label: "New today", value: newToday, icon: Sparkles, bg: "bg-blue-600 hover:bg-blue-700" },
-    { label: "Under review", value: statusCounts["under_review"] ?? 0, icon: Eye, bg: "bg-violet-600 hover:bg-violet-700", href: "/candidates?status=under_review" },
-    { label: "Shortlisted", value: statusCounts["shortlisted"] ?? 0, icon: Star, bg: "bg-teal-600 hover:bg-teal-700", href: "/candidates?status=shortlisted" },
-    { label: "Submitted", value: statusCounts["submitted"] ?? 0, icon: Send, bg: "bg-purple-600 hover:bg-purple-700", href: "/candidates?status=submitted" },
-    { label: "Placed", value: statusCounts["placed"] ?? 0, icon: Trophy, bg: "bg-emerald-600 hover:bg-emerald-700", href: "/candidates?status=placed" },
-    { label: "Job Quick Apply", value: quickApplyCount, icon: Zap, bg: "bg-sky-600 hover:bg-sky-700", href: qs({ origin: "quick_apply" }) },
-    { label: "Job Portal", value: jobPortalCount, icon: Database, bg: "bg-indigo-600 hover:bg-indigo-700", href: qs({ origin: "self_registration" }) },
-    { label: "Recruiter Created", value: recruiterAddedCount, icon: Users, bg: "bg-fuchsia-600 hover:bg-fuchsia-700", href: qs({ origin: "recruiter_created" }) },
-    { label: "Incomplete profiles", value: incompleteCount, icon: AlertTriangle, bg: "bg-amber-500 hover:bg-amber-600", href: qs({ incomplete: "1" }) },
+    { label: "Total candidates", value: totalCount, icon: Users, accent: true },
+    { label: "New today", value: newToday, icon: Sparkles },
+    { label: "Under review", value: statusCounts["under_review"] ?? 0, icon: Eye, href: "/candidates?status=under_review" },
+    { label: "Shortlisted", value: statusCounts["shortlisted"] ?? 0, icon: Star, href: "/candidates?status=shortlisted" },
+    { label: "Submitted", value: statusCounts["submitted"] ?? 0, icon: Send, href: "/candidates?status=submitted" },
+    { label: "Placed", value: statusCounts["placed"] ?? 0, icon: Trophy, href: "/candidates?status=placed" },
+    { label: "Job Quick Apply", value: quickApplyCount, icon: Zap, href: qs({ origin: "quick_apply" }) },
+    { label: "Job Portal", value: jobPortalCount, icon: Database, href: qs({ origin: "self_registration" }) },
+    { label: "Recruiter Created", value: recruiterAddedCount, icon: Users, href: qs({ origin: "recruiter_created" }) },
+    { label: "Incomplete profiles", value: incompleteCount, icon: AlertTriangle, href: qs({ incomplete: "1" }) },
   ];
 
   function qs(overrides: Record<string, string | undefined>) {
@@ -258,24 +265,24 @@ export default async function CandidatesPage({
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
         {statTiles.map((k) => {
           const Icon = k.icon;
-          const content = (
-            <div
-              className={`flex items-center gap-1.5 ${k.bg} text-white rounded-full pl-2 pr-3 py-1 shadow-sm transition-colors duration-150 cursor-pointer`}
-            >
-              <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
-              <span className="text-[13px] font-semibold tabular-nums leading-none">{k.value}</span>
-              <span className="text-[11px] font-medium leading-none opacity-90 whitespace-nowrap">{k.label}</span>
-            </div>
+          const tile = (
+            <StatTile
+              label={k.label}
+              value={k.value}
+              icon={<Icon className="w-4 h-4" strokeWidth={2} />}
+              accent={k.accent}
+              className={k.href ? "cursor-pointer" : undefined}
+            />
           );
           return k.href ? (
             <Link key={k.label} href={k.href}>
-              {content}
+              {tile}
             </Link>
           ) : (
-            <div key={k.label}>{content}</div>
+            <div key={k.label}>{tile}</div>
           );
         })}
       </div>
