@@ -259,35 +259,39 @@ export default async function CandidatesPage({
         </div>
         <Link
           href="/candidates/new"
-          className="rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white text-[13px] font-medium px-3.5 py-2 shadow-sm"
+          className="rounded-lg bg-blue-600 hover:bg-blue-500 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-white text-[13px] font-medium px-3.5 py-2 shadow-sm"
         >
           + Create candidate
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
-        {statTiles.map((k) => {
-          const Icon = k.icon;
-          const tile = (
-            <StatTile
-              label={k.label}
-              value={k.value}
-              icon={<Icon className="w-4 h-4" strokeWidth={2} />}
-              accent={k.accent}
-              className={k.href ? "cursor-pointer" : undefined}
-            />
-          );
-          return k.href ? (
-            <Link key={k.label} href={k.href}>
-              {tile}
-            </Link>
-          ) : (
-            <div key={k.label}>{tile}</div>
-          );
-        })}
+      {/* Soft canvas backdrop -- the tiles read as one calm surface instead
+          of ten separately-boxed panels floating on the page background. */}
+      <div className="bg-slate-50/60 rounded-ros-lg p-2 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          {statTiles.map((k) => {
+            const Icon = k.icon;
+            const tile = (
+              <StatTile
+                label={k.label}
+                value={k.value}
+                icon={<Icon className="w-4 h-4" strokeWidth={2} />}
+                accent={k.accent}
+                className={k.href ? "cursor-pointer" : undefined}
+              />
+            );
+            return k.href ? (
+              <Link key={k.label} href={k.href}>
+                {tile}
+              </Link>
+            ) : (
+              <div key={k.label}>{tile}</div>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-ros-lg px-4 py-3 mb-3 shadow-ros-sm">
+      <div className="bg-white border border-slate-100 rounded-ros-lg px-4 py-3 mb-3 shadow-ros-sm">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
             Hiring pipeline
@@ -310,7 +314,7 @@ export default async function CandidatesPage({
               >
                 <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${stage.color} opacity-80 group-hover:opacity-100 transition-all duration-200`}
+                    className={`h-full rounded-full ${stage.color} opacity-80 group-hover:opacity-100 transition-all duration-200 ease-ros`}
                     style={{ width: `${widthPct}%` }}
                   />
                 </div>
@@ -327,7 +331,7 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      <form className="bg-white border border-slate-200 rounded-ros-lg p-3 mb-3 shadow-ros-sm">
+      <form className="bg-white border border-slate-100 rounded-ros-lg p-3 mb-3 shadow-ros-sm">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <input
             name="q"
@@ -360,7 +364,7 @@ export default async function CandidatesPage({
             <Link
               key={c.value}
               href={qs({ category: c.value || undefined })}
-              className={`text-[12px] font-medium px-3 py-1 rounded-full transition-colors ${
+              className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
                 (params.category ?? "") === c.value
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -371,7 +375,7 @@ export default async function CandidatesPage({
           ))}
           <Link
             href={qs({ incomplete: params.incomplete ? undefined : "1" })}
-            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-colors ${
+            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
               params.incomplete
                 ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
                 : "bg-amber-50 text-amber-700 hover:bg-amber-100"

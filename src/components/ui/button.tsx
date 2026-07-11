@@ -30,8 +30,11 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center font-medium rounded-ros-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
-        "duration-[160ms]",
+        // Spring-flavored ease-out + a tiny lift/press on hover/active --
+        // the "Gemini effect": a click should feel physically tactile
+        // rather than a flat color swap.
+        "inline-flex items-center justify-center font-medium rounded-ros-md transition-all duration-200 ease-ros disabled:opacity-60 disabled:cursor-not-allowed",
+        "hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
         VARIANT_CLASSES[variant],
         SIZE_CLASSES[size],
         className

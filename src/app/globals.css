@@ -22,11 +22,16 @@
   --ros-shadow-md: 0 2px 8px -2px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.04);
   --ros-shadow-lg: 0 8px 24px -4px rgb(15 23 42 / 0.10), 0 2px 6px -2px rgb(15 23 42 / 0.06);
 
-  /* Motion -- 120-180ms per brief */
+  /* Motion -- 120-180ms per brief, plus a 200ms step for slightly larger
+     surfaces (cards, rows) that still needs to read as "snappy". The ease
+     curve is a spring-flavored ease-out (overshoot-free) -- the same
+     family Linear/Vercel use for hover/press so motion feels tactile
+     rather than mechanical. */
   --ros-duration-fast: 120ms;
   --ros-duration-base: 160ms;
   --ros-duration-slow: 180ms;
-  --ros-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ros-duration-slower: 200ms;
+  --ros-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Semantic tone tokens -- each existing ad-hoc "bg-X-50 text-X-700
      ring-X-200" tint pattern (used across inbox task badges, mandate
@@ -70,6 +75,10 @@
   --shadow-ros-sm: var(--ros-shadow-sm);
   --shadow-ros-md: var(--ros-shadow-md);
   --shadow-ros-lg: var(--ros-shadow-lg);
+
+  /* Enables `ease-ros` and `duration-ros-slower` Tailwind utilities. */
+  --ease-ros: var(--ros-ease);
+  --duration-ros-slower: var(--ros-duration-slower);
 }
 
 body {

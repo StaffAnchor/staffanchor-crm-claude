@@ -22,8 +22,13 @@ export function StatTile({
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 rounded-ros-lg border bg-white px-3 py-2.5 transition-colors duration-[160ms]",
-        accent ? "border-blue-200 bg-blue-50/40" : "border-slate-200 hover:border-slate-300",
+        // Faint borders (border-slate-100, not -200) so the row reads as
+        // one soft canvas rather than ten separately-boxed panels, plus a
+        // tiny lift-on-hover / press-on-click so the tiles feel tactile
+        // instead of static, matching the row/button physics elsewhere.
+        "flex items-center gap-2.5 rounded-ros-lg border bg-white px-3 py-2.5 transition-all duration-200 ease-ros",
+        "hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
+        accent ? "border-blue-100 bg-blue-50/40" : "border-slate-100 hover:border-slate-200 hover:shadow-ros-sm",
         className
       )}
     >
