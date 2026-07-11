@@ -5,18 +5,21 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import EmployerInquiriesView, { type EmployerInquiryRow } from "./employer-inquiries-view";
 
-// Landing page for employer submissions coming in from staffanchor.com
-// (the /employers and /contact forms). Those forms still post to Google
-// Sheets as they always have -- this table is a parallel, best-effort
-// sync so a recruiter can triage new inbound leads and convert one
-// straight into a Client without ever opening the spreadsheet.
+// Landing page for leads coming in from staffanchor.com's Contact Us form
+// (name/email/phone/audience/message). Note: the separate /employers
+// hiring-mandate form is not staged here -- it writes straight into the
+// Mandates list via the submit_mandate RPC. This table still posts to
+// Google Sheets as it always has for the contact form -- this is a
+// parallel, best-effort sync so a recruiter can triage inbound messages
+// and convert an employer-flagged one into a Client without opening the
+// spreadsheet.
 export default async function EmployerInquiriesPage() {
   const supabase = await createClient();
 
   const { data: inquiries } = await supabase
     .from("employer_inquiries")
     .select(
-      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, source, status, notes, converted_client_id"
+      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, audience, message, source, status, notes, converted_client_id"
     )
     .order("created_at", { ascending: false });
 
@@ -42,7 +45,7 @@ export default async function EmployerInquiriesPage() {
         <div>
           <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Employer Inquiries</h1>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Employer form submissions from staffanchor.com, synced here for triage
+            Contact Us submissions from staffanchor.com, synced here for triage
           </p>
         </div>
       </div>

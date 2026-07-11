@@ -13,13 +13,15 @@ export type InquirySource = "employers_page" | "contact_page";
 export interface EmployerInquiryRow {
   id: string;
   created_at: string;
-  company_name: string;
+  company_name: string | null;
   industry: string | null;
   custom_industry: string | null;
   full_name: string;
   designation: string | null;
   work_email: string;
   mobile_number: string | null;
+  audience: string | null;
+  message: string | null;
   source: InquirySource;
   status: InquiryStatus;
   notes: string | null;
@@ -82,6 +84,7 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
       router.push(`/clients/${row.converted_client_id}`);
       return;
     }
+    if (!row.company_name) return; // Contact Us submissions carry no company name -- nothing to convert.
     setConvertingId(row.id);
     setError(null);
     try {
@@ -156,20 +159,32 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 truncate">{row.company_name}</p>
+                  <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    {row.company_name ?? row.full_name}
+                  </p>
                   <Badge tone={STATUS_TONE[row.status]} size="sm">
                     {STATUS_LABEL[row.status]}
                   </Badge>
+                  {row.audience && (
+                    <Badge tone="info" size="sm" className="normal-case tracking-normal">
+                      {row.audience}
+                    </Badge>
+                  )}
                   {(row.industry || row.custom_industry) && (
                     <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
                       {row.industry === "Other" ? row.custom_industry : row.industry}
                     </Badge>
                   )}
                 </div>
-                <p className="text-[12.5px] text-slate-600 dark:text-slate-400">
-                  {row.full_name}
-                  {row.designation && <span className="text-slate-400 dark:text-slate-500"> · {row.designation}</span>}
-                </p>
+                {row.company_name && (
+                  <p className="text-[12.5px] text-slate-600 dark:text-slate-400">
+                    {row.full_name}
+                    {row.designation && <span className="text-slate-400 dark:text-slate-500"> · {row.designation}</span>}
+                  </p>
+                )}
+                {row.message && (
+                  <p className="text-[12.5px] text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{row.message}</p>
+                )}
                 <div className="flex items-center gap-3 mt-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1">
                     <Mail className="w-3 h-3" /> {row.work_email}
@@ -195,19 +210,21 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
                   <option value="dismissed">Dismissed</option>
                 </select>
 
-                <button
-                  onClick={() => convertToClient(row)}
-                  disabled={convertingId === row.id}
-                  className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
-                >
-                  <Building2 className="w-3 h-3" />
-                  {row.converted_client_id
-                    ? "View client"
-                    : convertingId === row.id
-                    ? "Converting…"
-                    : "Convert to Client"}
-                  <ArrowRight className="w-3 h-3" />
-                </button>
+                {row.company_name && (
+                  <button
+                    onClick={() => convertToClient(row)}
+                    disabled={convertingId === row.id}
+                    className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
+                  >
+                    <Building2 className="w-3 h-3" />
+                    {row.converted_client_id
+                      ? "View client"
+                      : convertingId === row.id
+                      ? "Converting…"
+                      : "Convert to Client"}
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             </div>
           </Card>
