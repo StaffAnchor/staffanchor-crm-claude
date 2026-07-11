@@ -5,21 +5,22 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import EmployerInquiriesView, { type EmployerInquiryRow } from "./employer-inquiries-view";
 
-// Landing page for leads coming in from staffanchor.com's Contact Us form
-// (name/email/phone/audience/message). Note: the separate /employers
-// hiring-mandate form is not staged here -- it writes straight into the
-// Mandates list via the submit_mandate RPC. This table still posts to
-// Google Sheets as it always has for the contact form -- this is a
-// parallel, best-effort sync so a recruiter can triage inbound messages
-// and convert an employer-flagged one into a Client without opening the
-// spreadsheet.
+// Landing page for BOTH leads coming in from staffanchor.com: the Contact
+// Us form (name/email/phone/audience/message) and the /employers hiring
+// mandate form (company/role/category/city/budget). Neither writes
+// straight into a live table anymore -- a mandate submission used to
+// insert directly into public.mandates via submit_mandate(), which meant
+// any anonymous visitor's junk submission went instantly live as an open
+// mandate (and therefore a public job listing on jobs.staffanchor.com)
+// with zero review. Both paths now land here for triage; a recruiter
+// explicitly promotes a reviewed one into a real Mandate or Client.
 export default async function EmployerInquiriesPage() {
   const supabase = await createClient();
 
   const { data: inquiries } = await supabase
     .from("employer_inquiries")
     .select(
-      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, audience, message, source, status, notes, converted_client_id"
+      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, audience, message, role_title, category, city, budget_min, budget_max, source, status, notes, converted_client_id, converted_mandate_id"
     )
     .order("created_at", { ascending: false });
 
@@ -45,7 +46,7 @@ export default async function EmployerInquiriesPage() {
         <div>
           <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Employer Inquiries</h1>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Contact Us submissions from staffanchor.com, synced here for triage
+            Mandate + Contact Us submissions from staffanchor.com, awaiting recruiter review
           </p>
         </div>
       </div>
