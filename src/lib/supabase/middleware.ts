@@ -66,5 +66,29 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Vendor/freelancer accounts get a separate, restricted portal (/vendor/*)
+  // instead of the full internal CRM -- keep each side out of the other's
+  // routes. Public routes (login, password reset, cron/webhook callbacks,
+  // shortlist links) are exempt since they're not role-specific.
+  if (user && !isPublicRoute) {
+    const isVendorRoute = request.nextUrl.pathname.startsWith("/vendor");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role === "freelancer" && !isVendorRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/vendor/mandates";
+      return NextResponse.redirect(url);
+    }
+    if (profile?.role !== "freelancer" && isVendorRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/candidates";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
