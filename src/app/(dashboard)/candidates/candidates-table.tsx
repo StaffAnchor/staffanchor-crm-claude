@@ -869,7 +869,7 @@ export default function CandidatesTable({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="w-full text-[13px]">
           <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
             <tr>
