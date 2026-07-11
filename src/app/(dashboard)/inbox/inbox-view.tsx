@@ -9,6 +9,7 @@ import {
   X,
   ArrowRight,
   Loader2,
+  MessageCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -243,6 +244,38 @@ function ContextDrawer({
 }) {
   const meta = metaFor(item.task_type);
   const Icon = meta.icon;
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // Reset the WhatsApp send status whenever focus moves to a different item.
+  useEffect(() => {
+    setSending(false);
+    setSendResult(null);
+  }, [item.id]);
+
+  async function handleSendUpdate() {
+    setSending(true);
+    setSendResult(null);
+    try {
+      const res = await fetch("/api/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxItemId: item.id }),
+      });
+      const body = await res.json();
+      if (body.ok) {
+        setSendResult({ ok: true, message: "WhatsApp update sent." });
+      } else if (body.status === "not_configured") {
+        setSendResult({ ok: false, message: "WhatsApp isn't connected yet -- this will send automatically once it's set up." });
+      } else {
+        setSendResult({ ok: false, message: body.error ?? "Couldn't send the update." });
+      }
+    } catch {
+      setSendResult({ ok: false, message: "Couldn't send the update." });
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <div>
@@ -286,6 +319,20 @@ function ContextDrawer({
           </Link>
         )}
       </div>
+
+      <button
+        onClick={handleSendUpdate}
+        disabled={sending}
+        className="w-full mb-2 flex items-center justify-center gap-1.5 text-[12px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 ring-1 ring-emerald-200 rounded-lg px-3 py-2 disabled:opacity-60"
+      >
+        {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+        Send Update via WhatsApp
+      </button>
+      {sendResult && (
+        <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500"}`}>
+          {sendResult.message}
+        </p>
+      )}
 
       <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
         <button

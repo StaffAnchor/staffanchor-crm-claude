@@ -42,7 +42,12 @@ export async function updateSession(request: NextRequest) {
     // Vercel Cron hits this on a schedule with a CRON_SECRET bearer token,
     // never a staff cookie -- same class of bug as public-ai-summary above,
     // caught this time before it shipped rather than after a user hit it.
-    request.nextUrl.pathname.startsWith("/api/cron/");
+    request.nextUrl.pathname.startsWith("/api/cron/") ||
+    // Meta calls this directly (verification handshake + delivery/inbound
+    // webhooks) with no staff cookie -- authorizes itself via
+    // WHATSAPP_VERIFY_TOKEN on the GET handshake; same class of bug as
+    // the two routes above, exempted up front this time.
+    request.nextUrl.pathname.startsWith("/api/whatsapp/webhook");
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||
