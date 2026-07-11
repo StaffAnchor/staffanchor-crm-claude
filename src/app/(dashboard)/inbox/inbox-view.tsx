@@ -19,6 +19,7 @@ import {
   MessageCircle,
   Users,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -107,6 +108,39 @@ function metaFor(taskType: string) {
   );
 }
 
+// Groups the flat task-type list into the broader buckets a recruiter
+// actually thinks in ("what's going on with interviews" / "which clients
+// need a nudge") rather than one undifferentiated stream of nine task
+// types. Any task type not explicitly mapped falls into "other" so a
+// future task type never disappears -- it just lands in a catch-all
+// section instead of breaking the grouping.
+const GROUP_META: Record<string, { label: string; icon: typeof Flame }> = {
+  interviews: { label: "Interviews", icon: CalendarClock },
+  sourcing: { label: "Sourcing & mandates", icon: Compass },
+  clients: { label: "Client relations", icon: MessageSquareWarning },
+  candidates: { label: "Candidates", icon: UserPlus2 },
+  offers: { label: "Offers & placements", icon: PartyPopper },
+  other: { label: "Other", icon: Flame },
+};
+
+const TASK_TYPE_GROUP: Record<string, keyof typeof GROUP_META> = {
+  TRIGGER_INTERVIEW_COORDINATION: "interviews",
+  INTERVIEW_REMINDER: "interviews",
+  STALE_MANDATE: "sourcing",
+  CLIENT_FEEDBACK_OVERDUE: "clients",
+  STALE_CANDIDATE: "candidates",
+  MISSING_ASSESSMENT: "candidates",
+  NEW_REFERRAL: "candidates",
+  FOLLOW_UP_ON_OFFER: "offers",
+  POST_PLACEMENT_CHECKIN: "offers",
+};
+
+const GROUP_ORDER: (keyof typeof GROUP_META)[] = ["interviews", "sourcing", "clients", "candidates", "offers", "other"];
+
+function groupFor(taskType: string): keyof typeof GROUP_META {
+  return TASK_TYPE_GROUP[taskType] ?? "other";
+}
+
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.round(diffMs / 60000);
@@ -143,20 +177,43 @@ export default function InboxView({
   // Filtering by task type / recruiter is purely a view-layer concern --
   // the underlying `items` state (and its indices) always holds everything
   // the viewer is allowed to see (now the whole team's inbox), so keyboard
-  // nav / optimistic updates stay simple.
+  // nav / optimistic updates stay simple. The final sort groups items into
+  // the broader buckets (Interviews / Sourcing & mandates / Client
+  // relations / Candidates / Offers & placements) a recruiter actually
+  // thinks in, high-priority-first within each group; Array#sort is a
+  // stable sort so items keep their original relative order (the RPC's
+  // own ordering) within a group/priority tier.
   const visibleItems = useMemo(
     () =>
-      items.filter((i) => {
-        if (activeFilter !== "ALL" && i.task_type !== activeFilter) return false;
-        if (recruiterFilter !== "ALL") {
-          const key = i.is_unassigned ? UNASSIGNED_KEY : i.recruiter_id ?? UNASSIGNED_KEY;
-          if (key !== recruiterFilter) return false;
-        }
-        return true;
-      }),
+      items
+        .filter((i) => {
+          if (activeFilter !== "ALL" && i.task_type !== activeFilter) return false;
+          if (recruiterFilter !== "ALL") {
+            const key = i.is_unassigned ? UNASSIGNED_KEY : i.recruiter_id ?? UNASSIGNED_KEY;
+            if (key !== recruiterFilter) return false;
+          }
+          return true;
+        })
+        .sort((a, b) => {
+          const ga = GROUP_ORDER.indexOf(groupFor(a.task_type));
+          const gb = GROUP_ORDER.indexOf(groupFor(b.task_type));
+          if (ga !== gb) return ga - gb;
+          if (a.priority === "high" && b.priority !== "high") return -1;
+          if (b.priority === "high" && a.priority !== "high") return 1;
+          return 0;
+        }),
     [items, activeFilter, recruiterFilter]
   );
   const focused = visibleItems[Math.min(focusedIdx, visibleItems.length - 1)] ?? null;
+
+  const groupCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    visibleItems.forEach((i) => {
+      const g = groupFor(i.task_type);
+      m.set(g, (m.get(g) ?? 0) + 1);
+    });
+    return m;
+  }, [visibleItems]);
 
   const filterCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -240,12 +297,6 @@ export default function InboxView({
       setFocusedIdx(Math.max(visibleItems.length - 1, 0));
     }
   }, [visibleItems.length, focusedIdx]);
-
-  const grouped = useMemo(() => {
-    const high = visibleItems.filter((i) => i.priority === "high");
-    const rest = visibleItems.filter((i) => i.priority !== "high");
-    return { high, rest };
-  }, [visibleItems]);
 
   const filterOptions = useMemo(() => {
     const present = Array.from(filterCounts.keys());
@@ -357,49 +408,66 @@ export default function InboxView({
             ref={listRef}
             className="bg-white rounded-ros-lg border border-slate-200 shadow-ros-sm overflow-hidden"
           >
-            {[...grouped.high, ...grouped.rest].map((item) => {
-              const idx = visibleItems.findIndex((i) => i.id === item.id);
+            {visibleItems.map((item, idx) => {
               const isFocused = idx === focusedIdx;
               const meta = metaFor(item.task_type);
               const Icon = meta.icon;
               const isResolving = resolvingId === item.id;
+              const group = groupFor(item.task_type);
+              const prevGroup = idx > 0 ? groupFor(visibleItems[idx - 1].task_type) : null;
+              const showGroupHeader = group !== prevGroup;
+              const GroupIcon = GROUP_META[group].icon;
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setFocusedIdx(idx)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${
-                    isFocused ? "bg-blue-50/70" : "hover:bg-slate-50"
-                  }`}
-                >
-                  <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ring-1 ${meta.tint}`}>
-                    <Icon className="w-4 h-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium text-slate-900 truncate">{item.title}</span>
-                      {item.priority === "high" && (
-                        <Badge tone="warning" size="sm">
-                          High
-                        </Badge>
-                      )}
-                      {item.is_unassigned ? (
-                        <Badge tone="success" size="sm" icon={<Users className="w-2.5 h-2.5" />}>
-                          Team
-                        </Badge>
-                      ) : item.recruiter_name ? (
-                        <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
-                          {item.recruiter_name}
-                        </Badge>
-                      ) : null}
-                    </span>
-                    <span className="block text-[11px] text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
-                  </span>
-                  {isResolving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 shrink-0" />
-                  ) : (
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                <div key={item.id}>
+                  {showGroupHeader && (
+                    <div
+                      className={`flex items-center gap-1.5 px-4 py-1.5 bg-slate-50/80 ${
+                        idx > 0 ? "border-t border-slate-100" : ""
+                      }`}
+                    >
+                      <GroupIcon className="w-3 h-3 text-slate-400" />
+                      <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
+                        {GROUP_META[group].label}
+                      </span>
+                      <span className="text-[10px] text-slate-400">· {groupCounts.get(group) ?? 0}</span>
+                    </div>
                   )}
-                </button>
+                  <button
+                    onClick={() => setFocusedIdx(idx)}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${
+                      isFocused ? "bg-blue-50/70" : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ring-1 ${meta.tint}`}>
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium text-slate-900 truncate">{item.title}</span>
+                        {item.priority === "high" && (
+                          <Badge tone="warning" size="sm">
+                            High
+                          </Badge>
+                        )}
+                        {item.is_unassigned ? (
+                          <Badge tone="success" size="sm" icon={<Users className="w-2.5 h-2.5" />}>
+                            Team
+                          </Badge>
+                        ) : item.recruiter_name ? (
+                          <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
+                            {item.recruiter_name}
+                          </Badge>
+                        ) : null}
+                      </span>
+                      <span className="block text-[11px] text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
+                    </span>
+                    {isResolving ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 shrink-0" />
+                    ) : (
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                    )}
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -466,6 +534,13 @@ function SnoozeMenu({ onSnooze, disabled }: { onSnooze: (until: Date) => void; d
   );
 }
 
+// Module-level cache (not React state) so navigating away from an item and
+// back doesn't re-request the same insight -- each item's AI take is
+// generated once per page load, the same "compute once, reuse on revisit"
+// pattern as the candidate AI passport being cached on the row itself,
+// just kept in memory here since these one-liners aren't worth a DB column.
+const aiInsightCache = new Map<string, { status: "loading" | "done" | "error"; text: string }>();
+
 function ContextDrawer({
   item,
   onResolve,
@@ -481,11 +556,50 @@ function ContextDrawer({
   const Icon = meta.icon;
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [, forceRerender] = useState(0);
 
   useEffect(() => {
     setSending(false);
     setSendResult(null);
   }, [item.id]);
+
+  // Auto-fetch a one-line "why this matters / what to do" AI take as soon
+  // as an item is opened, the same "AI context appears automatically"
+  // pattern used for the candidate passport, rather than requiring an
+  // extra click. Cached per item so re-focusing never re-fetches.
+  useEffect(() => {
+    if (aiInsightCache.has(item.id)) return;
+    aiInsightCache.set(item.id, { status: "loading", text: "" });
+    forceRerender((n) => n + 1);
+    (async () => {
+      try {
+        const res = await fetch("/api/inbox/ai-insight", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            taskType: item.task_type,
+            title: item.title,
+            detail: item.detail,
+            priority: item.priority,
+            candidateName: item.candidate_name,
+            mandateRoleTitle: item.mandate_role_title,
+            mandateClientName: item.mandate_client_name,
+          }),
+        });
+        const body = await res.json();
+        if (res.ok && body.insight) {
+          aiInsightCache.set(item.id, { status: "done", text: body.insight });
+        } else {
+          aiInsightCache.set(item.id, { status: "error", text: body.error ?? "Couldn't generate an AI insight." });
+        }
+      } catch {
+        aiInsightCache.set(item.id, { status: "error", text: "Couldn't generate an AI insight." });
+      }
+      forceRerender((n) => n + 1);
+    })();
+  }, [item.id, item.task_type, item.title, item.detail, item.priority, item.candidate_name, item.mandate_role_title, item.mandate_client_name]);
+
+  const aiInsight = aiInsightCache.get(item.id);
 
   async function handleSendUpdate() {
     setSending(true);
@@ -535,6 +649,20 @@ function ContextDrawer({
       </div>
 
       {item.detail && <p className="text-[13px] text-slate-600 mb-4">{item.detail}</p>}
+
+      {/* AI take: why this specific task matters + what to do, generated
+          automatically on open (see aiInsightCache above) -- a sharper,
+          situation-specific gloss on top of the rule-computed task. */}
+      <div className="flex items-start gap-2 rounded-ros-md bg-indigo-50/70 border border-indigo-100 px-3 py-2.5 mb-4">
+        <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+        {!aiInsight || aiInsight.status === "loading" ? (
+          <span className="text-[12px] text-slate-400 italic">Thinking...</span>
+        ) : aiInsight.status === "error" ? (
+          <span className="text-[12px] text-slate-400">{aiInsight.text}</span>
+        ) : (
+          <p className="text-[12.5px] text-slate-700 leading-snug">{aiInsight.text}</p>
+        )}
+      </div>
 
       <div className="space-y-2 mb-5">
         {item.candidate_id && (

@@ -21,7 +21,7 @@ export default async function MandatesPage({
 
   let query = supabase
     .from("mandates")
-    .select("id, client_name, role_title, category, sub_domain, city, status, created_at")
+    .select("id, client_name, role_title, category, sub_domain, city, status, created_at, auto_match_results")
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
 
@@ -81,6 +81,16 @@ export default async function MandatesPage({
       signals.push({ label: "Aging, no submissions", tone: "warning" });
     }
 
+    // Top AI-ranked candidate match, if one has already been computed --
+    // either from the auto-run at mandate creation or a manual "Find
+    // matches" click on the detail page. Reads the existing cached
+    // `auto_match_results` column (matches are already sorted by score
+    // descending), so surfacing it in the list costs zero extra AI calls.
+    const rawMatches = m.auto_match_results as
+      | { candidate_id: string; full_name: string; score: number; reason: string }[]
+      | null;
+    const topMatch = rawMatches && rawMatches.length > 0 ? rawMatches[0] : null;
+
     return {
       id: m.id,
       client_name: m.client_name,
@@ -94,6 +104,9 @@ export default async function MandatesPage({
       linked,
       submitted,
       signals,
+      topMatch: topMatch
+        ? { candidateId: topMatch.candidate_id, name: topMatch.full_name, score: topMatch.score, reason: topMatch.reason }
+        : null,
     };
   });
 

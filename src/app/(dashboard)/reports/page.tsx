@@ -17,6 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import AiNarrativeBanner from "./ai-narrative-banner";
 import ReportBarList, { type BarItem } from "./report-bar-list";
 import InflowTrend, { type InflowPoint } from "./inflow-trend";
 import { Card } from "@/components/ui/card";
@@ -358,6 +359,20 @@ export default async function ReportsPage({
           </p>
         </div>
       </div>
+
+      <AiNarrativeBanner
+        stats={{
+          rangeLabel: currentRangeLabel,
+          totalCandidates,
+          inflowTotal,
+          inflowDeltaPct,
+          topDomain: topDomain ? { label: topDomain.label, pct: topDomain.pct ?? 0 } : null,
+          topCategory: topCategory ? { label: topCategory.label, pct: topCategory.pct ?? 0 } : null,
+          topRecruiter: topRecruiter ? { name: topRecruiter.name, placed: topRecruiter.placed } : null,
+          totalPlaced,
+          attentionSignals: attentionSignals.map((s) => ({ label: s.label, value: s.value })),
+        }}
+      />
 
       {/* Headline KPI strip */}
       <div className="grid grid-cols-4 gap-3 mb-4">
