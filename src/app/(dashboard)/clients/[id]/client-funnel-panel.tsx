@@ -1,5 +1,7 @@
 import { TrendingUp, Target, Award, Briefcase } from "lucide-react";
 import { STAGE_ORDER, STAGE_LABELS, pct, type FunnelStats } from "../funnel-utils";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
   const maxCount = Math.max(1, ...STAGE_ORDER.map((s) => stats.byStage[s] ?? 0));
@@ -33,24 +35,22 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
 
   if (stats.total === 0) {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+      <Card>
         <h2 className="text-sm font-semibold text-slate-900 mb-1">Submission funnel</h2>
         <p className="text-[13px] text-slate-400">
           No candidates linked to this client's mandates yet — conversion analysis will appear once
           candidates are submitted.
         </p>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+    <Card>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-slate-900">Submission funnel</h2>
         {stats.rejected > 0 && (
-          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600 ring-1 ring-red-200">
-            {stats.rejected} rejected
-          </span>
+          <Badge tone="danger" size="sm" className="normal-case tracking-normal">{stats.rejected} rejected</Badge>
         )}
       </div>
 
@@ -61,9 +61,9 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
           return (
             <div key={s} className="flex items-center gap-2.5">
               <span className="w-[72px] shrink-0 text-[11px] text-slate-500">{STAGE_LABELS[s]}</span>
-              <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div className="flex-1 h-2 rounded-ros-full bg-slate-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-blue-500/80"
+                  className="h-full rounded-ros-full bg-blue-500/80 transition-all duration-300 ease-ros"
                   style={{ width: `${count > 0 ? Math.max(widthPct, 4) : 0}%` }}
                 />
               </div>
@@ -75,7 +75,7 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
 
       <div className="grid grid-cols-2 gap-3">
         {rateCards.map((r) => (
-          <div key={r.label} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
+          <div key={r.label} className="rounded-ros-lg border border-slate-100 bg-slate-50/60 p-3">
             <div className="flex items-center gap-1.5 text-slate-400 mb-1">
               <r.icon className="w-3.5 h-3.5" />
               <span className="text-[10.5px] font-medium uppercase tracking-wide">{r.label}</span>
@@ -85,6 +85,6 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

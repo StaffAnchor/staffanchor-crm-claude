@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Users, MapPin } from "lucide-react";
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
-const STATUS_STYLE: Record<string, string> = {
-  open: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-  on_hold: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  closed: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
-  filled: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+const STATUS_TONE: Record<string, BadgeTone> = {
+  open: "success",
+  on_hold: "warning",
+  closed: "neutral",
+  filled: "accent",
 };
 
 export type ClientMandateRow = {
@@ -23,16 +25,14 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
   const totalShortlisted = rows.reduce((sum, r) => sum + r.shortlisted, 0);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+    <Card>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-slate-900">Mandates</h2>
-        <div className="flex gap-2 text-[11px]">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600">{rows.length} total</span>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700">{open} open</span>
-          <span className="rounded-full bg-blue-100 px-2.5 py-1 font-medium text-blue-700">{filled} filled</span>
-          <span className="rounded-full bg-teal-100 px-2.5 py-1 font-medium text-teal-700">
-            {totalShortlisted} shortlisted
-          </span>
+        <div className="flex gap-2">
+          <Badge tone="neutral" size="sm" className="normal-case tracking-normal">{rows.length} total</Badge>
+          <Badge tone="success" size="sm" className="normal-case tracking-normal">{open} open</Badge>
+          <Badge tone="accent" size="sm" className="normal-case tracking-normal">{filled} filled</Badge>
+          <Badge tone="info" size="sm" className="normal-case tracking-normal">{totalShortlisted} shortlisted</Badge>
         </div>
       </div>
 
@@ -44,7 +44,7 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
             <Link
               key={m.id}
               href={`/mandates/${m.id}`}
-              className="flex items-center justify-between gap-3 py-2.5 hover:bg-slate-50/70 -mx-2 px-2 rounded-lg transition-colors"
+              className="flex items-center justify-between gap-3 py-2.5 hover:bg-slate-50/70 -mx-2 px-2 rounded-ros-md transition-all duration-200 ease-ros"
             >
               <div>
                 <p className="text-sm font-medium text-slate-900">{m.role_title}</p>
@@ -59,17 +59,13 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
                   </span>
                 </div>
               </div>
-              <span
-                className={`text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
-                  STATUS_STYLE[m.status] ?? "bg-slate-100 text-slate-600"
-                }`}
-              >
+              <Badge tone={STATUS_TONE[m.status] ?? "neutral"} className="normal-case tracking-normal shrink-0">
                 {m.status.replace("_", " ")}
-              </span>
+              </Badge>
             </Link>
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

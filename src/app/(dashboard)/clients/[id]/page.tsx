@@ -7,6 +7,7 @@ import ClientPortalAccessPanel from "./client-portal-access-panel";
 import ClientMandatesRollup, { type ClientMandateRow } from "./client-mandates-rollup";
 import ClientFunnelPanel from "./client-funnel-panel";
 import { computeFunnel } from "../funnel-utils";
+import { Card } from "@/components/ui/card";
 
 export default async function ClientDetailPage({
   params,
@@ -73,15 +74,15 @@ export default async function ClientDetailPage({
     <div className="grid grid-cols-3 gap-6">
       <div className="col-span-2 space-y-6">
         <div>
-          <Link href="/clients" className="text-xs text-slate-500 hover:text-slate-800">
+          <Link href="/clients" className="text-xs text-slate-500 hover:text-slate-800 transition-colors duration-200 ease-ros">
             ← All clients
           </Link>
-          <div className="bg-white border border-slate-200 rounded-xl p-6 mt-2 shadow-sm">
+          <Card className="mt-2">
             <h1 className="text-xl font-semibold text-slate-900">{clientRow.name}</h1>
             <p className="text-sm text-slate-500">
               {clientRow.industry ?? "Industry not set"} {clientRow.hq_city ? `· ${clientRow.hq_city}` : ""}
             </p>
-          </div>
+          </Card>
         </div>
 
         <ClientMandatesRollup rows={mandateRows} />
