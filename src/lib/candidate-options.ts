@@ -204,3 +204,87 @@ export const industryOptions = [
   "Defence",
   "Non-profit / Social Enterprise",
 ];
+
+// ---- Everything below mirrors the additional option sets used on the public
+// candidate-facing "Build Your Profile" wizard (jobs-staffanchor repo), added
+// so the recruiter-side "Edit profile" modal can offer full field parity
+// instead of only a subset of fields. ----
+
+export const roleLevelOptions = [
+  "IC – Sales Development",
+  "IC – Account Executive",
+  "IC",
+  "Manager",
+  "Senior Manager",
+  "Director",
+  "VP / Head",
+];
+
+export const currencyOptions = ["INR", "USD"] as const;
+export type CurrencyValue = (typeof currencyOptions)[number];
+
+export const dealSizeBandsB2B: Record<CurrencyValue, string[]> = {
+  INR: [
+    "<5L", "5L-10L", "10L-15L", "15L-20L", "20L-30L", "30L-50L", "50L-1Cr",
+    "1Cr-5Cr", "5Cr-10Cr", "10Cr-20Cr", "20Cr-40Cr", "40Cr-75Cr", "75Cr+",
+  ],
+  USD: [
+    "<$10K", "$10K-$25K", "$25K-$50K", "$50K-$100K", "$100K-$250K", "$250K-$500K",
+    "$500K-$1M", "$1M-$5M", "$5M-$10M", "$10M+",
+  ],
+};
+
+export const dealSizeBandsB2C: Record<CurrencyValue, string[]> = {
+  INR: ["<10K", "10K-25K", "25K-50K", "50K-1L", "1L-2L", "2L-5L", "5L-10L", "10L-25L", "25L+"],
+  USD: ["<$500", "$500-$1K", "$1K-$5K", "$5K-$10K", "$10K-$25K", "$25K-$50K", "$50K+"],
+};
+
+export function dealSizeBandsFor(category: string | null, currency: CurrencyValue | ""): string[] {
+  if (!currency) return [];
+  if (category === "b2c_sales") return dealSizeBandsB2C[currency];
+  return dealSizeBandsB2B[currency];
+}
+
+export const insideSalesSubDomains = ["Inside Sales (B2B)", "Inside Sales (B2C)"];
+
+export const ahtOptions = ["<3 mins", "3-5 mins", "5-8 mins", "8-12 mins", "12-20 mins", "20+ mins"];
+export const dailyCallTargetOptions = ["<20", "20-40", "40-60", "60-80", "80-100", "100-150", "150+"];
+export const dailyTalkTimeOptions = ["<1 hour", "1-2 hours", "2-3 hours", "3-4 hours", "4-5 hours", "5+ hours"];
+export const leadSourceOptions = [
+  "Inbound", "Outbound", "Social Media Campaigns", "Contact Us / Website Forms",
+  "Influencer Leads", "Referrals", "Paid Ads", "Events / Field", "Partner / Channel",
+];
+
+export const salesCycleOptions = [
+  "Same day", "<1 week", "1-4 weeks", "1-3 months", "3-6 months", "6-12 months", "12+ months",
+];
+export const sellingStyleOptions = ["Hunter", "Farmer", "Hybrid"];
+export const salesMotionOptions = [
+  "Outbound-Hunting", "Inbound", "Account-based", "Channel-led", "Field / On-ground",
+];
+export const customerSegmentOptions = ["SMB", "Mid-Market", "Enterprise", "MNC", "Startup", "Government"];
+export const funnelStageOptions = ["Acquisition", "Full-funnel", "Retention / Upsell"];
+export const geographicScopeOptions = [
+  "Single City", "Multi-City", "Regional (Multiple States)", "Pan-India", "International / Global",
+];
+export const internationalRegionOptions = [
+  "North America (US/Canada)", "Europe", "MENA", "Gulf (GCC)", "APAC / Asia",
+  "South Asia", "LATAM", "Global / Worldwide",
+];
+
+export const workModeOptions = ["Onsite", "Hybrid", "Remote", "Open to Any (as per company requirement)"];
+export const relocationOptions = ["Yes", "No", "Maybe"];
+export const travelPreferenceOptions = ["No Travel", "Some Travel (occasional)", "Extensive Travel"];
+
+export const highestQualificationOptions = [
+  "High School", "Diploma", "Bachelor's Degree (B.A. / B.Com / B.Sc.)", "B.Tech / B.E. (Engineering)",
+  "Master's Degree (M.A. / M.Com / M.Sc.)", "M.Tech / M.E. (Engineering)", "MBA / PGDM",
+  "CA (Chartered Accountant)", "CS (Company Secretary)", "CMA / ICWA (Cost Accountant)",
+  "CFA (Chartered Financial Analyst)", "LLB / Law Degree", "MBBS / Medical Degree",
+  "Doctorate (PhD)", "Other",
+];
+
+export const achievementBandOptions = [
+  "Less than 50%", "50-75%", "75-80%", "81-85%", "86-90%", "91-95%", "96-100%",
+  "100-110%", "110-120%", "More than 120%",
+];

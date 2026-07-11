@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Pencil, Loader2, X } from "lucide-react";
+import { Pencil, Loader2, X, Upload } from "lucide-react";
 import {
   cityOptions,
   cityStateMap,
@@ -15,26 +15,72 @@ import {
   industryOptions,
   roleTypeOptions,
   teamSizeOptions,
+  roleLevelOptions,
+  currencyOptions,
+  dealSizeBandsFor,
+  insideSalesSubDomains,
+  ahtOptions,
+  dailyCallTargetOptions,
+  dailyTalkTimeOptions,
+  leadSourceOptions,
+  salesCycleOptions,
+  sellingStyleOptions,
+  salesMotionOptions,
+  customerSegmentOptions,
+  funnelStageOptions,
+  geographicScopeOptions,
+  internationalRegionOptions,
+  workModeOptions,
+  relocationOptions,
+  travelPreferenceOptions,
+  highestQualificationOptions,
+  achievementBandOptions,
+  type CurrencyValue,
 } from "@/lib/candidate-options";
 
 type Candidate = {
   id: string;
   full_name: string;
+  email: string;
   phone: string | null;
   current_location: string | null;
+  linkedin_url: string | null;
+  resume_file_url: string | null;
   category: string | null;
   sub_domain: string | null;
+  secondary_sub_domains: string[] | null;
   current_fixed_ctc: number | null;
+  current_variable_ctc: number | null;
+  esops_held: boolean | null;
   total_experience_years: number | null;
   notice_period: string | null;
+  expected_fixed_ctc: number | null;
+  expected_variable_ctc: number | null;
   current_job_title: string | null;
   current_employer: string | null;
   current_employment_status: string | null;
   current_industry: string | null;
   industries: string[] | null;
+  highest_qualification: string | null;
+  skills: string | null;
+  work_mode: string | null;
+  open_to_relocation: string | null;
   status: string;
   segment_data: Record<string, unknown> | null;
 };
+
+function seg(data: Record<string, unknown> | null | undefined, key: string): string {
+  const v = data?.[key];
+  return v === undefined || v === null ? "" : String(v);
+}
+function segArr(data: Record<string, unknown> | null | undefined, key: string): string[] {
+  const v = data?.[key];
+  return Array.isArray(v) ? v.map(String) : [];
+}
+function segNumArr(data: Record<string, unknown> | null | undefined, key: string): string[] {
+  const v = data?.[key];
+  return Array.isArray(v) ? v.map((n) => String(n)) : ["", "", "", ""];
+}
 
 const MANDATORY_FIELDS_COMPLETE = (f: {
   full_name: string;
@@ -66,66 +112,297 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
   return true;
 };
 
+const SECTION_LABEL = "block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2.5";
+const FIELD_LABEL = "block text-xs font-medium text-slate-600 mb-1";
+const INPUT_CLS = "w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm";
+
+function CheckboxGroup({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: string[];
+  selected: string[];
+  onToggle: (opt: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => {
+        const active = selected.includes(opt);
+        return (
+          <button
+            type="button"
+            key={opt}
+            onClick={() => onToggle(opt)}
+            className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
+              active
+                ? "bg-blue-600 border-blue-600 text-white"
+                : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function EditProfileButton({ candidate }: { candidate: Candidate }) {
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const knownCity = candidate.current_location
     ? Object.keys(cityStateMap).find((c) => candidate.current_location?.startsWith(c))
     : undefined;
+  const sd = candidate.segment_data ?? null;
+  const roleTypeRaw = seg(sd, "role_type");
+  const icTargets = segNumArr(sd, "ic_targets");
+  const quota = segNumArr(sd, "quota");
+  const teamTargets = segNumArr(sd, "team_targets");
+  const teamQuota = segNumArr(sd, "team_quota");
+  const knownQualification =
+    candidate.highest_qualification && highestQualificationOptions.includes(candidate.highest_qualification);
+  const knownCurrentIndustry = candidate.current_industry && industryOptions.includes(candidate.current_industry);
 
   const [form, setForm] = useState({
     full_name: candidate.full_name ?? "",
+    email: candidate.email ?? "",
     phone: candidate.phone ?? "",
     city: knownCity ?? (candidate.current_location ? "Other" : ""),
     cityOther: knownCity ? "" : candidate.current_location ?? "",
+    linkedinUrl: candidate.linkedin_url ?? "",
+
     category: candidate.category ?? "",
     subDomain: candidate.sub_domain ?? "",
     subDomainOther: "",
+    secondarySubDomains: candidate.secondary_sub_domains ?? [],
+
     currentFixedCtc: candidate.current_fixed_ctc != null ? String(candidate.current_fixed_ctc) : "",
+    currentVariableCtc: candidate.current_variable_ctc != null ? String(candidate.current_variable_ctc) : "",
+    esopsHeld: candidate.esops_held ?? false,
     totalExperienceYears: candidate.total_experience_years != null ? String(candidate.total_experience_years) : "",
     noticePeriod: candidate.notice_period ?? "",
+    expectedFixedCtc: candidate.expected_fixed_ctc != null ? String(candidate.expected_fixed_ctc) : "",
+    expectedVariableCtc: candidate.expected_variable_ctc != null ? String(candidate.expected_variable_ctc) : "",
     currentJobTitle: candidate.current_job_title ?? "",
     currentEmployer: candidate.current_employer ?? "",
     employmentStatus: candidate.current_employment_status ?? "",
-    currentIndustry: candidate.current_industry ?? "",
-    previousIndustries: (candidate.industries ?? []).filter((i) => i !== candidate.current_industry).join(", "),
+    highestQualification: knownQualification ? (candidate.highest_qualification as string) : candidate.highest_qualification ? "Other" : "",
+    highestQualificationOther: !knownQualification ? candidate.highest_qualification ?? "" : "",
+    skills: candidate.skills ?? "",
+    workMode: candidate.work_mode ?? "",
+    openToRelocation: candidate.open_to_relocation ?? "",
+    travelPreference: seg(sd, "travel_preference"),
+
+    roleLevel: seg(sd, "role_level"),
     roleType:
-      (candidate.segment_data?.["role_type"] as string | undefined) === "Team Lead"
-        ? "Leading a Team"
-        : (candidate.segment_data?.["role_type"] as string | undefined) === "IC"
-          ? "Individual Contributor (IC)"
-          : "",
-    teamSize: (candidate.segment_data?.["team_size"] as string | undefined) ?? "",
+      roleTypeRaw === "Team Lead" ? "Leading a Team" : roleTypeRaw === "IC" ? "Individual Contributor (IC)" : "",
+    teamSize: seg(sd, "team_size"),
+
+    dealCurrency: (seg(sd, "deal_size_currency") || seg(sd, "ticket_currency")) as CurrencyValue | "",
+    dealSizeBand: seg(sd, "deal_size") || seg(sd, "ticket"),
+    cycle: seg(sd, "cycle"),
+    style: seg(sd, "style"),
+    motion: segArr(sd, "motion"),
+    segment: seg(sd, "segment"),
+    funnel: seg(sd, "funnel"),
+    scope: seg(sd, "scope"),
+    scopeDetail: seg(sd, "scope_detail"),
+    scopeRegions: segArr(sd, "scope_regions"),
+
+    aht: seg(sd, "aht"),
+    dailyCallTarget: seg(sd, "daily_call_target"),
+    dailyTalkTime: seg(sd, "daily_talk_time"),
+    leadSources: segArr(sd, "lead_sources"),
+
+    hasIcTarget: icTargets.some((v) => v !== "") ? "Yes" : "No",
+    icTargetCurrency: seg(sd, "ic_target_currency") as CurrencyValue | "",
+    teamTargetCurrency: seg(sd, "team_target_currency") as CurrencyValue | "",
+    icTargetQ1: icTargets[0] ?? "",
+    icTargetQ2: icTargets[1] ?? "",
+    icTargetQ3: icTargets[2] ?? "",
+    icTargetQ4: icTargets[3] ?? "",
+    quotaQ1: quota[0] ?? "",
+    quotaQ2: quota[1] ?? "",
+    quotaQ3: quota[2] ?? "",
+    quotaQ4: quota[3] ?? "",
+    teamTargetQ1: teamTargets[0] ?? "",
+    teamTargetQ2: teamTargets[1] ?? "",
+    teamTargetQ3: teamTargets[2] ?? "",
+    teamTargetQ4: teamTargets[3] ?? "",
+    teamQuotaQ1: teamQuota[0] ?? "",
+    teamQuotaQ2: teamQuota[1] ?? "",
+    teamQuotaQ3: teamQuota[2] ?? "",
+    teamQuotaQ4: teamQuota[3] ?? "",
+
+    currentIndustry: knownCurrentIndustry ? (candidate.current_industry as string) : candidate.current_industry ? "Other" : "",
+    currentIndustryOther: !knownCurrentIndustry ? candidate.current_industry ?? "" : "",
+    previousIndustries: (candidate.industries ?? [])
+      .filter((i) => i !== candidate.current_industry)
+      .join(", "),
   });
 
   const subDomainOptions = subDomainsForCategory(form.category || null);
+  const secondarySubDomainChoices = subDomainOptions.filter((d) => d !== form.subDomain);
+  const isSales = form.category === "b2b_sales" || form.category === "b2c_sales";
+  const isB2B = form.category === "b2b_sales";
+  const isB2C = form.category === "b2c_sales";
+  const isInsideSales = insideSalesSubDomains.includes(form.subDomain);
+  const isTeamLead = form.roleType === "Leading a Team";
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+  function toggleInArray(key: "secondarySubDomains" | "motion" | "scopeRegions" | "leadSources", opt: string) {
+    setForm((f) => {
+      const arr = f[key] as string[];
+      return {
+        ...f,
+        [key]: arr.includes(opt) ? arr.filter((v) => v !== opt) : [...arr, opt],
+      };
+    });
   }
 
   async function handleSave() {
     setError(null);
     setSaving(true);
 
+    let resumeFileUrl = candidate.resume_file_url;
+    if (resumeFile) {
+      const path = `${crypto.randomUUID()}-${resumeFile.name}`;
+      const { error: uploadError } = await supabase.storage.from("resumes").upload(path, resumeFile, {
+        contentType: resumeFile.type || undefined,
+      });
+      if (uploadError) {
+        setError(`Resume upload failed: ${uploadError.message}`);
+        setSaving(false);
+        return;
+      }
+      resumeFileUrl = path;
+    }
+
     const resolvedCity =
       form.city === "Other" ? form.cityOther.trim() : form.city ? `${form.city}, ${cityStateMap[form.city]}` : "";
     const resolvedSubDomain = form.subDomain === "Other" ? form.subDomainOther.trim() : form.subDomain;
+    const resolvedQualification =
+      form.highestQualification === "Other" ? form.highestQualificationOther.trim() : form.highestQualification;
+    const resolvedCurrentIndustry =
+      form.currentIndustry === "Other" ? form.currentIndustryOther.trim() : form.currentIndustry;
 
     const previousList = form.previousIndustries
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const industries = Array.from(new Set([form.currentIndustry, ...previousList].filter(Boolean)));
+    const industries = Array.from(new Set([resolvedCurrentIndustry, ...previousList].filter(Boolean)));
 
+    // segment_data: mirrors the same keys the public "Build Your Profile" wizard
+    // writes, so both entry points stay compatible with anything reading
+    // segment_data downstream (AI summary, matching, etc.)
     const segmentData: Record<string, unknown> = { ...(candidate.segment_data ?? {}) };
+    if (form.roleLevel) segmentData.role_level = form.roleLevel;
+    else delete segmentData.role_level;
     if (form.roleType) segmentData.role_type = form.roleType === "Leading a Team" ? "Team Lead" : "IC";
-    if (form.roleType === "Leading a Team" && form.teamSize) segmentData.team_size = form.teamSize;
+    else delete segmentData.role_type;
+    if (isTeamLead && form.teamSize) segmentData.team_size = form.teamSize;
     else delete segmentData.team_size;
+    if (form.travelPreference) segmentData.travel_preference = form.travelPreference;
+    else delete segmentData.travel_preference;
+
+    const icTargetNums = [form.icTargetQ1, form.icTargetQ2, form.icTargetQ3, form.icTargetQ4]
+      .filter((v) => v.trim() !== "")
+      .map(Number);
+    const icAchievement = [form.quotaQ1, form.quotaQ2, form.quotaQ3, form.quotaQ4].filter((v) => v.trim() !== "");
+    const teamTargetNums = [form.teamTargetQ1, form.teamTargetQ2, form.teamTargetQ3, form.teamTargetQ4]
+      .filter((v) => v.trim() !== "")
+      .map(Number);
+    const teamAchievement = [form.teamQuotaQ1, form.teamQuotaQ2, form.teamQuotaQ3, form.teamQuotaQ4].filter(
+      (v) => v.trim() !== ""
+    );
+
+    delete segmentData.team_targets;
+    delete segmentData.team_quota;
+    delete segmentData.team_target_currency;
+    delete segmentData.ic_targets;
+    delete segmentData.quota;
+    delete segmentData.ic_target_currency;
+    delete segmentData.total_targets;
+
+    if (isTeamLead) {
+      if (teamTargetNums.length) segmentData.team_targets = teamTargetNums;
+      if (teamAchievement.length) segmentData.team_quota = teamAchievement;
+      if (form.teamTargetCurrency) segmentData.team_target_currency = form.teamTargetCurrency;
+      if (form.hasIcTarget === "Yes") {
+        if (icTargetNums.length) segmentData.ic_targets = icTargetNums;
+        if (icAchievement.length) segmentData.quota = icAchievement;
+        if (form.icTargetCurrency) segmentData.ic_target_currency = form.icTargetCurrency;
+        if (
+          icTargetNums.length === 4 &&
+          teamTargetNums.length === 4 &&
+          form.icTargetCurrency &&
+          form.icTargetCurrency === form.teamTargetCurrency
+        ) {
+          segmentData.total_targets = teamTargetNums.map((t, i) => t + icTargetNums[i]);
+        }
+      }
+    } else {
+      if (icTargetNums.length) segmentData.ic_targets = icTargetNums;
+      if (icAchievement.length) segmentData.quota = icAchievement;
+      if (form.icTargetCurrency) segmentData.ic_target_currency = form.icTargetCurrency;
+    }
+
+    delete segmentData.deal_size;
+    delete segmentData.deal_size_currency;
+    delete segmentData.cycle;
+    delete segmentData.style;
+    delete segmentData.motion;
+    delete segmentData.segment;
+    delete segmentData.ticket;
+    delete segmentData.ticket_currency;
+    delete segmentData.funnel;
+    delete segmentData.scope;
+    delete segmentData.scope_detail;
+    delete segmentData.scope_regions;
+
+    if (isB2B) {
+      Object.assign(segmentData, {
+        deal_size: form.dealSizeBand || undefined,
+        deal_size_currency: form.dealCurrency || undefined,
+        cycle: form.cycle || undefined,
+        style: form.style || undefined,
+        motion: form.motion.length ? form.motion : undefined,
+        segment: form.segment || undefined,
+      });
+    } else if (isB2C) {
+      Object.assign(segmentData, {
+        ticket: form.dealSizeBand || undefined,
+        ticket_currency: form.dealCurrency || undefined,
+        funnel: form.funnel || undefined,
+        scope: form.scope || undefined,
+        scope_detail:
+          form.scope === "Single City" || form.scope === "Multi-City" || form.scope === "Regional (Multiple States)"
+            ? form.scopeDetail || undefined
+            : undefined,
+        scope_regions: form.scope === "International / Global" ? form.scopeRegions : undefined,
+      });
+    }
+
+    delete segmentData.aht;
+    delete segmentData.daily_call_target;
+    delete segmentData.daily_talk_time;
+    delete segmentData.lead_sources;
+    if (isInsideSales) {
+      Object.assign(segmentData, {
+        aht: form.aht || undefined,
+        daily_call_target: form.dailyCallTarget || undefined,
+        daily_talk_time: form.dailyTalkTime || undefined,
+        lead_sources: form.leadSources.length ? form.leadSources : undefined,
+      });
+    }
 
     const isComplete = MANDATORY_FIELDS_COMPLETE({
       full_name: form.full_name,
@@ -148,18 +425,30 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
 
     const update: Record<string, unknown> = {
       full_name: form.full_name.trim(),
+      email: form.email.trim(),
       phone: form.phone.trim() || null,
       current_location: resolvedCity || null,
+      linkedin_url: form.linkedinUrl.trim() || null,
+      resume_file_url: resumeFileUrl,
       category: form.category || null,
       sub_domain: resolvedSubDomain || null,
+      secondary_sub_domains: form.secondarySubDomains,
       current_fixed_ctc: form.currentFixedCtc ? Number(form.currentFixedCtc) : null,
+      current_variable_ctc: form.currentVariableCtc ? Number(form.currentVariableCtc) : null,
+      esops_held: form.esopsHeld,
       total_experience_years: form.totalExperienceYears ? Number(form.totalExperienceYears) : null,
       notice_period: form.noticePeriod || null,
+      expected_fixed_ctc: form.expectedFixedCtc ? Number(form.expectedFixedCtc) : null,
+      expected_variable_ctc: form.expectedVariableCtc ? Number(form.expectedVariableCtc) : null,
       current_job_title: form.currentJobTitle.trim() || null,
       current_employer: form.currentEmployer.trim() || null,
       current_employment_status: form.employmentStatus || null,
-      current_industry: form.currentIndustry || null,
+      current_industry: resolvedCurrentIndustry || null,
       industries,
+      highest_qualification: resolvedQualification || null,
+      skills: form.skills.trim() || null,
+      work_mode: form.workMode || null,
+      open_to_relocation: form.openToRelocation || null,
       segment_data: segmentData,
     };
 
@@ -194,7 +483,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !saving && setOpen(false)}>
           <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10">
@@ -204,243 +493,580 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
               </button>
             </div>
 
-            <div className="p-5 grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Full name</label>
-                <input
-                  value={form.full_name}
-                  onChange={(e) => set("full_name", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
-                <input
-                  value={form.phone}
-                  onChange={(e) => set("phone", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                />
-              </div>
+            <div className="p-5 space-y-6">
+              {/* --- Basic Info --- */}
+              <section>
+                <span className={SECTION_LABEL}>Basic Information</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={FIELD_LABEL}>Full name</label>
+                    <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Email</label>
+                    <input value={form.email} onChange={(e) => set("email", e.target.value)} className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Phone</label>
+                    <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>LinkedIn URL</label>
+                    <input value={form.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Location</label>
+                    <select value={form.city} onChange={(e) => set("city", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {cityOptions.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    {form.city === "Other" && (
+                      <input
+                        value={form.cityOther}
+                        onChange={(e) => set("cityOther", e.target.value)}
+                        placeholder="City, State"
+                        className={`${INPUT_CLS} mt-2`}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Resume</label>
+                    {candidate.resume_file_url && !resumeFile && (
+                      <p className="text-[12px] text-slate-500 mb-1 truncate">Currently on file</p>
+                    )}
+                    {resumeFile && <p className="text-[12px] text-slate-700 mb-1 truncate">{resumeFile.name} (replacing)</p>}
+                    <label className="flex items-center gap-1.5 text-[12px] text-slate-600 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 w-fit">
+                      <Upload className="w-3 h-3" />
+                      {candidate.resume_file_url ? "Replace resume" : "Upload resume"}
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        className="hidden"
+                        onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </section>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Location</label>
-                <select
-                  value={form.city}
-                  onChange={(e) => set("city", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  {cityOptions.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                {form.city === "Other" && (
-                  <input
-                    value={form.cityOther}
-                    onChange={(e) => set("cityOther", e.target.value)}
-                    placeholder="City, State"
-                    className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                  />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Function / Domain</label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subDomain: "" }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  <option value="b2b_sales">B2B Sales</option>
-                  <option value="b2c_sales">B2C Sales</option>
-                  <option value="non_sales">Non-Sales</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Sub-domain</label>
-                {subDomainOptions.length > 0 ? (
-                  <>
+              {/* --- Function / Domain & Specialization --- */}
+              <section>
+                <span className={SECTION_LABEL}>Function / Domain &amp; Specialization</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={FIELD_LABEL}>Function / Domain</label>
                     <select
-                      value={form.subDomain}
-                      onChange={(e) => set("subDomain", e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                      value={form.category}
+                      onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subDomain: "", secondarySubDomains: [] }))}
+                      className={INPUT_CLS}
                     >
                       <option value="">Select...</option>
-                      {subDomainOptions.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                      <option value="Other">Other</option>
+                      <option value="b2b_sales">B2B Sales</option>
+                      <option value="b2c_sales">B2C Sales</option>
+                      <option value="non_sales">Non-Sales</option>
                     </select>
-                    {form.subDomain === "Other" && (
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Sub-domain</label>
+                    {subDomainOptions.length > 0 ? (
+                      <>
+                        <select value={form.subDomain} onChange={(e) => set("subDomain", e.target.value)} className={INPUT_CLS}>
+                          <option value="">Select...</option>
+                          {subDomainOptions.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                          <option value="Other">Other</option>
+                        </select>
+                        {form.subDomain === "Other" && (
+                          <input
+                            value={form.subDomainOther}
+                            onChange={(e) => set("subDomainOther", e.target.value)}
+                            placeholder="e.g. SaaS Sales"
+                            className={`${INPUT_CLS} mt-2`}
+                          />
+                        )}
+                      </>
+                    ) : (
                       <input
                         value={form.subDomainOther}
                         onChange={(e) => set("subDomainOther", e.target.value)}
-                        placeholder="e.g. SaaS Sales"
-                        className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                        placeholder="Pick a category above first"
+                        className={INPUT_CLS}
                       />
                     )}
-                  </>
-                ) : (
-                  <input
-                    value={form.subDomainOther}
-                    onChange={(e) => set("subDomainOther", e.target.value)}
-                    placeholder="Pick a category above first"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                  />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Current fixed CTC</label>
-                <select
-                  value={form.currentFixedCtc}
-                  onChange={(e) => set("currentFixedCtc", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  {ctcOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Total experience</label>
-                <select
-                  value={form.totalExperienceYears}
-                  onChange={(e) => set("totalExperienceYears", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  {experienceOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">When can they join?</label>
-                <select
-                  value={form.noticePeriod}
-                  onChange={(e) => set("noticePeriod", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  {noticePeriodOptions.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Current job title</label>
-                <input
-                  value={form.currentJobTitle}
-                  onChange={(e) => set("currentJobTitle", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Current employer</label>
-                <input
-                  value={form.currentEmployer}
-                  onChange={(e) => set("currentEmployer", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Employment status</label>
-                <select
-                  value={form.employmentStatus}
-                  onChange={(e) => set("employmentStatus", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  {employmentStatusOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Current industry</label>
-                <select
-                  value={form.currentIndustry}
-                  onChange={(e) => set("currentIndustry", e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  {industryOptions.map((i) => (
-                    <option key={i} value={i}>
-                      {i}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-2">
-                <label className="block text-xs font-medium text-slate-600 mb-1">
-                  Previous industries <span className="text-slate-400">(comma-separated)</span>
-                </label>
-                <input
-                  value={form.previousIndustries}
-                  onChange={(e) => set("previousIndustries", e.target.value)}
-                  placeholder="e.g. EdTech, Retail Sales"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">IC or leading a team?</label>
-                <select
-                  value={form.roleType}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, roleType: e.target.value, teamSize: e.target.value === "Leading a Team" ? f.teamSize : "" }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                >
-                  <option value="">Select...</option>
-                  {roleTypeOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {form.roleType === "Leading a Team" && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Team size</label>
-                  <select
-                    value={form.teamSize}
-                    onChange={(e) => set("teamSize", e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                  >
-                    <option value="">Select...</option>
-                    {teamSizeOptions.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
+                  </div>
+                  {secondarySubDomainChoices.length > 0 && (
+                    <div className="col-span-2">
+                      <label className={FIELD_LABEL}>Secondary specializations (optional)</label>
+                      <CheckboxGroup
+                        options={secondarySubDomainChoices}
+                        selected={form.secondarySubDomains}
+                        onToggle={(o) => toggleInArray("secondarySubDomains", o)}
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className={FIELD_LABEL}>Role level</label>
+                    <select value={form.roleLevel} onChange={(e) => set("roleLevel", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {roleLevelOptions.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>IC or leading a team?</label>
+                    <select
+                      value={form.roleType}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, roleType: e.target.value, teamSize: e.target.value === "Leading a Team" ? f.teamSize : "" }))
+                      }
+                      className={INPUT_CLS}
+                    >
+                      <option value="">Select...</option>
+                      {roleTypeOptions.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {isTeamLead && (
+                    <div>
+                      <label className={FIELD_LABEL}>Team size</label>
+                      <select value={form.teamSize} onChange={(e) => set("teamSize", e.target.value)} className={INPUT_CLS}>
+                        <option value="">Select...</option>
+                        {teamSizeOptions.map((o) => (
+                          <option key={o} value={o}>{o}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
+              </section>
+
+              {/* --- Career & Compensation --- */}
+              <section>
+                <span className={SECTION_LABEL}>Career &amp; Compensation</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={FIELD_LABEL}>Current job title</label>
+                    <input value={form.currentJobTitle} onChange={(e) => set("currentJobTitle", e.target.value)} className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Current employer</label>
+                    <input value={form.currentEmployer} onChange={(e) => set("currentEmployer", e.target.value)} className={INPUT_CLS} />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Employment status</label>
+                    <select value={form.employmentStatus} onChange={(e) => set("employmentStatus", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {employmentStatusOptions.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Total experience</label>
+                    <select value={form.totalExperienceYears} onChange={(e) => set("totalExperienceYears", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {experienceOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Current fixed CTC</label>
+                    <select value={form.currentFixedCtc} onChange={(e) => set("currentFixedCtc", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {ctcOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Current variable CTC (optional)</label>
+                    <select value={form.currentVariableCtc} onChange={(e) => set("currentVariableCtc", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {ctcOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Expected fixed CTC</label>
+                    <select value={form.expectedFixedCtc} onChange={(e) => set("expectedFixedCtc", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {ctcOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Expected variable CTC (optional)</label>
+                    <select value={form.expectedVariableCtc} onChange={(e) => set("expectedVariableCtc", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {ctcOptions.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2 pt-6">
+                    <input
+                      type="checkbox"
+                      id="esops"
+                      checked={form.esopsHeld}
+                      onChange={(e) => set("esopsHeld", e.target.checked)}
+                      className="rounded border-slate-300"
+                    />
+                    <label htmlFor="esops" className="text-sm text-slate-700">Holds ESOPs</label>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>When can they join?</label>
+                    <select value={form.noticePeriod} onChange={(e) => set("noticePeriod", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {noticePeriodOptions.map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Highest qualification</label>
+                    <select value={form.highestQualification} onChange={(e) => set("highestQualification", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {highestQualificationOptions.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                    {form.highestQualification === "Other" && (
+                      <input
+                        value={form.highestQualificationOther}
+                        onChange={(e) => set("highestQualificationOther", e.target.value)}
+                        placeholder="Specify qualification"
+                        className={`${INPUT_CLS} mt-2`}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Work mode</label>
+                    <select value={form.workMode} onChange={(e) => set("workMode", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {workModeOptions.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Open to relocation?</label>
+                    <select value={form.openToRelocation} onChange={(e) => set("openToRelocation", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {relocationOptions.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Travel preference</label>
+                    <select value={form.travelPreference} onChange={(e) => set("travelPreference", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {travelPreferenceOptions.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className={FIELD_LABEL}>
+                      Skills <span className="text-slate-400">(comma-separated)</span>
+                    </label>
+                    <input
+                      value={form.skills}
+                      onChange={(e) => set("skills", e.target.value)}
+                      placeholder="e.g. Salesforce, Negotiation, Cold Calling"
+                      className={INPUT_CLS}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* --- Sales Specialization (conditional) --- */}
+              {isSales && (
+                <section>
+                  <span className={SECTION_LABEL}>Sales Specialization</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={FIELD_LABEL}>{isB2B ? "Deal size currency" : "Ticket size currency"}</label>
+                      <select
+                        value={form.dealCurrency}
+                        onChange={(e) => setForm((f) => ({ ...f, dealCurrency: e.target.value as CurrencyValue | "", dealSizeBand: "" }))}
+                        className={INPUT_CLS}
+                      >
+                        <option value="">Select...</option>
+                        {currencyOptions.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={FIELD_LABEL}>{isB2B ? "Typical deal size" : "Typical ticket size"}</label>
+                      <select value={form.dealSizeBand} onChange={(e) => set("dealSizeBand", e.target.value)} className={INPUT_CLS}>
+                        <option value="">Select...</option>
+                        {dealSizeBandsFor(form.category, form.dealCurrency).map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {isB2B && (
+                      <>
+                        <div>
+                          <label className={FIELD_LABEL}>Sales cycle length</label>
+                          <select value={form.cycle} onChange={(e) => set("cycle", e.target.value)} className={INPUT_CLS}>
+                            <option value="">Select...</option>
+                            {salesCycleOptions.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={FIELD_LABEL}>Selling style</label>
+                          <select value={form.style} onChange={(e) => set("style", e.target.value)} className={INPUT_CLS}>
+                            <option value="">Select...</option>
+                            {sellingStyleOptions.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={FIELD_LABEL}>Customer segment</label>
+                          <select value={form.segment} onChange={(e) => set("segment", e.target.value)} className={INPUT_CLS}>
+                            <option value="">Select...</option>
+                            {customerSegmentOptions.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <label className={FIELD_LABEL}>Sales motion</label>
+                          <CheckboxGroup options={salesMotionOptions} selected={form.motion} onToggle={(o) => toggleInArray("motion", o)} />
+                        </div>
+                      </>
+                    )}
+
+                    {isB2C && (
+                      <>
+                        <div>
+                          <label className={FIELD_LABEL}>Funnel stage</label>
+                          <select value={form.funnel} onChange={(e) => set("funnel", e.target.value)} className={INPUT_CLS}>
+                            <option value="">Select...</option>
+                            {funnelStageOptions.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={FIELD_LABEL}>Geographic scope</label>
+                          <select value={form.scope} onChange={(e) => set("scope", e.target.value)} className={INPUT_CLS}>
+                            <option value="">Select...</option>
+                            {geographicScopeOptions.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {(form.scope === "Single City" || form.scope === "Multi-City" || form.scope === "Regional (Multiple States)") && (
+                          <div className="col-span-2">
+                            <label className={FIELD_LABEL}>Scope detail</label>
+                            <input
+                              value={form.scopeDetail}
+                              onChange={(e) => set("scopeDetail", e.target.value)}
+                              placeholder="e.g. Delhi NCR, Maharashtra"
+                              className={INPUT_CLS}
+                            />
+                          </div>
+                        )}
+                        {form.scope === "International / Global" && (
+                          <div className="col-span-2">
+                            <label className={FIELD_LABEL}>Regions covered</label>
+                            <CheckboxGroup
+                              options={internationalRegionOptions}
+                              selected={form.scopeRegions}
+                              onToggle={(o) => toggleInArray("scopeRegions", o)}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {isInsideSales && (
+                    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+                      <div>
+                        <label className={FIELD_LABEL}>Average handling time (AHT)</label>
+                        <select value={form.aht} onChange={(e) => set("aht", e.target.value)} className={INPUT_CLS}>
+                          <option value="">Select...</option>
+                          {ahtOptions.map((o) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={FIELD_LABEL}>Daily call target</label>
+                        <select value={form.dailyCallTarget} onChange={(e) => set("dailyCallTarget", e.target.value)} className={INPUT_CLS}>
+                          <option value="">Select...</option>
+                          {dailyCallTargetOptions.map((o) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={FIELD_LABEL}>Daily talk time</label>
+                        <select value={form.dailyTalkTime} onChange={(e) => set("dailyTalkTime", e.target.value)} className={INPUT_CLS}>
+                          <option value="">Select...</option>
+                          {dailyTalkTimeOptions.map((o) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={FIELD_LABEL}>Lead sources</label>
+                        <CheckboxGroup options={leadSourceOptions} selected={form.leadSources} onToggle={(o) => toggleInArray("leadSources", o)} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2.5">
+                      Quarterly Targets &amp; Achievement (last 4 quarters)
+                    </span>
+                    {isTeamLead && (
+                      <div className="mb-4">
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <label className={FIELD_LABEL}>Team target currency</label>
+                            <select
+                              value={form.teamTargetCurrency}
+                              onChange={(e) => set("teamTargetCurrency", e.target.value as CurrencyValue | "")}
+                              className={INPUT_CLS}
+                            >
+                              <option value="">Select...</option>
+                              {currencyOptions.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-4 gap-3 mb-3">
+                          {(["teamTargetQ1", "teamTargetQ2", "teamTargetQ3", "teamTargetQ4"] as const).map((k, i) => (
+                            <div key={k}>
+                              <label className={FIELD_LABEL}>Team target Q{i + 1}</label>
+                              <input value={form[k]} onChange={(e) => set(k, e.target.value)} className={INPUT_CLS} placeholder="0" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-4 gap-3">
+                          {(["teamQuotaQ1", "teamQuotaQ2", "teamQuotaQ3", "teamQuotaQ4"] as const).map((k, i) => (
+                            <div key={k}>
+                              <label className={FIELD_LABEL}>Team achv. Q{i + 1}</label>
+                              <select value={form[k]} onChange={(e) => set(k, e.target.value)} className={INPUT_CLS}>
+                                <option value="">Select...</option>
+                                {achievementBandOptions.map((o) => (
+                                  <option key={o} value={o}>{o}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3">
+                          <label className={FIELD_LABEL}>Also carries an individual target?</label>
+                          <select
+                            value={form.hasIcTarget}
+                            onChange={(e) => set("hasIcTarget", e.target.value)}
+                            className={`${INPUT_CLS} max-w-[160px]`}
+                          >
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                    {(!isTeamLead || form.hasIcTarget === "Yes") && (
+                      <div>
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <label className={FIELD_LABEL}>Individual target currency</label>
+                            <select
+                              value={form.icTargetCurrency}
+                              onChange={(e) => set("icTargetCurrency", e.target.value as CurrencyValue | "")}
+                              className={INPUT_CLS}
+                            >
+                              <option value="">Select...</option>
+                              {currencyOptions.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-4 gap-3 mb-3">
+                          {(["icTargetQ1", "icTargetQ2", "icTargetQ3", "icTargetQ4"] as const).map((k, i) => (
+                            <div key={k}>
+                              <label className={FIELD_LABEL}>Target Q{i + 1}</label>
+                              <input value={form[k]} onChange={(e) => set(k, e.target.value)} className={INPUT_CLS} placeholder="0" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-4 gap-3">
+                          {(["quotaQ1", "quotaQ2", "quotaQ3", "quotaQ4"] as const).map((k, i) => (
+                            <div key={k}>
+                              <label className={FIELD_LABEL}>Achv. Q{i + 1}</label>
+                              <select value={form[k]} onChange={(e) => set(k, e.target.value)} className={INPUT_CLS}>
+                                <option value="">Select...</option>
+                                {achievementBandOptions.map((o) => (
+                                  <option key={o} value={o}>{o}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
               )}
+
+              {/* --- Industries --- */}
+              <section>
+                <span className={SECTION_LABEL}>Industries</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={FIELD_LABEL}>Current industry</label>
+                    <select value={form.currentIndustry} onChange={(e) => set("currentIndustry", e.target.value)} className={INPUT_CLS}>
+                      <option value="">Select...</option>
+                      {industryOptions.map((i) => (
+                        <option key={i} value={i}>{i}</option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+                    {form.currentIndustry === "Other" && (
+                      <input
+                        value={form.currentIndustryOther}
+                        onChange={(e) => set("currentIndustryOther", e.target.value)}
+                        placeholder="Specify industry"
+                        className={`${INPUT_CLS} mt-2`}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>
+                      Previous industries <span className="text-slate-400">(comma-separated)</span>
+                    </label>
+                    <input
+                      value={form.previousIndustries}
+                      onChange={(e) => set("previousIndustries", e.target.value)}
+                      placeholder="e.g. EdTech, Retail Sales"
+                      className={INPUT_CLS}
+                    />
+                  </div>
+                </div>
+              </section>
             </div>
 
             {error && <p className="px-5 text-[12px] text-red-600 mb-2">{error}</p>}
