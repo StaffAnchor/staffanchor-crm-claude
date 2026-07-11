@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/embed-candidates",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/inbox-sweep",
+      "schedule": "0 5 * * *"
     }
   ]
 }

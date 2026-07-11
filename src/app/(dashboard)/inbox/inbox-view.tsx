@@ -5,11 +5,20 @@ import Link from "next/link";
 import {
   Flame,
   CalendarClock,
+  CalendarCheck2,
+  Clock,
+  ClipboardList,
+  Compass,
+  PartyPopper,
+  MessageSquareWarning,
+  UserPlus2,
   CheckCircle2,
   X,
   ArrowRight,
   Loader2,
   MessageCircle,
+  Users,
+  ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -26,7 +35,9 @@ export type InboxItem = {
   title: string;
   detail: string | null;
   priority: "low" | "normal" | "high";
-  status: "open" | "done" | "dismissed";
+  status: "open" | "snoozed" | "done" | "dismissed";
+  snoozed_until: string | null;
+  is_unassigned: boolean;
 };
 
 const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: string }> = {
@@ -39,6 +50,41 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
     icon: ArrowRight,
     label: "Offer follow-up",
     tint: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+  },
+  INTERVIEW_REMINDER: {
+    icon: CalendarCheck2,
+    label: "Interview reminder",
+    tint: "bg-rose-50 text-rose-700 ring-rose-200",
+  },
+  STALE_CANDIDATE: {
+    icon: Clock,
+    label: "No movement",
+    tint: "bg-orange-50 text-orange-700 ring-orange-200",
+  },
+  MISSING_ASSESSMENT: {
+    icon: ClipboardList,
+    label: "Missing assessment",
+    tint: "bg-sky-50 text-sky-700 ring-sky-200",
+  },
+  STALE_MANDATE: {
+    icon: Compass,
+    label: "Needs sourcing",
+    tint: "bg-slate-100 text-slate-600 ring-slate-200",
+  },
+  POST_PLACEMENT_CHECKIN: {
+    icon: PartyPopper,
+    label: "Check-in",
+    tint: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  },
+  CLIENT_FEEDBACK_OVERDUE: {
+    icon: MessageSquareWarning,
+    label: "Client feedback overdue",
+    tint: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200",
+  },
+  NEW_REFERRAL: {
+    icon: UserPlus2,
+    label: "New referral",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
 };
 
@@ -63,6 +109,13 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
+function nextMorning(daysAhead: number, hour = 9) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  d.setHours(hour, 0, 0, 0);
+  return d;
+}
+
 export default function InboxView({
   initialItems,
   fetchError,
@@ -74,28 +127,48 @@ export default function InboxView({
   const [items, setItems] = useState<InboxItem[]>(initialItems);
   const [focusedIdx, setFocusedIdx] = useState(0);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const listRef = useRef<HTMLDivElement>(null);
 
-  const focused = items[focusedIdx] ?? null;
+  // Filtering by task type is purely a view-layer concern -- the
+  // underlying `items` state (and its indices) always holds everything,
+  // so keyboard nav / optimistic updates stay simple.
+  const visibleItems = useMemo(
+    () => (activeFilter === "ALL" ? items : items.filter((i) => i.task_type === activeFilter)),
+    [items, activeFilter]
+  );
+  const focused = visibleItems[Math.min(focusedIdx, visibleItems.length - 1)] ?? null;
+
+  const filterCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const i of items) counts.set(i.task_type, (counts.get(i.task_type) ?? 0) + 1);
+    return counts;
+  }, [items]);
 
   const resolve = useCallback(
     async (id: string, status: "done" | "dismissed") => {
       const prevItems = items;
       setResolvingId(id);
-      // Optimistic update: remove immediately, restore on failure.
       setItems((cur) => cur.filter((i) => i.id !== id));
       const { error } = await supabase.rpc("resolve_inbox_item", { p_id: id, p_status: status });
       setResolvingId(null);
-      if (error) {
-        setItems(prevItems);
-      }
+      if (error) setItems(prevItems);
     },
     [items, supabase]
   );
 
-  // Keyboard-first navigation: J/K to move focus, Enter is a no-op beyond
-  // focusing (the drawer already tracks focus live), D to mark done, X to
-  // dismiss -- mirrors the brief's "never leave the list to act" goal.
+  const snooze = useCallback(
+    async (id: string, until: Date) => {
+      const prevItems = items;
+      setResolvingId(id);
+      setItems((cur) => cur.filter((i) => i.id !== id));
+      const { error } = await supabase.rpc("snooze_inbox_item", { p_id: id, p_until: until.toISOString() });
+      setResolvingId(null);
+      if (error) setItems(prevItems);
+    },
+    [items, supabase]
+  );
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -103,7 +176,7 @@ export default function InboxView({
 
       if (e.key === "j" || e.key === "J") {
         e.preventDefault();
-        setFocusedIdx((i) => Math.min(i + 1, items.length - 1));
+        setFocusedIdx((i) => Math.min(i + 1, visibleItems.length - 1));
       } else if (e.key === "k" || e.key === "K") {
         e.preventDefault();
         setFocusedIdx((i) => Math.max(i - 1, 0));
@@ -115,27 +188,37 @@ export default function InboxView({
           e.preventDefault();
           resolve(focused.id, "dismissed");
         }
+      } else if (e.key === "s" || e.key === "S") {
+        if (focused) {
+          e.preventDefault();
+          snooze(focused.id, nextMorning(1));
+        }
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [items.length, focused, resolve]);
+  }, [visibleItems.length, focused, resolve, snooze]);
 
   useEffect(() => {
-    if (focusedIdx >= items.length) {
-      setFocusedIdx(Math.max(items.length - 1, 0));
+    if (focusedIdx >= visibleItems.length) {
+      setFocusedIdx(Math.max(visibleItems.length - 1, 0));
     }
-  }, [items.length, focusedIdx]);
+  }, [visibleItems.length, focusedIdx]);
 
   const grouped = useMemo(() => {
-    const high = items.filter((i) => i.priority === "high");
-    const rest = items.filter((i) => i.priority !== "high");
+    const high = visibleItems.filter((i) => i.priority === "high");
+    const rest = visibleItems.filter((i) => i.priority !== "high");
     return { high, rest };
-  }, [items]);
+  }, [visibleItems]);
+
+  const filterOptions = useMemo(() => {
+    const present = Array.from(filterCounts.keys());
+    return present.sort((a, b) => (filterCounts.get(b) ?? 0) - (filterCounts.get(a) ?? 0));
+  }, [filterCounts]);
 
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-6">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-[20px] font-semibold text-slate-900 flex items-center gap-2">
             <Flame className="w-5 h-5 text-orange-500" />
@@ -156,6 +239,9 @@ export default function InboxView({
             <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono">D</kbd> done
           </span>
           <span>
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono">S</kbd> snooze
+          </span>
+          <span>
             <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono">X</kbd> dismiss
           </span>
         </div>
@@ -164,6 +250,38 @@ export default function InboxView({
       {fetchError && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
           Couldn&apos;t load your inbox: {fetchError}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1">
+          <button
+            onClick={() => setActiveFilter("ALL")}
+            className={`shrink-0 text-[12px] font-medium rounded-full px-3 py-1.5 ring-1 transition-colors ${
+              activeFilter === "ALL"
+                ? "bg-slate-900 text-white ring-slate-900"
+                : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            All ({items.length})
+          </button>
+          {filterOptions.map((taskType) => {
+            const meta = metaFor(taskType);
+            const Icon = meta.icon;
+            const active = activeFilter === taskType;
+            return (
+              <button
+                key={taskType}
+                onClick={() => setActiveFilter(active ? "ALL" : taskType)}
+                className={`shrink-0 flex items-center gap-1.5 text-[12px] font-medium rounded-full px-3 py-1.5 ring-1 transition-colors ${
+                  active ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className="w-3 h-3" />
+                {meta.label} ({filterCounts.get(taskType)})
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -177,12 +295,15 @@ export default function InboxView({
             New tasks appear here automatically as candidates move through your pipelines.
           </p>
         </div>
+      ) : visibleItems.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white py-16 flex flex-col items-center justify-center text-center">
+          <p className="text-[13px] text-slate-500">No items in this filter.</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 items-start">
-          {/* Dense single-column action list */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-5 items-start">
           <div ref={listRef} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
             {[...grouped.high, ...grouped.rest].map((item) => {
-              const idx = items.findIndex((i) => i.id === item.id);
+              const idx = visibleItems.findIndex((i) => i.id === item.id);
               const isFocused = idx === focusedIdx;
               const meta = metaFor(item.task_type);
               const Icon = meta.icon;
@@ -206,6 +327,11 @@ export default function InboxView({
                           High
                         </span>
                       )}
+                      {item.is_unassigned && (
+                        <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 ring-1 ring-teal-200 rounded-full px-1.5 py-0.5">
+                          <Users className="w-2.5 h-2.5" /> Team
+                        </span>
+                      )}
                     </span>
                     <span className="block text-[11px] text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
                   </span>
@@ -219,10 +345,9 @@ export default function InboxView({
             })}
           </div>
 
-          {/* Context drawer -- follows keyboard focus live */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:sticky lg:top-20">
             {focused ? (
-              <ContextDrawer item={focused} onResolve={resolve} resolving={resolvingId === focused.id} />
+              <ContextDrawer item={focused} onResolve={resolve} onSnooze={snooze} resolving={resolvingId === focused.id} />
             ) : (
               <p className="text-[13px] text-slate-400">Select an item to see details.</p>
             )}
@@ -233,13 +358,64 @@ export default function InboxView({
   );
 }
 
+function SnoozeMenu({ onSnooze, disabled }: { onSnooze: (until: Date) => void; disabled: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const options = [
+    { label: "Tomorrow, 9am", getDate: () => nextMorning(1) },
+    { label: "In 3 days", getDate: () => nextMorning(3) },
+    { label: "Next week", getDate: () => nextMorning(7) },
+  ];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 disabled:opacity-60"
+      >
+        <Clock className="w-3.5 h-3.5" />
+        Snooze
+        <ChevronDown className="w-3 h-3" />
+      </button>
+      {open && (
+        <div className="absolute right-0 bottom-full mb-1 w-40 rounded-lg border border-slate-200 bg-white shadow-lg py-1 z-10">
+          {options.map((opt) => (
+            <button
+              key={opt.label}
+              onClick={() => {
+                onSnooze(opt.getDate());
+                setOpen(false);
+              }}
+              className="w-full text-left px-3 py-1.5 text-[12px] text-slate-700 hover:bg-slate-50"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ContextDrawer({
   item,
   onResolve,
+  onSnooze,
   resolving,
 }: {
   item: InboxItem;
   onResolve: (id: string, status: "done" | "dismissed") => void;
+  onSnooze: (id: string, until: Date) => void;
   resolving: boolean;
 }) {
   const meta = metaFor(item.task_type);
@@ -247,7 +423,6 @@ function ContextDrawer({
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  // Reset the WhatsApp send status whenever focus moves to a different item.
   useEffect(() => {
     setSending(false);
     setSendResult(null);
@@ -284,7 +459,14 @@ function ContextDrawer({
           <Icon className="w-5 h-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{meta.label}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+            {meta.label}
+            {item.is_unassigned && (
+              <span className="flex items-center gap-0.5 text-teal-600">
+                <Users className="w-2.5 h-2.5" /> Team task
+              </span>
+            )}
+          </p>
           <p className="text-[14px] font-semibold text-slate-900 leading-snug">{item.title}</p>
         </div>
       </div>
@@ -320,18 +502,22 @@ function ContextDrawer({
         )}
       </div>
 
-      <button
-        onClick={handleSendUpdate}
-        disabled={sending}
-        className="w-full mb-2 flex items-center justify-center gap-1.5 text-[12px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 ring-1 ring-emerald-200 rounded-lg px-3 py-2 disabled:opacity-60"
-      >
-        {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
-        Send Update via WhatsApp
-      </button>
-      {sendResult && (
-        <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500"}`}>
-          {sendResult.message}
-        </p>
+      {item.candidate_id && (
+        <>
+          <button
+            onClick={handleSendUpdate}
+            disabled={sending}
+            className="w-full mb-2 flex items-center justify-center gap-1.5 text-[12px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 ring-1 ring-emerald-200 rounded-lg px-3 py-2 disabled:opacity-60"
+          >
+            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+            Send Update via WhatsApp
+          </button>
+          {sendResult && (
+            <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500"}`}>
+              {sendResult.message}
+            </p>
+          )}
+        </>
       )}
 
       <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
@@ -344,6 +530,7 @@ function ContextDrawer({
           Mark done
           <kbd className="ml-1 text-[10px] opacity-70 font-mono">D</kbd>
         </button>
+        <SnoozeMenu onSnooze={(until) => onSnooze(item.id, until)} disabled={resolving} />
         <button
           onClick={() => onResolve(item.id, "dismissed")}
           disabled={resolving}
