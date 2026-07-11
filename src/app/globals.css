@@ -3,12 +3,73 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+
+  /* --- ROS design tokens (Phase 0) ---
+     Single source of truth for the redesign brief's visual system: soft
+     low-opacity tints + colored text, 8pt-compatible spacing, 12-16px
+     radius, premium shadows, and 120-180ms transitions. Existing pages are
+     untouched this phase -- these tokens and the primitives in
+     src/components/ui are additive, consumed by later phases. */
+
+  /* Radius scale */
+  --ros-radius-sm: 8px;
+  --ros-radius-md: 12px;
+  --ros-radius-lg: 16px;
+  --ros-radius-full: 9999px;
+
+  /* Shadow scale -- soft, premium, never harsh */
+  --ros-shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --ros-shadow-md: 0 2px 8px -2px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.04);
+  --ros-shadow-lg: 0 8px 24px -4px rgb(15 23 42 / 0.10), 0 2px 6px -2px rgb(15 23 42 / 0.06);
+
+  /* Motion -- 120-180ms per brief */
+  --ros-duration-fast: 120ms;
+  --ros-duration-base: 160ms;
+  --ros-duration-slow: 180ms;
+  --ros-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Semantic tone tokens -- each existing ad-hoc "bg-X-50 text-X-700
+     ring-X-200" tint pattern (used across inbox task badges, mandate
+     status chips, etc.) gets a name here so later phases reference one
+     semantic tone instead of re-picking a Tailwind color per component. */
+  --ros-tone-neutral-bg: #f1f5f9;
+  --ros-tone-neutral-text: #475569;
+  --ros-tone-neutral-ring: #e2e8f0;
+
+  --ros-tone-accent-bg: #eff6ff;
+  --ros-tone-accent-text: #1d4ed8;
+  --ros-tone-accent-ring: #bfdbfe;
+
+  --ros-tone-success-bg: #ecfdf5;
+  --ros-tone-success-text: #047857;
+  --ros-tone-success-ring: #a7f3d0;
+
+  --ros-tone-warning-bg: #fffbeb;
+  --ros-tone-warning-text: #b45309;
+  --ros-tone-warning-ring: #fde68a;
+
+  --ros-tone-danger-bg: #fef2f2;
+  --ros-tone-danger-text: #b91c1c;
+  --ros-tone-danger-ring: #fecaca;
+
+  --ros-tone-info-bg: #f0f9ff;
+  --ros-tone-info-text: #0369a1;
+  --ros-tone-info-ring: #bae6fd;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-ros-sm: var(--ros-radius-sm);
+  --radius-ros-md: var(--ros-radius-md);
+  --radius-ros-lg: var(--ros-radius-lg);
+  --radius-ros-full: var(--ros-radius-full);
+
+  --shadow-ros-sm: var(--ros-shadow-sm);
+  --shadow-ros-md: var(--ros-shadow-md);
+  --shadow-ros-lg: var(--ros-shadow-lg);
 }
 
 body {
@@ -33,4 +94,17 @@ body {
 
 .animate-fade-in {
   animation: fade-in 180ms ease-out;
+}
+
+@keyframes ros-skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-ros-skeleton {
+  animation: ros-skeleton-pulse 1.4s ease-in-out infinite;
 }
