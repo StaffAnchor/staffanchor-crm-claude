@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/inbox-sweep",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/mandate-auto-rematch",
+      "schedule": "0 3 * * *"
     }
   ]
 }
