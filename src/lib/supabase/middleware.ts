@@ -61,8 +61,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
+    // ROS Phase 2: Priority Actions is the true home screen post-login.
+    // Freelancer accounts get redirected onward to /vendor/mandates by the
+    // block below on their very next request.
     const url = request.nextUrl.clone();
-    url.pathname = "/candidates";
+    url.pathname = "/inbox";
     return NextResponse.redirect(url);
   }
 
@@ -85,7 +88,7 @@ export async function updateSession(request: NextRequest) {
     }
     if (profile?.role !== "freelancer" && isVendorRoute) {
       const url = request.nextUrl.clone();
-      url.pathname = "/candidates";
+      url.pathname = "/inbox";
       return NextResponse.redirect(url);
     }
   }

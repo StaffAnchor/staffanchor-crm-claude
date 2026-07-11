@@ -36,7 +36,7 @@ export default function TopNav({
   return (
     <header className="bg-[#12141c] text-slate-200 sticky top-0 z-30">
       <div className="max-w-[1400px] mx-auto px-5 h-14 flex items-center gap-6">
-        <Link href="/candidates" className="flex items-center gap-2 shrink-0">
+        <Link href="/inbox" className="flex items-center gap-2 shrink-0">
           <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[11px] font-bold text-white">
             SA
           </span>
