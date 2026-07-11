@@ -97,12 +97,6 @@ const CREATED_BY_TONE: Record<string, BadgeTone> = {
   recruiter_created: "neutral",
 };
 
-const CATEGORY_COLOR: Record<string, string> = {
-  b2b_sales: "from-blue-400 to-blue-600",
-  b2c_sales: "from-fuchsia-400 to-fuchsia-600",
-  non_sales: "from-slate-400 to-slate-600",
-};
-
 const CATEGORY_LABEL: Record<string, string> = {
   b2b_sales: "B2B Sales",
   b2c_sales: "B2C Sales",
@@ -928,11 +922,12 @@ export default function CandidatesTable({
                     onMouseLeave={handleNameLeave}
                   >
                     <Link href={`/candidates/${c.id}`} className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${
-                          CATEGORY_COLOR[c.category ?? ""] ?? "from-slate-400 to-slate-500"
-                        } flex items-center justify-center text-[11px] font-semibold text-white shrink-0`}
-                      >
+                      {/* One calm, neutral avatar treatment for everyone --
+                          category is already its own column, so color-coding
+                          the avatar too was pure noise, not signal (10 rows,
+                          10 different gradient hues, no consistent meaning
+                          a recruiter could actually read at a glance). */}
+                      <div className="w-8 h-8 rounded-full bg-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center text-[11px] font-semibold text-slate-600 shrink-0">
                         {initialsFor(c.full_name)}
                       </div>
                       <p className="text-[14px] font-medium text-slate-900 group-hover:text-blue-600 transition-all duration-200 ease-ros truncate whitespace-nowrap">
@@ -947,7 +942,7 @@ export default function CandidatesTable({
                           e.stopPropagation();
                           setMandatePopoverFor(mandatePopoverFor === c.id ? null : c.id);
                         }}
-                        className="absolute -top-1.5 left-4 flex items-center justify-center w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-semibold shadow-sm hover:bg-indigo-500"
+                        className="absolute -top-1.5 left-4 flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-semibold shadow-sm hover:bg-blue-500 transition-colors duration-200 ease-ros"
                         title="Mandates this candidate is linked to"
                       >
                         {(mandateLinksByCandidate[c.id] ?? []).length}
