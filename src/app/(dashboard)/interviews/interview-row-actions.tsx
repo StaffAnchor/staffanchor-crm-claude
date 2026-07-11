@@ -75,7 +75,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setScheduling((s) => !s);
             setLoggingOutcome(false);
           }}
-          className="text-[11.5px] font-medium text-blue-600 hover:text-blue-700"
+          className="text-[11.5px] font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 ease-ros"
         >
           {row.confirmed_interview_at ? "Reschedule" : "Confirm time"}
         </button>
@@ -84,30 +84,30 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setLoggingOutcome((s) => !s);
             setScheduling(false);
           }}
-          className="text-[11.5px] font-medium text-slate-500 hover:text-slate-700"
+          className="text-[11.5px] font-medium text-slate-500 hover:text-slate-700 transition-colors duration-200 ease-ros"
         >
           Log outcome
         </button>
       </div>
 
       {scheduling && (
-        <div className="flex items-center gap-1.5 mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2">
+        <div className="flex items-center gap-1.5 mt-1 bg-slate-50 border border-slate-200 rounded-ros-md p-2">
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="text-[11.5px] rounded border border-slate-300 px-1.5 py-1"
+            className="text-[11.5px] rounded-ros-md border border-slate-200 px-1.5 py-1"
           />
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="text-[11.5px] rounded border border-slate-300 px-1.5 py-1"
+            className="text-[11.5px] rounded-ros-md border border-slate-200 px-1.5 py-1"
           />
           <button
             onClick={confirmSlot}
             disabled={busy}
-            className="text-[11.5px] font-medium bg-blue-600 text-white rounded px-2 py-1 disabled:opacity-60"
+            className="text-[11.5px] font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
           >
             Save
           </button>
@@ -115,19 +115,19 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
       )}
 
       {loggingOutcome && (
-        <div className="flex flex-col gap-1.5 mt-1 bg-slate-50 border border-slate-200 rounded-lg p-2 w-56">
+        <div className="flex flex-col gap-1.5 mt-1 bg-slate-50 border border-slate-200 rounded-ros-md p-2 w-56">
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => logOutcome("offer")}
               disabled={busy}
-              className="text-[11.5px] font-medium bg-lime-100 text-lime-800 rounded px-2 py-1 disabled:opacity-60"
+              className="text-[11.5px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
             >
               Moved to offer
             </button>
             <button
               onClick={() => logOutcome("rejected")}
               disabled={busy}
-              className="text-[11.5px] font-medium bg-red-100 text-red-700 rounded px-2 py-1 disabled:opacity-60"
+              className="text-[11.5px] font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
             >
               Rejected
             </button>
@@ -136,7 +136,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Rejection reason (optional)"
-            className="text-[11.5px] rounded border border-slate-300 px-1.5 py-1"
+            className="text-[11.5px] rounded-ros-md border border-slate-200 px-1.5 py-1"
           />
         </div>
       )}
