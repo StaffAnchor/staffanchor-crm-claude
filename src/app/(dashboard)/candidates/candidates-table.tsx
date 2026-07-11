@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ResumePreview from "./[id]/resume-preview";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -514,6 +514,11 @@ export default function CandidatesTable({
   mandateLinksByCandidate?: Record<string, MandateLink[]>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Carried onto each candidate's detail-page link so it can rebuild this
+  // exact filtered list to offer prev/next navigation without a list --
+  // see candidates/[id]/page.tsx.
+  const fromQS = searchParams.toString();
   const supabase = createClient();
   const [order, setOrder] = useState<string[]>(COLUMN_KEYS);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -921,7 +926,10 @@ export default function CandidatesTable({
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
                     onMouseLeave={handleNameLeave}
                   >
-                    <Link href={`/candidates/${c.id}`} className="flex items-center gap-3">
+                    <Link
+                      href={fromQS ? `/candidates/${c.id}?from=${encodeURIComponent(fromQS)}` : `/candidates/${c.id}`}
+                      className="flex items-center gap-3"
+                    >
                       {/* One calm, neutral avatar treatment for everyone --
                           category is already its own column, so color-coding
                           the avatar too was pure noise, not signal (10 rows,
@@ -977,7 +985,7 @@ export default function CandidatesTable({
                 ))}
                 <td className="px-4 py-3 text-right">
                   <Link
-                    href={`/candidates/${c.id}`}
+                    href={fromQS ? `/candidates/${c.id}?from=${encodeURIComponent(fromQS)}` : `/candidates/${c.id}`}
                     className="opacity-0 group-hover:opacity-100 transition-all duration-200 ease-ros inline-flex items-center gap-1 text-[12px] text-blue-600 font-medium whitespace-nowrap"
                   >
                     View <ArrowUpRight className="w-3 h-3" />

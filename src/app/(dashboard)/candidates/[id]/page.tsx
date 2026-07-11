@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Phone, Mail, MapPin, FileText, MessageCircle, AlertTriangle } from "lucide-react";
+import { Phone, Mail, MapPin, FileText, MessageCircle, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -51,10 +51,13 @@ const RECOMMENDATION_TONE: Record<string, BadgeTone> = {
 
 export default async function CandidateDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from } = await searchParams;
   const supabase = await createClient();
 
   const { data: candidate } = await supabase
@@ -64,6 +67,64 @@ export default async function CandidateDetailPage({
     .single();
 
   if (!candidate) notFound();
+
+  // Prev/next navigation within whatever filtered list the recruiter came
+  // from -- `from` is the exact query string of /candidates?... they were
+  // browsing, carried onto this row's link. Re-running that same filter
+  // (id-only, same default ordering) lets us find this candidate's
+  // neighbors without keeping any list state around. Replaces the old
+  // per-section sidebar, which was meaningless on a single-candidate page.
+  let prevCandidate: { id: string; full_name: string } | null = null;
+  let nextCandidate: { id: string; full_name: string } | null = null;
+  let listPosition: { index: number; total: number } | null = null;
+  const backHref = from ? `/candidates?${from}` : "/candidates";
+
+  if (from) {
+    const listParams = new URLSearchParams(from);
+    let listQuery = supabase
+      .from("candidates")
+      .select("id, full_name")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    const q = listParams.get("q");
+    const category = listParams.get("category");
+    const status = listParams.get("status");
+    const minCtc = listParams.get("min_ctc");
+    const maxCtc = listParams.get("max_ctc");
+    const minExp = listParams.get("min_exp");
+    const subDomain = listParams.get("sub_domain");
+    const location = listParams.get("location");
+    const currentIndustry = listParams.get("current_industry");
+    const origin = listParams.get("origin");
+    const incomplete = listParams.get("incomplete");
+    const noticePeriod = listParams.get("notice_period");
+    const recommendation = listParams.get("recommendation");
+
+    if (q) listQuery = listQuery.or(`full_name.ilike.%${q}%,email.ilike.%${q}%,current_employer.ilike.%${q}%`);
+    if (category) listQuery = listQuery.eq("category", category);
+    if (status) listQuery = listQuery.eq("status", status);
+    if (minCtc) listQuery = listQuery.gte("current_fixed_ctc", Number(minCtc));
+    if (maxCtc) listQuery = listQuery.lte("current_fixed_ctc", Number(maxCtc));
+    if (minExp) listQuery = listQuery.gte("total_experience_years", Number(minExp));
+    if (subDomain) listQuery = listQuery.eq("sub_domain", subDomain);
+    if (location) listQuery = listQuery.ilike("current_location", `%${location}%`);
+    if (currentIndustry) listQuery = listQuery.eq("current_industry", currentIndustry);
+    if (origin) listQuery = listQuery.eq("created_by", origin);
+    if (incomplete) listQuery = listQuery.in("status", ["awaiting_input", "lead"]);
+    if (noticePeriod) listQuery = listQuery.eq("notice_period", noticePeriod);
+    if (recommendation) listQuery = listQuery.eq("recruiter_assessment->>overall_recommendation", recommendation);
+
+    const { data: listRows } = await listQuery;
+    if (listRows) {
+      const idx = listRows.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        listPosition = { index: idx + 1, total: listRows.length };
+        prevCandidate = idx > 0 ? listRows[idx - 1] : null;
+        nextCandidate = idx < listRows.length - 1 ? listRows[idx + 1] : null;
+      }
+    }
+  }
 
   let resumeSignedUrl: string | null = null;
   let resumeFileName: string | null = null;
@@ -150,12 +211,46 @@ export default async function CandidateDetailPage({
 
   return (
     <div>
-      <Link
-        href="/candidates"
-        className="text-[12px] text-slate-500 hover:text-slate-800 transition-colors duration-200 ease-ros"
-      >
-        ← All candidates
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href={backHref}
+          className="text-[12px] text-slate-500 hover:text-slate-800 transition-colors duration-200 ease-ros"
+        >
+          ← All candidates
+        </Link>
+
+        {listPosition && (
+          <div className="flex items-center gap-1 text-[12px] text-slate-500">
+            <span className="tabular-nums mr-1">
+              {listPosition.index} of {listPosition.total}
+            </span>
+            <Link
+              href={prevCandidate ? `/candidates/${prevCandidate.id}?from=${encodeURIComponent(from ?? "")}` : "#"}
+              aria-disabled={!prevCandidate}
+              title={prevCandidate ? `Previous: ${prevCandidate.full_name}` : undefined}
+              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 transition-all duration-200 ease-ros ${
+                prevCandidate
+                  ? "hover:bg-slate-50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600"
+                  : "opacity-30 pointer-events-none text-slate-400"
+              }`}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Link>
+            <Link
+              href={nextCandidate ? `/candidates/${nextCandidate.id}?from=${encodeURIComponent(from ?? "")}` : "#"}
+              aria-disabled={!nextCandidate}
+              title={nextCandidate ? `Next: ${nextCandidate.full_name}` : undefined}
+              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 transition-all duration-200 ease-ros ${
+                nextCandidate
+                  ? "hover:bg-slate-50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600"
+                  : "opacity-30 pointer-events-none text-slate-400"
+              }`}
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
+      </div>
 
       {/* --- Executive summary header --- */}
       <Card className="mt-2" padded={false}>

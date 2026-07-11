@@ -1,21 +1,6 @@
-import SectionShell, { type SidebarGroup } from "../section-shell";
-
-const groups: SidebarGroup[] = [
-  {
-    heading: "Views",
-    items: [
-      { label: "All Mandates", href: "/mandates", icon: "Briefcase" },
-      { label: "Open", href: "/mandates?status=open", icon: "CheckCircle2", matchParam: { key: "status", value: "open" } },
-      { label: "On Hold", href: "/mandates?status=on_hold", icon: "PauseCircle", matchParam: { key: "status", value: "on_hold" } },
-      { label: "Closed", href: "/mandates?status=closed", icon: "XCircle", matchParam: { key: "status", value: "closed" } },
-    ],
-  },
-];
-
+// See candidates/layout.tsx for the reasoning -- the sidebar duplicated
+// the status filters already on this page and was meaningless on the
+// mandate detail page.
 export default function MandatesLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <SectionShell basePath="/mandates" groups={groups}>
-      {children}
-    </SectionShell>
-  );
+  return <div className="max-w-[1400px] mx-auto px-6 py-6">{children}</div>;
 }
