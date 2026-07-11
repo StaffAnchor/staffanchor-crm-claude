@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TopNav from "./topnav";
+import CopilotPalette from "@/components/copilot-palette";
 
 export default async function DashboardLayout({
   children,
@@ -47,6 +48,7 @@ export default async function DashboardLayout({
         role={profile?.role ?? "recruiter"}
         initials={initials}
       />
+      <CopilotPalette />
       {children}
     </div>
   );
