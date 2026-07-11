@@ -447,7 +447,7 @@ export default async function ReportsPage({
       <Card className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <ShieldCheck className={`w-4 h-4 ${totalAttentionItems > 0 ? "text-amber-500" : "text-emerald-500"}`} />
-          <h2 className="text-sm font-semibold text-slate-900">Needs attention</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Needs attention</h2>
           <span className="text-[10.5px] text-slate-400 ml-auto">across mandates, candidates & interviews</span>
         </div>
         <div className="grid grid-cols-5 gap-2 mt-3">
@@ -458,7 +458,7 @@ export default async function ReportsPage({
               <Link
                 key={s.label}
                 href={s.href}
-                className="group flex flex-col gap-2 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 p-3 transition-all duration-200 ease-ros hover:border-slate-200 hover:shadow-ros-sm hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+                className="group flex flex-col gap-2 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/50 p-3 transition-all duration-200 ease-ros hover:border-slate-200 hover:shadow-ros-sm hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
               >
                 <div className="flex items-center justify-between">
                   <Icon className={`w-3.5 h-3.5 ${s.value === 0 ? "text-slate-400" : "text-amber-500"}`} />
@@ -479,13 +479,13 @@ export default async function ReportsPage({
         <div className="flex items-center gap-2 text-[12.5px] text-slate-600 dark:text-slate-400 bg-indigo-50/70 border border-indigo-100 rounded-ros-lg px-3.5 py-2 mb-4">
           <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
           <span>
-            <span className="font-semibold text-slate-900">{topCategory.label}</span> makes up{" "}
-            <span className="font-semibold text-slate-900">{topCategory.pct}%</span> of the candidate pool
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{topCategory.label}</span> makes up{" "}
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{topCategory.pct}%</span> of the candidate pool
             {topDomain ? (
               <>
                 {" "}
-                — the largest single domain is <span className="font-semibold text-slate-900">{topDomain.label}</span> at{" "}
-                <span className="font-semibold text-slate-900">{topDomain.pct}%</span>
+                — the largest single domain is <span className="font-semibold text-slate-900 dark:text-slate-100">{topDomain.label}</span> at{" "}
+                <span className="font-semibold text-slate-900 dark:text-slate-100">{topDomain.pct}%</span>
               </>
             ) : null}
             .
@@ -497,7 +497,7 @@ export default async function ReportsPage({
         <Card>
           <div className="flex items-center gap-2 mb-4">
             <Layers className="w-4 h-4 text-blue-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Primary domain</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Primary domain</h2>
             <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
           <ReportBarList items={primaryDomainItems} colorClass="bg-blue-500/80" highlightTop />
@@ -506,7 +506,7 @@ export default async function ReportsPage({
         <Card>
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-4 h-4 text-violet-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Segment</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Segment</h2>
             <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
           <ReportBarList items={categoryItems} colorClass="bg-violet-500/80" highlightTop />
@@ -515,7 +515,7 @@ export default async function ReportsPage({
         <Card>
           <div className="flex items-center gap-2 mb-4">
             <Layers className="w-4 h-4 text-teal-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Secondary domain</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Secondary domain</h2>
             <span className="text-[10.5px] text-slate-400 ml-auto">candidates can have multiple</span>
           </div>
           <ReportBarList items={secondaryDomainItems} colorClass="bg-teal-500/80" />
@@ -524,7 +524,7 @@ export default async function ReportsPage({
         <Card>
           <div className="flex items-center gap-2 mb-4">
             <Wallet className="w-4 h-4 text-emerald-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Current fixed CTC</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Current fixed CTC</h2>
             <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
           <ReportBarList items={ctcItems} colorClass="bg-emerald-500/80" highlightTop />
@@ -533,7 +533,7 @@ export default async function ReportsPage({
         <Card className="col-span-2">
           <div className="flex items-center gap-2 mb-4">
             <MapPin className="w-4 h-4 text-amber-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Location</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Location</h2>
             <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
           </div>
           <div className="grid grid-cols-2 gap-x-8">
@@ -547,7 +547,7 @@ export default async function ReportsPage({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-indigo-500" />
-            <h2 className="text-sm font-semibold text-slate-900">Candidate inflow</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Candidate inflow</h2>
             <span className="text-[11px] text-slate-400">
               {inflowTotal} registered · {currentRangeLabel}
             </span>
@@ -575,7 +575,7 @@ export default async function ReportsPage({
                 key={r.key}
                 href={`/reports?range=${r.key}`}
                 className={`text-[11.5px] font-medium px-2.5 py-1 rounded-ros-full transition-colors duration-200 ease-ros ${
-                  range === r.key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                  range === r.key ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                 }`}
               >
                 {r.label}
@@ -589,7 +589,7 @@ export default async function ReportsPage({
       <Card>
         <div className="flex items-center gap-2 mb-4">
           <Users2 className="w-4 h-4 text-rose-500" />
-          <h2 className="text-sm font-semibold text-slate-900">Recruiter productivity</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Recruiter productivity</h2>
           {totalPlaced > 0 && (
             <span className="text-[10.5px] text-slate-400 ml-auto">{totalPlaced} total placements</span>
           )}

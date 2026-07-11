@@ -62,7 +62,7 @@ export default function ResumePreview({
             className="bg-white dark:bg-slate-900 rounded-ros-lg shadow-ros-md w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
               <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{fileName}</p>
               <div className="flex items-center gap-2 shrink-0">
                 <a
@@ -72,19 +72,19 @@ export default function ResumePreview({
                 >
                   <Download className="w-3.5 h-3.5" /> Download
                 </a>
-                <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 p-1">
+                <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1">
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-auto bg-slate-50">
+            <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
               {isPdf ? (
                 <iframe src={signedUrl} className="w-full h-full" title={`Resume — ${fileName}`} />
               ) : isDocx ? (
                 loading ? (
                   <div className="flex flex-col items-center justify-center h-full text-center px-6">
                     <Loader2 className="w-6 h-6 text-slate-400 animate-spin mb-3" />
-                    <p className="text-[13px] text-slate-500">Rendering document…</p>
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400">Rendering document…</p>
                   </div>
                 ) : docxError ? (
                   <div className="flex flex-col items-center justify-center h-full text-center px-6">
@@ -101,7 +101,7 @@ export default function ResumePreview({
                 ) : (
                   <div className="bg-white dark:bg-slate-900 mx-auto max-w-2xl my-6 p-8 shadow-sm rounded-lg">
                     <div
-                      className="text-sm leading-relaxed text-slate-800 dark:text-slate-200 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1.5 [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 [&_strong]:font-semibold [&_a]:text-blue-600 [&_a]:underline [&_table]:border-collapse [&_table]:my-2 [&_td]:border [&_td]:border-slate-200 [&_td]:p-1.5 [&_th]:border [&_th]:border-slate-200 [&_th]:p-1.5 [&_th]:bg-slate-50"
+                      className="text-sm leading-relaxed text-slate-800 dark:text-slate-200 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1.5 [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 [&_strong]:font-semibold [&_a]:text-blue-600 [&_a]:underline [&_table]:border-collapse [&_table]:my-2 [&_td]:border [&_td]:border-slate-200 [&_td]:p-1.5 [&_th]:border [&_th]:border-slate-200 [&_th]:p-1.5 [&_th]:bg-slate-50 dark:bg-slate-800/50"
                       dangerouslySetInnerHTML={{ __html: html ?? "" }}
                     />
                   </div>

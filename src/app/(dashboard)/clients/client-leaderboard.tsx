@@ -27,7 +27,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
       <Card className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <Trophy className="w-4 h-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-slate-900">Client performance</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Client performance</h2>
         </div>
         <p className="text-[13px] text-slate-400">
           No candidates have been submitted to any client yet. Once recruiters start moving candidates
@@ -45,7 +45,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-slate-900">Client performance</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Client performance</h2>
         </div>
         <span className="text-[11px] text-slate-400">
           Ranked by submitted → interview conversion · {ranked.length} client{ranked.length === 1 ? "" : "s"} with data
@@ -90,7 +90,7 @@ function LeaderRow({ row, rank, positive }: { row: ClientLeaderRow; rank?: numbe
     >
       <div className="flex items-center gap-2.5 min-w-0">
         {rank && (
-          <span className="w-5 h-5 shrink-0 rounded-ros-full bg-slate-100 text-slate-500 dark:text-slate-400 text-[10px] font-semibold flex items-center justify-center">
+          <span className="w-5 h-5 shrink-0 rounded-ros-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-semibold flex items-center justify-center">
             {rank}
           </span>
         )}

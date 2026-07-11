@@ -116,7 +116,7 @@ export default function JobDescriptionPanel({
           <FileText className="w-3.5 h-3.5 text-slate-400" /> Job description
         </h2>
         {!editing && (
-          <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700">
+          <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         )}
@@ -132,7 +132,7 @@ export default function JobDescriptionPanel({
               onChange={(e) => setRawNotes(e.target.value)}
               rows={3}
               placeholder="Paste a rough JD, bullet notes, or a client email..."
-              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y bg-white"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
             />
             <button
               type="button"

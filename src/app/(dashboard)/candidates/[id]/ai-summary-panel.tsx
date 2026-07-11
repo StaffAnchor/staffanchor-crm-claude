@@ -55,7 +55,7 @@ export default function AiSummaryPanel({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900">
+        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900 dark:text-slate-100">
           <Sparkles className="w-3.5 h-3.5 text-blue-500" />
           AI summary <span className="text-[11px] font-normal text-slate-400">(shown to clients on the shortlist link/portal once generated)</span>
         </h3>
@@ -81,7 +81,7 @@ export default function AiSummaryPanel({
           </p>
           <ul className="space-y-1">
             {passport.resume_highlights.map((h, i) => (
-              <li key={i} className="flex items-start gap-1.5 text-[12.5px] text-slate-600">
+              <li key={i} className="flex items-start gap-1.5 text-[12.5px] text-slate-600 dark:text-slate-400">
                 <BadgeCheck className="w-3.5 h-3.5 text-teal-500 mt-0.5 shrink-0" />
                 <span>{h}</span>
               </li>

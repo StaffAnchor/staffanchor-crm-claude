@@ -137,7 +137,7 @@ function CheckboxGroup({
             className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
               active
                 ? "bg-blue-600 border-blue-600 text-white"
-                : "bg-white dark:bg-slate-900 border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+                : "bg-white dark:bg-slate-900 border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             }`}
           >
             {opt}
@@ -475,7 +475,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         <Pencil className="w-3 h-3" /> Edit profile
       </button>
@@ -487,8 +487,8 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
-              <h3 className="text-[14px] font-semibold text-slate-900">Edit profile</h3>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700">
+              <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit profile</h3>
+              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -537,7 +537,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                       <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-1 truncate">Currently on file</p>
                     )}
                     {resumeFile && <p className="text-[12px] text-slate-700 dark:text-slate-300 mb-1 truncate">{resumeFile.name} (replacing)</p>}
-                    <label className="flex items-center gap-1.5 text-[12px] text-slate-600 dark:text-slate-400 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 w-fit">
+                    <label className="flex items-center gap-1.5 text-[12px] text-slate-600 dark:text-slate-400 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 w-fit">
                       <Upload className="w-3 h-3" />
                       {candidate.resume_file_url ? "Replace resume" : "Upload resume"}
                       <input
@@ -719,7 +719,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                       onChange={(e) => set("esopsHeld", e.target.checked)}
                       className="rounded border-slate-300"
                     />
-                    <label htmlFor="esops" className="text-sm text-slate-700">Holds ESOPs</label>
+                    <label htmlFor="esops" className="text-sm text-slate-700 dark:text-slate-300">Holds ESOPs</label>
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>When can they join?</label>
@@ -898,7 +898,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                   </div>
 
                   {isInsideSales && (
-                    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+                    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                       <div>
                         <label className={FIELD_LABEL}>Average handling time (AHT)</label>
                         <select value={form.aht} onChange={(e) => set("aht", e.target.value)} className={INPUT_CLS}>
@@ -933,7 +933,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                     </div>
                   )}
 
-                  <div className="mt-4 pt-4 border-t border-slate-100">
+                  <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                     <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
                       Quarterly Targets &amp; Achievement (last 4 quarters)
                     </span>
@@ -1071,7 +1071,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
 
             {error && <p className="px-5 text-[12px] text-red-600 mb-2">{error}</p>}
 
-            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white">
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white dark:bg-slate-900">
               <button
                 onClick={() => setOpen(false)}
                 disabled={saving}

@@ -50,7 +50,7 @@ export function Dialog({
             <button
               onClick={onClose}
               aria-label="Close dialog"
-              className="ros-focusable text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-ros-sm p-1"
+              className="ros-focusable text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:hover:text-slate-200 rounded-ros-sm p-1"
             >
               <X className="w-4 h-4" />
             </button>

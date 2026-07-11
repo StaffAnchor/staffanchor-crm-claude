@@ -52,8 +52,8 @@ export default function CreateUserForm() {
           <p className="text-xs text-teal-700 mt-1">
             Share these credentials with them directly (not visible again after you leave this page):
           </p>
-          <p className="text-sm mt-2 font-mono text-slate-800">{created.email}</p>
-          <p className="text-sm font-mono text-slate-800">{created.password}</p>
+          <p className="text-sm mt-2 font-mono text-slate-800 dark:text-slate-200">{created.email}</p>
+          <p className="text-sm font-mono text-slate-800 dark:text-slate-200">{created.password}</p>
         </div>
         <button
           onClick={() => setCreated(null)}
@@ -104,7 +104,7 @@ export default function CreateUserForm() {
           <button
             type="button"
             onClick={() => setForm((f) => ({ ...f, password: generatePassword() }))}
-            className="text-xs px-2 rounded-lg border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+            className="text-xs px-2 rounded-lg border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
           >
             Regenerate
           </button>

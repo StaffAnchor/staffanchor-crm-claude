@@ -19,7 +19,7 @@ const ICON: Record<TimelineEvent["kind"], typeof MessageSquare> = {
 // the previous blue/violet/emerald rainbow.
 const ICON_COLOR: Record<TimelineEvent["kind"], string> = {
   note: "bg-blue-50 text-blue-600",
-  status_change: "bg-slate-100 text-slate-500",
+  status_change: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400",
   created: "bg-emerald-50 text-emerald-600",
 };
 
@@ -40,10 +40,10 @@ export default function Timeline({ events }: { events: TimelineEvent[] }) {
               >
                 <Icon className="w-3.5 h-3.5" strokeWidth={2} />
               </div>
-              {i < events.length - 1 && <div className="w-px flex-1 bg-slate-200 my-1" />}
+              {i < events.length - 1 && <div className="w-px flex-1 bg-slate-200 dark:bg-slate-700 my-1" />}
             </div>
             <div className="pb-5">
-              <p className="text-[13px] text-slate-800">{e.label}</p>
+              <p className="text-[13px] text-slate-800 dark:text-slate-200">{e.label}</p>
               {e.detail && <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{e.detail}</p>}
               <p className="text-[11px] text-slate-400 mt-1">{new Date(e.at).toLocaleString()}</p>
             </div>

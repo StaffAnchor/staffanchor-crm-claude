@@ -40,7 +40,7 @@ const ORIGIN_LABEL: Record<string, string> = {
 // categories -- so it reads calmer as one accent color deepening toward
 // the end of the pipeline (rainbow bars implied unrelated categories).
 const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
-  { key: "lead_registered", label: "New", color: "bg-slate-300" },
+  { key: "lead_registered", label: "New", color: "bg-slate-300 dark:bg-slate-600" },
   { key: "under_review", label: "Under Review", color: "bg-blue-300" },
   { key: "shortlisted", label: "Shortlisted", color: "bg-blue-400" },
   { key: "submitted", label: "Submitted", color: "bg-blue-500" },
@@ -303,7 +303,7 @@ export default async function CandidatesPage({
 
       {/* Soft canvas backdrop -- the tiles read as one calm surface instead
           of ten separately-boxed panels floating on the page background. */}
-      <div className="bg-slate-50/60 rounded-ros-lg p-2 mb-3">
+      <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-3">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {statTiles.map((k) => {
             const Icon = k.icon;
@@ -348,7 +348,7 @@ export default async function CandidatesPage({
                 className="group flex-1 flex items-center gap-2"
                 title={`${count} candidate${count === 1 ? "" : "s"} · ${stage.label}`}
               >
-                <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
                     className={`h-full rounded-full ${stage.color} opacity-80 group-hover:opacity-100 transition-all duration-200 ease-ros`}
                     style={{ width: `${widthPct}%` }}
@@ -373,7 +373,7 @@ export default async function CandidatesPage({
             name="q"
             defaultValue={params.q}
             placeholder="Search candidates by name, email, employer..."
-            className="flex-1 min-w-[220px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 text-[13px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300"
+            className="flex-1 min-w-[220px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 text-[13px] focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300"
           />
           {params.category && <input type="hidden" name="category" value={params.category} />}
           {params.status && <input type="hidden" name="status" value={params.status} />}
@@ -403,7 +403,7 @@ export default async function CandidatesPage({
               className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
                 (params.category ?? "") === c.value
                   ? "bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
               {c.label}
@@ -487,17 +487,17 @@ export default async function CandidatesPage({
           {hasAnyFilter && (
             <Link
               href="/candidates"
-              className="text-[12px] font-medium px-3 py-1 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200 ease-ros"
+              className="text-[12px] font-medium px-3 py-1 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 ease-ros"
             >
               Clear all filters
             </Link>
           )}
 
           <details key={filtersKey} className="ml-auto group">
-            <summary className="list-none flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 cursor-pointer px-2 py-1">
+            <summary className="list-none flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer px-2 py-1">
               <SlidersHorizontal className="w-3 h-3" /> More filters
             </summary>
-            <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-slate-100">
+            <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
               <div>
                 <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
                 <select
@@ -696,7 +696,7 @@ export default async function CandidatesPage({
               {hasAnyFilter && (
                 <Link
                   href="/candidates"
-                  className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 px-3 py-1.5"
+                  className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 px-3 py-1.5"
                 >
                   Clear all filters
                 </Link>

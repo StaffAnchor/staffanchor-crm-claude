@@ -79,7 +79,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   STALE_MANDATE: {
     icon: Compass,
     label: "Needs sourcing",
-    tint: "bg-slate-100 text-slate-600 dark:text-slate-400 ring-slate-200",
+    tint: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 ring-slate-200",
   },
   POST_PLACEMENT_CHECKIN: {
     icon: PartyPopper,
@@ -319,17 +319,17 @@ export default function InboxView({
         </div>
         <div className="text-[11px] text-slate-400 hidden md:flex items-center gap-3">
           <span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 dark:border-slate-700 font-mono">J</kbd>{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 dark:border-slate-700 font-mono">K</kbd> navigate
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">J</kbd>{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">K</kbd> navigate
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 dark:border-slate-700 font-mono">D</kbd> done
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">D</kbd> done
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 dark:border-slate-700 font-mono">S</kbd> snooze
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">S</kbd> snooze
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 dark:border-slate-700 font-mono">X</kbd> dismiss
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">X</kbd> dismiss
           </span>
         </div>
       </div>
@@ -369,7 +369,7 @@ export default function InboxView({
               <select
                 value={recruiterFilter}
                 onChange={(e) => setRecruiterFilter(e.target.value)}
-                className="text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 ring-1 ring-slate-200 rounded-full pl-3 pr-7 py-1.5 hover:bg-slate-50 outline-none appearance-none cursor-pointer"
+                className="text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 ring-1 ring-slate-200 rounded-full pl-3 pr-7 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 outline-none appearance-none cursor-pointer"
                 style={{
                   backgroundImage:
                     "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e\")",
@@ -421,12 +421,12 @@ export default function InboxView({
                 <div key={item.id}>
                   {showGroupHeader && (
                     <div
-                      className={`flex items-center gap-1.5 px-4 py-1.5 bg-slate-50/80 ${
-                        idx > 0 ? "border-t border-slate-100" : ""
+                      className={`flex items-center gap-1.5 px-4 py-1.5 bg-slate-50/80 dark:bg-slate-800/50 ${
+                        idx > 0 ? "border-t border-slate-100 dark:border-slate-800" : ""
                       }`}
                     >
                       <GroupIcon className="w-3 h-3 text-slate-400" />
-                      <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
+                      <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         {GROUP_META[group].label}
                       </span>
                       <span className="text-[10px] text-slate-400">· {groupCounts.get(group) ?? 0}</span>
@@ -435,7 +435,7 @@ export default function InboxView({
                   <button
                     onClick={() => setFocusedIdx(idx)}
                     className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 last:border-b-0 transition-colors ${
-                      isFocused ? "bg-blue-50/70" : "hover:bg-slate-50"
+                      isFocused ? "bg-blue-50/70" : "hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
                     }`}
                   >
                     <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ring-1 ${meta.tint}`}>
@@ -508,7 +508,7 @@ function SnoozeMenu({ onSnooze, disabled }: { onSnooze: (until: Date) => void; d
       <button
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}
-        className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 disabled:opacity-60"
+        className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 disabled:opacity-60"
       >
         <Clock className="w-3.5 h-3.5" />
         Snooze
@@ -523,7 +523,7 @@ function SnoozeMenu({ onSnooze, disabled }: { onSnooze: (until: Date) => void; d
                 onSnooze(opt.getDate());
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+              className="w-full text-left px-3 py-1.5 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             >
               {opt.label}
             </button>
@@ -668,7 +668,7 @@ function ContextDrawer({
         {item.candidate_id && (
           <Link
             href={`/candidates/${item.candidate_id}`}
-            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
           >
             <span>
               Candidate: <span className="font-medium">{item.candidate_name ?? "View profile"}</span>
@@ -679,7 +679,7 @@ function ContextDrawer({
         {item.mandate_id && (
           <Link
             href={`/mandates/${item.mandate_id}`}
-            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
           >
             <span>
               Mandate:{" "}
@@ -706,14 +706,14 @@ function ContextDrawer({
             Send Update via WhatsApp
           </Button>
           {sendResult && (
-            <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500"}`}>
+            <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500 dark:text-slate-400"}`}>
               {sendResult.message}
             </p>
           )}
         </>
       )}
 
-      <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
+      <div className="flex items-center gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
         <Button
           variant="primary"
           size="sm"

@@ -88,7 +88,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                   <span>Pipeline progress</span>
                   <span>{m.submitted}/{m.linked || 0} submitted+</span>
                 </div>
-                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
                     className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-ros"
                     style={{ width: `${progressPct}%` }}
@@ -97,7 +97,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
               </div>
 
               {m.signals.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-slate-100">
+                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                   {m.signals.map((s) => (
                     <Badge key={s.label} tone={s.tone} size="sm" icon={<AlertTriangle className="w-2.5 h-2.5" />} className="normal-case tracking-normal">
                       {s.label}
@@ -138,7 +138,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
             onClick={() => setOpenId(null)}
           />
           <div className="relative w-full max-w-md h-full bg-white dark:bg-slate-900 shadow-ros-md flex flex-col animate-fade-in">
-            <div className="flex items-start justify-between px-5 py-4 border-b border-slate-100">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
               <div className="min-w-0">
                 <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 truncate">{open.role_title}</p>
                 <p className="text-[13px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
@@ -147,7 +147,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
               </div>
               <button
                 onClick={() => setOpenId(null)}
-                className="text-slate-400 hover:text-slate-700 transition-colors duration-200 ease-ros shrink-0 ml-2"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros shrink-0 ml-2"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -163,7 +163,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                     <MapPin className="w-3 h-3" /> {open.city}
                   </span>
                 )}
-                <span className="text-[12px] text-slate-500">
+                <span className="text-[12px] text-slate-500 dark:text-slate-400">
                   {open.category?.replace("_", " ")} · {open.sub_domain}
                 </span>
               </div>
@@ -193,7 +193,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                     className="block rounded-ros-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2.5 hover:bg-indigo-50 transition-colors duration-200 ease-ros"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[13px] font-medium text-slate-900">{open.topMatch.name}</span>
+                      <span className="text-[13px] font-medium text-slate-900 dark:text-slate-100">{open.topMatch.name}</span>
                       <Badge tone="accent" size="sm" className="normal-case tracking-normal">
                         {open.topMatch.score}% fit
                       </Badge>
@@ -208,7 +208,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                   Health signals
                 </p>
                 {open.signals.length === 0 ? (
-                  <p className="text-[13px] text-slate-500">No issues flagged — this mandate looks healthy.</p>
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400">No issues flagged — this mandate looks healthy.</p>
                 ) : (
                   <div className="space-y-2">
                     {open.signals.map((s) => (
@@ -227,7 +227,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
               </div>
             </div>
 
-            <div className="px-5 py-4 border-t border-slate-100">
+            <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800">
               <Link href={`/mandates/${open.id}`}>
                 <Button className="w-full" icon={<ArrowUpRight className="w-3.5 h-3.5" />}>
                   Open full mandate

@@ -67,13 +67,13 @@ export default async function MandateDetailPage({
   return (
     <div className="grid grid-cols-3 gap-6">
       <div className="col-span-2">
-        <Link href="/mandates" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800">
+        <Link href="/mandates" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200">
           ← All mandates
         </Link>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 mt-2 shadow-sm flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">{mandate.role_title}</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{mandate.role_title}</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {mandate.client_name} · {mandate.city ?? "—"} ·{" "}
               {mandate.category?.replace("_", " ")} / {mandate.sub_domain}
             </p>
@@ -170,7 +170,7 @@ export default async function MandateDetailPage({
         {mandate.client_id && (
           <Link
             href={`/clients/${mandate.client_id}`}
-            className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-sm text-slate-700"
+            className="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-sm text-slate-700 dark:text-slate-300"
           >
             <span className="font-medium text-blue-600">Manage {mandate.client_name} →</span>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

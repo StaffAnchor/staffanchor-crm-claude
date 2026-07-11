@@ -91,7 +91,7 @@ export default function AlignCandidatesPanel({
         {filtered.map((c) => (
           <label
             key={c.id}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 text-[13px]"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px]"
           >
             <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
             <span className="flex-1 truncate">

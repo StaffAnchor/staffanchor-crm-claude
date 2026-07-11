@@ -73,7 +73,7 @@ export default function AssessmentForm({
             className={`w-7 h-7 rounded-ros-md text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
               form[key] === n
                 ? "bg-blue-600 text-white"
-                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             }`}
           >
             {n}
@@ -140,7 +140,7 @@ export default function AssessmentForm({
               className={`text-xs px-2 py-1 rounded-ros-full border transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
                 (form.red_flags ?? []).includes(flag)
                   ? "bg-rose-600 text-white border-rose-600"
-                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
               }`}
             >
               {flag}

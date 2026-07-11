@@ -107,7 +107,7 @@ export default async function ClientsPage({
           </div>
         </div>
 
-        <div className="bg-slate-50/60 rounded-ros-lg p-2 mb-4">
+        <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {statTiles.map((t) => {
               const Icon = t.icon;
@@ -168,7 +168,7 @@ export default async function ClientsPage({
                   </div>
 
                   {funnel.submittedPlus > 0 && (
-                    <div className="flex items-center gap-4 text-[11.5px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-4 text-[11.5px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800">
                       <span>
                         <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{pct(funnel.subToInterviewRate)}</span>{" "}
                         sub → interview
@@ -180,7 +180,7 @@ export default async function ClientsPage({
                   )}
 
                   {needsAttention && (
-                    <div className="pt-3 mt-3 border-t border-slate-100">
+                    <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
                       <Badge tone="warning" size="sm" icon={<AlertTriangle className="w-2.5 h-2.5" />} className="normal-case tracking-normal">
                         No submissions in {daysSinceOldestOpen}d
                       </Badge>

@@ -19,7 +19,7 @@ export default function Tabs({
             className={`px-3.5 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-all duration-200 ease-ros ${
               active === i
                 ? "border-blue-600 text-blue-700"
-                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800"
+                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200"
             }`}
           >
             {tab.label}

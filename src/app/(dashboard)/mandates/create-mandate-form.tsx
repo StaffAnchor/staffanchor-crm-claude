@@ -217,7 +217,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         ) : isMultiSubDomain ? (
           <div className="grid gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             {subDomainOptions.map((o) => (
-              <label key={o} className="flex items-center gap-2 text-[13px] text-slate-700">
+              <label key={o} className="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-300">
                 <input type="checkbox" checked={form.subDomains.includes(o)} onChange={() => toggleSubDomain(o)} />
                 {o}
               </label>
@@ -252,10 +252,10 @@ export default function CreateMandateForm({ existingClients }: { existingClients
             {form.cities.map((c) => (
               <span
                 key={c}
-                className="flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-2.5 py-1"
+                className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-2.5 py-1"
               >
                 {c}
-                <button type="button" onClick={() => removeCity(c)} className="text-slate-400 hover:text-slate-700">
+                <button type="button" onClick={() => removeCity(c)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
                   <X className="w-3 h-3" />
                 </button>
               </span>
@@ -283,7 +283,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
               addCity(form.cityPick);
               setForm((f) => ({ ...f, cityPick: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
           >
             Add
           </button>
@@ -301,7 +301,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
               addCity(form.cityOther);
               setForm((f) => ({ ...f, cityOther: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
           >
             Add
           </button>
@@ -351,7 +351,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
             value={form.jd_raw_notes}
             onChange={(e) => setForm((f) => ({ ...f, jd_raw_notes: e.target.value }))}
             rows={4}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y bg-white"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y bg-white dark:bg-slate-900"
           />
           <button
             type="button"
@@ -396,8 +396,8 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50">
-        <label className="flex items-start gap-2 text-[12px] text-slate-700">
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800/50">
+        <label className="flex items-start gap-2 text-[12px] text-slate-700 dark:text-slate-300">
           <input
             type="checkbox"
             checked={form.hide_client}

@@ -14,7 +14,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  referred: "bg-slate-100 text-slate-600",
+  referred: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400",
   registered: "bg-blue-100 text-blue-700",
   submitted: "bg-indigo-100 text-indigo-700",
   interviewing: "bg-cyan-100 text-cyan-700",
@@ -73,15 +73,15 @@ export default async function ReferralsPage() {
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{rows.length}</p>
-          <p className="text-[11px] text-slate-500">Total referrals</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Total referrals</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-amber-600 tabular-nums">{pendingPayout}</p>
-          <p className="text-[11px] text-slate-500">Placed — payout pending</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Placed — payout pending</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-emerald-600 tabular-nums">₹{totalPaid.toLocaleString("en-IN")}</p>
-          <p className="text-[11px] text-slate-500">Paid out to date</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Paid out to date</p>
         </div>
       </div>
 
@@ -89,7 +89,7 @@ export default async function ReferralsPage() {
         {rows.length === 0 ? (
           <div className="py-16 text-center">
             <Gift className="w-6 h-6 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm text-slate-500">No referrals yet — candidates can refer people from their portal.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">No referrals yet — candidates can refer people from their portal.</p>
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -110,7 +110,7 @@ export default async function ReferralsPage() {
                   .map((rm) => (Array.isArray(rm.mandates) ? rm.mandates[0] : rm.mandates))
                   .filter((m): m is { id: string; role_title: string; status: string } => !!m);
                 return (
-                  <tr key={r.id} className="hover:bg-slate-50 align-top">
+                  <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 align-top">
                     <td className="px-4 py-3">
                       {referrer ? (
                         <Link href={`/candidates/${referrer.id}`} className="text-blue-600 hover:underline font-medium">
@@ -121,7 +121,7 @@ export default async function ReferralsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{r.referred_name}</p>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">{r.referred_name}</p>
                       {referred ? (
                         <Link href={`/candidates/${referred.id}`} className="text-xs text-blue-600 hover:underline">
                           View profile ({referred.status})
@@ -151,7 +151,7 @@ export default async function ReferralsPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       <p>{r.referred_email}</p>
                       {r.referred_phone && <p className="text-xs text-slate-400">{r.referred_phone}</p>}
                     </td>
@@ -159,7 +159,7 @@ export default async function ReferralsPage() {
                       <ReferralRowActions referralId={r.id} currentStatus={r.status} currentReward={r.reward_amount} />
                       <span
                         className={`inline-block mt-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                          STATUS_STYLE[r.status] ?? "bg-slate-100 text-slate-600"
+                          STATUS_STYLE[r.status] ?? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
                         {STATUS_LABEL[r.status] ?? r.status}

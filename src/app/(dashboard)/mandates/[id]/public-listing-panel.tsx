@@ -61,7 +61,7 @@ export default function PublicListingPanel({
       )}
 
       <p className="text-[11px] text-slate-400 mb-3">
-        Candidates will see: <span className="font-medium text-slate-600">{showClientName ? clientName : label || "A confidential client"}</span>
+        Candidates will see: <span className="font-medium text-slate-600 dark:text-slate-400">{showClientName ? clientName : label || "A confidential client"}</span>
       </p>
 
       <button

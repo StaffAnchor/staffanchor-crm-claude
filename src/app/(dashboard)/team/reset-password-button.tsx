@@ -66,7 +66,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
 
   return (
     <div className="text-xs bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 max-w-[220px] space-y-1.5">
-      <p className="font-medium text-slate-700">Reset password for {name}?</p>
+      <p className="font-medium text-slate-700 dark:text-slate-300">Reset password for {name}?</p>
       <div className="flex gap-1.5">
         <input
           value={password}
@@ -76,7 +76,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
         <button
           type="button"
           onClick={() => setPassword(generatePassword())}
-          className="px-1.5 rounded border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-100 shrink-0"
+          className="px-1.5 rounded border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
         >
           ↻
         </button>

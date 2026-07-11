@@ -30,7 +30,7 @@ function TagEditor({
         {items.map((item, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 dark:text-slate-300 text-[12px] px-2.5 py-1"
+            className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[12px] px-2.5 py-1"
           >
             {item}
             <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-600">
@@ -55,7 +55,7 @@ function TagEditor({
         />
         <button
           onClick={add}
-          className="rounded-lg border border-slate-300 px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50"
+          className="rounded-lg border border-slate-300 px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -102,7 +102,7 @@ export default function MustHavesPanel({
           <ListChecks className="w-3.5 h-3.5 text-slate-400" /> Must haves / Good to haves
         </h2>
         {!editing && (
-          <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700">
+          <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         )}

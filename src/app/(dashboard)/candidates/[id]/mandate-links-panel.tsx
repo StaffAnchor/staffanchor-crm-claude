@@ -85,15 +85,15 @@ export default function MandateLinksPanel({
           <Card key={l.id} padded={false} className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-900">{l.mandates?.role_title}</p>
-                <p className="text-xs text-slate-500">{l.mandates?.client_name}</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{l.mandates?.role_title}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{l.mandates?.client_name}</p>
               </div>
               <button
                 onClick={() => toggleShortlist(l.id, l.in_shortlist)}
                 className={`text-xs px-2 py-1 rounded-ros-full font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
                   l.in_shortlist
                     ? "bg-emerald-600 text-white"
-                    : "bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
                 }`}
               >
                 {l.in_shortlist ? "In client shortlist" : "Add to shortlist"}

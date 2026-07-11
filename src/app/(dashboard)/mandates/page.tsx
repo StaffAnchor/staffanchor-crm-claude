@@ -131,7 +131,7 @@ export default async function MandatesPage({
           </div>
         </div>
 
-        <div className="bg-slate-50/60 rounded-ros-lg p-2 mb-4">
+        <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {statTiles.map((t) => {
               const Icon = t.icon;

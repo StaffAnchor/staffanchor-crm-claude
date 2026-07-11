@@ -79,7 +79,7 @@ export default function TopNav({
         <div className="flex-1" />
 
         <div className="hidden lg:flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.09] transition-colors rounded-lg px-3 py-1.5 w-64 border border-white/[0.06]">
-          <Search className="w-3.5 h-3.5 text-slate-500" strokeWidth={2} />
+          <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" strokeWidth={2} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -110,13 +110,13 @@ export default function TopNav({
             >
               <Link
                 href="/candidates/new"
-                className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:hover:bg-slate-700"
               >
                 New candidate
               </Link>
               <Link
                 href="/mandates"
-                className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:hover:bg-slate-700"
               >
                 New mandate
               </Link>

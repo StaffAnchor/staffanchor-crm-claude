@@ -134,7 +134,7 @@ function ScoreCell({ value }: { value: number | undefined }) {
       {[1, 2, 3, 4, 5].map((n) => (
         <span
           key={n}
-          className={`h-1.5 w-1.5 rounded-full ${n <= value ? "bg-blue-500" : "bg-slate-200"}`}
+          className={`h-1.5 w-1.5 rounded-full ${n <= value ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-700"}`}
         />
       ))}
       <span className="ml-1 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">{value}/5</span>
@@ -197,7 +197,7 @@ function PreviousIndustriesCell({
       onMouseLeave={() => setHover(false)}
     >
       {shown.map((i) => (
-        <span key={i} className="text-[10px] bg-slate-100 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+        <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
           {i}
         </span>
       ))}
@@ -212,7 +212,7 @@ function PreviousIndustriesCell({
           </p>
           <div className="flex flex-wrap gap-1">
             {former.map((i) => (
-              <span key={i} className="text-[10px] bg-slate-100 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                 {i}
               </span>
             ))}
@@ -289,7 +289,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Major Domain",
     render: (c) => (
       <div>
-        <span className="text-slate-700">{CATEGORY_LABEL[c.category ?? ""] ?? "—"}</span>
+        <span className="text-slate-700 dark:text-slate-300">{CATEGORY_LABEL[c.category ?? ""] ?? "—"}</span>
         {c.sub_domain && <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{c.sub_domain}</div>}
       </div>
     ),
@@ -713,7 +713,7 @@ export default function CandidatesTable({
         </p>
         <button
           onClick={() => setPanelOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg px-2.5 py-1.5 transition-colors"
+          className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
         >
           <Settings2 className="w-3.5 h-3.5" /> Customize columns
         </button>
@@ -723,8 +723,8 @@ export default function CandidatesTable({
             <div className="fixed inset-0 z-40" onClick={() => setPanelOpen(false)} />
             <div className="absolute right-4 top-11 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-3">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-semibold text-slate-800">Columns</p>
-                <button onClick={() => setPanelOpen(false)} className="text-slate-400 hover:text-slate-700">
+                <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">Columns</p>
+                <button onClick={() => setPanelOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -750,7 +750,7 @@ export default function CandidatesTable({
                       onDragEnd={() => setDraggedKey(null)}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing ${
                         isHidden ? "opacity-40" : ""
-                      } ${draggedKey === key ? "opacity-30" : ""} hover:bg-slate-50`}
+                      } ${draggedKey === key ? "opacity-30" : ""} hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50`}
                     >
                       <GripVertical className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                       <input
@@ -763,14 +763,14 @@ export default function CandidatesTable({
                       <button
                         onClick={() => move(key, -1)}
                         disabled={i === 0}
-                        className="text-slate-400 hover:text-slate-800 disabled:opacity-20 shrink-0"
+                        className="text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 disabled:opacity-20 shrink-0"
                       >
                         <ChevronUp className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => move(key, 1)}
                         disabled={i === order.length - 1}
-                        className="text-slate-400 hover:text-slate-800 disabled:opacity-20 shrink-0"
+                        className="text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 disabled:opacity-20 shrink-0"
                       >
                         <ChevronDown className="w-3.5 h-3.5" />
                       </button>
@@ -780,7 +780,7 @@ export default function CandidatesTable({
               </div>
               <button
                 onClick={resetDefaults}
-                className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 hover:text-slate-800 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 w-full"
+                className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 w-full"
               >
                 <RotateCcw className="w-3 h-3" /> Reset to default
               </button>
@@ -821,15 +821,15 @@ export default function CandidatesTable({
           >
             Delete
           </Button>
-          <button onClick={clearSelection} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 ml-auto">
+          <button onClick={clearSelection} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 ml-auto">
             Clear selection
           </button>
         </div>
       )}
 
       {bulkMessage && (
-        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100">
-          <p className="text-[12px] text-slate-500">{bulkMessage}</p>
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+          <p className="text-[12px] text-slate-500 dark:text-slate-400">{bulkMessage}</p>
         </div>
       )}
 
@@ -871,9 +871,9 @@ export default function CandidatesTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
             <tr>
-              <th className="px-4 py-2.5 w-8 sticky left-0 z-20 bg-slate-50">
+              <th className="px-4 py-2.5 w-8 sticky left-0 z-20 bg-slate-50 dark:bg-slate-800/50">
                 <input
                   type="checkbox"
                   checked={selected.size > 0 && selected.size === candidates.length}
@@ -894,11 +894,11 @@ export default function CandidatesTable({
             {candidates.map((c) => (
               <tr
                 key={c.id}
-                className={`group hover:bg-slate-50/70 transition-all duration-200 ease-ros ${
+                className={`group hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-all duration-200 ease-ros ${
                   selected.has(c.id) ? "bg-blue-50/50 ring-1 ring-inset ring-blue-500/20" : ""
                 }`}
               >
-                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70"}`}>
+                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
                   <input
                     type="checkbox"
                     checked={selected.has(c.id)}
@@ -906,7 +906,7 @@ export default function CandidatesTable({
                     className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
                   />
                 </td>
-                <td className={`px-4 py-3 sticky left-[52px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70"}`}>
+                <td className={`px-4 py-3 sticky left-[52px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
                   <div
                     className="relative"
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
@@ -921,7 +921,7 @@ export default function CandidatesTable({
                           the avatar too was pure noise, not signal (10 rows,
                           10 different gradient hues, no consistent meaning
                           a recruiter could actually read at a glance). */}
-                      <div className="w-8 h-8 rounded-full bg-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center text-[11px] font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-[11px] font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                         {initialsFor(c.full_name)}
                       </div>
                       <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-all duration-200 ease-ros truncate whitespace-nowrap">
@@ -954,7 +954,7 @@ export default function CandidatesTable({
                           <Link
                             key={m.mandate_id}
                             href={`/mandates/${m.mandate_id}`}
-                            className="block rounded-md px-1.5 py-1.5 hover:bg-slate-50"
+                            className="block rounded-md px-1.5 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
                           >
                             <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{m.role_title}</p>
                             <p className="text-[11px] text-slate-400 truncate">{m.client_name}</p>

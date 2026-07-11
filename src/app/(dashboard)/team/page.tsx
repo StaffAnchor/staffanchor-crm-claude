@@ -45,9 +45,9 @@ export default async function TeamPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(profiles ?? []).map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">{p.full_name}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.email}</td>
+                <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{p.full_name}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{p.email}</td>
                   <td className="px-4 py-3">
                     <RoleControl userId={p.id} currentRole={p.role} disabled={p.id === user.id} />
                   </td>

@@ -62,7 +62,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
   return (
     <div className="shrink-0 flex flex-col items-end gap-1.5">
       {confirmedLabel ? (
-        <span className="text-[11.5px] font-medium text-slate-700">{confirmedLabel}</span>
+        <span className="text-[11.5px] font-medium text-slate-700 dark:text-slate-300">{confirmedLabel}</span>
       ) : requestedLabel ? (
         <span className="text-[11.5px] text-amber-600">Client proposed {requestedLabel}</span>
       ) : (
@@ -84,7 +84,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setLoggingOutcome((s) => !s);
             setScheduling(false);
           }}
-          className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 transition-colors duration-200 ease-ros"
+          className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros"
         >
           Log outcome
         </button>

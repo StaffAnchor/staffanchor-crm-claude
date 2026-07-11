@@ -100,13 +100,13 @@ export default function ClientPortalAccessPanel({
         <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2">
           {initialUsers.map((u) => (
             <div key={u.id} className="flex items-center justify-between text-xs">
-              <span className="text-slate-700">{u.email}</span>
+              <span className="text-slate-700 dark:text-slate-300">{u.email}</span>
               <span className="text-emerald-700 font-medium">Active</span>
             </div>
           ))}
           {pendingInvites.map((i) => (
             <div key={i.id} className="flex items-center justify-between text-xs">
-              <span className="text-slate-700">{i.email}</span>
+              <span className="text-slate-700 dark:text-slate-300">{i.email}</span>
               <span className="text-amber-600 font-medium">Invited — not yet signed in</span>
             </div>
           ))}

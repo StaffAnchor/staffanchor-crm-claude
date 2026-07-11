@@ -27,7 +27,7 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
   return (
     <Card>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-slate-900">Mandates</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Mandates</h2>
         <div className="flex gap-2">
           <Badge tone="neutral" size="sm" className="normal-case tracking-normal">{rows.length} total</Badge>
           <Badge tone="success" size="sm" className="normal-case tracking-normal">{open} open</Badge>
@@ -44,10 +44,10 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
             <Link
               key={m.id}
               href={`/mandates/${m.id}`}
-              className="flex items-center justify-between gap-3 py-2.5 hover:bg-slate-50/70 -mx-2 px-2 rounded-ros-md transition-all duration-200 ease-ros"
+              className="flex items-center justify-between gap-3 py-2.5 hover:bg-slate-50/70 dark:hover:bg-slate-800/70 -mx-2 px-2 rounded-ros-md transition-all duration-200 ease-ros"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900">{m.role_title}</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{m.role_title}</p>
                 <div className="flex items-center gap-3 text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {m.city && (
                     <span className="flex items-center gap-1">

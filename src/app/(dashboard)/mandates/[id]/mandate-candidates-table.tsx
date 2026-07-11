@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const STAGE_COLOR: Record<string, string> = {
-  sourced: "bg-slate-100 text-slate-700",
+  sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
   screened: "bg-blue-100 text-blue-800",
   shortlisted: "bg-teal-100 text-teal-800",
   submitted: "bg-indigo-100 text-indigo-800",
@@ -143,7 +143,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
         </thead>
         <tbody className="divide-y divide-slate-100">
           {rows.map((l) => (
-            <tr key={l.id} className="hover:bg-slate-50">
+            <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
               <td className="px-4 py-3">
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
@@ -153,14 +153,14 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
                 </Link>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
               </td>
-              <td className="px-4 py-3 text-slate-600">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 {l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}
               </td>
-              <td className="px-4 py-3 text-slate-600">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STAGE_COLOR[l.stage] ?? "bg-slate-100 text-slate-700"}`}>
+                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}>
                   {l.stage.replace(/_/g, " ")}
                 </span>
               </td>
@@ -168,7 +168,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
                 <button
                   onClick={() => toggleShortlist(l.id, !l.in_shortlist)}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                    l.in_shortlist ? "bg-teal-100 text-teal-800 hover:bg-teal-200" : "bg-slate-100 text-slate-500 dark:text-slate-400 hover:bg-slate-200"
+                    l.in_shortlist ? "bg-teal-100 text-teal-800 hover:bg-teal-200" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
                   {l.in_shortlist ? "Yes — click to remove" : "No — click to add"}

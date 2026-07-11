@@ -214,13 +214,13 @@ export default async function CandidateDetailPage({
       <div className="flex items-center justify-between">
         <Link
           href={backHref}
-          className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 transition-colors duration-200 ease-ros"
+          className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros"
         >
           ← All candidates
         </Link>
 
         {listPosition && (
-          <div className="flex items-center gap-1 text-[12px] text-slate-500">
+          <div className="flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400">
             <span className="tabular-nums mr-1">
               {listPosition.index} of {listPosition.total}
             </span>
@@ -230,7 +230,7 @@ export default async function CandidateDetailPage({
               title={prevCandidate ? `Previous: ${prevCandidate.full_name}` : undefined}
               className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
                 prevCandidate
-                  ? "hover:bg-slate-50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600"
+                  ? "hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600 dark:text-slate-400"
                   : "opacity-30 pointer-events-none text-slate-400"
               }`}
             >
@@ -242,7 +242,7 @@ export default async function CandidateDetailPage({
               title={nextCandidate ? `Next: ${nextCandidate.full_name}` : undefined}
               className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
                 nextCandidate
-                  ? "hover:bg-slate-50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600"
+                  ? "hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600 dark:text-slate-400"
                   : "opacity-30 pointer-events-none text-slate-400"
               }`}
             >
@@ -257,7 +257,7 @@ export default async function CandidateDetailPage({
         <div className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-ros-full bg-slate-100 ring-1 ring-slate-200/60 flex items-center justify-center text-lg font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+              <div className="w-14 h-14 rounded-ros-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-lg font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                 {initialsFor(candidate.full_name)}
               </div>
               <div>
@@ -301,7 +301,7 @@ export default async function CandidateDetailPage({
                     </div>
                   );
                 })()}
-                <div className="flex flex-wrap items-center gap-3 mt-2 text-[12px] text-slate-500">
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-[12px] text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1">
                     <Mail className="w-3 h-3" /> {candidate.email}
                   </span>
@@ -343,7 +343,7 @@ export default async function CandidateDetailPage({
             {candidate.phone && (
               <a
                 href={`tel:${candidate.phone}`}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
               >
                 <Phone className="w-3 h-3" /> Call
               </a>
@@ -352,14 +352,14 @@ export default async function CandidateDetailPage({
               <a
                 href={`https://wa.me/91${candidate.phone.replace(/\D/g, "").slice(-10)}`}
                 target="_blank"
-                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
               >
                 <MessageCircle className="w-3 h-3" /> WhatsApp
               </a>
             )}
             <a
               href={`mailto:${candidate.email}`}
-              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
             >
               <Mail className="w-3 h-3" /> Email
             </a>
@@ -467,7 +467,7 @@ export default async function CandidateDetailPage({
                             {segmentEntries.map(([k, v]) => (
                               <div key={k}>
                                 <p className="text-[11px] text-slate-400">{humanize(k)}</p>
-                                <p className="text-[13px] text-slate-700">{formatValue(v)}</p>
+                                <p className="text-[13px] text-slate-700 dark:text-slate-300">{formatValue(v)}</p>
                               </div>
                             ))}
                           </div>
@@ -515,7 +515,7 @@ export default async function CandidateDetailPage({
         <div>
           <Card className="sticky top-20">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="text-[13px] font-semibold text-slate-900">Recruiter assessment</h2>
+              <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Recruiter assessment</h2>
               {recommendation && (
                 <Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">
                   {recommendation}
@@ -526,7 +526,7 @@ export default async function CandidateDetailPage({
               Internal only, never shown to clients. Fill after a real call using the standard scorecard.
             </p>
             {scores.length > 0 && (
-              <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                 {scores.map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-[11px] font-normal text-slate-400">/5</span></p>

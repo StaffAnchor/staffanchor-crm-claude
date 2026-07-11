@@ -77,7 +77,7 @@ export default function ClientContactsPanel({
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-slate-900">Contacts</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Contacts</h2>
         <button
           onClick={() => setFormOpen((v) => !v)}
           className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
@@ -87,7 +87,7 @@ export default function ClientContactsPanel({
       </div>
 
       {formOpen && (
-        <div className="mb-4 space-y-2 border border-slate-100 dark:border-slate-800 rounded-lg p-3 bg-slate-50">
+        <div className="mb-4 space-y-2 border border-slate-100 dark:border-slate-800 rounded-lg p-3 bg-slate-50 dark:bg-slate-800/50">
           <input
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -115,7 +115,7 @@ export default function ClientContactsPanel({
               className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-slate-500"
             />
           </div>
-          <label className="flex items-center gap-2 text-[12px] text-slate-600">
+          <label className="flex items-center gap-2 text-[12px] text-slate-600 dark:text-slate-400">
             <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} />
             Mark as primary contact
           </label>
@@ -141,8 +141,8 @@ export default function ClientContactsPanel({
                   {c.full_name}
                   {c.is_primary && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
                 </p>
-                {c.designation && <p className="text-[12px] text-slate-500">{c.designation}</p>}
-                <div className="flex flex-col gap-0.5 mt-1 text-[12px] text-slate-500">
+                {c.designation && <p className="text-[12px] text-slate-500 dark:text-slate-400">{c.designation}</p>}
+                <div className="flex flex-col gap-0.5 mt-1 text-[12px] text-slate-500 dark:text-slate-400">
                   {c.email && (
                     <span className="flex items-center gap-1">
                       <Mail className="w-3 h-3" /> {c.email}

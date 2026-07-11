@@ -19,7 +19,7 @@ type CandidateMatch = {
 function scoreColor(score: number) {
   if (score >= 75) return "text-emerald-700 bg-emerald-50";
   if (score >= 50) return "text-amber-700 bg-amber-50";
-  return "text-slate-600 dark:text-slate-400 bg-slate-100";
+  return "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800";
 }
 
 export default function FindMatchesPanel({
@@ -169,7 +169,7 @@ export default function FindMatchesPanel({
                     </div>
                     <button
                       onClick={() => toggleExpanded(m.candidate_id)}
-                      className="text-slate-400 hover:text-slate-700 shrink-0"
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 shrink-0"
                     >
                       {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
@@ -210,7 +210,7 @@ export default function FindMatchesPanel({
                   <button
                     onClick={() => addToPipeline(m.candidate_id)}
                     disabled={added || addingId === m.candidate_id}
-                    className="w-full mt-2 flex items-center justify-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 text-[12px] py-1.5 disabled:opacity-50"
+                    className="w-full mt-2 flex items-center justify-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12px] py-1.5 disabled:opacity-50"
                   >
                     {added ? (
                       <>

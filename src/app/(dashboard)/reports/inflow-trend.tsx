@@ -28,7 +28,7 @@ export default function InflowTrend({ points }: { points: InflowPoint[] }) {
             {!dense && (
               <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1 tabular-nums">{p.count}</span>
             )}
-            <div className="w-full rounded-t-sm bg-slate-100 overflow-hidden flex items-end" style={{ height: "100%" }}>
+            <div className="w-full rounded-t-sm bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-end" style={{ height: "100%" }}>
               <div
                 className="w-full rounded-t-sm bg-indigo-500/80 group-hover:bg-indigo-500 transition-colors duration-200 ease-ros"
                 style={{ height: `${heightPct}%` }}

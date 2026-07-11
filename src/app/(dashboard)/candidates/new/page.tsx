@@ -433,13 +433,13 @@ export default function NewCandidatePage() {
               <button
                 type="button"
                 onClick={() => setResumeFile(null)}
-                className="text-slate-400 hover:text-slate-600 shrink-0"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 cursor-pointer">
+            <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer">
               <UploadCloud className="w-4 h-4 shrink-0" />
               <span>Click to upload their CV (PDF, DOC, DOCX) — often the recruiter already has it on hand</span>
               <input
