@@ -38,7 +38,11 @@ export type InboxItem = {
   status: "open" | "snoozed" | "done" | "dismissed";
   snoozed_until: string | null;
   is_unassigned: boolean;
+  recruiter_id: string | null;
+  recruiter_name: string | null;
 };
+
+const UNASSIGNED_KEY = "__unassigned__";
 
 const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: string }> = {
   TRIGGER_INTERVIEW_COORDINATION: {
@@ -128,14 +132,24 @@ export default function InboxView({
   const [focusedIdx, setFocusedIdx] = useState(0);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
+  const [recruiterFilter, setRecruiterFilter] = useState<string>("ALL");
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Filtering by task type is purely a view-layer concern -- the
-  // underlying `items` state (and its indices) always holds everything,
-  // so keyboard nav / optimistic updates stay simple.
+  // Filtering by task type / recruiter is purely a view-layer concern --
+  // the underlying `items` state (and its indices) always holds everything
+  // the viewer is allowed to see (now the whole team's inbox), so keyboard
+  // nav / optimistic updates stay simple.
   const visibleItems = useMemo(
-    () => (activeFilter === "ALL" ? items : items.filter((i) => i.task_type === activeFilter)),
-    [items, activeFilter]
+    () =>
+      items.filter((i) => {
+        if (activeFilter !== "ALL" && i.task_type !== activeFilter) return false;
+        if (recruiterFilter !== "ALL") {
+          const key = i.is_unassigned ? UNASSIGNED_KEY : i.recruiter_id ?? UNASSIGNED_KEY;
+          if (key !== recruiterFilter) return false;
+        }
+        return true;
+      }),
+    [items, activeFilter, recruiterFilter]
   );
   const focused = visibleItems[Math.min(focusedIdx, visibleItems.length - 1)] ?? null;
 
@@ -143,6 +157,23 @@ export default function InboxView({
     const counts = new Map<string, number>();
     for (const i of items) counts.set(i.task_type, (counts.get(i.task_type) ?? 0) + 1);
     return counts;
+  }, [items]);
+
+  const recruiterOptions = useMemo(() => {
+    const byKey = new Map<string, { label: string; count: number }>();
+    for (const i of items) {
+      const key = i.is_unassigned ? UNASSIGNED_KEY : i.recruiter_id ?? UNASSIGNED_KEY;
+      const label = i.is_unassigned ? "Unassigned / Team" : i.recruiter_name ?? "Unknown";
+      const existing = byKey.get(key);
+      byKey.set(key, { label, count: (existing?.count ?? 0) + 1 });
+    }
+    return Array.from(byKey.entries())
+      .map(([key, v]) => ({ key, ...v }))
+      .sort((a, b) => {
+        if (a.key === UNASSIGNED_KEY) return 1;
+        if (b.key === UNASSIGNED_KEY) return -1;
+        return a.label.localeCompare(b.label);
+      });
   }, [items]);
 
   const resolve = useCallback(
@@ -254,34 +285,61 @@ export default function InboxView({
       )}
 
       {items.length > 0 && (
-        <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1">
-          <button
-            onClick={() => setActiveFilter("ALL")}
-            className={`shrink-0 text-[12px] font-medium rounded-full px-3 py-1.5 ring-1 transition-colors ${
-              activeFilter === "ALL"
-                ? "bg-slate-900 text-white ring-slate-900"
-                : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            All ({items.length})
-          </button>
-          {filterOptions.map((taskType) => {
-            const meta = metaFor(taskType);
-            const Icon = meta.icon;
-            const active = activeFilter === taskType;
-            return (
-              <button
-                key={taskType}
-                onClick={() => setActiveFilter(active ? "ALL" : taskType)}
-                className={`shrink-0 flex items-center gap-1.5 text-[12px] font-medium rounded-full px-3 py-1.5 ring-1 transition-colors ${
-                  active ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
-                }`}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <button
+              onClick={() => setActiveFilter("ALL")}
+              className={`shrink-0 text-[12px] font-medium rounded-full px-3 py-1.5 ring-1 transition-colors ${
+                activeFilter === "ALL"
+                  ? "bg-slate-900 text-white ring-slate-900"
+                  : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              All ({items.length})
+            </button>
+            {filterOptions.map((taskType) => {
+              const meta = metaFor(taskType);
+              const Icon = meta.icon;
+              const active = activeFilter === taskType;
+              return (
+                <button
+                  key={taskType}
+                  onClick={() => setActiveFilter(active ? "ALL" : taskType)}
+                  className={`shrink-0 flex items-center gap-1.5 text-[12px] font-medium rounded-full px-3 py-1.5 ring-1 transition-colors ${
+                    active ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <Icon className="w-3 h-3" />
+                  {meta.label} ({filterCounts.get(taskType)})
+                </button>
+              );
+            })}
+          </div>
+
+          {recruiterOptions.length > 1 && (
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+              <Users className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                value={recruiterFilter}
+                onChange={(e) => setRecruiterFilter(e.target.value)}
+                className="text-[12px] font-medium text-slate-700 bg-white ring-1 ring-slate-200 rounded-full pl-3 pr-7 py-1.5 hover:bg-slate-50 outline-none appearance-none cursor-pointer"
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e\")",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 8px center",
+                  backgroundSize: "14px",
+                }}
               >
-                <Icon className="w-3 h-3" />
-                {meta.label} ({filterCounts.get(taskType)})
-              </button>
-            );
-          })}
+                <option value="ALL">Everyone ({items.length})</option>
+                {recruiterOptions.map((opt) => (
+                  <option key={opt.key} value={opt.key}>
+                    {opt.label} ({opt.count})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
@@ -327,11 +385,15 @@ export default function InboxView({
                           High
                         </span>
                       )}
-                      {item.is_unassigned && (
+                      {item.is_unassigned ? (
                         <span className="shrink-0 flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 ring-1 ring-teal-200 rounded-full px-1.5 py-0.5">
                           <Users className="w-2.5 h-2.5" /> Team
                         </span>
-                      )}
+                      ) : item.recruiter_name ? (
+                        <span className="shrink-0 text-[10px] font-medium text-slate-500 bg-slate-100 rounded-full px-1.5 py-0.5">
+                          {item.recruiter_name}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="block text-[11px] text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
                   </span>
@@ -461,11 +523,15 @@ function ContextDrawer({
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
             {meta.label}
-            {item.is_unassigned && (
+            {item.is_unassigned ? (
               <span className="flex items-center gap-0.5 text-teal-600">
                 <Users className="w-2.5 h-2.5" /> Team task
               </span>
-            )}
+            ) : item.recruiter_name ? (
+              <span className="flex items-center gap-0.5 text-slate-500 normal-case font-medium">
+                <Users className="w-2.5 h-2.5" /> {item.recruiter_name}
+              </span>
+            ) : null}
           </p>
           <p className="text-[14px] font-semibold text-slate-900 leading-snug">{item.title}</p>
         </div>
