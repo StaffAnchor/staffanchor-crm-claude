@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Note = {
   id: string;
@@ -57,7 +59,7 @@ export default function NotesPanel({
         <select
           value={noteType}
           onChange={(e) => setNoteType(e.target.value)}
-          className="rounded-lg border border-slate-200 px-2 py-1.5 text-[12px] bg-slate-50"
+          className="rounded-ros-md border border-slate-200 px-2 py-1.5 text-[12px] bg-slate-50 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         >
           {NOTE_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -70,22 +72,20 @@ export default function NotesPanel({
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           placeholder="Add a note after this interaction..."
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="flex-1 rounded-ros-md border border-slate-200 px-3 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         />
-        <button
-          onClick={handleAdd}
-          disabled={saving}
-          className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] px-4 py-1.5 disabled:opacity-60"
-        >
+        <Button onClick={handleAdd} disabled={saving}>
           Add
-        </button>
+        </Button>
       </div>
       <div className="space-y-3">
         {notes.length === 0 && (
-          <div className="text-center py-8">
-            <MessageSquare className="w-5 h-5 text-slate-300 mx-auto mb-2" />
-            <p className="text-[13px] text-slate-400">No notes yet — add one after your first call.</p>
-          </div>
+          <EmptyState
+            icon={<MessageSquare className="w-5 h-5 text-slate-400" />}
+            title="No notes yet"
+            description="Add one after your first call."
+            className="py-10"
+          />
         )}
         {notes.map((n) => (
           <div key={n.id} className="border-l-2 border-slate-200 pl-3">

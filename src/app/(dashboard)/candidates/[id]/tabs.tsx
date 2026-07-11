@@ -16,7 +16,7 @@ export default function Tabs({
           <button
             key={tab.label}
             onClick={() => setActive(i)}
-            className={`px-3.5 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
+            className={`px-3.5 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-all duration-200 ease-ros ${
               active === i
                 ? "border-blue-600 text-blue-700"
                 : "border-transparent text-slate-500 hover:text-slate-800"

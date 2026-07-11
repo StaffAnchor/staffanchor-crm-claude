@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, BadgeCheck, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type AiPassport = {
   headline?: string;
@@ -54,31 +55,27 @@ export default function AiSummaryPanel({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[13px] font-semibold text-slate-900">
+        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900">
+          <Sparkles className="w-3.5 h-3.5 text-blue-500" />
           AI summary <span className="text-[11px] font-normal text-slate-400">(shown to clients on the shortlist link/portal once generated)</span>
         </h3>
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-2.5 py-1 disabled:opacity-60 transition-colors"
-        >
-          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+        <Button variant="secondary" size="sm" onClick={handleGenerate} disabled={loading} icon={loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}>
           {summary ? "Regenerate" : "Generate"}
-        </button>
+        </Button>
       </div>
       {error && <p className="text-[12px] text-rose-600 mb-2">{error}</p>}
       {passport?.profile_incomplete && (
-        <p className="flex items-center gap-1.5 text-[11.5px] text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5 mb-2">
+        <p className="flex items-center gap-1.5 text-[11.5px] text-amber-700 bg-amber-50 rounded-ros-md px-2.5 py-1.5 mb-2">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           Profile incomplete — this candidate hasn&apos;t finished registering yet, so the summary below is based on
           limited information. It will regenerate automatically once they complete their profile.
         </p>
       )}
-      <p className="text-[13px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-lg p-3">
+      <p className="text-[13px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-ros-md p-3">
         {summary || "Not generated yet — click Generate to summarize this candidate from their profile data."}
       </p>
       {passport?.resume_highlights && passport.resume_highlights.length > 0 && (
-        <div className="mt-2 bg-slate-50 rounded-lg p-3">
+        <div className="mt-2 bg-slate-50 rounded-ros-md p-3">
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
             From their resume
           </p>

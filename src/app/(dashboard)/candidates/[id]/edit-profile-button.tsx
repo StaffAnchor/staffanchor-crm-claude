@@ -475,7 +475,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg px-3 py-1.5 transition-colors"
+        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         <Pencil className="w-3 h-3" /> Edit profile
       </button>
@@ -483,7 +483,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !saving && setOpen(false)}>
           <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-ros-lg shadow-ros-md w-full max-w-3xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10">

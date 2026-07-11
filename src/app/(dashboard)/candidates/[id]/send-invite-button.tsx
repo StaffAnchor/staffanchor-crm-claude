@@ -31,7 +31,7 @@ export default function SendInviteButton({ candidateId }: { candidateId: string 
 
   if (state === "sent") {
     return (
-      <span className="flex items-center gap-1.5 text-[12px] font-medium text-emerald-700 bg-emerald-50 rounded-lg px-3 py-1.5">
+      <span className="flex items-center gap-1.5 text-[12px] font-medium text-emerald-700 bg-emerald-50 rounded-ros-md px-3 py-1.5">
         <Check className="w-3 h-3" /> Invite sent
       </span>
     );
@@ -42,7 +42,7 @@ export default function SendInviteButton({ candidateId }: { candidateId: string 
       <button
         onClick={handleSend}
         disabled={state === "loading"}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-3 py-1.5 disabled:opacity-60 transition-colors"
+        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-ros-md px-3 py-1.5 disabled:opacity-60 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         {state === "loading" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
         Request profile completion

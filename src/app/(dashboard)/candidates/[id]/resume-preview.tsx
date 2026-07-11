@@ -48,7 +48,7 @@ export default function ResumePreview({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 transition-colors"
+        className="flex items-center gap-1.5 text-[12px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         <FileText className="w-3 h-3" /> {label ?? "Preview resume"}
       </button>
@@ -59,7 +59,7 @@ export default function ResumePreview({
           onClick={() => setOpen(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-ros-lg shadow-ros-md w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">

@@ -14,9 +14,12 @@ const ICON: Record<TimelineEvent["kind"], typeof MessageSquare> = {
   created: UserPlus,
 };
 
+// Softer, calmer icon-chip colors -- part of the "one neutral surface, one
+// restrained accent" palette used across the redesigned pages, rather than
+// the previous blue/violet/emerald rainbow.
 const ICON_COLOR: Record<TimelineEvent["kind"], string> = {
   note: "bg-blue-50 text-blue-600",
-  status_change: "bg-violet-50 text-violet-600",
+  status_change: "bg-slate-100 text-slate-500",
   created: "bg-emerald-50 text-emerald-600",
 };
 
@@ -32,7 +35,9 @@ export default function Timeline({ events }: { events: TimelineEvent[] }) {
         return (
           <div key={e.id} className="flex gap-3">
             <div className="flex flex-col items-center">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${ICON_COLOR[e.kind]}`}>
+              <div
+                className={`w-7 h-7 rounded-ros-full flex items-center justify-center shrink-0 transition-colors duration-200 ease-ros ${ICON_COLOR[e.kind]}`}
+              >
                 <Icon className="w-3.5 h-3.5" strokeWidth={2} />
               </div>
               {i < events.length - 1 && <div className="w-px flex-1 bg-slate-200 my-1" />}

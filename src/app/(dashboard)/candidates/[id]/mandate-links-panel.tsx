@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const STAGES = [
   "sourced",
@@ -80,7 +82,7 @@ export default function MandateLinksPanel({
       <div className="space-y-3 mb-4">
         {links.length === 0 && <p className="text-sm text-slate-400">Not linked to any mandate yet.</p>}
         {links.map((l) => (
-          <div key={l.id} className="border border-slate-200 rounded-lg p-3">
+          <Card key={l.id} padded={false} className="p-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-900">{l.mandates?.role_title}</p>
@@ -88,10 +90,10 @@ export default function MandateLinksPanel({
               </div>
               <button
                 onClick={() => toggleShortlist(l.id, l.in_shortlist)}
-                className={`text-xs px-2 py-1 rounded-full font-medium ${
+                className={`text-xs px-2 py-1 rounded-ros-full font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
                   l.in_shortlist
-                    ? "bg-teal-600 text-white"
-                    : "bg-slate-100 text-slate-600 border border-slate-300"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-slate-100 text-slate-600 border border-slate-200"
                 }`}
               >
                 {l.in_shortlist ? "In client shortlist" : "Add to shortlist"}
@@ -101,7 +103,7 @@ export default function MandateLinksPanel({
               <select
                 value={l.stage}
                 onChange={(e) => updateStage(l.id, e.target.value)}
-                className="text-xs rounded-lg border border-slate-300 px-2 py-1"
+                className="text-xs rounded-ros-md border border-slate-200 px-2 py-1 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               >
                 {STAGES.map((s) => (
                   <option key={s} value={s}>
@@ -110,7 +112,7 @@ export default function MandateLinksPanel({
                 ))}
               </select>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -118,7 +120,7 @@ export default function MandateLinksPanel({
         <select
           value={selectedMandate}
           onChange={(e) => setSelectedMandate(e.target.value)}
-          className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+          className="flex-1 rounded-ros-md border border-slate-200 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         >
           <option value="">Link to a mandate...</option>
           {availableMandates.map((m) => (
@@ -127,13 +129,9 @@ export default function MandateLinksPanel({
             </option>
           ))}
         </select>
-        <button
-          onClick={handleLink}
-          disabled={linking || !selectedMandate}
-          className="rounded-lg bg-slate-900 text-white text-sm px-3 py-1.5 disabled:opacity-50"
-        >
+        <Button onClick={handleLink} disabled={linking || !selectedMandate}>
           Link
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -17,18 +17,21 @@ const STATUSES = [
   "inactive",
 ];
 
+// Same soft-tint pattern as the shared Badge primitive (ring at /60 opacity)
+// so the status pill on this page reads consistently with the one in the
+// candidates table, rather than as a separate, harder-edged control.
 const STATUS_STYLE: Record<string, string> = {
-  awaiting_input: "bg-amber-50 text-amber-700 ring-amber-200",
-  lead: "bg-slate-100 text-slate-600 ring-slate-200",
-  registered: "bg-blue-50 text-blue-700 ring-blue-200",
-  under_review: "bg-violet-50 text-violet-700 ring-violet-200",
-  shortlisted: "bg-teal-50 text-teal-700 ring-teal-200",
-  submitted: "bg-indigo-50 text-indigo-700 ring-indigo-200",
-  client_interview: "bg-cyan-50 text-cyan-700 ring-cyan-200",
-  offer: "bg-lime-50 text-lime-700 ring-lime-200",
-  placed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  alumni: "bg-slate-100 text-slate-500 ring-slate-200",
-  inactive: "bg-red-50 text-red-600 ring-red-200",
+  awaiting_input: "bg-amber-50 text-amber-700 ring-amber-200/60",
+  lead: "bg-slate-100 text-slate-600 ring-slate-200/60",
+  registered: "bg-sky-50 text-sky-700 ring-sky-200/60",
+  under_review: "bg-blue-50 text-blue-700 ring-blue-200/60",
+  shortlisted: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
+  submitted: "bg-blue-50 text-blue-700 ring-blue-200/60",
+  client_interview: "bg-sky-50 text-sky-700 ring-sky-200/60",
+  offer: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
+  placed: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
+  alumni: "bg-slate-100 text-slate-500 ring-slate-200/60",
+  inactive: "bg-rose-50 text-rose-600 ring-rose-200/60",
 };
 
 export default function StatusControl({
@@ -61,8 +64,8 @@ export default function StatusControl({
     <select
       defaultValue={currentStatus}
       onChange={handleChange}
-      className={`rounded-lg border-0 ring-1 px-3 py-1.5 text-[13px] font-medium ${
-        STATUS_STYLE[currentStatus] ?? "bg-slate-100 text-slate-700 ring-slate-200"
+      className={`rounded-ros-md border-0 ring-1 px-3 py-1.5 text-[13px] font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] cursor-pointer ${
+        STATUS_STYLE[currentStatus] ?? "bg-slate-100 text-slate-700 ring-slate-200/60"
       }`}
     >
       {STATUSES.map((s) => (
