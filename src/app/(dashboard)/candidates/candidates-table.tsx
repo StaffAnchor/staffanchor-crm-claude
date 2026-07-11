@@ -869,11 +869,11 @@ export default function CandidatesTable({
         </div>
       )}
 
-      <div className="overflow-x-auto overflow-y-visible">
+      <div className="overflow-auto max-h-[calc(100vh-13rem)]">
         <table className="w-full text-[13px]">
           <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
             <tr>
-              <th className="px-4 py-2.5 w-8 sticky left-0 top-14 z-30 bg-slate-50 dark:bg-slate-800/50">
+              <th className="px-4 py-2.5 w-8 sticky left-0 top-0 z-30 bg-slate-50 dark:bg-slate-800/50">
                 <input
                   type="checkbox"
                   checked={selected.size > 0 && selected.size === candidates.length}
@@ -881,16 +881,16 @@ export default function CandidatesTable({
                   className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
                 />
               </th>
-              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-14 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
+              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
-                  className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky top-14 z-20 bg-slate-50 dark:bg-slate-800/50"
+                  className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky top-0 z-20 bg-slate-50 dark:bg-slate-800/50"
                 >
                   {col.label}
                 </th>
               ))}
-              <th className="px-4 py-2.5 sticky top-14 z-20 bg-slate-50 dark:bg-slate-800/50" />
+              <th className="px-4 py-2.5 sticky top-0 z-20 bg-slate-50 dark:bg-slate-800/50" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
