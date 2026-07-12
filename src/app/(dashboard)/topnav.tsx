@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Plus, ChevronDown } from "lucide-react";
 import SignOutButton from "./sign-out-button";
 import ThemeToggle from "@/components/theme-toggle";
 import NotificationBell from "./notification-bell";
+import LiveClock from "@/components/ui/live-clock";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
@@ -38,13 +40,15 @@ export default function TopNav({
   return (
     <header className="bg-[#12141c] text-slate-200 sticky top-0 z-30">
       <div className="max-w-[1400px] mx-auto px-5 h-14 flex items-center gap-6">
-        <Link href="/inbox" className="flex items-center gap-2 shrink-0">
-          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[11px] font-bold text-white">
-            SA
-          </span>
-          <span className="text-[13px] font-semibold text-white tracking-tight hidden md:block">
-            StaffAnchor
-          </span>
+        <Link href="/inbox" className="flex items-center shrink-0">
+          <Image
+            src="/Staffanchor_Logo.svg"
+            alt="StaffAnchor"
+            width={116}
+            height={40}
+            priority
+            className="h-9 w-auto rounded-md bg-white/95 px-1.5 py-0.5"
+          />
         </Link>
 
         <nav className="flex items-center gap-0.5 text-[13px]">
@@ -124,6 +128,8 @@ export default function TopNav({
             </div>
           )}
         </div>
+
+        <LiveClock />
 
         <ThemeToggle />
 

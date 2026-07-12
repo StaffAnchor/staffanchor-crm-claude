@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import LiveClock from "@/components/ui/live-clock";
 
 function VendorSignOutButton() {
   const supabase = createClient();
@@ -35,12 +37,17 @@ export default function VendorNav({
   return (
     <header className="bg-[#12141c] text-slate-200 sticky top-0 z-30">
       <div className="max-w-[1100px] mx-auto px-5 h-14 flex items-center gap-6">
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-[11px] font-bold text-white">
-            SA
-          </span>
-          <span className="text-[13px] font-semibold text-white tracking-tight hidden md:block">
-            StaffAnchor <span className="text-teal-400 font-normal">Vendor Portal</span>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Image
+            src="/Staffanchor_Logo.svg"
+            alt="StaffAnchor"
+            width={104}
+            height={36}
+            priority
+            className="h-8 w-auto rounded-md bg-white/95 px-1.5 py-0.5"
+          />
+          <span className="text-[13px] font-semibold text-teal-400 tracking-tight hidden md:block">
+            Vendor Portal
           </span>
         </div>
 
@@ -62,6 +69,8 @@ export default function VendorNav({
         </nav>
 
         <div className="flex-1" />
+
+        <LiveClock />
 
         <span className="text-[12px] text-slate-400 hidden sm:block">{fullName ?? email}</span>
         <VendorSignOutButton />
