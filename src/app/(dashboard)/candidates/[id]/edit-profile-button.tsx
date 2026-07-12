@@ -255,6 +255,48 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
   const isInsideSales = insideSalesSubDomains.includes(form.subDomain);
   const isTeamLead = form.roleType === "Leading a Team";
 
+  // Tiered Passport Readiness Metric -- mirrors the same Basic/Good/Excellent/
+  // Premium language shown to candidates in the public "Build Your Profile"
+  // wizard (Sales Passport), so a recruiter editing a profile here sees the
+  // same vocabulary a candidate or hiring manager would. Purely a read-only
+  // gauge over the fields already in this form; no new fields, no change to
+  // what gets saved.
+  const READINESS_FIELDS_BASE: (keyof typeof form)[] = [
+    "full_name",
+    "phone",
+    "currentFixedCtc",
+    "totalExperienceYears",
+    "noticePeriod",
+    "category",
+    "subDomain",
+    "currentJobTitle",
+    "currentEmployer",
+    "employmentStatus",
+    "currentIndustry",
+    "roleType",
+    "highestQualification",
+    "skills",
+    "workMode",
+  ];
+  const readinessApplicableFields: (keyof typeof form)[] = [...READINESS_FIELDS_BASE];
+  if (isSales) {
+    readinessApplicableFields.push("dealCurrency", "dealSizeBand");
+    readinessApplicableFields.push(isTeamLead ? "teamTargetQ4" : "icTargetQ4");
+  }
+  const readinessFilledCount = readinessApplicableFields.filter((k) => {
+    const v = form[k];
+    return Array.isArray(v) ? v.length > 0 : String(v ?? "").trim() !== "";
+  }).length;
+  const readinessScore = Math.round((readinessFilledCount / readinessApplicableFields.length) * 100);
+  const readinessTier: "Basic" | "Good" | "Excellent" | "Premium" =
+    readinessScore >= 90 ? "Premium" : readinessScore >= 65 ? "Excellent" : readinessScore >= 35 ? "Good" : "Basic";
+  const READINESS_BADGE: Record<typeof readinessTier, string> = {
+    Basic: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    Good: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    Excellent: "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+    Premium: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  };
+
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
@@ -487,7 +529,12 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
-              <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit profile</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit profile</h3>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${READINESS_BADGE[readinessTier]}`}>
+                  {readinessTier} · {readinessScore}%
+                </span>
+              </div>
               <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
                 <X className="w-4 h-4" />
               </button>
