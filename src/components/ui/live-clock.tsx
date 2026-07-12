@@ -17,21 +17,21 @@ export default function LiveClock() {
 
   if (!now) {
     // Reserve layout space so nothing shifts once mounted.
-    return <div className="hidden lg:block w-[220px]" />;
+    return <div className="hidden lg:block w-[150px]" />;
   }
 
   const day = now.toLocaleDateString("en-US", { weekday: "short" });
-  const date = now.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
+  const date = now.toLocaleDateString("en-US", { day: "2-digit", month: "short" });
   const time = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
 
   return (
-    <div className="hidden lg:flex items-center gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/[0.07] px-3 py-1.5">
-      <div className="flex flex-col leading-none">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400/90">{day}</span>
-        <span className="text-[10px] text-slate-400 mt-0.5">{date}</span>
+    <div className="hidden lg:flex items-center gap-2.5 rounded-lg border border-amber-500/10 bg-amber-500/[0.03] px-3 py-1 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+      <div className="flex flex-col leading-tight">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{day}</span>
+        <span className="text-[10px] uppercase tracking-widest text-slate-500">{date}</span>
       </div>
-      <div className="h-6 w-px bg-amber-500/20" />
-      <span className="font-mono text-[13px] font-semibold tabular-nums text-amber-300">{time}</span>
+      <div className="h-6 w-px bg-amber-500/10" />
+      <span className="text-[14px] font-semibold tabular-nums text-amber-400/90">{time}</span>
     </div>
   );
 }
