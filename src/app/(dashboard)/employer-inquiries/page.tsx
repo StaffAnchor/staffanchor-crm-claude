@@ -20,11 +20,18 @@ export default async function EmployerInquiriesPage() {
   const { data: inquiries } = await supabase
     .from("employer_inquiries")
     .select(
-      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, audience, message, role_title, category, city, budget_min, budget_max, source, status, notes, converted_client_id, converted_mandate_id, sub_domains, cities, experience_min, experience_max, hiring_reason, team_handling, team_size_band, work_mode, working_days, shift_timing, reporting_manager_title, company_size_band, company_highlight_links, sales_cycle, deal_size_currency, deal_size_band, customer_profile, expectation_3_month, expectation_6_month, expectation_1_year, selling_style, preferred_industries, industries_sold_to, languages_required, existing_client_id"
+      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, audience, message, role_title, category, city, budget_min, budget_max, source, status, notes, converted_client_id, converted_mandate_id, sub_domains, cities, experience_min, experience_max, hiring_reason, team_handling, team_size_band, work_mode, working_days, shift_timing, reporting_manager_title, company_size_band, company_highlight_links, sales_cycle, deal_size_currency, deal_size_band, customer_profile, expectation_3_month, expectation_6_month, expectation_1_year, selling_style, preferred_industries, industries_sold_to, languages_required, week_off, b2c_customer_types, client_profile, existing_client_id, owner_id"
     )
     .order("created_at", { ascending: false });
 
   const rows = (inquiries ?? []) as EmployerInquiryRow[];
+
+  // For the owner-assignment dropdown -- specialties let the UI suggest a
+  // matching B2B/B2C/Non-Sales specialist first for a given inquiry's category.
+  const { data: teamMembers } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role, specialties")
+    .order("full_name", { ascending: true });
 
   const counts = {
     total: rows.length,
@@ -73,7 +80,7 @@ export default async function EmployerInquiriesPage() {
           />
         </Card>
       ) : (
-        <EmployerInquiriesView initialRows={rows} />
+        <EmployerInquiriesView initialRows={rows} teamMembers={teamMembers ?? []} />
       )}
     </div>
   );

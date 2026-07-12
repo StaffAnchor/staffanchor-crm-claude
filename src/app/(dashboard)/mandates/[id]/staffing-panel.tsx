@@ -36,9 +36,10 @@ export default function StaffingPanel({
     if (!pickerValue) return;
     setSaving(true);
     setError("");
-    const { error } = await supabase
-      .from("mandate_assignments")
-      .insert({ mandate_id: mandateId, freelancer_id: pickerValue });
+    const { error } = await supabase.rpc("assign_mandate_staff", {
+      p_mandate_id: mandateId,
+      p_freelancer_id: pickerValue,
+    });
     setSaving(false);
     if (error) {
       setError(error.message);

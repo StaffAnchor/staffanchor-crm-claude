@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, Plus, Bell, ChevronDown } from "lucide-react";
+import { Search, Plus, ChevronDown } from "lucide-react";
 import SignOutButton from "./sign-out-button";
 import ThemeToggle from "@/components/theme-toggle";
+import NotificationBell from "./notification-bell";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
@@ -126,13 +127,7 @@ export default function TopNav({
 
         <ThemeToggle />
 
-        <button
-          className="ros-focusable text-slate-400 hover:text-white transition-colors"
-          title="Notifications"
-          aria-label="Notifications"
-        >
-          <Bell className="w-4 h-4" strokeWidth={2} />
-        </button>
+        <NotificationBell />
 
         <div className="relative">
           <button

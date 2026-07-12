@@ -311,3 +311,33 @@ export const workingDaysOptions = ["5 days", "5.5 days", "6 days", "Rotational"]
 export const shiftTimingOptions = [
   "Day shift", "Night shift (US)", "UK shift", "Rotational shift", "Flexible",
 ];
+
+// Which day(s) of the week are off -- kept as a flexible multi-select of
+// individual weekdays rather than a fixed "2 days off"/"1 day off" preset,
+// since the actual day(s) vary by client regardless of how many days off
+// (e.g. 6-days-a-week roles are usually a single day off, but not always
+// Monday; 5-days roles are usually Sat+Sun, but some clients run Tue-off
+// instead). Recruiters just tick whichever day(s) actually apply.
+export const weekDaysOptions = [
+  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+];
+
+// B2C: who the end consumer actually is. Distinct from `customerSegmentOptions`
+// above (SMB/Enterprise/etc., which is a B2B company-size framing) -- B2C
+// roles sell to individual consumers, not other businesses, so "industry"
+// doesn't apply the same way.
+export const b2cCustomerTypeOptions = [
+  "Middle Class", "Upper Middle Class", "High Net-worth Individuals (HNI)",
+  "Parents", "Students", "Working Professionals", "Young Professionals / First Jobbers",
+  "Homemakers", "Senior Citizens", "Retail Walk-in Visitors", "Small Business Owners",
+  "Urban Consumers", "Rural / Semi-Urban Consumers",
+];
+
+// B2B: the actual decision-maker persona/title this role sells to -- distinct
+// from `industryOptions`/industries-sold-to, which describe the client
+// company's sector, not who within it the seller actually talks to.
+export const clientProfileOptions = [
+  "CEO / Founder", "CFO", "COO", "CHRO / HR Head", "HR Manager", "CTO / Tech Head",
+  "IT Head", "Plant Head / Operations Head", "Procurement Head", "Marketing Head",
+  "Sales Head", "VP / Director level", "Business Owner (SMB)",
+];

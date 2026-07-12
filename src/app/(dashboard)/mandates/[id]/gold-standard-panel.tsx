@@ -14,6 +14,9 @@ import {
   salesCycleOptions,
   currencyOptions,
   dealSizeBandsFor,
+  weekDaysOptions,
+  b2cCustomerTypeOptions,
+  clientProfileOptions,
   type CurrencyValue,
 } from "@/lib/candidate-options";
 import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
@@ -46,6 +49,9 @@ export type GoldStandardDetails = {
   preferred_industries: string[] | null;
   industries_sold_to: string[] | null;
   languages_required: string[] | null;
+  week_off: string[] | null;
+  b2c_customer_types: string[] | null;
+  client_profile: string[] | null;
 };
 
 const HIRING_REASON_LABEL: Record<string, string> = Object.fromEntries(hiringReasonOptions.map((o) => [o.value, o.label]));
@@ -60,6 +66,8 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
   const [error, setError] = useState("");
 
   const isSalesRole = initial.category === "b2b_sales" || initial.category === "b2c_sales";
+  const isB2B = initial.category === "b2b_sales";
+  const isB2C = initial.category === "b2c_sales";
   const optionSets = useMandateOptionSets();
 
   const [form, setForm] = useState({
@@ -83,7 +91,17 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
     preferred_industries: initial.preferred_industries ?? ([] as string[]),
     industries_sold_to: initial.industries_sold_to ?? ([] as string[]),
     languages_required: initial.languages_required ?? ([] as string[]),
+    week_off: initial.week_off ?? ([] as string[]),
+    b2c_customer_types: initial.b2c_customer_types ?? ([] as string[]),
+    client_profile: initial.client_profile ?? ([] as string[]),
   });
+
+  function toggleWeekOff(day: string) {
+    setForm((f) => ({
+      ...f,
+      week_off: f.week_off.includes(day) ? f.week_off.filter((d) => d !== day) : [...f.week_off, day],
+    }));
+  }
 
   const dealSizeOptions = dealSizeBandsFor(initial.category, form.deal_size_currency);
 
@@ -117,6 +135,9 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         preferred_industries: form.preferred_industries,
         industries_sold_to: isSalesRole ? form.industries_sold_to : [],
         languages_required: form.languages_required,
+        week_off: form.week_off,
+        b2c_customer_types: isB2C ? form.b2c_customer_types : [],
+        client_profile: isB2B ? form.client_profile : [],
       })
       .eq("id", mandateId);
     setSaving(false);
@@ -136,9 +157,12 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
       (initial.team_handling === "team_lead" ? `Leads a team${initial.team_size_band ? ` (${initial.team_size_band})` : ""}` : TEAM_HANDLING_LABEL[initial.team_handling]),
     initial.work_mode,
     initial.working_days,
+    initial.week_off && initial.week_off.length > 0 && `Off: ${initial.week_off.join(", ")}`,
     isSalesRole && initial.sales_cycle && `${initial.sales_cycle} sales cycle`,
     isSalesRole && initial.deal_size_band && `Deal size ${initial.deal_size_band}`,
     isSalesRole && initial.selling_style && `${initial.selling_style} seller`,
+    isB2C && initial.b2c_customer_types && initial.b2c_customer_types.length > 0 && `Sells to: ${initial.b2c_customer_types.join(", ")}`,
+    isB2B && initial.client_profile && initial.client_profile.length > 0 && `Talks to: ${initial.client_profile.join(", ")}`,
     initial.languages_required && initial.languages_required.length > 0 && `Languages: ${initial.languages_required.join(", ")}`,
   ].filter(Boolean);
 
@@ -311,6 +335,34 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
             rows={2}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
           />
+
+          {isB2C && (
+            <div>
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Who are the end consumers? (B2C)
+              </p>
+              <MultiSelectChips
+                options={b2cCustomerTypeOptions.map((o) => ({ value: o, label: o }))}
+                selected={form.b2c_customer_types}
+                onChange={(next) => setForm((f) => ({ ...f, b2c_customer_types: next }))}
+                placeholder="Search consumer types..."
+              />
+            </div>
+          )}
+
+          {isB2B && (
+            <div>
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Client profile -- who do they actually sell to? (B2B)
+              </p>
+              <MultiSelectChips
+                options={clientProfileOptions.map((o) => ({ value: o, label: o }))}
+                selected={form.client_profile}
+                onChange={(next) => setForm((f) => ({ ...f, client_profile: next }))}
+                placeholder="Search titles..."
+              />
+            </div>
+          )}
         </>
       )}
 
@@ -351,6 +403,20 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
             </option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          Off day(s) -- pick whichever day(s) actually apply
+        </p>
+        <div className="grid grid-cols-4 gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-2.5">
+          {weekDaysOptions.map((day) => (
+            <label key={day} className="flex items-center gap-1.5 text-[12.5px] text-slate-700 dark:text-slate-300">
+              <input type="checkbox" checked={form.week_off.includes(day)} onChange={() => toggleWeekOff(day)} />
+              {day.slice(0, 3)}
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="flex gap-2">

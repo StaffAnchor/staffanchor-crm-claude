@@ -152,6 +152,9 @@ export default async function MandateDetailPage({
             preferred_industries: mandate.preferred_industries ?? [],
             industries_sold_to: mandate.industries_sold_to ?? [],
             languages_required: mandate.languages_required ?? [],
+            week_off: mandate.week_off ?? [],
+            b2c_customer_types: mandate.b2c_customer_types ?? [],
+            client_profile: mandate.client_profile ?? [],
           }}
         />
         <ScreeningQuestionsPanel

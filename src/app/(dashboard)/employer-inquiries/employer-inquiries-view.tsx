@@ -59,12 +59,24 @@ export interface EmployerInquiryRow {
   preferred_industries: string[] | null;
   industries_sold_to: string[] | null;
   languages_required: string[] | null;
+  week_off: string[] | null;
+  b2c_customer_types: string[] | null;
+  client_profile: string[] | null;
   // Set only when this brief was submitted by a client who already has
   // Client Portal access (self-service, no shareable link needed) --
   // lets Create Mandate auto-link the new mandate to their existing
   // client record instead of leaving mandates.client_id unset.
   existing_client_id: string | null;
+  owner_id: string | null;
 }
+
+export type TeamMember = {
+  id: string;
+  full_name: string | null;
+  email: string;
+  role: string;
+  specialties: string[] | null;
+};
 
 const SOURCE_LABEL: Partial<Record<InquirySource, string>> = {
   employers_page: "Employer form",
@@ -99,13 +111,46 @@ const FILTERS: { key: InquiryStatus | "all"; label: string }[] = [
   { key: "dismissed", label: "Dismissed" },
 ];
 
-export default function EmployerInquiriesView({ initialRows }: { initialRows: EmployerInquiryRow[] }) {
+export default function EmployerInquiriesView({
+  initialRows,
+  teamMembers,
+}: {
+  initialRows: EmployerInquiryRow[];
+  teamMembers: TeamMember[];
+}) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState(initialRows);
   const [activeFilter, setActiveFilter] = useState<InquiryStatus | "all">("all");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [assigningId, setAssigningId] = useState<string | null>(null);
+
+  // For a given inquiry's category, show the specialists first (matching
+  // team member specialties), then everyone else -- so the recruiter doesn't
+  // have to hunt through the whole team list to find the right person.
+  function teamOptionsFor(category: string | null) {
+    const specialists = teamMembers.filter((m) => category && m.specialties?.includes(category));
+    const specialistIds = new Set(specialists.map((m) => m.id));
+    const others = teamMembers.filter((m) => !specialistIds.has(m.id));
+    return { specialists, others };
+  }
+
+  async function assignOwner(inquiryId: string, ownerId: string) {
+    if (!ownerId) return;
+    setAssigningId(inquiryId);
+    setError(null);
+    const { error: err } = await supabase.rpc("assign_inquiry_owner", {
+      p_inquiry_id: inquiryId,
+      p_owner_id: ownerId,
+    });
+    setAssigningId(null);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setRows((cur) => cur.map((r) => (r.id === inquiryId ? { ...r, owner_id: ownerId } : r)));
+  }
 
   const filtered = useMemo(
     () => (activeFilter === "all" ? rows : rows.filter((r) => r.status === activeFilter)),
@@ -196,12 +241,21 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
           preferred_industries: row.preferred_industries ?? [],
           industries_sold_to: row.industries_sold_to ?? [],
           languages_required: row.languages_required ?? [],
+          week_off: row.week_off ?? [],
+          b2c_customer_types: row.b2c_customer_types ?? [],
+          client_profile: row.client_profile ?? [],
           notes: contactLines,
           status: "draft",
         })
         .select("id")
         .single();
       if (mandateError || !mandate) throw mandateError ?? new Error("Failed to create mandate");
+
+      // Carry the inquiry's assigned owner (if any) over as mandate staffing,
+      // so ownership doesn't get lost the moment it's promoted to a mandate.
+      if (row.owner_id) {
+        await supabase.rpc("assign_mandate_staff", { p_mandate_id: mandate.id, p_freelancer_id: row.owner_id });
+      }
 
       const { error: inquiryError } = await supabase
         .from("employer_inquiries")
@@ -378,6 +432,9 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
                             row.preferred_industries?.length ? `Background: ${row.preferred_industries.join(", ")}` : null,
                             row.industries_sold_to?.length ? `Sells to: ${row.industries_sold_to.join(", ")}` : null,
                             row.languages_required?.length ? `Languages: ${row.languages_required.join(", ")}` : null,
+                            row.week_off?.length ? `Off: ${row.week_off.join(", ")}` : null,
+                            row.b2c_customer_types?.length ? `Consumers: ${row.b2c_customer_types.join(", ")}` : null,
+                            row.client_profile?.length ? `Talks to: ${row.client_profile.join(", ")}` : null,
                           ]
                             .filter(Boolean)
                             .join(" · ")}
@@ -419,6 +476,36 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
                     <option value="converted">Converted</option>
                     <option value="dismissed">Dismissed</option>
                   </select>
+
+                  {teamMembers.length > 0 && (() => {
+                    const { specialists, others } = teamOptionsFor(row.category);
+                    return (
+                      <select
+                        value={row.owner_id ?? ""}
+                        onChange={(e) => assignOwner(row.id, e.target.value)}
+                        disabled={assigningId === row.id}
+                        className="text-[12px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
+                      >
+                        <option value="">Assign owner...</option>
+                        {specialists.length > 0 && (
+                          <optgroup label="Matching specialists">
+                            {specialists.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.full_name ?? m.email}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        <optgroup label={specialists.length > 0 ? "Everyone else" : "Team"}>
+                          {others.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.full_name ?? m.email}
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    );
+                  })()}
 
                   {isMandate ? (
                     <button

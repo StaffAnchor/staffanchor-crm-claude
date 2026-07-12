@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CreateUserForm from "./create-user-form";
 import RoleControl from "./role-control";
+import SpecialtiesControl from "./specialties-control";
 import ResetPasswordButton from "./reset-password-button";
 
 export default async function TeamPage() {
@@ -23,7 +24,7 @@ export default async function TeamPage() {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role, created_at")
+    .select("id, full_name, email, role, created_at, specialties")
     .order("created_at", { ascending: true });
 
   return (
@@ -40,6 +41,7 @@ export default async function TeamPage() {
                 <th className="text-left px-4 py-2.5">Name</th>
                 <th className="text-left px-4 py-2.5">Email</th>
                 <th className="text-left px-4 py-2.5">Role</th>
+                <th className="text-left px-4 py-2.5">Specialty</th>
                 <th className="text-left px-4 py-2.5">Password</th>
               </tr>
             </thead>
@@ -50,6 +52,9 @@ export default async function TeamPage() {
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{p.email}</td>
                   <td className="px-4 py-3">
                     <RoleControl userId={p.id} currentRole={p.role} disabled={p.id === user.id} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <SpecialtiesControl userId={p.id} currentSpecialties={p.specialties ?? []} />
                   </td>
                   <td className="px-4 py-3">
                     <ResetPasswordButton userId={p.id} name={p.full_name ?? p.email} />
