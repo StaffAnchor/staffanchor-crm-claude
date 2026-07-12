@@ -341,3 +341,11 @@ export const clientProfileOptions = [
   "IT Head", "Plant Head / Operations Head", "Procurement Head", "Marketing Head",
   "Sales Head", "VP / Director level", "Business Owner (SMB)",
 ];
+
+// ---- Career Timeline "revenue impact" fields -- per-experience metrics for
+// the Sales Passport (Revenue Journey cards). Bands rather than raw numbers,
+// consistent with the rest of the taxonomy (achievementBandOptions, deal size
+// bands) so recruiters can filter/compare across candidates rather than
+// parsing free text. ----
+export const renewalRateBandOptions = ["<50%", "50-70%", "70-85%", "85-95%", "95%+"];
+export const winRateBandOptions = ["<20%", "20-35%", "35-50%", "50-65%", "65%+"];

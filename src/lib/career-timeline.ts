@@ -23,6 +23,21 @@ export type ProfileTimelineEntry = {
   team_size: string;
   start_month: string; // "YYYY-MM"
   end_month: string | null; // null = current role
+  // ---- Revenue impact (Sales Passport "Revenue Journey" cards) -- all
+  // optional, additive, purely descriptive/display fields the candidate or
+  // recruiter can fill in per role. Bands rather than raw numbers where an
+  // existing taxonomy applies, so these stay comparable across candidates
+  // instead of free text. Never used in stability/domain scoring.
+  revenue_generated?: string; // free text, e.g. "₹82 Cr" -- candidate's own claim, display-only
+  quota_attainment_band?: string; // reuses achievementBandOptions
+  largest_deal_band?: string; // reuses dealSizeBandsFor(category, currency)
+  largest_deal_currency?: string;
+  new_logos_count?: string;
+  renewal_rate_band?: string; // reuses renewalRateBandOptions
+  win_rate_band?: string; // reuses winRateBandOptions
+  reporting_to?: string; // free text role title, e.g. "VP Sales"
+  client_tier?: string; // reuses customerSegmentOptions
+  geo_scope?: string; // reuses geographicScopeOptions
 };
 
 export type ResumeTimelineEntry = {

@@ -29,6 +29,10 @@ import {
   salesCycleOptions,
   sellingStyleOptions,
   teamSizeOptions,
+  achievementBandOptions,
+  renewalRateBandOptions,
+  winRateBandOptions,
+  geographicScopeOptions,
   type CurrencyValue,
 } from "@/lib/candidate-options";
 
@@ -56,6 +60,16 @@ function emptyEntry(): ProfileTimelineEntry {
     team_size: "",
     start_month: "",
     end_month: null,
+    revenue_generated: "",
+    quota_attainment_band: "",
+    largest_deal_band: "",
+    largest_deal_currency: "",
+    new_logos_count: "",
+    renewal_rate_band: "",
+    win_rate_band: "",
+    reporting_to: "",
+    client_tier: "",
+    geo_scope: "",
   };
 }
 
@@ -500,6 +514,154 @@ export default function CareerTimelinePanel({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+              Revenue impact <span className="normal-case font-normal text-slate-400">(optional -- powers the Sales Passport)</span>
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Revenue generated</label>
+                <input
+                  placeholder="e.g. ₹82 Cr"
+                  value={form.revenue_generated ?? ""}
+                  onChange={(e) => set("revenue_generated", e.target.value)}
+                  className={INPUT_CLS}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Quota attainment</label>
+                <select
+                  value={form.quota_attainment_band ?? ""}
+                  onChange={(e) => set("quota_attainment_band", e.target.value)}
+                  className={INPUT_CLS}
+                >
+                  <option value="">Select...</option>
+                  {achievementBandOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  Largest deal closed
+                  <button
+                    type="button"
+                    onClick={() =>
+                      set("largest_deal_currency", (form.largest_deal_currency === "USD" ? "INR" : "USD") as string)
+                    }
+                    className="ml-1.5 text-blue-600"
+                  >
+                    ({form.largest_deal_currency || "INR"})
+                  </button>
+                </label>
+                <select
+                  value={form.largest_deal_band ?? ""}
+                  onChange={(e) => set("largest_deal_band", e.target.value)}
+                  className={INPUT_CLS}
+                >
+                  <option value="">Select...</option>
+                  {dealSizeBandsFor(form.category, (form.largest_deal_currency as CurrencyValue) || "INR").map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">New logos won</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 22"
+                  value={form.new_logos_count ?? ""}
+                  onChange={(e) => set("new_logos_count", e.target.value)}
+                  className={INPUT_CLS}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Renewal rate</label>
+                <select
+                  value={form.renewal_rate_band ?? ""}
+                  onChange={(e) => set("renewal_rate_band", e.target.value)}
+                  className={INPUT_CLS}
+                >
+                  <option value="">Select...</option>
+                  {renewalRateBandOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Win rate</label>
+                <select
+                  value={form.win_rate_band ?? ""}
+                  onChange={(e) => set("win_rate_band", e.target.value)}
+                  className={INPUT_CLS}
+                >
+                  <option value="">Select...</option>
+                  {winRateBandOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Reporting to</label>
+                <input
+                  placeholder="e.g. VP Sales"
+                  value={form.reporting_to ?? ""}
+                  onChange={(e) => set("reporting_to", e.target.value)}
+                  className={INPUT_CLS}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Client tier</label>
+                <select
+                  value={form.client_tier ?? ""}
+                  onChange={(e) => set("client_tier", e.target.value)}
+                  className={INPUT_CLS}
+                >
+                  <option value="">Select...</option>
+                  {customerSegmentOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-2">
+              <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Geographic scope</label>
+              <select
+                value={form.geo_scope ?? ""}
+                onChange={(e) => set("geo_scope", e.target.value)}
+                className={INPUT_CLS}
+              >
+                <option value="">Select...</option>
+                {geographicScopeOptions.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-2 pt-1">
