@@ -30,7 +30,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, candidates(id, full_name, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data)"
+      "id, stage, in_shortlist, candidates(id, full_name, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
     )
     .eq("mandate_id", id);
 

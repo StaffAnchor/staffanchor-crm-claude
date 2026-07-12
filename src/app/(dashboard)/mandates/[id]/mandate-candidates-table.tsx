@@ -35,6 +35,9 @@ export type MandateCandidateRow = {
     open_to_relocation: string | null;
     notice_period: string | null;
     segment_data: Record<string, unknown> | null;
+    current_employer: string | null;
+    career_timeline_resume: unknown;
+    career_timeline_profile: unknown;
   };
 };
 

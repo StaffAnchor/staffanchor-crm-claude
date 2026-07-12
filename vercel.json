@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/mandate-auto-rematch",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/career-timeline-sweep",
+      "schedule": "0 7 * * *"
     }
   ]
 }

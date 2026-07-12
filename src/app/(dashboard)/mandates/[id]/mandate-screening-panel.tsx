@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Drawer } from "@/components/ui/drawer";
-import { CheckCircle2, Circle, Sparkles, UserRound } from "lucide-react";
+import { CheckCircle2, Circle, Sparkles, UserRound, AlertTriangle } from "lucide-react";
 import {
   computeTier1GapQuestions,
   buildCandidateUpdateFromTier1Answers,
@@ -11,6 +11,11 @@ import {
 } from "@/lib/mandate-screening-questions";
 import type { ScreeningQuestion } from "./screening-questions-panel";
 import type { CurrencyValue } from "@/lib/candidate-options";
+import {
+  computeCareerGaps,
+  type ProfileTimelineEntry,
+  type ResumeTimelineEntry,
+} from "@/lib/career-timeline";
 
 export type ScreeningCandidate = {
   id: string;
@@ -20,6 +25,9 @@ export type ScreeningCandidate = {
   open_to_relocation: string | null;
   notice_period: string | null;
   segment_data: Record<string, unknown> | null;
+  current_employer?: string | null;
+  career_timeline_resume?: unknown;
+  career_timeline_profile?: unknown;
 };
 
 export type MandateScreeningContext = {
@@ -73,6 +81,19 @@ export default function MandateScreeningPanel({
     [mandateContext.screening_questions]
   );
   const allQuestions = useMemo(() => [...tier1, ...tier2], [tier1, tier2]);
+
+  // Career Timeline gaps (resume vs profile vs current_employer) surfaced
+  // right here so a recruiter can raise them live on the same call, instead
+  // of needing to separately open the candidate's profile tab to spot them.
+  const careerGaps = useMemo(
+    () =>
+      computeCareerGaps({
+        profileEntries: (candidate.career_timeline_profile ?? []) as ProfileTimelineEntry[],
+        resumeEntries: (candidate.career_timeline_resume ?? []) as ResumeTimelineEntry[],
+        currentEmployer: candidate.current_employer ?? null,
+      }),
+    [candidate.career_timeline_profile, candidate.career_timeline_resume, candidate.current_employer]
+  );
 
   const answeredCount = allQuestions.filter((q) => {
     const a = answers[q.id];
@@ -278,6 +299,31 @@ export default function MandateScreeningPanel({
             </div>
           </div>
         </div>
+
+        {careerGaps.length > 0 && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Worth raising on the call
+              </h3>
+              <span className="rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium px-1.5 py-0.5">
+                career timeline
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {careerGaps.map((gap, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-2 rounded-ros-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 px-3 py-2"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-amber-800 dark:text-amber-400">{gap.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {tier1.length > 0 && (
           <div>

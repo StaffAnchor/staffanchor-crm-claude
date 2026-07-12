@@ -6,6 +6,7 @@ import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AssessmentForm from "./assessment-form";
 import MandateDiscussions from "./mandate-discussions";
+import CareerTimelinePanel from "./career-timeline-panel";
 import NotesPanel from "./notes-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
@@ -501,6 +502,20 @@ export default async function CandidateDetailPage({
                       candidateId={candidate.id}
                       links={(links ?? []) as never}
                       openMandates={openMandates ?? []}
+                    />
+                  ),
+                },
+                {
+                  label: "Career",
+                  content: (
+                    <CareerTimelinePanel
+                      candidateId={candidate.id}
+                      currentEmployer={candidate.current_employer ?? null}
+                      initialProfileEntries={(candidate.career_timeline_profile ?? []) as never}
+                      initialResumeEntries={(candidate.career_timeline_resume ?? []) as never}
+                      initialStabilityScore={candidate.stability_score ?? null}
+                      initialDomainConsistencyScore={candidate.domain_consistency_score ?? null}
+                      hasResumeText={!!candidate.resume_text}
                     />
                   ),
                 },
