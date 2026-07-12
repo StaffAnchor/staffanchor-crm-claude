@@ -59,6 +59,11 @@ export interface EmployerInquiryRow {
   preferred_industries: string[] | null;
   industries_sold_to: string[] | null;
   languages_required: string[] | null;
+  // Set only when this brief was submitted by a client who already has
+  // Client Portal access (self-service, no shareable link needed) --
+  // lets Create Mandate auto-link the new mandate to their existing
+  // client record instead of leaving mandates.client_id unset.
+  existing_client_id: string | null;
 }
 
 const SOURCE_LABEL: Partial<Record<InquirySource, string>> = {
@@ -156,6 +161,7 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
       const { data: mandate, error: mandateError } = await supabase
         .from("mandates")
         .insert({
+          client_id: row.existing_client_id,
           client_name: row.company_name,
           role_title: row.role_title,
           category: row.category,
@@ -310,6 +316,11 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
                     {SOURCE_LABEL[row.source] && (
                       <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
                         {SOURCE_LABEL[row.source]}
+                      </Badge>
+                    )}
+                    {row.existing_client_id && (
+                      <Badge tone="success" size="sm" className="normal-case tracking-normal">
+                        Existing client
                       </Badge>
                     )}
                     {row.audience && (
