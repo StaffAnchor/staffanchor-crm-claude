@@ -6,6 +6,8 @@ import AlignCandidatesPanel from "./align-candidates-panel";
 import PublicListingPanel from "./public-listing-panel";
 import JobDescriptionPanel from "./job-description-panel";
 import BasicDetailsPanel from "./basic-details-panel";
+import GoldStandardPanel from "./gold-standard-panel";
+import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import FindMatchesPanel from "./find-matches-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
@@ -121,6 +123,42 @@ export default async function MandateDetailPage({
             experience_min: mandate.experience_min,
             experience_max: mandate.experience_max,
             status: mandate.status,
+          }}
+        />
+        <GoldStandardPanel
+          mandateId={id}
+          initial={{
+            category: mandate.category,
+            hiring_reason: mandate.hiring_reason,
+            team_handling: mandate.team_handling,
+            team_size_band: mandate.team_size_band,
+            work_mode: mandate.work_mode,
+            working_days: mandate.working_days,
+            shift_timing: mandate.shift_timing,
+            reporting_manager_title: mandate.reporting_manager_title,
+            company_size_band: mandate.company_size_band,
+            company_highlight_links: mandate.company_highlight_links ?? [],
+            sales_cycle: mandate.sales_cycle,
+            deal_size_currency: mandate.deal_size_currency,
+            deal_size_band: mandate.deal_size_band,
+            customer_profile: mandate.customer_profile,
+            expectation_3_month: mandate.expectation_3_month,
+            expectation_6_month: mandate.expectation_6_month,
+            expectation_1_year: mandate.expectation_1_year,
+          }}
+        />
+        <ScreeningQuestionsPanel
+          mandateId={id}
+          initialQuestions={mandate.screening_questions ?? []}
+          context={{
+            role_title: mandate.role_title,
+            category: mandate.category,
+            sub_domains: mandate.sub_domains ?? (mandate.sub_domain ? [mandate.sub_domain] : []),
+            sales_cycle: mandate.sales_cycle,
+            deal_size_band: mandate.deal_size_band,
+            customer_profile: mandate.customer_profile,
+            jd_candidate_profile: mandate.jd_candidate_profile,
+            must_haves: mandate.must_haves ?? [],
           }}
         />
         <PublicListingPanel

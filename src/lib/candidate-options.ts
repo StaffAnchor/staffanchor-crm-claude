@@ -288,3 +288,26 @@ export const achievementBandOptions = [
   "Less than 50%", "50-75%", "75-80%", "81-85%", "86-90%", "91-95%", "96-100%",
   "100-110%", "110-120%", "More than 120%",
 ];
+
+// ---- Gold Standard Mandate Intake option sets (recruiter-only briefing
+// fields -- these are never selected by the public jobs.staffanchor.com
+// listing query, which is what keeps them internal without needing a
+// separate per-field visibility flag). Deliberately no gender/demographic
+// preference field: that's a discrimination/compliance risk in hiring
+// software and was intentionally left out rather than silently added. ----
+
+export const hiringReasonOptions = [
+  { value: "new_role", label: "New Role (net new headcount)" },
+  { value: "replacement", label: "Replacement" },
+];
+
+export const teamHandlingOptions = [
+  { value: "individual_contributor", label: "Individual Contributor" },
+  { value: "team_lead", label: "Leads a Team" },
+];
+
+export const workingDaysOptions = ["5 days", "5.5 days", "6 days", "Rotational"];
+
+export const shiftTimingOptions = [
+  "Day shift", "Night shift (US)", "UK shift", "Rotational shift", "Flexible",
+];

@@ -3,8 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sparkles, X } from "lucide-react";
-import { cityOptions, subDomainsForCategory } from "@/lib/candidate-options";
+import { Sparkles, X, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  cityOptions,
+  subDomainsForCategory,
+  hiringReasonOptions,
+  teamHandlingOptions,
+  teamSizeOptions,
+  workModeOptions,
+  workingDaysOptions,
+  shiftTimingOptions,
+  salesCycleOptions,
+  currencyOptions,
+  dealSizeBandsFor,
+  type CurrencyValue,
+} from "@/lib/candidate-options";
 
 export default function CreateMandateForm({ existingClients }: { existingClients: string[] }) {
   const router = useRouter();
@@ -29,14 +42,35 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     jd_responsibilities: "",
     jd_candidate_profile: "",
     jd_compensation_benefits: "",
+    // Gold Standard Mandate Intake -- recruiter-only briefing fields, never
+    // sent to the public jobs.staffanchor.com listing query.
+    hiring_reason: "",
+    team_handling: "",
+    team_size_band: "",
+    work_mode: "",
+    working_days: "",
+    shift_timing: "",
+    reporting_manager_title: "",
+    company_size_band: "",
+    company_highlight_links: "",
+    sales_cycle: "",
+    deal_size_currency: "" as CurrencyValue | "",
+    deal_size_band: "",
+    customer_profile: "",
+    expectation_3_month: "",
+    expectation_6_month: "",
+    expectation_1_year: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [generatingJd, setGeneratingJd] = useState(false);
   const [jdError, setJdError] = useState("");
+  const [briefOpen, setBriefOpen] = useState(false);
 
   const subDomainOptions = subDomainsForCategory(form.category || null);
   const isMultiSubDomain = form.category === "b2b_sales" || form.category === "b2c_sales";
+  const isSalesRole = form.category === "b2b_sales" || form.category === "b2c_sales";
+  const dealSizeOptions = dealSizeBandsFor(form.category || null, form.deal_size_currency);
 
   function toggleSubDomain(value: string) {
     setForm((f) => ({
@@ -125,6 +159,25 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         jd_responsibilities: form.jd_responsibilities || null,
         jd_candidate_profile: form.jd_candidate_profile || null,
         jd_compensation_benefits: form.jd_compensation_benefits || null,
+        hiring_reason: form.hiring_reason || null,
+        team_handling: form.team_handling || null,
+        team_size_band: form.team_handling === "team_lead" ? form.team_size_band || null : null,
+        work_mode: form.work_mode || null,
+        working_days: form.working_days || null,
+        shift_timing: form.shift_timing || null,
+        reporting_manager_title: form.reporting_manager_title || null,
+        company_size_band: form.company_size_band || null,
+        company_highlight_links: form.company_highlight_links
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        sales_cycle: isSalesRole ? form.sales_cycle || null : null,
+        deal_size_currency: isSalesRole ? form.deal_size_currency || null : null,
+        deal_size_band: isSalesRole ? form.deal_size_band || null : null,
+        customer_profile: isSalesRole ? form.customer_profile || null : null,
+        expectation_3_month: form.expectation_3_month || null,
+        expectation_6_month: form.expectation_6_month || null,
+        expectation_1_year: form.expectation_1_year || null,
       })
       .select("id")
       .single();
@@ -167,6 +220,22 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       jd_responsibilities: "",
       jd_candidate_profile: "",
       jd_compensation_benefits: "",
+      hiring_reason: "",
+      team_handling: "",
+      team_size_band: "",
+      work_mode: "",
+      working_days: "",
+      shift_timing: "",
+      reporting_manager_title: "",
+      company_size_band: "",
+      company_highlight_links: "",
+      sales_cycle: "",
+      deal_size_currency: "",
+      deal_size_band: "",
+      customer_profile: "",
+      expectation_3_month: "",
+      expectation_6_month: "",
+      expectation_1_year: "",
     });
     router.refresh();
   }
@@ -394,6 +463,200 @@ export default function CreateMandateForm({ existingClients }: { existingClients
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
           />
         </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setBriefOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 text-left"
+        >
+          <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+            Gold Standard Brief <span className="font-normal text-slate-400">(recommended -- recruiter-only, never shown publicly)</span>
+          </span>
+          {briefOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        </button>
+        {briefOpen && (
+          <div className="p-3 space-y-2.5 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex gap-2">
+              <select
+                value={form.hiring_reason}
+                onChange={(e) => setForm((f) => ({ ...f, hiring_reason: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">New role or replacement?</option>
+                {hiringReasonOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={form.team_handling}
+                onChange={(e) => setForm((f) => ({ ...f, team_handling: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">IC or team lead?</option>
+                {teamHandlingOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {form.team_handling === "team_lead" && (
+              <select
+                value={form.team_size_band}
+                onChange={(e) => setForm((f) => ({ ...f, team_size_band: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">Team size to manage...</option>
+                {teamSizeOptions.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {isSalesRole && (
+              <>
+                <select
+                  value={form.sales_cycle}
+                  onChange={(e) => setForm((f) => ({ ...f, sales_cycle: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                >
+                  <option value="">Typical sales cycle for this role...</option>
+                  {salesCycleOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={form.deal_size_currency}
+                    onChange={(e) => setForm((f) => ({ ...f, deal_size_currency: e.target.value as CurrencyValue | "", deal_size_band: "" }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  >
+                    <option value="">Currency...</option>
+                    {currencyOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={form.deal_size_band}
+                    onChange={(e) => setForm((f) => ({ ...f, deal_size_band: e.target.value }))}
+                    disabled={!form.deal_size_currency}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
+                  >
+                    <option value="">Typical deal size...</option>
+                    {dealSizeOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <textarea
+                  placeholder="Target customer profile / clientele this role sells to"
+                  value={form.customer_profile}
+                  onChange={(e) => setForm((f) => ({ ...f, customer_profile: e.target.value }))}
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
+                />
+              </>
+            )}
+
+            <div className="flex gap-2">
+              <select
+                value={form.work_mode}
+                onChange={(e) => setForm((f) => ({ ...f, work_mode: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">Work mode...</option>
+                {workModeOptions.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={form.working_days}
+                onChange={(e) => setForm((f) => ({ ...f, working_days: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">Working days...</option>
+                {workingDaysOptions.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={form.shift_timing}
+                onChange={(e) => setForm((f) => ({ ...f, shift_timing: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">Shift...</option>
+                {shiftTimingOptions.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                placeholder="Reports to (title, e.g. VP Sales)"
+                value={form.reporting_manager_title}
+                onChange={(e) => setForm((f) => ({ ...f, reporting_manager_title: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              />
+              <select
+                value={form.company_size_band}
+                onChange={(e) => setForm((f) => ({ ...f, company_size_band: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">Company size...</option>
+                {teamSizeOptions.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <input
+              placeholder="Company highlight links, comma-separated (funding news, website, LinkedIn)"
+              value={form.company_highlight_links}
+              onChange={(e) => setForm((f) => ({ ...f, company_highlight_links: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 pt-1">Realistic expectations (for candidate conversations, not published)</p>
+            <input
+              placeholder="3-month expectation"
+              value={form.expectation_3_month}
+              onChange={(e) => setForm((f) => ({ ...f, expectation_3_month: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+            <input
+              placeholder="6-month expectation"
+              value={form.expectation_6_month}
+              onChange={(e) => setForm((f) => ({ ...f, expectation_6_month: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+            <input
+              placeholder="1-year expectation"
+              value={form.expectation_1_year}
+              onChange={(e) => setForm((f) => ({ ...f, expectation_1_year: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800/50">
