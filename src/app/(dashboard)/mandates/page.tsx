@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Briefcase, CheckCircle2, PauseCircle, AlertTriangle } from "lucide-react";
+import { Briefcase, CheckCircle2, PauseCircle, AlertTriangle, FileEdit } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CreateMandateForm from "./create-mandate-form";
 import MandatesGrid, { type MandateSummary, type HealthSignal } from "./mandates-grid";
@@ -114,6 +114,7 @@ export default async function MandatesPage({
   });
 
   const statTiles = [
+    { label: "Drafts, needs review", value: statusCounts["draft"] ?? 0, icon: FileEdit, href: "/mandates?status=draft" },
     { label: "Open", value: statusCounts["open"] ?? 0, icon: CheckCircle2, accent: true, href: "/mandates?status=open" },
     { label: "On hold", value: statusCounts["on_hold"] ?? 0, icon: PauseCircle, href: "/mandates?status=on_hold" },
     { label: "Closed", value: statusCounts["closed"] ?? 0, icon: Briefcase, href: "/mandates?status=closed" },

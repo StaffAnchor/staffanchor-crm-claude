@@ -12,6 +12,7 @@ import MustHavesPanel from "./must-haves-panel";
 import FindMatchesPanel from "./find-matches-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import DeleteMandateButton from "./delete-mandate-button";
+import PublishMandateButton from "./publish-mandate-button";
 import StaffingPanel from "./staffing-panel";
 import { AlertTriangle } from "lucide-react";
 
@@ -82,6 +83,8 @@ export default async function MandateDetailPage({
           </div>
           <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
         </div>
+
+        {mandate.status === "draft" && <PublishMandateButton mandateId={id} />}
 
         {staleLinks && staleLinks.length > 0 && (
           <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">

@@ -19,7 +19,14 @@ export type MandateBasicDetails = {
   status: string;
 };
 
-const STATUS_OPTIONS = ["open", "on_hold", "closed", "filled"];
+const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled"];
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Draft (not published)",
+  open: "Open",
+  on_hold: "On hold",
+  closed: "Closed",
+  filled: "Filled",
+};
 
 export default function BasicDetailsPanel({
   mandateId,
@@ -116,7 +123,8 @@ export default function BasicDetailsPanel({
         <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">
           Budget: {initial.budget_min ?? "—"}
           {initial.budget_max ? ` – ${initial.budget_max}` : ""} L · Experience: {initial.experience_min ?? "—"}
-          {initial.experience_max ? ` – ${initial.experience_max}` : ""} yrs · Status: {initial.status}
+          {initial.experience_max ? ` – ${initial.experience_max}` : ""} yrs · Status:{" "}
+          {STATUS_LABEL[initial.status] ?? initial.status}
         </p>
         {saved && (
           <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
@@ -295,7 +303,7 @@ export default function BasicDetailsPanel({
       >
         {STATUS_OPTIONS.map((s) => (
           <option key={s} value={s}>
-            {s.replace("_", " ")}
+            {STATUS_LABEL[s] ?? s.replace("_", " ")}
           </option>
         ))}
       </select>

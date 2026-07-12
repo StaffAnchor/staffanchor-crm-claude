@@ -128,10 +128,13 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
     }
   }
 
-  // Recruiter-gated publish step: a mandate submitted from the staffanchor.com
-  // /employers form lands here, not in public.mandates directly, so a junk
-  // or spam submission can never appear live on jobs.staffanchor.com without
-  // someone on the team explicitly reviewing it first and clicking this.
+  // Recruiter-gated publish step, part 1: a mandate submitted via a public
+  // form lands here, not in public.mandates directly. Clicking this creates
+  // the mandate record but as status "draft" -- NOT "open" -- so it still
+  // can never appear live on jobs.staffanchor.com yet. It only shows up on
+  // the internal Mandates page, where a recruiter reviews/edits it (existing
+  // edit controls) and then explicitly clicks "Publish mandate" there (part
+  // 2, in basic-details-panel.tsx) to flip it to "open" and make it public.
   async function createMandate(row: EmployerInquiryRow) {
     if (row.converted_mandate_id) {
       router.push(`/mandates/${row.converted_mandate_id}`);
@@ -194,7 +197,7 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
           industries_sold_to: row.industries_sold_to ?? [],
           languages_required: row.languages_required ?? [],
           notes: contactLines,
-          status: "open",
+          status: "draft",
         })
         .select("id")
         .single();
@@ -427,8 +430,8 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
                       {row.converted_mandate_id
                         ? "View mandate"
                         : busyId === row.id
-                        ? "Creating…"
-                        : "Create Mandate"}
+                        ? "Preparing…"
+                        : "Prepare Mandate"}
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   ) : (

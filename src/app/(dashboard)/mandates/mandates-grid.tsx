@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
+  draft: "info",
   open: "success",
   on_hold: "warning",
   closed: "neutral",
