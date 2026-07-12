@@ -60,6 +60,9 @@ export interface EmployerInquiryRow {
   industries_sold_to: string[] | null;
   languages_required: string[] | null;
   week_off: string[] | null;
+  week_off_type: string | null;
+  rotational_offs_per_week: number | null;
+  mandatory_working_days: string[] | null;
   b2c_customer_types: string[] | null;
   client_profile: string[] | null;
   // Set only when this brief was submitted by a client who already has
@@ -242,6 +245,9 @@ export default function EmployerInquiriesView({
           industries_sold_to: row.industries_sold_to ?? [],
           languages_required: row.languages_required ?? [],
           week_off: row.week_off ?? [],
+          week_off_type: row.week_off_type,
+          rotational_offs_per_week: row.rotational_offs_per_week,
+          mandatory_working_days: row.mandatory_working_days ?? [],
           b2c_customer_types: row.b2c_customer_types ?? [],
           client_profile: row.client_profile ?? [],
           notes: contactLines,
@@ -432,7 +438,12 @@ export default function EmployerInquiriesView({
                             row.preferred_industries?.length ? `Background: ${row.preferred_industries.join(", ")}` : null,
                             row.industries_sold_to?.length ? `Sells to: ${row.industries_sold_to.join(", ")}` : null,
                             row.languages_required?.length ? `Languages: ${row.languages_required.join(", ")}` : null,
-                            row.week_off?.length ? `Off: ${row.week_off.join(", ")}` : null,
+                            row.week_off_type === "fixed" && row.week_off?.length ? `Off: ${row.week_off.join(", ")}` : null,
+                            row.week_off_type === "rotational" && row.rotational_offs_per_week
+                              ? `${row.rotational_offs_per_week} rotational off${row.rotational_offs_per_week > 1 ? "s" : ""}/week${
+                                  row.mandatory_working_days?.length ? ` (${row.mandatory_working_days.join(", ")} mandatory)` : ""
+                                }`
+                              : null,
                             row.b2c_customer_types?.length ? `Consumers: ${row.b2c_customer_types.join(", ")}` : null,
                             row.client_profile?.length ? `Talks to: ${row.client_profile.join(", ")}` : null,
                           ]

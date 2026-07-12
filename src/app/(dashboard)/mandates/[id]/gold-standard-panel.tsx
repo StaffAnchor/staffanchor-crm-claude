@@ -14,13 +14,13 @@ import {
   salesCycleOptions,
   currencyOptions,
   dealSizeBandsFor,
-  weekDaysOptions,
   b2cCustomerTypeOptions,
   clientProfileOptions,
   type CurrencyValue,
 } from "@/lib/candidate-options";
 import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
+import WeekOffPicker, { type WeekOffValue } from "@/components/ui/week-off-picker";
 
 // The recruiter-only "Gold Standard Brief" fields -- everything here is
 // deliberately excluded from the public jobs.staffanchor.com listing query,
@@ -50,6 +50,9 @@ export type GoldStandardDetails = {
   industries_sold_to: string[] | null;
   languages_required: string[] | null;
   week_off: string[] | null;
+  week_off_type: string | null;
+  rotational_offs_per_week: number | null;
+  mandatory_working_days: string[] | null;
   b2c_customer_types: string[] | null;
   client_profile: string[] | null;
 };
@@ -91,17 +94,15 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
     preferred_industries: initial.preferred_industries ?? ([] as string[]),
     industries_sold_to: initial.industries_sold_to ?? ([] as string[]),
     languages_required: initial.languages_required ?? ([] as string[]),
-    week_off: initial.week_off ?? ([] as string[]),
+    weekOff: {
+      week_off_type: (initial.week_off_type as WeekOffValue["week_off_type"]) ?? "",
+      week_off: initial.week_off ?? [],
+      rotational_offs_per_week: (initial.rotational_offs_per_week as WeekOffValue["rotational_offs_per_week"]) ?? "",
+      mandatory_working_days: initial.mandatory_working_days ?? [],
+    } as WeekOffValue,
     b2c_customer_types: initial.b2c_customer_types ?? ([] as string[]),
     client_profile: initial.client_profile ?? ([] as string[]),
   });
-
-  function toggleWeekOff(day: string) {
-    setForm((f) => ({
-      ...f,
-      week_off: f.week_off.includes(day) ? f.week_off.filter((d) => d !== day) : [...f.week_off, day],
-    }));
-  }
 
   const dealSizeOptions = dealSizeBandsFor(initial.category, form.deal_size_currency);
 
@@ -135,7 +136,10 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         preferred_industries: form.preferred_industries,
         industries_sold_to: isSalesRole ? form.industries_sold_to : [],
         languages_required: form.languages_required,
-        week_off: form.week_off,
+        week_off: form.weekOff.week_off_type === "fixed" ? form.weekOff.week_off : [],
+        week_off_type: form.weekOff.week_off_type || null,
+        rotational_offs_per_week: form.weekOff.week_off_type === "rotational" ? form.weekOff.rotational_offs_per_week || null : null,
+        mandatory_working_days: form.weekOff.week_off_type === "rotational" ? form.weekOff.mandatory_working_days : [],
         b2c_customer_types: isB2C ? form.b2c_customer_types : [],
         client_profile: isB2B ? form.client_profile : [],
       })
@@ -157,7 +161,17 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
       (initial.team_handling === "team_lead" ? `Leads a team${initial.team_size_band ? ` (${initial.team_size_band})` : ""}` : TEAM_HANDLING_LABEL[initial.team_handling]),
     initial.work_mode,
     initial.working_days,
-    initial.week_off && initial.week_off.length > 0 && `Off: ${initial.week_off.join(", ")}`,
+    initial.week_off_type === "fixed" &&
+      initial.week_off &&
+      initial.week_off.length > 0 &&
+      `Off: ${initial.week_off.join(", ")}`,
+    initial.week_off_type === "rotational" &&
+      initial.rotational_offs_per_week &&
+      `${initial.rotational_offs_per_week} rotational off${initial.rotational_offs_per_week > 1 ? "s" : ""}/week${
+        initial.mandatory_working_days && initial.mandatory_working_days.length > 0
+          ? ` (${initial.mandatory_working_days.join(", ")} mandatory)`
+          : ""
+      }`,
     isSalesRole && initial.sales_cycle && `${initial.sales_cycle} sales cycle`,
     isSalesRole && initial.deal_size_band && `Deal size ${initial.deal_size_band}`,
     isSalesRole && initial.selling_style && `${initial.selling_style} seller`,
@@ -405,19 +419,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         </select>
       </div>
 
-      <div>
-        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
-          Off day(s) -- pick whichever day(s) actually apply
-        </p>
-        <div className="grid grid-cols-4 gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-2.5">
-          {weekDaysOptions.map((day) => (
-            <label key={day} className="flex items-center gap-1.5 text-[12.5px] text-slate-700 dark:text-slate-300">
-              <input type="checkbox" checked={form.week_off.includes(day)} onChange={() => toggleWeekOff(day)} />
-              {day.slice(0, 3)}
-            </label>
-          ))}
-        </div>
-      </div>
+      <WeekOffPicker value={form.weekOff} onChange={(next) => setForm((f) => ({ ...f, weekOff: next }))} />
 
       <div className="flex gap-2">
         <input

@@ -153,6 +153,9 @@ export default async function MandateDetailPage({
             industries_sold_to: mandate.industries_sold_to ?? [],
             languages_required: mandate.languages_required ?? [],
             week_off: mandate.week_off ?? [],
+            week_off_type: mandate.week_off_type,
+            rotational_offs_per_week: mandate.rotational_offs_per_week,
+            mandatory_working_days: mandate.mandatory_working_days ?? [],
             b2c_customer_types: mandate.b2c_customer_types ?? [],
             client_profile: mandate.client_profile ?? [],
           }}

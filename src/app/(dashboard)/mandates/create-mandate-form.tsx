@@ -16,10 +16,13 @@ import {
   salesCycleOptions,
   currencyOptions,
   dealSizeBandsFor,
+  b2cCustomerTypeOptions,
+  clientProfileOptions,
   type CurrencyValue,
 } from "@/lib/candidate-options";
 import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
+import WeekOffPicker, { emptyWeekOffValue, type WeekOffValue } from "@/components/ui/week-off-picker";
 
 export default function CreateMandateForm({ existingClients }: { existingClients: string[] }) {
   const router = useRouter();
@@ -66,6 +69,9 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     preferred_industries: [] as string[],
     industries_sold_to: [] as string[],
     languages_required: [] as string[],
+    weekOff: emptyWeekOffValue as WeekOffValue,
+    b2c_customer_types: [] as string[],
+    client_profile: [] as string[],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -77,6 +83,8 @@ export default function CreateMandateForm({ existingClients }: { existingClients
   const subDomainOptions = subDomainsForCategory(form.category || null);
   const isMultiSubDomain = form.category === "b2b_sales" || form.category === "b2c_sales";
   const isSalesRole = form.category === "b2b_sales" || form.category === "b2c_sales";
+  const isB2B = form.category === "b2b_sales";
+  const isB2C = form.category === "b2c_sales";
   const dealSizeOptions = dealSizeBandsFor(form.category || null, form.deal_size_currency);
 
   function toggleSubDomain(value: string) {
@@ -189,6 +197,12 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         preferred_industries: form.preferred_industries,
         industries_sold_to: isSalesRole ? form.industries_sold_to : [],
         languages_required: form.languages_required,
+        week_off: form.weekOff.week_off_type === "fixed" ? form.weekOff.week_off : [],
+        week_off_type: form.weekOff.week_off_type || null,
+        rotational_offs_per_week: form.weekOff.week_off_type === "rotational" ? form.weekOff.rotational_offs_per_week || null : null,
+        mandatory_working_days: form.weekOff.week_off_type === "rotational" ? form.weekOff.mandatory_working_days : [],
+        b2c_customer_types: isB2C ? form.b2c_customer_types : [],
+        client_profile: isB2B ? form.client_profile : [],
       })
       .select("id")
       .single();
@@ -251,6 +265,9 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       preferred_industries: [],
       industries_sold_to: [],
       languages_required: [],
+      weekOff: emptyWeekOffValue,
+      b2c_customer_types: [],
+      client_profile: [],
     });
     router.refresh();
   }
@@ -623,6 +640,34 @@ export default function CreateMandateForm({ existingClients }: { existingClients
                   rows={2}
                   className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
                 />
+
+                {isB2C && (
+                  <div>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                      Who are the end consumers? (B2C)
+                    </p>
+                    <MultiSelectChips
+                      options={b2cCustomerTypeOptions.map((o) => ({ value: o, label: o }))}
+                      selected={form.b2c_customer_types}
+                      onChange={(next) => setForm((f) => ({ ...f, b2c_customer_types: next }))}
+                      placeholder="Search consumer types..."
+                    />
+                  </div>
+                )}
+
+                {isB2B && (
+                  <div>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                      Client profile -- who do they actually sell to? (B2B)
+                    </p>
+                    <MultiSelectChips
+                      options={clientProfileOptions.map((o) => ({ value: o, label: o }))}
+                      selected={form.client_profile}
+                      onChange={(next) => setForm((f) => ({ ...f, client_profile: next }))}
+                      placeholder="Search titles..."
+                    />
+                  </div>
+                )}
               </>
             )}
 
@@ -664,6 +709,8 @@ export default function CreateMandateForm({ existingClients }: { existingClients
                 ))}
               </select>
             </div>
+
+            <WeekOffPicker value={form.weekOff} onChange={(next) => setForm((f) => ({ ...f, weekOff: next }))} />
 
             <div className="flex gap-2">
               <input
