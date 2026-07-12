@@ -5,6 +5,7 @@ import CreateMandateForm from "./create-mandate-form";
 import MandatesGrid, { type MandateSummary, type HealthSignal } from "./mandates-grid";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Card } from "@/components/ui/card";
+import MandateRequestLinkPanel from "@/components/mandate-request-link-panel";
 
 function daysOpen(createdAt: string) {
   const ms = Date.now() - new Date(createdAt).getTime();
@@ -145,7 +146,8 @@ export default async function MandatesPage({
 
         <MandatesGrid mandates={mandateSummaries} />
       </div>
-      <div>
+      <div className="space-y-6">
+        <MandateRequestLinkPanel />
         <Card className="sticky top-20">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New mandate</h2>
           <CreateMandateForm existingClients={existingClients} />

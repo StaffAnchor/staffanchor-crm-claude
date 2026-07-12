@@ -8,6 +8,7 @@ import ClientMandatesRollup, { type ClientMandateRow } from "./client-mandates-r
 import ClientFunnelPanel from "./client-funnel-panel";
 import { computeFunnel } from "../funnel-utils";
 import { Card } from "@/components/ui/card";
+import MandateRequestLinkPanel from "@/components/mandate-request-link-panel";
 
 export default async function ClientDetailPage({
   params,
@@ -99,6 +100,7 @@ export default async function ClientDetailPage({
           initialNotes={clientRow.notes}
         />
         <ClientContactsPanel clientId={id} initialContacts={(contacts ?? []) as ClientContact[]} />
+        <MandateRequestLinkPanel clientNamePrefill={clientRow.name} />
         <ClientPortalAccessPanel
           clientId={id}
           clientName={clientRow.name}

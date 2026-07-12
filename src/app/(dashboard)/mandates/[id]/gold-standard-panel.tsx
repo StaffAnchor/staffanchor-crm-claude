@@ -16,6 +16,8 @@ import {
   dealSizeBandsFor,
   type CurrencyValue,
 } from "@/lib/candidate-options";
+import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
+import MultiSelectChips from "@/components/ui/multi-select-chips";
 
 // The recruiter-only "Gold Standard Brief" fields -- everything here is
 // deliberately excluded from the public jobs.staffanchor.com listing query,
@@ -40,6 +42,10 @@ export type GoldStandardDetails = {
   expectation_3_month: string | null;
   expectation_6_month: string | null;
   expectation_1_year: string | null;
+  selling_style: string | null;
+  preferred_industries: string[] | null;
+  industries_sold_to: string[] | null;
+  languages_required: string[] | null;
 };
 
 const HIRING_REASON_LABEL: Record<string, string> = Object.fromEntries(hiringReasonOptions.map((o) => [o.value, o.label]));
@@ -54,6 +60,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
   const [error, setError] = useState("");
 
   const isSalesRole = initial.category === "b2b_sales" || initial.category === "b2c_sales";
+  const optionSets = useMandateOptionSets();
 
   const [form, setForm] = useState({
     hiring_reason: initial.hiring_reason ?? "",
@@ -72,6 +79,10 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
     expectation_3_month: initial.expectation_3_month ?? "",
     expectation_6_month: initial.expectation_6_month ?? "",
     expectation_1_year: initial.expectation_1_year ?? "",
+    selling_style: initial.selling_style ?? "",
+    preferred_industries: initial.preferred_industries ?? ([] as string[]),
+    industries_sold_to: initial.industries_sold_to ?? ([] as string[]),
+    languages_required: initial.languages_required ?? ([] as string[]),
   });
 
   const dealSizeOptions = dealSizeBandsFor(initial.category, form.deal_size_currency);
@@ -102,6 +113,10 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         expectation_3_month: form.expectation_3_month || null,
         expectation_6_month: form.expectation_6_month || null,
         expectation_1_year: form.expectation_1_year || null,
+        selling_style: isSalesRole ? form.selling_style || null : null,
+        preferred_industries: form.preferred_industries,
+        industries_sold_to: isSalesRole ? form.industries_sold_to : [],
+        languages_required: form.languages_required,
       })
       .eq("id", mandateId);
     setSaving(false);
@@ -123,6 +138,8 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
     initial.working_days,
     isSalesRole && initial.sales_cycle && `${initial.sales_cycle} sales cycle`,
     isSalesRole && initial.deal_size_band && `Deal size ${initial.deal_size_band}`,
+    isSalesRole && initial.selling_style && `${initial.selling_style} seller`,
+    initial.languages_required && initial.languages_required.length > 0 && `Languages: ${initial.languages_required.join(", ")}`,
   ].filter(Boolean);
 
   if (!editing) {
@@ -227,6 +244,27 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
 
       {isSalesRole && (
         <>
+          <select
+            value={form.selling_style}
+            onChange={(e) => setForm((f) => ({ ...f, selling_style: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Selling style: Hunter, Farmer, or Hybrid?</option>
+            {optionSets.selling_style.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <div>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industries sold to / clientele</p>
+            <MultiSelectChips
+              options={optionSets.industries}
+              selected={form.industries_sold_to}
+              onChange={(next) => setForm((f) => ({ ...f, industries_sold_to: next }))}
+              placeholder="Search industries..."
+            />
+          </div>
           <select
             value={form.sales_cycle}
             onChange={(e) => setForm((f) => ({ ...f, sales_cycle: e.target.value }))}
@@ -341,6 +379,26 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         onChange={(e) => setForm((f) => ({ ...f, company_highlight_links: e.target.value }))}
         className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
       />
+
+      <div>
+        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Preferred candidate industries (background)</p>
+        <MultiSelectChips
+          options={optionSets.industries}
+          selected={form.preferred_industries}
+          onChange={(next) => setForm((f) => ({ ...f, preferred_industries: next }))}
+          placeholder="Search industries..."
+        />
+      </div>
+
+      <div>
+        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Languages required</p>
+        <MultiSelectChips
+          options={optionSets.languages}
+          selected={form.languages_required}
+          onChange={(next) => setForm((f) => ({ ...f, languages_required: next }))}
+          placeholder="Search languages..."
+        />
+      </div>
 
       <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 pt-1">Realistic expectations</p>
       <input

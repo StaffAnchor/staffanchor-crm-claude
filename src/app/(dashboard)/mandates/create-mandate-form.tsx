@@ -18,6 +18,8 @@ import {
   dealSizeBandsFor,
   type CurrencyValue,
 } from "@/lib/candidate-options";
+import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
+import MultiSelectChips from "@/components/ui/multi-select-chips";
 
 export default function CreateMandateForm({ existingClients }: { existingClients: string[] }) {
   const router = useRouter();
@@ -60,12 +62,17 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     expectation_3_month: "",
     expectation_6_month: "",
     expectation_1_year: "",
+    selling_style: "",
+    preferred_industries: [] as string[],
+    industries_sold_to: [] as string[],
+    languages_required: [] as string[],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [generatingJd, setGeneratingJd] = useState(false);
   const [jdError, setJdError] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
+  const optionSets = useMandateOptionSets();
 
   const subDomainOptions = subDomainsForCategory(form.category || null);
   const isMultiSubDomain = form.category === "b2b_sales" || form.category === "b2c_sales";
@@ -178,6 +185,10 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         expectation_3_month: form.expectation_3_month || null,
         expectation_6_month: form.expectation_6_month || null,
         expectation_1_year: form.expectation_1_year || null,
+        selling_style: isSalesRole ? form.selling_style || null : null,
+        preferred_industries: form.preferred_industries,
+        industries_sold_to: isSalesRole ? form.industries_sold_to : [],
+        languages_required: form.languages_required,
       })
       .select("id")
       .single();
@@ -236,6 +247,10 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       expectation_3_month: "",
       expectation_6_month: "",
       expectation_1_year: "",
+      selling_style: "",
+      preferred_industries: [],
+      industries_sold_to: [],
+      languages_required: [],
     });
     router.refresh();
   }
@@ -380,14 +395,14 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       <div className="flex gap-2">
         <input
           type="number"
-          placeholder="Budget min (L)"
+          placeholder="Fixed CTC min (LPA)"
           value={form.budget_min}
           onChange={(e) => setForm((f) => ({ ...f, budget_min: e.target.value }))}
           className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
         />
         <input
           type="number"
-          placeholder="Budget max (L)"
+          placeholder="Fixed CTC max (LPA)"
           value={form.budget_max}
           onChange={(e) => setForm((f) => ({ ...f, budget_max: e.target.value }))}
           className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
@@ -407,6 +422,26 @@ export default function CreateMandateForm({ existingClients }: { existingClients
           value={form.experience_max}
           onChange={(e) => setForm((f) => ({ ...f, experience_max: e.target.value }))}
           className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+        />
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Preferred candidate industries (background)</p>
+        <MultiSelectChips
+          options={optionSets.industries}
+          selected={form.preferred_industries}
+          onChange={(next) => setForm((f) => ({ ...f, preferred_industries: next }))}
+          placeholder="Search industries..."
+        />
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Languages required</p>
+        <MultiSelectChips
+          options={optionSets.languages}
+          selected={form.languages_required}
+          onChange={(next) => setForm((f) => ({ ...f, languages_required: next }))}
+          placeholder="Search languages..."
         />
       </div>
 
@@ -521,6 +556,27 @@ export default function CreateMandateForm({ existingClients }: { existingClients
 
             {isSalesRole && (
               <>
+                <select
+                  value={form.selling_style}
+                  onChange={(e) => setForm((f) => ({ ...f, selling_style: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                >
+                  <option value="">Selling style: Hunter, Farmer, or Hybrid?</option>
+                  {optionSets.selling_style.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <div>
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industries sold to / clientele</p>
+                  <MultiSelectChips
+                    options={optionSets.industries}
+                    selected={form.industries_sold_to}
+                    onChange={(next) => setForm((f) => ({ ...f, industries_sold_to: next }))}
+                    placeholder="Search industries..."
+                  />
+                </div>
                 <select
                   value={form.sales_cycle}
                   onChange={(e) => setForm((f) => ({ ...f, sales_cycle: e.target.value }))}

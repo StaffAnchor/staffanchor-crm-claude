@@ -145,6 +145,10 @@ export default async function MandateDetailPage({
             expectation_3_month: mandate.expectation_3_month,
             expectation_6_month: mandate.expectation_6_month,
             expectation_1_year: mandate.expectation_1_year,
+            selling_style: mandate.selling_style,
+            preferred_industries: mandate.preferred_industries ?? [],
+            industries_sold_to: mandate.industries_sold_to ?? [],
+            languages_required: mandate.languages_required ?? [],
           }}
         />
         <ScreeningQuestionsPanel

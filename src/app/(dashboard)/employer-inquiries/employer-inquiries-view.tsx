@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 
 export type InquiryStatus = "new" | "contacted" | "converted" | "dismissed";
-export type InquirySource = "employers_page" | "contact_page";
+export type InquirySource = "employers_page" | "contact_page" | "client_mandate_request";
 
 export interface EmployerInquiryRow {
   id: string;
@@ -32,7 +32,39 @@ export interface EmployerInquiryRow {
   notes: string | null;
   converted_client_id: string | null;
   converted_mandate_id: string | null;
+  // Deeper brief fields -- present when the client filled these in
+  // themselves via the shared mandate-request link, or when a recruiter
+  // fills them in manually before promoting to a real mandate.
+  sub_domains: string[] | null;
+  cities: string[] | null;
+  experience_min: number | null;
+  experience_max: number | null;
+  hiring_reason: string | null;
+  team_handling: string | null;
+  team_size_band: string | null;
+  work_mode: string | null;
+  working_days: string | null;
+  shift_timing: string | null;
+  reporting_manager_title: string | null;
+  company_size_band: string | null;
+  company_highlight_links: string[] | null;
+  sales_cycle: string | null;
+  deal_size_currency: string | null;
+  deal_size_band: string | null;
+  customer_profile: string | null;
+  expectation_3_month: string | null;
+  expectation_6_month: string | null;
+  expectation_1_year: string | null;
+  selling_style: string | null;
+  preferred_industries: string[] | null;
+  industries_sold_to: string[] | null;
+  languages_required: string[] | null;
 }
+
+const SOURCE_LABEL: Partial<Record<InquirySource, string>> = {
+  employers_page: "Employer form",
+  client_mandate_request: "Client brief",
+};
 
 const STATUS_TONE: Record<InquiryStatus, BadgeTone> = {
   new: "info",
@@ -118,15 +150,43 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
         .filter((l) => l !== null)
         .join("\n");
 
+      const cities = row.cities ?? (row.city ? [row.city] : []);
+      const subDomains = row.sub_domains ?? [];
+
       const { data: mandate, error: mandateError } = await supabase
         .from("mandates")
         .insert({
           client_name: row.company_name,
           role_title: row.role_title,
           category: row.category,
-          city: row.city,
+          sub_domains: subDomains,
+          sub_domain: subDomains.join(", ") || null,
+          cities,
+          city: cities[0] ?? null,
           budget_min: row.budget_min,
           budget_max: row.budget_max,
+          experience_min: row.experience_min,
+          experience_max: row.experience_max,
+          hiring_reason: row.hiring_reason,
+          team_handling: row.team_handling,
+          team_size_band: row.team_size_band,
+          work_mode: row.work_mode,
+          working_days: row.working_days,
+          shift_timing: row.shift_timing,
+          reporting_manager_title: row.reporting_manager_title,
+          company_size_band: row.company_size_band,
+          company_highlight_links: row.company_highlight_links ?? [],
+          sales_cycle: row.sales_cycle,
+          deal_size_currency: row.deal_size_currency,
+          deal_size_band: row.deal_size_band,
+          customer_profile: row.customer_profile,
+          expectation_3_month: row.expectation_3_month,
+          expectation_6_month: row.expectation_6_month,
+          expectation_1_year: row.expectation_1_year,
+          selling_style: row.selling_style,
+          preferred_industries: row.preferred_industries ?? [],
+          industries_sold_to: row.industries_sold_to ?? [],
+          languages_required: row.languages_required ?? [],
           notes: contactLines,
           status: "open",
         })
@@ -228,7 +288,7 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
 
       <div className="space-y-2.5">
         {filtered.map((row) => {
-          const isMandate = row.source === "employers_page" && !!row.role_title;
+          const isMandate = (row.source === "employers_page" || row.source === "client_mandate_request") && !!row.role_title;
           return (
             <Card key={row.id} padded={false} className="p-4">
               <div className="flex items-start justify-between gap-4">
@@ -247,6 +307,11 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
                     ) : (
                       <Badge tone="neutral" size="sm">Contact</Badge>
                     )}
+                    {SOURCE_LABEL[row.source] && (
+                      <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
+                        {SOURCE_LABEL[row.source]}
+                      </Badge>
+                    )}
                     {row.audience && (
                       <Badge tone="info" size="sm" className="normal-case tracking-normal">
                         {row.audience}
@@ -260,22 +325,51 @@ export default function EmployerInquiriesView({ initialRows }: { initialRows: Em
                   </div>
 
                   {isMandate && (
-                    <p className="text-[12.5px] text-slate-700 dark:text-slate-300 font-medium">
-                      {row.role_title}
-                      {row.category && (
-                        <span className="text-slate-400 dark:text-slate-500 font-normal">
-                          {" "}
-                          · {CATEGORY_LABEL[row.category] ?? row.category}
-                        </span>
+                    <>
+                      <p className="text-[12.5px] text-slate-700 dark:text-slate-300 font-medium">
+                        {row.role_title}
+                        {row.category && (
+                          <span className="text-slate-400 dark:text-slate-500 font-normal">
+                            {" "}
+                            · {CATEGORY_LABEL[row.category] ?? row.category}
+                          </span>
+                        )}
+                        {(row.cities?.length ? row.cities.join(", ") : row.city) && (
+                          <span className="text-slate-400 dark:text-slate-500 font-normal">
+                            {" "}
+                            · {row.cities?.length ? row.cities.join(", ") : row.city}
+                          </span>
+                        )}
+                        {(row.budget_min !== null || row.budget_max !== null) && (
+                          <span className="text-slate-400 dark:text-slate-500 font-normal">
+                            {" "}
+                            · ₹{row.budget_min ?? "0"}-{row.budget_max ?? "+"}L
+                          </span>
+                        )}
+                      </p>
+                      {(row.sub_domains?.length ||
+                        row.sales_cycle ||
+                        row.deal_size_band ||
+                        row.work_mode ||
+                        row.selling_style ||
+                        row.languages_required?.length ||
+                        row.preferred_industries?.length) && (
+                        <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          {[
+                            row.sub_domains?.length ? row.sub_domains.join(", ") : null,
+                            row.sales_cycle ? `${row.sales_cycle} cycle` : null,
+                            row.deal_size_band ? `${row.deal_size_currency ?? ""} ${row.deal_size_band} deals`.trim() : null,
+                            row.work_mode,
+                            row.selling_style ? `${row.selling_style} seller` : null,
+                            row.preferred_industries?.length ? `Background: ${row.preferred_industries.join(", ")}` : null,
+                            row.industries_sold_to?.length ? `Sells to: ${row.industries_sold_to.join(", ")}` : null,
+                            row.languages_required?.length ? `Languages: ${row.languages_required.join(", ")}` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
                       )}
-                      {row.city && <span className="text-slate-400 dark:text-slate-500 font-normal"> · {row.city}</span>}
-                      {(row.budget_min !== null || row.budget_max !== null) && (
-                        <span className="text-slate-400 dark:text-slate-500 font-normal">
-                          {" "}
-                          · ₹{row.budget_min ?? "0"}-{row.budget_max ?? "+"}L
-                        </span>
-                      )}
-                    </p>
+                    </>
                   )}
 
                   {row.company_name && (
