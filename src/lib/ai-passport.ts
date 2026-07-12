@@ -1,11 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractResumeText } from "@/lib/resume-text";
+import {
+  mergeTimelines,
+  computeStabilityScore,
+  type ProfileTimelineEntry,
+  type ResumeTimelineEntry,
+} from "@/lib/career-timeline";
 
 export type AiPassport = {
   headline?: string;
   compensation_line?: string;
   targets_line?: string;
+  stability_line?: string;
   resume_highlights?: string[];
   // Set programmatically (not by the model) whenever the candidate's status
   // wasn't "registered" at generation time -- quick_apply and recruiter-seeded
@@ -31,7 +38,7 @@ function parsePassportJson(raw: string): AiPassport | null {
 }
 
 function passportToSummary(p: AiPassport): string {
-  return [p.headline, p.compensation_line, p.targets_line].filter(Boolean).join(" ");
+  return [p.headline, p.compensation_line, p.targets_line, p.stability_line].filter(Boolean).join(" ");
 }
 
 /**
@@ -50,7 +57,7 @@ export async function generateAiPassportForCandidate(
   const { data: candidate, error } = await supabase
     .from("candidates")
     .select(
-      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text, status"
+      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text, status, career_timeline_resume, career_timeline_profile"
     )
     .eq("id", candidateId)
     .single();
@@ -94,6 +101,30 @@ export async function generateAiPassportForCandidate(
   // plenty for pulling out achievements/employers, we don't need the whole thing.
   const resumeExcerpt = resumeText ? resumeText.slice(0, 8000) : null;
 
+  // Career Timeline stability facts -- computed deterministically from actual
+  // dates (resume-extracted and/or profile-confirmed roles), never left for
+  // the model to eyeball or invent from prose. This is what lets the passport
+  // honestly call out a job-hopping pattern (or a stable one) with the actual
+  // company names/durations behind it, instead of staying silent on tenure.
+  const profileEntries = (candidate.career_timeline_profile ?? []) as ProfileTimelineEntry[];
+  const resumeEntries = (candidate.career_timeline_resume ?? []) as ResumeTimelineEntry[];
+  const mergedTimeline = mergeTimelines(profileEntries, resumeEntries);
+  const stability = computeStabilityScore(mergedTimeline);
+  const careerStability =
+    mergedTimeline.length > 0
+      ? {
+          stability_label: stability?.label ?? null,
+          stability_score_out_of_100: stability?.score ?? null,
+          roles_newest_first: [...mergedTimeline]
+            .sort((a, b) => ((a.start_month ?? "") < (b.start_month ?? "") ? 1 : -1))
+            .map((e) => ({
+              company: e.company,
+              tenure_months: e.tenureMonths,
+              is_current: !e.end_month,
+            })),
+        }
+      : null;
+
   const factSheet = {
     name: candidate.full_name,
     current_role: candidate.current_job_title,
@@ -115,6 +146,7 @@ export async function generateAiPassportForCandidate(
     self_reported_segment_data: candidate.segment_data,
     self_assessment_writeups: candidate.self_assessment,
     recruiter_scorecard: candidate.recruiter_assessment,
+    career_stability: careerStability,
   };
 
   const firstName = (candidate.full_name as string | null)?.trim().split(/\s+/)[0] ?? "This candidate";
@@ -133,6 +165,7 @@ Return ONLY a JSON object (no markdown fence, no commentary) with exactly these 
 - "headline": one sentence -- ${firstName}'s current role/employer and primary sales domain, using their actual name once here.
 - "compensation_line": one sentence weaving together current and expected fixed CTC (and variable, if present) -- e.g. frame it as what they're looking for, not just "CTC is X". Omit key entirely if no CTC data exists.
 - "targets_line": one sentence synthesizing quota/target performance into a pattern or trend (see rule 2 above). Where the underlying fields are present in segment data, work in the actual target size (e.g. "ic_targets"/quarterly or period target amount, with its currency) and typical deal size ("deal_size" band, with its currency) alongside the achievement trend -- don't just report the achievement percentages in isolation when the target amount and deal size are sitting right there in the data. Omit key entirely if no target/achievement data exists at all.
+- "stability_line": one honest sentence about their job tenure pattern, based ONLY on the "career_stability" data below (never estimate tenure from the resume excerpt yourself -- these numbers are computed from actual dates). If "stability_label" is "Frequent Job-Hopper" or several roles show short tenure_months, say so plainly and name the specific role(s)/company(ies) with short stints (e.g. "has moved roles frequently in the last two years, including two-and-a-half-month and two-month stints at X and Y") -- do not soften or omit a real job-hopping pattern just to sound positive. If "stability_label" is "Stable" or "Some Movement" with no notably short stints, note the steady tenure instead. Omit key entirely if "career_stability" is null.
 - Note on "best"/"lost" self-assessment write-ups: these are the candidate's own words about a specific win/loss, not resume content. If used, fold the concrete fact (e.g. a named client or deal size mentioned there) into "targets_line" rather than "resume_highlights", since "resume_highlights" is reserved for facts pulled from the actual resume excerpt below.
 - "resume_highlights": an array of 2-4 short bullet-point strings pulled from the resume excerpt below -- concrete, factual points only (notable employers/clients, tenure pattern, certifications, named achievements) that AREN'T already covered by the headline/compensation/targets lines. Omit key (or return empty array) if no resume excerpt is provided or nothing factual/notable is extractable.
 

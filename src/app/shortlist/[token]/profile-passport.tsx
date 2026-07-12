@@ -7,6 +7,7 @@ type AiPassport = {
   headline?: string;
   compensation_line?: string;
   targets_line?: string;
+  stability_line?: string;
   resume_highlights?: string[];
   profile_incomplete?: boolean;
 };
@@ -136,6 +137,9 @@ export default function ProfilePassportTrigger({
               )}
               {aiPassport?.targets_line && (
                 <p className="text-sm text-slate-600">{aiPassport.targets_line}</p>
+              )}
+              {aiPassport?.stability_line && (
+                <p className="text-sm text-slate-600">{aiPassport.stability_line}</p>
               )}
 
               {aiPassport?.resume_highlights && aiPassport.resume_highlights.length > 0 && (
