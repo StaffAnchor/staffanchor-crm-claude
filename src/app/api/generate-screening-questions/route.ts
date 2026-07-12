@@ -27,6 +27,10 @@ export async function POST(req: NextRequest) {
     customer_profile: body.customer_profile ?? "",
     jd_candidate_profile: body.jd_candidate_profile ?? "",
     must_haves: Array.isArray(body.must_haves) ? body.must_haves : [],
+    team_handling: body.team_handling ?? "",
+    team_size_band: body.team_size_band ?? "",
+    work_mode: body.work_mode ?? "",
+    cities: Array.isArray(body.cities) ? body.cities : [],
   });
 
   if (!result.ok) {

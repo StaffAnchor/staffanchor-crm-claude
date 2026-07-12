@@ -4,6 +4,11 @@ export type ScreeningQuestion = {
   id: string;
   text: string;
   source: "ai" | "recruiter";
+  // Optional so questions generated before this upgrade (or added manually
+  // by a recruiter) still render fine -- the panel treats a missing
+  // answer_type as free_text.
+  answer_type?: "dropdown" | "multi_select" | "free_text";
+  options?: string[];
 };
 
 export type GenerateScreeningQuestionsResult =
@@ -16,7 +21,13 @@ const CATEGORY_LABEL: Record<string, string> = {
   non_sales: "Non-Sales / Other",
 };
 
-function parseQuestionsJson(raw: string): string[] | null {
+type RawQuestion = {
+  text?: string;
+  answer_type?: string;
+  options?: unknown;
+};
+
+function parseQuestionsJson(raw: string): RawQuestion[] | null {
   const cleaned = raw
     .trim()
     .replace(/^```(?:json)?/i, "")
@@ -24,10 +35,17 @@ function parseQuestionsJson(raw: string): string[] | null {
     .trim();
   try {
     const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) return parsed.map(String);
-    if (parsed && Array.isArray((parsed as { questions?: unknown }).questions)) {
-      return (parsed as { questions: unknown[] }).questions.map(String);
-    }
+    const list = Array.isArray(parsed)
+      ? parsed
+      : parsed && Array.isArray((parsed as { questions?: unknown }).questions)
+        ? (parsed as { questions: unknown[] }).questions
+        : null;
+    if (!list) return null;
+    // Tolerate the model returning plain strings instead of objects --
+    // treat those as free-text questions rather than failing generation.
+    return list.map((item) =>
+      typeof item === "string" ? { text: item, answer_type: "free_text" } : (item as RawQuestion)
+    );
   } catch {
     // fall through
   }
@@ -51,6 +69,15 @@ export async function generateScreeningQuestions(input: {
   customer_profile?: string;
   jd_candidate_profile?: string;
   must_haves?: string[];
+  // Added so questions can be conditioned on the mandate's own shape --
+  // team-lead situational questions only when this mandate actually
+  // involves managing a team, location/relocation questions only when a
+  // city is on file, work-arrangement questions when it's not a plain
+  // Onsite role.
+  team_handling?: string;
+  team_size_band?: string;
+  work_mode?: string;
+  cities?: string[];
 }): Promise<GenerateScreeningQuestionsResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -64,6 +91,8 @@ export async function generateScreeningQuestions(input: {
     return { ok: false, status: 400, error: "Save the role title first." };
   }
 
+  const isTeamLead = input.team_handling === "team_lead";
+
   const facts = [
     `Role title: ${input.role_title}`,
     input.category && `Function / Domain: ${CATEGORY_LABEL[input.category] ?? input.category}`,
@@ -73,6 +102,11 @@ export async function generateScreeningQuestions(input: {
     input.customer_profile && `Target customer profile: ${input.customer_profile}`,
     input.must_haves?.length && `Must-haves: ${input.must_haves.join("; ")}`,
     input.jd_candidate_profile && `Candidate profile notes: ${input.jd_candidate_profile}`,
+    isTeamLead
+      ? `This role manages a team${input.team_size_band ? ` of size ${input.team_size_band}` : ""} -- include at least 2 situational team-leadership questions (e.g. handling an underperforming rep, forecasting/coaching approach).`
+      : `This role is an individual contributor -- do not ask team-management questions.`,
+    input.cities?.length && `Work location(s): ${input.cities.join(", ")} -- include one question probing genuine willingness/logistics for this location if it's not remote.`,
+    input.work_mode && input.work_mode !== "Remote" && `Work arrangement: ${input.work_mode}.`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -82,7 +116,14 @@ export async function generateScreeningQuestions(input: {
 Mandate facts:
 ${facts}
 
-Return ONLY a JSON array of 6-8 short question strings (no markdown fence, no commentary, no numbering). Each question should be answerable in a few sentences on a screening call and should probe something specific to this role's domain (e.g. deal size handled, sales cycle experience, customer segment familiarity, team size managed) rather than generic soft-skill questions.`;
+Return ONLY a JSON array of 6-8 question objects (no markdown fence, no commentary, no numbering), each shaped exactly like:
+{"text": "<the question>", "answer_type": "dropdown" | "multi_select" | "free_text", "options": ["opt1", "opt2", ...]}
+
+Rules:
+- Prefer "dropdown" or "multi_select" with 3-6 concrete options whenever the question has a naturally bounded answer (e.g. a range, a style, a yes/no/conditional, a named list of tools or segments) -- this is important, it's what lets the answers become structured, searchable data instead of notes someone has to re-read later.
+- Use "free_text" only for genuinely narrative/behavioral questions ("walk me through how you handled...") that can't be reduced to options.
+- Every question must probe something specific to this exact role's domain (deal size handled, sales-cycle experience, customer-segment familiarity, team size managed, location fit) -- not generic soft-skill filler.
+- options must be omitted or an empty array for free_text questions.`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
@@ -99,12 +140,22 @@ Return ONLY a JSON array of 6-8 short question strings (no markdown fence, no co
         continue;
       }
       const questions: ScreeningQuestion[] = list
-        .filter((t) => t && t.trim())
-        .map((text) => ({
-          id: crypto.randomUUID(),
-          text: text.trim(),
-          source: "ai" as const,
-        }));
+        .filter((q) => q.text && q.text.trim())
+        .map((q) => {
+          const answerType: "dropdown" | "multi_select" | "free_text" =
+            q.answer_type === "dropdown" || q.answer_type === "multi_select" ? q.answer_type : "free_text";
+          const options = Array.isArray(q.options) ? q.options.map(String).filter(Boolean) : [];
+          return {
+            id: crypto.randomUUID(),
+            text: q.text!.trim(),
+            source: "ai" as const,
+            answer_type: answerType,
+            // A dropdown/multi_select with no usable options is worse than
+            // free text -- fall back rather than render an empty select.
+            options: answerType === "free_text" ? [] : options.length ? options : undefined,
+          };
+        })
+        .map((q) => (q.answer_type !== "free_text" && !q.options?.length ? { ...q, answer_type: "free_text" as const } : q));
       return { ok: true, questions };
     } catch (err) {
       lastError = err;

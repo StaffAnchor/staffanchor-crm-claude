@@ -9,6 +9,8 @@ export type ScreeningQuestion = {
   id: string;
   text: string;
   source: "ai" | "recruiter";
+  answer_type?: "dropdown" | "multi_select" | "free_text";
+  options?: string[];
 };
 
 export default function ScreeningQuestionsPanel({
@@ -27,6 +29,10 @@ export default function ScreeningQuestionsPanel({
     customer_profile: string | null;
     jd_candidate_profile: string | null;
     must_haves: string[];
+    team_handling: string | null;
+    team_size_band: string | null;
+    work_mode: string | null;
+    cities: string[];
   };
 }) {
   const router = useRouter();
@@ -76,6 +82,10 @@ export default function ScreeningQuestionsPanel({
           customer_profile: context.customer_profile,
           jd_candidate_profile: context.jd_candidate_profile,
           must_haves: context.must_haves,
+          team_handling: context.team_handling,
+          team_size_band: context.team_size_band,
+          work_mode: context.work_mode,
+          cities: context.cities,
         }),
       });
       const data = await res.json();
@@ -106,8 +116,9 @@ export default function ScreeningQuestionsPanel({
         </button>
       </div>
       <p className="text-[12px] text-slate-400 mb-2">
-        Targeted questions for screening calls against this mandate. Answers are logged per-candidate on the
-        candidate&apos;s recruiter-assessment panel.
+        Targeted questions for screening calls against this mandate. Recruiters answer these per-candidate from the
+        Screen action in the candidate table below -- answers become structured, searchable profile data, not just
+        notes.
       </p>
       {genError && <p className="text-[11px] text-red-600 mb-2">{genError}</p>}
 

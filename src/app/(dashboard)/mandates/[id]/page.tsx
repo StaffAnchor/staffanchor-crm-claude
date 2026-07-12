@@ -29,8 +29,19 @@ export default async function MandateDetailPage({
 
   const { data: links } = await supabase
     .from("candidate_mandate_links")
-    .select("id, stage, in_shortlist, candidates(id, full_name, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment)")
+    .select(
+      "id, stage, in_shortlist, candidates(id, full_name, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data)"
+    )
     .eq("mandate_id", id);
+
+  // Distinct candidate IDs already screened against this mandate, so the
+  // table can show an Assessed / Not Assessed badge without a separate
+  // round-trip per row.
+  const { data: screeningRows } = await supabase
+    .from("mandate_screening_answers")
+    .select("candidate_id")
+    .eq("mandate_id", id);
+  const screenedCandidateIds = Array.from(new Set((screeningRows ?? []).map((r) => r.candidate_id)));
 
   const { data: existingToken } = await supabase
     .from("shortlist_tokens")
@@ -106,9 +117,33 @@ export default async function MandateDetailPage({
             .map((l) => {
               const cand = l.candidates as unknown as MandateCandidateRow["candidate"] | null;
               if (!cand) return null;
-              return { id: l.id, stage: l.stage, in_shortlist: l.in_shortlist, candidate: cand };
+              return {
+                id: l.id,
+                stage: l.stage,
+                in_shortlist: l.in_shortlist,
+                candidate: cand,
+                screened: screenedCandidateIds.includes(cand.id),
+              };
             })
             .filter((r): r is MandateCandidateRow => r !== null)}
+          mandateContext={{
+            mandateId: id,
+            role_title: mandate.role_title,
+            category: mandate.category,
+            sub_domains: mandate.sub_domains ?? (mandate.sub_domain ? [mandate.sub_domain] : []),
+            sales_cycle: mandate.sales_cycle,
+            deal_size_band: mandate.deal_size_band,
+            deal_size_currency: mandate.deal_size_currency ?? "INR",
+            customer_profile: mandate.customer_profile,
+            jd_candidate_profile: mandate.jd_candidate_profile,
+            must_haves: mandate.must_haves ?? [],
+            team_handling: mandate.team_handling,
+            team_size_band: mandate.team_size_band,
+            work_mode: mandate.work_mode,
+            cities: mandate.cities ?? (mandate.city ? [mandate.city] : []),
+            client_name: mandate.client_name,
+            screening_questions: mandate.screening_questions ?? [],
+          }}
         />
       </div>
 
@@ -172,6 +207,10 @@ export default async function MandateDetailPage({
             customer_profile: mandate.customer_profile,
             jd_candidate_profile: mandate.jd_candidate_profile,
             must_haves: mandate.must_haves ?? [],
+            team_handling: mandate.team_handling,
+            team_size_band: mandate.team_size_band,
+            work_mode: mandate.work_mode,
+            cities: mandate.cities ?? (mandate.city ? [mandate.city] : []),
           }}
         />
         <PublicListingPanel

@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { MessageCircleQuestion } from "lucide-react";
+import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -20,6 +22,7 @@ export type MandateCandidateRow = {
   id: string;
   stage: string;
   in_shortlist: boolean;
+  screened: boolean;
   candidate: {
     id: string;
     full_name: string;
@@ -28,16 +31,27 @@ export type MandateCandidateRow = {
     total_experience_years: number | null;
     current_fixed_ctc: number | null;
     recruiter_assessment: Record<string, unknown> | null;
+    work_mode: string | null;
+    open_to_relocation: string | null;
+    notice_period: string | null;
+    segment_data: Record<string, unknown> | null;
   };
 };
 
-export default function MandateCandidatesTable({ rows: initialRows }: { rows: MandateCandidateRow[] }) {
+export default function MandateCandidatesTable({
+  rows: initialRows,
+  mandateContext,
+}: {
+  rows: MandateCandidateRow[];
+  mandateContext: MandateScreeningContext & { [key: string]: unknown };
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [screeningRowId, setScreeningRowId] = useState<string | null>(null);
 
   function toggleRow(linkId: string) {
     setSelected((prev) => {
@@ -137,6 +151,7 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
             <th className="text-left px-4 py-2.5">Candidate</th>
             <th className="text-left px-4 py-2.5">Fixed CTC</th>
             <th className="text-left px-4 py-2.5">Recommendation</th>
+            <th className="text-left px-4 py-2.5">Screening</th>
             <th className="text-left px-4 py-2.5">Stage</th>
             <th className="text-left px-4 py-2.5">In client shortlist</th>
           </tr>
@@ -158,6 +173,19 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}
+              </td>
+              <td className="px-4 py-3">
+                <button
+                  onClick={() => setScreeningRowId(l.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
+                    l.screened
+                      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                      : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                  }`}
+                >
+                  <MessageCircleQuestion className="w-3 h-3" />
+                  {l.screened ? "Screened" : "Screen"}
+                </button>
               </td>
               <td className="px-4 py-3">
                 <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}>
@@ -183,6 +211,23 @@ export default function MandateCandidatesTable({ rows: initialRows }: { rows: Ma
           No candidates linked yet. Link candidates from their profile page.
         </p>
       )}
+
+      {screeningRowId && (() => {
+        const row = rows.find((r) => r.id === screeningRowId);
+        if (!row) return null;
+        return (
+          <MandateScreeningPanel
+            open={true}
+            onClose={() => setScreeningRowId(null)}
+            candidate={row.candidate}
+            mandateContext={mandateContext}
+            onSaved={() => {
+              setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, screened: true } : r)));
+              router.refresh();
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

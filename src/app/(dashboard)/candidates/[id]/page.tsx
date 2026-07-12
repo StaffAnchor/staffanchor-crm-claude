@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AssessmentForm from "./assessment-form";
+import MandateDiscussions from "./mandate-discussions";
 import NotesPanel from "./notes-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
@@ -536,6 +537,7 @@ export default async function CandidateDetailPage({
               </div>
             )}
             <AssessmentForm candidateId={candidate.id} assessment={assessment} />
+            <MandateDiscussions entries={(candidate.mandate_discussion_summaries ?? []) as never} />
           </Card>
         </div>
       </div>
