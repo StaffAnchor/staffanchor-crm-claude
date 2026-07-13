@@ -15,6 +15,7 @@ import DeleteMandateButton from "./delete-mandate-button";
 import PublishMandateButton from "./publish-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
 import DownloadJdButton from "./download-jd-button";
+import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
 import { AlertTriangle } from "lucide-react";
 
 export default async function MandateDetailPage({
@@ -157,6 +158,7 @@ export default async function MandateDetailPage({
       </div>
 
       <div className="space-y-6">
+        <QuickApplyFunnelPanel mandateId={id} />
         <BasicDetailsPanel
           mandateId={id}
           initial={{
