@@ -89,6 +89,7 @@ type SearchParams = {
   recruiter?: string;
   placed_only?: string;
   page?: string;
+  ids?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -142,6 +143,10 @@ export default async function CandidatesPage({
     }
     if (params.origin) qq = qq.eq("created_by", params.origin);
     if (params.incomplete) qq = qq.in("status", ["awaiting_input", "lead"]);
+    if (params.ids) {
+      const idList = params.ids.split(",").map((s) => s.trim()).filter(Boolean);
+      qq = qq.in("id", idList.length ? idList : ["00000000-0000-0000-0000-000000000000"]);
+    }
     if (params.from) qq = qq.gte("created_at", params.from);
     if (params.to) qq = qq.lte("created_at", `${params.to}T23:59:59.999`);
     if (recruiterCandidateIds) {

@@ -138,15 +138,33 @@ export default async function ReportsPage({
   const totalInvitesSent = (inviteLog ?? []).length;
   const totalCandidatesInvited = invitedIds.size;
   const invitedCandidates = rows.filter((c) => invitedIds.has(c.id));
-  const invitedCompletedCount = invitedCandidates.filter(
-    (c) => !["awaiting_input", "lead"].includes(c.status ?? "")
-  ).length;
-  const invitedStillIncompleteCount = totalCandidatesInvited - invitedCompletedCount;
+  const invitedCompletedIds = invitedCandidates
+    .filter((c) => !["awaiting_input", "lead"].includes(c.status ?? ""))
+    .map((c) => c.id);
+  const invitedStillIncompleteIds = invitedCandidates
+    .filter((c) => ["awaiting_input", "lead"].includes(c.status ?? ""))
+    .map((c) => c.id);
+  const invitedCompletedCount = invitedCompletedIds.length;
+  const invitedStillIncompleteCount = invitedStillIncompleteIds.length;
   const inviteConversionPct = pctOf(invitedCompletedCount, totalCandidatesInvited);
+  // Link each bar to the exact invited-candidate subset (via the `ids` filter
+  // on the Candidates page) rather than a broad status filter -- otherwise
+  // "Completed profile" would show every registered candidate, not just the
+  // handful who actually converted from this email.
   const inviteConversionItems: BarItem[] = withPct(
     [
-      { key: "completed", label: "Completed profile", count: invitedCompletedCount, href: "/candidates?status=registered" },
-      { key: "still_incomplete", label: "Still incomplete", count: invitedStillIncompleteCount, href: "/candidates?incomplete=1" },
+      {
+        key: "completed",
+        label: "Completed profile",
+        count: invitedCompletedCount,
+        href: invitedCompletedCount > 0 ? `/candidates?ids=${invitedCompletedIds.join(",")}` : "/candidates",
+      },
+      {
+        key: "still_incomplete",
+        label: "Still incomplete",
+        count: invitedStillIncompleteCount,
+        href: invitedStillIncompleteCount > 0 ? `/candidates?ids=${invitedStillIncompleteIds.join(",")}` : "/candidates",
+      },
     ],
     totalCandidatesInvited
   );
