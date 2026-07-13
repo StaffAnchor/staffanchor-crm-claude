@@ -417,10 +417,15 @@ export default function CreateMandateForm({
         <div className="flex gap-2">
           <select
             value={form.cityPick}
-            onChange={(e) => setForm((f) => ({ ...f, cityPick: e.target.value }))}
+            onChange={(e) => {
+              // Adds immediately on selection -- a separate "Add" click
+              // after picking from this dropdown was easy to miss.
+              addCity(e.target.value);
+              setForm((f) => ({ ...f, cityPick: "" }));
+            }}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
           >
-            <option value="">Select city...</option>
+            <option value="">Select city to add...</option>
             {cityOptions
               .filter((c) => c !== "Other")
               .map((c) => (
@@ -429,16 +434,6 @@ export default function CreateMandateForm({
                 </option>
               ))}
           </select>
-          <button
-            type="button"
-            onClick={() => {
-              addCity(form.cityPick);
-              setForm((f) => ({ ...f, cityPick: "" }));
-            }}
-            className="shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
-          >
-            Add
-          </button>
         </div>
         <div className="flex gap-2 mt-1.5">
           <input
