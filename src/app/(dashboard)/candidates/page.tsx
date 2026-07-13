@@ -88,7 +88,10 @@ type SearchParams = {
   to?: string;
   recruiter?: string;
   placed_only?: string;
+  page?: string;
 };
+
+const PAGE_SIZE = 100;
 
 export default async function CandidatesPage({
   searchParams,
@@ -98,63 +101,96 @@ export default async function CandidatesPage({
   const params = await searchParams;
   const supabase = await createClient();
 
-  let query = supabase
+  const pageNum = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
+  const rangeFrom = (pageNum - 1) * PAGE_SIZE;
+  const rangeTo = rangeFrom + PAGE_SIZE - 1;
+
+  // Resolved once, up front, since it requires its own async lookup and is
+  // then reused identically by both the page-of-rows query and the
+  // filtered-count query below (so pagination and the "N candidates" total
+  // always agree on exactly the same underlying candidate ID set).
+  let recruiterCandidateIds: string[] | null = null;
+  if (params.recruiter) {
+    let linkQuery = supabase.from("candidate_mandate_links").select("candidate_id").eq("added_by", params.recruiter);
+    if (params.placed_only) linkQuery = linkQuery.eq("stage", "placed");
+    const { data: recruiterLinks } = await linkQuery;
+    recruiterCandidateIds = Array.from(new Set((recruiterLinks ?? []).map((l) => l.candidate_id)));
+  }
+
+  // Applies every filter to a given query builder. Shared by the data query
+  // (below) and the count query so page-of-rows and total-matching-count
+  // can never drift out of sync with each other.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function applyFilters(q: any): any {
+    let qq = q;
+    if (params.q) {
+      qq = qq.or(
+        `full_name.ilike.%${params.q}%,email.ilike.%${params.q}%,current_employer.ilike.%${params.q}%`
+      );
+    }
+    if (params.category) qq = qq.eq("category", params.category);
+    if (params.status) qq = qq.eq("status", params.status);
+    if (params.min_ctc) qq = qq.gte("current_fixed_ctc", Number(params.min_ctc));
+    if (params.max_ctc) qq = qq.lte("current_fixed_ctc", Number(params.max_ctc));
+    if (params.min_exp) qq = qq.gte("total_experience_years", Number(params.min_exp));
+    if (params.sub_domain) qq = qq.eq("sub_domain", params.sub_domain);
+    if (params.location) qq = qq.ilike("current_location", `%${params.location}%`);
+    if (params.secondary_domain) qq = qq.contains("secondary_sub_domains", [params.secondary_domain]);
+    if (params.current_industry) qq = qq.eq("current_industry", params.current_industry);
+    if (params.previous_industry) {
+      qq = qq.contains("industries", [params.previous_industry]).neq("current_industry", params.previous_industry);
+    }
+    if (params.origin) qq = qq.eq("created_by", params.origin);
+    if (params.incomplete) qq = qq.in("status", ["awaiting_input", "lead"]);
+    if (params.from) qq = qq.gte("created_at", params.from);
+    if (params.to) qq = qq.lte("created_at", `${params.to}T23:59:59.999`);
+    if (recruiterCandidateIds) {
+      qq = qq.in("id", recruiterCandidateIds.length ? recruiterCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
+    }
+    if (params.notice_period) qq = qq.eq("notice_period", params.notice_period);
+    if (params.recommendation) {
+      qq = qq.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
+    }
+    if (params.job_stability) {
+      qq = qq.eq("recruiter_assessment->>job_stability", params.job_stability);
+    }
+    if (params.relocation_verified) {
+      qq = qq.eq("recruiter_assessment->>relocation_verified", params.relocation_verified);
+    }
+    if (params.min_communication) {
+      qq = qq.gte("recruiter_assessment->>communication_score", params.min_communication);
+    }
+    if (params.min_confidence) {
+      qq = qq.gte("recruiter_assessment->>confidence_score", params.min_confidence);
+    }
+    if (params.min_coachability) {
+      qq = qq.gte("recruiter_assessment->>coachability_score", params.min_coachability);
+    }
+    return qq;
+  }
+
+  const baseQuery = supabase
     .from("candidates")
     .select(
       "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, current_industry, industries, total_experience_years, current_fixed_ctc, notice_period, current_employment_status, status, created_by, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
     )
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range(rangeFrom, rangeTo);
+  const query = applyFilters(baseQuery);
 
-  if (params.q) {
-    query = query.or(
-      `full_name.ilike.%${params.q}%,email.ilike.%${params.q}%,current_employer.ilike.%${params.q}%`
-    );
-  }
-  if (params.category) query = query.eq("category", params.category);
-  if (params.status) query = query.eq("status", params.status);
-  if (params.min_ctc) query = query.gte("current_fixed_ctc", Number(params.min_ctc));
-  if (params.max_ctc) query = query.lte("current_fixed_ctc", Number(params.max_ctc));
-  if (params.min_exp) query = query.gte("total_experience_years", Number(params.min_exp));
-  if (params.sub_domain) query = query.eq("sub_domain", params.sub_domain);
-  if (params.location) query = query.ilike("current_location", `%${params.location}%`);
-  if (params.secondary_domain) query = query.contains("secondary_sub_domains", [params.secondary_domain]);
-  if (params.current_industry) query = query.eq("current_industry", params.current_industry);
-  if (params.previous_industry) {
-    query = query.contains("industries", [params.previous_industry]).neq("current_industry", params.previous_industry);
-  }
-  if (params.origin) query = query.eq("created_by", params.origin);
-  if (params.incomplete) query = query.in("status", ["awaiting_input", "lead"]);
-  if (params.from) query = query.gte("created_at", params.from);
-  if (params.to) query = query.lte("created_at", `${params.to}T23:59:59.999`);
-  if (params.recruiter) {
-    let linkQuery = supabase.from("candidate_mandate_links").select("candidate_id").eq("added_by", params.recruiter);
-    if (params.placed_only) linkQuery = linkQuery.eq("stage", "placed");
-    const { data: recruiterLinks } = await linkQuery;
-    const candidateIds = Array.from(new Set((recruiterLinks ?? []).map((l) => l.candidate_id)));
-    query = query.in("id", candidateIds.length ? candidateIds : ["00000000-0000-0000-0000-000000000000"]);
-  }
-  if (params.notice_period) query = query.eq("notice_period", params.notice_period);
-  if (params.recommendation) {
-    query = query.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
-  }
-  if (params.job_stability) {
-    query = query.eq("recruiter_assessment->>job_stability", params.job_stability);
-  }
-  if (params.relocation_verified) {
-    query = query.eq("recruiter_assessment->>relocation_verified", params.relocation_verified);
-  }
-  if (params.min_communication) {
-    query = query.gte("recruiter_assessment->>communication_score", params.min_communication);
-  }
-  if (params.min_confidence) {
-    query = query.gte("recruiter_assessment->>confidence_score", params.min_confidence);
-  }
-  if (params.min_coachability) {
-    query = query.gte("recruiter_assessment->>coachability_score", params.min_coachability);
-  }
+  const { data: candidates, error } = (await query) as {
+    data: Array<Record<string, unknown> & { id: string; resume_file_url: string | null }> | null;
+    error: { message: string } | null;
+  };
 
-  const { data: candidates, error } = await query;
+  const countQuery = applyFilters(
+    supabase.from("candidates").select("id", { count: "exact", head: true })
+  );
+  const { count: filteredCount } = (await countQuery) as { count: number | null };
+  const totalFiltered = filteredCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  const rangeStart = totalFiltered === 0 ? 0 : rangeFrom + 1;
+  const rangeEnd = Math.min(rangeFrom + PAGE_SIZE, totalFiltered);
 
   // Batch-generate resume signed URLs in one Storage API call instead of
   // leaving each table row to fire its own createSignedUrl request on
@@ -265,7 +301,10 @@ export default async function CandidatesPage({
   ];
 
   function qs(overrides: Record<string, string | undefined>) {
-    const merged = { ...params, ...overrides };
+    // Any filter change resets back to page 1 unless the override is
+    // specifically a page-navigation link (which sets `page` itself) --
+    // otherwise switching filters could silently land on a now out-of-range page.
+    const merged = { ...params, page: undefined, ...overrides };
     const sp = new URLSearchParams();
     Object.entries(merged).forEach(([k, v]) => {
       if (v) sp.set(k, v);
@@ -714,7 +753,68 @@ export default async function CandidatesPage({
         candidates={candidatesWithResumeUrls as never}
         openMandates={openMandates ?? []}
         mandateLinksByCandidate={mandateLinksByCandidate}
+        totalCount={totalFiltered}
+        rangeStart={rangeStart}
+        rangeEnd={rangeEnd}
       />
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-3">
+          <p className="text-[12px] text-slate-500 dark:text-slate-400">
+            Page {pageNum} of {totalPages}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <Link
+              href={qs({ page: pageNum > 1 ? String(pageNum - 1) : undefined })}
+              aria-disabled={pageNum <= 1}
+              className={`text-[12.5px] font-medium px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 ${
+                pageNum <= 1
+                  ? "pointer-events-none opacity-40 text-slate-400"
+                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              ← Prev
+            </Link>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - pageNum) <= 2)
+              .reduce<(number | "ellipsis")[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("ellipsis");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "ellipsis" ? (
+                  <span key={`e${i}`} className="text-[12px] text-slate-400 px-1">
+                    …
+                  </span>
+                ) : (
+                  <Link
+                    key={p}
+                    href={qs({ page: p === 1 ? undefined : String(p) })}
+                    className={`text-[12.5px] font-medium w-8 h-8 flex items-center justify-center rounded-lg ${
+                      p === pageNum
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {p}
+                  </Link>
+                )
+              )}
+            <Link
+              href={qs({ page: pageNum < totalPages ? String(pageNum + 1) : undefined })}
+              aria-disabled={pageNum >= totalPages}
+              className={`text-[12.5px] font-medium px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 ${
+                pageNum >= totalPages
+                  ? "pointer-events-none opacity-40 text-slate-400"
+                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              Next →
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

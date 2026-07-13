@@ -494,10 +494,19 @@ export default function CandidatesTable({
   candidates,
   openMandates,
   mandateLinksByCandidate = {},
+  totalCount,
+  rangeStart,
+  rangeEnd,
 }: {
   candidates: CandidateRow[];
   openMandates: OpenMandate[];
   mandateLinksByCandidate?: Record<string, MandateLink[]>;
+  // When provided (server knows the real filtered total, not just this
+  // page's row count), the header switches from "N candidates" to
+  // "Showing A-B of N candidates" so pagination doesn't look like truncation.
+  totalCount?: number;
+  rangeStart?: number;
+  rangeEnd?: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -709,7 +718,9 @@ export default function CandidatesTable({
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-ros-lg overflow-visible shadow-ros-sm">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 relative">
         <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
-          {candidates.length} candidate{candidates.length === 1 ? "" : "s"}
+          {typeof totalCount === "number" && typeof rangeStart === "number" && typeof rangeEnd === "number"
+            ? `Showing ${totalCount === 0 ? 0 : rangeStart}–${rangeEnd} of ${totalCount} candidate${totalCount === 1 ? "" : "s"}`
+            : `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`}
         </p>
         <button
           onClick={() => setPanelOpen((v) => !v)}
