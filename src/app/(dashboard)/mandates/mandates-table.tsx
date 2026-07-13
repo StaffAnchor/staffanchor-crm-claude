@@ -31,6 +31,15 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 
 const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled"];
 
+// Matches the label set on the Candidates table (candidates-table.tsx) and
+// the Mandates sidebar filter (page.tsx) for these same category values --
+// plain CSS `capitalize` renders "b2b_sales" as "B2b Sales", not "B2B Sales".
+const CATEGORY_LABEL: Record<string, string> = {
+  b2b_sales: "B2B Sales",
+  b2c_sales: "B2C Sales",
+  non_sales: "Non-Sales",
+};
+
 type ColumnDef = {
   key: string;
   label: string;
@@ -67,7 +76,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Function / Domain",
     render: (m) => (
       <div>
-        <span className="text-slate-700 dark:text-slate-300 capitalize">{(m.category ?? "—").replace("_", " ")}</span>
+        <span className="text-slate-700 dark:text-slate-300">{m.category ? CATEGORY_LABEL[m.category] ?? m.category : "—"}</span>
         {m.sub_domain && <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{m.sub_domain}</div>}
       </div>
     ),

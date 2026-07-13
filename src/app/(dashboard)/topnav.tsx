@@ -53,7 +53,7 @@ export default function TopNav({
           </span>
         </Link>
 
-        <nav className="flex items-center gap-1 text-[13px]">
+        <nav className="flex items-center gap-1 text-[13px] min-w-0 shrink overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {navLinks.map((link) => {
             const active = link.enabled && pathname.startsWith(link.href);
             if (!link.enabled) {
@@ -86,9 +86,9 @@ export default function TopNav({
           })}
         </nav>
 
-        <div className="flex-1" />
+        <div className="flex-1 min-w-2" />
 
-        <div className="hidden lg:flex items-center gap-2 bg-slate-900/50 hover:border-slate-700 focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-lg px-3 py-1.5 w-64 border border-slate-800">
+        <div className="hidden lg:flex items-center gap-2 bg-slate-900/50 hover:border-slate-700 focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-lg px-3 py-1.5 w-64 min-w-[8rem] shrink border border-slate-800">
           <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" strokeWidth={2} />
           <input
             value={search}
@@ -101,6 +101,7 @@ export default function TopNav({
           <kbd className="text-[10px] text-slate-500 dark:text-slate-400 bg-white/[0.06] rounded px-1.5 py-0.5 flex items-center justify-center">/</kbd>
         </div>
 
+        <div className="flex items-center gap-3 shrink-0">
         <div className="relative">
           <button
             onClick={() => setCreateOpen((v) => !v)}
@@ -167,6 +168,7 @@ export default function TopNav({
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
     </header>

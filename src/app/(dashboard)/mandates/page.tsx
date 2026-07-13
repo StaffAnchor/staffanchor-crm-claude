@@ -16,6 +16,15 @@ import MandateRequestLinkPanel from "@/components/mandate-request-link-panel";
 // dedicated "filter by field" rail instead of being folded into the tiles.
 type FilterGroup = { key: string; label: string; values: { value: string; label: string }[] };
 
+// Matches the label set already used on the Candidates table (candidates-table.tsx)
+// for these same three category values -- kept as a local constant here since
+// there's no shared category-label module in the codebase yet.
+const CATEGORY_LABEL: Record<string, string> = {
+  b2b_sales: "B2B Sales",
+  b2c_sales: "B2C Sales",
+  non_sales: "Non-Sales",
+};
+
 function daysOpen(createdAt: string) {
   const ms = Date.now() - new Date(createdAt).getTime();
   return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
@@ -118,7 +127,7 @@ export default async function MandatesPage({
       label: "Function / Domain",
       values: Array.from(new Set((allMandates ?? []).map((m) => m.category).filter(Boolean) as string[]))
         .sort()
-        .map((v) => ({ value: v, label: v.replace("_", " ") })),
+        .map((v) => ({ value: v, label: CATEGORY_LABEL[v] ?? v.replace("_", " ") })),
     },
     {
       key: "city",
