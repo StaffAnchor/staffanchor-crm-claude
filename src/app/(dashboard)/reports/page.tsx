@@ -15,6 +15,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ShieldCheck,
+  Mail,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import AiNarrativeBanner from "./ai-narrative-banner";
@@ -120,6 +121,35 @@ export default async function ReportsPage({
   });
 
   const incompleteProfilesCount = rows.filter((c) => ["awaiting_input", "lead"].includes(c.status ?? "")).length;
+
+  // ---- Profile-completion email conversion ----
+  // The "Send profile completion emails" bulk action (candidates-table.tsx
+  // -> /api/send-invite) never writes anything onto the candidate row --
+  // the only record of a send is an audit_log entry with
+  // action = 'completion_invite_sent'. We treat "completed" as: invited at
+  // least once, and current status has since moved off awaiting_input/lead
+  // (i.e. graduated to registered or further along the pipeline).
+  const { data: inviteLog } = await supabase
+    .from("audit_log")
+    .select("entity_id, at")
+    .eq("entity", "candidate")
+    .eq("action", "completion_invite_sent");
+  const invitedIds = new Set((inviteLog ?? []).map((r) => r.entity_id));
+  const totalInvitesSent = (inviteLog ?? []).length;
+  const totalCandidatesInvited = invitedIds.size;
+  const invitedCandidates = rows.filter((c) => invitedIds.has(c.id));
+  const invitedCompletedCount = invitedCandidates.filter(
+    (c) => !["awaiting_input", "lead"].includes(c.status ?? "")
+  ).length;
+  const invitedStillIncompleteCount = totalCandidatesInvited - invitedCompletedCount;
+  const inviteConversionPct = pctOf(invitedCompletedCount, totalCandidatesInvited);
+  const inviteConversionItems: BarItem[] = withPct(
+    [
+      { key: "completed", label: "Completed profile", count: invitedCompletedCount, href: "/candidates?status=registered" },
+      { key: "still_incomplete", label: "Still incomplete", count: invitedStillIncompleteCount, href: "/candidates?incomplete=1" },
+    ],
+    totalCandidatesInvited
+  );
 
   const needsSchedulingCount = (links ?? []).filter((l) => l.stage === "client_interview" && !l.confirmed_interview_at).length;
   const awaitingOutcomeCount = (links ?? []).filter(
@@ -473,6 +503,32 @@ export default async function ReportsPage({
             );
           })}
         </div>
+      </Card>
+
+      {/* Profile-completion email conversion -- mails sent (audit_log,
+          since sends aren't recorded on the candidate row itself) vs. how
+          many of those invited candidates have since completed their
+          profile (status moved off awaiting_input/lead). */}
+      <Card className="mb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Mail className="w-4 h-4 text-blue-500" />
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Profile-completion email conversion</h2>
+          <span className="text-[10.5px] text-slate-400 ml-auto">
+            {totalInvitesSent} email{totalInvitesSent === 1 ? "" : "s"} sent · {totalCandidatesInvited} candidate
+            {totalCandidatesInvited === 1 ? "" : "s"} invited
+          </span>
+        </div>
+        {totalCandidatesInvited === 0 ? (
+          <p className="text-[13px] text-slate-400 mt-2">No profile-completion emails sent yet.</p>
+        ) : (
+          <>
+            <p className="text-[22px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none mt-2 mb-3">
+              {inviteConversionPct}%
+              <span className="text-[12px] font-normal text-slate-400 ml-2">conversion rate</span>
+            </p>
+            <ReportBarList items={inviteConversionItems} colorClass="bg-blue-500/80" />
+          </>
+        )}
       </Card>
 
       {topCategory && topCategory.count > 0 && (
