@@ -24,12 +24,27 @@ import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
 import WeekOffPicker, { emptyWeekOffValue, type WeekOffValue } from "@/components/ui/week-off-picker";
 
-export default function CreateMandateForm({ existingClients }: { existingClients: string[] }) {
+export type RecruiterOption = { id: string; full_name: string | null; email: string };
+
+export default function CreateMandateForm({
+  existingClients,
+  recruiters = [],
+  currentUserId,
+}: {
+  existingClients: string[];
+  // Internal-only field -- never surfaced to clients or candidates in any
+  // public/portal view. Every mandate needs an owner for internal tracking
+  // ("who's this mandate's recruiter"), so it's required at creation time
+  // rather than left to be set later and forgotten.
+  recruiters?: RecruiterOption[];
+  currentUserId?: string;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [form, setForm] = useState({
     client_name: "",
     role_title: "",
+    owner_id: currentUserId ?? "",
     category: "",
     subDomains: [] as string[],
     subDomainKeywords: "",
@@ -159,6 +174,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
       .insert({
         client_name: form.client_name,
         role_title: form.role_title,
+        owner_id: form.owner_id,
         category: form.category || null,
         sub_domains: subDomains,
         sub_domain: subDomains.join(", ") || null,
@@ -228,6 +244,7 @@ export default function CreateMandateForm({ existingClients }: { existingClients
     setForm({
       client_name: "",
       role_title: "",
+      owner_id: currentUserId ?? "",
       category: "",
       subDomains: [],
       subDomainKeywords: "",
@@ -306,6 +323,25 @@ export default function CreateMandateForm({ existingClients }: { existingClients
         <option value="b2c_sales">B2C Sales</option>
         <option value="non_sales">Non-Sales</option>
       </select>
+
+      <div>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+          Recruiter (internal only — never shown to the client or candidates)
+        </p>
+        <select
+          required
+          value={form.owner_id}
+          onChange={(e) => setForm((f) => ({ ...f, owner_id: e.target.value }))}
+          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+        >
+          <option value="">Select recruiter...</option>
+          {recruiters.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.full_name ?? r.email}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div>
         <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">

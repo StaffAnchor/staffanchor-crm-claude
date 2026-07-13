@@ -49,6 +49,18 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (m) => <span className="text-slate-700 dark:text-slate-300 truncate block max-w-[160px]">{m.client_name}</span>,
   },
   {
+    key: "ownerName",
+    label: "Recruiter",
+    // Internal-only tracking field -- who owns this mandate. Never sent to
+    // any client- or candidate-facing view.
+    render: (m) =>
+      m.ownerName ? (
+        <span className="text-slate-700 dark:text-slate-300 truncate block max-w-[140px]">{m.ownerName}</span>
+      ) : (
+        <span className="text-[11px] text-amber-600">Unassigned</span>
+      ),
+  },
+  {
     key: "category",
     label: "Function / Domain",
     render: (m) => (
@@ -144,6 +156,7 @@ const COLUMN_DEFS: ColumnDef[] = [
 const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
 const DEFAULT_VISIBLE = new Set([
   "client_name",
+  "ownerName",
   "category",
   "city",
   "status",

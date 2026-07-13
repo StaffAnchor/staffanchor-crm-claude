@@ -14,7 +14,7 @@ import MandateRequestLinkPanel from "@/components/mandate-request-link-panel";
 // that narrows the table via a query param -- same underlying mechanism
 // the status stat-tiles already use, just organized Zoho-style as a
 // dedicated "filter by field" rail instead of being folded into the tiles.
-type FilterGroup = { key: string; label: string; values: string[] };
+type FilterGroup = { key: string; label: string; values: { value: string; label: string }[] };
 
 function daysOpen(createdAt: string) {
   const ms = Date.now() - new Date(createdAt).getTime();
@@ -24,19 +24,35 @@ function daysOpen(createdAt: string) {
 export default async function MandatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; category?: string; city?: string; client?: string }>;
+  searchParams: Promise<{ status?: string; category?: string; city?: string; client?: string; recruiter?: string }>;
 }) {
-  const { status, category, city, client } = await searchParams;
+  const { status, category, city, client, recruiter } = await searchParams;
   const supabase = await createClient();
+
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  // Every recruiter/admin in the org, for the "New mandate" owner picker and
+  // for resolving owner_id -> a display name everywhere else on this page.
+  const { data: recruiterProfiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .order("full_name", { ascending: true });
+  const profileNameById: Record<string, string> = {};
+  (recruiterProfiles ?? []).forEach((p) => {
+    profileNameById[p.id] = p.full_name ?? p.email;
+  });
 
   let query = supabase
     .from("mandates")
-    .select("id, client_name, role_title, category, sub_domain, city, status, created_at, auto_match_results")
+    .select("id, client_name, role_title, category, sub_domain, city, status, created_at, auto_match_results, owner_id")
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
   if (category) query = query.eq("category", category);
   if (city) query = query.eq("city", city);
   if (client) query = query.eq("client_name", client);
+  if (recruiter) query = query.eq("owner_id", recruiter);
 
   const { data: mandates } = await query;
 
@@ -68,7 +84,7 @@ export default async function MandatesPage({
   // round trips even though they're reading the same rows.
   const { data: allMandates } = await supabase
     .from("mandates")
-    .select("id, client_name, status, created_at, category, city");
+    .select("id, client_name, status, created_at, category, city, owner_id");
   const existingClients = Array.from(
     new Set((allMandates ?? []).map((r) => r.client_name).filter(Boolean))
   ).sort();
@@ -85,17 +101,30 @@ export default async function MandatesPage({
     {
       key: "category",
       label: "Function / Domain",
-      values: Array.from(new Set((allMandates ?? []).map((m) => m.category).filter(Boolean) as string[])).sort(),
+      values: Array.from(new Set((allMandates ?? []).map((m) => m.category).filter(Boolean) as string[]))
+        .sort()
+        .map((v) => ({ value: v, label: v.replace("_", " ") })),
     },
     {
       key: "city",
       label: "City",
-      values: Array.from(new Set((allMandates ?? []).map((m) => m.city).filter(Boolean) as string[])).sort(),
+      values: Array.from(new Set((allMandates ?? []).map((m) => m.city).filter(Boolean) as string[]))
+        .sort()
+        .map((v) => ({ value: v, label: v })),
     },
     {
       key: "client",
       label: "Client",
-      values: existingClients,
+      values: existingClients.map((v) => ({ value: v, label: v })),
+    },
+    {
+      key: "recruiter",
+      label: "Recruiter",
+      // Only recruiters who actually own at least one mandate -- avoids a
+      // long dead list of every team member ever added.
+      values: Array.from(new Set((allMandates ?? []).map((m) => m.owner_id).filter(Boolean) as string[]))
+        .map((id) => ({ value: id, label: profileNameById[id] ?? "Unknown" }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     },
   ];
 
@@ -139,6 +168,8 @@ export default async function MandatesPage({
       linked,
       submitted,
       signals,
+      ownerId: m.owner_id ?? null,
+      ownerName: m.owner_id ? profileNameById[m.owner_id] ?? "Unknown" : null,
       topMatch: topMatch
         ? { candidateId: topMatch.candidate_id, name: topMatch.full_name, score: topMatch.score, reason: topMatch.reason }
         : null,
@@ -153,11 +184,11 @@ export default async function MandatesPage({
     { label: "Aging, no submissions", value: agingCount, icon: AlertTriangle },
   ];
 
-  const activeFilters: Record<string, string | undefined> = { status, category, city, client };
+  const activeFilters: Record<string, string | undefined> = { status, category, city, client, recruiter };
   // Clicking an already-active value clears that one facet; clicking any
   // other value replaces it -- every other active facet is preserved either
   // way, so filters stack (e.g. category=b2b_sales&city=Mumbai together).
-  function filterHref(key: "category" | "city" | "client", value: string) {
+  function filterHref(key: "category" | "city" | "client" | "recruiter", value: string) {
     const next = { ...activeFilters, [key]: activeFilters[key] === value ? undefined : value };
     const qs = new URLSearchParams();
     Object.entries(next).forEach(([k, v]) => {
@@ -166,7 +197,7 @@ export default async function MandatesPage({
     const s = qs.toString();
     return s ? `/mandates?${s}` : "/mandates";
   }
-  const hasAnyFilter = Boolean(status || category || city || client);
+  const hasAnyFilter = Boolean(status || category || city || client || recruiter);
 
   return (
     <div className="flex gap-6">
@@ -191,19 +222,19 @@ export default async function MandatesPage({
               ) : (
                 <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
                   {group.values.map((v) => {
-                    const isActive = activeFilters[group.key] === v;
+                    const isActive = activeFilters[group.key] === v.value;
                     return (
                       <Link
-                        key={v}
-                        href={filterHref(group.key as "category" | "city" | "client", v)}
+                        key={v.value}
+                        href={filterHref(group.key as "category" | "city" | "client" | "recruiter", v.value)}
                         className={`block truncate text-[12px] rounded-md px-2 py-1 transition-colors duration-150 ease-ros ${
                           isActive
                             ? "bg-blue-50 text-blue-700 font-medium"
                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800"
                         }`}
-                        title={v}
+                        title={v.label}
                       >
-                        {group.key === "category" ? v.replace("_", " ") : v}
+                        {v.label}
                       </Link>
                     );
                   })}
@@ -247,7 +278,11 @@ export default async function MandatesPage({
           <MandateRequestLinkPanel />
           <Card>
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New mandate</h2>
-            <CreateMandateForm existingClients={existingClients} />
+            <CreateMandateForm
+              existingClients={existingClients}
+              recruiters={recruiterProfiles ?? []}
+              currentUserId={currentUser?.id}
+            />
           </Card>
         </div>
       </div>

@@ -34,6 +34,10 @@ export type MandateSummary = {
   submitted: number;
   signals: HealthSignal[];
   topMatch: TopMatch | null;
+  // Internal-only -- who owns this mandate for tracking purposes. Never
+  // rendered on any client- or candidate-facing surface.
+  ownerId: string | null;
+  ownerName: string | null;
 };
 
 // Health-signal quick view: a slide-over drawer that surfaces the same
