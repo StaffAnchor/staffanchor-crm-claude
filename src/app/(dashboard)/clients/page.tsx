@@ -22,12 +22,17 @@ export default async function ClientsPage({
     .select("id, name, industry, hq_city, website, created_at")
     .order("name", { ascending: true });
   if (q) query = query.ilike("name", `%${q}%`);
-  const { data: clients } = await query;
 
-  const { data: mandates } = await supabase.from("mandates").select("id, client_id, status, created_at");
-  const { data: links } = await supabase
-    .from("candidate_mandate_links")
-    .select("mandate_id, in_shortlist, stage");
+  // These three queries don't depend on each other, but were previously run
+  // one after another -- each one waiting on the last round-trip to finish
+  // before starting the next. Running them concurrently cuts this page's
+  // database wait time to roughly the slowest single query instead of the
+  // sum of all three, which is the main reason this page felt slow to load.
+  const [{ data: clients }, { data: mandates }, { data: links }] = await Promise.all([
+    query,
+    supabase.from("mandates").select("id, client_id, status, created_at"),
+    supabase.from("candidate_mandate_links").select("mandate_id, in_shortlist, stage"),
+  ]);
 
   const shortlistedByMandate: Record<string, number> = {};
   (links ?? []).forEach((l) => {
