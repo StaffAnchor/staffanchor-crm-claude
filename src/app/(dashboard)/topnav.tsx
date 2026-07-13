@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Plus, ChevronDown } from "lucide-react";
 import SignOutButton from "./sign-out-button";
 import ThemeToggle from "@/components/theme-toggle";
@@ -30,12 +30,29 @@ export default function TopNav({
   const [menuOpen, setMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const createRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   function handleSearchKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && search.trim()) {
       router.push(`/candidates?q=${encodeURIComponent(search.trim())}`);
     }
   }
+
+  // Click-outside-to-close instead of onBlur+setTimeout: the old blur-based
+  // close raced against the Link's own click/navigation (a mousedown that
+  // shifts focus fires blur *before* the click event completes), so a
+  // dropdown item could silently fail to navigate on some devices/browsers
+  // -- this is what was blocking "New candidate"/"New mandate" for at least
+  // one recruiter even though nothing in the app is actually role-gated.
+  useEffect(() => {
+    function handlePointerDown(e: MouseEvent) {
+      if (createRef.current && !createRef.current.contains(e.target as Node)) setCreateOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
 
   return (
     <header className="bg-[#12141c] text-slate-200 sticky top-0 z-30">
@@ -102,10 +119,9 @@ export default function TopNav({
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-        <div className="relative">
+        <div className="relative" ref={createRef}>
           <button
             onClick={() => setCreateOpen((v) => !v)}
-            onBlur={() => setTimeout(() => setCreateOpen(false), 150)}
             className="ros-focusable flex items-center gap-1 bg-blue-600 hover:bg-blue-500 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-white text-[13px] font-medium rounded-lg pl-2.5 pr-2 py-1.5"
             aria-label="Create new"
             aria-haspopup="menu"
@@ -121,12 +137,14 @@ export default function TopNav({
             >
               <Link
                 href="/candidates/new"
+                onClick={() => setCreateOpen(false)}
                 className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:hover:bg-slate-700"
               >
                 New candidate
               </Link>
               <Link
                 href="/mandates"
+                onClick={() => setCreateOpen(false)}
                 className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:hover:bg-slate-700"
               >
                 New mandate
@@ -141,10 +159,9 @@ export default function TopNav({
 
         <NotificationBell />
 
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            onBlur={() => setTimeout(() => setMenuOpen(false), 150)}
             className="ros-focusable flex items-center gap-2"
             aria-label="Account menu"
             aria-haspopup="menu"

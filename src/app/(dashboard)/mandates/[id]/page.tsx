@@ -14,6 +14,7 @@ import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-cand
 import DeleteMandateButton from "./delete-mandate-button";
 import PublishMandateButton from "./publish-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
+import DownloadJdButton from "./download-jd-button";
 import { AlertTriangle } from "lucide-react";
 
 export default async function MandateDetailPage({
@@ -30,7 +31,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, candidates(id, full_name, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
+      "id, stage, in_shortlist, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
     )
     .eq("mandate_id", id);
 
@@ -97,7 +98,10 @@ export default async function MandateDetailPage({
             </p>
             <MandateStaffingControl mandateId={id} initialAssigned={assignedStaff} allProfiles={allStaffProfiles ?? []} />
           </div>
-          <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
+          <div className="flex items-center gap-2 shrink-0">
+            <DownloadJdButton mandateId={id} />
+            <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
+          </div>
         </div>
 
         {mandate.status === "draft" && <PublishMandateButton mandateId={id} staffCount={assignedStaff.length} />}

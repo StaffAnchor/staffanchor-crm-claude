@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MessageCircleQuestion } from "lucide-react";
+import { MessageCircleQuestion, Loader2, Mail } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
 
 const STAGE_COLOR: Record<string, string> = {
@@ -26,6 +26,7 @@ export type MandateCandidateRow = {
   candidate: {
     id: string;
     full_name: string;
+    email: string | null;
     category: string | null;
     sub_domain: string | null;
     total_experience_years: number | null;
@@ -53,6 +54,7 @@ export default function MandateCandidatesTable({
   const [rows, setRows] = useState(initialRows);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [emailingJd, setEmailingJd] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [screeningRowId, setScreeningRowId] = useState<string | null>(null);
 
@@ -93,6 +95,37 @@ export default function MandateCandidatesTable({
     setMessage({ type: "success", text: `Moved ${ids.length} candidate${ids.length === 1 ? "" : "s"} to the client shortlist.` });
   }
 
+  async function handleEmailJd() {
+    setEmailingJd(true);
+    setMessage(null);
+    const candidateIds = Array.from(selected)
+      .map((linkId) => rows.find((r) => r.id === linkId)?.candidate.id)
+      .filter((v): v is string => Boolean(v));
+    try {
+      const res = await fetch(`/api/mandates/${mandateContext.mandateId}/email-jd`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to email the JD.");
+      const sentCount = data.sent?.length ?? 0;
+      const failedCount = data.failed?.length ?? 0;
+      setMessage({
+        type: failedCount > 0 && sentCount === 0 ? "error" : "success",
+        text:
+          `JD emailed to ${sentCount} candidate${sentCount === 1 ? "" : "s"}.` +
+          (failedCount > 0
+            ? ` ${failedCount} failed (${data.failed.map((f: { name: string; reason: string }) => `${f.name}: ${f.reason}`).join(", ")}).`
+            : ""),
+      });
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to email the JD." });
+    } finally {
+      setEmailingJd(false);
+    }
+  }
+
   async function handleBulkUnlink() {
     if (!window.confirm(`Remove ${selected.size} candidate(s) from this mandate? This does not delete their profile.`)) return;
     setBusy(true);
@@ -127,6 +160,15 @@ export default function MandateCandidatesTable({
               className="rounded-lg bg-teal-500 hover:bg-teal-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
             >
               Move to client shortlist
+            </button>
+            <button
+              onClick={handleEmailJd}
+              disabled={emailingJd}
+              className="flex items-center gap-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
+              title="Emails the JD PDF to each selected candidate's email on file"
+            >
+              {emailingJd ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+              Email JD
             </button>
             <button
               onClick={handleBulkUnlink}
