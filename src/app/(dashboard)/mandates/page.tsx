@@ -214,35 +214,38 @@ export default async function MandatesPage({
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 grid grid-cols-3 gap-6">
-        <div className="col-span-2">
-          <div className="flex items-baseline justify-between mb-3">
-            <div>
-              <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Mandates</h1>
-              <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {(mandates ?? []).length} client role{(mandates ?? []).length === 1 ? "" : "s"}
-                {hasAnyFilter ? " matching current filters" : ""}
-              </p>
-            </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between mb-3">
+          <div>
+            <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Mandates</h1>
+            <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+              {(mandates ?? []).length} client role{(mandates ?? []).length === 1 ? "" : "s"}
+              {hasAnyFilter ? " matching current filters" : ""}
+            </p>
           </div>
-
-          <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {statTiles.map((t) => {
-                const Icon = t.icon;
-                const tile = (
-                  <StatTile label={t.label} value={t.value} icon={<Icon className="w-4 h-4" strokeWidth={2} />} accent={t.accent} className={t.href ? "cursor-pointer" : undefined} />
-                );
-                return t.href ? <Link key={t.label} href={t.href}>{tile}</Link> : <div key={t.label}>{tile}</div>;
-              })}
-            </div>
-          </div>
-
-          <MandatesTable mandates={mandateSummaries} totalCount={mandateSummaries.length} />
         </div>
-        <div className="space-y-6">
+
+        <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {statTiles.map((t) => {
+              const Icon = t.icon;
+              const tile = (
+                <StatTile label={t.label} value={t.value} icon={<Icon className="w-4 h-4" strokeWidth={2} />} accent={t.accent} className={t.href ? "cursor-pointer" : undefined} />
+              );
+              return t.href ? <Link key={t.label} href={t.href}>{tile}</Link> : <div key={t.label}>{tile}</div>;
+            })}
+          </div>
+        </div>
+
+        {/* Full-width dense table now that the create-mandate form has moved
+            below -- this is the primary real estate on the page, same as
+            Zoho's job-openings grid, rather than sharing the row with a
+            persistent right rail. */}
+        <MandatesTable mandates={mandateSummaries} totalCount={mandateSummaries.length} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <MandateRequestLinkPanel />
-          <Card className="sticky top-20">
+          <Card>
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New mandate</h2>
             <CreateMandateForm existingClients={existingClients} />
           </Card>

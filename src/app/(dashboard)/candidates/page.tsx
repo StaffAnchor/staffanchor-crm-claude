@@ -90,6 +90,7 @@ type SearchParams = {
   placed_only?: string;
   page?: string;
   ids?: string;
+  mandate?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -116,6 +117,18 @@ export default async function CandidatesPage({
     if (params.placed_only) linkQuery = linkQuery.eq("stage", "placed");
     const { data: recruiterLinks } = await linkQuery;
     recruiterCandidateIds = Array.from(new Set((recruiterLinks ?? []).map((l) => l.candidate_id)));
+  }
+
+  // Same resolve-then-reuse pattern as recruiterCandidateIds above, for the
+  // Mandates table's "Applications" column -- clicking the count needs to
+  // land here already filtered to just that mandate's linked candidates.
+  let mandateCandidateIds: string[] | null = null;
+  if (params.mandate) {
+    const { data: mandateLinks } = await supabase
+      .from("candidate_mandate_links")
+      .select("candidate_id")
+      .eq("mandate_id", params.mandate);
+    mandateCandidateIds = Array.from(new Set((mandateLinks ?? []).map((l) => l.candidate_id)));
   }
 
   // Applies every filter to a given query builder. Shared by the data query
@@ -151,6 +164,9 @@ export default async function CandidatesPage({
     if (params.to) qq = qq.lte("created_at", `${params.to}T23:59:59.999`);
     if (recruiterCandidateIds) {
       qq = qq.in("id", recruiterCandidateIds.length ? recruiterCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
+    }
+    if (mandateCandidateIds) {
+      qq = qq.in("id", mandateCandidateIds.length ? mandateCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
     }
     if (params.notice_period) qq = qq.eq("notice_period", params.notice_period);
     if (params.recommendation) {

@@ -75,7 +75,18 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "linked",
     label: "Applications",
-    render: (m) => <span className="text-slate-600 dark:text-slate-300 tabular-nums">{m.linked}</span>,
+    render: (m) =>
+      m.linked === 0 ? (
+        <span className="text-slate-400 tabular-nums">0</span>
+      ) : (
+        <Link
+          href={`/candidates?mandate=${m.id}`}
+          className="text-blue-700 dark:text-blue-400 hover:underline tabular-nums font-medium"
+          title={`View ${m.linked} candidate${m.linked === 1 ? "" : "s"} linked to this mandate`}
+        >
+          {m.linked}
+        </Link>
+      ),
   },
   {
     key: "submitted",
@@ -180,6 +191,15 @@ export default function MandatesTable({
   const [bulkMessage, setBulkMessage] = useState<string | null>(null);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [chosenStatus, setChosenStatus] = useState("");
+  const [pageNum, setPageNum] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Reset to page 1 whenever the underlying filtered set changes (a sidebar
+  // filter click, a status-tile click, etc.) so page 3 of a 40-row view
+  // doesn't silently show as an empty page 3 of a 4-row view.
+  useEffect(() => {
+    setPageNum(1);
+  }, [mandates]);
 
   useEffect(() => {
     const prefs = loadPrefs();
@@ -200,6 +220,12 @@ export default function MandatesTable({
   }, []);
 
   const visibleColumns = order.filter((k) => !hidden.has(k)).map((k) => columnsByKey.get(k)!).filter(Boolean);
+
+  const totalPages = Math.max(1, Math.ceil(mandates.length / PAGE_SIZE));
+  const safePageNum = Math.min(pageNum, totalPages);
+  const rangeStart = mandates.length === 0 ? 0 : (safePageNum - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(safePageNum * PAGE_SIZE, mandates.length);
+  const pagedMandates = mandates.slice((safePageNum - 1) * PAGE_SIZE, safePageNum * PAGE_SIZE);
 
   function move(key: string, dir: -1 | 1) {
     setOrder((prev) => {
@@ -246,7 +272,14 @@ export default function MandatesTable({
   }
 
   function toggleAll() {
-    setSelected((prev) => (prev.size === mandates.length ? new Set() : new Set(mandates.map((m) => m.id))));
+    // Selects/clears only the rows on the currently visible page -- matches
+    // how a paginated table reads: "select all" means "all of what I can
+    // see right now," not every mandate across every page.
+    setSelected((prev) =>
+      pagedMandates.every((m) => prev.has(m.id)) && pagedMandates.length > 0
+        ? new Set()
+        : new Set(pagedMandates.map((m) => m.id))
+    );
   }
 
   function clearSelection() {
@@ -295,9 +328,11 @@ export default function MandatesTable({
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-ros-lg overflow-visible shadow-ros-sm">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 relative">
         <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
-          {typeof totalCount === "number"
-            ? `${totalCount} mandate${totalCount === 1 ? "" : "s"}`
-            : `${mandates.length} mandate${mandates.length === 1 ? "" : "s"}`}
+          {mandates.length === 0
+            ? "0 mandates"
+            : `Showing ${rangeStart}–${rangeEnd} of ${typeof totalCount === "number" ? totalCount : mandates.length} mandate${
+                (typeof totalCount === "number" ? totalCount : mandates.length) === 1 ? "" : "s"
+              }`}
         </p>
         <button
           onClick={() => setPanelOpen((v) => !v)}
@@ -442,7 +477,7 @@ export default function MandatesTable({
               <th className="px-4 py-2.5 w-8 sticky left-0 top-0 z-30 bg-slate-50 dark:bg-slate-800/50">
                 <input
                   type="checkbox"
-                  checked={selected.size > 0 && selected.size === mandates.length}
+                  checked={pagedMandates.length > 0 && pagedMandates.every((m) => selected.has(m.id))}
                   onChange={toggleAll}
                   className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
                 />
@@ -458,7 +493,7 @@ export default function MandatesTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {mandates.map((m) => (
+            {pagedMandates.map((m) => (
               <tr
                 key={m.id}
                 className={`group hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-all duration-200 ease-ros ${
@@ -495,6 +530,56 @@ export default function MandatesTable({
 
       {mandates.length === 0 && (
         <EmptyState title="No mandates match this view" description="Try a different filter, or create a new mandate." />
+      )}
+
+      {mandates.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 dark:border-slate-800">
+          <p className="text-[11.5px] text-slate-400">
+            Page {safePageNum} of {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPageNum((p) => Math.max(1, p - 1))}
+              disabled={safePageNum === 1}
+              className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePageNum) <= 2)
+              .reduce<(number | "ellipsis")[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("ellipsis");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "ellipsis" ? (
+                  <span key={`e${i}`} className="text-[12px] text-slate-300 px-1">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPageNum(p)}
+                    className={`text-[12px] font-medium rounded-lg px-2.5 py-1 tabular-nums ${
+                      p === safePageNum
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setPageNum((p) => Math.min(totalPages, p + 1))}
+              disabled={safePageNum === totalPages}
+              className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
