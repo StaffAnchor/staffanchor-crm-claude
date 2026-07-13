@@ -24,7 +24,7 @@ import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
 import WeekOffPicker, { emptyWeekOffValue, type WeekOffValue } from "@/components/ui/week-off-picker";
 
-export type RecruiterOption = { id: string; full_name: string | null; email: string };
+export type RecruiterOption = { id: string; full_name: string | null; email: string; role?: string };
 
 export default function CreateMandateForm({
   existingClients,
@@ -33,9 +33,11 @@ export default function CreateMandateForm({
 }: {
   existingClients: string[];
   // Internal-only field -- never surfaced to clients or candidates in any
-  // public/portal view. Every mandate needs an owner for internal tracking
-  // ("who's this mandate's recruiter"), so it's required at creation time
-  // rather than left to be set later and forgotten.
+  // public/portal view. At least one recruiter or vendor is required at
+  // creation time (single source of truth is mandate_assignments -- see
+  // mandate-staffing-control.tsx on the detail page), rather than left to be
+  // set later and forgotten. More than one can be picked here, and more can
+  // always be added afterwards.
   recruiters?: RecruiterOption[];
   currentUserId?: string;
 }) {
@@ -44,7 +46,7 @@ export default function CreateMandateForm({
   const [form, setForm] = useState({
     client_name: "",
     role_title: "",
-    owner_id: currentUserId ?? "",
+    recruiterIds: currentUserId ? [currentUserId] : ([] as string[]),
     category: "",
     subDomains: [] as string[],
     subDomainKeywords: "",
@@ -166,6 +168,10 @@ export default function CreateMandateForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (form.recruiterIds.length === 0) {
+      setError("Select at least one recruiter or vendor.");
+      return;
+    }
     setSaving(true);
     setError("");
     const subDomains = resolvedSubDomains();
@@ -174,7 +180,6 @@ export default function CreateMandateForm({
       .insert({
         client_name: form.client_name,
         role_title: form.role_title,
-        owner_id: form.owner_id,
         category: form.category || null,
         sub_domains: subDomains,
         sub_domain: subDomains.join(", ") || null,
@@ -240,11 +245,24 @@ export default function CreateMandateForm({
       }).catch(() => {
         // Best-effort; recruiter can still click "Find matches" manually.
       });
+
+      // Staff every selected recruiter/vendor via the single shared
+      // mechanism (mandate_assignments) rather than a bespoke owner_id write
+      // -- this is what fires the in-app notification, and each call also
+      // triggers a best-effort email so nobody has to be watching the bell.
+      for (const recruiterId of form.recruiterIds) {
+        await supabase.rpc("assign_mandate_staff", { p_mandate_id: data.id, p_freelancer_id: recruiterId });
+        fetch("/api/notify-mandate-staff", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mandateId: data.id, freelancerId: recruiterId }),
+        }).catch(() => {});
+      }
     }
     setForm({
       client_name: "",
       role_title: "",
-      owner_id: currentUserId ?? "",
+      recruiterIds: currentUserId ? [currentUserId] : [],
       category: "",
       subDomains: [],
       subDomainKeywords: "",
@@ -326,21 +344,18 @@ export default function CreateMandateForm({
 
       <div>
         <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-          Recruiter (internal only — never shown to the client or candidates)
+          Recruiter / Vendor (internal only — never shown to the client or candidates){" "}
+          <span className="font-normal text-slate-400">at least one is required; add more anytime</span>
         </p>
-        <select
-          required
-          value={form.owner_id}
-          onChange={(e) => setForm((f) => ({ ...f, owner_id: e.target.value }))}
-          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-        >
-          <option value="">Select recruiter...</option>
-          {recruiters.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.full_name ?? r.email}
-            </option>
-          ))}
-        </select>
+        <MultiSelectChips
+          options={recruiters.map((r) => ({
+            value: r.id,
+            label: (r.full_name ?? r.email) + (r.role === "freelancer" ? " (vendor)" : ""),
+          }))}
+          selected={form.recruiterIds}
+          onChange={(next) => setForm((f) => ({ ...f, recruiterIds: next }))}
+          placeholder="Search recruiters / vendors..."
+        />
       </div>
 
       <div>
@@ -826,7 +841,8 @@ export default function CreateMandateForm({
       {error && <p className="text-xs text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={saving}
+        disabled={saving || form.recruiterIds.length === 0}
+        title={form.recruiterIds.length === 0 ? "Select at least one recruiter or vendor above" : undefined}
         className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 disabled:opacity-60"
       >
         {saving ? "Creating..." : "Create mandate"}

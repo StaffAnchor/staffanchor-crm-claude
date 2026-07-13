@@ -13,19 +13,19 @@ import { Rocket, Loader2, AlertTriangle } from "lucide-react";
 // recruiter has reviewed/edited the mandate's details below.
 export default function PublishMandateButton({
   mandateId,
-  ownerId,
+  staffCount,
 }: {
   mandateId: string;
-  // Internal recruiter-tracking field. Required before publish as a safety
-  // net for older drafts created before this became a mandatory field on
-  // the create form -- new mandates always have one already.
-  ownerId?: string | null;
+  // Internal recruiter/vendor staffing count (mandate_assignments). Required
+  // before publish as a safety net for older drafts created before this
+  // became mandatory at creation time -- new mandates always have one already.
+  staffCount: number;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const missingOwner = !ownerId;
+  const missingOwner = staffCount === 0;
 
   async function handlePublish() {
     if (missingOwner) return;
@@ -54,7 +54,7 @@ export default function PublishMandateButton({
         </p>
         {missingOwner && (
           <p className="text-[12px] text-amber-900 font-medium mt-1">
-            Assign a recruiter (above) before publishing -- required for internal tracking.
+            Assign a recruiter or vendor (above) before publishing -- required for internal tracking.
           </p>
         )}
         {error && <p className="text-[12px] text-red-600 mt-1">{error}</p>}

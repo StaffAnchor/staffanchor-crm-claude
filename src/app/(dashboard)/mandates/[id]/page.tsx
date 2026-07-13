@@ -13,8 +13,7 @@ import FindMatchesPanel from "./find-matches-panel";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import DeleteMandateButton from "./delete-mandate-button";
 import PublishMandateButton from "./publish-mandate-button";
-import MandateOwnerControl from "./mandate-owner-control";
-import StaffingPanel from "./staffing-panel";
+import MandateStaffingControl from "./mandate-staffing-control";
 import { AlertTriangle } from "lucide-react";
 
 export default async function MandateDetailPage({
@@ -71,6 +70,10 @@ export default async function MandateDetailPage({
     .select("id, full_name, email, role")
     .order("full_name");
 
+  const assignedStaff = (assignments ?? [])
+    .map((a) => a.profiles as unknown as { id: string; full_name: string | null; email: string; role: string } | null)
+    .filter((p): p is { id: string; full_name: string | null; email: string; role: string } => p !== null);
+
   const linkedCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean));
   const { data: allCandidates } = await supabase
     .from("candidates")
@@ -92,14 +95,12 @@ export default async function MandateDetailPage({
               {mandate.client_name} · {mandate.city ?? "—"} ·{" "}
               {mandate.category?.replace("_", " ")} / {mandate.sub_domain}
             </p>
-            <p className="text-[12.5px] mt-1">
-              <MandateOwnerControl mandateId={id} ownerId={mandate.owner_id} profiles={allStaffProfiles ?? []} />
-            </p>
+            <MandateStaffingControl mandateId={id} initialAssigned={assignedStaff} allProfiles={allStaffProfiles ?? []} />
           </div>
           <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
         </div>
 
-        {mandate.status === "draft" && <PublishMandateButton mandateId={id} ownerId={mandate.owner_id} />}
+        {mandate.status === "draft" && <PublishMandateButton mandateId={id} staffCount={assignedStaff.length} />}
 
         {staleLinks && staleLinks.length > 0 && (
           <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -251,13 +252,6 @@ export default async function MandateDetailPage({
           mandateId={id}
           initialMatches={mandate.auto_match_results ?? null}
           initialComputedAt={mandate.auto_match_computed_at ?? null}
-        />
-        <StaffingPanel
-          mandateId={id}
-          initialAssigned={(assignments ?? [])
-            .map((a) => a.profiles as unknown as { id: string; full_name: string | null; email: string; role: string } | null)
-            .filter((p): p is { id: string; full_name: string | null; email: string; role: string } => p !== null)}
-          allProfiles={allStaffProfiles ?? []}
         />
         <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />
         <ShortlistLinkPanel mandateId={id} existingToken={existingToken?.token ?? null} />

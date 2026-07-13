@@ -33,26 +33,41 @@ export default async function MandatesPage({
     data: { user: currentUser },
   } = await supabase.auth.getUser();
 
-  // Every recruiter/admin in the org, for the "New mandate" owner picker and
-  // for resolving owner_id -> a display name everywhere else on this page.
+  // Every recruiter/admin/vendor in the org, for the "New mandate" staffing
+  // picker and for resolving assignments -> display names everywhere else on
+  // this page.
   const { data: recruiterProfiles } = await supabase
     .from("profiles")
-    .select("id, full_name, email")
+    .select("id, full_name, email, role")
     .order("full_name", { ascending: true });
   const profileNameById: Record<string, string> = {};
   (recruiterProfiles ?? []).forEach((p) => {
     profileNameById[p.id] = p.full_name ?? p.email;
   });
 
+  // Single source of truth for "who's staffed on this mandate" -- a mandate
+  // can have more than one recruiter/vendor, so this is a full join rather
+  // than a single owner_id column (see mandate-staffing-control.tsx).
+  const { data: allAssignments } = await supabase.from("mandate_assignments").select("mandate_id, freelancer_id");
+  const staffIdsByMandate: Record<string, string[]> = {};
+  (allAssignments ?? []).forEach((a) => {
+    (staffIdsByMandate[a.mandate_id] ??= []).push(a.freelancer_id);
+  });
+
   let query = supabase
     .from("mandates")
-    .select("id, client_name, role_title, category, sub_domain, city, status, created_at, auto_match_results, owner_id")
+    .select("id, client_name, role_title, category, sub_domain, city, status, created_at, auto_match_results")
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
   if (category) query = query.eq("category", category);
   if (city) query = query.eq("city", city);
   if (client) query = query.eq("client_name", client);
-  if (recruiter) query = query.eq("owner_id", recruiter);
+  if (recruiter) {
+    const mandateIdsForRecruiter = Object.entries(staffIdsByMandate)
+      .filter(([, ids]) => ids.includes(recruiter))
+      .map(([mandateId]) => mandateId);
+    query = query.in("id", mandateIdsForRecruiter.length ? mandateIdsForRecruiter : ["00000000-0000-0000-0000-000000000000"]);
+  }
 
   const { data: mandates } = await query;
 
@@ -84,7 +99,7 @@ export default async function MandatesPage({
   // round trips even though they're reading the same rows.
   const { data: allMandates } = await supabase
     .from("mandates")
-    .select("id, client_name, status, created_at, category, city, owner_id");
+    .select("id, client_name, status, created_at, category, city");
   const existingClients = Array.from(
     new Set((allMandates ?? []).map((r) => r.client_name).filter(Boolean))
   ).sort();
@@ -120,9 +135,9 @@ export default async function MandatesPage({
     {
       key: "recruiter",
       label: "Recruiter",
-      // Only recruiters who actually own at least one mandate -- avoids a
-      // long dead list of every team member ever added.
-      values: Array.from(new Set((allMandates ?? []).map((m) => m.owner_id).filter(Boolean) as string[]))
+      // Only recruiters/vendors actually staffed on at least one mandate --
+      // avoids a long dead list of every team member ever added.
+      values: Array.from(new Set(Object.values(staffIdsByMandate).flat()))
         .map((id) => ({ value: id, label: profileNameById[id] ?? "Unknown" }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     },
@@ -168,8 +183,8 @@ export default async function MandatesPage({
       linked,
       submitted,
       signals,
-      ownerId: m.owner_id ?? null,
-      ownerName: m.owner_id ? profileNameById[m.owner_id] ?? "Unknown" : null,
+      staffIds: staffIdsByMandate[m.id] ?? [],
+      staffNames: (staffIdsByMandate[m.id] ?? []).map((sid) => profileNameById[sid] ?? "Unknown"),
       topMatch: topMatch
         ? { candidateId: topMatch.candidate_id, name: topMatch.full_name, score: topMatch.score, reason: topMatch.reason }
         : null,

@@ -34,10 +34,11 @@ export type MandateSummary = {
   submitted: number;
   signals: HealthSignal[];
   topMatch: TopMatch | null;
-  // Internal-only -- who owns this mandate for tracking purposes. Never
-  // rendered on any client- or candidate-facing surface.
-  ownerId: string | null;
-  ownerName: string | null;
+  // Internal-only -- everyone staffed on this mandate (mandate_assignments),
+  // for tracking purposes. Never rendered on any client- or candidate-facing
+  // surface. staffIds drives the Recruiter filter; staffNames is what's shown.
+  staffIds: string[];
+  staffNames: string[];
 };
 
 // Health-signal quick view: a slide-over drawer that surfaces the same
