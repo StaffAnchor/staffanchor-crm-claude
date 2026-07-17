@@ -8,13 +8,14 @@ import {
   cityOptions,
   cityStateMap,
   ctcOptions,
-  subDomainsForCategory,
   experienceOptions,
   noticePeriodOptions,
   employmentStatusOptions,
   industryOptions,
   roleTypeOptions,
   teamSizeOptions,
+  profileTypeOptions,
+  level1OptionsForProfileType,
 } from "@/lib/candidate-options";
 
 export default function NewCandidatePage() {
@@ -27,6 +28,7 @@ export default function NewCandidatePage() {
     category: "",
     sub_domain: "",
     sub_domain_other: "",
+    ask_candidate_later_subdomain: false,
     city: "",
     city_other: "",
     current_fixed_ctc: "",
@@ -44,7 +46,11 @@ export default function NewCandidatePage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const subDomainOptions = subDomainsForCategory(form.category || null);
+  // Level 1 options under whichever Profile Type is picked -- Practice under
+  // B2B, Vertical under B2C, Function under Non-Sales. Matches the unified
+  // taxonomy now live on jobs.staffanchor.com's ApplyForm; `sub_domain`
+  // stores this Level 1 value directly, same DB column as before.
+  const subDomainOptions = level1OptionsForProfileType(form.category || null);
 
   function validate(): string | null {
     if (!form.full_name.trim()) return "Full name is required.";
@@ -55,9 +61,11 @@ export default function NewCandidatePage() {
     if (!form.current_fixed_ctc) return "Current fixed CTC is required.";
     if (!form.total_experience_years) return "Total experience is required.";
     if (!form.notice_period) return "When they can join is required.";
-    if (!form.category) return "Function / Domain is required.";
-    if (!form.sub_domain) return "Sub-domain is required.";
-    if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the sub-domain.";
+    if (!form.category) return "Profile Type is required.";
+    if (!form.ask_candidate_later_subdomain) {
+      if (!form.sub_domain) return "Practice / Vertical / Function is required (or check 'Ask candidate later').";
+      if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the value, or check 'Ask candidate later'.";
+    }
     if (!form.current_job_title.trim()) return "Current job title is required.";
     if (!form.current_employer.trim()) return "Current employer is required.";
     if (!form.current_employment_status) return "Employment status is required.";
@@ -95,8 +103,11 @@ export default function NewCandidatePage() {
       resumeFileUrl = path;
     }
 
-    const resolvedSubDomain =
-      form.sub_domain === "Other" || form.sub_domain === "" ? form.sub_domain_other || null : form.sub_domain;
+    const resolvedSubDomain = form.ask_candidate_later_subdomain
+      ? null
+      : form.sub_domain === "Other" || form.sub_domain === ""
+        ? form.sub_domain_other || null
+        : form.sub_domain;
 
     const resolvedLocation =
       form.city === "Other"
@@ -227,7 +238,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Function / Domain *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Profile Type *</label>
           <select
             required
             value={form.category}
@@ -235,20 +246,26 @@ export default function NewCandidatePage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
           >
             <option value="">Select...</option>
-            <option value="b2b_sales">B2B Sales</option>
-            <option value="b2c_sales">B2C Sales</option>
-            <option value="non_sales">Non-Sales</option>
+            {profileTypeOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Sub-domain *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            {form.category === "b2b_sales" ? "Practice" : form.category === "b2c_sales" ? "Vertical" : "Function"}
+            {!form.ask_candidate_later_subdomain && " *"}
+          </label>
           {subDomainOptions.length > 0 ? (
             <>
               <select
+                disabled={form.ask_candidate_later_subdomain}
                 value={form.sub_domain}
                 onChange={(e) => setForm((f) => ({ ...f, sub_domain: e.target.value }))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">Select...</option>
                 {subDomainOptions.map((d) => (
@@ -258,7 +275,7 @@ export default function NewCandidatePage() {
                 ))}
                 <option value="Other">Other</option>
               </select>
-              {form.sub_domain === "Other" && (
+              {form.sub_domain === "Other" && !form.ask_candidate_later_subdomain && (
                 <input
                   value={form.sub_domain_other}
                   onChange={(e) => setForm((f) => ({ ...f, sub_domain_other: e.target.value }))}
@@ -266,6 +283,21 @@ export default function NewCandidatePage() {
                   className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
                 />
               )}
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={form.ask_candidate_later_subdomain}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      ask_candidate_later_subdomain: e.target.checked,
+                      sub_domain: e.target.checked ? "" : f.sub_domain,
+                      sub_domain_other: e.target.checked ? "" : f.sub_domain_other,
+                    }))
+                  }
+                />
+                Not sure — ask candidate later
+              </label>
             </>
           ) : (
             <input

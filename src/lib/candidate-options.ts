@@ -98,6 +98,90 @@ export function subDomainsForCategory(category: string | null): string[] {
   return [];
 }
 
+// ---- Unified Candidate Intake taxonomy (Profile Type -> Practice/Vertical/
+// Function -> Sub-domain). Additive, not a replacement for the lists above --
+// `subDomainsForCategory` still backs the mandate-creation form and existing
+// candidate records at that granularity. This new layer is what the unified
+// ApplyForm/Quick Apply/Recruiter Created component uses going forward.
+// `category` itself is unchanged (`b2b_sales` / `b2c_sales` / `non_sales` --
+// already matches Profile Type 1:1, confirmed against the DB CHECK
+// constraint, so no migration was needed for this level). ----
+
+export const profileTypeOptions: { value: string; label: string }[] = [
+  { value: "b2b_sales", label: "B2B Sales" },
+  { value: "b2c_sales", label: "B2C Sales" },
+  { value: "non_sales", label: "Other (Non-Sales)" },
+];
+
+// Level 1 under B2B Sales -- the three frozen business practices.
+export const b2bPractices = [
+  "Enterprise Tech Sales & Revenue",
+  "Industrial & Infrastructure",
+  "Other B2B",
+] as const;
+
+// Level 2 (sub-domain) per B2B practice.
+export const enterpriseTechSubDomains = [
+  "SaaS", "Cybersecurity", "Cloud Infrastructure", "AI Platforms", "FinTech", "Data & Analytics",
+];
+export const industrialSubDomains = [
+  "Industrial Automation", "Smart Manufacturing Software", "Capital Equipment",
+  "Electrical & Electronics", "Clean Energy", "Building Technologies",
+];
+export const otherB2BSubDomains = [
+  "Media & Advertising", "Professional / Business Services", "Logistics & Supply Chain (B2B)",
+  "Real Estate / Commercial (B2B)", "EdTech (B2B / Institutional)", "HR-Tech / HR Services (B2B)", "Other",
+];
+
+export function subDomainsForPractice(practice: string | null): string[] {
+  if (practice === "Enterprise Tech Sales & Revenue") return enterpriseTechSubDomains;
+  if (practice === "Industrial & Infrastructure") return industrialSubDomains;
+  if (practice === "Other B2B") return otherB2BSubDomains;
+  return [];
+}
+
+// Level 1 under B2C Sales -- vertical, no further sub-level.
+export const b2cVerticals = [
+  "Retail", "Insurance", "Loans & Lending", "EdTech", "Real Estate",
+  "Automobile", "Telecom", "Healthcare & Wellness", "Travel & Hospitality", "Other",
+];
+
+// Level 1 under Other (Non-Sales) -- function, no further sub-level, no
+// fields beyond this single tag per the frozen spec.
+export const nonSalesFunctions = [
+  "Marketing", "Finance & Accounts", "HR", "Operations", "Customer Support / Service",
+  "IT / Technology", "Legal & Compliance", "Supply Chain & Procurement", "Admin", "Other",
+];
+
+// Single entry point the unified form calls once Profile Type is chosen --
+// returns the correct Level 1 list (Practice / Vertical / Function) for
+// whichever Profile Type is active.
+export function level1OptionsForProfileType(profileType: string | null): string[] {
+  if (profileType === "b2b_sales") return [...b2bPractices];
+  if (profileType === "b2c_sales") return b2cVerticals;
+  if (profileType === "non_sales") return nonSalesFunctions;
+  return [];
+}
+
+// B2C sales-motion options -- distinct from the B2B `salesMotionOptions`
+// above (Outbound-Hunting/Inbound/Account-based/etc., which assumes a B2B
+// buying process). B2C motions describe how the sale physically happens.
+export const b2cSalesMotionOptions = [
+  "Retail / Counter Sales", "Field / Door-to-door", "Telesales / Inside Sales", "Channel / Franchise-led",
+];
+
+// Industrial & Infrastructure practice-specific option sets -- mirrors
+// jobs-staffanchor CareerTimelinePanel.tsx exactly (same value strings), so
+// the CRM Career Timeline component and the candidate-facing form stay in
+// lockstep on stored values.
+export const territoryRegionOptions = ["North", "South", "West", "East", "Pan-India", "International"];
+export const commercialRouteOptions = ["Direct Field", "Channel / Distributor", "Hybrid"];
+export const targetAccountTypeOptions = ["OEMs", "EPC Contractors", "Government / PSU", "Industrial End-Users", "Distributors"];
+export const productComplexityOptions = ["Standard Catalog Products", "Engineered / Customized Technical Solutions"];
+
+// Average ticket size bands for B2C -- reuses the existing `dealSizeBandsB2C`
+// currency-keyed bands above rather than duplicating them.
+
 // Whole-lakh CTC dropdown, 0-120 LPA plus a 120+ ceiling (stored as 121 to
 // distinguish "exactly 120" from "more than 120" -- same convention the
 // public apply form uses).
@@ -349,3 +433,35 @@ export const clientProfileOptions = [
 // parsing free text. ----
 export const renewalRateBandOptions = ["<50%", "50-70%", "70-85%", "85-95%", "95%+"];
 export const winRateBandOptions = ["<20%", "20-35%", "35-50%", "50-65%", "65%+"];
+
+// ---- Reason for leaving a past role (kept short/dropdown so it stays fast to
+// fill for every older job, not a free-text essay per company) -- mirrors
+// jobs-staffanchor-clean's modules/apply/options.ts exactly.
+export const reasonForLeavingOptions = [
+  "Better Compensation",
+  "Better Growth / Role",
+  "Company Shutdown / Layoff",
+  "Contract / Tenure Ended",
+  "Relocation",
+  "Career Change / Domain Switch",
+  "Team / Manager Change",
+  "Company Restructuring",
+  "Health / Personal Reasons",
+  "Higher Studies",
+  "Other",
+];
+
+// ---- Average quarterly target band, used for roles other than the current
+// one -- deliberately a single band rather than the full quarter-by-quarter
+// target+achievement grid, since candidates rarely remember exact historic
+// numbers. Mirrors jobs-staffanchor-clean's modules/apply/options.ts exactly.
+export const avgQuarterlyTargetBandOptions = [
+  "<5L / quarter",
+  "5L-15L / quarter",
+  "15L-30L / quarter",
+  "30L-50L / quarter",
+  "50L-1Cr / quarter",
+  "1Cr-2Cr / quarter",
+  "2Cr-5Cr / quarter",
+  "5Cr+ / quarter",
+];

@@ -38,6 +38,51 @@ export type ProfileTimelineEntry = {
   reporting_to?: string; // free text role title, e.g. "VP Sales"
   client_tier?: string; // reuses customerSegmentOptions
   geo_scope?: string; // reuses geographicScopeOptions
+  // ---- Sales Passport per-experience detail -- mirrors jobs-staffanchor-clean's
+  // src/lib/career-timeline.ts exactly so both apps read/write identical values
+  // in the shared career_timeline_profile column. All optional/additive.
+  sales_motion?: string;
+  decision_maker_persona?: string; // B2B: who was actually sold to (CFO/CTO/etc.)
+  customer_type?: string; // B2C: end-consumer persona (HNI/Students/etc.)
+  // ---- Industrial & Infrastructure practice-specific fields -- only
+  // meaningful/rendered when sub_domain for this entry is
+  // "Industrial & Infrastructure".
+  territory_region?: string;
+  commercial_route?: string;
+  target_account_type?: string;
+  product_complexity?: string;
+  // ---- Inside Sales specific fields
+  aht?: string;
+  daily_call_target?: string;
+  daily_talk_time?: string;
+  lead_source?: string;
+  reason_for_leaving?: string;
+  avg_quarterly_target_band?: string; // used for roles other than the current one
+  avg_quarterly_revenue_value?: string;
+  avg_quarterly_revenue_currency?: string;
+  // ---- Current-role-only performance detail: quarterly target/achievement
+  // grid, only ever filled/shown for the entry where end_month === null.
+  target_currency?: string;
+  target_q1?: string;
+  target_q2?: string;
+  target_q3?: string;
+  target_q4?: string;
+  achieved_q1?: string;
+  achieved_q2?: string;
+  achieved_q3?: string;
+  achieved_q4?: string;
+  has_ic_target_too?: string; // "Yes"/"No" -- for a Team Lead role, do they also carry an individual number
+  ic_target_currency?: string;
+  ic_target_q1?: string;
+  ic_target_q2?: string;
+  ic_target_q3?: string;
+  ic_target_q4?: string;
+  ic_achieved_q1?: string;
+  ic_achieved_q2?: string;
+  ic_achieved_q3?: string;
+  ic_achieved_q4?: string;
+  best_win?: string;
+  tough_loss?: string;
 };
 
 export type ResumeTimelineEntry = {
