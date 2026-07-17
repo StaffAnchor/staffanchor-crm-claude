@@ -54,7 +54,9 @@ const ORIGIN_LABEL: Record<string, string> = {
 // categories -- so it reads calmer as one accent color deepening toward
 // the end of the pipeline (rainbow bars implied unrelated categories).
 const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
-  { key: "lead_registered", label: "New", color: "bg-slate-300 dark:bg-slate-600" },
+  { key: "lead", label: "Lead", color: "bg-slate-300 dark:bg-slate-600" },
+  { key: "awaiting_input", label: "Awaiting Input", color: "bg-amber-300" },
+  { key: "registered", label: "Registered", color: "bg-sky-300" },
   { key: "under_review", label: "Under Review", color: "bg-blue-300" },
   { key: "shortlisted", label: "Shortlisted", color: "bg-blue-400" },
   { key: "submitted", label: "Submitted", color: "bg-blue-500" },
@@ -321,8 +323,9 @@ export default async function CandidatesPage({
   const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
   const funnelCounts: Record<string, number> = {
-    lead_registered:
-      (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0) + (statusCounts["registered"] ?? 0),
+    lead: statusCounts["lead"] ?? 0,
+    awaiting_input: statusCounts["awaiting_input"] ?? 0,
+    registered: statusCounts["registered"] ?? 0,
     under_review: statusCounts["under_review"] ?? 0,
     shortlisted: statusCounts["shortlisted"] ?? 0,
     submitted: statusCounts["submitted"] ?? 0,
@@ -426,11 +429,7 @@ export default async function CandidatesPage({
             return (
               <Link
                 key={stage.key}
-                href={
-                  stage.key === "lead_registered"
-                    ? "/candidates"
-                    : `/candidates?status=${stage.key === "offer_placed" ? "offer" : stage.key}`
-                }
+                href={`/candidates?status=${stage.key === "offer_placed" ? "offer" : stage.key}`}
                 className="group flex-1 flex items-center gap-2"
                 title={`${count} candidate${count === 1 ? "" : "s"} · ${stage.label}`}
               >

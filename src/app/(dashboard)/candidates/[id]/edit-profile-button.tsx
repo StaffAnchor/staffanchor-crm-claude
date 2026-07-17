@@ -628,7 +628,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                 <span className={SECTION_LABEL}>Function / Domain &amp; Specialization</span>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={FIELD_LABEL}>Function / Domain</label>
+                    <label className={FIELD_LABEL}>Current Profile Type</label>
                     <select
                       value={form.category}
                       onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subDomain: "", secondarySubDomains: [] }))}
@@ -641,7 +641,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                     </select>
                   </div>
                   <div>
-                    <label className={FIELD_LABEL}>Sub-domain</label>
+                    <label className={FIELD_LABEL}>Primary Specialization</label>
                     {subDomainOptions.length > 0 ? (
                       <>
                         <select value={form.subDomain} onChange={(e) => set("subDomain", e.target.value)} className={INPUT_CLS}>

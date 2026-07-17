@@ -303,7 +303,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   },
   {
     key: "category",
-    label: "Major Domain",
+    label: "Current Profile Type",
     render: (c) => (
       <div>
         <span className="text-slate-700 dark:text-slate-300">{CATEGORY_LABEL[c.category ?? ""] ?? "—"}</span>
@@ -379,7 +379,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   },
   {
     key: "sub_domain",
-    label: "Sub-domain",
+    label: "Primary Specialization",
     render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.sub_domain ?? "—"}</span>,
   },
   {

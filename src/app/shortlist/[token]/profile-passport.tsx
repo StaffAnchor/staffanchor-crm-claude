@@ -160,7 +160,7 @@ export default function ProfilePassportTrigger({
 
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-sm">
                 <div>
-                  <p className="text-xs text-slate-400">Sub-domain</p>
+                  <p className="text-xs text-slate-400">Primary Specialization</p>
                   <p className="text-slate-700">{subDomain ?? "—"}</p>
                 </div>
                 <div>

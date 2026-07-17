@@ -245,7 +245,7 @@ function CandidateCard({
 
       <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
         <div>
-          <p className="text-xs text-slate-400">Sub-domain</p>
+          <p className="text-xs text-slate-400">Primary Specialization</p>
           <p className="text-slate-700">{candidate.sub_domain ?? "—"}</p>
         </div>
         <div>
