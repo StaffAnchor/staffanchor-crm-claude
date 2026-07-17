@@ -16,6 +16,8 @@ import {
   teamSizeOptions,
   profileTypeOptions,
   level1OptionsForProfileType,
+  subDomainsForPractice,
+  languageOptions,
   highestQualificationOptions,
   workModeOptions,
   relocationOptions,
@@ -31,7 +33,12 @@ export default function NewCandidatePage() {
     category: "",
     sub_domain: "",
     sub_domain_other: "",
+    other_b2b_subdomain: "",
+    other_b2b_subdomain_custom: "",
     ask_candidate_later_subdomain: false,
+    languages_known: [] as string[],
+    custom_language: "",
+    ask_candidate_later_languages: false,
     city: "",
     city_other: "",
     current_fixed_ctc: "",
@@ -125,6 +132,9 @@ export default function NewCandidatePage() {
       if (form.role_type === "Leading a Team" && !form.team_size) return "Team size is required.";
     }
     if (!askCandidateLaterResume && !resumeFile) return "Resume is required (or check 'Ask candidate later').";
+    if (!form.ask_candidate_later_languages && !form.languages_known.length) {
+      return "Languages known is required (or check 'Ask candidate later').";
+    }
     return null;
   }
 
@@ -140,7 +150,13 @@ export default function NewCandidatePage() {
 
     let resumeFileUrl: string | null = null;
     if (resumeFile) {
-      const path = `${crypto.randomUUID()}-${resumeFile.name}`;
+      // Sanitize -- Supabase Storage object keys reject characters real resume
+      // filenames commonly contain (e.g. square brackets in "Naukri_Name[3y_6m].pdf").
+      const safeName = resumeFile.name
+        .normalize("NFKD")
+        .replace(/[^\w.\-]+/g, "_")
+        .replace(/_+/g, "_");
+      const path = `${crypto.randomUUID()}-${safeName}`;
       const { error: uploadError } = await supabase.storage.from("resumes").upload(path, resumeFile, {
         contentType: resumeFile.type || undefined,
       });
@@ -189,6 +205,7 @@ export default function NewCandidatePage() {
     if (form.ask_candidate_later_highest_qualification) missingFields.push("highest_qualification");
     if (form.ask_candidate_later_work_mode) missingFields.push("work_mode");
     if (form.ask_candidate_later_open_to_relocation) missingFields.push("open_to_relocation");
+    if (form.ask_candidate_later_languages) missingFields.push("languages_known");
     if (askCandidateLaterResume) missingFields.push("resume");
 
     const segmentData: Record<string, unknown> = {
@@ -196,6 +213,20 @@ export default function NewCandidatePage() {
     };
     if (!form.ask_candidate_later_role_type && form.role_type === "Leading a Team" && form.team_size) {
       segmentData.team_size = form.team_size;
+    }
+    if (!form.ask_candidate_later_languages && form.languages_known.length) {
+      segmentData.languages_known = Array.from(
+        new Set(
+          form.languages_known
+            .filter((l) => l !== "Other")
+            .concat(form.languages_known.includes("Other") ? [form.custom_language.trim()] : [])
+            .filter(Boolean)
+        )
+      );
+    }
+    if (!form.ask_candidate_later_subdomain && form.sub_domain === "Other B2B" && form.other_b2b_subdomain) {
+      segmentData.other_b2b_subdomain =
+        form.other_b2b_subdomain === "Other" ? form.other_b2b_subdomain_custom.trim() : form.other_b2b_subdomain;
     }
     if (missingFields.length > 0) {
       segmentData.missing_fields = missingFields;
@@ -364,16 +395,18 @@ export default function NewCandidatePage() {
               <select
                 disabled={form.ask_candidate_later_subdomain}
                 value={form.sub_domain}
-                onChange={(e) => setForm((f) => ({ ...f, sub_domain: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, sub_domain: e.target.value, sub_domain_other: "" }))}
                 className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">Select...</option>
+                {/* subDomainOptions already ends in its own "Other" for B2C
+                    Verticals / Non-Sales Functions -- no extra hardcoded option
+                    appended here (that used to render two "Other" entries). */}
                 {subDomainOptions.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
                 ))}
-                <option value="Other">Other</option>
               </select>
               {form.sub_domain === "Other" && !form.ask_candidate_later_subdomain && (
                 <input
@@ -382,6 +415,30 @@ export default function NewCandidatePage() {
                   placeholder="e.g. SaaS Sales"
                   className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
                 />
+              )}
+              {form.sub_domain === "Other B2B" && !form.ask_candidate_later_subdomain && (
+                <div className="mt-2 space-y-2">
+                  <select
+                    value={form.other_b2b_subdomain || ""}
+                    onChange={(e) => setForm((f) => ({ ...f, other_b2b_subdomain: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  >
+                    <option value="">Select...</option>
+                    {subDomainsForPractice("Other B2B").map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                  {form.other_b2b_subdomain === "Other" && (
+                    <input
+                      value={form.other_b2b_subdomain_custom || ""}
+                      onChange={(e) => setForm((f) => ({ ...f, other_b2b_subdomain_custom: e.target.value }))}
+                      placeholder="Please specify"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                    />
+                  )}
+                </div>
               )}
               <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <input
@@ -729,6 +786,65 @@ export default function NewCandidatePage() {
                   ...f,
                   ask_candidate_later_work_mode: e.target.checked,
                   work_mode: e.target.checked ? "" : f.work_mode,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Languages Known{!form.ask_candidate_later_languages && " *"}
+          </label>
+          {!form.ask_candidate_later_languages && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {languageOptions.map((lang) => {
+                  const active = form.languages_known.includes(lang);
+                  return (
+                    <button
+                      type="button"
+                      key={lang}
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          languages_known: active
+                            ? f.languages_known.filter((l) => l !== lang)
+                            : [...f.languages_known, lang],
+                        }))
+                      }
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                        active
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                      }`}
+                    >
+                      {active ? "✓ " : "+ "}
+                      {lang}
+                    </button>
+                  );
+                })}
+              </div>
+              {form.languages_known.includes("Other") && (
+                <input
+                  value={form.custom_language}
+                  onChange={(e) => setForm((f) => ({ ...f, custom_language: e.target.value }))}
+                  placeholder="Please specify other language(s)"
+                  className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                />
+              )}
+            </>
+          )}
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_languages}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_languages: e.target.checked,
+                  languages_known: e.target.checked ? [] : f.languages_known,
                 }))
               }
             />

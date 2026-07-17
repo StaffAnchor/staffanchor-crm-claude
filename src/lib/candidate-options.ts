@@ -201,6 +201,24 @@ export const experienceOptions: { value: number; label: string }[] = [
 
 export const noticePeriodOptions = ["Immediate", "15 days", "30 days", "60 days", "90 days"];
 
+// ---- Languages known (mirrors jobs-staffanchor-clean's options.ts) ----
+export const languageOptions = [
+  "English",
+  "Hindi",
+  "Bengali",
+  "Marathi",
+  "Telugu",
+  "Tamil",
+  "Gujarati",
+  "Urdu",
+  "Kannada",
+  "Odia",
+  "Malayalam",
+  "Punjabi",
+  "Assamese",
+  "Other",
+];
+
 export const employmentStatusOptions = [
   "Employed",
   "Serving Notice",
