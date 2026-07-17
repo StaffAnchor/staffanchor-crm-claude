@@ -96,9 +96,9 @@ export default function NewCandidatePage() {
     if (!form.phone.trim()) return "Phone number is required.";
     if (!form.city) return "Location is required.";
     if (form.city === "Other" && !form.city_other.trim()) return "Please enter the city.";
-    if (!form.category) return "Profile Type is required.";
+    if (!form.category) return "Current Profile Type is required.";
     if (!form.ask_candidate_later_subdomain) {
-      if (!form.sub_domain) return "Practice / Vertical / Function is required (or check 'Ask candidate later').";
+      if (!form.sub_domain) return "Primary Specialization is required (or check 'Ask candidate later').";
       if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the value, or check 'Ask candidate later'.";
     }
     // A "First Job Seeker" has no current employer/job title/CTC -- there is
@@ -242,11 +242,8 @@ export default function NewCandidatePage() {
       segmentData.other_b2b_subdomain =
         form.other_b2b_subdomain === "Other" ? form.other_b2b_subdomain_custom.trim() : form.other_b2b_subdomain;
     }
-    if (form.secondary_sub_domains.includes("Other B2B") && form.secondary_other_b2b_subdomain) {
-      segmentData.secondary_other_b2b_subdomain =
-        form.secondary_other_b2b_subdomain === "Other"
-          ? form.secondary_other_b2b_subdomain_custom.trim()
-          : form.secondary_other_b2b_subdomain;
+    if (form.secondary_sub_domains.includes("Other (B2B)") && form.secondary_other_b2b_subdomain.trim()) {
+      segmentData.secondary_other_b2b_subdomain = form.secondary_other_b2b_subdomain.trim();
     }
     if (form.secondary_sub_domains.includes("Other (B2C)") && form.secondary_other_b2c_specify.trim()) {
       segmentData.secondary_other_b2c_specify = form.secondary_other_b2c_specify.trim();
@@ -396,7 +393,7 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Profile Type *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current Profile Type *</label>
           <select
             required
             value={form.category}
@@ -414,7 +411,7 @@ export default function NewCandidatePage() {
 
         <div>
           <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-            {form.category === "b2b_sales" ? "Practice" : form.category === "b2c_sales" ? "Vertical" : "Function"}
+            Primary Specialization
             {!form.ask_candidate_later_subdomain && " *"}
           </label>
           {subDomainOptions.length > 0 ? (
@@ -540,29 +537,13 @@ export default function NewCandidatePage() {
               );
             })}
           </div>
-          {form.secondary_sub_domains.includes("Other B2B") && (
-            <div className="mt-2 space-y-2 rounded-lg border border-slate-100 bg-slate-50/60 p-2.5">
-              <select
-                value={form.secondary_other_b2b_subdomain}
-                onChange={(e) => setForm((f) => ({ ...f, secondary_other_b2b_subdomain: e.target.value }))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-              >
-                <option value="">Select — tell us more about "Other B2B"...</option>
-                {subDomainsForPractice("Other B2B").map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-              {form.secondary_other_b2b_subdomain === "Other" && (
-                <input
-                  value={form.secondary_other_b2b_subdomain_custom}
-                  onChange={(e) => setForm((f) => ({ ...f, secondary_other_b2b_subdomain_custom: e.target.value }))}
-                  placeholder="Please specify"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-                />
-              )}
-            </div>
+          {form.secondary_sub_domains.includes("Other (B2B)") && (
+            <input
+              value={form.secondary_other_b2b_subdomain}
+              onChange={(e) => setForm((f) => ({ ...f, secondary_other_b2b_subdomain: e.target.value }))}
+              placeholder='Please specify the "Other" B2B specialization'
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
           )}
           {form.secondary_sub_domains.includes("Other (B2C)") && (
             <input

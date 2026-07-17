@@ -82,12 +82,21 @@ function segNumArr(data: Record<string, unknown> | null | undefined, key: string
   return Array.isArray(v) ? v.map((n) => String(n)) : ["", "", "", ""];
 }
 
+// Mirrors public.submit_candidate's v_is_complete check in Supabase exactly
+// (same field list) -- that RPC is the authoritative server-side gate for
+// self-service candidate submissions, so a recruiter marking a profile
+// "registered" here must not use a looser bar than the one candidates
+// themselves are held to. Previously this omitted expected_fixed_ctc,
+// linkedin_url, resume_file_url, work_mode, and open_to_relocation, which let
+// a recruiter flip status to "registered" on a profile that was still
+// missing mandatory Stage 3 fields -- fixed by matching the RPC's list.
 const MANDATORY_FIELDS_COMPLETE = (f: {
   full_name: string;
   phone: string;
   city: string;
   cityOther: string;
   currentFixedCtc: string;
+  expectedFixedCtc: string;
   totalExperienceYears: string;
   noticePeriod: string;
   category: string;
@@ -99,16 +108,25 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
   currentIndustry: string;
   roleType: string;
   teamSize: string;
+  linkedinUrl: string;
+  resumeFileUrl: string | null;
+  highestQualification: string;
+  highestQualificationOther: string;
+  workMode: string;
+  openToRelocation: string;
 }) => {
   if (!f.full_name.trim() || !f.phone.trim()) return false;
   if (!f.city || (f.city === "Other" && !f.cityOther.trim())) return false;
-  if (!f.currentFixedCtc || !f.totalExperienceYears || !f.noticePeriod) return false;
+  if (!f.currentFixedCtc || !f.expectedFixedCtc || !f.totalExperienceYears || !f.noticePeriod) return false;
   if (!f.category) return false;
   if (!f.subDomain || (f.subDomain === "Other" && !f.subDomainOther.trim())) return false;
   if (!f.currentJobTitle.trim() || !f.currentEmployer.trim()) return false;
   if (!f.employmentStatus || !f.currentIndustry) return false;
   if (!f.roleType) return false;
   if (f.roleType === "Leading a Team" && !f.teamSize) return false;
+  if (!f.linkedinUrl.trim() || !f.resumeFileUrl) return false;
+  if (!f.highestQualification || (f.highestQualification === "Other" && !f.highestQualificationOther.trim())) return false;
+  if (!f.workMode || !f.openToRelocation) return false;
   return true;
 };
 
@@ -452,6 +470,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       city: form.city,
       cityOther: form.cityOther,
       currentFixedCtc: form.currentFixedCtc,
+      expectedFixedCtc: form.expectedFixedCtc,
       totalExperienceYears: form.totalExperienceYears,
       noticePeriod: form.noticePeriod,
       category: form.category,
@@ -463,6 +482,12 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       currentIndustry: form.currentIndustry,
       roleType: form.roleType,
       teamSize: form.teamSize,
+      linkedinUrl: form.linkedinUrl,
+      resumeFileUrl,
+      highestQualification: form.highestQualification,
+      highestQualificationOther: form.highestQualificationOther,
+      workMode: form.workMode,
+      openToRelocation: form.openToRelocation,
     });
 
     const update: Record<string, unknown> = {

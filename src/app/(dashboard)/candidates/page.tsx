@@ -13,7 +13,21 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
-import { industryOptions } from "@/lib/candidate-options";
+import {
+  industryOptions,
+  employmentStatusOptions,
+  highestQualificationOptions as QUALIFICATION_OPTIONS,
+  workModeOptions,
+  roleLevelOptions,
+} from "@/lib/candidate-options";
+
+// role_type is stored in segment_data as "IC" or "Team Lead" (see ApplyForm's
+// mapping in jobs-staffanchor-clean) -- distinct from the UI labels used on
+// the intake form, so the filter values below match the stored strings.
+const ROLE_TYPE_FILTER_OPTIONS = [
+  { value: "IC", label: "Individual Contributor" },
+  { value: "Team Lead", label: "Leading a Team" },
+];
 import { StatTile } from "@/components/ui/stat-tile";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -91,6 +105,12 @@ type SearchParams = {
   page?: string;
   ids?: string;
   mandate?: string;
+  employment_status?: string;
+  highest_qualification?: string;
+  work_mode?: string;
+  open_to_relocation?: string;
+  role_level?: string;
+  role_type?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -169,6 +189,12 @@ export default async function CandidatesPage({
       qq = qq.in("id", mandateCandidateIds.length ? mandateCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
     }
     if (params.notice_period) qq = qq.eq("notice_period", params.notice_period);
+    if (params.employment_status) qq = qq.eq("current_employment_status", params.employment_status);
+    if (params.highest_qualification) qq = qq.eq("highest_qualification", params.highest_qualification);
+    if (params.work_mode) qq = qq.eq("work_mode", params.work_mode);
+    if (params.open_to_relocation) qq = qq.eq("open_to_relocation", params.open_to_relocation);
+    if (params.role_level) qq = qq.eq("segment_data->>role_level", params.role_level);
+    if (params.role_type) qq = qq.eq("segment_data->>role_type", params.role_type);
     if (params.recommendation) {
       qq = qq.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
     }
@@ -671,6 +697,93 @@ export default async function CandidatesPage({
                   {NOTICE_PERIODS.map((n) => (
                     <option key={n} value={n}>
                       {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Employment status</label>
+                <select
+                  name="employment_status"
+                  defaultValue={params.employment_status ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {employmentStatusOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Highest qualification</label>
+                <select
+                  name="highest_qualification"
+                  defaultValue={params.highest_qualification ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {QUALIFICATION_OPTIONS.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Work mode</label>
+                <select
+                  name="work_mode"
+                  defaultValue={params.work_mode ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {workModeOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Open to relocation</label>
+                <select
+                  name="open_to_relocation"
+                  defaultValue={params.open_to_relocation ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Role level</label>
+                <select
+                  name="role_level"
+                  defaultValue={params.role_level ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {roleLevelOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Role type</label>
+                <select
+                  name="role_type"
+                  defaultValue={params.role_type ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {ROLE_TYPE_FILTER_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
                     </option>
                   ))}
                 </select>

@@ -165,24 +165,90 @@ export function level1OptionsForProfileType(profileType: string | null): string[
 
 // ---- Secondary Specialization: cross-Profile-Type combined list -- mirrors
 // jobs-staffanchor's options.ts secondarySpecializationGroups() exactly (same
-// value strings, including the "Other (B2C)" / "Other (Non-Sales)"
-// disambiguation), so a candidate created here and one who applies directly
-// end up with identical secondary_sub_domains values. ----
+// value strings, including the "Other (B2B)" / "Other (B2C)" /
+// "Other (Non-Sales)" disambiguation), so a candidate created here and one
+// who applies directly end up with identical secondary_sub_domains values.
+// Deliberately granular (named specializations, not the 3 broad b2bPractices)
+// -- see jobs-staffanchor's options.ts for the full rationale. ----
 export type SecondarySpecializationGroup = {
   group: "B2B Sales" | "B2C Sales" | "Non-Sales / Other";
   options: string[];
 };
 
+const secondaryB2BOptions = [
+  ...enterpriseTechSubDomains,
+  ...industrialSubDomains,
+  ...otherB2BSubDomains.filter((o) => o !== "Other"),
+  "Other (B2B)",
+];
+
+const secondaryB2COptions = [
+  "Retail (Offline / In-store)",
+  "E-commerce / D2C",
+  "Insurance (Life)",
+  "Insurance (Health / General)",
+  "Loans & Lending (Personal / Consumer)",
+  "Loans & Lending (Home / Auto)",
+  "Mutual Funds / Wealth Advisory (B2C)",
+  "EdTech",
+  "Real Estate (Residential)",
+  "Automobile (Two-wheeler)",
+  "Automobile (Four-wheeler)",
+  "Telecom",
+  "Healthcare & Wellness",
+  "Fitness / Gym Memberships",
+  "Travel & Hospitality",
+  "OTT / Media Subscriptions",
+  "FMCG / Consumer Durables (Retail)",
+  "Jewellery / Luxury Retail",
+  "Other (B2C)",
+];
+
+const secondaryNonSalesOptions = [
+  "Performance Marketing",
+  "Content Marketing",
+  "Brand Marketing",
+  "Growth Marketing",
+  "Marketing Analytics",
+  "Finance & Accounts",
+  "FP&A",
+  "Treasury",
+  "HR Business Partner",
+  "HR Recruiter / Talent Acquisition",
+  "Learning & Development (L&D)",
+  "Compensation & Benefits",
+  "HR Operations",
+  "Operations Management",
+  "Process Excellence",
+  "Customer Support / Service",
+  "Customer Success",
+  "Software Engineering / Development",
+  "Quality Assurance (QA) / Testing",
+  "DevOps / Site Reliability",
+  "Data Science / Machine Learning",
+  "Data & Analytics / BI",
+  "IT Support / Infrastructure",
+  "Cybersecurity / InfoSec",
+  "Product Management",
+  "Product Design (UI/UX)",
+  "Legal & Compliance",
+  "Supply Chain & Procurement",
+  "Logistics",
+  "Administration / Facilities",
+  "Other (Non-Sales)",
+];
+
 export function secondarySpecializationGroups(): SecondarySpecializationGroup[] {
   return [
-    { group: "B2B Sales", options: [...b2bPractices] },
-    { group: "B2C Sales", options: b2cVerticals.map((o) => (o === "Other" ? "Other (B2C)" : o)) },
-    { group: "Non-Sales / Other", options: nonSalesFunctions.map((o) => (o === "Other" ? "Other (Non-Sales)" : o)) },
+    { group: "B2B Sales", options: secondaryB2BOptions },
+    { group: "B2C Sales", options: secondaryB2COptions },
+    { group: "Non-Sales / Other", options: secondaryNonSalesOptions },
   ];
 }
 
 export function primaryAsSecondaryLabel(profileType: string | null, subDomain: string): string {
   if (subDomain === "Other") {
+    if (profileType === "b2b_sales") return "Other (B2B)";
     if (profileType === "b2c_sales") return "Other (B2C)";
     if (profileType === "non_sales") return "Other (Non-Sales)";
   }
@@ -342,6 +408,7 @@ export const roleLevelOptions = [
   "IC – Sales Development",
   "IC – Account Executive",
   "IC",
+  "Team Lead / Asst. Manager",
   "Manager",
   "Senior Manager",
   "Director",

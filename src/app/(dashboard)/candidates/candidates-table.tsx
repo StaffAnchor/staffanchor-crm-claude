@@ -228,14 +228,26 @@ function PreviousIndustriesCell({
   );
 }
 
+// Role Level = the seniority band (IC / Team Lead / Manager / .../ VP-Head).
+// Role Type = the separate IC-vs-people-manager flag. These were previously
+// collapsed into one column mislabeled "IC / Team Lead" that actually only
+// showed Role Level -- split into two honestly-labeled columns below.
 function roleLevelFor(c: CandidateRow): string {
   const seg = c.segment_data ?? {};
   const level = seg["role_level"];
-  const team = seg["team"];
   if (!level) return "—";
-  const levelStr = String(level);
-  if (typeof team === "number" && team > 0) return `${levelStr} · Team of ${team}`;
-  return levelStr;
+  return String(level);
+}
+
+function roleTypeFor(c: CandidateRow): string {
+  const seg = c.segment_data ?? {};
+  const rawType = seg["role_type"];
+  const team = seg["team_size"] ?? seg["team"];
+  if (!rawType) return "—";
+  const typeStr = String(rawType);
+  const label = typeStr === "Team Lead" ? "Leading a Team" : typeStr === "IC" ? "Individual Contributor" : typeStr;
+  if (typeStr === "Team Lead" && team) return `${label} · Team of ${team}`;
+  return label;
 }
 
 type ColumnDef = {
@@ -306,8 +318,13 @@ const COLUMN_DEFS: ColumnDef[] = [
   },
   {
     key: "role_level",
-    label: "IC / Team Lead",
+    label: "Role Level",
     render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{roleLevelFor(c)}</span>,
+  },
+  {
+    key: "role_type",
+    label: "Role Type",
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{roleTypeFor(c)}</span>,
   },
   {
     key: "recommendation",
@@ -514,6 +531,7 @@ const DEFAULT_VISIBLE = new Set([
   "previous_industries",
   "current_location",
   "role_level",
+  "role_type",
   "current_employment_status",
   "notice_period",
   "recommendation",
