@@ -20,6 +20,7 @@ import {
   Users,
   ChevronDown,
   Sparkles,
+  UserCog,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -96,6 +97,11 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
     label: "New referral",
     tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
+  INCOMPLETE_PROFILE: {
+    icon: UserCog,
+    label: "Incomplete profile",
+    tint: "bg-cyan-50 text-cyan-700 ring-cyan-200",
+  },
 };
 
 function metaFor(taskType: string) {
@@ -133,6 +139,7 @@ const TASK_TYPE_GROUP: Record<string, keyof typeof GROUP_META> = {
   NEW_REFERRAL: "candidates",
   FOLLOW_UP_ON_OFFER: "offers",
   POST_PLACEMENT_CHECKIN: "offers",
+  INCOMPLETE_PROFILE: "candidates",
 };
 
 const GROUP_ORDER: (keyof typeof GROUP_META)[] = ["interviews", "sourcing", "clients", "candidates", "offers", "other"];
@@ -159,12 +166,16 @@ function nextMorning(daysAhead: number, hour = 9) {
   return d;
 }
 
+export type RecruiterOption = { id: string; full_name: string | null; email: string };
+
 export default function InboxView({
   initialItems,
   fetchError,
+  recruiters,
 }: {
   initialItems: InboxItem[];
   fetchError: string | null;
+  recruiters: RecruiterOption[];
 }) {
   const supabase = createClient();
   const [items, setItems] = useState<InboxItem[]>(initialItems);
@@ -260,6 +271,31 @@ export default function InboxView({
       if (error) setItems(prevItems);
     },
     [items, supabase]
+  );
+
+  // Manual-only recruiter assignment -- no auto-assign logic, per product
+  // decision. Direct table write (same pattern as MandateStaffingControl's
+  // mandate_assignments writes) since recruiter_inbox's RLS update policy
+  // already permits any staff member to update any row.
+  const assignRecruiter = useCallback(
+    async (id: string, recruiterId: string | null) => {
+      const prevItems = items;
+      setItems((cur) =>
+        cur.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                recruiter_id: recruiterId,
+                recruiter_name: recruiterId ? recruiters.find((r) => r.id === recruiterId)?.full_name ?? recruiters.find((r) => r.id === recruiterId)?.email ?? null : null,
+                is_unassigned: !recruiterId,
+              }
+            : i
+        )
+      );
+      const { error } = await supabase.from("recruiter_inbox").update({ recruiter_id: recruiterId }).eq("id", id);
+      if (error) setItems(prevItems);
+    },
+    [items, recruiters, supabase]
   );
 
   useEffect(() => {
@@ -474,7 +510,14 @@ export default function InboxView({
 
           <Card className="lg:sticky lg:top-20">
             {focused ? (
-              <ContextDrawer item={focused} onResolve={resolve} onSnooze={snooze} resolving={resolvingId === focused.id} />
+              <ContextDrawer
+                item={focused}
+                onResolve={resolve}
+                onSnooze={snooze}
+                onAssign={assignRecruiter}
+                recruiters={recruiters}
+                resolving={resolvingId === focused.id}
+              />
             ) : (
               <p className="text-[13px] text-slate-400">Select an item to see details.</p>
             )}
@@ -545,11 +588,15 @@ function ContextDrawer({
   item,
   onResolve,
   onSnooze,
+  onAssign,
+  recruiters,
   resolving,
 }: {
   item: InboxItem;
   onResolve: (id: string, status: "done" | "dismissed") => void;
   onSnooze: (id: string, until: Date) => void;
+  onAssign: (id: string, recruiterId: string | null) => void;
+  recruiters: RecruiterOption[];
   resolving: boolean;
 }) {
   const meta = metaFor(item.task_type);
@@ -649,6 +696,26 @@ function ContextDrawer({
       </div>
 
       {item.detail && <p className="text-[13px] text-slate-600 dark:text-slate-400 mb-4">{item.detail}</p>}
+
+      {/* Manual recruiter assignment -- writes straight to recruiter_inbox.recruiter_id.
+          No auto-assign logic (future item); this is the only assignment control in the
+          inbox UI today, since the item list previously only had a *filter* by recruiter,
+          not a way to actually set it. */}
+      <div className="flex items-center gap-2 mb-4">
+        <UserCog className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        <select
+          value={item.recruiter_id ?? ""}
+          onChange={(e) => onAssign(item.id, e.target.value || null)}
+          className="flex-1 text-[12px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-slate-700 dark:text-slate-300"
+        >
+          <option value="">Unassigned</option>
+          {recruiters.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.full_name ?? r.email}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* AI take: why this specific task matters + what to do, generated
           automatically on open (see aiInsightCache above) -- a sharper,

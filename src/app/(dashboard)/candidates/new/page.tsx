@@ -16,6 +16,9 @@ import {
   teamSizeOptions,
   profileTypeOptions,
   level1OptionsForProfileType,
+  highestQualificationOptions,
+  workModeOptions,
+  relocationOptions,
 } from "@/lib/candidate-options";
 
 export default function NewCandidatePage() {
@@ -32,17 +35,35 @@ export default function NewCandidatePage() {
     city: "",
     city_other: "",
     current_fixed_ctc: "",
+    ask_candidate_later_current_fixed_ctc: false,
+    expected_fixed_ctc: "",
+    ask_candidate_later_expected_fixed_ctc: false,
     total_experience_years: "",
+    ask_candidate_later_total_experience_years: false,
     notice_period: "",
+    ask_candidate_later_notice_period: false,
     current_job_title: "",
+    ask_candidate_later_current_job_title: false,
     current_employer: "",
+    ask_candidate_later_current_employer: false,
     current_employment_status: "",
+    ask_candidate_later_current_employment_status: false,
     current_industry: "",
+    ask_candidate_later_current_industry: false,
+    highest_qualification: "",
+    highest_qualification_other: "",
+    ask_candidate_later_highest_qualification: false,
+    work_mode: "",
+    ask_candidate_later_work_mode: false,
+    open_to_relocation: "",
+    ask_candidate_later_open_to_relocation: false,
     role_type: "",
+    ask_candidate_later_role_type: false,
     team_size: "",
     recruiter_seed_note: "",
   });
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [askCandidateLaterResume, setAskCandidateLaterResume] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -58,21 +79,52 @@ export default function NewCandidatePage() {
     if (!form.phone.trim()) return "Phone number is required.";
     if (!form.city) return "Location is required.";
     if (form.city === "Other" && !form.city_other.trim()) return "Please enter the city.";
-    if (!form.current_fixed_ctc) return "Current fixed CTC is required.";
-    if (!form.total_experience_years) return "Total experience is required.";
-    if (!form.notice_period) return "When they can join is required.";
     if (!form.category) return "Profile Type is required.";
     if (!form.ask_candidate_later_subdomain) {
       if (!form.sub_domain) return "Practice / Vertical / Function is required (or check 'Ask candidate later').";
       if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the value, or check 'Ask candidate later'.";
     }
-    if (!form.current_job_title.trim()) return "Current job title is required.";
-    if (!form.current_employer.trim()) return "Current employer is required.";
-    if (!form.current_employment_status) return "Employment status is required.";
-    if (!form.current_industry) return "Current industry is required.";
-    if (!form.role_type) return "IC / Team Lead is required.";
-    if (form.role_type === "Leading a Team" && !form.team_size) return "Team size is required.";
-    if (!resumeFile) return "Resume is required.";
+    if (!form.ask_candidate_later_current_fixed_ctc && !form.current_fixed_ctc) {
+      return "Current fixed CTC is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_expected_fixed_ctc && !form.expected_fixed_ctc) {
+      return "Expected fixed CTC is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_total_experience_years && !form.total_experience_years) {
+      return "Total experience is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_notice_period && !form.notice_period) {
+      return "Days to join is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_current_job_title && !form.current_job_title.trim()) {
+      return "Current job title is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_current_employer && !form.current_employer.trim()) {
+      return "Current employer is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_current_employment_status && !form.current_employment_status) {
+      return "Employment status is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_current_industry && !form.current_industry) {
+      return "Current industry is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_highest_qualification) {
+      if (!form.highest_qualification) return "Highest qualification is required (or check 'Ask candidate later').";
+      if (form.highest_qualification === "Other" && !form.highest_qualification_other.trim()) {
+        return "Please enter the qualification, or check 'Ask candidate later'.";
+      }
+    }
+    if (!form.ask_candidate_later_work_mode && !form.work_mode) {
+      return "Work mode is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_open_to_relocation && !form.open_to_relocation) {
+      return "Open to relocation is required (or check 'Ask candidate later').";
+    }
+    if (!form.ask_candidate_later_role_type) {
+      if (!form.role_type) return "IC / Team Lead is required (or check 'Ask candidate later').";
+      if (form.role_type === "Leading a Team" && !form.team_size) return "Team size is required.";
+    }
+    if (!askCandidateLaterResume && !resumeFile) return "Resume is required (or check 'Ask candidate later').";
     return null;
   }
 
@@ -85,9 +137,6 @@ export default function NewCandidatePage() {
       return;
     }
     setSaving(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
     let resumeFileUrl: string | null = null;
     if (resumeFile) {
@@ -116,44 +165,94 @@ export default function NewCandidatePage() {
           ? `${form.city}, ${cityStateMap[form.city]}`
           : null;
 
+    const resolvedHighestQualification = form.ask_candidate_later_highest_qualification
+      ? null
+      : form.highest_qualification === "Other"
+        ? form.highest_qualification_other || null
+        : form.highest_qualification || null;
+
+    // Everything the recruiter checked "ask candidate later" on -- stored as
+    // a flat string array so the inbox-sweep cron can detect these
+    // explicitly-flagged candidates and so the profile-completion invite
+    // email (send-invite route) can reference exactly what's outstanding.
+    const missingFields: string[] = [];
+    if (form.ask_candidate_later_subdomain) missingFields.push("sub_domain");
+    if (form.ask_candidate_later_current_employer) missingFields.push("current_employer");
+    if (form.ask_candidate_later_current_job_title) missingFields.push("current_job_title");
+    if (form.ask_candidate_later_current_employment_status) missingFields.push("current_employment_status");
+    if (form.ask_candidate_later_current_industry) missingFields.push("current_industry");
+    if (form.ask_candidate_later_total_experience_years) missingFields.push("total_experience_years");
+    if (form.ask_candidate_later_current_fixed_ctc) missingFields.push("current_fixed_ctc");
+    if (form.ask_candidate_later_expected_fixed_ctc) missingFields.push("expected_fixed_ctc");
+    if (form.ask_candidate_later_notice_period) missingFields.push("notice_period");
+    if (form.ask_candidate_later_role_type) missingFields.push("role_type");
+    if (form.ask_candidate_later_highest_qualification) missingFields.push("highest_qualification");
+    if (form.ask_candidate_later_work_mode) missingFields.push("work_mode");
+    if (form.ask_candidate_later_open_to_relocation) missingFields.push("open_to_relocation");
+    if (askCandidateLaterResume) missingFields.push("resume");
+
     const segmentData: Record<string, unknown> = {
-      role_type: form.role_type === "Leading a Team" ? "Team Lead" : "IC",
+      role_type: form.ask_candidate_later_role_type ? null : form.role_type === "Leading a Team" ? "Team Lead" : "IC",
     };
-    if (form.role_type === "Leading a Team" && form.team_size) {
+    if (!form.ask_candidate_later_role_type && form.role_type === "Leading a Team" && form.team_size) {
       segmentData.team_size = form.team_size;
     }
+    if (missingFields.length > 0) {
+      segmentData.missing_fields = missingFields;
+    }
 
-    const { data, error } = await supabase
-      .from("candidates")
-      .insert({
-        full_name: form.full_name,
-        email: form.email,
-        phone: form.phone || null,
-        category: form.category || null,
-        sub_domain: resolvedSubDomain,
-        current_location: resolvedLocation,
-        current_fixed_ctc: form.current_fixed_ctc ? Number(form.current_fixed_ctc) : null,
-        total_experience_years: form.total_experience_years ? Number(form.total_experience_years) : null,
-        notice_period: form.notice_period || null,
-        current_job_title: form.current_job_title || null,
-        current_employer: form.current_employer || null,
-        current_employment_status: form.current_employment_status || null,
-        current_industry: form.current_industry || null,
-        industries: form.current_industry ? [form.current_industry] : [],
-        segment_data: segmentData,
-        resume_file_url: resumeFileUrl,
-        recruiter_seed_note: form.recruiter_seed_note || null,
-        status: "awaiting_input",
-        created_by: "recruiter_created",
-        created_by_user: user?.id,
-        source: "referral",
-      })
-      .select("id")
-      .single();
+    // Server-side create route: creates/links a real auth.users account for
+    // this candidate's email (service-role only, never exposed to the
+    // browser), inserts the candidates row, stamps user_id, and -- since
+    // this is Recruiter Created (no candidate consent needed) -- always
+    // sends a branded welcome + magic-link login email. See
+    // src/app/api/candidate-create for the full flow. Transport-only change
+    // from the old direct supabase.from("candidates").insert(...) call --
+    // every field collected above is unchanged.
+    const res = await fetch("/api/candidate-create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        candidate: {
+          full_name: form.full_name,
+          email: form.email,
+          phone: form.phone || null,
+          category: form.category || null,
+          sub_domain: resolvedSubDomain,
+          current_location: resolvedLocation,
+          current_fixed_ctc:
+            !form.ask_candidate_later_current_fixed_ctc && form.current_fixed_ctc ? Number(form.current_fixed_ctc) : null,
+          expected_fixed_ctc:
+            !form.ask_candidate_later_expected_fixed_ctc && form.expected_fixed_ctc ? Number(form.expected_fixed_ctc) : null,
+          total_experience_years:
+            !form.ask_candidate_later_total_experience_years && form.total_experience_years
+              ? Number(form.total_experience_years)
+              : null,
+          notice_period: !form.ask_candidate_later_notice_period ? form.notice_period || null : null,
+          current_job_title: !form.ask_candidate_later_current_job_title ? form.current_job_title || null : null,
+          current_employer: !form.ask_candidate_later_current_employer ? form.current_employer || null : null,
+          current_employment_status: !form.ask_candidate_later_current_employment_status
+            ? form.current_employment_status || null
+            : null,
+          current_industry: !form.ask_candidate_later_current_industry ? form.current_industry || null : null,
+          industries: !form.ask_candidate_later_current_industry && form.current_industry ? [form.current_industry] : [],
+          highest_qualification: resolvedHighestQualification,
+          work_mode: !form.ask_candidate_later_work_mode ? form.work_mode || null : null,
+          open_to_relocation: !form.ask_candidate_later_open_to_relocation ? form.open_to_relocation || null : null,
+          segment_data: segmentData,
+          resume_file_url: resumeFileUrl,
+          recruiter_seed_note: form.recruiter_seed_note || null,
+          status: "awaiting_input",
+          created_by: "recruiter_created",
+          source: "referral",
+        },
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
 
     setSaving(false);
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      setError(data?.error ?? "Something went wrong. Please try again.");
       return;
     }
 
@@ -165,22 +264,23 @@ export default function NewCandidatePage() {
       fetch("/api/ai-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: data.id }),
+        body: JSON.stringify({ candidateId: data.candidateId }),
       }).catch(() => {
         // Best-effort; the recruiter can still click Generate manually on
         // the candidate page if this silently fails.
       });
     }
 
-    router.push(`/candidates/${data.id}`);
+    router.push(`/candidates/${data.candidateId}`);
   }
 
   return (
     <div className="max-w-lg">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Create candidate</h1>
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-        The fields below are mandatory for a recruiter-sourced profile. Deeper fields (quota, deal size,
-        self-assessment) still come from the candidate once you send a completion invite.
+        Full name, email, phone, and location are always required -- that's how we'd ever reach this candidate again.
+        Everything else can be checked &quot;ask candidate later&quot; if you don&apos;t have it on hand; it'll show up
+        as an open item in the Priority Actions inbox and get asked for again via their profile-completion invite.
       </p>
       <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 space-y-4">
         <div>
@@ -310,12 +410,14 @@ export default function NewCandidatePage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current fixed CTC *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Current fixed CTC{!form.ask_candidate_later_current_fixed_ctc && " *"}
+          </label>
           <select
-            required
+            disabled={form.ask_candidate_later_current_fixed_ctc}
             value={form.current_fixed_ctc}
             onChange={(e) => setForm((f) => ({ ...f, current_fixed_ctc: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">Select...</option>
             {ctcOptions.map((c) => (
@@ -324,15 +426,64 @@ export default function NewCandidatePage() {
               </option>
             ))}
           </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_current_fixed_ctc}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_current_fixed_ctc: e.target.checked,
+                  current_fixed_ctc: e.target.checked ? "" : f.current_fixed_ctc,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Total experience *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Expected fixed CTC{!form.ask_candidate_later_expected_fixed_ctc && " *"}
+          </label>
           <select
-            required
+            disabled={form.ask_candidate_later_expected_fixed_ctc}
+            value={form.expected_fixed_ctc}
+            onChange={(e) => setForm((f) => ({ ...f, expected_fixed_ctc: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+          >
+            <option value="">Select...</option>
+            {ctcOptions.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_expected_fixed_ctc}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_expected_fixed_ctc: e.target.checked,
+                  expected_fixed_ctc: e.target.checked ? "" : f.expected_fixed_ctc,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Total experience{!form.ask_candidate_later_total_experience_years && " *"}
+          </label>
+          <select
+            disabled={form.ask_candidate_later_total_experience_years}
             value={form.total_experience_years}
             onChange={(e) => setForm((f) => ({ ...f, total_experience_years: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">Select...</option>
             {experienceOptions.map((o) => (
@@ -341,15 +492,31 @@ export default function NewCandidatePage() {
               </option>
             ))}
           </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_total_experience_years}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_total_experience_years: e.target.checked,
+                  total_experience_years: e.target.checked ? "" : f.total_experience_years,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Days to join *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Days to join{!form.ask_candidate_later_notice_period && " *"}
+          </label>
           <select
-            required
+            disabled={form.ask_candidate_later_notice_period}
             value={form.notice_period}
             onChange={(e) => setForm((f) => ({ ...f, notice_period: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">Select...</option>
             {noticePeriodOptions.map((n) => (
@@ -358,37 +525,85 @@ export default function NewCandidatePage() {
               </option>
             ))}
           </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_notice_period}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_notice_period: e.target.checked,
+                  notice_period: e.target.checked ? "" : f.notice_period,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current job title *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Current job title{!form.ask_candidate_later_current_job_title && " *"}
+          </label>
           <input
-            required
+            disabled={form.ask_candidate_later_current_job_title}
             value={form.current_job_title}
             onChange={(e) => setForm((f) => ({ ...f, current_job_title: e.target.value }))}
             placeholder="e.g. Senior Account Executive"
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           />
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_current_job_title}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_current_job_title: e.target.checked,
+                  current_job_title: e.target.checked ? "" : f.current_job_title,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current employer *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Current employer{!form.ask_candidate_later_current_employer && " *"}
+          </label>
           <input
-            required
+            disabled={form.ask_candidate_later_current_employer}
             value={form.current_employer}
             onChange={(e) => setForm((f) => ({ ...f, current_employer: e.target.value }))}
             placeholder="Company name"
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           />
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_current_employer}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_current_employer: e.target.checked,
+                  current_employer: e.target.checked ? "" : f.current_employer,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Employment status *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Employment status{!form.ask_candidate_later_current_employment_status && " *"}
+          </label>
           <select
-            required
+            disabled={form.ask_candidate_later_current_employment_status}
             value={form.current_employment_status}
             onChange={(e) => setForm((f) => ({ ...f, current_employment_status: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">Select...</option>
             {employmentStatusOptions.map((o) => (
@@ -397,15 +612,31 @@ export default function NewCandidatePage() {
               </option>
             ))}
           </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_current_employment_status}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_current_employment_status: e.target.checked,
+                  current_employment_status: e.target.checked ? "" : f.current_employment_status,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Current industry *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Current industry{!form.ask_candidate_later_current_industry && " *"}
+          </label>
           <select
-            required
+            disabled={form.ask_candidate_later_current_industry}
             value={form.current_industry}
             onChange={(e) => setForm((f) => ({ ...f, current_industry: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">Select...</option>
             {industryOptions.map((i) => (
@@ -414,17 +645,141 @@ export default function NewCandidatePage() {
               </option>
             ))}
           </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_current_industry}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_current_industry: e.target.checked,
+                  current_industry: e.target.checked ? "" : f.current_industry,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">IC or leading a team? *</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Highest qualification{!form.ask_candidate_later_highest_qualification && " *"}
+          </label>
           <select
-            required
+            disabled={form.ask_candidate_later_highest_qualification}
+            value={form.highest_qualification}
+            onChange={(e) => setForm((f) => ({ ...f, highest_qualification: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+          >
+            <option value="">Select...</option>
+            {highestQualificationOptions.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+          {form.highest_qualification === "Other" && !form.ask_candidate_later_highest_qualification && (
+            <input
+              value={form.highest_qualification_other}
+              onChange={(e) => setForm((f) => ({ ...f, highest_qualification_other: e.target.value }))}
+              placeholder="Please specify"
+              className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+          )}
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_highest_qualification}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_highest_qualification: e.target.checked,
+                  highest_qualification: e.target.checked ? "" : f.highest_qualification,
+                  highest_qualification_other: e.target.checked ? "" : f.highest_qualification_other,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Work mode{!form.ask_candidate_later_work_mode && " *"}
+          </label>
+          <select
+            disabled={form.ask_candidate_later_work_mode}
+            value={form.work_mode}
+            onChange={(e) => setForm((f) => ({ ...f, work_mode: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+          >
+            <option value="">Select...</option>
+            {workModeOptions.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_work_mode}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_work_mode: e.target.checked,
+                  work_mode: e.target.checked ? "" : f.work_mode,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Open to relocation{!form.ask_candidate_later_open_to_relocation && " *"}
+          </label>
+          <select
+            disabled={form.ask_candidate_later_open_to_relocation}
+            value={form.open_to_relocation}
+            onChange={(e) => setForm((f) => ({ ...f, open_to_relocation: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+          >
+            <option value="">Select...</option>
+            {relocationOptions.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_open_to_relocation}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_open_to_relocation: e.target.checked,
+                  open_to_relocation: e.target.checked ? "" : f.open_to_relocation,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            IC or leading a team?{!form.ask_candidate_later_role_type && " *"}
+          </label>
+          <select
+            disabled={form.ask_candidate_later_role_type}
             value={form.role_type}
             onChange={(e) =>
               setForm((f) => ({ ...f, role_type: e.target.value, team_size: e.target.value === "Leading a Team" ? f.team_size : "" }))
             }
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">Select...</option>
             {roleTypeOptions.map((o) => (
@@ -433,30 +788,45 @@ export default function NewCandidatePage() {
               </option>
             ))}
           </select>
-        </div>
-
-        {form.role_type === "Leading a Team" && (
-          <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Team size *</label>
+          {form.role_type === "Leading a Team" && !form.ask_candidate_later_role_type && (
             <select
               required
               value={form.team_size}
               onChange={(e) => setForm((f) => ({ ...f, team_size: e.target.value }))}
-              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
             >
-              <option value="">Select...</option>
+              <option value="">Select team size...</option>
               {teamSizeOptions.map((o) => (
                 <option key={o} value={o}>
                   {o}
                 </option>
               ))}
             </select>
-          </div>
-        )}
+          )}
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={form.ask_candidate_later_role_type}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  ask_candidate_later_role_type: e.target.checked,
+                  role_type: e.target.checked ? "" : f.role_type,
+                  team_size: e.target.checked ? "" : f.team_size,
+                }))
+              }
+            />
+            Not sure — ask candidate later
+          </label>
+        </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Resume *</label>
-          {resumeFile ? (
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Resume{!askCandidateLaterResume && " *"}
+          </label>
+          {askCandidateLaterResume ? (
+            <p className="text-xs text-slate-400 italic px-1 py-1">Will collect this from the candidate later.</p>
+          ) : resumeFile ? (
             <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
@@ -482,6 +852,17 @@ export default function NewCandidatePage() {
               />
             </label>
           )}
+          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={askCandidateLaterResume}
+              onChange={(e) => {
+                setAskCandidateLaterResume(e.target.checked);
+                if (e.target.checked) setResumeFile(null);
+              }}
+            />
+            Not sure — ask candidate later
+          </label>
         </div>
 
         <div>

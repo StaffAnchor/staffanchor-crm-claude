@@ -12,5 +12,9 @@ export default async function VendorInboxPage() {
 
   const items: InboxItem[] = (error ? [] : data ?? []) as InboxItem[];
 
-  return <InboxView initialItems={items} fetchError={error?.message ?? null} />;
+  // Vendors/freelancers don't get the recruiter-assignment control -- RLS
+  // only lets them update rows already assigned to themselves anyway, so an
+  // empty roster here just means the dropdown quietly shows "Unassigned"
+  // with no reassignment options rather than exposing the full staff list.
+  return <InboxView initialItems={items} fetchError={error?.message ?? null} recruiters={[]} />;
 }

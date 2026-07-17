@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data: candidate, error } = await supabase
     .from("candidates")
-    .select("id, full_name, email, status")
+    .select("id, full_name, email, status, segment_data")
     .eq("id", candidateId)
     .single();
 
@@ -52,6 +52,36 @@ export async function POST(req: NextRequest) {
     candidate.full_name
   )}&email=${encodeURIComponent(candidate.email)}&ref=${candidate.id}`;
 
+  // If the recruiter explicitly flagged fields as "ask candidate later" on
+  // the Create Candidate form (segment_data.missing_fields), reference them
+  // by name here instead of a generic "complete your profile" ask -- same
+  // label vocabulary as the Create Candidate form and the inbox-sweep cron's
+  // incomplete_profile task so a candidate sees consistent wording wherever
+  // this comes up.
+  const missingFields = Array.isArray((candidate.segment_data as { missing_fields?: unknown } | null)?.missing_fields)
+    ? ((candidate.segment_data as { missing_fields: unknown[] }).missing_fields.filter((f): f is string => typeof f === "string"))
+    : [];
+  const missingFieldLabels: Record<string, string> = {
+    sub_domain: "your practice / vertical / function",
+    current_employer: "your current employer",
+    current_job_title: "your current job title",
+    current_employment_status: "your employment status",
+    current_industry: "your current industry",
+    total_experience_years: "your total experience",
+    current_fixed_ctc: "your current fixed CTC",
+    expected_fixed_ctc: "your expected fixed CTC",
+    notice_period: "your notice period / days to join",
+    role_type: "whether you're an IC or leading a team",
+    highest_qualification: "your highest qualification",
+    work_mode: "your preferred work mode",
+    open_to_relocation: "whether you're open to relocation",
+    resume: "your resume",
+  };
+  const missingFieldText =
+    missingFields.length > 0
+      ? ` Specifically, we still need: ${missingFields.map((f) => missingFieldLabels[f] ?? f).join(", ")}.`
+      : "";
+
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -62,8 +92,8 @@ export async function POST(req: NextRequest) {
       from: `"StaffAnchor" <${gmailUser}>`,
       to: candidate.email,
       subject: "Complete your StaffAnchor candidate profile",
-      text: `Hi ${candidate.full_name},\n\nA StaffAnchor recruiter has started a profile for you. Please complete it here so we can match you to the right roles:\n\n${registerUrl}\n\nThanks,\nStaffAnchor Team`,
-      html: `<p>Hi ${candidate.full_name},</p><p>A StaffAnchor recruiter has started a profile for you. Please complete it so we can match you to the right roles:</p><p><a href="${registerUrl}">${registerUrl}</a></p><p>Thanks,<br/>StaffAnchor Team</p>`,
+      text: `Hi ${candidate.full_name},\n\nA StaffAnchor recruiter has started a profile for you.${missingFieldText} Please complete it here so we can match you to the right roles:\n\n${registerUrl}\n\nThanks,\nStaffAnchor Team`,
+      html: `<p>Hi ${candidate.full_name},</p><p>A StaffAnchor recruiter has started a profile for you.${missingFieldText}</p><p>Please complete it so we can match you to the right roles:</p><p><a href="${registerUrl}">${registerUrl}</a></p><p>Thanks,<br/>StaffAnchor Team</p>`,
     });
 
     await supabase.from("audit_log").insert({
