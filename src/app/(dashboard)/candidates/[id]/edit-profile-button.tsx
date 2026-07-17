@@ -18,11 +18,8 @@ import {
   roleLevelOptions,
   currencyOptions,
   dealSizeBandsFor,
-  insideSalesSubDomains,
-  ahtOptions,
-  dailyCallTargetOptions,
-  dailyTalkTimeOptions,
-  leadSourceOptions,
+  b2bSalesMotionTypeGroups,
+  clientProfileOptions,
   salesCycleOptions,
   sellingStyleOptions,
   salesMotionOptions,
@@ -233,10 +230,8 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
     scopeDetail: seg(sd, "scope_detail"),
     scopeRegions: segArr(sd, "scope_regions"),
 
-    aht: seg(sd, "aht"),
-    dailyCallTarget: seg(sd, "daily_call_target"),
-    dailyTalkTime: seg(sd, "daily_talk_time"),
-    leadSources: segArr(sd, "lead_sources"),
+    b2bSalesMotionType: segArr(sd, "b2b_sales_motion_type"),
+    buyerPersona: seg(sd, "buyer_persona"),
 
     hasIcTarget: icTargets.some((v) => v !== "") ? "Yes" : "No",
     icTargetCurrency: seg(sd, "ic_target_currency") as CurrencyValue | "",
@@ -270,7 +265,6 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
   const isSales = form.category === "b2b_sales" || form.category === "b2c_sales";
   const isB2B = form.category === "b2b_sales";
   const isB2C = form.category === "b2c_sales";
-  const isInsideSales = insideSalesSubDomains.includes(form.subDomain);
   const isTeamLead = form.roleType === "Leading a Team";
 
   // Tiered Passport Readiness Metric -- mirrors the same Basic/Good/Excellent/
@@ -318,7 +312,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
-  function toggleInArray(key: "secondarySubDomains" | "motion" | "scopeRegions" | "leadSources", opt: string) {
+  function toggleInArray(key: "secondarySubDomains" | "motion" | "scopeRegions" | "b2bSalesMotionType", opt: string) {
     setForm((f) => {
       const arr = f[key] as string[];
       return {
@@ -427,6 +421,8 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
     delete segmentData.scope;
     delete segmentData.scope_detail;
     delete segmentData.scope_regions;
+    delete segmentData.b2b_sales_motion_type;
+    delete segmentData.buyer_persona;
 
     if (isB2B) {
       Object.assign(segmentData, {
@@ -436,6 +432,8 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
         style: form.style || undefined,
         motion: form.motion.length ? form.motion : undefined,
         segment: form.segment || undefined,
+        b2b_sales_motion_type: form.b2bSalesMotionType.length ? form.b2bSalesMotionType : undefined,
+        buyer_persona: form.buyerPersona || undefined,
       });
     } else if (isB2C) {
       Object.assign(segmentData, {
@@ -451,18 +449,14 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       });
     }
 
+    // AHT / Daily Call Target / Daily Talk Time / Lead Source are obsolete --
+    // every B2B Sales Motion now uses the same shared field set (Selling
+    // Style, Deal Size, Sales Cycle, Buyer Persona) instead of a separate
+    // Inside-Sales-only block, mirroring the candidate-facing wizard.
     delete segmentData.aht;
     delete segmentData.daily_call_target;
     delete segmentData.daily_talk_time;
     delete segmentData.lead_sources;
-    if (isInsideSales) {
-      Object.assign(segmentData, {
-        aht: form.aht || undefined,
-        daily_call_target: form.dailyCallTarget || undefined,
-        daily_talk_time: form.dailyTalkTime || undefined,
-        lead_sources: form.leadSources.length ? form.leadSources : undefined,
-      });
-    }
 
     const isComplete = MANDATORY_FIELDS_COMPLETE({
       full_name: form.full_name,
@@ -969,38 +963,37 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                     )}
                   </div>
 
-                  {isInsideSales && (
-                    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                      <div>
-                        <label className={FIELD_LABEL}>Average handling time (AHT)</label>
-                        <select value={form.aht} onChange={(e) => set("aht", e.target.value)} className={INPUT_CLS}>
+                  {isB2B && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
+                        Sales Motion Type &amp; Buyer Persona
+                      </span>
+                      <div className="space-y-3">
+                        {b2bSalesMotionTypeGroups.map(({ group, options }) => (
+                          <div key={group}>
+                            <label className="block text-[11px] font-medium text-slate-400 dark:text-slate-500 mb-1">
+                              {group}
+                            </label>
+                            <CheckboxGroup
+                              options={[...options]}
+                              selected={form.b2bSalesMotionType}
+                              onToggle={(o) => toggleInArray("b2bSalesMotionType", o)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3">
+                        <label className={FIELD_LABEL}>Primary buyer persona</label>
+                        <select
+                          value={form.buyerPersona}
+                          onChange={(e) => set("buyerPersona", e.target.value)}
+                          className={INPUT_CLS}
+                        >
                           <option value="">Select...</option>
-                          {ahtOptions.map((o) => (
+                          {clientProfileOptions.map((o) => (
                             <option key={o} value={o}>{o}</option>
                           ))}
                         </select>
-                      </div>
-                      <div>
-                        <label className={FIELD_LABEL}>Daily call target</label>
-                        <select value={form.dailyCallTarget} onChange={(e) => set("dailyCallTarget", e.target.value)} className={INPUT_CLS}>
-                          <option value="">Select...</option>
-                          {dailyCallTargetOptions.map((o) => (
-                            <option key={o} value={o}>{o}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className={FIELD_LABEL}>Daily talk time</label>
-                        <select value={form.dailyTalkTime} onChange={(e) => set("dailyTalkTime", e.target.value)} className={INPUT_CLS}>
-                          <option value="">Select...</option>
-                          {dailyTalkTimeOptions.map((o) => (
-                            <option key={o} value={o}>{o}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className={FIELD_LABEL}>Lead sources</label>
-                        <CheckboxGroup options={leadSourceOptions} selected={form.leadSources} onToggle={(o) => toggleInArray("leadSources", o)} />
                       </div>
                     </div>
                   )}

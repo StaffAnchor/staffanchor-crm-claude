@@ -262,6 +262,40 @@ export const b2cSalesMotionOptions = [
   "Retail / Counter Sales", "Field / Door-to-door", "Telesales / Inside Sales", "Channel / Franchise-led",
 ];
 
+// B2B sales-motion taxonomy -- mirrors jobs-staffanchor ApplyForm.tsx exactly
+// (same group labels + option strings), so segment_data.b2b_sales_motion_type
+// stays in lockstep between the candidate-facing wizard and this recruiter
+// edit panel. Both candidate-facing and recruiter-facing UIs treat this as a
+// multi-select (string[]).
+export const b2bSalesMotionTypeGroups = [
+  {
+    group: "Enterprise Sales Motions (High ACV & Strategic)",
+    options: [
+      "Outbound Enterprise (Account-Based Marketing / ABM)",
+      "Inbound Enterprise (Marketing-Led)",
+      "Strategic / Named Accounts (Enterprise Expansion)",
+      "Partner / Channel-Led Enterprise Sales",
+    ],
+  },
+  {
+    group: "Inside Sales / High-Velocity Motions",
+    options: [
+      "Inbound Transactional Sales (High-Velocity Inbound)",
+      "Outbound Inside Sales (Volume Prospecting / SDR / BDR)",
+      "Product-Led Sales (PLS / Active User Conversion)",
+      "Inside Channel & Remote Partner Management",
+    ],
+  },
+  {
+    group: "Traditional & Industrial Sales Motions",
+    options: [
+      "Direct Field Engineering Sales (Consultative B2B)",
+      "Distributor-Led Commercial Sales (Indirect Channel)",
+    ],
+  },
+] as const;
+export const b2bSalesMotionTypeOptions = b2bSalesMotionTypeGroups.flatMap((g) => [...g.options]);
+
 // Industrial & Infrastructure practice-specific option sets -- mirrors
 // jobs-staffanchor CareerTimelinePanel.tsx exactly (same value strings), so
 // the CRM Career Timeline component and the candidate-facing form stay in
