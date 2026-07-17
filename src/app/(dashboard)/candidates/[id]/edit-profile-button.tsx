@@ -1113,8 +1113,9 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                     {form.currentIndustry === "Other" && (
                       <input
                         value={form.currentIndustryOther}
-                        onChange={(e) => set("currentIndustryOther", e.target.value)}
-                        placeholder="Specify industry"
+                        onChange={(e) => set("currentIndustryOther", e.target.value.slice(0, 60))}
+                        maxLength={60}
+                        placeholder="e.g. EdTech, Fintech, Insurance"
                         className={`${INPUT_CLS} mt-2`}
                       />
                     )}
