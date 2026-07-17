@@ -38,10 +38,15 @@ export type CandidateRow = {
   current_job_title: string | null;
   category: string | null;
   sub_domain: string | null;
+  secondary_sub_domains: string[] | null;
   total_experience_years: number | null;
   current_fixed_ctc: number | null;
+  expected_fixed_ctc: number | null;
   notice_period: string | null;
   current_employment_status: string | null;
+  highest_qualification: string | null;
+  work_mode: string | null;
+  open_to_relocation: string | null;
   status: string;
   current_industry: string | null;
   industries: string[] | null;
@@ -369,6 +374,54 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "notice_period",
     label: "Days to Join",
     render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.notice_period ?? "—"}</span>,
+  },
+  {
+    key: "expected_fixed_ctc",
+    label: "Expected Fixed CTC",
+    render: (c) => (
+      <span className="text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
+        {c.expected_fixed_ctc ? `₹${c.expected_fixed_ctc}L` : "—"}
+      </span>
+    ),
+  },
+  {
+    key: "highest_qualification",
+    label: "Highest Qualification",
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.highest_qualification ?? "—"}</span>,
+  },
+  {
+    key: "work_mode",
+    label: "Work Mode",
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.work_mode ?? "—"}</span>,
+  },
+  {
+    key: "open_to_relocation",
+    label: "Open to Relocation",
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.open_to_relocation ?? "—"}</span>,
+  },
+  {
+    key: "languages_known",
+    label: "Languages Known",
+    render: (c) => {
+      const langs = (c.segment_data?.["languages_known"] as string[] | undefined) ?? [];
+      return langs.length ? (
+        <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{langs.join(", ")}</span>
+      ) : (
+        <span className="text-[11px] text-slate-300">—</span>
+      );
+    },
+  },
+  {
+    key: "secondary_sub_domains",
+    label: "Secondary Specializations",
+    render: (c) =>
+      c.secondary_sub_domains && c.secondary_sub_domains.length ? (
+        <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[180px]">
+          {c.secondary_sub_domains.join(", ")}
+        </span>
+      ) : (
+        <span className="text-[11px] text-slate-300">—</span>
+      ),
   },
   {
     key: "resume",

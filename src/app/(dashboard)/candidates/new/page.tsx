@@ -17,6 +17,8 @@ import {
   profileTypeOptions,
   level1OptionsForProfileType,
   subDomainsForPractice,
+  secondarySpecializationGroups,
+  primaryAsSecondaryLabel,
   languageOptions,
   highestQualificationOptions,
   workModeOptions,
@@ -36,6 +38,14 @@ export default function NewCandidatePage() {
     other_b2b_subdomain: "",
     other_b2b_subdomain_custom: "",
     ask_candidate_later_subdomain: false,
+    // Cross-Profile-Type (mirrors jobs-staffanchor's ApplyForm exactly, see
+    // candidate-options.ts secondarySpecializationGroups) -- optional here
+    // since this quick-create form treats most depth fields as skippable.
+    secondary_sub_domains: [] as string[],
+    secondary_other_b2b_subdomain: "",
+    secondary_other_b2b_subdomain_custom: "",
+    secondary_other_b2c_specify: "",
+    secondary_other_non_sales_specify: "",
     languages_known: [] as string[],
     custom_language: "",
     ask_candidate_later_languages: false,
@@ -91,7 +101,11 @@ export default function NewCandidatePage() {
       if (!form.sub_domain) return "Practice / Vertical / Function is required (or check 'Ask candidate later').";
       if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the value, or check 'Ask candidate later'.";
     }
-    if (!form.ask_candidate_later_current_fixed_ctc && !form.current_fixed_ctc) {
+    // A "First Job Seeker" has no current employer/job title/CTC -- there is
+    // no current role for those to describe -- so they're skipped rather than
+    // requiring "Ask candidate later" to be checked as a workaround.
+    const isFirstJobSeeker = form.current_employment_status === "First Job Seeker";
+    if (!isFirstJobSeeker && !form.ask_candidate_later_current_fixed_ctc && !form.current_fixed_ctc) {
       return "Current fixed CTC is required (or check 'Ask candidate later').";
     }
     if (!form.ask_candidate_later_expected_fixed_ctc && !form.expected_fixed_ctc) {
@@ -103,10 +117,10 @@ export default function NewCandidatePage() {
     if (!form.ask_candidate_later_notice_period && !form.notice_period) {
       return "Days to join is required (or check 'Ask candidate later').";
     }
-    if (!form.ask_candidate_later_current_job_title && !form.current_job_title.trim()) {
+    if (!isFirstJobSeeker && !form.ask_candidate_later_current_job_title && !form.current_job_title.trim()) {
       return "Current job title is required (or check 'Ask candidate later').";
     }
-    if (!form.ask_candidate_later_current_employer && !form.current_employer.trim()) {
+    if (!isFirstJobSeeker && !form.ask_candidate_later_current_employer && !form.current_employer.trim()) {
       return "Current employer is required (or check 'Ask candidate later').";
     }
     if (!form.ask_candidate_later_current_employment_status && !form.current_employment_status) {
@@ -228,6 +242,18 @@ export default function NewCandidatePage() {
       segmentData.other_b2b_subdomain =
         form.other_b2b_subdomain === "Other" ? form.other_b2b_subdomain_custom.trim() : form.other_b2b_subdomain;
     }
+    if (form.secondary_sub_domains.includes("Other B2B") && form.secondary_other_b2b_subdomain) {
+      segmentData.secondary_other_b2b_subdomain =
+        form.secondary_other_b2b_subdomain === "Other"
+          ? form.secondary_other_b2b_subdomain_custom.trim()
+          : form.secondary_other_b2b_subdomain;
+    }
+    if (form.secondary_sub_domains.includes("Other (B2C)") && form.secondary_other_b2c_specify.trim()) {
+      segmentData.secondary_other_b2c_specify = form.secondary_other_b2c_specify.trim();
+    }
+    if (form.secondary_sub_domains.includes("Other (Non-Sales)") && form.secondary_other_non_sales_specify.trim()) {
+      segmentData.secondary_other_non_sales_specify = form.secondary_other_non_sales_specify.trim();
+    }
     if (missingFields.length > 0) {
       segmentData.missing_fields = missingFields;
     }
@@ -250,6 +276,7 @@ export default function NewCandidatePage() {
           phone: form.phone || null,
           category: form.category || null,
           sub_domain: resolvedSubDomain,
+          secondary_sub_domains: form.secondary_sub_domains,
           current_location: resolvedLocation,
           current_fixed_ctc:
             !form.ask_candidate_later_current_fixed_ctc && form.current_fixed_ctc ? Number(form.current_fixed_ctc) : null,
@@ -468,35 +495,133 @@ export default function NewCandidatePage() {
 
         <div>
           <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-            Current fixed CTC{!form.ask_candidate_later_current_fixed_ctc && " *"}
+            Secondary Specializations <span className="font-normal text-slate-400">(optional)</span>
           </label>
-          <select
-            disabled={form.ask_candidate_later_current_fixed_ctc}
-            value={form.current_fixed_ctc}
-            onChange={(e) => setForm((f) => ({ ...f, current_fixed_ctc: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-          >
-            <option value="">Select...</option>
-            {ctcOptions.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mb-1.5 text-xs text-slate-500">
+            Covers all Profile Types, not just this candidate&apos;s primary one -- pick any that genuinely apply if
+            they've worked across B2B, B2C, or a non-sales function.
+          </p>
+          <div className="space-y-2 rounded-lg border border-slate-200 p-2.5">
+            {secondarySpecializationGroups().map(({ group, options }) => {
+              const excludeLabel = primaryAsSecondaryLabel(form.category || null, form.sub_domain);
+              const visibleOptions = options.filter((o) => o !== excludeLabel);
+              if (!visibleOptions.length) return null;
+              return (
+                <div key={group}>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{group}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {visibleOptions.map((o) => {
+                      const active = form.secondary_sub_domains.includes(o);
+                      return (
+                        <button
+                          type="button"
+                          key={o}
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              secondary_sub_domains: active
+                                ? f.secondary_sub_domains.filter((v) => v !== o)
+                                : [...f.secondary_sub_domains, o],
+                            }))
+                          }
+                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                            active
+                              ? "border-slate-900 bg-slate-900 text-white"
+                              : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                          }`}
+                        >
+                          {active ? "✓ " : "+ "}
+                          {o}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {form.secondary_sub_domains.includes("Other B2B") && (
+            <div className="mt-2 space-y-2 rounded-lg border border-slate-100 bg-slate-50/60 p-2.5">
+              <select
+                value={form.secondary_other_b2b_subdomain}
+                onChange={(e) => setForm((f) => ({ ...f, secondary_other_b2b_subdomain: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                <option value="">Select — tell us more about "Other B2B"...</option>
+                {subDomainsForPractice("Other B2B").map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+              {form.secondary_other_b2b_subdomain === "Other" && (
+                <input
+                  value={form.secondary_other_b2b_subdomain_custom}
+                  onChange={(e) => setForm((f) => ({ ...f, secondary_other_b2b_subdomain_custom: e.target.value }))}
+                  placeholder="Please specify"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                />
+              )}
+            </div>
+          )}
+          {form.secondary_sub_domains.includes("Other (B2C)") && (
             <input
-              type="checkbox"
-              checked={form.ask_candidate_later_current_fixed_ctc}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  ask_candidate_later_current_fixed_ctc: e.target.checked,
-                  current_fixed_ctc: e.target.checked ? "" : f.current_fixed_ctc,
-                }))
-              }
+              value={form.secondary_other_b2c_specify}
+              onChange={(e) => setForm((f) => ({ ...f, secondary_other_b2c_specify: e.target.value }))}
+              placeholder='Please specify the "Other" B2C specialization'
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
             />
-            Not sure — ask candidate later
+          )}
+          {form.secondary_sub_domains.includes("Other (Non-Sales)") && (
+            <input
+              value={form.secondary_other_non_sales_specify}
+              onChange={(e) => setForm((f) => ({ ...f, secondary_other_non_sales_specify: e.target.value }))}
+              placeholder='Please specify the "Other" Non-Sales specialization'
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            />
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Current fixed CTC
+            {!form.ask_candidate_later_current_fixed_ctc && form.current_employment_status !== "First Job Seeker" && " *"}
           </label>
+          {form.current_employment_status === "First Job Seeker" ? (
+            <p className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/60 px-3 py-1.5 text-sm text-emerald-700">
+              Not applicable — First Job Seeker
+            </p>
+          ) : (
+            <>
+              <select
+                disabled={form.ask_candidate_later_current_fixed_ctc}
+                value={form.current_fixed_ctc}
+                onChange={(e) => setForm((f) => ({ ...f, current_fixed_ctc: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                <option value="">Select...</option>
+                {ctcOptions.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={form.ask_candidate_later_current_fixed_ctc}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      ask_candidate_later_current_fixed_ctc: e.target.checked,
+                      current_fixed_ctc: e.target.checked ? "" : f.current_fixed_ctc,
+                    }))
+                  }
+                />
+                Not sure — ask candidate later
+              </label>
+            </>
+          )}
         </div>
 
         <div>
@@ -600,56 +725,74 @@ export default function NewCandidatePage() {
 
         <div>
           <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-            Current job title{!form.ask_candidate_later_current_job_title && " *"}
+            Current job title
+            {!form.ask_candidate_later_current_job_title && form.current_employment_status !== "First Job Seeker" && " *"}
           </label>
-          <input
-            disabled={form.ask_candidate_later_current_job_title}
-            value={form.current_job_title}
-            onChange={(e) => setForm((f) => ({ ...f, current_job_title: e.target.value }))}
-            placeholder="e.g. Senior Account Executive"
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-          />
-          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <input
-              type="checkbox"
-              checked={form.ask_candidate_later_current_job_title}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  ask_candidate_later_current_job_title: e.target.checked,
-                  current_job_title: e.target.checked ? "" : f.current_job_title,
-                }))
-              }
-            />
-            Not sure — ask candidate later
-          </label>
+          {form.current_employment_status === "First Job Seeker" ? (
+            <p className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/60 px-3 py-1.5 text-sm text-emerald-700">
+              Not applicable — First Job Seeker
+            </p>
+          ) : (
+            <>
+              <input
+                disabled={form.ask_candidate_later_current_job_title}
+                value={form.current_job_title}
+                onChange={(e) => setForm((f) => ({ ...f, current_job_title: e.target.value }))}
+                placeholder="e.g. Senior Account Executive"
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+              />
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={form.ask_candidate_later_current_job_title}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      ask_candidate_later_current_job_title: e.target.checked,
+                      current_job_title: e.target.checked ? "" : f.current_job_title,
+                    }))
+                  }
+                />
+                Not sure — ask candidate later
+              </label>
+            </>
+          )}
         </div>
 
         <div>
           <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-            Current employer{!form.ask_candidate_later_current_employer && " *"}
+            Current employer
+            {!form.ask_candidate_later_current_employer && form.current_employment_status !== "First Job Seeker" && " *"}
           </label>
-          <input
-            disabled={form.ask_candidate_later_current_employer}
-            value={form.current_employer}
-            onChange={(e) => setForm((f) => ({ ...f, current_employer: e.target.value }))}
-            placeholder="Company name"
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-          />
-          <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <input
-              type="checkbox"
-              checked={form.ask_candidate_later_current_employer}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  ask_candidate_later_current_employer: e.target.checked,
-                  current_employer: e.target.checked ? "" : f.current_employer,
-                }))
-              }
-            />
-            Not sure — ask candidate later
-          </label>
+          {form.current_employment_status === "First Job Seeker" ? (
+            <p className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/60 px-3 py-1.5 text-sm text-emerald-700">
+              Not applicable — First Job Seeker
+            </p>
+          ) : (
+            <>
+              <input
+                disabled={form.ask_candidate_later_current_employer}
+                value={form.current_employer}
+                onChange={(e) => setForm((f) => ({ ...f, current_employer: e.target.value }))}
+                placeholder="Company name"
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+              />
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={form.ask_candidate_later_current_employer}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      ask_candidate_later_current_employer: e.target.checked,
+                      current_employer: e.target.checked ? "" : f.current_employer,
+                    }))
+                  }
+                />
+                Not sure — ask candidate later
+              </label>
+            </>
+          )}
         </div>
 
         <div>

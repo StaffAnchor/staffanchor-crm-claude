@@ -163,6 +163,32 @@ export function level1OptionsForProfileType(profileType: string | null): string[
   return [];
 }
 
+// ---- Secondary Specialization: cross-Profile-Type combined list -- mirrors
+// jobs-staffanchor's options.ts secondarySpecializationGroups() exactly (same
+// value strings, including the "Other (B2C)" / "Other (Non-Sales)"
+// disambiguation), so a candidate created here and one who applies directly
+// end up with identical secondary_sub_domains values. ----
+export type SecondarySpecializationGroup = {
+  group: "B2B Sales" | "B2C Sales" | "Non-Sales / Other";
+  options: string[];
+};
+
+export function secondarySpecializationGroups(): SecondarySpecializationGroup[] {
+  return [
+    { group: "B2B Sales", options: [...b2bPractices] },
+    { group: "B2C Sales", options: b2cVerticals.map((o) => (o === "Other" ? "Other (B2C)" : o)) },
+    { group: "Non-Sales / Other", options: nonSalesFunctions.map((o) => (o === "Other" ? "Other (Non-Sales)" : o)) },
+  ];
+}
+
+export function primaryAsSecondaryLabel(profileType: string | null, subDomain: string): string {
+  if (subDomain === "Other") {
+    if (profileType === "b2c_sales") return "Other (B2C)";
+    if (profileType === "non_sales") return "Other (Non-Sales)";
+  }
+  return subDomain;
+}
+
 // B2C sales-motion options -- distinct from the B2B `salesMotionOptions`
 // above (Outbound-Hunting/Inbound/Account-based/etc., which assumes a B2B
 // buying process). B2C motions describe how the sale physically happens.
