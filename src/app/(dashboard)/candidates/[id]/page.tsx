@@ -328,6 +328,21 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
+          {/* At-a-glance stat strip -- the handful of numbers a recruiter
+              scans first (current location, experience, notice period,
+              expected CTC), pulled out of the denser 8-field grid below and
+              given their own prominent row right under the header, the way
+              a portal candidate card leads with these before anything else. */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <StatChip label="Current location" value={candidate.current_location} />
+            <StatChip label="Experience" value={candidate.total_experience_years ? `${candidate.total_experience_years} yrs` : null} />
+            <StatChip label="Days to join" value={candidate.notice_period} />
+            <StatChip
+              label="Expected fixed CTC"
+              value={candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : null}
+            />
+          </div>
+
           {redFlags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mt-4">
               <span className="flex items-center gap-1 text-[11px] font-medium text-rose-600">
@@ -375,15 +390,13 @@ export default async function CandidateDetailPage({
             )}
           </div>
 
-          {/* Key stats -- the numbers a recruiter scans before opening a tab */}
+          {/* Secondary details -- everything else, kept to the denser grid
+              now that the four headline numbers above have their own row. */}
           <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 text-[13px]">
             <Field label="Function / Domain" value={candidate.category?.replace("_", " ")} />
             <Field label="Primary sub-domain" value={candidate.sub_domain} />
-            <Field label="Experience" value={`${candidate.total_experience_years ?? "—"} yrs`} />
-            <Field label="Days to join" value={candidate.notice_period} />
             <Field label="Current fixed CTC" value={candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "—"} />
             <Field label="Current variable CTC" value={candidate.current_variable_ctc ? `₹${candidate.current_variable_ctc}L` : "—"} />
-            <Field label="Expected fixed CTC" value={candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "—"} />
             <Field label="ESOPs held" value={candidate.esops_held ? "Yes" : "No"} />
           </div>
 
@@ -565,6 +578,18 @@ function Field({ label, value }: { label: string; value?: string | null }) {
     <div>
       <p className="text-[11px] text-slate-400">{label}</p>
       <p className="text-slate-800 dark:text-slate-200 font-medium">{value || "—"}</p>
+    </div>
+  );
+}
+
+// Portal-style headline stat -- bolder number, quieter label, its own
+// bordered chip so these four read as the "at a glance" facts rather than
+// blending into the denser field grid underneath.
+function StatChip({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
+      <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
+      <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
     </div>
   );
 }

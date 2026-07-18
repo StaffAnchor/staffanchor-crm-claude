@@ -96,14 +96,16 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 
 const CREATED_BY_LABEL: Record<string, string> = {
   quick_apply: "Quick Apply",
-  self_registration: "Job Portal",
+  self_registration: "Build Your Profile",
   recruiter_created: "Recruiter Added",
+  bulk_resume_upload: "Bulk CV Upload",
 };
 
 const CREATED_BY_TONE: Record<string, BadgeTone> = {
   quick_apply: "accent",
   self_registration: "info",
   recruiter_created: "neutral",
+  bulk_resume_upload: "warning",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {

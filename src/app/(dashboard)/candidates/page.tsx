@@ -10,6 +10,7 @@ import {
   Zap,
   Database,
   AlertTriangle,
+  Upload,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
@@ -19,7 +20,15 @@ import {
   highestQualificationOptions as QUALIFICATION_OPTIONS,
   workModeOptions,
   roleLevelOptions,
+  languageOptions,
+  b2bSalesMotionTypeOptions,
+  b2cSalesMotionOptions,
 } from "@/lib/candidate-options";
+
+// Bulk CV Upload (and any future non-portal ingestion path) lands here too,
+// alongside the three original mechanisms -- keeps "how a candidate entered
+// the system" as one closed set instead of drifting into free text.
+const SOURCE_CHANNEL_OPTIONS = ["Naukri", "LinkedIn", "IIMJobs", "Monster", "Referral", "Other"];
 
 // role_type is stored in segment_data as "IC" or "Team Lead" (see ApplyForm's
 // mapping in jobs-staffanchor-clean) -- distinct from the UI labels used on
@@ -46,8 +55,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 const ORIGIN_LABEL: Record<string, string> = {
   quick_apply: "Job Quick Apply",
-  self_registration: "Job Portal — Build Your Profile",
-  recruiter_created: "Recruiter Created",
+  self_registration: "Build Your Profile",
+  recruiter_created: "Recruiter Created (one at a time)",
+  bulk_resume_upload: "Bulk CV Upload",
 };
 
 // ROS: a hiring funnel is inherently one progression, not six unrelated
@@ -113,6 +123,10 @@ type SearchParams = {
   open_to_relocation?: string;
   role_level?: string;
   role_type?: string;
+  language?: string;
+  b2b_motion?: string;
+  b2c_motion?: string;
+  source_channel?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -172,6 +186,16 @@ export default async function CandidatesPage({
     if (params.sub_domain) qq = qq.eq("sub_domain", params.sub_domain);
     if (params.location) qq = qq.ilike("current_location", `%${params.location}%`);
     if (params.secondary_domain) qq = qq.contains("secondary_sub_domains", [params.secondary_domain]);
+    // segment_data.languages_known / .b2b_sales_motion_type are jsonb arrays
+    // nested inside the segment_data column (not their own top-level array
+    // columns like secondary_sub_domains above), so containment needs the
+    // 'cs' (contains) jsonb operator against the JSON path expression rather
+    // than .contains(). b2c motion lives at segment_data.motion (mirrors the
+    // key ApplyForm.tsx actually writes -- see jobs-staffanchor ApplyForm.tsx).
+    if (params.language) qq = qq.filter("segment_data->languages_known", "cs", JSON.stringify([params.language]));
+    if (params.b2b_motion) qq = qq.filter("segment_data->b2b_sales_motion_type", "cs", JSON.stringify([params.b2b_motion]));
+    if (params.b2c_motion) qq = qq.filter("segment_data->motion", "cs", JSON.stringify([params.b2c_motion]));
+    if (params.source_channel) qq = qq.eq("source_channel", params.source_channel);
     if (params.current_industry) qq = qq.eq("current_industry", params.current_industry);
     if (params.previous_industry) {
       qq = qq.contains("industries", [params.previous_industry]).neq("current_industry", params.previous_industry);
@@ -320,6 +344,7 @@ export default async function CandidatesPage({
   const quickApplyCount = createdByCounts["quick_apply"] ?? 0;
   const jobPortalCount = createdByCounts["self_registration"] ?? 0;
   const recruiterAddedCount = createdByCounts["recruiter_created"] ?? 0;
+  const bulkUploadCount = createdByCounts["bulk_resume_upload"] ?? 0;
   const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
   const funnelCounts: Record<string, number> = {
@@ -345,8 +370,9 @@ export default async function CandidatesPage({
     { label: "Submitted", value: statusCounts["submitted"] ?? 0, icon: Send, href: "/candidates?status=submitted" },
     { label: "Placed", value: statusCounts["placed"] ?? 0, icon: Trophy, href: "/candidates?status=placed" },
     { label: "Job Quick Apply", value: quickApplyCount, icon: Zap, href: qs({ origin: "quick_apply" }) },
-    { label: "Job Portal", value: jobPortalCount, icon: Database, href: qs({ origin: "self_registration" }) },
+    { label: "Build Your Profile", value: jobPortalCount, icon: Database, href: qs({ origin: "self_registration" }) },
     { label: "Recruiter Created", value: recruiterAddedCount, icon: Users, href: qs({ origin: "recruiter_created" }) },
+    { label: "Bulk CV Upload", value: bulkUploadCount, icon: Upload, href: qs({ origin: "bulk_resume_upload" }) },
     { label: "Incomplete profiles", value: incompleteCount, icon: AlertTriangle, href: qs({ incomplete: "1" }) },
   ];
 
@@ -382,12 +408,20 @@ export default async function CandidatesPage({
             Search, assess, and shortlist your candidate database
           </p>
         </div>
-        <Link
-          href="/candidates/new"
-          className="rounded-lg bg-blue-600 hover:bg-blue-500 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-white text-[13px] font-medium px-3.5 py-2 shadow-sm"
-        >
-          + Create candidate
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/candidates/bulk-upload"
+            className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-700 dark:text-slate-200 text-[13px] font-medium px-3.5 py-2 shadow-sm flex items-center gap-1.5"
+          >
+            <Upload className="w-3.5 h-3.5" /> Bulk upload CVs
+          </Link>
+          <Link
+            href="/candidates/new"
+            className="rounded-lg bg-blue-600 hover:bg-blue-500 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-white text-[13px] font-medium px-3.5 py-2 shadow-sm"
+          >
+            + Create candidate
+          </Link>
+        </div>
       </div>
 
       {/* Soft canvas backdrop -- the tiles read as one calm surface instead
@@ -472,6 +506,10 @@ export default async function CandidatesPage({
           {params.to && <input type="hidden" name="to" value={params.to} />}
           {params.recruiter && <input type="hidden" name="recruiter" value={params.recruiter} />}
           {params.placed_only && <input type="hidden" name="placed_only" value={params.placed_only} />}
+          {params.language && <input type="hidden" name="language" value={params.language} />}
+          {params.b2b_motion && <input type="hidden" name="b2b_motion" value={params.b2b_motion} />}
+          {params.b2c_motion && <input type="hidden" name="b2c_motion" value={params.b2c_motion} />}
+          {params.source_channel && <input type="hidden" name="source_channel" value={params.source_channel} />}
           <button
             type="submit"
             className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium px-3.5 py-1.5"
@@ -550,6 +588,38 @@ export default async function CandidatesPage({
               className="text-[12px] font-medium px-3 py-1 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200"
             >
               Origin: {ORIGIN_LABEL[params.origin] ?? params.origin} ✕
+            </Link>
+          )}
+          {params.source_channel && (
+            <Link
+              href={qs({ source_channel: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200"
+            >
+              Source: {params.source_channel} ✕
+            </Link>
+          )}
+          {params.language && (
+            <Link
+              href={qs({ language: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              Language: {params.language} ✕
+            </Link>
+          )}
+          {params.b2b_motion && (
+            <Link
+              href={qs({ b2b_motion: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              B2B Motion: {params.b2b_motion} ✕
+            </Link>
+          )}
+          {params.b2c_motion && (
+            <Link
+              href={qs({ b2c_motion: undefined })}
+              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            >
+              B2C Motion: {params.b2c_motion} ✕
             </Link>
           )}
           {(params.from || params.to) && (
@@ -681,6 +751,81 @@ export default async function CandidatesPage({
                   {Object.entries(ORIGIN_LABEL).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Secondary specialization</label>
+                <select
+                  name="secondary_domain"
+                  defaultValue={params.secondary_domain ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {subDomains.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Languages known</label>
+                <select
+                  name="language"
+                  defaultValue={params.language ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {languageOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">B2B Sales Motion</label>
+                <select
+                  name="b2b_motion"
+                  defaultValue={params.b2b_motion ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {b2bSalesMotionTypeOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">B2C Sales Motion</label>
+                <select
+                  name="b2c_motion"
+                  defaultValue={params.b2c_motion ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {b2cSalesMotionOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Source channel</label>
+                <select
+                  name="source_channel"
+                  defaultValue={params.source_channel ?? ""}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                >
+                  <option value="">Any</option>
+                  {SOURCE_CHANNEL_OPTIONS.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
                     </option>
                   ))}
                 </select>
