@@ -8,7 +8,9 @@ import {
   cityOptions,
   cityStateMap,
   ctcOptions,
-  subDomainsForCategory,
+  level1OptionsForProfileType,
+  secondarySpecializationGroups,
+  primaryAsSecondaryLabel,
   subDomainsForPractice,
   otherB2BSubDomains,
   experienceOptions,
@@ -283,8 +285,15 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       .join(", "),
   });
 
-  const subDomainOptions = subDomainsForCategory(form.category || null);
-  const secondarySubDomainChoices = subDomainOptions.filter((d) => d !== form.subDomain);
+  const subDomainOptions = level1OptionsForProfileType(form.category || null);
+  // Secondary specializations are a cross-Profile-Type list (mirrors
+  // jobs-staffanchor's ApplyForm exactly), not "whatever's left over from
+  // the primary dropdown" -- primaryAsSecondaryLabel handles the
+  // Other -> Other (B2B)/(B2C)/(Non-Sales) disambiguation so the current
+  // primary selection is correctly excluded from its own secondary list.
+  const secondarySubDomainChoices = secondarySpecializationGroups()
+    .flatMap((g) => g.options)
+    .filter((d) => d !== primaryAsSecondaryLabel(form.category || null, form.subDomain));
   const isSales = form.category === "b2b_sales" || form.category === "b2c_sales";
   const isB2B = form.category === "b2b_sales";
   const isB2C = form.category === "b2c_sales";
@@ -690,7 +699,6 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                           {subDomainOptions.map((d) => (
                             <option key={d} value={d}>{d}</option>
                           ))}
-                          <option value="Other">Other</option>
                         </select>
                         {form.subDomain === "Other" && (
                           <input
