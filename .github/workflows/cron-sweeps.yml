@@ -1,0 +1,51 @@
+name: Cron sweeps backstop
+
+# Independent trigger for the six /api/cron/* routes, alongside (not instead
+# of) Vercel's own scheduler. Added after discovering none of the six
+# Vercel-scheduled crons had actually executed in 30 days in production even
+# though vercel.json was configured correctly -- this gives every sweep a
+# second, independent path to actually fire every day regardless of
+# anything on Vercel's side. All six are cheap, idempotent, bounded-batch
+# routes, so running them all once a day from here (in addition to whatever
+# Vercel's own scheduler does) is safe even if both fire on the same day.
+#
+# Setup (one-time):
+#   1. In the Vercel project -> Settings -> Environment Variables, add
+#      CRON_SECRET with any random value (Production + Preview).
+#   2. In this GitHub repo -> Settings -> Secrets and variables -> Actions,
+#      add a repo secret named CRON_SECRET with that exact same value.
+#   3. (Optional) Add a repo variable CRM_BASE_URL if the production domain
+#      ever changes from the default below.
+#
+# If CRON_SECRET isn't set on either side, these calls still work -- the
+# routes only enforce the Authorization header when CRON_SECRET is present
+# in the Vercel environment.
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # once daily, 2:30am UTC -- ahead of Vercel's own 3am-12pm schedule
+  workflow_dispatch: {} # lets you trigger all six manually from the Actions tab, any time
+
+jobs:
+  run-sweeps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit every cron route
+        env:
+          BASE_URL: ${{ vars.CRM_BASE_URL || 'https://staffanchor-crm-claude.vercel.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -e
+          ROUTES="mandate-auto-rematch inbox-sweep auto-summarize career-timeline-sweep client-followup embed-candidates"
+          for route in $ROUTES; do
+            echo "== $route =="
+            if [ -n "$CRON_SECRET" ]; then
+              curl -sS -o - -w "\nHTTP %{http_code}\n" \
+                -H "Authorization: Bearer $CRON_SECRET" \
+                "$BASE_URL/api/cron/$route"
+            else
+              curl -sS -o - -w "\nHTTP %{http_code}\n" \
+                "$BASE_URL/api/cron/$route"
+            fi
+            echo ""
+          done

@@ -9,6 +9,8 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 // sweep_recruiter_inbox() SQL function so it's one auditable place to
 // adjust thresholds; this route is just the scheduled trigger, mirroring
 // the existing auto-summarize/client-followup crons.
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {

@@ -11,6 +11,8 @@ const STALE_DAYS = 4;
 // on to the next mandate. One email per mandate that has gone stale,
 // listing which candidates are still waiting, sent to that mandate's
 // assigned recruiter(s) plus all admins.
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {

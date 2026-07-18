@@ -15,6 +15,12 @@ import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 // Scheduled via vercel.json; Vercel automatically sends
 // `Authorization: Bearer <CRON_SECRET>` on cron-triggered invocations when
 // a CRON_SECRET env var is set on the project, which we check here.
+// Explicit time budget (Hobby's cap) instead of relying on the platform
+// default -- this route can process dozens of candidates per run, each
+// involving a Gemini call, and without this it's ambiguous how long it's
+// actually allowed to run before Vercel kills it mid-batch.
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
@@ -57,7 +63,7 @@ export async function GET(req: NextRequest) {
         "and(status.eq.registered,ai_summary_generated_status.neq.registered)"
     )
     .order("created_at", { ascending: true })
-    .limit(15); // bounded batch per run to keep this fast and cheap
+    .limit(40); // bounded batch per run -- raised from 15 so the existing backlog actually clears in a reasonable number of days instead of ~40
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

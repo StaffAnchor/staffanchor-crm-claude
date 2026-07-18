@@ -12,6 +12,8 @@ import { matchCandidatesForMandate } from "@/lib/candidate-match";
 // auto_match_computed_at write-back that the manual button and the
 // on-creation auto-run already use, just looped over every open mandate
 // and driven by the service-role client instead of a signed-in session.
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {

@@ -11,6 +11,8 @@ import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeli
 // hash it last generated a timeline from -- including a resume replaced
 // long after the candidate was created, which a one-time upload trigger
 // would miss entirely.
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {

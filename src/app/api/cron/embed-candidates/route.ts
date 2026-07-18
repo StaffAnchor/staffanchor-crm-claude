@@ -8,6 +8,8 @@ import { embedCandidate } from "@/lib/embeddings";
 // Mirrors the existing auto-summarize cron's shape exactly -- same
 // CRON_SECRET check, same service-role client, same bounded-batch pattern
 // -- so it slots in without touching anything else.
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
