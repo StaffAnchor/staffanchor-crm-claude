@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   Users,
   Sparkles,
@@ -38,6 +39,26 @@ const ROLE_TYPE_FILTER_OPTIONS = [
   { value: "Team Lead", label: "Leading a Team" },
 ];
 import { StatTile } from "@/components/ui/stat-tile";
+
+// "More filters" panel is grouped into named sections (rather than one long
+// wrapped row) so it reads as a designed control surface instead of a form
+// dump -- each section title doubles as a scan anchor for "is X filterable?".
+function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="min-w-[220px]">
+      <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">{title}</p>
+      <div className="flex flex-wrap items-end gap-3">{children}</div>
+    </div>
+  );
+}
+function FilterField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</label>
+      {children}
+    </div>
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   awaiting_input: "Awaiting Input",
@@ -518,7 +539,10 @@ export default async function CandidatesPage({
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap mt-3">
+        <div className="flex items-center gap-2.5 flex-wrap mt-3">
+          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide shrink-0">
+            Current profile type
+          </span>
           {CATEGORIES.map((c) => (
             <Link
               key={c.value}
@@ -532,6 +556,7 @@ export default async function CandidatesPage({
               {c.label}
             </Link>
           ))}
+          <span className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" aria-hidden />
           <Link
             href={qs({ incomplete: params.incomplete ? undefined : "1" })}
             className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
@@ -652,372 +677,364 @@ export default async function CandidatesPage({
             <summary className="list-none flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer px-2 py-1">
               <SlidersHorizontal className="w-3 h-3" /> More filters
             </summary>
-            <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Status</label>
-                <select
-                  name="status"
-                  defaultValue={params.status ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">All</option>
-                  {Object.entries(STATUS_LABEL).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+            <div className="flex flex-col gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex flex-wrap gap-x-8 gap-y-4">
+                <FilterGroup title="Profile & Specialization">
+                  <FilterField label="Primary Specialization">
+                    <select
+                      name="sub_domain"
+                      defaultValue={params.sub_domain ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {subDomains.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Secondary specialization">
+                    <select
+                      name="secondary_domain"
+                      defaultValue={params.secondary_domain ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {subDomains.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Current industry">
+                    <select
+                      name="current_industry"
+                      defaultValue={params.current_industry ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {industryOptions.map((i) => (
+                        <option key={i} value={i}>
+                          {i}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Previous industry">
+                    <select
+                      name="previous_industry"
+                      defaultValue={params.previous_industry ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {industryOptions.map((i) => (
+                        <option key={i} value={i}>
+                          {i}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Languages known">
+                    <select
+                      name="language"
+                      defaultValue={params.language ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {languageOptions.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="B2B Sales Motion">
+                    <select
+                      name="b2b_motion"
+                      defaultValue={params.b2b_motion ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {b2bSalesMotionTypeOptions.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="B2C Sales Motion">
+                    <select
+                      name="b2c_motion"
+                      defaultValue={params.b2c_motion ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {b2cSalesMotionOptions.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                </FilterGroup>
+
+                <FilterGroup title="Compensation & Availability">
+                  <FilterField label="Min fixed CTC (L)">
+                    <input name="min_ctc" type="number" defaultValue={params.min_ctc} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
+                  </FilterField>
+                  <FilterField label="Max fixed CTC (L)">
+                    <input name="max_ctc" type="number" defaultValue={params.max_ctc} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
+                  </FilterField>
+                  <FilterField label="Min experience">
+                    <input name="min_exp" type="number" defaultValue={params.min_exp} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
+                  </FilterField>
+                  <FilterField label="Days to join">
+                    <select
+                      name="notice_period"
+                      defaultValue={params.notice_period ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {NOTICE_PERIODS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Employment status">
+                    <select
+                      name="employment_status"
+                      defaultValue={params.employment_status ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {employmentStatusOptions.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Highest qualification">
+                    <select
+                      name="highest_qualification"
+                      defaultValue={params.highest_qualification ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {QUALIFICATION_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Work mode">
+                    <select
+                      name="work_mode"
+                      defaultValue={params.work_mode ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {workModeOptions.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Open to relocation">
+                    <select
+                      name="open_to_relocation"
+                      defaultValue={params.open_to_relocation ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </FilterField>
+                  <FilterField label="Role level">
+                    <select
+                      name="role_level"
+                      defaultValue={params.role_level ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {roleLevelOptions.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Role type">
+                    <select
+                      name="role_type"
+                      defaultValue={params.role_type ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {ROLE_TYPE_FILTER_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                </FilterGroup>
               </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min fixed CTC (L)</label>
-                <input name="min_ctc" type="number" defaultValue={params.min_ctc} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
+
+              <div className="flex flex-wrap gap-x-8 gap-y-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <FilterGroup title="Pipeline & Source">
+                  <FilterField label="Status">
+                    <select
+                      name="status"
+                      defaultValue={params.status ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">All</option>
+                      {Object.entries(STATUS_LABEL).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Origin">
+                    <select
+                      name="origin"
+                      defaultValue={params.origin ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {Object.entries(ORIGIN_LABEL).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Source channel">
+                    <select
+                      name="source_channel"
+                      defaultValue={params.source_channel ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {SOURCE_CHANNEL_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Recruiter recommendation">
+                    <select
+                      name="recommendation"
+                      defaultValue={params.recommendation ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {RECOMMENDATIONS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                </FilterGroup>
+
+                <FilterGroup title="Assessment scores">
+                  <FilterField label="Job stability">
+                    <select
+                      name="job_stability"
+                      defaultValue={params.job_stability ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {JOB_STABILITY_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Relocation — verified">
+                    <select
+                      name="relocation_verified"
+                      defaultValue={params.relocation_verified ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {RELOCATION_VERIFIED_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Min communication score">
+                    <select
+                      name="min_communication"
+                      defaultValue={params.min_communication ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {SCORE_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}+
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Min confidence score">
+                    <select
+                      name="min_confidence"
+                      defaultValue={params.min_confidence ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {SCORE_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}+
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                  <FilterField label="Min coachability score">
+                    <select
+                      name="min_coachability"
+                      defaultValue={params.min_coachability ?? ""}
+                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <option value="">Any</option>
+                      {SCORE_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}+
+                        </option>
+                      ))}
+                    </select>
+                  </FilterField>
+                </FilterGroup>
               </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Max fixed CTC (L)</label>
-                <input name="max_ctc" type="number" defaultValue={params.max_ctc} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
+
+              <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button type="submit" className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium px-3 py-1.5">
+                  Apply
+                </button>
+                {hasAnyFilter && (
+                  <Link
+                    href="/candidates"
+                    className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 px-3 py-1.5"
+                  >
+                    Clear all filters
+                  </Link>
+                )}
               </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min experience</label>
-                <input name="min_exp" type="number" defaultValue={params.min_exp} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Recruiter recommendation</label>
-                <select
-                  name="recommendation"
-                  defaultValue={params.recommendation ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {RECOMMENDATIONS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Sub-domain</label>
-                <select
-                  name="sub_domain"
-                  defaultValue={params.sub_domain ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {subDomains.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Current industry</label>
-                <select
-                  name="current_industry"
-                  defaultValue={params.current_industry ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {industryOptions.map((i) => (
-                    <option key={i} value={i}>
-                      {i}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Previous industry</label>
-                <select
-                  name="previous_industry"
-                  defaultValue={params.previous_industry ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {industryOptions.map((i) => (
-                    <option key={i} value={i}>
-                      {i}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Origin</label>
-                <select
-                  name="origin"
-                  defaultValue={params.origin ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {Object.entries(ORIGIN_LABEL).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Secondary specialization</label>
-                <select
-                  name="secondary_domain"
-                  defaultValue={params.secondary_domain ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {subDomains.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Languages known</label>
-                <select
-                  name="language"
-                  defaultValue={params.language ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {languageOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">B2B Sales Motion</label>
-                <select
-                  name="b2b_motion"
-                  defaultValue={params.b2b_motion ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {b2bSalesMotionTypeOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">B2C Sales Motion</label>
-                <select
-                  name="b2c_motion"
-                  defaultValue={params.b2c_motion ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {b2cSalesMotionOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Source channel</label>
-                <select
-                  name="source_channel"
-                  defaultValue={params.source_channel ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {SOURCE_CHANNEL_OPTIONS.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Days to join</label>
-                <select
-                  name="notice_period"
-                  defaultValue={params.notice_period ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {NOTICE_PERIODS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Employment status</label>
-                <select
-                  name="employment_status"
-                  defaultValue={params.employment_status ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {employmentStatusOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Highest qualification</label>
-                <select
-                  name="highest_qualification"
-                  defaultValue={params.highest_qualification ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {QUALIFICATION_OPTIONS.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Work mode</label>
-                <select
-                  name="work_mode"
-                  defaultValue={params.work_mode ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {workModeOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Open to relocation</label>
-                <select
-                  name="open_to_relocation"
-                  defaultValue={params.open_to_relocation ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Role level</label>
-                <select
-                  name="role_level"
-                  defaultValue={params.role_level ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {roleLevelOptions.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Role type</label>
-                <select
-                  name="role_type"
-                  defaultValue={params.role_type ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {ROLE_TYPE_FILTER_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Job stability</label>
-                <select
-                  name="job_stability"
-                  defaultValue={params.job_stability ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {JOB_STABILITY_OPTIONS.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Relocation — verified</label>
-                <select
-                  name="relocation_verified"
-                  defaultValue={params.relocation_verified ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {RELOCATION_VERIFIED_OPTIONS.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min communication score</label>
-                <select
-                  name="min_communication"
-                  defaultValue={params.min_communication ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {SCORE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}+
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min confidence score</label>
-                <select
-                  name="min_confidence"
-                  defaultValue={params.min_confidence ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {SCORE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}+
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Min coachability score</label>
-                <select
-                  name="min_coachability"
-                  defaultValue={params.min_coachability ?? ""}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                >
-                  <option value="">Any</option>
-                  {SCORE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}+
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button type="submit" className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium px-3 py-1.5">
-                Apply
-              </button>
-              {hasAnyFilter && (
-                <Link
-                  href="/candidates"
-                  className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 px-3 py-1.5"
-                >
-                  Clear all filters
-                </Link>
-              )}
             </div>
           </details>
         </div>
