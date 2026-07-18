@@ -17,6 +17,8 @@ import SendInviteButton from "./send-invite-button";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
+import { SalesPassportView } from "@/components/passport/sales-passport-view";
+import { mergeTimelines, computeStabilityScore, computeDomainConsistencyScore } from "@/lib/career-timeline";
 
 // ROS design language: one neutral avatar treatment for every candidate --
 // no per-category color-coding (see candidates-table.tsx for the reasoning:
@@ -210,6 +212,16 @@ export default async function CandidateDetailPage({
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
   const segmentEntries = Object.entries(segment).filter(([, v]) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0));
+
+  // Recomputed here (not just read off the stored stability_score column) so
+  // the Passport tab's "Stable"/"Some Movement"/"Frequent Job-Hopper" label
+  // always matches the same merged-timeline logic the Career tab uses --
+  // the stored column only ever held the numeric score, not the label.
+  const profileTimelineEntries = (candidate.career_timeline_profile ?? []) as never[];
+  const resumeTimelineEntries = (candidate.career_timeline_resume ?? []) as never[];
+  const mergedForStability = mergeTimelines(profileTimelineEntries as never, resumeTimelineEntries as never);
+  const stabilityResult = computeStabilityScore(mergedForStability);
+  const domainConsistencyResult = computeDomainConsistencyScore(profileTimelineEntries as never);
 
   return (
     <div>
@@ -515,6 +527,37 @@ export default async function CandidateDetailPage({
                       candidateId={candidate.id}
                       links={(links ?? []) as never}
                       openMandates={openMandates ?? []}
+                    />
+                  ),
+                },
+                {
+                  label: "Passport",
+                  content: (
+                    <SalesPassportView
+                      viewer="recruiter"
+                      fullName={candidate.full_name}
+                      currentJobTitle={candidate.current_job_title}
+                      currentEmployer={candidate.current_employer}
+                      currentLocation={candidate.current_location}
+                      totalExperienceYears={candidate.total_experience_years}
+                      subDomain={candidate.sub_domain}
+                      secondarySubDomains={candidate.secondary_sub_domains}
+                      expectedFixedCtc={candidate.expected_fixed_ctc}
+                      currentFixedCtc={candidate.current_fixed_ctc}
+                      noticePeriod={candidate.notice_period}
+                      verifiedRelocation={(assessment.relocation_verified as string | undefined) ?? null}
+                      verifiedNotice={(assessment.notice_verified as string | undefined) ?? null}
+                      currentIndustry={candidate.current_industry}
+                      industries={candidate.industries}
+                      skills={candidate.skills}
+                      segmentData={segment}
+                      careerTimeline={profileTimelineEntries as never}
+                      stabilityScore={stabilityResult?.score ?? candidate.stability_score ?? null}
+                      stabilityLabel={stabilityResult?.label ?? null}
+                      domainConsistencyScore={domainConsistencyResult?.score ?? candidate.domain_consistency_score ?? null}
+                      scores={scores}
+                      recommendation={recommendation}
+                      redFlags={redFlags}
                     />
                   ),
                 },

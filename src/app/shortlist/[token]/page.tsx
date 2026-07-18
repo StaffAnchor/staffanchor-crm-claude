@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import FeedbackButtons from "./feedback-buttons";
 import ResumePreview from "./resume-preview";
@@ -242,6 +243,12 @@ function CandidateCard({
         aiSummary={candidate.ai_summary}
         aiPassport={candidate.ai_passport}
       />
+      <Link
+        href={`/shortlist/${token}/passport/${candidate.candidate_id}`}
+        className="inline-block mt-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+      >
+        View full Sales Passport →
+      </Link>
 
       <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
         <div>
