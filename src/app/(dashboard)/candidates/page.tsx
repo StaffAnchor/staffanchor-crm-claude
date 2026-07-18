@@ -75,6 +75,39 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
   );
 }
 
+// Active-filter removable pill -- was 10 near-identical inline className
+// strings (bg-blue-50/emerald-50/orange-50 + ring + text-[12px], repeated
+// per filter type) collapsed into one component driven by the same
+// semantic tone vocabulary as the shared Badge primitive, so "what does
+// this color mean" stays consistent with the rest of the app instead of
+// being re-decided per filter.
+const ACTIVE_FILTER_TONE_CLASSES = {
+  accent: "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 ring-blue-200/60 dark:ring-blue-800/60",
+  success:
+    "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 ring-emerald-200/60 dark:ring-emerald-800/60",
+  warning:
+    "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 ring-orange-200/60 dark:ring-orange-800/60",
+} as const;
+
+function ActiveFilterChip({
+  href,
+  tone = "accent",
+  children,
+}: {
+  href: string;
+  tone?: keyof typeof ACTIVE_FILTER_TONE_CLASSES;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`text-ros-body-sm font-medium px-3 py-1 rounded-full ring-1 transition-all duration-200 ease-ros ${ACTIVE_FILTER_TONE_CLASSES[tone]}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
 const STATUS_LABEL: Record<string, string> = {
   awaiting_input: "Awaiting Input",
   lead: "Lead",
@@ -593,100 +626,64 @@ export default async function CandidatesPage({
             ⚠ Incomplete profiles
           </Link>
           {params.status && (
-            <Link
-              href={qs({ status: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ status: undefined })}>
               Status: {STATUS_LABEL[params.status] ?? params.status} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.location && (
-            <Link
-              href={qs({ location: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ location: undefined })}>
               Location: {params.location} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.secondary_domain && (
-            <Link
-              href={qs({ secondary_domain: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ secondary_domain: undefined })}>
               Secondary domain: {params.secondary_domain} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.current_industry && (
-            <Link
-              href={qs({ current_industry: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-            >
+            <ActiveFilterChip href={qs({ current_industry: undefined })} tone="success">
               Current industry: {params.current_industry} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.previous_industry && (
-            <Link
-              href={qs({ previous_industry: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ previous_industry: undefined })}>
               Previous industry: {params.previous_industry} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.origin && (
-            <Link
-              href={qs({ origin: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200"
-            >
+            <ActiveFilterChip href={qs({ origin: undefined })} tone="warning">
               Origin: {ORIGIN_LABEL[params.origin] ?? params.origin} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.source_channel && (
-            <Link
-              href={qs({ source_channel: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200"
-            >
+            <ActiveFilterChip href={qs({ source_channel: undefined })} tone="warning">
               Source: {params.source_channel} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.language && (
-            <Link
-              href={qs({ language: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ language: undefined })}>
               Language: {params.language} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.b2b_motion && (
-            <Link
-              href={qs({ b2b_motion: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ b2b_motion: undefined })}>
               B2B Motion: {params.b2b_motion} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.b2c_motion && (
-            <Link
-              href={qs({ b2c_motion: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ b2c_motion: undefined })}>
               B2C Motion: {params.b2c_motion} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {(params.from || params.to) && (
-            <Link
-              href={qs({ from: undefined, to: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ from: undefined, to: undefined })}>
               Added: {params.from ?? "…"} → {params.to ?? "…"} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
           {params.recruiter && (
-            <Link
-              href={qs({ recruiter: undefined, placed_only: undefined })}
-              className="text-[12px] font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-            >
+            <ActiveFilterChip href={qs({ recruiter: undefined, placed_only: undefined })}>
               {params.placed_only ? "Placed by" : "Linked by"} {recruiterName ?? "recruiter"} ✕
-            </Link>
+            </ActiveFilterChip>
           )}
 
           {hasAnyFilter && (

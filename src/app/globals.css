@@ -66,6 +66,25 @@
   --ros-tone-info-bg: #f0f9ff;
   --ros-tone-info-text: #0369a1;
   --ros-tone-info-ring: #bae6fd;
+
+  /* Type scale (Phase 1 of the ROS visual-system pass) -- a named,
+     6-step scale with a real jump between steps, replacing the
+     ad-hoc text-[11px]/text-[12px]/text-[13px] arbitrary values
+     scattered per-component today (47 instances of text-[12px] alone
+     on the Candidates page). Each step also carries its own
+     line-height so components stop re-deriving one by hand. */
+  --ros-text-caption: 11px;
+  --ros-text-caption--line-height: 14px;
+  --ros-text-body-sm: 12px;
+  --ros-text-body-sm--line-height: 16px;
+  --ros-text-body: 14px;
+  --ros-text-body--line-height: 20px;
+  --ros-text-heading-sm: 16px;
+  --ros-text-heading-sm--line-height: 22px;
+  --ros-text-heading: 20px;
+  --ros-text-heading--line-height: 26px;
+  --ros-text-title: 24px;
+  --ros-text-title--line-height: 30px;
 }
 
 /* Phase 11: dark palette override for the same --background/--foreground
@@ -94,6 +113,22 @@
   /* Enables `ease-ros` and `duration-ros-slower` Tailwind utilities. */
   --ease-ros: var(--ros-ease);
   --duration-ros-slower: var(--ros-duration-slower);
+
+  /* Enables text-ros-caption / text-ros-body-sm / text-ros-body /
+     text-ros-heading-sm / text-ros-heading / text-ros-title utilities,
+     each with a matched line-height. */
+  --text-ros-caption: var(--ros-text-caption);
+  --text-ros-caption--line-height: var(--ros-text-caption--line-height);
+  --text-ros-body-sm: var(--ros-text-body-sm);
+  --text-ros-body-sm--line-height: var(--ros-text-body-sm--line-height);
+  --text-ros-body: var(--ros-text-body);
+  --text-ros-body--line-height: var(--ros-text-body--line-height);
+  --text-ros-heading-sm: var(--ros-text-heading-sm);
+  --text-ros-heading-sm--line-height: var(--ros-text-heading-sm--line-height);
+  --text-ros-heading: var(--ros-text-heading);
+  --text-ros-heading--line-height: var(--ros-text-heading--line-height);
+  --text-ros-title: var(--ros-text-title);
+  --text-ros-title--line-height: var(--ros-text-title--line-height);
 }
 
 body {
