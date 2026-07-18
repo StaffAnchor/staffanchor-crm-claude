@@ -130,7 +130,10 @@ export const industrialSubDomains = [
 ];
 export const otherB2BSubDomains = [
   "Media & Advertising", "Professional / Business Services", "Logistics & Supply Chain (B2B)",
-  "Real Estate / Commercial (B2B)", "EdTech (B2B / Institutional)", "HR-Tech / HR Services (B2B)", "Other",
+  "Real Estate / Commercial (B2B)", "EdTech (B2B / Institutional)", "HR-Tech / HR Services (B2B)",
+  "Healthcare & MedTech (B2B)", "Financial Services (Institutional / B2B)", "Agri & Food Processing (B2B)",
+  "Telecom & Networking Services (B2B)", "Legal, Compliance & Consulting Services",
+  "Travel & Corporate Hospitality (B2B)", "Chemicals, Materials & Packaging (B2B)", "Other",
 ];
 
 export function subDomainsForPractice(practice: string | null): string[] {

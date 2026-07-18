@@ -100,6 +100,16 @@ export default function NewCandidatePage() {
     if (!form.ask_candidate_later_subdomain) {
       if (!form.sub_domain) return "Primary Specialization is required (or check 'Ask candidate later').";
       if (form.sub_domain === "Other" && !form.sub_domain_other.trim()) return "Please enter the value, or check 'Ask candidate later'.";
+      // "Other B2B" was previously never enforced here -- a recruiter could
+      // pick it and leave the specify dropdown blank, and the profile still
+      // saved with no record of what the candidate's actual B2B background
+      // was. Required now, matching the candidate-facing form's own gate.
+      if (form.sub_domain === "Other B2B" && !form.other_b2b_subdomain) {
+        return "Please specify the B2B specialization, or check 'Ask candidate later'.";
+      }
+      if (form.sub_domain === "Other B2B" && form.other_b2b_subdomain === "Other" && !form.other_b2b_subdomain_custom.trim()) {
+        return "Please specify the B2B specialization.";
+      }
     }
     // A "First Job Seeker" has no current employer/job title/CTC -- there is
     // no current role for those to describe -- so they're skipped rather than
