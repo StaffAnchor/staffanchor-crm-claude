@@ -9,6 +9,8 @@ import {
   cityStateMap,
   ctcOptions,
   subDomainsForCategory,
+  subDomainsForPractice,
+  otherB2BSubDomains,
   experienceOptions,
   noticePeriodOptions,
   employmentStatusOptions,
@@ -99,6 +101,8 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
   category: string;
   subDomain: string;
   subDomainOther: string;
+  otherB2BSubDomain: string;
+  otherB2BSubDomainCustom: string;
   currentJobTitle: string;
   currentEmployer: string;
   employmentStatus: string;
@@ -117,6 +121,10 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
   if (!f.currentFixedCtc || !f.expectedFixedCtc || !f.totalExperienceYears || !f.noticePeriod) return false;
   if (!f.category) return false;
   if (!f.subDomain || (f.subDomain === "Other" && !f.subDomainOther.trim())) return false;
+  if (f.subDomain === "Other B2B") {
+    if (!f.otherB2BSubDomain) return false;
+    if (f.otherB2BSubDomain === "Other" && !f.otherB2BSubDomainCustom.trim()) return false;
+  }
   if (!f.currentJobTitle.trim() || !f.currentEmployer.trim()) return false;
   if (!f.employmentStatus || !f.currentIndustry) return false;
   if (!f.roleType) return false;
@@ -195,6 +203,21 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
     category: candidate.category ?? "",
     subDomain: candidate.sub_domain ?? "",
     subDomainOther: "",
+    // "Other B2B" specify sub-field -- mirrors the same two-level structure
+    // and required-ness as jobs-staffanchor's candidate-facing wizard and
+    // the CRM's own Create Candidate form. This screen previously had no
+    // equivalent field at all: a recruiter could pick "Other B2B" as
+    // Primary Specialization and save with no way to capture what that
+    // background actually was.
+    otherB2BSubDomain: (() => {
+      const raw = seg(sd, "other_b2b_subdomain");
+      if (!raw) return "";
+      return otherB2BSubDomains.includes(raw) ? raw : "Other";
+    })(),
+    otherB2BSubDomainCustom: (() => {
+      const raw = seg(sd, "other_b2b_subdomain");
+      return raw && !otherB2BSubDomains.includes(raw) ? raw : "";
+    })(),
     secondarySubDomains: candidate.secondary_sub_domains ?? [],
 
     currentFixedCtc: candidate.current_fixed_ctc != null ? String(candidate.current_fixed_ctc) : "",
@@ -324,6 +347,22 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
 
   async function handleSave() {
     setError(null);
+
+    // "Other B2B" specify field is required once picked as Primary
+    // Specialization -- this screen previously let it through blank
+    // (handleSave had no gate at all on it), which is exactly how recent
+    // "Other B2B" candidates ended up on record with no actual B2B
+    // background captured. Block the save the same way jobs-staffanchor's
+    // wizard and the CRM's own Create Candidate form already do.
+    if (form.subDomain === "Other B2B" && !form.otherB2BSubDomain) {
+      setError("Please specify the B2B specialization, or choose a different Primary Specialization.");
+      return;
+    }
+    if (form.subDomain === "Other B2B" && form.otherB2BSubDomain === "Other" && !form.otherB2BSubDomainCustom.trim()) {
+      setError("Please specify the B2B specialization.");
+      return;
+    }
+
     setSaving(true);
 
     let resumeFileUrl = candidate.resume_file_url;
@@ -423,6 +462,12 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
     delete segmentData.scope_regions;
     delete segmentData.b2b_sales_motion_type;
     delete segmentData.buyer_persona;
+    delete segmentData.other_b2b_subdomain;
+
+    if (form.subDomain === "Other B2B" && form.otherB2BSubDomain) {
+      segmentData.other_b2b_subdomain =
+        form.otherB2BSubDomain === "Other" ? form.otherB2BSubDomainCustom.trim() : form.otherB2BSubDomain;
+    }
 
     if (isB2B) {
       Object.assign(segmentData, {
@@ -470,6 +515,8 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       category: form.category,
       subDomain: form.subDomain,
       subDomainOther: form.subDomainOther,
+      otherB2BSubDomain: form.otherB2BSubDomain,
+      otherB2BSubDomainCustom: form.otherB2BSubDomainCustom,
       currentJobTitle: form.currentJobTitle,
       currentEmployer: form.currentEmployer,
       employmentStatus: form.employmentStatus,
@@ -652,6 +699,32 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                             placeholder="e.g. SaaS Sales"
                             className={`${INPUT_CLS} mt-2`}
                           />
+                        )}
+                        {form.subDomain === "Other B2B" && (
+                          <>
+                            <p className="mt-2 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                              We actively focus on Enterprise Tech and Industrial &amp; Infrastructure, but want to
+                              place great candidates from every B2B background — specify which.
+                            </p>
+                            <select
+                              value={form.otherB2BSubDomain}
+                              onChange={(e) => set("otherB2BSubDomain", e.target.value)}
+                              className={`${INPUT_CLS} mt-1.5`}
+                            >
+                              <option value="">Select...</option>
+                              {subDomainsForPractice("Other B2B").map((d) => (
+                                <option key={d} value={d}>{d}</option>
+                              ))}
+                            </select>
+                            {form.otherB2BSubDomain === "Other" && (
+                              <input
+                                value={form.otherB2BSubDomainCustom}
+                                onChange={(e) => set("otherB2BSubDomainCustom", e.target.value)}
+                                placeholder="e.g. EdTech Sales"
+                                className={`${INPUT_CLS} mt-2`}
+                              />
+                            )}
+                          </>
                         )}
                       </>
                     ) : (
