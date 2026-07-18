@@ -43,7 +43,12 @@ export type SalesPassportProps = {
   expectedFixedCtc?: number | null;
   currentFixedCtc?: number | null;
   noticePeriod?: string | null;
+  /** Recruiter-confirmed relocation answer, set only after a screening call. */
   verifiedRelocation?: string | null;
+  /** Candidate's own answer from the onboarding wizard -- shown whenever a
+      recruiter hasn't verified relocation yet, so the stat doesn't read
+      empty just because no one's had that call. */
+  openToRelocation?: string | null;
   verifiedNotice?: string | null;
   currentIndustry?: string | null;
   industries?: string[] | null;
@@ -82,6 +87,7 @@ export function SalesPassportView(props: SalesPassportProps) {
     currentFixedCtc,
     noticePeriod,
     verifiedRelocation,
+    openToRelocation,
     verifiedNotice,
     currentIndustry,
     industries,
@@ -117,9 +123,23 @@ export function SalesPassportView(props: SalesPassportProps) {
     currentRole &&
     (currentRole.target_q1 || currentRole.target_q2 || currentRole.target_q3 || currentRole.target_q4);
 
-  const segmentEntries = Object.entries(segmentData ?? {}).filter(
-    ([, v]) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)
-  );
+  // segment_data holds a mix of flat scalars (motion, ticket band, role
+  // level, ...) and at least one nested object -- revenue_snapshot, written
+  // by ApplyForm.tsx's Stage 3 step as {period, target, target_currency,
+  // achievement, has_individual_quota, individual_target, ...}. Rendering
+  // that object with String(v) produced the literal text "[object Object]";
+  // this flattens any nested object into its own labeled sub-rows instead
+  // of trying to print it as one value.
+  const segmentEntries: [string, unknown][] = Object.entries(segmentData ?? {})
+    .filter(([, v]) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0))
+    .flatMap(([k, v]) => {
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        return Object.entries(v as Record<string, unknown>)
+          .filter(([, sv]) => sv !== null && sv !== "" && sv !== undefined)
+          .map(([sk, sv]) => [`${humanize(k)} — ${humanize(sk)}`, sv] as [string, unknown]);
+      }
+      return [[humanize(k), v] as [string, unknown]];
+    });
 
   const revenueDetailFields: [string, string | undefined][] = currentRole
     ? [
@@ -162,7 +182,10 @@ export function SalesPassportView(props: SalesPassportProps) {
             <Stat label="Current fixed CTC" value={currentFixedCtc ? `₹${currentFixedCtc}L` : undefined} />
           )}
           <Stat label="Days to join" value={verifiedNotice ?? noticePeriod} />
-          <Stat label="Relocation" value={verifiedRelocation} />
+          <Stat
+            label={verifiedRelocation ? "Relocation — verified" : "Relocation — self-reported"}
+            value={verifiedRelocation ?? openToRelocation}
+          />
         </div>
 
         {(subDomain || (secondarySubDomains && secondarySubDomains.length > 0)) && (
@@ -243,9 +266,9 @@ export function SalesPassportView(props: SalesPassportProps) {
         <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
           <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-3">Sales identity</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
-            {segmentEntries.map(([k, v]) => (
-              <div key={k}>
-                <p className="text-[11px] text-slate-400">{humanize(k)}</p>
+            {segmentEntries.map(([label, v]) => (
+              <div key={label}>
+                <p className="text-[11px] text-slate-400">{label}</p>
                 <p className="text-[13px] text-slate-700 dark:text-slate-300">
                   {Array.isArray(v) ? v.join(", ") : String(v)}
                 </p>

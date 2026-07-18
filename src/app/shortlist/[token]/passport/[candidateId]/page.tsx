@@ -50,7 +50,7 @@ export default async function ClientPassportPage({
   const { data: candidate } = await admin
     .from("candidates")
     .select(
-      "full_name, current_job_title, current_employer, current_location, total_experience_years, sub_domain, secondary_sub_domains, expected_fixed_ctc, notice_period, current_industry, industries, skills, segment_data, career_timeline_profile, recruiter_assessment"
+      "full_name, current_job_title, current_employer, current_location, total_experience_years, sub_domain, secondary_sub_domains, expected_fixed_ctc, notice_period, open_to_relocation, current_industry, industries, skills, segment_data, career_timeline_profile, recruiter_assessment"
     )
     .eq("id", candidateId)
     .single();
@@ -99,6 +99,7 @@ export default async function ClientPassportPage({
           expectedFixedCtc={candidate.expected_fixed_ctc}
           noticePeriod={candidate.notice_period}
           verifiedRelocation={verifiedRelocation}
+          openToRelocation={candidate.open_to_relocation}
           verifiedNotice={verifiedNotice}
           currentIndustry={candidate.current_industry}
           industries={candidate.industries}

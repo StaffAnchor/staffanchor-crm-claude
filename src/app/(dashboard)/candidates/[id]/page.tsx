@@ -546,6 +546,7 @@ export default async function CandidateDetailPage({
                       currentFixedCtc={candidate.current_fixed_ctc}
                       noticePeriod={candidate.notice_period}
                       verifiedRelocation={(assessment.relocation_verified as string | undefined) ?? null}
+                      openToRelocation={candidate.open_to_relocation ?? null}
                       verifiedNotice={(assessment.notice_verified as string | undefined) ?? null}
                       currentIndustry={candidate.current_industry}
                       industries={candidate.industries}
