@@ -54,6 +54,7 @@ const ROLE_TYPE_FILTER_OPTIONS = [
   { value: "Team Lead", label: "Leading a Team" },
 ];
 import { StatTile } from "@/components/ui/stat-tile";
+import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 
 // "More filters" panel is grouped into named sections (rather than one long
 // wrapped row) so it reads as a designed control surface instead of a form
@@ -252,7 +253,7 @@ export default async function CandidatesPage({
     if (params.min_ctc) qq = qq.gte("current_fixed_ctc", Number(params.min_ctc));
     if (params.max_ctc) qq = qq.lte("current_fixed_ctc", Number(params.max_ctc));
     if (params.min_exp) qq = qq.gte("total_experience_years", Number(params.min_exp));
-    if (params.sub_domain) qq = qq.eq("sub_domain", params.sub_domain);
+    if (params.sub_domain) qq = qq.in("sub_domain", params.sub_domain.split(","));
     if (params.location) qq = qq.ilike("current_location", `%${params.location}%`);
     if (params.secondary_domain) qq = qq.contains("secondary_sub_domains", [params.secondary_domain]);
     // segment_data.languages_known / .b2b_sales_motion_type are jsonb arrays
@@ -288,7 +289,7 @@ export default async function CandidatesPage({
     if (params.highest_qualification) qq = qq.eq("highest_qualification", params.highest_qualification);
     if (params.work_mode) qq = qq.eq("work_mode", params.work_mode);
     if (params.open_to_relocation) qq = qq.eq("open_to_relocation", params.open_to_relocation);
-    if (params.role_level) qq = qq.eq("segment_data->>role_level", params.role_level);
+    if (params.role_level) qq = qq.in("segment_data->>role_level", params.role_level.split(","));
     if (params.role_type) qq = qq.eq("segment_data->>role_type", params.role_type);
     if (params.recommendation) {
       qq = qq.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
@@ -630,6 +631,30 @@ export default async function CandidatesPage({
               Status: {STATUS_LABEL[params.status] ?? params.status} ✕
             </ActiveFilterChip>
           )}
+          {params.sub_domain &&
+            params.sub_domain.split(",").filter(Boolean).map((v) => (
+              <ActiveFilterChip
+                key={`sub_domain-${v}`}
+                href={qs({
+                  sub_domain:
+                    params.sub_domain!.split(",").filter((x) => x !== v).join(",") || undefined,
+                })}
+              >
+                Specialization: {v} ✕
+              </ActiveFilterChip>
+            ))}
+          {params.role_level &&
+            params.role_level.split(",").filter(Boolean).map((v) => (
+              <ActiveFilterChip
+                key={`role_level-${v}`}
+                href={qs({
+                  role_level:
+                    params.role_level!.split(",").filter((x) => x !== v).join(",") || undefined,
+                })}
+              >
+                Role level: {v} ✕
+              </ActiveFilterChip>
+            ))}
           {params.location && (
             <ActiveFilterChip href={qs({ location: undefined })}>
               Location: {params.location} ✕
@@ -703,31 +728,17 @@ export default async function CandidatesPage({
               <div className="flex flex-wrap gap-x-8 gap-y-4">
                 <FilterGroup title="Profile & Specialization">
                   <FilterField label="Primary Specialization">
-                    <select
+                    <MultiSelectFilter
                       name="sub_domain"
-                      defaultValue={params.sub_domain ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {PRIMARY_SPECIALIZATION_GROUPS.map((g) => (
-                        <optgroup key={g.group} label={g.group}>
-                          {g.options.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                      {legacySubDomains.length > 0 && (
-                        <optgroup label="Other / legacy values">
-                          {legacySubDomains.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
+                      label="Primary Specialization"
+                      defaultValue={params.sub_domain}
+                      groups={[
+                        ...PRIMARY_SPECIALIZATION_GROUPS,
+                        ...(legacySubDomains.length > 0
+                          ? [{ group: "Other / legacy values", options: legacySubDomains }]
+                          : []),
+                      ]}
+                    />
                   </FilterField>
                   <FilterField label="Secondary specialization">
                     <select
@@ -897,18 +908,12 @@ export default async function CandidatesPage({
                     </select>
                   </FilterField>
                   <FilterField label="Role level">
-                    <select
+                    <MultiSelectFilter
                       name="role_level"
-                      defaultValue={params.role_level ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {roleLevelOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Role level"
+                      defaultValue={params.role_level}
+                      options={[...roleLevelOptions]}
+                    />
                   </FilterField>
                   <FilterField label="Role type">
                     <select
