@@ -24,7 +24,22 @@ import {
   languageOptions,
   b2bSalesMotionTypeOptions,
   b2cSalesMotionOptions,
+  profileTypeOptions,
+  level1OptionsForProfileType,
+  secondarySpecializationGroups,
 } from "@/lib/candidate-options";
+
+// Primary Specialization filter must show the *actual* taxonomy recruiters
+// pick from on the intake form (grouped by Current Profile Type), not just
+// whatever sub_domain strings happen to already exist in the candidates
+// table -- a DB scan silently drops any specialization no candidate has
+// been tagged with yet, which is exactly backwards for a filter meant to
+// help recruiters find candidates by what they're hiring for.
+const PRIMARY_SPECIALIZATION_GROUPS = profileTypeOptions.map((pt) => ({
+  group: pt.label,
+  options: level1OptionsForProfileType(pt.value),
+}));
+const CANONICAL_PRIMARY_SPECIALIZATIONS = new Set(PRIMARY_SPECIALIZATION_GROUPS.flatMap((g) => g.options));
 
 // Bulk CV Upload (and any future non-portal ingestion path) lands here too,
 // alongside the three original mechanisms -- keeps "how a candidate entered
@@ -350,7 +365,17 @@ export default async function CandidatesPage({
   // reading the same rows; combining the column list into one query halves
   // the redundant traffic without changing any of the derived numbers.
   const { data: allRows } = await supabase.from("candidates").select("sub_domain, status, created_at, created_by");
-  const subDomains = Array.from(new Set((allRows ?? []).map((r) => r.sub_domain).filter(Boolean))).sort();
+  // Anything actually on a candidate record that ISN'T in the current
+  // canonical taxonomy (pre-taxonomy-unification legacy values like "SaaS
+  // Sales") still needs to stay filterable -- surfaced as a separate group
+  // below the real taxonomy instead of silently disappearing.
+  const legacySubDomains = Array.from(
+    new Set(
+      (allRows ?? [])
+        .map((r) => r.sub_domain)
+        .filter((d): d is string => Boolean(d) && !CANONICAL_PRIMARY_SPECIALIZATIONS.has(d as string))
+    )
+  ).sort();
   const statusCounts: Record<string, number> = {};
   const createdByCounts: Record<string, number> = {};
   let newToday = 0;
@@ -687,11 +712,24 @@ export default async function CandidatesPage({
                       className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                     >
                       <option value="">Any</option>
-                      {subDomains.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
+                      {PRIMARY_SPECIALIZATION_GROUPS.map((g) => (
+                        <optgroup key={g.group} label={g.group}>
+                          {g.options.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
+                      {legacySubDomains.length > 0 && (
+                        <optgroup label="Other / legacy values">
+                          {legacySubDomains.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </FilterField>
                   <FilterField label="Secondary specialization">
@@ -701,10 +739,14 @@ export default async function CandidatesPage({
                       className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
                     >
                       <option value="">Any</option>
-                      {subDomains.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
+                      {secondarySpecializationGroups().map((g) => (
+                        <optgroup key={g.group} label={g.group}>
+                          {g.options.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   </FilterField>
