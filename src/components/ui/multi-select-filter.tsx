@@ -24,12 +24,17 @@ export function MultiSelectFilter({
   options,
   groups,
   defaultValue,
+  labels,
 }: {
   name: string;
   label: string;
   options?: string[];
   groups?: OptionGroup[];
   defaultValue?: string;
+  /** Optional value -> display-label map, for fields whose stored value is a
+      code (e.g. status="under_review") but the UI should show a readable
+      label ("Under Review"). Selection/query values remain the raw codes. */
+  labels?: Record<string, string>;
 }) {
   const [selected, setSelected] = useState<string[]>(
     defaultValue ? defaultValue.split(",").filter(Boolean) : []
@@ -62,7 +67,11 @@ export function MultiSelectFilter({
         className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-ros-body-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 min-w-[140px]"
       >
         <span className="flex-1 text-left truncate">
-          {selected.length === 0 ? "Any" : selected.length === 1 ? selected[0] : `${selected.length} selected`}
+          {selected.length === 0
+            ? "Any"
+            : selected.length === 1
+            ? labels?.[selected[0]] ?? selected[0]
+            : `${selected.length} selected`}
         </span>
         <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
       </button>
@@ -93,7 +102,7 @@ export function MultiSelectFilter({
                       onChange={() => toggle(opt)}
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
                     />
-                    {opt}
+                    {labels?.[opt] ?? opt}
                   </label>
                 );
               })}

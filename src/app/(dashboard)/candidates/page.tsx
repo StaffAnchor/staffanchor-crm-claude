@@ -249,28 +249,43 @@ export default async function CandidatesPage({
       );
     }
     if (params.category) qq = qq.eq("category", params.category);
-    if (params.status) qq = qq.eq("status", params.status);
+    if (params.status) qq = qq.in("status", params.status.split(","));
     if (params.min_ctc) qq = qq.gte("current_fixed_ctc", Number(params.min_ctc));
     if (params.max_ctc) qq = qq.lte("current_fixed_ctc", Number(params.max_ctc));
     if (params.min_exp) qq = qq.gte("total_experience_years", Number(params.min_exp));
     if (params.sub_domain) qq = qq.in("sub_domain", params.sub_domain.split(","));
     if (params.location) qq = qq.ilike("current_location", `%${params.location}%`);
-    if (params.secondary_domain) qq = qq.contains("secondary_sub_domains", [params.secondary_domain]);
+    if (params.secondary_domain) qq = qq.overlaps("secondary_sub_domains", params.secondary_domain.split(","));
     // segment_data.languages_known / .b2b_sales_motion_type are jsonb arrays
     // nested inside the segment_data column (not their own top-level array
     // columns like secondary_sub_domains above), so containment needs the
     // 'cs' (contains) jsonb operator against the JSON path expression rather
     // than .contains(). b2c motion lives at segment_data.motion (mirrors the
     // key ApplyForm.tsx actually writes -- see jobs-staffanchor ApplyForm.tsx).
-    if (params.language) qq = qq.filter("segment_data->languages_known", "cs", JSON.stringify([params.language]));
-    if (params.b2b_motion) qq = qq.filter("segment_data->b2b_sales_motion_type", "cs", JSON.stringify([params.b2b_motion]));
-    if (params.b2c_motion) qq = qq.filter("segment_data->motion", "cs", JSON.stringify([params.b2c_motion]));
-    if (params.source_channel) qq = qq.eq("source_channel", params.source_channel);
-    if (params.current_industry) qq = qq.eq("current_industry", params.current_industry);
-    if (params.previous_industry) {
-      qq = qq.contains("industries", [params.previous_industry]).neq("current_industry", params.previous_industry);
+    if (params.language) {
+      const vals = params.language.split(",");
+      qq = qq.or(vals.map((v) => `segment_data->languages_known.cs.${JSON.stringify([v])}`).join(","));
     }
-    if (params.origin) qq = qq.eq("created_by", params.origin);
+    if (params.b2b_motion) {
+      const vals = params.b2b_motion.split(",");
+      qq = qq.or(vals.map((v) => `segment_data->b2b_sales_motion_type.cs.${JSON.stringify([v])}`).join(","));
+    }
+    if (params.b2c_motion) {
+      const vals = params.b2c_motion.split(",");
+      qq = qq.or(vals.map((v) => `segment_data->motion.cs.${JSON.stringify([v])}`).join(","));
+    }
+    if (params.source_channel) qq = qq.in("source_channel", params.source_channel.split(","));
+    if (params.current_industry) qq = qq.in("current_industry", params.current_industry.split(","));
+    if (params.previous_industry) {
+      const vals = params.previous_industry.split(",");
+      qq = qq.overlaps("industries", vals);
+      // The exclude-if-also-current-industry behavior only makes
+      // unambiguous sense for a single selected value -- with multiple
+      // values selected it's no longer clear which one should exclude,
+      // so it's dropped rather than guessed at.
+      if (vals.length === 1) qq = qq.neq("current_industry", vals[0]);
+    }
+    if (params.origin) qq = qq.in("created_by", params.origin.split(","));
     if (params.incomplete) qq = qq.in("status", ["awaiting_input", "lead"]);
     if (params.ids) {
       const idList = params.ids.split(",").map((s) => s.trim()).filter(Boolean);
@@ -284,21 +299,21 @@ export default async function CandidatesPage({
     if (mandateCandidateIds) {
       qq = qq.in("id", mandateCandidateIds.length ? mandateCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
     }
-    if (params.notice_period) qq = qq.eq("notice_period", params.notice_period);
-    if (params.employment_status) qq = qq.eq("current_employment_status", params.employment_status);
-    if (params.highest_qualification) qq = qq.eq("highest_qualification", params.highest_qualification);
-    if (params.work_mode) qq = qq.eq("work_mode", params.work_mode);
+    if (params.notice_period) qq = qq.in("notice_period", params.notice_period.split(","));
+    if (params.employment_status) qq = qq.in("current_employment_status", params.employment_status.split(","));
+    if (params.highest_qualification) qq = qq.in("highest_qualification", params.highest_qualification.split(","));
+    if (params.work_mode) qq = qq.in("work_mode", params.work_mode.split(","));
     if (params.open_to_relocation) qq = qq.eq("open_to_relocation", params.open_to_relocation);
     if (params.role_level) qq = qq.in("segment_data->>role_level", params.role_level.split(","));
     if (params.role_type) qq = qq.eq("segment_data->>role_type", params.role_type);
     if (params.recommendation) {
-      qq = qq.eq("recruiter_assessment->>overall_recommendation", params.recommendation);
+      qq = qq.in("recruiter_assessment->>overall_recommendation", params.recommendation.split(","));
     }
     if (params.job_stability) {
-      qq = qq.eq("recruiter_assessment->>job_stability", params.job_stability);
+      qq = qq.in("recruiter_assessment->>job_stability", params.job_stability.split(","));
     }
     if (params.relocation_verified) {
-      qq = qq.eq("recruiter_assessment->>relocation_verified", params.relocation_verified);
+      qq = qq.in("recruiter_assessment->>relocation_verified", params.relocation_verified.split(","));
     }
     if (params.min_communication) {
       qq = qq.gte("recruiter_assessment->>communication_score", params.min_communication);
@@ -469,6 +484,33 @@ export default async function CandidatesPage({
     return s ? `/candidates?${s}` : "/candidates";
   }
 
+  // Renders one removable chip per selected value for a multi-select filter
+  // field -- same "remove just this one value" pattern established for
+  // sub_domain/role_level, generalized so every multi-select field can reuse
+  // it instead of repeating the split/filter/join logic per field.
+  function multiValueChips(
+    field: string,
+    label: string,
+    opts?: { tone?: keyof typeof ACTIVE_FILTER_TONE_CLASSES; labels?: Record<string, string> }
+  ) {
+    const raw = params[field as keyof typeof params] as string | undefined;
+    if (!raw) return null;
+    return raw
+      .split(",")
+      .filter(Boolean)
+      .map((v) => (
+        <ActiveFilterChip
+          key={`${field}-${v}`}
+          tone={opts?.tone}
+          href={qs({
+            [field]: raw.split(",").filter((x) => x !== v).join(",") || undefined,
+          })}
+        >
+          {label}: {opts?.labels?.[v] ?? v} ✕
+        </ActiveFilterChip>
+      ));
+  }
+
   // Whether any filter (basic or advanced) is currently active, so the
   // "Clear all filters" control only shows up when there's actually
   // something to clear.
@@ -626,11 +668,7 @@ export default async function CandidatesPage({
           >
             ⚠ Incomplete profiles
           </Link>
-          {params.status && (
-            <ActiveFilterChip href={qs({ status: undefined })}>
-              Status: {STATUS_LABEL[params.status] ?? params.status} ✕
-            </ActiveFilterChip>
-          )}
+          {multiValueChips("status", "Status", { labels: STATUS_LABEL })}
           {params.sub_domain &&
             params.sub_domain.split(",").filter(Boolean).map((v) => (
               <ActiveFilterChip
@@ -660,46 +698,21 @@ export default async function CandidatesPage({
               Location: {params.location} ✕
             </ActiveFilterChip>
           )}
-          {params.secondary_domain && (
-            <ActiveFilterChip href={qs({ secondary_domain: undefined })}>
-              Secondary domain: {params.secondary_domain} ✕
-            </ActiveFilterChip>
-          )}
-          {params.current_industry && (
-            <ActiveFilterChip href={qs({ current_industry: undefined })} tone="success">
-              Current industry: {params.current_industry} ✕
-            </ActiveFilterChip>
-          )}
-          {params.previous_industry && (
-            <ActiveFilterChip href={qs({ previous_industry: undefined })}>
-              Previous industry: {params.previous_industry} ✕
-            </ActiveFilterChip>
-          )}
-          {params.origin && (
-            <ActiveFilterChip href={qs({ origin: undefined })} tone="warning">
-              Origin: {ORIGIN_LABEL[params.origin] ?? params.origin} ✕
-            </ActiveFilterChip>
-          )}
-          {params.source_channel && (
-            <ActiveFilterChip href={qs({ source_channel: undefined })} tone="warning">
-              Source: {params.source_channel} ✕
-            </ActiveFilterChip>
-          )}
-          {params.language && (
-            <ActiveFilterChip href={qs({ language: undefined })}>
-              Language: {params.language} ✕
-            </ActiveFilterChip>
-          )}
-          {params.b2b_motion && (
-            <ActiveFilterChip href={qs({ b2b_motion: undefined })}>
-              B2B Motion: {params.b2b_motion} ✕
-            </ActiveFilterChip>
-          )}
-          {params.b2c_motion && (
-            <ActiveFilterChip href={qs({ b2c_motion: undefined })}>
-              B2C Motion: {params.b2c_motion} ✕
-            </ActiveFilterChip>
-          )}
+          {multiValueChips("secondary_domain", "Secondary domain")}
+          {multiValueChips("current_industry", "Current industry", { tone: "success" })}
+          {multiValueChips("previous_industry", "Previous industry")}
+          {multiValueChips("origin", "Origin", { tone: "warning", labels: ORIGIN_LABEL })}
+          {multiValueChips("source_channel", "Source", { tone: "warning" })}
+          {multiValueChips("language", "Language")}
+          {multiValueChips("b2b_motion", "B2B Motion")}
+          {multiValueChips("b2c_motion", "B2C Motion")}
+          {multiValueChips("notice_period", "Days to join")}
+          {multiValueChips("employment_status", "Employment status")}
+          {multiValueChips("highest_qualification", "Qualification")}
+          {multiValueChips("work_mode", "Work mode")}
+          {multiValueChips("recommendation", "Recommendation")}
+          {multiValueChips("job_stability", "Job stability")}
+          {multiValueChips("relocation_verified", "Relocation verified")}
           {(params.from || params.to) && (
             <ActiveFilterChip href={qs({ from: undefined, to: undefined })}>
               Added: {params.from ?? "…"} → {params.to ?? "…"} ✕
@@ -741,92 +754,52 @@ export default async function CandidatesPage({
                     />
                   </FilterField>
                   <FilterField label="Secondary specialization">
-                    <select
+                    <MultiSelectFilter
                       name="secondary_domain"
-                      defaultValue={params.secondary_domain ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {secondarySpecializationGroups().map((g) => (
-                        <optgroup key={g.group} label={g.group}>
-                          {g.options.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
+                      label="Secondary specialization"
+                      defaultValue={params.secondary_domain}
+                      groups={secondarySpecializationGroups()}
+                    />
                   </FilterField>
                   <FilterField label="Current industry">
-                    <select
+                    <MultiSelectFilter
                       name="current_industry"
-                      defaultValue={params.current_industry ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {industryOptions.map((i) => (
-                        <option key={i} value={i}>
-                          {i}
-                        </option>
-                      ))}
-                    </select>
+                      label="Current industry"
+                      defaultValue={params.current_industry}
+                      options={[...industryOptions]}
+                    />
                   </FilterField>
                   <FilterField label="Previous industry">
-                    <select
+                    <MultiSelectFilter
                       name="previous_industry"
-                      defaultValue={params.previous_industry ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {industryOptions.map((i) => (
-                        <option key={i} value={i}>
-                          {i}
-                        </option>
-                      ))}
-                    </select>
+                      label="Previous industry"
+                      defaultValue={params.previous_industry}
+                      options={[...industryOptions]}
+                    />
                   </FilterField>
                   <FilterField label="Languages known">
-                    <select
+                    <MultiSelectFilter
                       name="language"
-                      defaultValue={params.language ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {languageOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Languages known"
+                      defaultValue={params.language}
+                      options={[...languageOptions]}
+                    />
                   </FilterField>
                   <FilterField label="B2B Sales Motion">
-                    <select
+                    <MultiSelectFilter
                       name="b2b_motion"
-                      defaultValue={params.b2b_motion ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {b2bSalesMotionTypeOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="B2B Sales Motion"
+                      defaultValue={params.b2b_motion}
+                      options={[...b2bSalesMotionTypeOptions]}
+                    />
                   </FilterField>
                   <FilterField label="B2C Sales Motion">
-                    <select
+                    <MultiSelectFilter
                       name="b2c_motion"
-                      defaultValue={params.b2c_motion ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {b2cSalesMotionOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="B2C Sales Motion"
+                      defaultValue={params.b2c_motion}
+                      options={[...b2cSalesMotionOptions]}
+                    />
                   </FilterField>
                 </FilterGroup>
 
@@ -841,60 +814,36 @@ export default async function CandidatesPage({
                     <input name="min_exp" type="number" defaultValue={params.min_exp} className="w-20 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]" />
                   </FilterField>
                   <FilterField label="Days to join">
-                    <select
+                    <MultiSelectFilter
                       name="notice_period"
-                      defaultValue={params.notice_period ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {NOTICE_PERIODS.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
+                      label="Days to join"
+                      defaultValue={params.notice_period}
+                      options={[...NOTICE_PERIODS]}
+                    />
                   </FilterField>
                   <FilterField label="Employment status">
-                    <select
+                    <MultiSelectFilter
                       name="employment_status"
-                      defaultValue={params.employment_status ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {employmentStatusOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Employment status"
+                      defaultValue={params.employment_status}
+                      options={[...employmentStatusOptions]}
+                    />
                   </FilterField>
                   <FilterField label="Highest qualification">
-                    <select
+                    <MultiSelectFilter
                       name="highest_qualification"
-                      defaultValue={params.highest_qualification ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {QUALIFICATION_OPTIONS.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Highest qualification"
+                      defaultValue={params.highest_qualification}
+                      options={[...QUALIFICATION_OPTIONS]}
+                    />
                   </FilterField>
                   <FilterField label="Work mode">
-                    <select
+                    <MultiSelectFilter
                       name="work_mode"
-                      defaultValue={params.work_mode ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {workModeOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Work mode"
+                      defaultValue={params.work_mode}
+                      options={[...workModeOptions]}
+                    />
                   </FilterField>
                   <FilterField label="Open to relocation">
                     <select
@@ -935,91 +884,57 @@ export default async function CandidatesPage({
               <div className="flex flex-wrap gap-x-8 gap-y-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <FilterGroup title="Pipeline & Source">
                   <FilterField label="Status">
-                    <select
+                    <MultiSelectFilter
                       name="status"
-                      defaultValue={params.status ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">All</option>
-                      {Object.entries(STATUS_LABEL).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
+                      label="Status"
+                      defaultValue={params.status}
+                      options={Object.keys(STATUS_LABEL)}
+                      labels={STATUS_LABEL}
+                    />
                   </FilterField>
                   <FilterField label="Origin">
-                    <select
+                    <MultiSelectFilter
                       name="origin"
-                      defaultValue={params.origin ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {Object.entries(ORIGIN_LABEL).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
+                      label="Origin"
+                      defaultValue={params.origin}
+                      options={Object.keys(ORIGIN_LABEL)}
+                      labels={ORIGIN_LABEL}
+                    />
                   </FilterField>
                   <FilterField label="Source channel">
-                    <select
+                    <MultiSelectFilter
                       name="source_channel"
-                      defaultValue={params.source_channel ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {SOURCE_CHANNEL_OPTIONS.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Source channel"
+                      defaultValue={params.source_channel}
+                      options={[...SOURCE_CHANNEL_OPTIONS]}
+                    />
                   </FilterField>
                   <FilterField label="Recruiter recommendation">
-                    <select
+                    <MultiSelectFilter
                       name="recommendation"
-                      defaultValue={params.recommendation ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {RECOMMENDATIONS.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
+                      label="Recruiter recommendation"
+                      defaultValue={params.recommendation}
+                      options={[...RECOMMENDATIONS]}
+                    />
                   </FilterField>
                 </FilterGroup>
 
                 <FilterGroup title="Assessment scores">
                   <FilterField label="Job stability">
-                    <select
+                    <MultiSelectFilter
                       name="job_stability"
-                      defaultValue={params.job_stability ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {JOB_STABILITY_OPTIONS.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Job stability"
+                      defaultValue={params.job_stability}
+                      options={[...JOB_STABILITY_OPTIONS]}
+                    />
                   </FilterField>
                   <FilterField label="Relocation — verified">
-                    <select
+                    <MultiSelectFilter
                       name="relocation_verified"
-                      defaultValue={params.relocation_verified ?? ""}
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12px]"
-                    >
-                      <option value="">Any</option>
-                      {RELOCATION_VERIFIED_OPTIONS.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
+                      label="Relocation — verified"
+                      defaultValue={params.relocation_verified}
+                      options={[...RELOCATION_VERIFIED_OPTIONS]}
+                    />
                   </FilterField>
                   <FilterField label="Min communication score">
                     <select
