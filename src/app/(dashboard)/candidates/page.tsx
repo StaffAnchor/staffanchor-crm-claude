@@ -254,7 +254,7 @@ export default async function CandidatesPage({
     if (params.max_ctc) qq = qq.lte("current_fixed_ctc", Number(params.max_ctc));
     if (params.min_exp) qq = qq.gte("total_experience_years", Number(params.min_exp));
     if (params.sub_domain) qq = qq.in("sub_domain", params.sub_domain.split(","));
-    if (params.location) qq = qq.ilike("current_location", `%${params.location}%`);
+    if (params.location) qq = qq.in("current_location", params.location.split(","));
     if (params.secondary_domain) qq = qq.overlaps("secondary_sub_domains", params.secondary_domain.split(","));
     // segment_data.languages_known / .b2b_sales_motion_type are jsonb arrays
     // nested inside the segment_data column (not their own top-level array
@@ -413,7 +413,9 @@ export default async function CandidatesPage({
   // alone, one for status/created_at/created_by) even though they're
   // reading the same rows; combining the column list into one query halves
   // the redundant traffic without changing any of the derived numbers.
-  const { data: allRows } = await supabase.from("candidates").select("sub_domain, status, created_at, created_by");
+  const { data: allRows } = await supabase
+    .from("candidates")
+    .select("sub_domain, status, created_at, created_by, current_location");
   // Anything actually on a candidate record that ISN'T in the current
   // canonical taxonomy (pre-taxonomy-unification legacy values like "SaaS
   // Sales") still needs to stay filterable -- surfaced as a separate group
@@ -423,6 +425,18 @@ export default async function CandidatesPage({
       (allRows ?? [])
         .map((r) => r.sub_domain)
         .filter((d): d is string => Boolean(d) && !CANONICAL_PRIMARY_SPECIALIZATIONS.has(d as string))
+    )
+  ).sort();
+  // current_location is free text typed by the candidate (no fixed taxonomy
+  // like industry/language), so the filter options have to come from what's
+  // actually on file rather than a hardcoded list -- same reasoning as
+  // legacySubDomains above. Exact-match .in() rather than the old .ilike()
+  // substring match, matching every other multi-select filter on this page.
+  const locationOptions = Array.from(
+    new Set(
+      (allRows ?? [])
+        .map((r) => (r.current_location ?? "").trim())
+        .filter((v): v is string => Boolean(v))
     )
   ).sort();
   const statusCounts: Record<string, number> = {};
@@ -693,11 +707,7 @@ export default async function CandidatesPage({
                 Role level: {v} ✕
               </ActiveFilterChip>
             ))}
-          {params.location && (
-            <ActiveFilterChip href={qs({ location: undefined })}>
-              Location: {params.location} ✕
-            </ActiveFilterChip>
-          )}
+          {multiValueChips("location", "Current location")}
           {multiValueChips("secondary_domain", "Secondary domain")}
           {multiValueChips("current_industry", "Current industry", { tone: "success" })}
           {multiValueChips("previous_industry", "Previous industry")}
@@ -740,6 +750,14 @@ export default async function CandidatesPage({
             <div className="flex flex-col gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
               <div className="flex flex-wrap gap-x-8 gap-y-4">
                 <FilterGroup title="Profile & Specialization">
+                  <FilterField label="Current location">
+                    <MultiSelectFilter
+                      name="location"
+                      label="Current location"
+                      defaultValue={params.location}
+                      options={locationOptions}
+                    />
+                  </FilterField>
                   <FilterField label="Primary Specialization">
                     <MultiSelectFilter
                       name="sub_domain"
