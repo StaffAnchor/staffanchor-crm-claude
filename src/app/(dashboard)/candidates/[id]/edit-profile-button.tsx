@@ -614,15 +614,15 @@ export default function EditProfileButton({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !saving && setOpen(false)}>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-2" onClick={() => !saving && setOpen(false)}>
           <div
             className={`bg-white dark:bg-slate-900 rounded-ros-lg shadow-ros-md w-full flex overflow-hidden ${
-              hasResume ? "max-w-6xl h-[88vh]" : "max-w-3xl max-h-[90vh]"
+              hasResume ? "max-w-[98vw] h-[97vh]" : "max-w-3xl max-h-[90vh]"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
             {hasResume && (
-              <div className="hidden lg:flex flex-col w-[42%] shrink-0 border-r border-slate-100 dark:border-slate-800">
+              <div className="hidden lg:flex flex-col w-1/2 shrink-0 border-r border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{resumeFileName}</p>
                   <a
