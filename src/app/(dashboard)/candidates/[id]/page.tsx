@@ -280,6 +280,14 @@ export default async function CandidateDetailPage({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
+                  {candidate.candidate_number != null && (
+                    <span
+                      className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400"
+                      title="Candidate number — reference this in internal discussions"
+                    >
+                      C-{String(candidate.candidate_number).padStart(6, "0")}
+                    </span>
+                  )}
                   {recommendation && (
                     <Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">
                       {recommendation}

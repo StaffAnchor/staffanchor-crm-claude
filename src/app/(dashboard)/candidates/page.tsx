@@ -256,9 +256,21 @@ export default async function CandidatesPage({
   function applyFilters(q: any): any {
     let qq = q;
     if (params.q) {
-      qq = qq.or(
-        `full_name.ilike.%${params.q}%,email.ilike.%${params.q}%,current_employer.ilike.%${params.q}%`
-      );
+      // Recruiters reference candidates by their internal candidate_number
+      // (e.g. "C-000123" or just "123") when discussing them out loud or in
+      // Slack -- so a search that looks like a number (with or without the
+      // C-/# prefix we display) should also match on that column exactly,
+      // not just fall through to a fuzzy name/email/employer match.
+      const numericMatch = params.q.trim().match(/^(?:c-?|#)?0*(\d+)$/i);
+      if (numericMatch) {
+        qq = qq.or(
+          `full_name.ilike.%${params.q}%,email.ilike.%${params.q}%,current_employer.ilike.%${params.q}%,candidate_number.eq.${Number(numericMatch[1])}`
+        );
+      } else {
+        qq = qq.or(
+          `full_name.ilike.%${params.q}%,email.ilike.%${params.q}%,current_employer.ilike.%${params.q}%`
+        );
+      }
     }
     if (params.category) qq = qq.eq("category", params.category);
     if (params.status) qq = qq.in("status", params.status.split(","));
@@ -345,7 +357,7 @@ export default async function CandidatesPage({
   const baseQuery = supabase
     .from("candidates")
     .select(
-      "id, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
+      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
     )
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);
@@ -707,7 +719,7 @@ export default async function CandidatesPage({
           <input
             name="q"
             defaultValue={params.q}
-            placeholder="Search candidates by name, email, employer..."
+            placeholder="Search by name, email, employer, or candidate # ..."
             className="flex-1 min-w-[220px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 text-[13px] focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300"
           />
           {params.category && <input type="hidden" name="category" value={params.category} />}

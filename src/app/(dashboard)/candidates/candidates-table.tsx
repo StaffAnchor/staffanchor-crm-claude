@@ -42,6 +42,7 @@ export type OpenMandate = {
 
 export type CandidateRow = {
   id: string;
+  candidate_number: number | null;
   full_name: string;
   email: string;
   phone: string | null;
@@ -1224,7 +1225,8 @@ export default function CandidatesTable({
                   className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
                 />
               </th>
-              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
+              <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50">ID</th>
+              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[116px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -1252,7 +1254,13 @@ export default function CandidatesTable({
                     className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
                   />
                 </td>
-                <td className={`px-4 py-3 sticky left-[52px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
+                <td
+                  className={`px-3 py-3 sticky left-[52px] z-10 whitespace-nowrap text-[12px] font-mono text-slate-400 dark:text-slate-500 ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}
+                  title="Candidate number — reference this in internal discussions"
+                >
+                  {c.candidate_number != null ? `C-${String(c.candidate_number).padStart(6, "0")}` : "—"}
+                </td>
+                <td className={`px-4 py-3 sticky left-[116px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
                   <div
                     className="relative"
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
