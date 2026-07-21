@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UploadCloud, FileText, X, Loader2, AlertTriangle, Check, ArrowRight, Link2 } from "lucide-react";
-import { profileTypeOptions, languageOptions } from "@/lib/candidate-options";
+import { profileTypeOptions, languageOptions, level1OptionsForProfileType } from "@/lib/candidate-options";
 import { createClient } from "@/lib/supabase/client";
 
 const SOURCE_CHANNEL_OPTIONS = ["Naukri", "LinkedIn", "IIMJobs", "Monster", "Referral", "Other"];
@@ -46,6 +46,15 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [profileType, setProfileType] = useState("");
+  // Optional, batch-level Function/Specialization -- previously bulk-uploaded
+  // candidates got a Profile Type (B2B/B2C/Non-Sales) but no sub_domain at
+  // all, since the AI extraction never inferred it and there was no field to
+  // set it manually. Same "applies to the whole batch" convention as Profile
+  // Type/Source above (a bulk upload is usually all for one role), and
+  // resets whenever Profile Type changes since the option list depends on it.
+  const [subDomain, setSubDomain] = useState("");
+  const [subDomainOther, setSubDomainOther] = useState("");
+  const subDomainOptions = level1OptionsForProfileType(profileType || null);
   const [sourceChannel, setSourceChannel] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -129,6 +138,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               email: row.email,
               phone: row.phone || null,
               category: profileType,
+              sub_domain: subDomain ? (subDomain === "Other" ? subDomainOther || null : subDomain) : null,
               current_location: row.current_location || null,
               current_employer: row.current_employer || null,
               current_job_title: row.current_job_title || null,
@@ -189,7 +199,11 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               </p>
               <select
                 value={profileType}
-                onChange={(e) => setProfileType(e.target.value)}
+                onChange={(e) => {
+                  setProfileType(e.target.value);
+                  setSubDomain("");
+                  setSubDomainOther("");
+                }}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
               >
                 <option value="">Select...</option>
@@ -200,6 +214,37 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 ))}
               </select>
             </div>
+            {subDomainOptions.length > 0 && (
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                  Function / Specialization <span className="font-normal text-slate-400">(optional)</span>
+                </label>
+                <p className="text-[11px] text-slate-400 mb-1.5">Also applies to the whole batch.</p>
+                <select
+                  value={subDomain}
+                  onChange={(e) => {
+                    setSubDomain(e.target.value);
+                    if (e.target.value !== "Other") setSubDomainOther("");
+                  }}
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                >
+                  <option value="">Not sure -- leave blank</option>
+                  {subDomainOptions.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                {subDomain === "Other" && (
+                  <input
+                    value={subDomainOther}
+                    onChange={(e) => setSubDomainOther(e.target.value)}
+                    placeholder="Please specify"
+                    className="w-full mt-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                  />
+                )}
+              </div>
+            )}
             <div>
               <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Source <span className="text-red-500">*</span>

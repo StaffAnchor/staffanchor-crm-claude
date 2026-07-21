@@ -4,27 +4,31 @@ import mammoth from "mammoth";
 // ~2017) with no escape hatch for malformed-but-real PDFs -- several
 // candidate resumes (confirmed: a ReportLab-generated PDF, "bad XRef entry")
 // throw a hard FormatError there even though the file opens fine in any
-// real PDF viewer and even in modern parsers (pypdf, pdfjs-dist). Rather
-// than silently telling the recruiter "only PDF/DOCX supported" (misleading
-// -- the file WAS a PDF, this specific ancient parser just choked on it),
-// fall back to pdfjs-dist (actively maintained, far more tolerant of
-// non-standard xref tables) whenever the fast path fails.
+// real PDF viewer and even in modern parsers (pypdf, unpdf). Rather than
+// silently telling the recruiter "only PDF/DOCX supported" (misleading --
+// the file WAS a PDF, this specific ancient parser just choked on it), fall
+// back to unpdf whenever the fast path fails.
+//
+// First attempt at this fallback used raw pdfjs-dist directly, which failed
+// in production with "Setting up fake worker failed: Cannot find module
+// .../pdf.worker.mjs" -- pdfjs-dist's Node path still tries to dynamically
+// resolve its worker script relative to wherever Turbopack bundled its code
+// into a serverless chunk, and that worker file never ships in that chunk.
+// unpdf exists specifically to solve this: it's built for serverless/edge
+// runtimes and patches pdfjs-dist internally to run fully worker-free, so
+// there's no external file for the bundler to lose track of. Verified
+// locally against the exact failing file before shipping.
 async function extractPdfTextViaPdfParse(buffer: ArrayBuffer): Promise<string | null> {
   const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
   const result = await pdfParse(Buffer.from(buffer));
   return result.text?.trim() || null;
 }
 
-async function extractPdfTextViaPdfjs(buffer: ArrayBuffer): Promise<string | null> {
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buffer), isEvalSupported: false }).promise;
-  let text = "";
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    text += content.items.map((item) => ("str" in item ? item.str : "")).join(" ") + "\n";
-  }
-  return text.trim() || null;
+async function extractPdfTextViaUnpdf(buffer: ArrayBuffer): Promise<string | null> {
+  const { extractText, getDocumentProxy } = await import("unpdf");
+  const doc = await getDocumentProxy(new Uint8Array(buffer));
+  const { text } = await extractText(doc, { mergePages: true });
+  return text?.trim() || null;
 }
 
 // Extracts plain text from a resume file buffer so it can be fed into the AI
@@ -37,11 +41,11 @@ export async function extractResumeText(buffer: ArrayBuffer, fileName: string): 
     try {
       return await extractPdfTextViaPdfParse(buffer);
     } catch (err) {
-      console.error("pdf-parse failed, falling back to pdfjs-dist", err);
+      console.error("pdf-parse failed, falling back to unpdf", err);
       try {
-        return await extractPdfTextViaPdfjs(buffer);
+        return await extractPdfTextViaUnpdf(buffer);
       } catch (fallbackErr) {
-        console.error("pdfjs-dist fallback also failed", fallbackErr);
+        console.error("unpdf fallback also failed", fallbackErr);
         return null;
       }
     }
