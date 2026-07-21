@@ -31,6 +31,62 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Feature 5: instead of the recruiter typing a single guessed time and
+  // going back-and-forth, offer a few candidate time slots and let the
+  // candidate pick one themselves via a no-login link (same pattern as the
+  // client shortlist link). Purely additive -- "Confirm time" above still
+  // works for a recruiter who'd rather just set the time directly.
+  const [sendingLink, setSendingLink] = useState(false);
+  const [slotInputs, setSlotInputs] = useState<{ date: string; time: string }[]>([{ date: "", time: "" }]);
+  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function updateSlotInput(i: number, field: "date" | "time", value: string) {
+    setSlotInputs((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)));
+  }
+
+  async function generateSchedulingLink() {
+    const valid = slotInputs.filter((s) => s.date && s.time);
+    if (valid.length === 0) {
+      setLinkError("Add at least one candidate time slot.");
+      return;
+    }
+    setGenerating(true);
+    setLinkError("");
+    try {
+      const { error: slotsErr } = await supabase.from("interview_slots").insert(
+        valid.map((s) => ({
+          link_id: row.id,
+          starts_at: new Date(`${s.date}T${s.time}`).toISOString(),
+          duration_minutes: 30,
+        }))
+      );
+      if (slotsErr) throw slotsErr;
+
+      const token = crypto.randomUUID().replace(/-/g, "");
+      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { error: tokenErr } = await supabase
+        .from("interview_scheduling_tokens")
+        .insert({ token, link_id: row.id, expires_at: expiresAt });
+      if (tokenErr) throw tokenErr;
+
+      setGeneratedUrl(`${window.location.origin}/schedule/${token}`);
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : "Could not create the scheduling link.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!generatedUrl) return;
+    await navigator.clipboard.writeText(generatedUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   async function confirmSlot() {
     if (!date || !time) return;
     setBusy(true);
@@ -74,6 +130,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
           onClick={() => {
             setScheduling((s) => !s);
             setLoggingOutcome(false);
+            setSendingLink(false);
           }}
           className="text-[11.5px] font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 ease-ros"
         >
@@ -81,14 +138,88 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
         </button>
         <button
           onClick={() => {
+            setSendingLink((s) => !s);
+            setScheduling(false);
+            setLoggingOutcome(false);
+          }}
+          className="text-[11.5px] font-medium text-purple-600 hover:text-purple-700 transition-colors duration-200 ease-ros"
+        >
+          Let candidate pick
+        </button>
+        <button
+          onClick={() => {
             setLoggingOutcome((s) => !s);
             setScheduling(false);
+            setSendingLink(false);
           }}
           className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros"
         >
           Log outcome
         </button>
       </div>
+
+      {sendingLink && (
+        <div className="flex flex-col gap-1.5 mt-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-ros-md p-2 w-64">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Offer a few times -- the candidate picks one via a no-login link.
+          </p>
+          {slotInputs.map((s, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={s.date}
+                onChange={(e) => updateSlotInput(i, "date", e.target.value)}
+                className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 flex-1"
+              />
+              <input
+                type="time"
+                value={s.time}
+                onChange={(e) => updateSlotInput(i, "time", e.target.value)}
+                className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
+              />
+              {slotInputs.length > 1 && (
+                <button
+                  onClick={() => setSlotInputs((prev) => prev.filter((_, idx) => idx !== i))}
+                  className="text-slate-400 hover:text-red-500 text-[11px]"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={() => setSlotInputs((prev) => [...prev, { date: "", time: "" }])}
+            className="self-start text-[11px] text-purple-600 hover:text-purple-700"
+          >
+            + Add another time
+          </button>
+          {linkError && <p className="text-[11px] text-red-600">{linkError}</p>}
+          {!generatedUrl ? (
+            <button
+              onClick={generateSchedulingLink}
+              disabled={generating}
+              className="text-[11.5px] font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
+            >
+              {generating ? "Creating link…" : "Create scheduling link"}
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <input
+                readOnly
+                value={generatedUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                className="text-[11px] flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 bg-white dark:bg-slate-900"
+              />
+              <button
+                onClick={copyLink}
+                className="text-[11px] font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-ros-md px-2 py-1 transition-all duration-200 ease-ros"
+              >
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {scheduling && (
         <div className="flex items-center gap-1.5 mt-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-ros-md p-2">

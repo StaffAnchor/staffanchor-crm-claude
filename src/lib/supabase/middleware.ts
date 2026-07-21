@@ -52,7 +52,11 @@ export async function updateSession(request: NextRequest) {
     isAuthRoute ||
     isPasswordResetRoute ||
     isPublicApiRoute ||
-    request.nextUrl.pathname.startsWith("/shortlist");
+    request.nextUrl.pathname.startsWith("/shortlist") ||
+    // No-login candidate interview scheduling link (Feature 5) -- same
+    // class of route as /shortlist above: authorizes itself via the
+    // interview_scheduling_tokens token inside the RPCs, not a staff cookie.
+    request.nextUrl.pathname.startsWith("/schedule");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
