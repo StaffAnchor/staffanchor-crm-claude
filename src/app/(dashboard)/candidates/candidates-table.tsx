@@ -237,6 +237,11 @@ function InlineSelectCell({
     );
   }
 
+  // Editable cells need to read as editable at a glance, not just on hover
+  // -- a recruiter scanning the table has no reason to hover over a cell
+  // that looks like plain text. A small always-visible chevron plus a
+  // faint dashed underline gives the "this is a dropdown" cue up front;
+  // hover just deepens it (color shift) to confirm on approach.
   return (
     <button
       type="button"
@@ -245,18 +250,25 @@ function InlineSelectCell({
         setEditing(true);
       }}
       title="Click to edit"
-      className="text-left truncate block max-w-[170px] whitespace-nowrap hover:opacity-80"
+      className="group text-left truncate inline-flex items-center gap-0.5 max-w-[170px] whitespace-nowrap"
     >
       {value ? (
         renderClosed ? (
-          renderClosed(value)
+          <span className="inline-flex items-center gap-0.5">
+            {renderClosed(value)}
+            <ChevronDown className="w-2.5 h-2.5 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 shrink-0" strokeWidth={2.5} />
+          </span>
         ) : (
-          <span className="text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:underline decoration-dashed underline-offset-2">
-            {labels?.[value] ?? value}
+          <span className="inline-flex items-center gap-0.5 text-slate-500 dark:text-slate-400 border-b border-dashed border-slate-300 dark:border-slate-600 group-hover:text-blue-600 group-hover:border-blue-400">
+            <span className="truncate">{labels?.[value] ?? value}</span>
+            <ChevronDown className="w-2.5 h-2.5 shrink-0 opacity-70 group-hover:opacity-100" strokeWidth={2.5} />
           </span>
         )
       ) : (
-        <span className="text-slate-300 hover:text-blue-500 hover:underline decoration-dashed underline-offset-2">{placeholder}</span>
+        <span className="inline-flex items-center gap-0.5 text-slate-300 dark:text-slate-600 border-b border-dashed border-slate-300 dark:border-slate-600 group-hover:text-blue-500 group-hover:border-blue-400">
+          {placeholder}
+          <ChevronDown className="w-2.5 h-2.5 shrink-0 opacity-70 group-hover:opacity-100" strokeWidth={2.5} />
+        </span>
       )}
     </button>
   );

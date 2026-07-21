@@ -1,18 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import {
-  Users,
-  Sparkles,
-  Eye,
-  Star,
-  Send,
-  Trophy,
-  SlidersHorizontal,
-  Zap,
-  Database,
-  AlertTriangle,
-  Upload,
-} from "lucide-react";
+import { SlidersHorizontal, AlertTriangle, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
 import {
@@ -54,7 +42,7 @@ const ROLE_TYPE_FILTER_OPTIONS = [
   { value: "IC", label: "Individual Contributor" },
   { value: "Team Lead", label: "Leading a Team" },
 ];
-import { StatTile } from "@/components/ui/stat-tile";
+import { MiniStat, StatSection } from "@/components/ui/mini-stat";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 
 // "More filters" panel is grouped into named sections (rather than one long
@@ -145,32 +133,12 @@ const STAGE_LABEL: Record<string, string> = {
 const ORIGIN_LABEL: Record<string, string> = {
   quick_apply: "Job Quick Apply",
   self_registration: "Build Your Profile",
+  candidate_self_signup: "Build Your Profile",
   recruiter_created: "Recruiter Created (one at a time)",
   bulk_resume_upload: "Bulk CV Upload",
+  bulk_import: "One-Time Upload (Zoho)",
 };
 
-// ROS: a hiring funnel is inherently one progression, not six unrelated
-// categories -- so it reads calmer as one accent color deepening toward
-// the end of the pipeline (rainbow bars implied unrelated categories).
-// First four stages come off candidates.status (profile lifecycle, one
-// value per candidate). The rest come off candidate_mandate_links.stage
-// (per-mandate pipeline) -- see funnelCounts below, which sources each
-// bucket from the right table. "Client Shortlisted" replaces the old
-// pre-submission "Shortlisted" bucket: since stage is now tracked per
-// mandate rather than as a single candidate.status value, the meaningful
-// aggregate bucket is the client's own post-interview shortlist call, not
-// the recruiter's internal pre-submission judgment (still visible per
-// mandate, just not worth a top-level KPI).
-const FUNNEL_STAGES: { key: string; label: string; color: string; source: "status" | "stage" }[] = [
-  { key: "lead", label: "Lead", color: "bg-slate-300 dark:bg-slate-600", source: "status" },
-  { key: "awaiting_input", label: "Awaiting Input", color: "bg-amber-300", source: "status" },
-  { key: "registered", label: "Registered", color: "bg-sky-300", source: "status" },
-  { key: "under_review", label: "Under Review", color: "bg-blue-300", source: "status" },
-  { key: "submitted", label: "Submitted", color: "bg-blue-500", source: "stage" },
-  { key: "client_interview", label: "Client Interview", color: "bg-blue-600", source: "stage" },
-  { key: "client_shortlisted", label: "Client Shortlisted", color: "bg-purple-500", source: "stage" },
-  { key: "offer_placed", label: "Offer / Placed", color: "bg-emerald-500", source: "stage" },
-];
 
 const CATEGORIES = [
   { value: "", label: "All" },
@@ -462,7 +430,7 @@ export default async function CandidatesPage({
   // the redundant traffic without changing any of the derived numbers.
   const { data: allRows } = await supabase
     .from("candidates")
-    .select("sub_domain, status, created_at, created_by, current_location");
+    .select("sub_domain, status, created_at, created_by, current_location, recruiter_assessment");
   // Anything actually on a candidate record that ISN'T in the current
   // canonical taxonomy (pre-taxonomy-unification legacy values like "SaaS
   // Sales") still needs to stay filterable -- surfaced as a separate group
@@ -489,18 +457,39 @@ export default async function CandidatesPage({
   const statusCounts: Record<string, number> = {};
   const createdByCounts: Record<string, number> = {};
   let newToday = 0;
+  let newWTD = 0;
+  let newMTD = 0;
+  let newLastMonth = 0;
+  let recruiterAssessedCount = 0;
+  const now = new Date();
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
+  // Week = Mon-Sun containing today.
+  const startOfWeek = new Date(startOfToday);
+  const dayOfWeek = (startOfToday.getDay() + 6) % 7; // 0 = Monday
+  startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   (allRows ?? []).forEach((r) => {
     statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
     if (r.created_by) createdByCounts[r.created_by] = (createdByCounts[r.created_by] ?? 0) + 1;
-    if (new Date(r.created_at) >= startOfToday) newToday += 1;
+    const createdAt = new Date(r.created_at);
+    if (createdAt >= startOfToday) newToday += 1;
+    if (createdAt >= startOfWeek) newWTD += 1;
+    if (createdAt >= startOfMonth) newMTD += 1;
+    if (createdAt >= startOfLastMonth && createdAt < startOfMonth) newLastMonth += 1;
+    const assessment = r.recruiter_assessment as Record<string, unknown> | null;
+    if (assessment && Object.keys(assessment).length > 0) recruiterAssessedCount += 1;
   });
   const totalCount = (allRows ?? []).length;
   const quickApplyCount = createdByCounts["quick_apply"] ?? 0;
-  const jobPortalCount = createdByCounts["self_registration"] ?? 0;
+  // "Build Your Profile" covers both the current self_registration path and
+  // the legacy candidate_self_signup value -- same UI-facing origin, just an
+  // older created_by string from before the taxonomy settled.
+  const jobPortalCount = (createdByCounts["self_registration"] ?? 0) + (createdByCounts["candidate_self_signup"] ?? 0);
   const recruiterAddedCount = createdByCounts["recruiter_created"] ?? 0;
   const bulkUploadCount = createdByCounts["bulk_resume_upload"] ?? 0;
+  const zohoImportCount = createdByCounts["bulk_import"] ?? 0;
   const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
   // Pipeline progress (Submitted / Client Interview / Client Shortlisted /
@@ -508,50 +497,30 @@ export default async function CandidatesPage({
   // -- not candidates.status, which Phase 1 narrowed to profile-lifecycle
   // values only. Counting "distinct candidates with at least one mandate at
   // this stage" here, same as the funnel/KPI tiles below read from it.
-  const { data: allStageLinks } = await supabase.from("candidate_mandate_links").select("candidate_id, stage");
+  const { data: allStageLinks } = await supabase
+    .from("candidate_mandate_links")
+    .select("candidate_id, stage, date_of_joining");
   const stageCandidateSets: Record<string, Set<string>> = {};
+  // "Placed" splits into Joined vs Offered-but-not-joined by whether a join
+  // date has actually landed -- both are still stage="placed", so tracked
+  // as their own distinct-candidate sets alongside stageCandidateSets.
+  const joinedCandidates = new Set<string>();
+  const offeredNotJoinedCandidates = new Set<string>();
   (allStageLinks ?? []).forEach((l) => {
     if (!l.stage) return;
     if (!stageCandidateSets[l.stage]) stageCandidateSets[l.stage] = new Set();
     stageCandidateSets[l.stage].add(l.candidate_id);
+    if (l.stage === "placed") {
+      if (l.date_of_joining) joinedCandidates.add(l.candidate_id);
+      else offeredNotJoinedCandidates.add(l.candidate_id);
+    }
   });
   const stageCounts: Record<string, number> = {};
   MANDATE_STAGES.forEach((s) => {
     stageCounts[s] = stageCandidateSets[s]?.size ?? 0;
   });
-  const placedOrOfferCandidates = new Set([
-    ...(stageCandidateSets["offer"] ?? []),
-    ...(stageCandidateSets["placed"] ?? []),
-  ]);
-
-  const funnelCounts: Record<string, number> = {
-    lead: statusCounts["lead"] ?? 0,
-    awaiting_input: statusCounts["awaiting_input"] ?? 0,
-    registered: statusCounts["registered"] ?? 0,
-    under_review: statusCounts["under_review"] ?? 0,
-    submitted: stageCounts["submitted"] ?? 0,
-    client_interview: stageCounts["client_interview"] ?? 0,
-    client_shortlisted: stageCounts["client_shortlisted"] ?? 0,
-    offer_placed: placedOrOfferCandidates.size,
-  };
-  const funnelMax = Math.max(1, ...Object.values(funnelCounts));
-
-  // ROS: neutral cards + one restrained accent (Total candidates, the
-  // single most important number in the row) instead of ten differently
-  // colored solid pills -- calmer, less "control panel," per the redesign.
-  const statTiles = [
-    { label: "Total candidates", value: totalCount, icon: Users, accent: true },
-    { label: "New today", value: newToday, icon: Sparkles },
-    { label: "Under review", value: statusCounts["under_review"] ?? 0, icon: Eye, href: "/candidates?status=under_review" },
-    { label: "Client Shortlisted", value: stageCounts["client_shortlisted"] ?? 0, icon: Star, href: "/candidates?mandate_stage=client_shortlisted" },
-    { label: "Submitted", value: stageCounts["submitted"] ?? 0, icon: Send, href: "/candidates?mandate_stage=submitted" },
-    { label: "Placed", value: stageCounts["placed"] ?? 0, icon: Trophy, href: "/candidates?mandate_stage=placed" },
-    { label: "Job Quick Apply", value: quickApplyCount, icon: Zap, href: qs({ origin: "quick_apply" }) },
-    { label: "Build Your Profile", value: jobPortalCount, icon: Database, href: qs({ origin: "self_registration" }) },
-    { label: "Recruiter Created", value: recruiterAddedCount, icon: Users, href: qs({ origin: "recruiter_created" }) },
-    { label: "Bulk CV Upload", value: bulkUploadCount, icon: Upload, href: qs({ origin: "bulk_resume_upload" }) },
-    { label: "Incomplete profiles", value: incompleteCount, icon: AlertTriangle, href: qs({ incomplete: "1" }) },
-  ];
+  const joinedCount = joinedCandidates.size;
+  const offeredNotJoinedCount = offeredNotJoinedCandidates.size;
 
   function qs(overrides: Record<string, string | undefined>) {
     // Any filter change resets back to page 1 unless the override is
@@ -628,69 +597,67 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      {/* Soft canvas backdrop -- the tiles read as one calm surface instead
-          of ten separately-boxed panels floating on the page background. */}
-      <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-3">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-          {statTiles.map((k) => {
-            const Icon = k.icon;
-            const tile = (
-              <StatTile
-                label={k.label}
-                value={k.value}
-                icon={<Icon className="w-4 h-4" strokeWidth={2} />}
-                accent={k.accent}
-                className={k.href ? "cursor-pointer" : undefined}
-              />
-            );
-            return k.href ? (
-              <Link key={k.label} href={k.href}>
-                {tile}
-              </Link>
-            ) : (
-              <div key={k.label}>{tile}</div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg px-4 py-3 mb-3 shadow-ros-sm">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-            Hiring pipeline
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {FUNNEL_STAGES.map((stage, i) => {
-            const count = funnelCounts[stage.key] ?? 0;
-            const widthPct = Math.max(6, (count / funnelMax) * 100);
-            return (
+      {/* Business-critical metrics only, grouped into four labeled rows of
+          compact pill "tubes" instead of a flat grid of square cards --
+          each row answers one question a recruiter/founder actually asks:
+          how many candidates do we have and where from, how fast are we
+          adding more, how much recruiter attention has landed, and where
+          is everyone in the client pipeline right now. */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-4 mb-3 shadow-ros-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="shrink-0">
+            <p className="text-[30px] leading-none font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+              {totalCount}
+            </p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1.5">Total Candidates</p>
+            {incompleteCount > 0 && (
               <Link
-                key={stage.key}
-                href={
-                  stage.source === "status"
-                    ? `/candidates?status=${stage.key}`
-                    : `/candidates?mandate_stage=${stage.key === "offer_placed" ? "offer,placed" : stage.key}`
-                }
-                className="group flex-1 flex items-center gap-2"
-                title={`${count} candidate${count === 1 ? "" : "s"} · ${stage.label}`}
+                href={qs({ incomplete: "1" })}
+                className="inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 mt-1.5"
               >
-                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${stage.color} opacity-80 group-hover:opacity-100 transition-all duration-200 ease-ros`}
-                    style={{ width: `${widthPct}%` }}
-                  />
-                </div>
-                <span className="text-[12px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums shrink-0">{count}</span>
-                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 shrink-0 hidden lg:inline">{stage.label}</span>
-                {i < FUNNEL_STAGES.length - 1 && (
-                  <span className="hidden" aria-hidden>
-                    →
-                  </span>
-                )}
+                <AlertTriangle className="w-3 h-3" /> {incompleteCount} need profile completion
               </Link>
-            );
-          })}
+            )}
+          </div>
+          <div className="hidden lg:block w-px self-stretch bg-slate-100 dark:bg-slate-800" />
+          <div className="flex-1 flex flex-wrap gap-1.5">
+            <MiniStat value={quickApplyCount} label="Job Apply" tone="info" href={qs({ origin: "quick_apply" })} />
+            <MiniStat value={jobPortalCount} label="Profile Registrations" tone="accent" href={qs({ origin: "self_registration,candidate_self_signup" })} />
+            <MiniStat value={bulkUploadCount} label="Bulk Uploads" tone="warning" href={qs({ origin: "bulk_resume_upload" })} />
+            <MiniStat value={zohoImportCount} label="One-Time Upload (Zoho)" tone="neutral" href={qs({ origin: "bulk_import" })} />
+            <MiniStat value={recruiterAddedCount} label="Recruiter Created" tone="success" href={qs({ origin: "recruiter_created" })} />
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3">
+          <StatSection title="New Additions">
+            <MiniStat value={newToday} label="Today" tone="accent" />
+            <MiniStat value={newWTD} label="This Week" tone="accent" />
+            <MiniStat value={newMTD} label="This Month" tone="accent" />
+            <MiniStat value={newLastMonth} label="Last Month" tone="neutral" />
+          </StatSection>
+
+          <StatSection title="Recruiter Activity">
+            <MiniStat
+              value={recruiterAssessedCount}
+              label="Recruiter Assessed"
+              tone="info"
+              title="Candidates with a saved recruiter assessment"
+            />
+          </StatSection>
+
+          <StatSection title="Client Pipeline Disposition">
+            <MiniStat value={stageCounts["submitted"] ?? 0} label="Submitted" tone="info" href={qs({ mandate_stage: "submitted" })} />
+            <MiniStat value={stageCounts["client_interview"] ?? 0} label="Client Interview" tone="accent" href={qs({ mandate_stage: "client_interview" })} />
+            <MiniStat value={stageCounts["client_shortlisted"] ?? 0} label="Client Shortlisted" tone="success" href={qs({ mandate_stage: "client_shortlisted" })} />
+            <MiniStat value={stageCounts["rejected"] ?? 0} label="Client Rejected" tone="danger" href={qs({ mandate_stage: "rejected" })} />
+          </StatSection>
+
+          <StatSection title="Offer & Joining">
+            <MiniStat value={stageCounts["offer"] ?? 0} label="Client Offers" tone="warning" href={qs({ mandate_stage: "offer" })} />
+            <MiniStat value={joinedCount} label="Joined" tone="success" href={qs({ mandate_stage: "placed" })} />
+            <MiniStat value={offeredNotJoinedCount} label="Offered, Not Joined" tone="warning" title="Placed stage without a join date on file yet" />
+          </StatSection>
         </div>
       </div>
 
