@@ -12,6 +12,9 @@ import {
   highestQualificationOptions,
   workModeOptions,
   ctcOptions,
+  roleLevelOptions,
+  noticePeriodOptions,
+  relocationOptions,
 } from "@/lib/candidate-options";
 import ResumePreview from "./[id]/resume-preview";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -377,11 +380,28 @@ function roleTypeFor(c: CandidateRow): string {
   return label;
 }
 
+// role_type is stored as the short "IC" / "Team Lead" strings inside
+// segment_data (see roleTypeFor above) -- distinct from the longer display
+// labels used on the intake form, so the inline quick-edit needs its own
+// stored-value <-> label map rather than reusing candidate-options' display
+// list directly.
+const ROLE_TYPE_STORED = ["IC", "Team Lead"];
+const ROLE_TYPE_LABEL: Record<string, string> = {
+  IC: "Individual Contributor (IC)",
+  "Team Lead": "Leading a Team",
+};
+
 // updateField is threaded into every column's render so the handful of
 // quick-editable columns (InlineSelectCell) can write straight back to
 // Supabase without each needing its own copy of the update/refresh logic --
-// most columns simply ignore the second argument.
-type RenderHelpers = { updateField: (id: string, field: string, value: unknown) => Promise<void> };
+// most columns simply ignore the second argument. Role Level/Role Type live
+// inside the segment_data jsonb column rather than as their own columns, so
+// they need updateSegmentField instead, which merges the one key into the
+// existing object rather than overwriting the whole thing.
+type RenderHelpers = {
+  updateField: (id: string, field: string, value: unknown) => Promise<void>;
+  updateSegmentField: (id: string, current: Record<string, unknown> | null, key: string, value: unknown) => Promise<void>;
+};
 
 type ColumnDef = {
   key: string;
@@ -455,12 +475,26 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "role_level",
     label: "Role Level",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{roleLevelFor(c)}</span>,
+    render: (c, { updateSegmentField }) => (
+      <InlineSelectCell
+        value={(c.segment_data?.["role_level"] as string | undefined) ?? null}
+        options={[...roleLevelOptions]}
+        onSave={(v) => updateSegmentField(c.id, c.segment_data, "role_level", v)}
+      />
+    ),
   },
   {
     key: "role_type",
     label: "Role Type",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{roleTypeFor(c)}</span>,
+    render: (c, { updateSegmentField }) => (
+      <InlineSelectCell
+        value={(c.segment_data?.["role_type"] as string | undefined) ?? null}
+        options={ROLE_TYPE_STORED}
+        labels={ROLE_TYPE_LABEL}
+        renderClosed={() => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{roleTypeFor(c)}</span>}
+        onSave={(v) => updateSegmentField(c.id, c.segment_data, "role_type", v)}
+      />
+    ),
   },
   {
     key: "recommendation",
@@ -564,7 +598,13 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "notice_period",
     label: "Days to Join",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.notice_period ?? "—"}</span>,
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.notice_period}
+        options={[...noticePeriodOptions]}
+        onSave={(v) => updateField(c.id, "notice_period", v)}
+      />
+    ),
   },
   {
     key: "expected_fixed_ctc",
@@ -603,7 +643,13 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "open_to_relocation",
     label: "Open to Relocation",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.open_to_relocation ?? "—"}</span>,
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.open_to_relocation}
+        options={[...relocationOptions]}
+        onSave={(v) => updateField(c.id, "open_to_relocation", v)}
+      />
+    ),
   },
   {
     key: "languages_known",
@@ -949,6 +995,20 @@ export default function CandidatesTable({
     router.refresh();
   }
 
+  // Role Level / Role Type live inside the segment_data jsonb column, not
+  // as their own columns -- a direct .update({ role_level: value }) would
+  // just fail (no such column), so this merges the one key into whatever
+  // segment_data the row already had rather than overwriting the object.
+  async function updateSegmentField(id: string, current: Record<string, unknown> | null, key: string, value: unknown) {
+    const nextSegmentData = { ...(current ?? {}), [key]: value };
+    const { error } = await supabase.from("candidates").update({ segment_data: nextSegmentData }).eq("id", id);
+    if (error) {
+      window.alert(`Couldn't save: ${error.message}`);
+      return;
+    }
+    router.refresh();
+  }
+
   async function handleBulkInvite() {
     if (selected.size === 0) return;
     const targets = candidates.filter(
@@ -1252,7 +1312,7 @@ export default function CandidatesTable({
                 </td>
                 {visibleColumns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
-                    {col.render(c, { updateField })}
+                    {col.render(c, { updateField, updateSegmentField })}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-right">
