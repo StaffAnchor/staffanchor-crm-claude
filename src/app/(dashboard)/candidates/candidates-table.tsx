@@ -5,6 +5,14 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatExperience } from "@/lib/format-experience";
+import {
+  level1OptionsForProfileType,
+  industryOptions,
+  employmentStatusOptions,
+  highestQualificationOptions,
+  workModeOptions,
+  ctcOptions,
+} from "@/lib/candidate-options";
 import ResumePreview from "./[id]/resume-preview";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +103,14 @@ const STATUS_TONE: Record<string, BadgeTone> = {
   inactive: "danger",
 };
 
+// Profile-lifecycle-only values a candidate's Status can actually be set to
+// from this quick-edit (mirrors status-control.tsx, Phase 1's split of
+// profile lifecycle from per-mandate pipeline stage). Legacy pipeline
+// values (shortlisted/submitted/etc.) some older rows still carry are left
+// out of the option list -- editing those belongs on the per-mandate panel,
+// not this field -- but still render correctly via STATUS_LABEL above.
+const LIFECYCLE_STATUSES = ["awaiting_input", "lead", "registered", "under_review", "alumni", "inactive"];
+
 const CREATED_BY_LABEL: Record<string, string> = {
   quick_apply: "Quick Apply",
   self_registration: "Build Your Profile",
@@ -147,6 +163,102 @@ function ScoreCell({ value }: { value: number | undefined }) {
       ))}
       <span className="ml-1 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">{value}/5</span>
     </span>
+  );
+}
+
+// One-click quick-edit for the 8 fields simple/safe enough for a single
+// flat dropdown (Primary Specialization, Current Industry, Employment
+// Status, Highest Qualification, Work Mode, Current/Expected Fixed CTC,
+// profile Status) -- click the current value, pick a new one, saves
+// immediately via the same direct supabase.from("candidates").update()
+// pattern already used elsewhere on this table (bulk delete/map) and on
+// the mandate-stage quick-edit (mandate-candidates-table.tsx). Deliberately
+// NOT used for fields needing multi-select, numeric-with-dependent-logic,
+// or "Other, specify" branching (Secondary Specialization, CTC bands tied
+// to role type, etc.) -- those still require the full Edit Profile modal.
+function InlineSelectCell({
+  value,
+  options,
+  labels,
+  disabledOption,
+  placeholder = "—",
+  renderClosed,
+  onSave,
+}: {
+  value: string | null;
+  options: string[];
+  labels?: Record<string, string>;
+  // A currently-stored value that isn't in `options` (e.g. a legacy status)
+  // -- shown as a disabled, labeled option so it doesn't silently vanish
+  // from the select the moment this cell renders.
+  disabledOption?: { value: string; label: string } | null;
+  placeholder?: string;
+  // Optional custom display for the closed (non-editing) state -- e.g. the
+  // colored Badge status/industry used elsewhere, instead of plain text.
+  renderClosed?: (value: string) => React.ReactNode;
+  onSave: (next: string) => Promise<void> | void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  if (editing) {
+    return (
+      <select
+        autoFocus
+        defaultValue={value ?? ""}
+        disabled={saving}
+        onClick={(e) => e.stopPropagation()}
+        onBlur={() => setEditing(false)}
+        onChange={async (e) => {
+          const next = e.target.value;
+          if (!next) {
+            setEditing(false);
+            return;
+          }
+          setSaving(true);
+          await onSave(next);
+          setSaving(false);
+          setEditing(false);
+        }}
+        className="text-[12px] rounded-md border border-blue-300 dark:border-blue-700 px-1.5 py-1 bg-white dark:bg-slate-800 max-w-[170px] focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+      >
+        <option value="">{placeholder}</option>
+        {disabledOption && !options.includes(disabledOption.value) && (
+          <option value={disabledOption.value} disabled>
+            {disabledOption.label} (legacy)
+          </option>
+        )}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {labels?.[o] ?? o}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        setEditing(true);
+      }}
+      title="Click to edit"
+      className="text-left truncate block max-w-[170px] whitespace-nowrap hover:opacity-80"
+    >
+      {value ? (
+        renderClosed ? (
+          renderClosed(value)
+        ) : (
+          <span className="text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:underline decoration-dashed underline-offset-2">
+            {labels?.[value] ?? value}
+          </span>
+        )
+      ) : (
+        <span className="text-slate-300 hover:text-blue-500 hover:underline decoration-dashed underline-offset-2">{placeholder}</span>
+      )}
+    </button>
   );
 }
 
@@ -253,10 +365,16 @@ function roleTypeFor(c: CandidateRow): string {
   return label;
 }
 
+// updateField is threaded into every column's render so the handful of
+// quick-editable columns (InlineSelectCell) can write straight back to
+// Supabase without each needing its own copy of the update/refresh logic --
+// most columns simply ignore the second argument.
+type RenderHelpers = { updateField: (id: string, field: string, value: unknown) => Promise<void> };
+
 type ColumnDef = {
   key: string;
   label: string;
-  render: (c: CandidateRow) => React.ReactNode;
+  render: (c: CandidateRow, helpers: RenderHelpers) => React.ReactNode;
   headerClassName?: string;
 };
 
@@ -279,10 +397,13 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "current_fixed_ctc",
     label: "Current Fixed CTC",
-    render: (c) => (
-      <span className="text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
-        {c.current_fixed_ctc ? `₹${c.current_fixed_ctc}L` : "—"}
-      </span>
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.current_fixed_ctc != null ? String(c.current_fixed_ctc) : null}
+        options={ctcOptions.map((o) => String(o.value))}
+        labels={Object.fromEntries(ctcOptions.map((o) => [String(o.value), `₹${o.label}`]))}
+        onSave={(v) => updateField(c.id, "current_fixed_ctc", Number(v))}
+      />
     ),
   },
   {
@@ -345,11 +466,23 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "status",
     label: "Status",
-    render: (c) => (
-      <Badge tone={STATUS_TONE[c.status] ?? "neutral"} size="sm" className="normal-case tracking-normal">
-        {STATUS_LABEL[c.status] ?? c.status}
-      </Badge>
-    ),
+    render: (c, { updateField }) => {
+      const isLegacy = !LIFECYCLE_STATUSES.includes(c.status);
+      return (
+        <InlineSelectCell
+          value={c.status}
+          options={LIFECYCLE_STATUSES}
+          labels={STATUS_LABEL}
+          disabledOption={isLegacy ? { value: c.status, label: STATUS_LABEL[c.status] ?? c.status } : null}
+          renderClosed={(v) => (
+            <Badge tone={STATUS_TONE[v] ?? "neutral"} size="sm" className="normal-case tracking-normal">
+              {STATUS_LABEL[v] ?? v}
+            </Badge>
+          )}
+          onSave={(v) => updateField(c.id, "status", v)}
+        />
+      );
+    },
   },
   {
     key: "origin",
@@ -366,14 +499,18 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "current_industry",
     label: "Current Industry",
-    render: (c) =>
-      c.current_industry ? (
-        <Badge tone="success" size="sm" className="normal-case tracking-normal">
-          {c.current_industry}
-        </Badge>
-      ) : (
-        <span className="text-[11px] text-slate-300">—</span>
-      ),
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.current_industry}
+        options={[...industryOptions]}
+        renderClosed={(v) => (
+          <Badge tone="success" size="sm" className="normal-case tracking-normal">
+            {v}
+          </Badge>
+        )}
+        onSave={(v) => updateField(c.id, "current_industry", v)}
+      />
+    ),
   },
   {
     key: "previous_industries",
@@ -383,12 +520,34 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "sub_domain",
     label: "Primary Specialization",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.sub_domain ?? "—"}</span>,
+    render: (c, { updateField }) => {
+      // Options depend on the candidate's own Current Profile Type (category)
+      // -- same as the full Edit Profile modal's level1OptionsForProfileType
+      // call. Without a category set there's no meaningful option list, so
+      // the cell stays plain (unclickable) text, same as before.
+      const options = level1OptionsForProfileType(c.category ?? null);
+      if (options.length === 0) {
+        return <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.sub_domain ?? "—"}</span>;
+      }
+      return (
+        <InlineSelectCell
+          value={c.sub_domain}
+          options={options}
+          onSave={(v) => updateField(c.id, "sub_domain", v)}
+        />
+      );
+    },
   },
   {
     key: "current_employment_status",
     label: "Employment Status",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.current_employment_status ?? "—"}</span>,
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.current_employment_status}
+        options={[...employmentStatusOptions]}
+        onSave={(v) => updateField(c.id, "current_employment_status", v)}
+      />
+    ),
   },
   {
     key: "notice_period",
@@ -398,21 +557,36 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "expected_fixed_ctc",
     label: "Expected Fixed CTC",
-    render: (c) => (
-      <span className="text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
-        {c.expected_fixed_ctc ? `₹${c.expected_fixed_ctc}L` : "—"}
-      </span>
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.expected_fixed_ctc != null ? String(c.expected_fixed_ctc) : null}
+        options={ctcOptions.map((o) => String(o.value))}
+        labels={Object.fromEntries(ctcOptions.map((o) => [String(o.value), `₹${o.label}`]))}
+        onSave={(v) => updateField(c.id, "expected_fixed_ctc", Number(v))}
+      />
     ),
   },
   {
     key: "highest_qualification",
     label: "Highest Qualification",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.highest_qualification ?? "—"}</span>,
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.highest_qualification}
+        options={[...highestQualificationOptions]}
+        onSave={(v) => updateField(c.id, "highest_qualification", v)}
+      />
+    ),
   },
   {
     key: "work_mode",
     label: "Work Mode",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.work_mode ?? "—"}</span>,
+    render: (c, { updateField }) => (
+      <InlineSelectCell
+        value={c.work_mode}
+        options={[...workModeOptions]}
+        onSave={(v) => updateField(c.id, "work_mode", v)}
+      />
+    ),
   },
   {
     key: "open_to_relocation",
@@ -751,6 +925,18 @@ export default function CandidatesTable({
     router.refresh();
   }
 
+  // Shared write path for every InlineSelectCell quick-edit -- same direct
+  // supabase.from("candidates").update().eq("id", ...) pattern already used
+  // by bulk delete/map above, then router.refresh() to pull the fresh row.
+  async function updateField(id: string, field: string, value: unknown) {
+    const { error } = await supabase.from("candidates").update({ [field]: value }).eq("id", id);
+    if (error) {
+      window.alert(`Couldn't save: ${error.message}`);
+      return;
+    }
+    router.refresh();
+  }
+
   async function handleBulkInvite() {
     if (selected.size === 0) return;
     const targets = candidates.filter(
@@ -1054,7 +1240,7 @@ export default function CandidatesTable({
                 </td>
                 {visibleColumns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
-                    {col.render(c)}
+                    {col.render(c, { updateField })}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-right">
