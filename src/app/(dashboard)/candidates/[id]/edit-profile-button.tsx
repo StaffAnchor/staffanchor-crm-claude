@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Pencil, Loader2, X, Upload } from "lucide-react";
+import { Pencil, Loader2, X, Upload, Download } from "lucide-react";
+import ResumeViewerInline from "./resume-viewer-inline";
 import {
   cityOptions,
   cityStateMap,
@@ -173,10 +174,25 @@ function CheckboxGroup({
   );
 }
 
-export default function EditProfileButton({ candidate }: { candidate: Candidate }) {
+export default function EditProfileButton({
+  candidate,
+  resumeSignedUrl,
+  resumeFileName,
+}: {
+  candidate: Candidate;
+  // When present, the edit modal embeds the resume inline on the left,
+  // alongside the editable fields on the right -- so a recruiter on a live
+  // call can keep the CV open while updating the profile in real time,
+  // instead of the old behavior where opening the resume preview covered
+  // and disabled the rest of the page. Optional: candidates without a
+  // resume on file just get the original single-column form.
+  resumeSignedUrl?: string | null;
+  resumeFileName?: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
+  const hasResume = Boolean(resumeSignedUrl && resumeFileName);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -600,9 +616,30 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !saving && setOpen(false)}>
           <div
-            className="bg-white dark:bg-slate-900 rounded-ros-lg shadow-ros-md w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+            className={`bg-white dark:bg-slate-900 rounded-ros-lg shadow-ros-md w-full flex overflow-hidden ${
+              hasResume ? "max-w-6xl h-[88vh]" : "max-w-3xl max-h-[90vh]"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
+            {hasResume && (
+              <div className="hidden lg:flex flex-col w-[42%] shrink-0 border-r border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                  <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{resumeFileName}</p>
+                  <a
+                    href={resumeSignedUrl!}
+                    download={resumeFileName!}
+                    className="flex items-center gap-1 text-[12px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 shrink-0"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download
+                  </a>
+                </div>
+                <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
+                  <ResumeViewerInline signedUrl={resumeSignedUrl!} fileName={resumeFileName!} />
+                </div>
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0 overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
               <div className="flex items-center gap-2">
                 <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit profile</h3>
@@ -1234,6 +1271,7 @@ export default function EditProfileButton({ candidate }: { candidate: Candidate 
                 {saving && <Loader2 className="w-3 h-3 animate-spin" />}
                 Save changes
               </button>
+            </div>
             </div>
           </div>
         </div>

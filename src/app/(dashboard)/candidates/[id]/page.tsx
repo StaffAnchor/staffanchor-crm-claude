@@ -335,7 +335,7 @@ export default async function CandidateDetailPage({
             </div>
             <div className="flex items-start gap-2">
               {candidate.status === "awaiting_input" && <SendInviteButton candidateId={candidate.id} />}
-              <EditProfileButton candidate={candidate} />
+              <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
               <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
               <DeleteCandidateButton candidateId={candidate.id} candidateName={candidate.full_name} />
             </div>
