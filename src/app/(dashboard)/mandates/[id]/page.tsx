@@ -20,6 +20,8 @@ import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListCh
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
+import { FillProbabilityTile } from "./fill-probability-tile";
+import { computeFillProbability } from "@/lib/fill-probability";
 
 function daysOpen(createdAt: string) {
   const ms = Date.now() - new Date(createdAt).getTime();
@@ -119,6 +121,23 @@ export default async function MandateDetailPage({
     blockers.push({ label: "Aging, no submissions", tone: "warning" });
   }
 
+  // Fill probability -- only meaningful while a mandate is actually being
+  // worked (open); a draft has no activity to score yet, and a
+  // closed/placed mandate's outcome is already known.
+  const topMatchScore = (mandate.auto_match_results as { score: number }[] | null)?.[0]?.score ?? null;
+  const fillProbability =
+    mandate.status === "open"
+      ? computeFillProbability({
+          daysOpen: daysOpenNum,
+          staffCount: assignedStaff.length,
+          pipelineCount,
+          submittedCount,
+          screenedCount,
+          staleFeedbackCount: staleLinks?.length ?? 0,
+          topMatchScore,
+        })
+      : null;
+
   return (
     <div>
       <Link href="/mandates" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200">
@@ -144,7 +163,7 @@ export default async function MandateDetailPage({
 
       {/* Health strip -- everything a recruiter needs to answer "is this
           mandate in trouble" without opening a single panel below. */}
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className={fillProbability ? "mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5" : "mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"}>
         <StatTile label="Days open" value={daysOpenNum} icon={<CalendarDays className="h-4 w-4" />} accent={daysOpenNum >= 21} />
         <StatTile label="In pipeline" value={pipelineCount} icon={<Users className="h-4 w-4" />} />
         <StatTile label="Submitted to client" value={submittedCount} icon={<Share2 className="h-4 w-4" />} />
@@ -153,7 +172,13 @@ export default async function MandateDetailPage({
           value={pipelineCount > 0 ? `${screenedCount}/${pipelineCount}` : "—"}
           icon={<ClipboardCheck className="h-4 w-4" />}
         />
+        {fillProbability && <FillProbabilityTile probability={fillProbability} />}
       </div>
+      {fillProbability && (
+        <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+          Fill probability driver: {fillProbability.driver}
+        </p>
+      )}
 
       {blockers.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
