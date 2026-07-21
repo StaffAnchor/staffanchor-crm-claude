@@ -12,8 +12,13 @@ export type CandidateMatch = {
 };
 
 export type MatchMandateResult =
-  | { ok: true; matches: CandidateMatch[]; scanned: number }
+  | { ok: true; matches: CandidateMatch[]; scanned: number; calibration: { positive: number; negative: number } }
   | { ok: false; status: number; error: string };
+
+// Stages that represent the recruiter having actively said "yes" to a
+// candidate for this specific mandate -- used as positive calibration
+// signal (below), not just "in the pipeline".
+const POSITIVE_STAGES = new Set(["shortlisted", "submitted", "client_interview", "offer", "placed"]);
 
 type CandidateRow = {
   id: string;
@@ -88,12 +93,45 @@ export async function matchCandidatesForMandate(
     };
   }
 
-  // Already-linked candidates don't need to be suggested again.
+  // Already-linked candidates don't need to be suggested again. This same
+  // query also doubles as the recruiter-feedback signal for this mandate --
+  // stage tells us who they've actively said yes to (shortlisted onward)
+  // vs explicitly rejected, which feeds the calibration block below.
   const { data: existingLinks } = await supabase
     .from("candidate_mandate_links")
-    .select("candidate_id")
+    .select(
+      "candidate_id, stage, rejection_reason, candidates(current_job_title, current_employer, category, sub_domain, total_experience_years, current_location, skills, current_industry)"
+    )
     .eq("mandate_id", mandateId);
   const linkedIds = new Set((existingLinks ?? []).map((l) => l.candidate_id as string));
+
+  type LinkedCandidateProfile = {
+    current_job_title: string | null;
+    current_employer: string | null;
+    category: string | null;
+    sub_domain: string | null;
+    total_experience_years: number | null;
+    current_location: string | null;
+    skills: string | null;
+    current_industry: string | null;
+  };
+
+  const positiveExamples: (LinkedCandidateProfile & { stage: string })[] = [];
+  const negativeExamples: (LinkedCandidateProfile & { rejection_reason: string | null })[] = [];
+  for (const link of existingLinks ?? []) {
+    const profile = link.candidates as unknown as LinkedCandidateProfile | null;
+    if (!profile) continue;
+    if (link.stage === "rejected") {
+      negativeExamples.push({ ...profile, rejection_reason: (link.rejection_reason as string | null) ?? null });
+    } else if (POSITIVE_STAGES.has(link.stage as string)) {
+      positiveExamples.push({ ...profile, stage: link.stage as string });
+    }
+  }
+  // Bounded so this stays a light calibration nudge, not a second full
+  // dataset dump into the prompt -- most recent 12 of each is plenty of
+  // signal for "what does a good/bad fit look like on this mandate".
+  const calibrationPositive = positiveExamples.slice(-12);
+  const calibrationNegative = negativeExamples.slice(-12);
 
   // Stage 1: cheap SQL pre-filter. Same category is required (a B2C hunter
   // profile isn't useful for a B2B enterprise mandate); sub-domain, location,
@@ -116,9 +154,10 @@ export async function matchCandidatesForMandate(
   }
 
   const candidates = ((pool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+  const calibration = { positive: calibrationPositive.length, negative: calibrationNegative.length };
 
   if (candidates.length === 0) {
-    return { ok: true, matches: [], scanned: 0 };
+    return { ok: true, matches: [], scanned: 0, calibration };
   }
 
   // Score a cheap heuristic to rank/trim the pool before spending AI tokens
@@ -177,6 +216,16 @@ export async function matchCandidatesForMandate(
     existing_ai_summary: c.ai_summary,
   }));
 
+const calibrationBlock =
+    calibrationPositive.length + calibrationNegative.length === 0
+      ? ""
+      : `
+
+Recruiter calibration for THIS mandate (learn from this, don't just re-derive fit from the JD alone):
+- Candidates the recruiter has already accepted onto this mandate (shortlisted/submitted/interviewed/offered/placed) -- treat profiles resembling these as stronger signal than the raw must-haves suggest: ${JSON.stringify(calibrationPositive)}
+- Candidates the recruiter has explicitly rejected for this mandate -- treat profiles resembling these as weaker signal, and factor in any stated rejection reason: ${JSON.stringify(calibrationNegative)}
+Use these examples to calibrate what "good fit" actually means for this specific role and client, beyond what's written in the JD.`;
+
   const prompt = `You are a sharp sales recruiter matching candidates from an existing candidate pool against one open mandate (job requisition). Score and rank ONLY the candidates given below -- never invent a candidate, employer, skill, or fact not present in their data.
 
 Mandate:
@@ -188,6 +237,7 @@ Mandate:
 - Job description: ${m.job_description ?? "(none provided)"}
 - Must haves (hard requirements): ${JSON.stringify(m.must_haves ?? [])}
 - Good to haves (nice-to-haves): ${JSON.stringify(m.good_to_haves ?? [])}
+${calibrationBlock}
 
 Candidates to evaluate (JSON array):
 ${JSON.stringify(factSheets, null, 2)}
@@ -233,7 +283,7 @@ Sort the array by score descending. Include at most 15 candidates.`;
         }))
         .sort((a, b) => b.score - a.score);
 
-      return { ok: true, matches, scanned: candidates.length };
+      return { ok: true, matches, scanned: candidates.length, calibration };
     } catch (err) {
       lastError = err;
       console.error(`Gemini candidate matching failed with model ${modelName}`, err);

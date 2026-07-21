@@ -41,6 +41,7 @@ export default function FindMatchesPanel({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [addingId, setAddingId] = useState<string | null>(null);
+  const [calibration, setCalibration] = useState<{ positive: number; negative: number } | null>(null);
 
   async function runMatch() {
     setLoading(true);
@@ -58,6 +59,7 @@ export default function FindMatchesPanel({
         setMatches(json.matches ?? []);
         setScanned(json.scanned ?? 0);
         setComputedAt(new Date().toISOString());
+        setCalibration(json.calibration ?? null);
       }
     } catch {
       setError("Matching failed. Please try again.");
@@ -130,6 +132,15 @@ export default function FindMatchesPanel({
               {scanned > 0
                 ? `${matches.length} suggested of ${scanned} candidates scanned`
                 : `${matches.length} suggested${computedAt ? ` — auto-matched ${new Date(computedAt).toLocaleDateString()}` : ""}`}
+              {calibration && calibration.positive + calibration.negative > 0 && (
+                <span
+                  className="ml-1.5 text-purple-500"
+                  title="This ranking factors in candidates you've previously shortlisted or rejected for this mandate."
+                >
+                  · calibrated on {calibration.positive + calibration.negative} past decision
+                  {calibration.positive + calibration.negative === 1 ? "" : "s"}
+                </span>
+              )}
             </p>
             <button
               onClick={runMatch}

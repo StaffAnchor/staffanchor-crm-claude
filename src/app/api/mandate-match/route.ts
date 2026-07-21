@@ -39,5 +39,5 @@ export async function POST(req: NextRequest) {
     .update({ auto_match_results: result.matches, auto_match_computed_at: new Date().toISOString() })
     .eq("id", mandateId);
 
-  return NextResponse.json({ matches: result.matches, scanned: result.scanned });
+  return NextResponse.json({ matches: result.matches, scanned: result.scanned, calibration: result.calibration });
 }
