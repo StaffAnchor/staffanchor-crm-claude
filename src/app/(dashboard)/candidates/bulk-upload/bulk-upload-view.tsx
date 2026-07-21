@@ -3,11 +3,14 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UploadCloud, FileText, X, Loader2, AlertTriangle, Check, ArrowRight } from "lucide-react";
+import { UploadCloud, FileText, X, Loader2, AlertTriangle, Check, ArrowRight, Link2 } from "lucide-react";
 import { profileTypeOptions, languageOptions } from "@/lib/candidate-options";
+import { createClient } from "@/lib/supabase/client";
 
 const SOURCE_CHANNEL_OPTIONS = ["Naukri", "LinkedIn", "IIMJobs", "Monster", "Referral", "Other"];
 const MAX_FILES = 10;
+
+type MandateOption = { id: string; role_title: string; client_name: string };
 
 type Row = {
   fileName: string;
@@ -26,14 +29,20 @@ type Row = {
   current_job_title: string;
   total_experience_years: string;
   languages_known: string[];
+  // Optional: a batch might be sourced for one specific mandate, or just
+  // general pipeline-building with no mandate in mind -- so this defaults
+  // to "" (unlinked), not required to create the candidate.
+  mandate_id: string;
   included: boolean;
   createState: "idle" | "saving" | "saved" | "error";
   createError?: string;
   createdCandidateId?: string;
+  linkError?: string;
 };
 
-export default function BulkUploadView() {
+export default function BulkUploadView({ mandates }: { mandates: MandateOption[] }) {
   const router = useRouter();
+  const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [profileType, setProfileType] = useState("");
@@ -42,6 +51,7 @@ export default function BulkUploadView() {
   const [extractError, setExtractError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [creating, setCreating] = useState(false);
+  const [bulkMandateId, setBulkMandateId] = useState("");
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
@@ -86,6 +96,7 @@ export default function BulkUploadView() {
               ? String(extracted.total_experience_years)
               : "",
           languages_known: (extracted.languages_known as string[]) ?? [],
+          mandate_id: "",
           included: (r.ok as boolean) && !r.duplicate,
           createState: "idle",
         };
@@ -136,6 +147,23 @@ export default function BulkUploadView() {
           continue;
         }
         updateRow(row.fileName, { createState: "saved", createdCandidateId: data.candidateId });
+
+        // Optional mandate link -- same candidate_mandate_links insert the
+        // "Find matches" panel uses when a recruiter adds someone to a
+        // pipeline manually. Non-fatal if it fails: the candidate is still
+        // created either way, just flagged so the recruiter can link it
+        // themselves from the candidate or mandate page.
+        if (row.mandate_id) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          const { error: linkErr } = await supabase.from("candidate_mandate_links").insert({
+            candidate_id: data.candidateId,
+            mandate_id: row.mandate_id,
+            added_by: user?.id ?? null,
+          });
+          if (linkErr) updateRow(row.fileName, { linkError: "Created, but couldn't link to the mandate." });
+        }
       } catch {
         updateRow(row.fileName, { createState: "error", createError: "Network error." });
       }
@@ -266,6 +294,34 @@ export default function BulkUploadView() {
             </button>
           </div>
 
+          {mandates.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-3 py-2">
+              <Link2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="text-[12px] text-slate-500 dark:text-slate-400">
+                Link all uploaded candidates to a mandate (optional):
+              </span>
+              <select
+                value={bulkMandateId}
+                onChange={(e) => setBulkMandateId(e.target.value)}
+                className="rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12px] max-w-[16rem]"
+              >
+                <option value="">No mandate -- general pipeline</option>
+                {mandates.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.role_title} — {m.client_name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setRows((prev) => (prev ? prev.map((r) => ({ ...r, mandate_id: bulkMandateId })) : prev))}
+                className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
+              >
+                Apply to all
+              </button>
+            </div>
+          )}
+
           {rows.map((row) => (
             <div
               key={row.fileName}
@@ -293,7 +349,7 @@ export default function BulkUploadView() {
                     href={`/candidates/${row.createdCandidateId}`}
                     className="flex items-center gap-1 text-[12px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 shrink-0"
                   >
-                    <Check className="w-3 h-3" /> Created
+                    <Check className="w-3 h-3" /> {row.mandate_id && !row.linkError ? "Created & linked" : "Created"}
                   </Link>
                 )}
               </div>
@@ -341,6 +397,26 @@ export default function BulkUploadView() {
                     value={row.total_experience_years}
                     onChange={(v) => updateRow(row.fileName, { total_experience_years: v })}
                   />
+                  {mandates.length > 0 && (
+                    <div>
+                      <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+                        Mandate (optional)
+                      </label>
+                      <select
+                        value={row.mandate_id}
+                        onChange={(e) => updateRow(row.fileName, { mandate_id: e.target.value })}
+                        disabled={row.createState === "saved"}
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px] disabled:opacity-60"
+                      >
+                        <option value="">Not linked</option>
+                        {mandates.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.role_title} — {m.client_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
                       Languages known
@@ -368,6 +444,7 @@ export default function BulkUploadView() {
               {row.createState === "error" && (
                 <p className="mt-2 text-[12px] text-rose-600">{row.createError}</p>
               )}
+              {row.linkError && <p className="mt-2 text-[12px] text-amber-600">{row.linkError}</p>}
             </div>
           ))}
 

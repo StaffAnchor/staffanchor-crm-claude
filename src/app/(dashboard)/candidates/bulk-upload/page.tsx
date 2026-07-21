@@ -1,6 +1,19 @@
+import { createClient } from "@/lib/supabase/server";
 import BulkUploadView from "./bulk-upload-view";
 
-export default function BulkUploadPage() {
+export default async function BulkUploadPage() {
+  const supabase = await createClient();
+  // Open/draft mandates only -- a closed mandate isn't something you'd be
+  // sourcing fresh candidates for. Optional linking (see bulk-upload-view.tsx):
+  // a batch might be sourced for one specific mandate, or just general
+  // pipeline-building with no mandate in mind yet.
+  const { data: mandates } = await supabase
+    .from("mandates")
+    .select("id, role_title, client_name")
+    .in("status", ["open", "draft"])
+    .order("created_at", { ascending: false })
+    .limit(300);
+
   return (
     <div className="max-w-4xl">
       <div className="mb-4">
@@ -10,7 +23,7 @@ export default function BulkUploadPage() {
           review before anything is saved.
         </p>
       </div>
-      <BulkUploadView />
+      <BulkUploadView mandates={mandates ?? []} />
     </div>
   );
 }
