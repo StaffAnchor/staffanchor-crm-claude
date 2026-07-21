@@ -33,6 +33,7 @@ export default async function DashboardLayout({
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
+    { href: "/sales", label: "Sales", enabled: true },
     { href: "/employer-inquiries", label: "Employer Inquiries", enabled: true },
     { href: "/interviews", label: "Interviews", enabled: true },
     { href: "/reports", label: "Reports", enabled: true },
