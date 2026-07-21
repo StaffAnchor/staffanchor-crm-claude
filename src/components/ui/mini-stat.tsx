@@ -24,6 +24,18 @@ const DOT_CLASSES = {
   info: "bg-sky-400",
 } as const;
 
+// Each compartment's border/wash uses the same hue as its dot, just far
+// more diluted -- enough that the eye registers "this is a separate box"
+// without the boxes competing with the pills inside them for attention.
+const SECTION_CLASSES = {
+  neutral: "border-slate-200/70 dark:border-slate-700/70 bg-slate-50/40 dark:bg-slate-800/20",
+  accent: "border-blue-100 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/10",
+  success: "border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10",
+  warning: "border-amber-100 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/10",
+  danger: "border-rose-100 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/10",
+  info: "border-sky-100 dark:border-sky-900/40 bg-sky-50/30 dark:bg-sky-950/10",
+} as const;
+
 export type MiniStatTone = keyof typeof TONE_CLASSES;
 
 export function MiniStat({
@@ -65,19 +77,24 @@ export function MiniStat({
 export function StatSection({
   title,
   tone = "neutral",
+  className,
   children,
 }: {
   title: string;
   tone?: MiniStatTone;
+  className?: string;
   children: React.ReactNode;
 }) {
+  // A real bordered/tinted box, not just a label sitting over some pills --
+  // that's what actually reads as "a separate compartment" rather than
+  // everything running together into one wall of pills.
   return (
-    <div className="inline-flex flex-col align-top">
-      <p className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
-        <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASSES[tone])} />
+    <div className={cn("h-full rounded-lg border p-3", SECTION_CLASSES[tone], className)}>
+      <p className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", DOT_CLASSES[tone])} />
         {title}
       </p>
-      <div className="flex flex-wrap gap-1.5 max-w-md">{children}</div>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
     </div>
   );
 }

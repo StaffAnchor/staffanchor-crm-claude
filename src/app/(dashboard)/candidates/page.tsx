@@ -622,70 +622,83 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      {/* Business-critical metrics only, grouped into labeled clusters of
-          compact pill "tubes" instead of a flat grid of square cards --
-          each cluster answers one question a recruiter/founder actually
-          asks: how many candidates do we have and where from, how fast are
-          we adding more, how much recruiter attention has landed, and
-          where is everyone in the client pipeline right now. Clusters flow
-          left-to-right and wrap by their own natural width (not a rigid
-          grid), so an uneven cluster like Recruiter Activity (one tube)
-          doesn't leave a jagged empty column next to a five-tube cluster. */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-5 mb-3 shadow-ros-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-5 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="shrink-0">
-            <p className="text-[32px] leading-none font-bold text-slate-900 dark:text-slate-100 tabular-nums tracking-tight">
-              {totalCount}
-            </p>
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1.5">Total Candidates</p>
-            {incompleteCount > 0 && (
-              <Link
-                href={qs({ incomplete: "1" })}
-                className="inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 mt-1.5 transition-colors duration-200 ease-ros"
-              >
-                <AlertTriangle className="w-3 h-3" /> {incompleteCount} need profile completion
-              </Link>
-            )}
+      {/* Business-critical metrics only, laid out as clearly bordered
+          compartments (a 12-col grid) rather than a flowing wall of pills --
+          each box answers one question a recruiter/founder actually asks:
+          how many candidates do we have and where from, how fast are we
+          adding more, how much recruiter attention has landed, and where
+          is everyone in the client pipeline right now. Fixed column spans
+          (not flex-wrap) so the boxes line up into a real grid instead of
+          drifting to whatever width their content happens to need. */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-4 mb-3 shadow-ros-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 items-stretch">
+          {/* Total Candidates -- same bordered-box grammar as the clusters
+              below (via SECTION_CLASSES.neutral) so it reads as part of the
+              same compartment system, just the widest one and visually
+              anchored by the big number instead of a cluster title. */}
+          <div className="sm:col-span-2 xl:col-span-4 rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-slate-50/40 dark:bg-slate-800/20 p-3">
+            <div className="flex items-center gap-4 h-full">
+              <div className="shrink-0">
+                <p className="text-[30px] leading-none font-bold text-slate-900 dark:text-slate-100 tabular-nums tracking-tight">
+                  {totalCount}
+                </p>
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1.5 whitespace-nowrap">Total Candidates</p>
+                {incompleteCount > 0 && (
+                  <Link
+                    href={qs({ incomplete: "1" })}
+                    className="inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 mt-1.5 transition-colors duration-200 ease-ros"
+                  >
+                    <AlertTriangle className="w-3 h-3" /> {incompleteCount} need completion
+                  </Link>
+                )}
+              </div>
+              <div className="w-px self-stretch bg-slate-200/70 dark:bg-slate-700/70 shrink-0" />
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                <MiniStat value={quickApplyCount} label="Job Apply" tone="info" href={qs({ origin: "quick_apply" })} />
+                <MiniStat value={jobPortalCount} label="Profile Registrations" tone="accent" href={qs({ origin: "self_registration,candidate_self_signup" })} />
+                <MiniStat value={bulkUploadCount} label="Bulk Uploads" tone="warning" href={qs({ origin: "bulk_resume_upload" })} />
+                <MiniStat value={zohoImportCount} label="One-Time Upload (Zoho)" tone="neutral" href={qs({ origin: "bulk_import" })} />
+                <MiniStat value={recruiterAddedCount} label="Recruiter Created" tone="success" href={qs({ origin: "recruiter_created" })} />
+              </div>
+            </div>
           </div>
-          <div className="hidden lg:block w-px self-stretch bg-slate-100 dark:bg-slate-800" />
-          <div className="flex-1 flex flex-wrap gap-1.5">
-            <MiniStat value={quickApplyCount} label="Job Apply" tone="info" href={qs({ origin: "quick_apply" })} />
-            <MiniStat value={jobPortalCount} label="Profile Registrations" tone="accent" href={qs({ origin: "self_registration,candidate_self_signup" })} />
-            <MiniStat value={bulkUploadCount} label="Bulk Uploads" tone="warning" href={qs({ origin: "bulk_resume_upload" })} />
-            <MiniStat value={zohoImportCount} label="One-Time Upload (Zoho)" tone="neutral" href={qs({ origin: "bulk_import" })} />
-            <MiniStat value={recruiterAddedCount} label="Recruiter Created" tone="success" href={qs({ origin: "recruiter_created" })} />
+
+          <div className="sm:col-span-1 xl:col-span-2">
+            <StatSection title="New Additions" tone="accent">
+              <MiniStat value={newToday} label="Today" tone="accent" />
+              <MiniStat value={newWTD} label="This Week" tone="accent" />
+              <MiniStat value={newMTD} label="This Month" tone="accent" />
+              <MiniStat value={newLastMonth} label="Last Month" tone="neutral" />
+            </StatSection>
           </div>
-        </div>
 
-        <div className="flex flex-wrap gap-x-9 gap-y-4">
-          <StatSection title="New Additions" tone="accent">
-            <MiniStat value={newToday} label="Today" tone="accent" />
-            <MiniStat value={newWTD} label="This Week" tone="accent" />
-            <MiniStat value={newMTD} label="This Month" tone="accent" />
-            <MiniStat value={newLastMonth} label="Last Month" tone="neutral" />
-          </StatSection>
+          <div className="sm:col-span-1 xl:col-span-2">
+            <StatSection title="Recruiter Activity" tone="info">
+              <MiniStat
+                value={recruiterAssessedCount}
+                label="Recruiter Assessed"
+                tone="info"
+                title="Candidates with a saved recruiter assessment"
+              />
+            </StatSection>
+          </div>
 
-          <StatSection title="Recruiter Activity" tone="info">
-            <MiniStat
-              value={recruiterAssessedCount}
-              label="Recruiter Assessed"
-              tone="info"
-              title="Candidates with a saved recruiter assessment"
-            />
-          </StatSection>
+          <div className="sm:col-span-1 xl:col-span-2">
+            <StatSection title="Client Pipeline Disposition" tone="success">
+              <MiniStat value={stageCounts["submitted"] ?? 0} label="Submitted" tone="info" href={qs({ mandate_stage: "submitted" })} />
+              <MiniStat value={stageCounts["client_interview"] ?? 0} label="Client Interview" tone="accent" href={qs({ mandate_stage: "client_interview" })} />
+              <MiniStat value={stageCounts["client_shortlisted"] ?? 0} label="Client Shortlisted" tone="success" href={qs({ mandate_stage: "client_shortlisted" })} />
+              <MiniStat value={stageCounts["rejected"] ?? 0} label="Client Rejected" tone="danger" href={qs({ mandate_stage: "rejected" })} />
+            </StatSection>
+          </div>
 
-          <StatSection title="Client Pipeline Disposition" tone="success">
-            <MiniStat value={stageCounts["submitted"] ?? 0} label="Submitted" tone="info" href={qs({ mandate_stage: "submitted" })} />
-            <MiniStat value={stageCounts["client_interview"] ?? 0} label="Client Interview" tone="accent" href={qs({ mandate_stage: "client_interview" })} />
-            <MiniStat value={stageCounts["client_shortlisted"] ?? 0} label="Client Shortlisted" tone="success" href={qs({ mandate_stage: "client_shortlisted" })} />
-            <MiniStat value={stageCounts["rejected"] ?? 0} label="Client Rejected" tone="danger" href={qs({ mandate_stage: "rejected" })} />
-          </StatSection>
-
-          <StatSection title="Offer & Joining" tone="warning">
-            <MiniStat value={stageCounts["offer"] ?? 0} label="Client Offers" tone="warning" href={qs({ mandate_stage: "offer" })} />
-            <MiniStat value={joinedCount} label="Joined" tone="success" href={qs({ mandate_stage: "placed" })} />
-            <MiniStat value={offeredNotJoinedCount} label="Offered, Not Joined" tone="warning" title="Placed stage without a join date on file yet" />
-          </StatSection>
+          <div className="sm:col-span-1 xl:col-span-2">
+            <StatSection title="Offer & Joining" tone="warning">
+              <MiniStat value={stageCounts["offer"] ?? 0} label="Client Offers" tone="warning" href={qs({ mandate_stage: "offer" })} />
+              <MiniStat value={joinedCount} label="Joined" tone="success" href={qs({ mandate_stage: "placed" })} />
+              <MiniStat value={offeredNotJoinedCount} label="Offered, Not Joined" tone="warning" title="Placed stage without a join date on file yet" />
+            </StatSection>
+          </div>
         </div>
       </div>
 
