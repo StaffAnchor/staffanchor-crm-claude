@@ -42,7 +42,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
+      "id, stage, in_shortlist, stage_source, client_decision_at, rejected_from_stage, date_of_joining, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
     )
     .eq("mandate_id", id);
 
@@ -217,6 +217,10 @@ export default async function MandateDetailPage({
                 id: l.id,
                 stage: l.stage,
                 in_shortlist: l.in_shortlist,
+                stage_source: l.stage_source,
+                client_decision_at: l.client_decision_at,
+                rejected_from_stage: l.rejected_from_stage,
+                date_of_joining: l.date_of_joining,
                 candidate: cand,
                 screened: screenedCandidateIds.includes(cand.id),
               };

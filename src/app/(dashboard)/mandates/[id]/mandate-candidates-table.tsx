@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MessageCircleQuestion, Loader2, Mail } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
+import { STAGES, applyStageChange, type Stage, type StageSource } from "@/lib/mandate-stage";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -13,6 +14,7 @@ const STAGE_COLOR: Record<string, string> = {
   shortlisted: "bg-teal-100 text-teal-800",
   submitted: "bg-indigo-100 text-indigo-800",
   client_interview: "bg-cyan-100 text-cyan-800",
+  client_shortlisted: "bg-purple-100 text-purple-800",
   offer: "bg-lime-100 text-lime-800",
   placed: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-700",
@@ -22,6 +24,10 @@ export type MandateCandidateRow = {
   id: string;
   stage: string;
   in_shortlist: boolean;
+  stage_source: StageSource | null;
+  client_decision_at: string | null;
+  rejected_from_stage: string | null;
+  date_of_joining: string | null;
   screened: boolean;
   candidate: {
     id: string;
@@ -57,6 +63,14 @@ export default function MandateCandidatesTable({
   const [emailingJd, setEmailingJd] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [screeningRowId, setScreeningRowId] = useState<string | null>(null);
+  // Which row is mid-edit on its stage select, and whether that edit is
+  // being attributed to the client (vs. the recruiter's own call) --
+  // separate from `rows` state since most rows are never being edited.
+  const [editingStageId, setEditingStageId] = useState<string | null>(null);
+  const [clientRelayed, setClientRelayed] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [dateOfJoining, setDateOfJoining] = useState("");
+  const [savingStage, setSavingStage] = useState(false);
 
   function toggleRow(linkId: string) {
     setSelected((prev) => {
@@ -69,6 +83,36 @@ export default function MandateCandidatesTable({
 
   function toggleAll() {
     setSelected((prev) => (prev.size === rows.length ? new Set() : new Set(rows.map((r) => r.id))));
+  }
+
+  async function saveStage(row: MandateCandidateRow, newStage: Stage) {
+    setSavingStage(true);
+    setMessage(null);
+    try {
+      const source: StageSource = clientRelayed ? "client_relayed" : "recruiter";
+      await applyStageChange(supabase, {
+        linkId: row.id,
+        candidateId: row.candidate.id,
+        mandateId: mandateContext.mandateId as string,
+        candidateName: row.candidate.full_name,
+        mandateLabel: `${mandateContext.role_title as string} — ${mandateContext.client_name as string}`,
+        previousStage: row.stage,
+        newStage,
+        source,
+        rejectionReason: newStage === "rejected" ? rejectionReason : undefined,
+        dateOfJoining: newStage === "placed" ? dateOfJoining : undefined,
+      });
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stage: newStage, stage_source: source } : r)));
+      setEditingStageId(null);
+      setClientRelayed(false);
+      setRejectionReason("");
+      setDateOfJoining("");
+      router.refresh();
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to update stage." });
+    } finally {
+      setSavingStage(false);
+    }
   }
 
   async function toggleShortlist(linkId: string, next: boolean) {
@@ -233,9 +277,60 @@ export default function MandateCandidatesTable({
                 </button>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}>
-                  {l.stage.replace(/_/g, " ")}
-                </span>
+                {editingStageId === l.id ? (
+                  <div className="flex flex-col gap-1.5 min-w-[160px]">
+                    <select
+                      defaultValue={l.stage}
+                      autoFocus
+                      onChange={(e) => saveStage(l, e.target.value as Stage)}
+                      disabled={savingStage}
+                      className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
+                    >
+                      {STAGES.map((s) => (
+                        <option key={s} value={s}>
+                          {s.replace(/_/g, " ")}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400">
+                      <input type="checkbox" checked={clientRelayed} onChange={(e) => setClientRelayed(e.target.checked)} />
+                      Client told us this
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Rejection reason (if rejected)"
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
+                    />
+                    <input
+                      type="date"
+                      title="Date of joining (if placed)"
+                      value={dateOfJoining}
+                      onChange={(e) => setDateOfJoining(e.target.value)}
+                      className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
+                    />
+                    <button
+                      onClick={() => {
+                        setEditingStageId(null);
+                        setClientRelayed(false);
+                        setRejectionReason("");
+                        setDateOfJoining("");
+                      }}
+                      className="text-[11px] text-slate-400 hover:text-slate-600 text-left"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingStageId(l.id)}
+                    className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
+                  >
+                    {l.stage_source && l.stage_source !== "recruiter" && "🔔 "}
+                    {l.stage.replace(/_/g, " ")}
+                  </button>
+                )}
               </td>
               <td className="px-4 py-3">
                 <button

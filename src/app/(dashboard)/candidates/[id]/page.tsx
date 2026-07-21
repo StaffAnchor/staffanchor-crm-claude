@@ -163,7 +163,9 @@ export default async function CandidateDetailPage({
 
   const { data: links } = await supabase
     .from("candidate_mandate_links")
-    .select("id, mandate_id, stage, in_shortlist, rejection_reason, mandates(client_name, role_title)")
+    .select(
+      "id, mandate_id, stage, in_shortlist, rejection_reason, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title)"
+    )
     .eq("candidate_id", id);
 
   const { data: openMandates } = await supabase
@@ -526,6 +528,7 @@ export default async function CandidateDetailPage({
                   content: (
                     <MandateLinksPanel
                       candidateId={candidate.id}
+                      candidateName={candidate.full_name}
                       links={(links ?? []) as never}
                       openMandates={openMandates ?? []}
                     />
