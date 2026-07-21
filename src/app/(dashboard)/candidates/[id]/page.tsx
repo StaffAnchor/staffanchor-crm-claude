@@ -19,6 +19,7 @@ import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
 import { SalesPassportView } from "@/components/passport/sales-passport-view";
 import { mergeTimelines, computeStabilityScore, computeDomainConsistencyScore } from "@/lib/career-timeline";
+import { formatExperience } from "@/lib/format-experience";
 
 // ROS design language: one neutral avatar treatment for every candidate --
 // no per-category color-coding (see candidates-table.tsx for the reasoning:
@@ -347,7 +348,7 @@ export default async function CandidateDetailPage({
               a portal candidate card leads with these before anything else. */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
             <StatChip label="Current location" value={candidate.current_location} />
-            <StatChip label="Experience" value={candidate.total_experience_years ? `${candidate.total_experience_years} yrs` : null} />
+            <StatChip label="Experience" value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
             <StatChip label="Days to join" value={candidate.notice_period} />
             <StatChip
               label="Expected fixed CTC"

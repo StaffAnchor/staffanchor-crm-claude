@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Sparkles, BadgeCheck, Loader2, AlertTriangle } from "lucide-react";
+import { formatExperience } from "@/lib/format-experience";
 
 type AiPassport = {
   headline?: string;
@@ -113,7 +114,7 @@ export default function ProfilePassportTrigger({
                   {currentEmployer ? ` at ${currentEmployer}` : ""}
                 </p>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {currentLocation} · {totalExperienceYears ?? "—"} yrs experience
+                  {currentLocation} · {formatExperience(totalExperienceYears)} experience
                 </p>
               </div>
               <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">

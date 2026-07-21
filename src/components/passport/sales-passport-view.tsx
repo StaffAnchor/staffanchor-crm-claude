@@ -1,6 +1,7 @@
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Timeline, type TimelineEntry } from "@/components/ui/timeline";
 import type { ProfileTimelineEntry } from "@/lib/career-timeline";
+import { formatExperience } from "@/lib/format-experience";
 
 // The Sales Passport -- one read-only view of "everything that makes this
 // person hireable as a sales specialist," shared between two contexts:
@@ -168,7 +169,7 @@ export function SalesPassportView(props: SalesPassportProps) {
               {currentEmployer ? ` at ${currentEmployer}` : ""}
             </p>
             <p className="text-[12px] text-slate-400 mt-0.5">
-              {currentLocation ?? "—"} · {totalExperienceYears ?? "—"} yrs experience
+              {currentLocation ?? "—"} · {formatExperience(totalExperienceYears)} experience
             </p>
           </div>
           {viewer === "recruiter" && recommendation && (

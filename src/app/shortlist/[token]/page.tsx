@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatExperience } from "@/lib/format-experience";
 import { createClient } from "@supabase/supabase-js";
 import FeedbackButtons from "./feedback-buttons";
 import ResumePreview from "./resume-preview";
@@ -212,7 +213,7 @@ function CandidateCard({
             {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            {candidate.current_location} · {candidate.total_experience_years ?? "—"} yrs experience
+            {candidate.current_location} · {formatExperience(candidate.total_experience_years)} experience
           </p>
         </div>
         {candidate.resume_file_url && resumeUrl && (

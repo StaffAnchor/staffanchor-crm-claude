@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { formatExperience } from "@/lib/format-experience";
 import ResumePreview from "./[id]/resume-preview";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -289,7 +290,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Total Experience",
     render: (c) => (
       <span className="text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
-        {c.total_experience_years ?? "—"} yrs
+        {formatExperience(c.total_experience_years)}
       </span>
     ),
   },
