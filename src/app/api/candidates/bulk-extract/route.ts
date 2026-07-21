@@ -151,6 +151,21 @@ async function processOne(file: File, admin: SupabaseClient, genAI: GoogleGenera
   }
 }
 
+// Indian numbers frequently come back from Gemini with the country code
+// still attached (a resume's "+91 98765 43210" survives the digits-only
+// strip below as "919876543210", 12 digits) even though the prompt asks it
+// not to. Trim that down to the bare 10-digit mobile number. Deliberately
+// narrow -- only a 12-digit string starting with the Indian "91" prefix is
+// touched, so a genuinely international number (UAE "971...", etc., which
+// won't be exactly 12 digits starting with 91) is left exactly as extracted.
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return digits.slice(2);
+  }
+  return digits;
+}
+
 async function extractFieldsWithGemini(resumeText: string, genAI: GoogleGenerativeAI | null) {
   if (!genAI) return null;
 
@@ -178,7 +193,7 @@ ${resumeText.slice(0, 12000)}`;
       return {
         full_name: typeof parsed.full_name === "string" ? parsed.full_name.trim() : null,
         email: typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : null,
-        phone: typeof parsed.phone === "string" ? parsed.phone.replace(/[^\d]/g, "") : null,
+        phone: typeof parsed.phone === "string" ? normalizePhone(parsed.phone) : null,
         current_location: typeof parsed.current_location === "string" ? parsed.current_location.trim() : null,
         current_employer: typeof parsed.current_employer === "string" ? parsed.current_employer.trim() : null,
         current_job_title: typeof parsed.current_job_title === "string" ? parsed.current_job_title.trim() : null,
