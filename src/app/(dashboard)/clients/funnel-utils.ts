@@ -4,12 +4,23 @@
 // count candidates currently at or past a stage (rejects are tracked
 // separately since we don't know which stage they dropped out of).
 
+// FIX (Reports v2 audit): this list previously omitted "client_shortlisted"
+// -- a real value candidate_mandate_links.stage can hold (client said
+// yes-in-principle after interviewing, before a formal offer). Since RANK
+// is built purely from this array, any candidate sitting at
+// client_shortlisted had `RANK[s] === undefined`, silently fell through the
+// `if (rank === undefined) return;` guard below, and was dropped from
+// submittedPlus/interviewPlus/offerPlus/placed entirely -- undercounting
+// every funnel and conversion rate built on this file (Clients module +
+// firm-wide Reports funnel) for any mandate with a client-shortlisted
+// candidate who hadn't yet moved to a formal offer.
 export const STAGE_ORDER = [
   "sourced",
   "screened",
   "shortlisted",
   "submitted",
   "client_interview",
+  "client_shortlisted",
   "offer",
   "placed",
 ] as const;
@@ -22,6 +33,7 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   shortlisted: "Shortlisted",
   submitted: "Submitted",
   client_interview: "Interview",
+  client_shortlisted: "Client Shortlisted",
   offer: "Offer",
   placed: "Placed",
 };
