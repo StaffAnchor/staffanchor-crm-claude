@@ -473,11 +473,18 @@ export default async function CandidatesPage({
   (allRows ?? []).forEach((r) => {
     statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
     if (r.created_by) createdByCounts[r.created_by] = (createdByCounts[r.created_by] ?? 0) + 1;
-    const createdAt = new Date(r.created_at);
-    if (createdAt >= startOfToday) newToday += 1;
-    if (createdAt >= startOfWeek) newWTD += 1;
-    if (createdAt >= startOfMonth) newMTD += 1;
-    if (createdAt >= startOfLastMonth && createdAt < startOfMonth) newLastMonth += 1;
+    // "New Additions" is meant to track ongoing organic inflow (applications,
+    // recruiter sourcing, referrals) -- the one-time Zoho historical import
+    // all landed with a created_at of the migration run itself, so including
+    // it here would make every cadence bucket read as "721 this month"
+    // forever, which is meaningless as a growth metric.
+    if (r.created_by !== "bulk_import") {
+      const createdAt = new Date(r.created_at);
+      if (createdAt >= startOfToday) newToday += 1;
+      if (createdAt >= startOfWeek) newWTD += 1;
+      if (createdAt >= startOfMonth) newMTD += 1;
+      if (createdAt >= startOfLastMonth && createdAt < startOfMonth) newLastMonth += 1;
+    }
     const assessment = r.recruiter_assessment as Record<string, unknown> | null;
     if (assessment && Object.keys(assessment).length > 0) recruiterAssessedCount += 1;
   });
@@ -499,13 +506,22 @@ export default async function CandidatesPage({
   // this stage" here, same as the funnel/KPI tiles below read from it.
   const { data: allStageLinks } = await supabase
     .from("candidate_mandate_links")
-    .select("candidate_id, stage, date_of_joining");
+    .select("candidate_id, stage, date_of_joining, rejected_from_stage");
   const stageCandidateSets: Record<string, Set<string>> = {};
   // "Placed" splits into Joined vs Offered-but-not-joined by whether a join
   // date has actually landed -- both are still stage="placed", so tracked
   // as their own distinct-candidate sets alongside stageCandidateSets.
   const joinedCandidates = new Set<string>();
   const offeredNotJoinedCandidates = new Set<string>();
+  // The client-facing pipeline is a straight line -- reaching Client
+  // Shortlisted means the candidate necessarily passed through Submitted
+  // and Client Interview first. Recording a raw per-stage count (only the
+  // *current* stage) makes earlier stages look empty the moment someone
+  // advances, which reads as broken data rather than progress. Instead,
+  // every link is forward-filled: whatever stage it's at (or, if rejected,
+  // whatever stage it had reached right before rejection, via
+  // rejected_from_stage) counts toward every earlier stage in this list too.
+  const PIPELINE_ORDER = ["submitted", "client_interview", "client_shortlisted", "offer", "placed"] as const;
   (allStageLinks ?? []).forEach((l) => {
     if (!l.stage) return;
     if (!stageCandidateSets[l.stage]) stageCandidateSets[l.stage] = new Set();
@@ -513,6 +529,15 @@ export default async function CandidatesPage({
     if (l.stage === "placed") {
       if (l.date_of_joining) joinedCandidates.add(l.candidate_id);
       else offeredNotJoinedCandidates.add(l.candidate_id);
+    }
+    const reachedStage = l.stage === "rejected" ? l.rejected_from_stage : l.stage;
+    const idx = PIPELINE_ORDER.indexOf(reachedStage as (typeof PIPELINE_ORDER)[number]);
+    if (idx >= 0) {
+      for (let i = 0; i <= idx; i++) {
+        const s = PIPELINE_ORDER[i];
+        if (!stageCandidateSets[s]) stageCandidateSets[s] = new Set();
+        stageCandidateSets[s].add(l.candidate_id);
+      }
     }
   });
   const stageCounts: Record<string, number> = {};
@@ -597,23 +622,26 @@ export default async function CandidatesPage({
         </div>
       </div>
 
-      {/* Business-critical metrics only, grouped into four labeled rows of
+      {/* Business-critical metrics only, grouped into labeled clusters of
           compact pill "tubes" instead of a flat grid of square cards --
-          each row answers one question a recruiter/founder actually asks:
-          how many candidates do we have and where from, how fast are we
-          adding more, how much recruiter attention has landed, and where
-          is everyone in the client pipeline right now. */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-4 mb-3 shadow-ros-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
+          each cluster answers one question a recruiter/founder actually
+          asks: how many candidates do we have and where from, how fast are
+          we adding more, how much recruiter attention has landed, and
+          where is everyone in the client pipeline right now. Clusters flow
+          left-to-right and wrap by their own natural width (not a rigid
+          grid), so an uneven cluster like Recruiter Activity (one tube)
+          doesn't leave a jagged empty column next to a five-tube cluster. */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-5 mb-3 shadow-ros-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-5 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="shrink-0">
-            <p className="text-[30px] leading-none font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+            <p className="text-[32px] leading-none font-bold text-slate-900 dark:text-slate-100 tabular-nums tracking-tight">
               {totalCount}
             </p>
             <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1.5">Total Candidates</p>
             {incompleteCount > 0 && (
               <Link
                 href={qs({ incomplete: "1" })}
-                className="inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 mt-1.5"
+                className="inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 mt-1.5 transition-colors duration-200 ease-ros"
               >
                 <AlertTriangle className="w-3 h-3" /> {incompleteCount} need profile completion
               </Link>
@@ -629,15 +657,15 @@ export default async function CandidatesPage({
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3">
-          <StatSection title="New Additions">
+        <div className="flex flex-wrap gap-x-9 gap-y-4">
+          <StatSection title="New Additions" tone="accent">
             <MiniStat value={newToday} label="Today" tone="accent" />
             <MiniStat value={newWTD} label="This Week" tone="accent" />
             <MiniStat value={newMTD} label="This Month" tone="accent" />
             <MiniStat value={newLastMonth} label="Last Month" tone="neutral" />
           </StatSection>
 
-          <StatSection title="Recruiter Activity">
+          <StatSection title="Recruiter Activity" tone="info">
             <MiniStat
               value={recruiterAssessedCount}
               label="Recruiter Assessed"
@@ -646,14 +674,14 @@ export default async function CandidatesPage({
             />
           </StatSection>
 
-          <StatSection title="Client Pipeline Disposition">
+          <StatSection title="Client Pipeline Disposition" tone="success">
             <MiniStat value={stageCounts["submitted"] ?? 0} label="Submitted" tone="info" href={qs({ mandate_stage: "submitted" })} />
             <MiniStat value={stageCounts["client_interview"] ?? 0} label="Client Interview" tone="accent" href={qs({ mandate_stage: "client_interview" })} />
             <MiniStat value={stageCounts["client_shortlisted"] ?? 0} label="Client Shortlisted" tone="success" href={qs({ mandate_stage: "client_shortlisted" })} />
             <MiniStat value={stageCounts["rejected"] ?? 0} label="Client Rejected" tone="danger" href={qs({ mandate_stage: "rejected" })} />
           </StatSection>
 
-          <StatSection title="Offer & Joining">
+          <StatSection title="Offer & Joining" tone="warning">
             <MiniStat value={stageCounts["offer"] ?? 0} label="Client Offers" tone="warning" href={qs({ mandate_stage: "offer" })} />
             <MiniStat value={joinedCount} label="Joined" tone="success" href={qs({ mandate_stage: "placed" })} />
             <MiniStat value={offeredNotJoinedCount} label="Offered, Not Joined" tone="warning" title="Placed stage without a join date on file yet" />
