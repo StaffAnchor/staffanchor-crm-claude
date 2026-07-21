@@ -28,6 +28,7 @@ import {
   level1OptionsForProfileType,
   secondarySpecializationGroups,
 } from "@/lib/candidate-options";
+import { STAGES as MANDATE_STAGES } from "@/lib/mandate-stage";
 
 // Primary Specialization filter must show the *actual* taxonomy recruiters
 // pick from on the intake form (grouped by Current Profile Type), not just
@@ -123,6 +124,24 @@ const STATUS_LABEL: Record<string, string> = {
   inactive: "Inactive",
 };
 
+// Labels for candidate_mandate_links.stage (the per-mandate pipeline, see
+// lib/mandate-stage.ts) -- distinct from STATUS_LABEL above, which is now
+// profile-lifecycle-only. A candidate can be "Client Shortlisted" on one
+// mandate and "Rejected" on another at the same time, so these counts are
+// "how many candidates have at least one mandate at this stage," not a
+// single mutually-exclusive bucket like the status funnel above.
+const STAGE_LABEL: Record<string, string> = {
+  sourced: "Sourced",
+  screened: "Screened",
+  shortlisted: "Shortlisted (recruiter)",
+  submitted: "Submitted",
+  client_interview: "Client Interview",
+  client_shortlisted: "Client Shortlisted",
+  offer: "Offer",
+  placed: "Placed",
+  rejected: "Rejected",
+};
+
 const ORIGIN_LABEL: Record<string, string> = {
   quick_apply: "Job Quick Apply",
   self_registration: "Build Your Profile",
@@ -133,15 +152,24 @@ const ORIGIN_LABEL: Record<string, string> = {
 // ROS: a hiring funnel is inherently one progression, not six unrelated
 // categories -- so it reads calmer as one accent color deepening toward
 // the end of the pipeline (rainbow bars implied unrelated categories).
-const FUNNEL_STAGES: { key: string; label: string; color: string }[] = [
-  { key: "lead", label: "Lead", color: "bg-slate-300 dark:bg-slate-600" },
-  { key: "awaiting_input", label: "Awaiting Input", color: "bg-amber-300" },
-  { key: "registered", label: "Registered", color: "bg-sky-300" },
-  { key: "under_review", label: "Under Review", color: "bg-blue-300" },
-  { key: "shortlisted", label: "Shortlisted", color: "bg-blue-400" },
-  { key: "submitted", label: "Submitted", color: "bg-blue-500" },
-  { key: "client_interview", label: "Interview", color: "bg-blue-600" },
-  { key: "offer_placed", label: "Offer / Placed", color: "bg-emerald-500" },
+// First four stages come off candidates.status (profile lifecycle, one
+// value per candidate). The rest come off candidate_mandate_links.stage
+// (per-mandate pipeline) -- see funnelCounts below, which sources each
+// bucket from the right table. "Client Shortlisted" replaces the old
+// pre-submission "Shortlisted" bucket: since stage is now tracked per
+// mandate rather than as a single candidate.status value, the meaningful
+// aggregate bucket is the client's own post-interview shortlist call, not
+// the recruiter's internal pre-submission judgment (still visible per
+// mandate, just not worth a top-level KPI).
+const FUNNEL_STAGES: { key: string; label: string; color: string; source: "status" | "stage" }[] = [
+  { key: "lead", label: "Lead", color: "bg-slate-300 dark:bg-slate-600", source: "status" },
+  { key: "awaiting_input", label: "Awaiting Input", color: "bg-amber-300", source: "status" },
+  { key: "registered", label: "Registered", color: "bg-sky-300", source: "status" },
+  { key: "under_review", label: "Under Review", color: "bg-blue-300", source: "status" },
+  { key: "submitted", label: "Submitted", color: "bg-blue-500", source: "stage" },
+  { key: "client_interview", label: "Client Interview", color: "bg-blue-600", source: "stage" },
+  { key: "client_shortlisted", label: "Client Shortlisted", color: "bg-purple-500", source: "stage" },
+  { key: "offer_placed", label: "Offer / Placed", color: "bg-emerald-500", source: "stage" },
 ];
 
 const CATEGORIES = [
@@ -187,6 +215,7 @@ type SearchParams = {
   page?: string;
   ids?: string;
   mandate?: string;
+  mandate_stage?: string;
   employment_status?: string;
   highest_qualification?: string;
   work_mode?: string;
@@ -235,6 +264,21 @@ export default async function CandidatesPage({
       .select("candidate_id")
       .eq("mandate_id", params.mandate);
     mandateCandidateIds = Array.from(new Set((mandateLinks ?? []).map((l) => l.candidate_id)));
+  }
+
+  // "Client Shortlisted" / "Submitted" / etc. on the KPI tiles and Hiring
+  // pipeline strip now live on candidate_mandate_links.stage rather than
+  // candidates.status (see Phase 1 of the pipeline-stage split) -- so
+  // filtering the main table by one of those stages means resolving which
+  // candidates have at least one mandate link at that stage first, same
+  // resolve-then-.in("id", ...) pattern as recruiterCandidateIds above.
+  let mandateStageCandidateIds: string[] | null = null;
+  if (params.mandate_stage) {
+    const { data: stageLinks } = await supabase
+      .from("candidate_mandate_links")
+      .select("candidate_id")
+      .in("stage", params.mandate_stage.split(","));
+    mandateStageCandidateIds = Array.from(new Set((stageLinks ?? []).map((l) => l.candidate_id)));
   }
 
   // Applies every filter to a given query builder. Shared by the data query
@@ -298,6 +342,9 @@ export default async function CandidatesPage({
     }
     if (mandateCandidateIds) {
       qq = qq.in("id", mandateCandidateIds.length ? mandateCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
+    }
+    if (mandateStageCandidateIds) {
+      qq = qq.in("id", mandateStageCandidateIds.length ? mandateStageCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
     }
     if (params.notice_period) qq = qq.in("notice_period", params.notice_period.split(","));
     if (params.employment_status) qq = qq.in("current_employment_status", params.employment_status.split(","));
@@ -456,15 +503,36 @@ export default async function CandidatesPage({
   const bulkUploadCount = createdByCounts["bulk_resume_upload"] ?? 0;
   const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
+  // Pipeline progress (Submitted / Client Interview / Client Shortlisted /
+  // Offer / Placed) now lives on candidate_mandate_links.stage, per mandate
+  // -- not candidates.status, which Phase 1 narrowed to profile-lifecycle
+  // values only. Counting "distinct candidates with at least one mandate at
+  // this stage" here, same as the funnel/KPI tiles below read from it.
+  const { data: allStageLinks } = await supabase.from("candidate_mandate_links").select("candidate_id, stage");
+  const stageCandidateSets: Record<string, Set<string>> = {};
+  (allStageLinks ?? []).forEach((l) => {
+    if (!l.stage) return;
+    if (!stageCandidateSets[l.stage]) stageCandidateSets[l.stage] = new Set();
+    stageCandidateSets[l.stage].add(l.candidate_id);
+  });
+  const stageCounts: Record<string, number> = {};
+  MANDATE_STAGES.forEach((s) => {
+    stageCounts[s] = stageCandidateSets[s]?.size ?? 0;
+  });
+  const placedOrOfferCandidates = new Set([
+    ...(stageCandidateSets["offer"] ?? []),
+    ...(stageCandidateSets["placed"] ?? []),
+  ]);
+
   const funnelCounts: Record<string, number> = {
     lead: statusCounts["lead"] ?? 0,
     awaiting_input: statusCounts["awaiting_input"] ?? 0,
     registered: statusCounts["registered"] ?? 0,
     under_review: statusCounts["under_review"] ?? 0,
-    shortlisted: statusCounts["shortlisted"] ?? 0,
-    submitted: statusCounts["submitted"] ?? 0,
-    client_interview: statusCounts["client_interview"] ?? 0,
-    offer_placed: (statusCounts["offer"] ?? 0) + (statusCounts["placed"] ?? 0),
+    submitted: stageCounts["submitted"] ?? 0,
+    client_interview: stageCounts["client_interview"] ?? 0,
+    client_shortlisted: stageCounts["client_shortlisted"] ?? 0,
+    offer_placed: placedOrOfferCandidates.size,
   };
   const funnelMax = Math.max(1, ...Object.values(funnelCounts));
 
@@ -475,9 +543,9 @@ export default async function CandidatesPage({
     { label: "Total candidates", value: totalCount, icon: Users, accent: true },
     { label: "New today", value: newToday, icon: Sparkles },
     { label: "Under review", value: statusCounts["under_review"] ?? 0, icon: Eye, href: "/candidates?status=under_review" },
-    { label: "Shortlisted", value: statusCounts["shortlisted"] ?? 0, icon: Star, href: "/candidates?status=shortlisted" },
-    { label: "Submitted", value: statusCounts["submitted"] ?? 0, icon: Send, href: "/candidates?status=submitted" },
-    { label: "Placed", value: statusCounts["placed"] ?? 0, icon: Trophy, href: "/candidates?status=placed" },
+    { label: "Client Shortlisted", value: stageCounts["client_shortlisted"] ?? 0, icon: Star, href: "/candidates?mandate_stage=client_shortlisted" },
+    { label: "Submitted", value: stageCounts["submitted"] ?? 0, icon: Send, href: "/candidates?mandate_stage=submitted" },
+    { label: "Placed", value: stageCounts["placed"] ?? 0, icon: Trophy, href: "/candidates?mandate_stage=placed" },
     { label: "Job Quick Apply", value: quickApplyCount, icon: Zap, href: qs({ origin: "quick_apply" }) },
     { label: "Build Your Profile", value: jobPortalCount, icon: Database, href: qs({ origin: "self_registration" }) },
     { label: "Recruiter Created", value: recruiterAddedCount, icon: Users, href: qs({ origin: "recruiter_created" }) },
@@ -599,7 +667,11 @@ export default async function CandidatesPage({
             return (
               <Link
                 key={stage.key}
-                href={`/candidates?status=${stage.key === "offer_placed" ? "offer" : stage.key}`}
+                href={
+                  stage.source === "status"
+                    ? `/candidates?status=${stage.key}`
+                    : `/candidates?mandate_stage=${stage.key === "offer_placed" ? "offer,placed" : stage.key}`
+                }
                 className="group flex-1 flex items-center gap-2"
                 title={`${count} candidate${count === 1 ? "" : "s"} · ${stage.label}`}
               >
@@ -683,6 +755,7 @@ export default async function CandidatesPage({
             ⚠ Incomplete profiles
           </Link>
           {multiValueChips("status", "Status", { labels: STATUS_LABEL })}
+          {multiValueChips("mandate_stage", "Pipeline stage", { tone: "success", labels: STAGE_LABEL })}
           {params.sub_domain &&
             params.sub_domain.split(",").filter(Boolean).map((v) => (
               <ActiveFilterChip
@@ -908,6 +981,15 @@ export default async function CandidatesPage({
                       defaultValue={params.status}
                       options={Object.keys(STATUS_LABEL)}
                       labels={STATUS_LABEL}
+                    />
+                  </FilterField>
+                  <FilterField label="Pipeline stage">
+                    <MultiSelectFilter
+                      name="mandate_stage"
+                      label="Pipeline stage"
+                      defaultValue={params.mandate_stage}
+                      options={[...MANDATE_STAGES]}
+                      labels={STAGE_LABEL}
                     />
                   </FilterField>
                   <FilterField label="Origin">
