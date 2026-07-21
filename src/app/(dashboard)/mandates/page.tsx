@@ -33,9 +33,17 @@ function daysOpen(createdAt: string) {
 export default async function MandatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; category?: string; city?: string; client?: string; recruiter?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    category?: string;
+    city?: string;
+    client?: string;
+    recruiter?: string;
+    newClientId?: string;
+    newClientName?: string;
+  }>;
 }) {
-  const { status, category, city, client, recruiter } = await searchParams;
+  const { status, category, city, client, recruiter, newClientId, newClientName } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -300,12 +308,14 @@ export default async function MandatesPage({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <MandateRequestLinkPanel />
-          <Card>
+          <Card id="new-mandate">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New mandate</h2>
             <CreateMandateForm
               existingClients={existingClients}
               recruiters={recruiterProfiles ?? []}
               currentUserId={currentUser?.id}
+              prefillClientId={newClientId}
+              prefillClientName={newClientName}
             />
           </Card>
         </div>

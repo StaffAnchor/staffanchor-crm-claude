@@ -30,6 +30,8 @@ export default function CreateMandateForm({
   existingClients,
   recruiters = [],
   currentUserId,
+  prefillClientId,
+  prefillClientName,
 }: {
   existingClients: string[];
   // Internal-only field -- never surfaced to clients or candidates in any
@@ -40,11 +42,17 @@ export default function CreateMandateForm({
   // always be added afterwards.
   recruiters?: RecruiterOption[];
   currentUserId?: string;
+  // "Create a mandate now" shortcut from a client's detail page -- prefills
+  // the client name and, as long as the recruiter doesn't retype it into a
+  // different client's name, links the mandate's client_id directly instead
+  // of relying on the client_name text matching up with an existing row.
+  prefillClientId?: string;
+  prefillClientName?: string;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [form, setForm] = useState({
-    client_name: "",
+    client_name: prefillClientName ?? "",
     role_title: "",
     recruiterIds: currentUserId ? [currentUserId] : ([] as string[]),
     category: "",
@@ -175,9 +183,14 @@ export default function CreateMandateForm({
     setSaving(true);
     setError("");
     const subDomains = resolvedSubDomains();
+    // Only trust the prefilled client_id if the recruiter hasn't since
+    // retyped the client name to something else -- otherwise this mandate
+    // would silently get FK'd to the wrong client.
+    const resolvedClientId = prefillClientId && form.client_name === prefillClientName ? prefillClientId : null;
     const { data, error } = await supabase
       .from("mandates")
       .insert({
+        client_id: resolvedClientId,
         client_name: form.client_name,
         role_title: form.role_title,
         category: form.category || null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, FileText, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -83,6 +83,25 @@ export default function NewCandidatePage() {
   const [askCandidateLaterResume, setAskCandidateLaterResume] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Optional mandate link -- a recruiter often already knows which open
+  // mandate this candidate is for (referral for a specific role, sourced off
+  // a JD, etc.), but plenty of candidates are created with no mandate in
+  // mind yet, so this is never required. Mirrors the same optional control
+  // on Bulk CV Upload (bulk-upload-view.tsx), same candidate_mandate_links
+  // insert, same "non-fatal if it fails" handling.
+  const [mandates, setMandates] = useState<{ id: string; role_title: string; client_name: string }[]>([]);
+  const [mandateId, setMandateId] = useState("");
+  useEffect(() => {
+    supabase
+      .from("mandates")
+      .select("id, role_title, client_name")
+      .in("status", ["open", "draft"])
+      .order("created_at", { ascending: false })
+      .limit(300)
+      .then(({ data }) => setMandates(data ?? []));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Level 1 options under whichever Profile Type is picked -- Practice under
   // B2B, Vertical under B2C, Function under Non-Sales. Matches the unified
@@ -319,6 +338,20 @@ export default function NewCandidatePage() {
     if (!res.ok) {
       setError(data?.error ?? "Something went wrong. Please try again.");
       return;
+    }
+
+    // Optional mandate link -- same candidate_mandate_links insert Bulk CV
+    // Upload uses. Non-fatal: the candidate is already created either way,
+    // so a failed link just means linking it manually from the mandate page.
+    if (mandateId) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      await supabase.from("candidate_mandate_links").insert({
+        candidate_id: data.candidateId,
+        mandate_id: mandateId,
+        added_by: user?.id ?? null,
+      });
     }
 
     // Fire-and-forget: if a resume was attached there's enough to work with
@@ -1114,6 +1147,26 @@ export default function NewCandidatePage() {
             Not sure — ask candidate later
           </label>
         </div>
+
+        {mandates.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              Link to mandate <span className="font-normal text-slate-400">(optional)</span>
+            </label>
+            <select
+              value={mandateId}
+              onChange={(e) => setMandateId(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            >
+              <option value="">Not tied to a specific mandate</option>
+              {mandates.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.role_title} — {m.client_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Note</label>

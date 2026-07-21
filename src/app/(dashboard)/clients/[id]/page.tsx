@@ -79,10 +79,25 @@ export default async function ClientDetailPage({
             ← All clients
           </Link>
           <Card className="mt-2">
-            <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{clientRow.name}</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {clientRow.industry ?? "Industry not set"} {clientRow.hq_city ? `· ${clientRow.hq_city}` : ""}
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{clientRow.name}</h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {clientRow.industry ?? "Industry not set"} {clientRow.hq_city ? `· ${clientRow.hq_city}` : ""}
+                </p>
+              </div>
+              {/* Shortcut into the same New Mandate form on /mandates, with
+                  client name (and client_id, as long as it isn't retyped)
+                  prefilled -- so opening a mandate for a client you're
+                  already looking at doesn't mean retyping their name from
+                  scratch on a different page. */}
+              <Link
+                href={`/mandates?newClientId=${encodeURIComponent(id)}&newClientName=${encodeURIComponent(clientRow.name)}#new-mandate`}
+                className="shrink-0 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 transition-colors"
+              >
+                + Create a mandate
+              </Link>
+            </div>
           </Card>
         </div>
 
