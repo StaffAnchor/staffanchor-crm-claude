@@ -14,6 +14,14 @@ import { matchCandidatesForMandate } from "@/lib/candidate-match";
 // and driven by the service-role client instead of a signed-in session.
 export const maxDuration = 60;
 
+// Bounded per run -- this calls Gemini once per mandate processed, and the
+// free-tier key only has ~20 generateContent requests/day for the whole
+// project (shared with auto-summarize and career-timeline-sweep, which now
+// run on different days of the week -- see vercel.json). Oldest-computed
+// first so every open mandate eventually gets refreshed across successive
+// runs instead of the same handful winning every time.
+const BATCH_SIZE = 8;
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
@@ -30,14 +38,18 @@ export async function GET(req: NextRequest) {
   }
   const admin = createSupabaseClient(supabaseUrl, serviceKey);
 
-  const { data: openMandates, error } = await admin
+  const { data: allOpenMandates, error } = await admin
     .from("mandates")
     .select("id, role_title, client_name")
-    .eq("status", "open");
+    .eq("status", "open")
+    .order("auto_match_computed_at", { ascending: true, nullsFirst: true })
+    .limit(BATCH_SIZE);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const openMandates = allOpenMandates;
 
   if (!openMandates || openMandates.length === 0) {
     return NextResponse.json({ ok: true, mandatesProcessed: 0 });

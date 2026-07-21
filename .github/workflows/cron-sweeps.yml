@@ -5,9 +5,16 @@ name: Cron sweeps backstop
 # Vercel-scheduled crons had actually executed in 30 days in production even
 # though vercel.json was configured correctly -- this gives every sweep a
 # second, independent path to actually fire every day regardless of
-# anything on Vercel's side. All six are cheap, idempotent, bounded-batch
-# routes, so running them all once a day from here (in addition to whatever
-# Vercel's own scheduler does) is safe even if both fire on the same day.
+# anything on Vercel's side.
+#
+# Three routes (inbox-sweep, client-followup, embed-candidates) are cheap
+# and don't call Gemini's generateContent endpoint, so they still run daily.
+# The other three (auto-summarize, career-timeline-sweep, mandate-auto-
+# rematch) each call Gemini once per record processed, and the free-tier key
+# only gets ~20 generateContent requests/day for the whole project -- so
+# they're staggered to different days of the week, matching vercel.json
+# exactly, so this backstop doesn't undo that throttling by hitting all
+# three on the same day anyway.
 #
 # Setup (one-time):
 #   1. In the Vercel project -> Settings -> Environment Variables, add
@@ -36,7 +43,18 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -e
-          ROUTES="mandate-auto-rematch inbox-sweep auto-summarize career-timeline-sweep client-followup embed-candidates"
+          # Always run: cheap, no Gemini generateContent calls.
+          ROUTES="inbox-sweep client-followup embed-candidates"
+
+          # Gemini-backed routes: gated to the same day-of-week as
+          # vercel.json (1=Mon .. 7=Sun, UTC).
+          DOW=$(date -u +%u)
+          case "$DOW" in
+            1|4) ROUTES="$ROUTES auto-summarize" ;;       # Mon & Thu
+            2|5) ROUTES="$ROUTES career-timeline-sweep" ;; # Tue & Fri
+            3|6) ROUTES="$ROUTES mandate-auto-rematch" ;;  # Wed & Sat
+          esac
+
           for route in $ROUTES; do
             echo "== $route =="
             if [ -n "$CRON_SECRET" ]; then

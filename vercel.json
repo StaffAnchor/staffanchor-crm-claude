@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/auto-summarize",
-      "schedule": "0 6 * * *"
+      "schedule": "0 6 * * 1,4"
     },
     {
       "path": "/api/cron/client-followup",
@@ -18,11 +18,11 @@
     },
     {
       "path": "/api/cron/mandate-auto-rematch",
-      "schedule": "0 3 * * *"
+      "schedule": "0 3 * * 3,6"
     },
     {
       "path": "/api/cron/career-timeline-sweep",
-      "schedule": "0 7 * * *"
+      "schedule": "0 7 * * 2,5"
     }
   ]
 }
