@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pencil, Loader2, X, Upload, Download } from "lucide-react";
@@ -196,6 +196,18 @@ export default function EditProfileButton({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  // Root cause of "I click Save Changes and nothing happens" reports: this
+  // modal's only validation gate (Other B2B specify field) blocked the save
+  // silently from a recruiter's point of view whenever they were scrolled
+  // past it -- the error text rendered in normal document flow right above
+  // the footer, so it was only visible if they happened to already be
+  // scrolled to the very bottom AND hadn't scrolled past that point since.
+  // A recruiter opening this modal just to fix a candidate's CTC (nothing to
+  // do with Primary Specialization) would never know why Save silently
+  // failed on a legacy "Other B2B" candidate whose specify-field was never
+  // captured. Now scrolls to and focuses the actual offending field so the
+  // block is impossible to miss.
+  const otherB2BRef = useRef<HTMLSelectElement>(null);
 
   const knownCity = candidate.current_location
     ? Object.keys(cityStateMap).find((c) => candidate.current_location?.startsWith(c))
@@ -380,11 +392,15 @@ export default function EditProfileButton({
     // background captured. Block the save the same way jobs-staffanchor's
     // wizard and the CRM's own Create Candidate form already do.
     if (form.subDomain === "Other B2B" && !form.otherB2BSubDomain) {
-      setError("Please specify the B2B specialization, or choose a different Primary Specialization.");
+      setError("Please specify the B2B specialization (highlighted below) before saving, or choose a different Primary Specialization.");
+      otherB2BRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      otherB2BRef.current?.focus();
       return;
     }
     if (form.subDomain === "Other B2B" && form.otherB2BSubDomain === "Other" && !form.otherB2BSubDomainCustom.trim()) {
-      setError("Please specify the B2B specialization.");
+      setError("Please specify the B2B specialization (highlighted below) before saving.");
+      otherB2BRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      otherB2BRef.current?.focus();
       return;
     }
 
@@ -752,9 +768,12 @@ export default function EditProfileButton({
                               place great candidates from every B2B background — specify which.
                             </p>
                             <select
+                              ref={otherB2BRef}
                               value={form.otherB2BSubDomain}
                               onChange={(e) => set("otherB2BSubDomain", e.target.value)}
-                              className={`${INPUT_CLS} mt-1.5`}
+                              className={`${INPUT_CLS} mt-1.5 ${
+                                error && !form.otherB2BSubDomain ? "border-red-400 ring-2 ring-red-200" : ""
+                              }`}
                             >
                               <option value="">Select...</option>
                               {subDomainsForPractice("Other B2B").map((d) => (
@@ -1253,7 +1272,11 @@ export default function EditProfileButton({
               </section>
             </div>
 
-            {error && <p className="px-5 text-[12px] text-red-600 mb-2">{error}</p>}
+            {error && (
+              <p className="mx-5 mb-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[12px] font-medium text-red-700">
+                {error}
+              </p>
+            )}
 
             <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white dark:bg-slate-900">
               <button
