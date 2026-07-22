@@ -23,6 +23,7 @@ type ShortlistRow = {
   current_employer: string | null;
   current_location: string | null;
   total_experience_years: number | null;
+  current_fixed_ctc: number | null;
   expected_fixed_ctc: number | null;
   expected_variable_ctc: number | null;
   category: string | null;
@@ -41,6 +42,28 @@ type ShortlistRow = {
   requested_interview_at: string | null;
   confirmed_interview_at: string | null;
 };
+
+const AVATAR_TONES = [
+  "from-blue-500 to-indigo-600",
+  "from-teal-500 to-emerald-600",
+  "from-violet-500 to-purple-600",
+  "from-amber-500 to-orange-600",
+  "from-rose-500 to-pink-600",
+  "from-cyan-500 to-sky-600",
+];
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function avatarTone(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_TONES[hash % AVATAR_TONES.length];
+}
 
 function median(values: number[]): number | null {
   if (values.length === 0) return null;
@@ -131,28 +154,32 @@ export default async function ClientShortlistPage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-3xl mx-auto px-6 py-6">
-          <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">
-            StaffAnchor Talent Solutions
+      <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white">
+        <div className="max-w-3xl mx-auto px-6 pt-8 pb-7">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-blue-500 flex items-center justify-center text-[13px] font-bold shrink-0">
+              S
+            </div>
+            <p className="text-xs font-semibold tracking-wide text-blue-300 uppercase">
+              StaffAnchor Talent Solutions
+            </p>
+          </div>
+          <h1 className="text-2xl font-semibold text-white mt-3 tracking-tight">{role_title}</h1>
+          <p className="text-sm text-slate-300 mt-1">
+            Mandate for <span className="font-medium text-white">{client_name}</span> · {rows.length} candidate
+            {rows.length === 1 ? "" : "s"} shortlisted for your review
           </p>
-          <h1 className="text-xl font-semibold text-slate-900 mt-1">
-            {role_title} — {client_name}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {rows.length} candidate{rows.length === 1 ? "" : "s"} shortlisted for your review.
-          </p>
-          <div className="flex flex-wrap gap-4 mt-4 text-xs">
-            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+          <div className="flex flex-wrap gap-2 mt-5 text-xs">
+            <span className="rounded-full bg-white/10 px-3 py-1.5 font-medium text-slate-200 ring-1 ring-white/10">
               {recommended.length} recommended
             </span>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700">
+            <span className="rounded-full bg-emerald-500/15 px-3 py-1.5 font-medium text-emerald-300 ring-1 ring-emerald-400/20">
               {interestedCount} interested
             </span>
-            <span className="rounded-full bg-cyan-100 px-3 py-1 font-medium text-cyan-700">
+            <span className="rounded-full bg-cyan-500/15 px-3 py-1.5 font-medium text-cyan-300 ring-1 ring-cyan-400/20">
               {interviewCount} interview requested
             </span>
-            <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
+            <span className="rounded-full bg-amber-500/15 px-3 py-1.5 font-medium text-amber-300 ring-1 ring-amber-400/20">
               {pendingCount} awaiting your response
             </span>
           </div>
@@ -161,7 +188,7 @@ export default async function ClientShortlistPage({
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-4">
         {(medianCtc !== null || availableSoonCount > 0) && (
-          <p className="text-xs text-slate-500 bg-slate-100 rounded-lg px-3.5 py-2">
+          <p className="text-xs text-slate-500 bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 shadow-sm">
             {medianCtc !== null && <>Median expected CTC in this shortlist: <span className="font-semibold text-slate-700">₹{medianCtc}L</span></>}
             {medianCtc !== null && availableSoonCount > 0 && " · "}
             {availableSoonCount > 0 && (
@@ -197,100 +224,122 @@ function CandidateCard({
   resumeUrl?: string;
 }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-slate-900">{candidate.full_name}</h2>
-            {recommended && (
-              <span className="text-xs bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-medium">
-                Recommended
-              </span>
-            )}
+    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3.5 min-w-0">
+          <div
+            className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatarTone(
+              candidate.full_name
+            )} flex items-center justify-center text-white text-[15px] font-semibold shrink-0 shadow-sm`}
+          >
+            {initials(candidate.full_name)}
           </div>
-          <p className="text-sm text-slate-500">
-            {candidate.current_job_title}
-            {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
-          </p>
-          <p className="text-xs text-slate-400 mt-1">
-            {candidate.current_location} · {formatExperience(candidate.total_experience_years)} experience
-          </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-semibold text-slate-900">{candidate.full_name}</h2>
+              {recommended && (
+                <span className="text-[11px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-medium">
+                  Recommended
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-slate-600 mt-0.5">
+              {candidate.current_job_title}
+              {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {candidate.current_location} · {formatExperience(candidate.total_experience_years)} experience
+            </p>
+          </div>
         </div>
         {candidate.resume_file_url && resumeUrl && (
-          <ResumePreview
-            signedUrl={resumeUrl}
-            fileName={candidate.resume_file_url.replace(/^resumes\//, "")}
-            label="Preview resume"
-          />
+          <div className="shrink-0">
+            <ResumePreview
+              signedUrl={resumeUrl}
+              fileName={candidate.resume_file_url.replace(/^resumes\//, "")}
+              label="Preview resume"
+            />
+          </div>
         )}
       </div>
 
       {candidate.ai_summary && (
-        <p className="text-sm text-slate-700 mt-3 line-clamp-2">{candidate.ai_summary}</p>
+        <p className="text-sm text-slate-700 mt-4 pl-3.5 border-l-2 border-blue-200 leading-relaxed line-clamp-2">
+          {candidate.ai_summary}
+        </p>
       )}
-      <ProfilePassportTrigger
-        candidateId={candidate.candidate_id}
-        token={token}
-        fullName={candidate.full_name}
-        currentJobTitle={candidate.current_job_title}
-        currentEmployer={candidate.current_employer}
-        currentLocation={candidate.current_location}
-        totalExperienceYears={candidate.total_experience_years}
-        subDomain={candidate.sub_domain}
-        expectedFixedCtc={candidate.expected_fixed_ctc}
-        verifiedRelocation={candidate.verified_relocation}
-        verifiedNotice={candidate.verified_notice}
-        industries={candidate.industries}
-        aiSummary={candidate.ai_summary}
-        aiPassport={candidate.ai_passport}
-      />
-      <Link
-        href={`/shortlist/${token}/passport/${candidate.candidate_id}`}
-        className="inline-block mt-1 text-xs font-medium text-blue-600 hover:text-blue-700"
-      >
-        View full Sales Passport →
-      </Link>
 
-      <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-        <div>
-          <p className="text-xs text-slate-400">Primary Specialization</p>
-          <p className="text-slate-700">{candidate.sub_domain ?? "—"}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-400">Expected fixed CTC</p>
-          <p className="text-slate-700">
-            {candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "—"}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-400">Relocation — verified</p>
-          <p className="text-slate-700">{candidate.verified_relocation ?? "—"}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-400">Notice period — verified</p>
-          <p className="text-slate-700">{candidate.verified_notice ?? "—"}</p>
-        </div>
-        {candidate.industries && candidate.industries.length > 0 && (
-          <div className="col-span-2">
-            <p className="text-xs text-slate-400">Industries</p>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {candidate.industries.map((i) => (
-                <span key={i} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                  {i}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+      <div className="flex items-center gap-3 mt-3 flex-wrap">
+        <ProfilePassportTrigger
+          candidateId={candidate.candidate_id}
+          token={token}
+          fullName={candidate.full_name}
+          currentJobTitle={candidate.current_job_title}
+          currentEmployer={candidate.current_employer}
+          currentLocation={candidate.current_location}
+          totalExperienceYears={candidate.total_experience_years}
+          subDomain={candidate.sub_domain}
+          currentFixedCtc={candidate.current_fixed_ctc}
+          expectedFixedCtc={candidate.expected_fixed_ctc}
+          verifiedRelocation={candidate.verified_relocation}
+          verifiedNotice={candidate.verified_notice}
+          industries={candidate.industries}
+          aiSummary={candidate.ai_summary}
+          aiPassport={candidate.ai_passport}
+        />
+        <Link
+          href={`/shortlist/${token}/passport/${candidate.candidate_id}`}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+        >
+          View full Sales Passport →
+        </Link>
       </div>
 
-      <FeedbackButtons
-        token={token}
-        linkId={candidate.link_id}
-        current={candidate.client_feedback}
-        requestedInterviewAt={candidate.requested_interview_at}
-        confirmedInterviewAt={candidate.confirmed_interview_at}
-      />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
+        <StatChip label="Primary Specialization" value={candidate.sub_domain ?? "—"} />
+        <StatChip
+          label="Current fixed CTC"
+          value={candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "—"}
+        />
+        <StatChip
+          label="Expected fixed CTC"
+          value={candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "—"}
+        />
+        <StatChip label="Relocation — verified" value={candidate.verified_relocation ?? "—"} />
+        <StatChip label="Notice period — verified" value={candidate.verified_notice ?? "—"} />
+      </div>
+
+      {candidate.industries && candidate.industries.length > 0 && (
+        <div className="mt-3">
+          <p className="text-[11px] text-slate-400 mb-1.5">Industries</p>
+          <div className="flex flex-wrap gap-1.5">
+            {candidate.industries.map((i) => (
+              <span key={i} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                {i}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 pt-4 border-t border-slate-100">
+        <FeedbackButtons
+          token={token}
+          linkId={candidate.link_id}
+          current={candidate.client_feedback}
+          requestedInterviewAt={candidate.requested_interview_at}
+          confirmedInterviewAt={candidate.confirmed_interview_at}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+      <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
+      <p className="text-[13.5px] font-semibold text-slate-800 mt-0.5">{value}</p>
     </div>
   );
 }

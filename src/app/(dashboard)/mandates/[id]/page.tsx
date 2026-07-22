@@ -325,6 +325,7 @@ export default async function MandateDetailPage({
                       experience_max: mandate.experience_max,
                       budget_min: mandate.budget_min,
                       budget_max: mandate.budget_max,
+                      client_name: mandate.client_name,
                     }}
                   />
                   <MustHavesPanel

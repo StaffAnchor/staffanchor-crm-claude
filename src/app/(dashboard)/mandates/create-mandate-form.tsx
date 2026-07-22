@@ -156,6 +156,7 @@ export default function CreateMandateForm({
           budget_min: form.budget_min,
           budget_max: form.budget_max,
           raw_notes: form.jd_raw_notes,
+          client_name: form.client_name,
         }),
       });
       const data = await res.json();

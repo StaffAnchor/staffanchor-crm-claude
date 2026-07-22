@@ -22,6 +22,7 @@ export default function ProfilePassportTrigger({
   currentLocation,
   totalExperienceYears,
   subDomain,
+  currentFixedCtc,
   expectedFixedCtc,
   verifiedRelocation,
   verifiedNotice,
@@ -37,6 +38,7 @@ export default function ProfilePassportTrigger({
   currentLocation: string | null;
   totalExperienceYears: number | null;
   subDomain: string | null;
+  currentFixedCtc?: number | null;
   expectedFixedCtc: number | null;
   verifiedRelocation: string | null;
   verifiedNotice: string | null;
@@ -73,14 +75,14 @@ export default function ProfilePassportTrigger({
 
   if (!aiSummary && !aiPassport) {
     return (
-      <div className="mt-1">
+      <div>
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-60"
+          className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-full px-2.5 py-1 transition-colors duration-150 disabled:opacity-60"
         >
           {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-          {generating ? "Generating…" : "Generate AI passport"}
+          {generating ? "Generating…" : "Generate AI summary"}
         </button>
         {generateError && <p className="text-xs text-rose-600 mt-1">{generateError}</p>}
       </div>
@@ -91,9 +93,9 @@ export default function ProfilePassportTrigger({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+        className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-full px-2.5 py-1 transition-colors duration-150"
       >
-        <Sparkles className="w-3 h-3" /> View profile passport
+        <Sparkles className="w-3 h-3" /> Quick AI summary
       </button>
 
       {open && (
@@ -163,6 +165,10 @@ export default function ProfilePassportTrigger({
                 <div>
                   <p className="text-xs text-slate-400">Primary Specialization</p>
                   <p className="text-slate-700">{subDomain ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">Current fixed CTC</p>
+                  <p className="text-slate-700">{currentFixedCtc ? `₹${currentFixedCtc}L` : "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Expected fixed CTC</p>

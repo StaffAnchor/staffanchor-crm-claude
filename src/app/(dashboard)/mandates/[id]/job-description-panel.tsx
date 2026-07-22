@@ -28,6 +28,7 @@ type MandateContext = {
   experience_max: number | null;
   budget_min: number | null;
   budget_max: number | null;
+  client_name: string | null;
 };
 
 export default function JobDescriptionPanel({
@@ -75,6 +76,7 @@ export default function JobDescriptionPanel({
           budget_min: context.budget_min ?? "",
           budget_max: context.budget_max ?? "",
           raw_notes: rawNotes,
+          client_name: context.client_name ?? "",
         }),
       });
       const data = await res.json();

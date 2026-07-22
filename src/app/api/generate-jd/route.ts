@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     budget_min: body.budget_min ?? "",
     budget_max: body.budget_max ?? "",
     raw_notes: body.raw_notes ?? "",
+    client_name: body.client_name ?? "",
   });
 
   if (!result.ok) {

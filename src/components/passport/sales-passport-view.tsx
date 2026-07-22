@@ -178,10 +178,8 @@ export function SalesPassportView(props: SalesPassportProps) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+          <Stat label="Current fixed CTC" value={currentFixedCtc ? `₹${currentFixedCtc}L` : undefined} />
           <Stat label="Expected fixed CTC" value={expectedFixedCtc ? `₹${expectedFixedCtc}L` : undefined} />
-          {viewer === "recruiter" && (
-            <Stat label="Current fixed CTC" value={currentFixedCtc ? `₹${currentFixedCtc}L` : undefined} />
-          )}
           <Stat label="Days to join" value={verifiedNotice ?? noticePeriod} />
           <Stat
             label={verifiedRelocation ? "Relocation — verified" : "Relocation — self-reported"}
