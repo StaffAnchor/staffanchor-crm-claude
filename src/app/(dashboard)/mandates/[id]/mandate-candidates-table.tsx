@@ -17,8 +17,14 @@ const STAGE_COLOR: Record<string, string> = {
   client_shortlisted: "bg-purple-100 text-purple-800",
   offer: "bg-lime-100 text-lime-800",
   placed: "bg-green-100 text-green-800",
+  pulled_back: "bg-orange-100 text-orange-800",
   rejected: "bg-red-100 text-red-700",
 };
+
+// Stage index used only to decide whether adding to the client shortlist
+// should auto-advance stage -- never downgrades a candidate who's already
+// further along (e.g. already at client_interview) back to "submitted".
+const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {});
 
 export type MandateCandidateRow = {
   id: string;
@@ -115,28 +121,67 @@ export default function MandateCandidatesTable({
     }
   }
 
+  // Adding a candidate to the client shortlist and their pipeline stage are
+  // the same real-world event from the client's point of view -- being put
+  // in front of the client -- so this keeps stage in sync automatically
+  // instead of leaving a recruiter to remember to also flip the Stage
+  // dropdown. Only auto-advances (never downgrades someone already further
+  // along, e.g. already at client_interview), and only auto-syncs this one
+  // direction: manually setting Stage to "submitted" from the dropdown does
+  // NOT add someone to the shortlist, since a recruiter might mark that for
+  // other reasons (e.g. submitted outside this tool).
+  async function syncStageForShortlist(row: MandateCandidateRow, addingToShortlist: boolean) {
+    const newStage: Stage = addingToShortlist ? "submitted" : "pulled_back";
+    if (addingToShortlist && (STAGE_ORDER[row.stage] ?? 0) >= STAGE_ORDER["submitted"]) return; // already further along, don't downgrade
+    if (!addingToShortlist && row.stage === "pulled_back") return; // already pulled back
+
+    try {
+      await applyStageChange(supabase, {
+        linkId: row.id,
+        candidateId: row.candidate.id,
+        mandateId: mandateContext.mandateId as string,
+        candidateName: row.candidate.full_name,
+        mandateLabel: `${mandateContext.role_title as string} — ${mandateContext.client_name as string}`,
+        previousStage: row.stage,
+        newStage,
+        source: "recruiter",
+      });
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stage: newStage, stage_source: "recruiter" } : r)));
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to sync stage with shortlist status." });
+    }
+  }
+
   async function toggleShortlist(linkId: string, next: boolean) {
+    const row = rows.find((r) => r.id === linkId);
     setRows((prev) => prev.map((r) => (r.id === linkId ? { ...r, in_shortlist: next } : r)));
     const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: next }).eq("id", linkId);
     if (error) {
       setMessage({ type: "error", text: error.message });
       setRows((prev) => prev.map((r) => (r.id === linkId ? { ...r, in_shortlist: !next } : r)));
+      return;
     }
+    if (row) await syncStageForShortlist(row, next);
+    router.refresh();
   }
 
   async function handleBulkShortlist() {
     setBusy(true);
     setMessage(null);
     const ids = Array.from(selected);
+    const targetRows = rows.filter((r) => ids.includes(r.id));
     const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).in("id", ids);
-    setBusy(false);
     if (error) {
+      setBusy(false);
       setMessage({ type: "error", text: error.message });
       return;
     }
     setRows((prev) => prev.map((r) => (ids.includes(r.id) ? { ...r, in_shortlist: true } : r)));
+    await Promise.all(targetRows.map((row) => syncStageForShortlist(row, true)));
+    setBusy(false);
     setSelected(new Set());
-    setMessage({ type: "success", text: `Moved ${ids.length} candidate${ids.length === 1 ? "" : "s"} to the client shortlist.` });
+    setMessage({ type: "success", text: `Moved ${ids.length} candidate${ids.length === 1 ? "" : "s"} to the client shortlist and set stage to submitted.` });
+    router.refresh();
   }
 
   async function handleEmailJd() {

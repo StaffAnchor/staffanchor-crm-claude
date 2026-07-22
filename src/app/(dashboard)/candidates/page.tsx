@@ -127,6 +127,7 @@ const STAGE_LABEL: Record<string, string> = {
   client_shortlisted: "Client Shortlisted",
   offer: "Offer",
   placed: "Placed",
+  pulled_back: "Pulled Back (from client shortlist)",
   rejected: "Rejected",
 };
 

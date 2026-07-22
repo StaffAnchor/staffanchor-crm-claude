@@ -15,6 +15,7 @@ export const STAGES = [
   "client_shortlisted", // client said yes-in-principle after interviewing, before a formal offer
   "offer",
   "placed",
+  "pulled_back", // was on the client shortlist, then taken off it before any client decision -- distinct from "rejected" (rejected implies the client/recruiter made a negative call; pulled back just means it's no longer in front of the client)
   "rejected",
 ] as const;
 export type Stage = (typeof STAGES)[number];
