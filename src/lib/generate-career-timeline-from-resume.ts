@@ -71,10 +71,10 @@ export async function generateCareerTimelineForCandidate(
   if (!apiKey) return { ok: false, status: 503, error: "GEMINI_API_KEY not configured" };
 
   const prompt = `Extract this candidate's employment history from the resume text below. Return ONLY a JSON array (no markdown fence, no commentary), one object per job, most recent first, shaped exactly like:
-{"company": "...", "title": "...", "start_month": "YYYY-MM" | null, "end_month": "YYYY-MM" | null, "description": "one short sentence on what they did/sold, or empty string"}
+{"company": "...", "title": "...", "start_month": "YYYY-MM" | null, "end_month": "YYYY-MM" | null, "description": "one short sentence describing what was sold/done in this role, or empty string -- phrase it without pronouns (e.g. 'Managed enterprise accounts across BFSI' not 'They managed...')"}
 
 Rules:
-- end_month is null if this is their current/ongoing role.
+- end_month is null if this is the candidate's current/ongoing role.
 - If you can't confidently determine a month, use "01" for that month rather than omitting the date entirely -- an approximate date is more useful than none for tenure calculations.
 - Skip education entries, certifications, and anything that isn't an employer.
 - If no employment history is identifiable, return [].

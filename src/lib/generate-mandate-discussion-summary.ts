@@ -48,7 +48,7 @@ export async function generateMandateDiscussionSummary(input: {
 
   const transcript = input.qa_pairs.map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`).join("\n\n");
 
-  const prompt = `You are a sales recruiter's assistant. Below is a screening-call transcript for ${input.candidate_name}, screened against the "${input.role_title}" mandate at ${input.client_name}. Write a short, factual summary a recruiter could re-read in seconds months from now to remember what was actually discussed, plus a handful of short tags capturing concrete, reusable facts about this candidate (not about this mandate) -- e.g. "handled 8-person team", "comfortable with 6-12mo enterprise cycles", "strong objection handling".
+  const prompt = `You are a sales recruiter's assistant. Below is a screening-call transcript for ${input.candidate_name}, screened against the "${input.role_title}" mandate at ${input.client_name}. Write a short, factual summary a recruiter could re-read in seconds months from now to remember what was actually discussed, plus a handful of short tags capturing concrete, reusable facts about this candidate (not about this mandate) -- e.g. "handled 8-person team", "comfortable with 6-12mo enterprise cycles", "strong objection handling". Refer to the candidate by first name ("${input.candidate_name.split(/\s+/)[0]}") rather than "they/them" -- we don't know gender, and the name reads more naturally.
 
 Transcript:
 ${transcript}

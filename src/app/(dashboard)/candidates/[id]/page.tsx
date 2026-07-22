@@ -164,9 +164,18 @@ export default async function CandidateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, mandate_id, stage, in_shortlist, rejection_reason, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title)"
+      "id, mandate_id, stage, in_shortlist, rejection_reason, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title, city, cities)"
     )
     .eq("candidate_id", id);
+
+  const linkedMandateCities = Array.from(
+    new Set(
+      (links ?? []).flatMap((l) => {
+        const m = l.mandates as unknown as { city: string | null; cities: string[] | null } | null;
+        return m?.cities?.length ? m.cities : m?.city ? [m.city] : [];
+      })
+    )
+  );
 
   const { data: openMandates } = await supabase
     .from("mandates")
@@ -620,7 +629,12 @@ export default async function CandidateDetailPage({
                 ))}
               </div>
             )}
-            <AssessmentForm candidateId={candidate.id} assessment={assessment} />
+            <AssessmentForm
+              candidateId={candidate.id}
+              assessment={assessment}
+              candidateLocation={candidate.current_location}
+              linkedMandateCities={linkedMandateCities}
+            />
             <MandateDiscussions entries={(candidate.mandate_discussion_summaries ?? []) as never} />
           </Card>
         </div>
