@@ -377,11 +377,21 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               <div className="flex items-start justify-between gap-3 mb-2.5">
                 <div className="flex items-center gap-2 min-w-0">
                   {row.createState !== "saved" && (
+                    // FIX: this used to be disabled whenever extraction
+                    // failed (row.ok === false), which combined with the
+                    // fields below being hidden in that same case meant an
+                    // extraction failure was a dead end -- no error was ever
+                    // shown (the backend silently reported ok: true with
+                    // blank fields), and even now that it correctly reports
+                    // ok: false, there'd be no way to manually fill the row
+                    // in and still save it. The fields are now always
+                    // editable, so this can stay enabled too -- the
+                    // recruiter fills in what the AI couldn't find and
+                    // checks the box themselves when it's ready.
                     <input
                       type="checkbox"
                       checked={row.included}
                       onChange={(e) => updateRow(row.fileName, { included: e.target.checked })}
-                      disabled={!row.ok}
                     />
                   )}
                   <FileText className="w-3.5 h-3.5 shrink-0 text-slate-400" />
@@ -417,8 +427,14 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 </p>
               )}
 
-              {row.ok && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {
+                // FIX: previously gated on row.ok, so a failed extraction
+                // (or the old silent-null bug this masked) hid every field
+                // entirely -- the recruiter had no way to type in what the
+                // resume actually said. Always show the form; the error
+                // banner above already explains why it's blank/partial.
+              }
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <Field label="Full name" value={row.full_name} onChange={(v) => updateRow(row.fileName, { full_name: v })} />
                   <Field label="Email" value={row.email} onChange={(v) => updateRow(row.fileName, { email: v })} />
                   <Field label="Mobile" value={row.phone} onChange={(v) => updateRow(row.fileName, { phone: v })} />
@@ -483,8 +499,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                       ))}
                     </select>
                   </div>
-                </div>
-              )}
+              </div>
 
               {row.createState === "error" && (
                 <p className="mt-2 text-[12px] text-rose-600">{row.createError}</p>

@@ -114,23 +114,22 @@ async function processOne(file: File, admin: SupabaseClient, genAI: GoogleGenera
       };
     }
 
+    // FIX: this used to report ok: true with every field silently defaulted
+    // to null/empty whenever Gemini failed on all 3 fallback models (e.g. it
+    // returned a refusal or non-JSON output for an unusually-formatted
+    // resume) -- so the recruiter just saw a completely blank row with no
+    // indication anything had gone wrong, and Save was blocked downstream by
+    // "A valid email is required" with zero clue why. Report it as a real
+    // failure instead, same as the "couldn't read text" case above, so the
+    // UI shows an error banner and the recruiter knows to fill the row in
+    // manually rather than assuming the tool just found nothing.
     const extracted = await extractFieldsWithGemini(resumeText, genAI);
     if (!extracted) {
       return {
         fileName,
-        ok: true,
+        ok: false,
+        error: "Couldn't extract fields from this resume automatically. Fill them in manually below.",
         resumeFileUrl: path,
-        extracted: {
-          full_name: null,
-          email: null,
-          phone: null,
-          current_location: null,
-          current_employer: null,
-          current_job_title: null,
-          total_experience_years: null,
-          languages_known: [],
-        },
-        duplicate: null,
       };
     }
 
