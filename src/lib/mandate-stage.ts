@@ -66,7 +66,12 @@ export async function applyStageChange(
     update.rejected_from_stage = params.previousStage;
     if (params.rejectionReason) update.rejection_reason = params.rejectionReason;
   }
-  if (params.newStage === "placed" && params.dateOfJoining) {
+  // Previously only saved when advancing to "placed" -- but a client often
+  // confirms a joining date at Offer stage, well before the recruiter is
+  // ready to formally mark someone Placed, and that date is exactly the
+  // thing worth capturing immediately for follow-up. Save it whenever
+  // it's provided, regardless of which stage this transition is to.
+  if (params.dateOfJoining) {
     update.date_of_joining = params.dateOfJoining;
   }
 

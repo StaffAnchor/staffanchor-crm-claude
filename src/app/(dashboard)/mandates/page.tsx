@@ -90,13 +90,24 @@ export default async function MandatesPage({
 
   const { data: links } = await supabase
     .from("candidate_mandate_links")
-    .select("mandate_id, stage, in_shortlist, shortlisted_at, client_feedback");
+    .select("mandate_id, stage, stage_updated_at");
   const countsByMandate: Record<string, number> = {};
   const submittedByMandate: Record<string, number> = {};
   const staleFeedbackByMandate: Record<string, number> = {};
   // Same 4-day staleness threshold the mandate detail page's client-feedback
   // nudge already uses -- surfaced here too so it's visible without opening
   // every mandate one at a time.
+  //
+  // Keyed off stage === "submitted" AND stage_updated_at, NOT the legacy
+  // in_shortlist/client_feedback/shortlisted_at columns -- those only get
+  // written by the public client-shortlist-link flow. The far more common
+  // real path is a recruiter recording the client's verbal/email Yes/No by
+  // hand via the Stage dropdown (client_relayed), which never touched those
+  // legacy columns, so a candidate could sail all the way to Offer/Placed
+  // and this nudge would still insist the client hadn't responded. Once
+  // stage has moved off "submitted" at all, that IS the feedback -- no
+  // more nagging, and the clock naturally resets on every real transition
+  // since stage_updated_at updates with it.
   const STALE_DAYS = 4;
   const staleCutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
   (links ?? []).forEach((l) => {
@@ -104,7 +115,7 @@ export default async function MandatesPage({
     if (["submitted", "client_interview", "offer", "placed"].includes(l.stage)) {
       submittedByMandate[l.mandate_id] = (submittedByMandate[l.mandate_id] ?? 0) + 1;
     }
-    if (l.in_shortlist && !l.client_feedback && l.shortlisted_at && new Date(l.shortlisted_at).getTime() < staleCutoff) {
+    if (l.stage === "submitted" && l.stage_updated_at && new Date(l.stage_updated_at).getTime() < staleCutoff) {
       staleFeedbackByMandate[l.mandate_id] = (staleFeedbackByMandate[l.mandate_id] ?? 0) + 1;
     }
   });

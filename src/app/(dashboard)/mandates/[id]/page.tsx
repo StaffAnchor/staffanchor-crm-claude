@@ -63,15 +63,24 @@ export default async function MandateDetailPage({
 
   // Same staleness check the daily email digest runs, but instant here --
   // no need to wait for cron to see it once you're already on the page.
+  //
+  // Keyed off stage === "submitted" AND stage_updated_at, NOT the legacy
+  // in_shortlist/client_feedback/shortlisted_at columns -- those only get
+  // written by the public client-shortlist-link flow. The common real-world
+  // path (e.g. Kiwi Kisan / Amit Sharma: client coordinates by phone/email,
+  // recruiter records the Yes/No via the Stage dropdown) never touches
+  // those columns, so this used to keep insisting "awaiting client
+  // feedback" even after the candidate had already moved to Client
+  // Shortlisted, Offer, or Placed. Once stage has moved off "submitted"
+  // at all, that IS the feedback.
   const STALE_DAYS = 4;
   const staleCutoff = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { data: staleLinks } = await supabase
     .from("candidate_mandate_links")
-    .select("shortlisted_at, candidates(full_name)")
+    .select("stage_updated_at, candidates(full_name)")
     .eq("mandate_id", id)
-    .eq("in_shortlist", true)
-    .is("client_feedback", null)
-    .lt("shortlisted_at", staleCutoff);
+    .eq("stage", "submitted")
+    .lt("stage_updated_at", staleCutoff);
 
   const { data: assignments } = await supabase
     .from("mandate_assignments")

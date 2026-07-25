@@ -111,7 +111,42 @@ export default function MandateLinksPanel({
         newStage: p.stage,
         source,
         rejectionReason: p.stage === "rejected" ? p.rejectionReason : undefined,
-        dateOfJoining: p.stage === "placed" ? p.dateOfJoining : undefined,
+        // Save whenever a date is entered, not just when advancing to
+        // "placed" -- a client often confirms joining well before the
+        // recruiter formally marks the candidate Placed.
+        dateOfJoining: p.dateOfJoining || undefined,
+      });
+      setPending((prev) => {
+        const next = { ...prev };
+        delete next[l.id];
+        return next;
+      });
+      router.refresh();
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  // Lets the joining date be recorded/updated on its own, independent of
+  // changing stage -- e.g. a candidate already sitting at Offer with no
+  // stage change pending still needs a way to save a date the client just
+  // confirmed (the stage <select> not being "dirty" would otherwise hide
+  // the whole extra-fields row and the main Save button).
+  async function saveJoiningDate(l: Link) {
+    const p = getPending(l);
+    if (!p.dateOfJoining) return;
+    setSaving(l.id);
+    try {
+      await applyStageChange(supabase, {
+        linkId: l.id,
+        candidateId,
+        mandateId: l.mandate_id,
+        candidateName,
+        mandateLabel: `${l.mandates?.role_title ?? "Role"} — ${l.mandates?.client_name ?? "Client"}`,
+        previousStage: l.stage,
+        newStage: l.stage as Stage,
+        source: "recruiter",
+        dateOfJoining: p.dateOfJoining,
       });
       setPending((prev) => {
         const next = { ...prev };
@@ -172,6 +207,12 @@ export default function MandateLinksPanel({
                 </p>
               )}
 
+              {l.date_of_joining && l.stage !== "placed" && (
+                <p className="mt-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                  Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </p>
+              )}
+
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <select
                   value={p.stage}
@@ -206,13 +247,26 @@ export default function MandateLinksPanel({
                   />
                 )}
 
-                {dirty && p.stage === "placed" && (
-                  <input
-                    type="date"
-                    value={p.dateOfJoining}
-                    onChange={(e) => setPendingFor(l.id, { dateOfJoining: e.target.value })}
-                    className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
-                  />
+                {/* Visible whenever the pending/current stage is Offer or
+                    Placed -- not gated on `dirty` -- since a joining date is
+                    often confirmed by the client while a candidate just sits
+                    at Offer with no stage change pending. Has its own Save
+                    so it doesn't require also changing the stage select. */}
+                {(p.stage === "offer" || p.stage === "placed") && (
+                  <>
+                    <input
+                      type="date"
+                      title="Joining date (expected or confirmed)"
+                      value={p.dateOfJoining}
+                      onChange={(e) => setPendingFor(l.id, { dateOfJoining: e.target.value })}
+                      className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
+                    />
+                    {!dirty && p.dateOfJoining !== (l.date_of_joining ?? "") && (
+                      <Button onClick={() => saveJoiningDate(l)} disabled={saving === l.id} className="!text-xs !py-1 !px-2">
+                        {saving === l.id ? "Saving…" : "Save date"}
+                      </Button>
+                    )}
+                  </>
                 )}
 
                 {dirty && (

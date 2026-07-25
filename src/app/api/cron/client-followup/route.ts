@@ -31,16 +31,25 @@ export async function GET(req: NextRequest) {
 
   const staleCutoff = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  // Every shortlisted-but-unresponded link older than the cutoff, joined to
-  // its mandate and candidate for the digest text.
+  // Every link still sitting at "submitted" (i.e. shared with the client
+  // but not yet moved forward) older than the cutoff, joined to its
+  // mandate and candidate for the digest text.
+  //
+  // Keyed off stage === "submitted" AND stage_updated_at, NOT the legacy
+  // in_shortlist/client_feedback/shortlisted_at columns -- those are only
+  // written by the public client-shortlist-link flow. When a recruiter
+  // instead records the client's Yes/No by hand via the Stage dropdown
+  // (the common real-world path -- client coordinates by phone/email),
+  // those columns never update, so this digest kept nagging about
+  // candidates that had already moved to Client Shortlisted/Offer/Placed
+  // days or weeks earlier.
   const { data: staleLinks, error } = await admin
     .from("candidate_mandate_links")
     .select(
-      "id, shortlisted_at, mandate_id, candidates(full_name), mandates(id, role_title, client_name)"
+      "id, stage_updated_at, mandate_id, candidates(full_name), mandates(id, role_title, client_name)"
     )
-    .eq("in_shortlist", true)
-    .is("client_feedback", null)
-    .lt("shortlisted_at", staleCutoff);
+    .eq("stage", "submitted")
+    .lt("stage_updated_at", staleCutoff);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -58,7 +67,7 @@ export async function GET(req: NextRequest) {
     const candidate = link.candidates as unknown as { full_name: string } | null;
     if (!mandate || !candidate) continue;
     const daysWaiting = Math.floor(
-      (Date.now() - new Date(link.shortlisted_at as string).getTime()) / (24 * 60 * 60 * 1000)
+      (Date.now() - new Date(link.stage_updated_at as string).getTime()) / (24 * 60 * 60 * 1000)
     );
     const existing = byMandate.get(mandate.id);
     if (existing) {

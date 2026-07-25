@@ -118,9 +118,15 @@ export default function MandateCandidatesTable({
         newStage,
         source,
         rejectionReason: newStage === "rejected" ? rejectionReason : undefined,
-        dateOfJoining: newStage === "placed" ? dateOfJoining : undefined,
+        // Save whenever a date is entered, not just when advancing to
+        // "placed" -- a client often confirms joining well before the
+        // recruiter formally marks the candidate Placed (e.g. right at
+        // Offer), and that's exactly when it's worth capturing.
+        dateOfJoining: dateOfJoining || undefined,
       });
-      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stage: newStage, stage_source: source } : r)));
+      setRows((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, stage: newStage, stage_source: source, date_of_joining: dateOfJoining || r.date_of_joining } : r))
+      );
       setEditingStageId(null);
       setClientRelayed(false);
       setRejectionReason("");
@@ -128,6 +134,39 @@ export default function MandateCandidatesTable({
       router.refresh();
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to update stage." });
+    } finally {
+      setSavingStage(false);
+    }
+  }
+
+  // Lets a recruiter record/update the joining date on its own, without
+  // also having to re-pick the stage -- the date-of-joining input's
+  // onChange doesn't fire a save by itself (the stage <select>'s onChange
+  // is what triggers saveStage above), so without this, a candidate
+  // already sitting at Offer with no stage change pending would have no
+  // way to persist a date the client just confirmed.
+  async function saveJoiningDate(row: MandateCandidateRow) {
+    if (!dateOfJoining) return;
+    setSavingStage(true);
+    setMessage(null);
+    try {
+      await applyStageChange(supabase, {
+        linkId: row.id,
+        candidateId: row.candidate.id,
+        mandateId: mandateContext.mandateId as string,
+        candidateName: row.candidate.full_name,
+        mandateLabel: `${mandateContext.role_title as string} — ${mandateContext.client_name as string}`,
+        previousStage: row.stage,
+        newStage: row.stage as Stage,
+        source: "recruiter",
+        dateOfJoining,
+      });
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, date_of_joining: dateOfJoining } : r)));
+      setEditingStageId(null);
+      setDateOfJoining("");
+      router.refresh();
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to save joining date." });
     } finally {
       setSavingStage(false);
     }
@@ -431,13 +470,24 @@ export default function MandateCandidatesTable({
                       onChange={(e) => setRejectionReason(e.target.value)}
                       className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
                     />
-                    <input
-                      type="date"
-                      title="Date of joining (if placed)"
-                      value={dateOfJoining}
-                      onChange={(e) => setDateOfJoining(e.target.value)}
-                      className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
-                    />
+                    <label className="text-[10px] text-slate-400">
+                      Joining date (expected or confirmed -- can be set at any stage)
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="date"
+                        value={dateOfJoining}
+                        onChange={(e) => setDateOfJoining(e.target.value)}
+                        className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1 flex-1"
+                      />
+                      <button
+                        onClick={() => saveJoiningDate(l)}
+                        disabled={savingStage || !dateOfJoining}
+                        className="text-[10.5px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                      >
+                        Save
+                      </button>
+                    </div>
                     <button
                       onClick={() => {
                         setEditingStageId(null);
@@ -453,7 +503,10 @@ export default function MandateCandidatesTable({
                 ) : (
                   <div className="flex flex-col gap-1 items-start">
                     <button
-                      onClick={() => setEditingStageId(l.id)}
+                      onClick={() => {
+                        setEditingStageId(l.id);
+                        setDateOfJoining(l.date_of_joining ?? "");
+                      }}
                       className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
                     >
                       {l.stage_source && l.stage_source !== "recruiter" && "🔔 "}
@@ -463,6 +516,11 @@ export default function MandateCandidatesTable({
                         honest caveat that only the current dot has a real date, since
                         we don't log a full per-transition history. */}
                     <StageTimeline stage={l.stage} stageUpdatedAt={l.stage_updated_at} rejectedFromStage={l.rejected_from_stage} />
+                    {l.date_of_joining && (
+                      <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
+                        Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </span>
+                    )}
                   </div>
                 )}
               </td>

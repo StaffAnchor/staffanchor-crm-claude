@@ -138,7 +138,7 @@ export default async function ReportsPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "candidate_id, added_by, stage, mandate_id, in_shortlist, shortlisted_at, client_feedback, confirmed_interview_at, stage_updated_at, date_of_joining"
+      "candidate_id, added_by, stage, mandate_id, in_shortlist, confirmed_interview_at, stage_updated_at, date_of_joining"
     );
   const allLinks = links ?? [];
 
@@ -167,6 +167,42 @@ export default async function ReportsPage({
     (screenedByMandate[r.mandate_id] ??= new Set()).add(r.candidate_id);
   });
 
+  // ---- Upcoming / recently-confirmed joiners ---------------------------
+  // A joining date can now be recorded as soon as it's known (see
+  // mandate-stage.ts -- previously only captured once a candidate was
+  // formally marked "Placed"), so this is a real one-list follow-up view:
+  // "who's about to join, and did the ones who should have already joined
+  // actually show up." Window: 7 days back (catches a just-passed date
+  // worth confirming) through 60 days forward (catches dates set early,
+  // right at Offer). Firm-wide, capped, sorted soonest-first.
+  const joinWindowFrom = toDateStr(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000));
+  const joinWindowTo = toDateStr(new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000));
+  const { data: joiningLinksRaw } = await supabase
+    .from("candidate_mandate_links")
+    .select("date_of_joining, stage, candidates(id, full_name), mandates(id, role_title, client_name)")
+    .not("date_of_joining", "is", null)
+    .gte("date_of_joining", joinWindowFrom)
+    .lte("date_of_joining", joinWindowTo)
+    .order("date_of_joining", { ascending: true })
+    .limit(20);
+  const upcomingJoiners = (joiningLinksRaw ?? [])
+    .map((l) => {
+      const cand = l.candidates as unknown as { id: string; full_name: string } | null;
+      const mand = l.mandates as unknown as { id: string; role_title: string; client_name: string } | null;
+      if (!cand || !mand || !l.date_of_joining) return null;
+      const daysUntil = Math.round((new Date(l.date_of_joining).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        candidateId: cand.id,
+        candidateName: cand.full_name,
+        mandateId: mand.id,
+        mandateLabel: `${mand.role_title} — ${mand.client_name}`,
+        dateOfJoining: l.date_of_joining,
+        stage: l.stage,
+        daysUntil,
+      };
+    })
+    .filter((v): v is NonNullable<typeof v> => v !== null);
+
   // ---- Cross-pipeline "needs attention" signals -----------------------
   // A capstone intelligence panel that pulls together the same
   // health-signal thresholds already used on Mandates (stale client
@@ -174,6 +210,13 @@ export default async function ReportsPage({
   // awaiting outcome), plus incomplete candidate profiles, so a recruiter
   // can see everything that needs a decision from one screen instead of
   // checking four separate pages.
+  // Keyed off stage === "submitted" AND stage_updated_at, NOT the legacy
+  // in_shortlist/client_feedback/shortlisted_at columns -- see the same
+  // fix on the mandate detail and mandates-list pages. Those legacy
+  // columns are only written by the public client-shortlist-link flow, so
+  // a candidate whose client feedback was recorded by hand via the Stage
+  // dropdown (the common case) would sail past Client Shortlisted/Offer/
+  // Placed and still show up here as "awaiting feedback" forever.
   const STALE_DAYS = 4;
   const staleCutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
   const submittedByMandateAttn = new Set<string>();
@@ -187,7 +230,7 @@ export default async function ReportsPage({
       submittedByMandateAttn.add(l.mandate_id);
       submittedCountByMandate[l.mandate_id] = (submittedCountByMandate[l.mandate_id] ?? 0) + 1;
     }
-    if (l.in_shortlist && !l.client_feedback && l.shortlisted_at && new Date(l.shortlisted_at).getTime() < staleCutoff) {
+    if (l.stage === "submitted" && l.stage_updated_at && new Date(l.stage_updated_at).getTime() < staleCutoff) {
       staleMandateIds.add(l.mandate_id);
       staleFeedbackByMandate[l.mandate_id] = (staleFeedbackByMandate[l.mandate_id] ?? 0) + 1;
     }
@@ -632,6 +675,61 @@ export default async function ReportsPage({
                     <DonutChart slices={categoryItems} totalLabel="candidates" />
                   </Card>
                 </div>
+
+                {/* Upcoming / recently-confirmed joiners -- one firm-wide
+                    follow-up list, now that a joining date can be recorded
+                    as soon as it's known rather than only at Placed. */}
+                <Card className="mb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CalendarClock className="w-4 h-4 text-emerald-500" />
+                    <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Joining follow-ups</h2>
+                    <span className="text-[10.5px] text-slate-400 ml-auto">next 60 days, and last 7 days for confirmation</span>
+                  </div>
+                  {upcomingJoiners.length === 0 ? (
+                    <p className="text-[13px] text-slate-400">No joining dates recorded in this window.</p>
+                  ) : (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {upcomingJoiners.map((j) => (
+                        <Link
+                          key={`${j.candidateId}-${j.mandateId}`}
+                          href={`/candidates/${j.candidateId}`}
+                          className="group flex items-center justify-between gap-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 -mx-1 px-1 rounded-ros-md transition-colors duration-200 ease-ros"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-blue-600 truncate">
+                              {j.candidateName}
+                            </p>
+                            <p className="text-[11px] text-slate-400 truncate">{j.mandateLabel}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-[12.5px] font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                              {new Date(j.dateOfJoining).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            </p>
+                            <p
+                              className={`text-[10.5px] font-medium ${
+                                j.daysUntil < 0
+                                  ? j.stage === "placed"
+                                    ? "text-emerald-600"
+                                    : "text-rose-500"
+                                  : j.daysUntil <= 3
+                                    ? "text-amber-600"
+                                    : "text-slate-400"
+                              }`}
+                            >
+                              {j.daysUntil < 0
+                                ? j.stage === "placed"
+                                  ? `joined ${Math.abs(j.daysUntil)}d ago`
+                                  : `was due ${Math.abs(j.daysUntil)}d ago — confirm`
+                                : j.daysUntil === 0
+                                  ? "joining today"
+                                  : `in ${j.daysUntil}d`}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </Card>
 
                 {/* Needs attention -- capstone intelligence panel, pulling the
                     same health-signal thresholds already surfaced on Mandates
