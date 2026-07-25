@@ -96,9 +96,14 @@ export default async function MandatesPage({
 
   const { data: mandates } = await query;
 
+  // Capped well above any realistic pipeline size at current volumes --
+  // an unbounded select here was flagged in the July 2026 gap analysis as
+  // a scaling risk. If this cap is ever actually hit, the KPI strip should
+  // move to a server-side aggregate instead of raising the number further.
   const { data: links } = await supabase
     .from("candidate_mandate_links")
-    .select("mandate_id, stage, stage_updated_at");
+    .select("mandate_id, stage, stage_updated_at")
+    .limit(20000);
   const countsByMandate: Record<string, number> = {};
   const submittedByMandate: Record<string, number> = {};
   const staleFeedbackByMandate: Record<string, number> = {};
@@ -305,13 +310,21 @@ export default async function MandatesPage({
               {hasAnyFilter ? " matching current filters" : ""}
             </p>
           </div>
-          <a
-            href={`/api/export/mandates${exportQS ? `?${exportQS}` : ""}`}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors border border-slate-200 dark:border-slate-700"
-            title="Export the current filtered list as CSV"
-          >
-            Export CSV
-          </a>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/mandates/trash"
+              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
+            >
+              Recently deleted
+            </Link>
+            <a
+              href={`/api/export/mandates${exportQS ? `?${exportQS}` : ""}`}
+              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors border border-slate-200 dark:border-slate-700"
+              title="Export the current filtered list as CSV"
+            >
+              Export CSV
+            </a>
+          </div>
         </div>
 
         <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">

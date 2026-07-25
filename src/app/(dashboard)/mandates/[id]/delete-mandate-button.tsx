@@ -13,12 +13,14 @@ export default function DeleteMandateButton({ mandateId, roleTitle }: { mandateI
 
   async function handleDelete() {
     const confirmed = window.confirm(
-      `Delete the "${roleTitle}" mandate? This removes all candidate links, the shortlist link, and any assignments for this mandate. Candidate profiles and client portal access are not affected. This cannot be undone.`
+      `Delete the "${roleTitle}" mandate? This removes all candidate links, the shortlist link, and any assignments for this mandate. Candidate profiles and client portal access are not affected. It can be restored from Mandates > Recently deleted for as long as it stays there.`
     );
     if (!confirmed) return;
     setDeleting(true);
     setError(null);
-    const { error } = await supabase.from("mandates").delete().eq("id", mandateId);
+    // Snapshots the mandate + its links into deleted_mandates before
+    // removing it, so it can be restored later (see mandates/trash).
+    const { error } = await supabase.rpc("soft_delete_mandate", { p_mandate_id: mandateId });
     if (error) {
       setError(error.message);
       setDeleting(false);

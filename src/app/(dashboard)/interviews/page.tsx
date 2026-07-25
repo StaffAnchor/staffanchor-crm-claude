@@ -11,7 +11,6 @@ export type InterviewRow = {
   candidate_id: string;
   mandate_id: string;
   stage: string;
-  client_feedback: string | null;
   requested_interview_at: string | null;
   confirmed_interview_at: string | null;
   candidate_name: string;
@@ -48,7 +47,7 @@ export default async function InterviewsPage() {
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, candidate_id, mandate_id, stage, client_feedback, requested_interview_at, confirmed_interview_at, added_by, candidates(full_name), mandates(role_title, client_name)"
+      "id, candidate_id, mandate_id, stage, requested_interview_at, confirmed_interview_at, added_by, candidates(full_name), mandates(role_title, client_name)"
     )
     .in("stage", ["client_interview"])
     .order("requested_interview_at", { ascending: true, nullsFirst: false });
@@ -64,7 +63,6 @@ export default async function InterviewsPage() {
     candidate_id: string;
     mandate_id: string;
     stage: string;
-    client_feedback: string | null;
     requested_interview_at: string | null;
     confirmed_interview_at: string | null;
     added_by: string | null;
@@ -80,7 +78,6 @@ export default async function InterviewsPage() {
       candidate_id: l.candidate_id,
       mandate_id: l.mandate_id,
       stage: l.stage,
-      client_feedback: l.client_feedback,
       requested_interview_at: l.requested_interview_at,
       confirmed_interview_at: l.confirmed_interview_at,
       candidate_name: candidate?.full_name ?? "Unknown candidate",

@@ -31,7 +31,7 @@ export default async function ClientsPage({
   const [{ data: clients }, { data: mandates }, { data: links }] = await Promise.all([
     query,
     supabase.from("mandates").select("id, client_id, status, created_at"),
-    supabase.from("candidate_mandate_links").select("mandate_id, stage"),
+    supabase.from("candidate_mandate_links").select("mandate_id, stage").limit(20000),
   ]);
 
   // Derived from `stage`, not the legacy `in_shortlist` flag -- in_shortlist

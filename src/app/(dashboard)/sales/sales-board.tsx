@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -276,22 +276,54 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadRow[
   const [showAdd, setShowAdd] = useState(false);
   void ownerNames; // reserved for a future "assigned to" filter
 
+  // URL-based, like Candidates/Mandates -- so the search survives clicking
+  // into a lead and back, instead of silently resetting (gap #8, July 2026
+  // audit: Sales was the one list page whose filter state didn't round-trip).
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const q = searchParams.get("q") ?? "";
+
+  function setQuery(next: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next) params.set("q", next);
+    else params.delete("q");
+    router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+  }
+
+  const filteredLeads = q.trim()
+    ? leads.filter((l) => {
+        const needle = q.trim().toLowerCase();
+        return (
+          l.company_name?.toLowerCase().includes(needle) ||
+          l.contact_name?.toLowerCase().includes(needle) ||
+          l.company_domain?.toLowerCase().includes(needle)
+        );
+      })
+    : leads;
+
   const byStage: Record<string, SalesLeadRow[]> = {};
   STAGES.forEach((s) => (byStage[s.key] = []));
-  leads.forEach((l) => {
+  filteredLeads.forEach((l) => {
     (byStage[l.stage] ??= []).push(l);
   });
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[11.5px] text-slate-400">Click a card for full details, notes, and activity history.</p>
+      <div className="flex items-center justify-between mb-3 gap-3">
+        <input
+          value={q}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search company or contact..."
+          className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        />
+        <p className="text-[11.5px] text-slate-400 flex-1">Click a card for full details, notes, and activity history.</p>
         <Button icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowAdd(true)}>
           Add lead
         </Button>
       </div>
 
-      {leads.length === 0 ? (
+      {filteredLeads.length === 0 ? (
         <EmptyState
           title="No leads yet"
           description="Add your first prospect — from LinkedIn, Apollo, Lusha, ZoomInfo, or a referral."

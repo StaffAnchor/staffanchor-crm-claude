@@ -520,7 +520,8 @@ export default async function CandidatesPage({
   // this stage" here, same as the funnel/KPI tiles below read from it.
   const { data: allStageLinks } = await supabase
     .from("candidate_mandate_links")
-    .select("candidate_id, stage, date_of_joining, rejected_from_stage");
+    .select("candidate_id, stage, date_of_joining, rejected_from_stage")
+    .limit(20000);
   const stageCandidateSets: Record<string, Set<string>> = {};
   // "Placed" splits into Joined vs Offered-but-not-joined by whether a join
   // date has actually landed -- both are still stage="placed", so tracked

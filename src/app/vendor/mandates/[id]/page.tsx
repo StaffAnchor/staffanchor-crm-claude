@@ -24,8 +24,6 @@ type VendorSubmission = {
   role_title: string;
   client_display: string;
   stage: string;
-  in_shortlist: boolean;
-  shortlisted_at: string | null;
   confirmed_interview_at: string | null;
   submitted_at: string;
 };
