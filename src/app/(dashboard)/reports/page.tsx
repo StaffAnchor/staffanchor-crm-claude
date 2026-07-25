@@ -23,6 +23,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import ReportBarList, { type BarItem } from "./report-bar-list";
 import InflowTrend, { type InflowPoint } from "./inflow-trend";
+import FunnelChart from "./funnel-chart";
+import DonutChart from "./donut-chart";
 import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -467,6 +469,16 @@ export default async function ReportsPage({
   // in that shared lib (see funnel-utils.ts) as part of this pass.
   const firmFunnel = computeFunnel(allLinks.map((l) => l.stage));
 
+  // Compact shape-only version of the funnel above, for the homepage-style
+  // Overview tab (see FunnelChart) -- same STAGE_ORDER/byStage counts, just
+  // rendered as a narrowing wedge stack instead of a labeled bar list.
+  const funnelStages = STAGE_ORDER.map((s) => ({
+    key: s,
+    label: STAGE_LABELS[s],
+    count: firmFunnel.byStage[s] ?? 0,
+    href: "/mandates",
+  }));
+
   // ---- Stage movement in range ------------------------------------------
   // The funnel above is a point-in-time snapshot of the whole portfolio
   // (mirrors how the Clients module already reports it) -- this is the
@@ -596,6 +608,31 @@ export default async function ReportsPage({
             icon: <Radar className="w-3.5 h-3.5" />,
             content: (
               <>
+                {/* Homepage-style pair -- pipeline shape + candidate mix,
+                    inspired by Ceipal's home dashboard (funnel + pie chart
+                    side by side, above the more granular panels below).
+                    The detailed conversion-rate math for the funnel lives
+                    in the Pipeline & Conversion tab; this is deliberately
+                    just the at-a-glance shape. */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <Card>
+                    <div className="flex items-center gap-2 mb-3">
+                      <GitBranch className="w-4 h-4 text-blue-500" />
+                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Pipeline funnel</h2>
+                      <span className="text-[10.5px] text-slate-400 ml-auto">all-time snapshot</span>
+                    </div>
+                    <FunnelChart stages={funnelStages} />
+                  </Card>
+                  <Card>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Layers className="w-4 h-4 text-violet-500" />
+                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Candidate mix</h2>
+                      <span className="text-[10.5px] text-slate-400 ml-auto">by function</span>
+                    </div>
+                    <DonutChart slices={categoryItems} totalLabel="candidates" />
+                  </Card>
+                </div>
+
                 {/* Needs attention -- capstone intelligence panel, pulling the
                     same health-signal thresholds already surfaced on Mandates
                     and Interviews into one cross-pipeline glance. */}
