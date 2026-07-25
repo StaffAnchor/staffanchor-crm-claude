@@ -23,6 +23,14 @@
     {
       "path": "/api/cron/career-timeline-sweep",
       "schedule": "0 7 * * 2,5"
+    },
+    {
+      "path": "/api/cron/joining-followup",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/client-portal-inactivity",
+      "schedule": "0 11 * * 1"
     }
   ]
 }

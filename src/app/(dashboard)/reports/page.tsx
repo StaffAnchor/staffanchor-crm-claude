@@ -692,7 +692,7 @@ export default async function ReportsPage({
                       {upcomingJoiners.map((j) => (
                         <Link
                           key={`${j.candidateId}-${j.mandateId}`}
-                          href={`/candidates/${j.candidateId}`}
+                          href={`/candidates/${j.candidateId}?mandateId=${j.mandateId}`}
                           className="group flex items-center justify-between gap-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 -mx-1 px-1 rounded-ros-md transition-colors duration-200 ease-ros"
                         >
                           <div className="min-w-0">

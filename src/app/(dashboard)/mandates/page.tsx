@@ -44,6 +44,14 @@ export default async function MandatesPage({
   }>;
 }) {
   const { status, category, city, client, recruiter, newClientId, newClientName } = await searchParams;
+  const exportQS = [
+    status ? `status=${encodeURIComponent(status)}` : "",
+    category ? `category=${encodeURIComponent(category)}` : "",
+    city ? `city=${encodeURIComponent(city)}` : "",
+    client ? `client=${encodeURIComponent(client)}` : "",
+  ]
+    .filter(Boolean)
+    .join("&");
   const supabase = await createClient();
 
   const {
@@ -297,6 +305,13 @@ export default async function MandatesPage({
               {hasAnyFilter ? " matching current filters" : ""}
             </p>
           </div>
+          <a
+            href={`/api/export/mandates${exportQS ? `?${exportQS}` : ""}`}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors border border-slate-200 dark:border-slate-700"
+            title="Export the current filtered list as CSV"
+          >
+            Export CSV
+          </a>
         </div>
 
         <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">

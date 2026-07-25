@@ -72,11 +72,16 @@ export async function POST(req: NextRequest) {
       if (user) {
         const { data: clientUser } = await admin.from("client_users").select("client_id").eq("id", user.id).single();
         if (clientUser) {
+          // Gate on `stage`, not the legacy `in_shortlist` flag -- in_shortlist
+          // is only set by the public shortlist-link flow or the dedicated
+          // toggle button, so a candidate moved via the Stage dropdown (the
+          // common path) could be wrongly denied, and one later rejected
+          // could still pass if in_shortlist was never cleared.
           const { data: link } = await admin
             .from("candidate_mandate_links")
-            .select("id, mandates!inner(client_id)")
+            .select("id, stage, mandates!inner(client_id)")
             .eq("candidate_id", candidateId)
-            .eq("in_shortlist", true)
+            .in("stage", ["submitted", "client_interview", "client_shortlisted", "offer", "placed"])
             .eq("mandates.client_id", clientUser.client_id)
             .limit(1)
             .maybeSingle();

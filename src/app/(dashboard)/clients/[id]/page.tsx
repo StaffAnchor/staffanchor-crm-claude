@@ -31,15 +31,19 @@ export default async function ClientDetailPage({
   const { data: links } = mandateIds.length
     ? await supabase
         .from("candidate_mandate_links")
-        .select("mandate_id, in_shortlist, stage")
+        .select("mandate_id, stage")
         .in("mandate_id", mandateIds)
-    : { data: [] as { mandate_id: string; in_shortlist: boolean; stage: string | null }[] };
+    : { data: [] as { mandate_id: string; stage: string | null }[] };
 
+  // Derived from `stage`, not the legacy `in_shortlist` flag -- see clients/page.tsx.
+  const SHORTLISTED_STAGES = new Set(["client_shortlisted", "offer", "placed"]);
   const linkedByMandate: Record<string, number> = {};
   const shortlistedByMandate: Record<string, number> = {};
   (links ?? []).forEach((l) => {
     linkedByMandate[l.mandate_id] = (linkedByMandate[l.mandate_id] ?? 0) + 1;
-    if (l.in_shortlist) shortlistedByMandate[l.mandate_id] = (shortlistedByMandate[l.mandate_id] ?? 0) + 1;
+    if (l.stage && SHORTLISTED_STAGES.has(l.stage)) {
+      shortlistedByMandate[l.mandate_id] = (shortlistedByMandate[l.mandate_id] ?? 0) + 1;
+    }
   });
 
   const funnelStats = computeFunnel((links ?? []).map((l) => l.stage));

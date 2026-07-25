@@ -66,7 +66,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
           {members.map((m) => (
             <tr key={m.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70">
               <td className="px-4 py-2.5">
-                <Link href={`/candidates/${m.id}`} className="font-medium text-slate-800 dark:text-slate-100 hover:text-blue-600">
+                <Link href={`/candidates/${m.id}?groupId=${groupId}`} className="font-medium text-slate-800 dark:text-slate-100 hover:text-blue-600">
                   {m.full_name || "Unnamed"}
                 </Link>
                 {m.candidate_number ? <span className="text-slate-400 text-[11px] ml-1">#{m.candidate_number}</span> : null}

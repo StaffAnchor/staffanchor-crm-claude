@@ -202,7 +202,7 @@ function InterviewListRow({ row }: { row: InterviewRow }) {
     <div className="flex items-center justify-between py-3 gap-4">
       <div className="min-w-0">
         <Link
-          href={`/candidates/${row.candidate_id}`}
+          href={`/candidates/${row.candidate_id}?mandateId=${row.mandate_id}`}
           className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 transition-colors duration-200 ease-ros truncate"
         >
           {row.candidate_name}

@@ -33,6 +33,7 @@ import {
   Send as SendIcon,
   Loader2,
   FolderPlus,
+  Download,
 } from "lucide-react";
 
 export type OpenMandate = {
@@ -1124,12 +1125,21 @@ export default function CandidatesTable({
             ? `Showing ${totalCount === 0 ? 0 : rangeStart}–${rangeEnd} of ${totalCount} candidate${totalCount === 1 ? "" : "s"}`
             : `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`}
         </p>
-        <button
-          onClick={() => setPanelOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
-        >
-          <Settings2 className="w-3.5 h-3.5" /> Customize columns
-        </button>
+        <div className="flex items-center gap-1">
+          <a
+            href={`/api/export/candidates${fromQS ? `?${fromQS}` : ""}`}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
+            title="Export the current filtered list as CSV"
+          >
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </a>
+          <button
+            onClick={() => setPanelOpen((v) => !v)}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
+          >
+            <Settings2 className="w-3.5 h-3.5" /> Customize columns
+          </button>
+        </div>
 
         {panelOpen && (
           <>

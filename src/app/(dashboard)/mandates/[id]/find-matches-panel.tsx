@@ -167,7 +167,7 @@ export default function FindMatchesPanel({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/candidates/${m.candidate_id}`}
+                          href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
                           className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate"
                         >
                           {m.full_name}

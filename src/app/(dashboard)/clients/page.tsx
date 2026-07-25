@@ -31,12 +31,19 @@ export default async function ClientsPage({
   const [{ data: clients }, { data: mandates }, { data: links }] = await Promise.all([
     query,
     supabase.from("mandates").select("id, client_id, status, created_at"),
-    supabase.from("candidate_mandate_links").select("mandate_id, in_shortlist, stage"),
+    supabase.from("candidate_mandate_links").select("mandate_id, stage"),
   ]);
 
+  // Derived from `stage`, not the legacy `in_shortlist` flag -- in_shortlist
+  // is only ever set by the public shortlist-link flow or the dedicated
+  // toggle button, so candidates moved via the Stage dropdown (the common
+  // path) were being silently excluded from this count.
+  const SHORTLISTED_STAGES = new Set(["client_shortlisted", "offer", "placed"]);
   const shortlistedByMandate: Record<string, number> = {};
   (links ?? []).forEach((l) => {
-    if (l.in_shortlist) shortlistedByMandate[l.mandate_id] = (shortlistedByMandate[l.mandate_id] ?? 0) + 1;
+    if (l.stage && SHORTLISTED_STAGES.has(l.stage)) {
+      shortlistedByMandate[l.mandate_id] = (shortlistedByMandate[l.mandate_id] ?? 0) + 1;
+    }
   });
 
   const statsByClient: Record<string, { open: number; total: number; shortlisted: number }> = {};

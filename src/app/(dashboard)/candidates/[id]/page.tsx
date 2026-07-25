@@ -59,10 +59,10 @@ export default async function CandidateDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string; mandateId?: string }>;
+  searchParams: Promise<{ from?: string; mandateId?: string; groupId?: string }>;
 }) {
   const { id } = await params;
-  const { from, mandateId } = await searchParams;
+  const { from, mandateId, groupId } = await searchParams;
   const supabase = await createClient();
 
   const { data: candidate } = await supabase
@@ -107,6 +107,31 @@ export default async function CandidateDetailPage({
       .order("created_at", { ascending: true });
     if (mandateLinkRows) {
       const roster = mandateLinkRows
+        .map((r) => r.candidates as unknown as { id: string; full_name: string } | null)
+        .filter((c): c is { id: string; full_name: string } => c !== null);
+      const idx = roster.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        listPosition = { index: idx + 1, total: roster.length };
+        prevCandidate = idx > 0 ? roster[idx - 1] : null;
+        nextCandidate = idx < roster.length - 1 ? roster[idx + 1] : null;
+      }
+    }
+  } else if (groupId) {
+    const { data: groupRow } = await supabase
+      .from("candidate_groups")
+      .select("name")
+      .eq("id", groupId)
+      .single();
+    backHref = `/candidates/groups/${groupId}`;
+    backLabel = groupRow ? `← ${groupRow.name}` : "← Back to group";
+
+    const { data: groupMemberRows } = await supabase
+      .from("candidate_group_members")
+      .select("candidate_id, added_at, candidates(id, full_name)")
+      .eq("group_id", groupId)
+      .order("added_at", { ascending: true });
+    if (groupMemberRows) {
+      const roster = groupMemberRows
         .map((r) => r.candidates as unknown as { id: string; full_name: string } | null)
         .filter((c): c is { id: string; full_name: string } => c !== null);
       const idx = roster.findIndex((r) => r.id === id);
@@ -257,6 +282,15 @@ export default async function CandidateDetailPage({
 
   const segmentEntries = Object.entries(segment).filter(([, v]) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0));
 
+  // Single place computing a neighbor's link so it always carries whichever
+  // context (mandate / group / filtered list) got us to this page.
+  function neighborHref(neighbor: { id: string } | null): string {
+    if (!neighbor) return "#";
+    if (mandateId) return `/candidates/${neighbor.id}?mandateId=${mandateId}`;
+    if (groupId) return `/candidates/${neighbor.id}?groupId=${groupId}`;
+    return `/candidates/${neighbor.id}?from=${encodeURIComponent(from ?? "")}`;
+  }
+
   // Recomputed here (not just read off the stored stability_score column) so
   // the Passport tab's "Stable"/"Some Movement"/"Frequent Job-Hopper" label
   // always matches the same merged-timeline logic the Career tab uses --
@@ -283,13 +317,7 @@ export default async function CandidateDetailPage({
               {listPosition.index} of {listPosition.total}
             </span>
             <Link
-              href={
-                prevCandidate
-                  ? mandateId
-                    ? `/candidates/${prevCandidate.id}?mandateId=${mandateId}`
-                    : `/candidates/${prevCandidate.id}?from=${encodeURIComponent(from ?? "")}`
-                  : "#"
-              }
+              href={neighborHref(prevCandidate)}
               aria-disabled={!prevCandidate}
               title={prevCandidate ? `Previous: ${prevCandidate.full_name}` : undefined}
               className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
@@ -301,13 +329,7 @@ export default async function CandidateDetailPage({
               <ChevronLeft className="w-3.5 h-3.5" />
             </Link>
             <Link
-              href={
-                nextCandidate
-                  ? mandateId
-                    ? `/candidates/${nextCandidate.id}?mandateId=${mandateId}`
-                    : `/candidates/${nextCandidate.id}?from=${encodeURIComponent(from ?? "")}`
-                  : "#"
-              }
+              href={neighborHref(nextCandidate)}
               aria-disabled={!nextCandidate}
               title={nextCandidate ? `Next: ${nextCandidate.full_name}` : undefined}
               className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
