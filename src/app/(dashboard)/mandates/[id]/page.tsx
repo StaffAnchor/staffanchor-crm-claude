@@ -12,6 +12,7 @@ import MustHavesPanel from "./must-haves-panel";
 import FindMatchesPanel from "./find-matches-panel";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
+import MandateSplitLayout from "./mandate-split-layout";
 import DeleteMandateButton from "./delete-mandate-button";
 import PublishMandateButton from "./publish-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
@@ -216,8 +217,8 @@ export default async function MandateDetailPage({
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-3 gap-6">
-      <div className="col-span-2">
+      <MandateSplitLayout
+        left={
         <MandateCandidatesView
           rows={(links ?? [])
             .map((l) => {
@@ -257,9 +258,9 @@ export default async function MandateDetailPage({
             screening_questions: mandate.screening_questions ?? [],
           }}
         />
-      </div>
-
-      <div>
+        }
+        right={
+        <>
         {/* The 10 independently-saving panels this page used to render in
             one long scroll (see "Close Mandates cockpit" in the Recruiter
             OS roadmap) -- grouped behind tabs by what a recruiter is
@@ -417,8 +418,9 @@ export default async function MandateDetailPage({
             </p>
           </Link>
         )}
-      </div>
-    </div>
+        </>
+        }
+      />
     </div>
   );
 }
