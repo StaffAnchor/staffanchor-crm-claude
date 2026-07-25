@@ -221,7 +221,7 @@ export default function MandateCandidatesBoard({
                         </div>
                         <div className="min-w-0 flex-1">
                           <Link
-                            href={`/candidates/${row.candidate.id}`}
+                            href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
                             className="text-[12.5px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate block"
                           >
                             {row.candidate.full_name}

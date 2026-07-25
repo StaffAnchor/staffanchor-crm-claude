@@ -420,7 +420,7 @@ export default function MandateCandidatesTable({
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
               <td className="px-4 py-3">
-                <Link href={`/candidates/${l.candidate.id}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
+                <Link href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
                   {l.candidate.full_name}
                 </Link>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>

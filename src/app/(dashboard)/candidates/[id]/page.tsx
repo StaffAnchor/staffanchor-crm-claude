@@ -59,10 +59,10 @@ export default async function CandidateDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; mandateId?: string }>;
 }) {
   const { id } = await params;
-  const { from } = await searchParams;
+  const { from, mandateId } = await searchParams;
   const supabase = await createClient();
 
   const { data: candidate } = await supabase
@@ -79,12 +79,44 @@ export default async function CandidateDetailPage({
   // (id-only, same default ordering) lets us find this candidate's
   // neighbors without keeping any list state around. Replaces the old
   // per-section sidebar, which was meaningless on a single-candidate page.
+  //
+  // `mandateId` is the mandate-context equivalent: set when a candidate is
+  // opened from a mandate's Board/Table view (see mandate-candidates-table
+  // / -board.tsx), so "back" returns to that specific mandate's candidate
+  // list instead of the global /candidates page, and prev/next walk that
+  // mandate's roster instead of the firm-wide one.
   let prevCandidate: { id: string; full_name: string } | null = null;
   let nextCandidate: { id: string; full_name: string } | null = null;
   let listPosition: { index: number; total: number } | null = null;
-  const backHref = from ? `/candidates?${from}` : "/candidates";
+  let backLabel = "← All candidates";
+  let backHref = from ? `/candidates?${from}` : "/candidates";
 
-  if (from) {
+  if (mandateId) {
+    const { data: mandateRow } = await supabase
+      .from("mandates")
+      .select("role_title, client_name")
+      .eq("id", mandateId)
+      .single();
+    backHref = `/mandates/${mandateId}`;
+    backLabel = mandateRow ? `← ${mandateRow.role_title} — ${mandateRow.client_name}` : "← Back to mandate";
+
+    const { data: mandateLinkRows } = await supabase
+      .from("candidate_mandate_links")
+      .select("candidate_id, created_at, candidates(id, full_name)")
+      .eq("mandate_id", mandateId)
+      .order("created_at", { ascending: true });
+    if (mandateLinkRows) {
+      const roster = mandateLinkRows
+        .map((r) => r.candidates as unknown as { id: string; full_name: string } | null)
+        .filter((c): c is { id: string; full_name: string } => c !== null);
+      const idx = roster.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        listPosition = { index: idx + 1, total: roster.length };
+        prevCandidate = idx > 0 ? roster[idx - 1] : null;
+        nextCandidate = idx < roster.length - 1 ? roster[idx + 1] : null;
+      }
+    }
+  } else if (from) {
     const listParams = new URLSearchParams(from);
     let listQuery = supabase
       .from("candidates")
@@ -242,7 +274,7 @@ export default async function CandidateDetailPage({
           href={backHref}
           className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros"
         >
-          ← All candidates
+          {backLabel}
         </Link>
 
         {listPosition && (
@@ -251,7 +283,13 @@ export default async function CandidateDetailPage({
               {listPosition.index} of {listPosition.total}
             </span>
             <Link
-              href={prevCandidate ? `/candidates/${prevCandidate.id}?from=${encodeURIComponent(from ?? "")}` : "#"}
+              href={
+                prevCandidate
+                  ? mandateId
+                    ? `/candidates/${prevCandidate.id}?mandateId=${mandateId}`
+                    : `/candidates/${prevCandidate.id}?from=${encodeURIComponent(from ?? "")}`
+                  : "#"
+              }
               aria-disabled={!prevCandidate}
               title={prevCandidate ? `Previous: ${prevCandidate.full_name}` : undefined}
               className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
@@ -263,7 +301,13 @@ export default async function CandidateDetailPage({
               <ChevronLeft className="w-3.5 h-3.5" />
             </Link>
             <Link
-              href={nextCandidate ? `/candidates/${nextCandidate.id}?from=${encodeURIComponent(from ?? "")}` : "#"}
+              href={
+                nextCandidate
+                  ? mandateId
+                    ? `/candidates/${nextCandidate.id}?mandateId=${mandateId}`
+                    : `/candidates/${nextCandidate.id}?from=${encodeURIComponent(from ?? "")}`
+                  : "#"
+              }
               aria-disabled={!nextCandidate}
               title={nextCandidate ? `Next: ${nextCandidate.full_name}` : undefined}
               className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
