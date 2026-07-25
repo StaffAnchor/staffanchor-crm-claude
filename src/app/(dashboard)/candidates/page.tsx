@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SlidersHorizontal, AlertTriangle, Upload } from "lucide-react";
+import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
 import {
@@ -17,6 +17,7 @@ import {
   secondarySpecializationGroups,
 } from "@/lib/candidate-options";
 import { STAGES as MANDATE_STAGES } from "@/lib/mandate-stage";
+import { TourTooltip } from "@/components/ui/tour-tooltip";
 
 // Primary Specialization filter must show the *actual* taxonomy recruiters
 // pick from on the intake form (grouped by Current Profile Type), not just
@@ -620,6 +621,18 @@ export default async function CandidatesPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <TourTooltip
+            tourKey="candidate_groups_v1"
+            title="New: saved candidate groups"
+            description="Select rows in the table below and choose 'Add to group' to build reusable segments -- e.g. all B2B AEs shortlisted for a client -- that you can revisit anytime from here."
+          >
+            <Link
+              href="/candidates/groups"
+              className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-700 dark:text-slate-200 text-[13px] font-medium px-3.5 py-2 shadow-sm flex items-center gap-1.5"
+            >
+              <FolderKanban className="w-3.5 h-3.5" /> Groups
+            </Link>
+          </TourTooltip>
           <Link
             href="/candidates/bulk-upload"
             className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-700 dark:text-slate-200 text-[13px] font-medium px-3.5 py-2 shadow-sm flex items-center gap-1.5"

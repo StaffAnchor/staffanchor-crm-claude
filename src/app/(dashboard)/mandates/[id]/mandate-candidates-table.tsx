@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { MessageCircleQuestion, Loader2, Mail } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
 import { STAGES, applyStageChange, type Stage, type StageSource } from "@/lib/mandate-stage";
+import { StageTimeline } from "@/components/ui/stage-timeline";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -31,6 +32,7 @@ export type MandateCandidateRow = {
   stage: string;
   in_shortlist: boolean;
   stage_source: StageSource | null;
+  stage_updated_at: string | null;
   client_decision_at: string | null;
   rejected_from_stage: string | null;
   date_of_joining: string | null;
@@ -368,13 +370,19 @@ export default function MandateCandidatesTable({
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setEditingStageId(l.id)}
-                    className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
-                  >
-                    {l.stage_source && l.stage_source !== "recruiter" && "🔔 "}
-                    {l.stage.replace(/_/g, " ")}
-                  </button>
+                  <div className="flex flex-col gap-1 items-start">
+                    <button
+                      onClick={() => setEditingStageId(l.id)}
+                      className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
+                    >
+                      {l.stage_source && l.stage_source !== "recruiter" && "🔔 "}
+                      {l.stage.replace(/_/g, " ")}
+                    </button>
+                    {/* Pipeline-progress-at-a-glance -- see stage-timeline.tsx for the
+                        honest caveat that only the current dot has a real date, since
+                        we don't log a full per-transition history. */}
+                    <StageTimeline stage={l.stage} stageUpdatedAt={l.stage_updated_at} rejectedFromStage={l.rejected_from_stage} />
+                  </div>
                 )}
               </td>
               <td className="px-4 py-3">

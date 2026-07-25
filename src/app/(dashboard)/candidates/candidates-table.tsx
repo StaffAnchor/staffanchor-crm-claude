@@ -32,6 +32,7 @@ import {
   Link2,
   Send as SendIcon,
   Loader2,
+  FolderPlus,
 } from "lucide-react";
 
 export type OpenMandate = {
@@ -864,6 +865,14 @@ export default function CandidatesTable({
   const [chosenMandate, setChosenMandate] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkMessage, setBulkMessage] = useState<string | null>(null);
+  // "Add to group" -- saved candidate segments (see /candidates/groups),
+  // modeled on Ceipal's Applicant Groups. Groups are fetched lazily only
+  // once the picker actually opens, since most sessions never touch this.
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [existingGroups, setExistingGroups] = useState<{ id: string; name: string }[] | null>(null);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [chosenGroupId, setChosenGroupId] = useState("");
+  const [newGroupName, setNewGroupName] = useState("");
 
   useEffect(() => {
     const prefs = loadPrefs();
@@ -982,6 +991,66 @@ export default function CandidatesTable({
     setBulkMessage(`Mapped ${rows.length} candidate${rows.length === 1 ? "" : "s"} to the mandate.`);
     setSelected(new Set());
     router.refresh();
+  }
+
+  async function openGroupModal() {
+    setGroupModalOpen(true);
+    if (existingGroups !== null) return;
+    setGroupsLoading(true);
+    const { data } = await supabase.from("candidate_groups").select("id, name").order("name");
+    setExistingGroups(data ?? []);
+    setGroupsLoading(false);
+  }
+
+  // Adds the current selection to a group -- either an existing one picked
+  // from the dropdown, or a brand-new one created inline (name typed into
+  // the "or create new" field). ignoreDuplicates on the member insert means
+  // re-adding someone already in the group is a harmless no-op rather than
+  // a unique-constraint error.
+  async function handleAddToGroup() {
+    if (selected.size === 0) return;
+    if (!chosenGroupId && !newGroupName.trim()) return;
+    setBulkBusy(true);
+    setBulkMessage(null);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let groupId = chosenGroupId;
+    if (!groupId) {
+      const { data: created, error: createError } = await supabase
+        .from("candidate_groups")
+        .insert({ name: newGroupName.trim(), created_by: user?.id ?? null })
+        .select("id")
+        .single();
+      if (createError || !created) {
+        setBulkBusy(false);
+        setBulkMessage(`Failed to create group: ${createError?.message ?? "unknown error"}`);
+        return;
+      }
+      groupId = created.id;
+    }
+
+    const rows = Array.from(selected).map((candidate_id) => ({
+      group_id: groupId,
+      candidate_id,
+      added_by: user?.id ?? null,
+    }));
+    const { error } = await supabase.from("candidate_group_members").upsert(rows, {
+      onConflict: "group_id,candidate_id",
+      ignoreDuplicates: true,
+    });
+    setBulkBusy(false);
+    if (error) {
+      setBulkMessage(`Failed to add to group: ${error.message}`);
+      return;
+    }
+    setGroupModalOpen(false);
+    setChosenGroupId("");
+    setNewGroupName("");
+    setExistingGroups(null);
+    setBulkMessage(`Added ${rows.length} candidate${rows.length === 1 ? "" : "s"} to the group.`);
+    setSelected(new Set());
   }
 
   // Shared write path for every InlineSelectCell quick-edit -- same direct
@@ -1156,6 +1225,15 @@ export default function CandidatesTable({
             Map with a mandate
           </Button>
           <Button
+            variant="secondary"
+            size="sm"
+            onClick={openGroupModal}
+            disabled={bulkBusy}
+            icon={<FolderPlus className="w-3.5 h-3.5" />}
+          >
+            Add to group
+          </Button>
+          <Button
             variant="danger"
             size="sm"
             onClick={handleBulkDelete}
@@ -1207,6 +1285,65 @@ export default function CandidatesTable({
                 className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
               >
                 {bulkBusy ? "Mapping..." : "Map"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {groupModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setGroupModalOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              Add {selected.size} candidate{selected.size === 1 ? "" : "s"} to a group
+            </h3>
+            <p className="text-[12px] text-slate-400 mb-3">
+              Saved groups live under Candidates → Groups, for reusable segments you come back to.
+            </p>
+            {groupsLoading ? (
+              <p className="text-[12.5px] text-slate-400 flex items-center gap-1.5 mb-3">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading groups...
+              </p>
+            ) : (
+              <select
+                value={chosenGroupId}
+                onChange={(e) => {
+                  setChosenGroupId(e.target.value);
+                  if (e.target.value) setNewGroupName("");
+                }}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-2"
+              >
+                <option value="">Select an existing group...</option>
+                {(existingGroups ?? []).map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="text-[11px] text-slate-400 mb-1.5">or create a new one:</p>
+            <input
+              value={newGroupName}
+              onChange={(e) => {
+                setNewGroupName(e.target.value);
+                if (e.target.value) setChosenGroupId("");
+              }}
+              placeholder="New group name"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-3"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setGroupModalOpen(false)}
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddToGroup}
+                disabled={(!chosenGroupId && !newGroupName.trim()) || bulkBusy}
+                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+              >
+                {bulkBusy ? "Adding..." : "Add"}
               </button>
             </div>
           </div>
