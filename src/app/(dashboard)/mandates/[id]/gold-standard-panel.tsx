@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Pencil, X, Check, ClipboardList } from "lucide-react";
+import { Pencil, X, Check, ClipboardList, ChevronDown } from "lucide-react";
 import {
   hiringReasonOptions,
   teamHandlingOptions,
@@ -67,6 +67,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
 
   const isSalesRole = initial.category === "b2b_sales" || initial.category === "b2c_sales";
   const isB2B = initial.category === "b2b_sales";
@@ -184,45 +185,53 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
     return (
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ease-ros ${collapsed ? "-rotate-90" : ""}`} />
             <ClipboardList className="w-3.5 h-3.5 text-slate-400" /> Gold Standard Brief
-          </h2>
+          </button>
           <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         </div>
-        {summaryLines.length > 0 ? (
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">{summaryLines.join(" · ")}</p>
-        ) : (
-          <p className="text-[12px] text-slate-400 mt-1">
-            Not filled in yet -- add sales-cycle, work arrangement, and expectation details so recruiters have enough
-            context for candidate conversations.
-          </p>
-        )}
-        {(initial.expectation_3_month || initial.expectation_6_month || initial.expectation_1_year) && (
-          <div className="mt-2 space-y-0.5">
-            {initial.expectation_3_month && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="font-medium">3mo:</span> {initial.expectation_3_month}
+        {!collapsed && (
+          <>
+            {summaryLines.length > 0 ? (
+              <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">{summaryLines.join(" · ")}</p>
+            ) : (
+              <p className="text-[12px] text-slate-400 mt-1">
+                Not filled in yet -- add sales-cycle, work arrangement, and expectation details so recruiters have enough
+                context for candidate conversations.
               </p>
             )}
-            {initial.expectation_6_month && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="font-medium">6mo:</span> {initial.expectation_6_month}
+            {(initial.expectation_3_month || initial.expectation_6_month || initial.expectation_1_year) && (
+              <div className="mt-2 space-y-0.5">
+                {initial.expectation_3_month && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">3mo:</span> {initial.expectation_3_month}
+                  </p>
+                )}
+                {initial.expectation_6_month && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">6mo:</span> {initial.expectation_6_month}
+                  </p>
+                )}
+                {initial.expectation_1_year && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">1yr:</span> {initial.expectation_1_year}
+                  </p>
+                )}
+              </div>
+            )}
+            <p className="text-[10.5px] text-slate-400 mt-2 italic">Recruiter-only -- never shown on the public job listing.</p>
+            {saved && (
+              <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
+                <Check className="w-3 h-3" /> Saved
               </p>
             )}
-            {initial.expectation_1_year && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="font-medium">1yr:</span> {initial.expectation_1_year}
-              </p>
-            )}
-          </div>
-        )}
-        <p className="text-[10.5px] text-slate-400 mt-2 italic">Recruiter-only -- never shown on the public job listing.</p>
-        {saved && (
-          <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
-            <Check className="w-3 h-3" /> Saved
-          </p>
+          </>
         )}
       </div>
     );

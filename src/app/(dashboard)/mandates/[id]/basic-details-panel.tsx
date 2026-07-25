@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Pencil, X, Check, Briefcase } from "lucide-react";
+import { Pencil, X, Check, Briefcase, ChevronDown } from "lucide-react";
 import { cityOptions, subDomainsForCategory } from "@/lib/candidate-options";
 
 export type MandateBasicDetails = {
@@ -41,6 +41,9 @@ export default function BasicDetailsPanel({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  // Collapsing only applies to the read-mode card -- editing always shows
+  // the full form, since collapsing mid-edit would just be confusing.
+  const [collapsed, setCollapsed] = useState(false);
 
   const [form, setForm] = useState({
     role_title: initial.role_title,
@@ -113,23 +116,31 @@ export default function BasicDetailsPanel({
     return (
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ease-ros ${collapsed ? "-rotate-90" : ""}`} />
             <Briefcase className="w-3.5 h-3.5 text-slate-400" /> Mandate details
-          </h2>
+          </button>
           <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         </div>
-        <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">
-          Budget: {initial.budget_min ?? "—"}
-          {initial.budget_max ? ` – ${initial.budget_max}` : ""} L · Experience: {initial.experience_min ?? "—"}
-          {initial.experience_max ? ` – ${initial.experience_max}` : ""} yrs · Status:{" "}
-          {STATUS_LABEL[initial.status] ?? initial.status}
-        </p>
-        {saved && (
-          <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
-            <Check className="w-3 h-3" /> Saved
-          </p>
+        {!collapsed && (
+          <>
+            <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">
+              Budget: {initial.budget_min ?? "—"}
+              {initial.budget_max ? ` – ${initial.budget_max}` : ""} L · Experience: {initial.experience_min ?? "—"}
+              {initial.experience_max ? ` – ${initial.experience_max}` : ""} yrs · Status:{" "}
+              {STATUS_LABEL[initial.status] ?? initial.status}
+            </p>
+            {saved && (
+              <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
+                <Check className="w-3 h-3" /> Saved
+              </p>
+            )}
+          </>
         )}
       </div>
     );

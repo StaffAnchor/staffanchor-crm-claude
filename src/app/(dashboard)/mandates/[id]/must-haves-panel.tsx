@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ListChecks, Check, Pencil, X, Plus } from "lucide-react";
+import { ListChecks, Check, Pencil, X, Plus, ChevronDown } from "lucide-react";
 
 function TagEditor({
   label,
@@ -80,6 +80,7 @@ export default function MustHavesPanel({
   const [goodToHaves, setGoodToHaves] = useState<string[]>(initialGoodToHaves);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -98,15 +99,21 @@ export default function MustHavesPanel({
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-300"
+        >
+          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ease-ros ${collapsed ? "-rotate-90" : ""}`} />
           <ListChecks className="w-3.5 h-3.5 text-slate-400" /> Must haves / Good to haves
-        </h2>
+        </button>
         {!editing && (
           <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
             <Pencil className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
+      {!collapsed && (
+      <>
       <p className="text-[12px] text-slate-400 mb-3">
         Used by AI candidate matching below to score and explain fit against this mandate.
       </p>
@@ -154,6 +161,8 @@ export default function MustHavesPanel({
         <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
           <Check className="w-3 h-3" /> Saved
         </p>
+      )}
+      </>
       )}
     </div>
   );
