@@ -36,6 +36,7 @@ export type MandateCandidateRow = {
   client_decision_at: string | null;
   rejected_from_stage: string | null;
   date_of_joining: string | null;
+  created_at: string | null;
   screened: boolean;
   candidate: {
     id: string;

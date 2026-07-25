@@ -10,7 +10,8 @@ import GoldStandardPanel from "./gold-standard-panel";
 import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import FindMatchesPanel from "./find-matches-panel";
-import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
+import { type MandateCandidateRow } from "./mandate-candidates-table";
+import MandateCandidatesView from "./mandate-candidates-view";
 import DeleteMandateButton from "./delete-mandate-button";
 import PublishMandateButton from "./publish-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
@@ -42,7 +43,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
+      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
     )
     .eq("mandate_id", id);
 
@@ -217,7 +218,7 @@ export default async function MandateDetailPage({
 
       <div className="mt-6 grid grid-cols-3 gap-6">
       <div className="col-span-2">
-        <MandateCandidatesTable
+        <MandateCandidatesView
           rows={(links ?? [])
             .map((l) => {
               const cand = l.candidates as unknown as MandateCandidateRow["candidate"] | null;
@@ -231,6 +232,7 @@ export default async function MandateDetailPage({
                 client_decision_at: l.client_decision_at,
                 rejected_from_stage: l.rejected_from_stage,
                 date_of_joining: l.date_of_joining,
+                created_at: l.created_at,
                 candidate: cand,
                 screened: screenedCandidateIds.includes(cand.id),
               };
