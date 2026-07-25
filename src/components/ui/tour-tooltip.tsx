@@ -4,13 +4,17 @@ import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { useTourSeen } from "@/lib/use-tour-seen";
 
-// A one-time coach-mark that wraps whatever UI element it's introducing
-// (a button, a nav link, a new panel) and pops a small callout beneath it
-// until the user dismisses it -- inspired by Ceipal's onboarding hints for
-// newly shipped features. Framework is generic: any new feature gets a
-// tour by picking a fresh `tourKey` and wrapping the entry point, no new
-// component needed. Renders nothing extra once seen (or before we know,
-// to avoid a flash-of-tooltip on every page load).
+// A coach-mark that wraps whatever UI element it's introducing (a button,
+// a nav link, a new panel) and pops a small callout beneath it -- inspired
+// by Ceipal's onboarding hints for newly shipped features. It auto-shows
+// on each of a given user's next few page loads (see useTourSeen /
+// MAX_AUTO_VIEWS) rather than vanishing after one glance, since a single
+// appearance rarely registers with someone moving fast through the app.
+// Clicking "Got it" or the X dismisses it immediately for good. Framework
+// is generic: any new feature gets a tour by picking a fresh `tourKey` and
+// wrapping the entry point, no new component needed. Renders nothing extra
+// once dismissed/exhausted (or before we know, to avoid a flash-of-tooltip
+// on every page load).
 export function TourTooltip({
   tourKey,
   title,
@@ -24,9 +28,9 @@ export function TourTooltip({
   side?: "bottom" | "top";
   children: ReactNode;
 }) {
-  const { seen, loading, markSeen } = useTourSeen(tourKey);
+  const { shown, loading, dismiss } = useTourSeen(tourKey);
 
-  if (loading || seen) return <>{children}</>;
+  if (loading || !shown) return <>{children}</>;
 
   return (
     <div className="relative inline-block">
@@ -42,7 +46,7 @@ export function TourTooltip({
         <div className="flex items-start justify-between gap-2">
           <p className="text-[12.5px] font-semibold">{title}</p>
           <button
-            onClick={markSeen}
+            onClick={dismiss}
             className="text-slate-400 hover:text-white shrink-0 -mt-0.5 -mr-0.5"
             aria-label="Dismiss"
           >
@@ -51,7 +55,7 @@ export function TourTooltip({
         </div>
         <p className="text-[11.5px] text-slate-300 mt-1 leading-snug">{description}</p>
         <button
-          onClick={markSeen}
+          onClick={dismiss}
           className="mt-2 text-[11px] font-medium bg-white/10 hover:bg-white/20 rounded-md px-2.5 py-1 transition-colors"
         >
           Got it

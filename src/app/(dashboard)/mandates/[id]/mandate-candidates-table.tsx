@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MessageCircleQuestion, Loader2, Mail } from "lucide-react";
+import { MessageCircleQuestion, Loader2, Mail, FolderPlus } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
 import { STAGES, applyStageChange, type Stage, type StageSource } from "@/lib/mandate-stage";
 import { StageTimeline } from "@/components/ui/stage-timeline";
@@ -79,6 +79,16 @@ export default function MandateCandidatesTable({
   const [rejectionReason, setRejectionReason] = useState("");
   const [dateOfJoining, setDateOfJoining] = useState("");
   const [savingStage, setSavingStage] = useState(false);
+  // Saving a group of similar candidates is often easier to do right here,
+  // on a specific mandate, than from the main Candidates page -- everyone
+  // sourced/screened for the same role is already sitting in one table.
+  // Same candidate_groups/candidate_group_members schema and modal pattern
+  // as the main Candidates table's "Add to group" action.
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [existingGroups, setExistingGroups] = useState<{ id: string; name: string }[] | null>(null);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [chosenGroupId, setChosenGroupId] = useState("");
+  const [newGroupName, setNewGroupName] = useState("");
 
   function toggleRow(linkId: string) {
     setSelected((prev) => {
@@ -234,6 +244,68 @@ export default function MandateCandidatesTable({
     router.refresh();
   }
 
+  async function openGroupModal() {
+    setGroupModalOpen(true);
+    if (existingGroups !== null) return;
+    setGroupsLoading(true);
+    const { data } = await supabase.from("candidate_groups").select("id, name").order("name");
+    setExistingGroups(data ?? []);
+    setGroupsLoading(false);
+  }
+
+  // `selected` here holds candidate_mandate_links.id (the row/link id), not
+  // candidate id -- map through `rows` to the underlying candidate before
+  // writing to candidate_group_members. ignoreDuplicates on the insert
+  // means re-adding someone already in the group is a harmless no-op.
+  async function handleAddToGroup() {
+    if (selected.size === 0) return;
+    if (!chosenGroupId && !newGroupName.trim()) return;
+    setBusy(true);
+    setMessage(null);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let groupId = chosenGroupId;
+    if (!groupId) {
+      const { data: created, error: createError } = await supabase
+        .from("candidate_groups")
+        .insert({ name: newGroupName.trim(), created_by: user?.id ?? null })
+        .select("id")
+        .single();
+      if (createError || !created) {
+        setBusy(false);
+        setMessage({ type: "error", text: `Failed to create group: ${createError?.message ?? "unknown error"}` });
+        return;
+      }
+      groupId = created.id;
+    }
+
+    const candidateIds = Array.from(selected)
+      .map((linkId) => rows.find((r) => r.id === linkId)?.candidate.id)
+      .filter((v): v is string => Boolean(v));
+    const memberRows = candidateIds.map((candidate_id) => ({
+      group_id: groupId,
+      candidate_id,
+      added_by: user?.id ?? null,
+    }));
+    const { error } = await supabase.from("candidate_group_members").upsert(memberRows, {
+      onConflict: "group_id,candidate_id",
+      ignoreDuplicates: true,
+    });
+    setBusy(false);
+    if (error) {
+      setMessage({ type: "error", text: `Failed to add to group: ${error.message}` });
+      return;
+    }
+    setGroupModalOpen(false);
+    setChosenGroupId("");
+    setNewGroupName("");
+    setExistingGroups(null);
+    setMessage({ type: "success", text: `Added ${memberRows.length} candidate${memberRows.length === 1 ? "" : "s"} to the group.` });
+    setSelected(new Set());
+  }
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mt-6 shadow-sm">
       {message && (
@@ -260,6 +332,15 @@ export default function MandateCandidatesTable({
             >
               {emailingJd ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
               Email JD
+            </button>
+            <button
+              onClick={openGroupModal}
+              disabled={busy}
+              className="flex items-center gap-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
+              title="Save these candidates as a reusable named segment"
+            >
+              <FolderPlus className="w-3 h-3" />
+              Add to group
             </button>
             <button
               onClick={handleBulkUnlink}
@@ -421,6 +502,65 @@ export default function MandateCandidatesTable({
           />
         );
       })()}
+
+      {groupModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setGroupModalOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              Add {selected.size} candidate{selected.size === 1 ? "" : "s"} to a group
+            </h3>
+            <p className="text-[12px] text-slate-400 mb-3">
+              Saved groups live under Candidates → Groups, for reusable segments you come back to.
+            </p>
+            {groupsLoading ? (
+              <p className="text-[12.5px] text-slate-400 flex items-center gap-1.5 mb-3">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading groups...
+              </p>
+            ) : (
+              <select
+                value={chosenGroupId}
+                onChange={(e) => {
+                  setChosenGroupId(e.target.value);
+                  if (e.target.value) setNewGroupName("");
+                }}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-2"
+              >
+                <option value="">Select an existing group...</option>
+                {(existingGroups ?? []).map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="text-[11px] text-slate-400 mb-1.5">or create a new one:</p>
+            <input
+              value={newGroupName}
+              onChange={(e) => {
+                setNewGroupName(e.target.value);
+                if (e.target.value) setChosenGroupId("");
+              }}
+              placeholder="New group name"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-3"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setGroupModalOpen(false)}
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddToGroup}
+                disabled={(!chosenGroupId && !newGroupName.trim()) || busy}
+                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+              >
+                {busy ? "Adding..." : "Add"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
