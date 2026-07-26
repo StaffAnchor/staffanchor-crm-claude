@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { logTimeSaved } from "@/lib/time-saved";
 import { Drawer } from "@/components/ui/drawer";
 import { CheckCircle2, Circle, Sparkles, UserRound, AlertTriangle } from "lucide-react";
 import {
@@ -197,6 +198,17 @@ export default function MandateScreeningPanel({
             .from("candidates")
             .update({ mandate_discussion_summaries: [...existing, nextEntry] })
             .eq("id", candidate.id);
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          await logTimeSaved(supabase, {
+            actionType: "call_summary_draft",
+            recruiterId: user?.id ?? null,
+            entityType: "candidate",
+            entityId: candidate.id,
+            metadata: { mandateId: mandateContext.mandateId },
+          });
         }
         // A failed AI summary shouldn't block the recruiter -- the raw
         // answers are already saved in mandate_screening_answers either way.

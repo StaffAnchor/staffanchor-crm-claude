@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 import { createClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractResumeText } from "@/lib/resume-text";
+import { logTimeSaved } from "@/lib/time-saved";
 
 export const runtime = "nodejs";
 
@@ -77,13 +78,18 @@ export async function POST(req: NextRequest) {
 
   const results: BulkExtractResult[] = [];
   for (const file of files) {
-    results.push(await processOne(file, admin, genAI));
+    results.push(await processOne(file, admin, genAI, user.id));
   }
 
   return NextResponse.json({ results });
 }
 
-async function processOne(file: File, admin: SupabaseClient, genAI: GoogleGenerativeAI | null): Promise<BulkExtractResult> {
+async function processOne(
+  file: File,
+  admin: SupabaseClient,
+  genAI: GoogleGenerativeAI | null,
+  recruiterId: string
+): Promise<BulkExtractResult> {
   const fileName = file.name;
   try {
     const buffer = await file.arrayBuffer();
@@ -141,7 +147,18 @@ async function processOne(file: File, admin: SupabaseClient, genAI: GoogleGenera
         .ilike("email", extracted.email)
         .limit(1)
         .maybeSingle();
-      if (existing) duplicate = { candidateId: existing.id, fullName: existing.full_name };
+      if (existing) {
+        duplicate = { candidateId: existing.id, fullName: existing.full_name };
+        // A duplicate caught here is one the recruiter would otherwise have
+        // discovered later -- after re-typing/re-uploading a profile that
+        // already exists and having to untangle two records.
+        await logTimeSaved(admin, {
+          actionType: "duplicate_detected",
+          recruiterId,
+          entityType: "candidate",
+          entityId: existing.id,
+        });
+      }
     }
 
     return { fileName, ok: true, resumeFileUrl: path, extracted, duplicate };

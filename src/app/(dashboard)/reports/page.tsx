@@ -19,6 +19,7 @@ import {
   Gauge,
   GitBranch,
   Radar,
+  Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ReportBarList, { type BarItem } from "./report-bar-list";
@@ -31,6 +32,7 @@ import { StatTile } from "@/components/ui/stat-tile";
 import { Tabs } from "@/components/ui/tabs";
 import { STAGE_ORDER, STAGE_LABELS, computeFunnel, pct as pctRate } from "../clients/funnel-utils";
 import { computeFillProbability } from "@/lib/fill-probability";
+import { ACTION_LABELS, type TimeSavedActionType } from "@/lib/time-saved";
 
 const CTC_BANDS: { label: string; min: number; max: number }[] = [
   { label: "0–5L", min: 0, max: 5 },
@@ -595,6 +597,74 @@ export default async function ReportsPage({
   const totalPlaced = recruiterRows.reduce((sum, r) => sum + r.placed, 0);
   const topRecruiter = recruiterRows[0];
 
+  // ---- Time-Saved Ledger --------------------------------------------------
+  // Every automation that fires (auto stage progression on client action, AI
+  // call-summary drafting, duplicate detection at intake) logs a row here
+  // with an estimated minutes-saved value -- see lib/time-saved.ts for the
+  // per-action estimates and their rationale. This is deliberately the first
+  // report to show only what's actually instrumented today, not a projection
+  // of what automation "should" save -- three of the ten-plus automation
+  // ideas discussed for the CRM are wired into this ledger so far; the rest
+  // (AI-drafted replies, predictive alerts, offer letters, billing) simply
+  // don't exist yet, so there's nothing to log for them.
+  const { data: timeSavedRows } = await supabase
+    .from("time_saved_events")
+    .select("action_type, recruiter_id, estimated_minutes_saved, created_at");
+  const tsRows = timeSavedRows ?? [];
+
+  const totalMinutesSavedAllTime = tsRows.reduce((sum, r) => sum + Number(r.estimated_minutes_saved ?? 0), 0);
+  const minutesSavedInRange = tsRows
+    .filter((r) => {
+      const d = new Date(r.created_at);
+      return d >= rangeFrom && d <= new Date(rangeTo.getTime() + 24 * 60 * 60 * 1000 - 1);
+    })
+    .reduce((sum, r) => sum + Number(r.estimated_minutes_saved ?? 0), 0);
+  const eventsInRangeCount = tsRows.filter((r) => {
+    const d = new Date(r.created_at);
+    return d >= rangeFrom && d <= new Date(rangeTo.getTime() + 24 * 60 * 60 * 1000 - 1);
+  }).length;
+
+  const minutesByAction: Record<string, number> = {};
+  tsRows.forEach((r) => {
+    minutesByAction[r.action_type] = (minutesByAction[r.action_type] ?? 0) + Number(r.estimated_minutes_saved ?? 0);
+  });
+  const timeSavedByActionItems: BarItem[] = Object.entries(minutesByAction)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, minutes]) => ({
+      key,
+      label: ACTION_LABELS[key as TimeSavedActionType] ?? key,
+      count: minutes,
+      href: "/reports?range=" + range,
+    }));
+
+  const minutesByRecruiter: Record<string, number> = {};
+  tsRows.forEach((r) => {
+    if (!r.recruiter_id) return;
+    minutesByRecruiter[r.recruiter_id] = (minutesByRecruiter[r.recruiter_id] ?? 0) + Number(r.estimated_minutes_saved ?? 0);
+  });
+  const timeSavedByRecruiterItems: BarItem[] = Object.entries(minutesByRecruiter)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([id, minutes]) => ({
+      key: id,
+      label: profileNames[id] ?? "Unknown",
+      count: minutes,
+      href: "/reports?range=" + range,
+    }));
+
+  // Daily trend of minutes saved over the selected range -- reuses the exact
+  // date-bucketing pattern as the candidate inflow chart above.
+  const tsDayCount = Math.max(1, Math.round((rangeTo.getTime() - rangeFrom.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  const timeSavedTrend: InflowPoint[] = Array.from({ length: tsDayCount }, (_, i) => {
+    const d = new Date(rangeFrom);
+    d.setDate(d.getDate() + i);
+    const ds = toDateStr(d);
+    const minutes = tsRows
+      .filter((r) => r.created_at.slice(0, 10) === ds)
+      .reduce((sum, r) => sum + Number(r.estimated_minutes_saved ?? 0), 0);
+    return { key: ds, label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), count: minutes, href: "/reports?range=" + range };
+  });
+
   return (
     <div>
       <div className="flex items-baseline justify-between mb-4">
@@ -1059,6 +1129,71 @@ export default async function ReportsPage({
                     </>
                   )}
                 </Card>
+              </>
+            ),
+          },
+          {
+            key: "time-saved",
+            label: "Time Saved",
+            icon: <Clock className="w-3.5 h-3.5" />,
+            content: (
+              <>
+                <Card className="mb-4 flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">
+                  <Clock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">What this measures:</span> every time an
+                    existing automation does something a recruiter would otherwise have done by hand -- an auto stage update
+                    triggered by a client, an AI-drafted call summary, a duplicate caught before it was re-created -- it logs a
+                    row here with a conservative, named minutes-saved estimate (see the ledger source for the exact assumption
+                    behind each number). Only <span className="font-semibold text-slate-700 dark:text-slate-300">3 of the ~10-15
+                    automation ideas discussed for this CRM are wired into this ledger so far</span> — AI-drafted WhatsApp/email
+                    replies, predictive going-cold alerts, offer-letter generation, and billing automation don&apos;t exist yet, so
+                    there is nothing to log for them. This tab will only ever be as honest as what&apos;s actually instrumented.
+                  </p>
+                </Card>
+
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <StatTile
+                    icon={<Clock className="w-4 h-4" />}
+                    label="Est. minutes saved, all-time"
+                    value={Math.round(totalMinutesSavedAllTime)}
+                    accent
+                  />
+                  <StatTile
+                    icon={<Clock className="w-4 h-4" />}
+                    label={`Est. minutes saved · ${currentRangeLabel.toLowerCase()}`}
+                    value={Math.round(minutesSavedInRange)}
+                  />
+                  <StatTile icon={<GitBranch className="w-4 h-4" />} label={`Automated actions · ${currentRangeLabel.toLowerCase()}`} value={eventsInRangeCount} />
+                </div>
+
+                <Card className="mb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="w-4 h-4 text-indigo-500" />
+                    <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Minutes saved, by day</h2>
+                    <span className="text-[10.5px] text-slate-400 ml-auto">{currentRangeLabel}</span>
+                  </div>
+                  <InflowTrend points={timeSavedTrend} />
+                </Card>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <div className="flex items-center gap-2 mb-4">
+                      <GitBranch className="w-4 h-4 text-blue-500" />
+                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">By automation type</h2>
+                      <span className="text-[10.5px] text-slate-400 ml-auto">all-time, minutes</span>
+                    </div>
+                    <ReportBarList items={timeSavedByActionItems} colorClass="bg-blue-500/80" emptyLabel="No automated actions logged yet." highlightTop />
+                  </Card>
+                  <Card>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Users2 className="w-4 h-4 text-rose-500" />
+                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">By recruiter</h2>
+                      <span className="text-[10.5px] text-slate-400 ml-auto">all-time, minutes · top 10</span>
+                    </div>
+                    <ReportBarList items={timeSavedByRecruiterItems} colorClass="bg-rose-500/80" emptyLabel="No automated actions attributed to a recruiter yet." highlightTop />
+                  </Card>
+                </div>
               </>
             ),
           },

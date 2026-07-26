@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logTimeSaved } from "./time-saved";
 
 // Every stage a candidate can be at on ONE specific mandate. Deliberately
 // NOT the same list as candidates.status (see status-control.tsx) --
@@ -84,6 +85,20 @@ export async function applyStageChange(
     .from("mandate_assignments")
     .select("freelancer_id")
     .eq("mandate_id", params.mandateId);
+
+  // Client acted directly (portal or shortlist link) instead of a recruiter
+  // manually updating the stage and pinging the team -- log it against every
+  // recruiter/vendor staffed on this mandate, since the time saved (skipping
+  // a manual update + status ping) accrues to all of them, not just one.
+  for (const a of assignments ?? []) {
+    await logTimeSaved(supabase, {
+      actionType: "auto_stage_progression",
+      recruiterId: a.freelancer_id,
+      entityType: "candidate_mandate_link",
+      entityId: params.linkId,
+      metadata: { newStage: params.newStage, source: params.source },
+    });
+  }
 
   const verb = params.newStage.replace(/_/g, " ");
   const title = `${SOURCE_LABEL[params.source]}: ${params.candidateName} → ${verb} — ${params.mandateLabel}`;
