@@ -196,6 +196,7 @@ type SearchParams = {
   b2b_motion?: string;
   b2c_motion?: string;
   source_channel?: string;
+  owner?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -207,6 +208,10 @@ export default async function CandidatesPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
+
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
 
   const pageNum = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const rangeFrom = (pageNum - 1) * PAGE_SIZE;
@@ -301,6 +306,12 @@ export default async function CandidatesPage({
       qq = qq.or(vals.map((v) => `segment_data->motion.cs.${JSON.stringify([v])}`).join(","));
     }
     if (params.source_channel) qq = qq.in("source_channel", params.source_channel.split(","));
+    // "me" resolves to the signed-in recruiter's own id so a single shared
+    // link/bookmark ("My Candidates") works for whoever is logged in,
+    // rather than baking in one recruiter's uuid.
+    if (params.owner) {
+      qq = qq.eq("owner_id", params.owner === "me" ? currentUser?.id ?? "00000000-0000-0000-0000-000000000000" : params.owner);
+    }
     if (params.current_industry) qq = qq.in("current_industry", params.current_industry.split(","));
     if (params.previous_industry) {
       const vals = params.previous_industry.split(",");
@@ -359,7 +370,7 @@ export default async function CandidatesPage({
   const baseQuery = supabase
     .from("candidates")
     .select(
-      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, recruiter_assessment, segment_data, resume_file_url, ai_summary, created_at"
+      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, created_at"
     )
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);
@@ -435,6 +446,15 @@ export default async function CandidatesPage({
     .select("id, role_title, client_name")
     .eq("status", "open")
     .order("created_at", { ascending: false });
+
+  // Every recruiter/admin, for the Owner column's reassign dropdown and the
+  // "My Candidates" pill -- one shared fetch instead of each row/filter
+  // hitting profiles separately.
+  const { data: teamMembers } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .in("role", ["recruiter", "admin"])
+    .order("full_name");
 
   // Single unfiltered scan of the candidates table covering both the
   // sub-domain filter dropdown and the status/origin stat tiles -- these
@@ -753,6 +773,7 @@ export default async function CandidatesPage({
           {params.b2b_motion && <input type="hidden" name="b2b_motion" value={params.b2b_motion} />}
           {params.b2c_motion && <input type="hidden" name="b2c_motion" value={params.b2c_motion} />}
           {params.source_channel && <input type="hidden" name="source_channel" value={params.source_channel} />}
+          {params.owner && <input type="hidden" name="owner" value={params.owner} />}
           <button
             type="submit"
             className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium px-3.5 py-1.5"
@@ -762,6 +783,21 @@ export default async function CandidatesPage({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap mt-3">
+          {/* Defaults every recruiter's view to their own book of candidates
+              -- with 10 recruiters sharing one table, "everything" is the
+              wrong default and "mine" is the one that matters most, most
+              of the time. One click switches to All. */}
+          <Link
+            href={qs({ owner: params.owner ? undefined : "me" })}
+            className={`text-[12px] font-semibold px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
+              params.owner
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+            }`}
+          >
+            {params.owner === "me" ? "★ My Candidates" : params.owner ? "★ Filtered by owner" : "My Candidates"}
+          </Link>
+          <span className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" aria-hidden />
           <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide shrink-0">
             Current profile type
           </span>
@@ -1141,6 +1177,7 @@ export default async function CandidatesPage({
       <CandidatesTable
         candidates={candidatesWithResumeUrls as never}
         openMandates={openMandates ?? []}
+        teamMembers={teamMembers ?? []}
         mandateLinksByCandidate={mandateLinksByCandidate}
         totalCount={totalFiltered}
         rangeStart={rangeStart}

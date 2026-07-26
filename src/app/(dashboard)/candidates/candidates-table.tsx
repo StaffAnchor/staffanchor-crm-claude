@@ -42,6 +42,15 @@ export type OpenMandate = {
   client_name: string;
 };
 
+// A recruiter/admin who can own a candidate record -- fetched once
+// server-side (candidates/page.tsx) and passed down so the Owner column's
+// dropdown and the "My Candidates" filter don't each need their own fetch.
+export type TeamMember = {
+  id: string;
+  full_name: string | null;
+  email: string;
+};
+
 export type CandidateRow = {
   id: string;
   candidate_number: number | null;
@@ -68,6 +77,8 @@ export type CandidateRow = {
   created_by: string | null;
   recruiter_assessment: Record<string, unknown> | null;
   segment_data: Record<string, unknown> | null;
+  owner_id: string | null;
+  verification_level: number | null;
   resume_file_url: string | null;
   // Pre-computed server-side (candidates/page.tsx batches every visible
   // row's resume into one createSignedUrls call) so this row never needs
@@ -404,7 +415,15 @@ const ROLE_TYPE_LABEL: Record<string, string> = {
 type RenderHelpers = {
   updateField: (id: string, field: string, value: unknown) => Promise<void>;
   updateSegmentField: (id: string, current: Record<string, unknown> | null, key: string, value: unknown) => Promise<void>;
+  updateVerification: (id: string, level: number) => Promise<void>;
+  teamMembers: TeamMember[];
 };
+
+// Recruiter/admin display name, first-name-first, falling back to email --
+// same convention as elsewhere (employer-inquiries owner dropdown).
+function teamMemberLabel(m: TeamMember) {
+  return m.full_name?.trim() || m.email;
+}
 
 type ColumnDef = {
   key: string;
@@ -418,6 +437,65 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "created_at",
     label: "Profile Created",
     render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{formatDate(c.created_at)}</span>,
+  },
+  {
+    key: "owner",
+    label: "Owner",
+    // Every candidate is auto-assigned an owner on creation (round-robin
+    // trigger), but this stays reassignable by any recruiter -- e.g. when
+    // a specialist should take over from whoever the rotation landed on.
+    render: (c, { updateField, teamMembers }) => (
+      <InlineSelectCell
+        value={c.owner_id}
+        options={teamMembers.map((m) => m.id)}
+        labels={Object.fromEntries(teamMembers.map((m) => [m.id, teamMemberLabel(m)]))}
+        placeholder="Unassigned"
+        renderClosed={(v) => {
+          const m = teamMembers.find((tm) => tm.id === v);
+          return (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/50 text-[9px] font-semibold text-blue-700 dark:text-blue-300">
+                {initialsFor(m ? teamMemberLabel(m) : "?")}
+              </span>
+              <span className="text-slate-600 dark:text-slate-300 truncate max-w-[100px]">{m ? teamMemberLabel(m) : v}</span>
+            </span>
+          );
+        }}
+        onSave={(v) => updateField(c.id, "owner_id", v)}
+      />
+    ),
+  },
+  {
+    key: "verification_level",
+    label: "Verified",
+    // 0=self-reported / 1=recruiter call / 2=reference triangulated /
+    // 3=outcome confirmed -- a dated, tiered status instead of a binary
+    // badge that silently goes stale. Bumping it here also stamps
+    // verified_at/verified_by so the date shown elsewhere (passport,
+    // client shortlist) stays honest.
+    render: (c, { updateVerification }) => {
+      const level = c.verification_level ?? 0;
+      const TONE: Record<number, BadgeTone> = { 0: "neutral", 1: "info", 2: "accent", 3: "success" };
+      const LABEL: Record<number, string> = {
+        0: "Self-reported",
+        1: "Call-verified",
+        2: "Reference-checked",
+        3: "Outcome-confirmed",
+      };
+      return (
+        <InlineSelectCell
+          value={String(level)}
+          options={["0", "1", "2", "3"]}
+          labels={{ "0": LABEL[0], "1": LABEL[1], "2": LABEL[2], "3": LABEL[3] }}
+          renderClosed={(v) => (
+            <Badge tone={TONE[Number(v)] ?? "neutral"} size="sm" className="normal-case tracking-normal">
+              {LABEL[Number(v)] ?? v}
+            </Badge>
+          )}
+          onSave={(v) => updateVerification(c.id, Number(v))}
+        />
+      );
+    },
   },
   {
     key: "email",
@@ -757,6 +835,8 @@ const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
 
 const DEFAULT_VISIBLE = new Set([
   "created_at",
+  "owner",
+  "verification_level",
   "origin",
   "email",
   "phone",
@@ -802,6 +882,7 @@ export type MandateLink = { mandate_id: string; role_title: string; client_name:
 export default function CandidatesTable({
   candidates,
   openMandates,
+  teamMembers = [],
   mandateLinksByCandidate = {},
   totalCount,
   rangeStart,
@@ -809,6 +890,7 @@ export default function CandidatesTable({
 }: {
   candidates: CandidateRow[];
   openMandates: OpenMandate[];
+  teamMembers?: TeamMember[];
   mandateLinksByCandidate?: Record<string, MandateLink[]>;
   // When provided (server knows the real filtered total, not just this
   // page's row count), the header switches from "N candidates" to
@@ -1073,6 +1155,29 @@ export default function CandidatesTable({
   async function updateSegmentField(id: string, current: Record<string, unknown> | null, key: string, value: unknown) {
     const nextSegmentData = { ...(current ?? {}), [key]: value };
     const { error } = await supabase.from("candidates").update({ segment_data: nextSegmentData }).eq("id", id);
+    if (error) {
+      window.alert(`Couldn't save: ${error.message}`);
+      return;
+    }
+    router.refresh();
+  }
+
+  // Bumping verification level stamps who verified it and when, so the
+  // badge shown here (and later on the client shortlist / public passport)
+  // is a dated claim rather than an undated "verified" toggle that quietly
+  // goes stale -- the whole point of tiered verification per the audit.
+  async function updateVerification(id: string, level: number) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("candidates")
+      .update({
+        verification_level: level,
+        verified_at: new Date().toISOString(),
+        verified_by: user?.id ?? null,
+      })
+      .eq("id", id);
     if (error) {
       window.alert(`Couldn't save: ${error.message}`);
       return;
@@ -1467,7 +1572,7 @@ export default function CandidatesTable({
                 </td>
                 {visibleColumns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
-                    {col.render(c, { updateField, updateSegmentField })}
+                    {col.render(c, { updateField, updateSegmentField, updateVerification, teamMembers })}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-right">
