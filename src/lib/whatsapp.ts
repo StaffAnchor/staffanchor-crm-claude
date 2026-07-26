@@ -14,6 +14,24 @@
 
 const GRAPH_API_VERSION = "v20.0";
 
+/**
+ * Candidate phone numbers are stored as plain 10-digit local numbers
+ * (e.g. "9818881142"), with no country code -- Meta's Cloud API requires
+ * full E.164-ish digits ("919818881142") to match a number against its
+ * allow-list / WhatsApp account. Without this, Meta returns error 131030
+ * ("Recipient phone number not in allowed list") even when the number IS
+ * whitelisted, because "9818881142" != "919818881142" byte-for-byte.
+ * StaffAnchor only operates in India today, so bare 10-digit numbers are
+ * assumed local (+91); anything already carrying a country code (11+
+ * digits, or an explicit leading 0/91) is left alone.
+ */
+function toE164India(raw: string): string {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 11 && digits.startsWith("0")) return `91${digits.slice(1)}`;
+  return digits;
+}
+
 export type SendTemplateResult =
   | { ok: true; metaMessageId: string }
   | { ok: false; status: "not_configured"; error: string }
@@ -53,7 +71,7 @@ export async function sendWhatsAppTemplate({
     };
   }
 
-  const toDigitsOnly = to.replace(/[^\d]/g, "");
+  const toDigitsOnly = toE164India(to);
   if (!toDigitsOnly) {
     return { ok: false, status: "send_failed", error: "Candidate has no usable phone number." };
   }
@@ -139,7 +157,7 @@ export async function sendWhatsAppFreeform({
     };
   }
 
-  const toDigitsOnly = to.replace(/[^\d]/g, "");
+  const toDigitsOnly = toE164India(to);
   if (!toDigitsOnly) {
     return { ok: false, status: "send_failed", error: "Candidate has no usable phone number." };
   }
