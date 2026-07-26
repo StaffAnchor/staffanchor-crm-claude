@@ -32,8 +32,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-50 px-4">
+      {/* Same textured-backdrop treatment used on the candidate/client login
+          screens -- a soft dot grid plus two muted colour blooms -- so the
+          internal sign-in screen doesn't look like a bare, unstyled form. */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_1px_1px,theme(colors.slate.300)_1px,transparent_0)] bg-[length:22px_22px] opacity-40" />
+      <div className="pointer-events-none absolute -top-24 -left-16 -z-10 h-72 w-72 rounded-full bg-blue-200/50 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -right-16 -z-10 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
+
+      <div className="w-full max-w-sm bg-white/90 border border-slate-200/80 rounded-xl shadow-lg shadow-slate-200/60 backdrop-blur-sm p-8">
         <div className="mb-6">
           <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">
             StaffAnchor
