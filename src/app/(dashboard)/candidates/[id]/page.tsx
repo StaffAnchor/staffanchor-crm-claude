@@ -19,6 +19,7 @@ import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
 import QuickContactActions from "./quick-contact-actions";
 import ActivityLogPanel from "./activity-log-panel";
+import WhatsAppPanel from "./whatsapp-panel";
 import { SalesPassportView } from "@/components/passport/sales-passport-view";
 import { mergeTimelines, computeStabilityScore, computeDomainConsistencyScore } from "@/lib/career-timeline";
 import { formatExperience } from "@/lib/format-experience";
@@ -235,6 +236,13 @@ export default async function CandidateDetailPage({
     created_at: a.created_at,
     actor_name: (a.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
   })) as import("./activity-log-panel").Activity[];
+
+  const { data: whatsappRows } = await supabase
+    .from("whatsapp_messages")
+    .select("id, direction, body_preview, status, created_at")
+    .eq("candidate_id", id)
+    .order("created_at", { ascending: true })
+    .limit(50);
 
   const { data: links } = await supabase
     .from("candidate_mandate_links")
@@ -605,6 +613,16 @@ export default async function CandidateDetailPage({
                 {
                   label: "Activity",
                   content: <ActivityLogPanel candidateId={candidate.id} activities={activities} />,
+                },
+                {
+                  label: "WhatsApp",
+                  content: (
+                    <WhatsAppPanel
+                      candidateId={candidate.id}
+                      hasPhone={!!candidate.phone}
+                      messages={(whatsappRows ?? []) as import("./whatsapp-panel").WhatsAppMessage[]}
+                    />
+                  ),
                 },
                 {
                   label: "Mandates",

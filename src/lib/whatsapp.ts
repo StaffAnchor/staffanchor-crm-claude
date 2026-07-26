@@ -109,6 +109,91 @@ export async function sendWhatsAppTemplate({
 }
 
 /**
+ * Sends a freeform text message via the Cloud API -- used for AI-drafted
+ * reply suggestions (see generate-reply-draft.ts + /api/whatsapp/send-reply),
+ * which are open-ended text, not a pre-approved template.
+ *
+ * Important constraint, surfaced to the caller rather than hidden: Meta's
+ * Cloud API only allows freeform text within the 24-hour "customer service
+ * window" after the customer's last inbound message -- outside that window
+ * this call fails and only an approved template can reach them. This is a
+ * real WhatsApp Business platform rule, not something worth working around;
+ * the UI should tell the recruiter plainly when a send fails for this reason
+ * so they know to fall back to a template message instead.
+ */
+export async function sendWhatsAppFreeform({
+  to,
+  body,
+}: {
+  to: string;
+  body: string;
+}): Promise<SendTemplateResult> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!accessToken || !phoneNumberId) {
+    return {
+      ok: false,
+      status: "not_configured",
+      error: "WhatsApp isn't connected yet -- WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID aren't set.",
+    };
+  }
+
+  const toDigitsOnly = to.replace(/[^\d]/g, "");
+  if (!toDigitsOnly) {
+    return { ok: false, status: "send_failed", error: "Candidate has no usable phone number." };
+  }
+  if (!body.trim()) {
+    return { ok: false, status: "send_failed", error: "Message body is empty." };
+  }
+
+  try {
+    const res = await fetch(`https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: toDigitsOnly,
+        type: "text",
+        text: { body },
+      }),
+    });
+
+    const responseBody = await res.json();
+    if (!res.ok) {
+      const rawError: string = responseBody?.error?.message ?? `Meta API returned ${res.status}`;
+      // Meta's error code 131047 / message mentioning "24 hour" or "window"
+      // is exactly the customer-service-window rule described above --
+      // surface it plainly rather than as a generic failure.
+      const isWindowError = /24.?hour|window|re-?engagement/i.test(rawError) || responseBody?.error?.code === 131047;
+      return {
+        ok: false,
+        status: "send_failed",
+        error: isWindowError
+          ? "This candidate hasn't messaged in the last 24 hours, so WhatsApp only allows a pre-approved template, not a freeform reply. Send a template update instead."
+          : rawError,
+      };
+    }
+
+    const metaMessageId = responseBody?.messages?.[0]?.id;
+    if (!metaMessageId) {
+      return { ok: false, status: "send_failed", error: "No message id in Meta's response." };
+    }
+
+    return { ok: true, metaMessageId };
+  } catch (err) {
+    return {
+      ok: false,
+      status: "send_failed",
+      error: err instanceof Error ? err.message : "Unknown error calling Meta API.",
+    };
+  }
+}
+
+/**
  * Maps a recruiter_inbox task_type to the WhatsApp template that should be
  * sent for it. Template *names* are read from env vars rather than
  * hardcoded, since the actual approved template names in Meta's Business

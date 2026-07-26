@@ -16,12 +16,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type TimeSavedActionType =
   | "auto_stage_progression" // client acted via portal/shortlist link -- recruiter didn't have to manually update the stage + notify the team
   | "call_summary_draft" // AI turned a screening call's free-text answers into a permanent, searchable summary
-  | "duplicate_detected"; // bulk CV upload caught a duplicate before a recruiter re-keyed an existing candidate
+  | "duplicate_detected" // bulk CV upload caught a duplicate before a recruiter re-keyed an existing candidate
+  | "ai_reply_draft"; // recruiter sent an AI-drafted WhatsApp reply instead of typing one from scratch
 
 export const ACTION_LABELS: Record<TimeSavedActionType, string> = {
   auto_stage_progression: "Auto stage update (client-initiated)",
   call_summary_draft: "AI call/interview summary",
   duplicate_detected: "Duplicate caught at intake",
+  ai_reply_draft: "AI-drafted WhatsApp reply",
 };
 
 // Conservative, named estimates -- see comment above. Revise here if real
@@ -31,6 +33,7 @@ export const ESTIMATED_MINUTES: Record<TimeSavedActionType, number> = {
   auto_stage_progression: 3, // manual stage update + drafting/sending a status ping to the team
   call_summary_draft: 7, // manually writing up call notes into a reusable summary
   duplicate_detected: 4, // time wasted re-creating and then untangling a duplicate candidate record
+  ai_reply_draft: 2, // typing a considered WhatsApp reply from scratch vs. reviewing/editing a draft
 };
 
 export async function logTimeSaved(
