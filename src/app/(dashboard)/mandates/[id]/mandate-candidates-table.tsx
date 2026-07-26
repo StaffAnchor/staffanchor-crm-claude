@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MessageCircleQuestion, Loader2, Mail, FolderPlus } from "lucide-react";
+import { MessageCircleQuestion, Loader2, Mail, FolderPlus, Send } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
 import { STAGES, applyStageChange, type Stage, type StageSource } from "@/lib/mandate-stage";
 import { StageTimeline } from "@/components/ui/stage-timeline";
@@ -90,6 +90,77 @@ export default function MandateCandidatesTable({
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [chosenGroupId, setChosenGroupId] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
+
+  // Email selected candidates (summary + resumes attached) straight to one
+  // or more client contacts, from client_contacts on this mandate's client
+  // -- passed down server-side in mandateContext so the picker opens
+  // instantly with no extra round trip. Sending auto-marks every included
+  // candidate in_shortlist + stage "submitted" (see the API route), the
+  // same real-world event as "Move to client shortlist" above, just
+  // triggered by the email going out instead of a separate manual click.
+  const clientContacts = (mandateContext.clientContacts as { id: string; full_name: string; email: string | null; is_primary: boolean }[]) ?? [];
+  const contactsWithEmail = clientContacts.filter((c) => c.email);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [chosenContactIds, setChosenContactIds] = useState<Set<string>>(new Set());
+  const [sendingClientEmail, setSendingClientEmail] = useState(false);
+
+  function openEmailModal() {
+    // Default to the primary contact if there is one, so the common case
+    // (one key contact) is a single click away instead of forcing a pick
+    // every time.
+    const primary = contactsWithEmail.find((c) => c.is_primary);
+    setChosenContactIds(new Set(primary ? [primary.id] : []));
+    setEmailModalOpen(true);
+  }
+
+  function toggleContact(contactId: string) {
+    setChosenContactIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(contactId)) next.delete(contactId);
+      else next.add(contactId);
+      return next;
+    });
+  }
+
+  async function handleSendToClient() {
+    if (chosenContactIds.size === 0) return;
+    setSendingClientEmail(true);
+    setMessage(null);
+    const candidateIds = Array.from(selected)
+      .map((linkId) => rows.find((r) => r.id === linkId)?.candidate.id)
+      .filter((v): v is string => Boolean(v));
+    try {
+      const res = await fetch(`/api/mandates/${mandateContext.mandateId}/email-to-client`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateIds, contactIds: Array.from(chosenContactIds) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to email the client.");
+      const ids = Array.from(selected);
+      setRows((prev) =>
+        prev.map((r) =>
+          ids.includes(r.id)
+            ? { ...r, in_shortlist: true, stage: (STAGE_ORDER[r.stage] ?? 0) >= STAGE_ORDER["submitted"] ? r.stage : "submitted" }
+            : r
+        )
+      );
+      setEmailModalOpen(false);
+      setSelected(new Set());
+      setMessage({
+        type: "success",
+        text:
+          `Emailed ${data.candidateCount} candidate${data.candidateCount === 1 ? "" : "s"} to ${data.sentTo.join(", ")}` +
+          ` and marked ${data.candidateCount === 1 ? "them" : "them all"} submitted to client.` +
+          (data.resumeless?.length > 0 ? ` (No resume on file for: ${data.resumeless.join(", ")}.)` : ""),
+      });
+      router.refresh();
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to email the client." });
+    } finally {
+      setSendingClientEmail(false);
+    }
+  }
 
   function toggleRow(linkId: string) {
     setSelected((prev) => {
@@ -374,6 +445,19 @@ export default function MandateCandidatesTable({
               Email JD
             </button>
             <button
+              onClick={openEmailModal}
+              disabled={contactsWithEmail.length === 0}
+              className="flex items-center gap-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
+              title={
+                contactsWithEmail.length === 0
+                  ? "This client has no contact with an email on file yet -- add one from the client's page"
+                  : "Emails these candidates' summaries + resumes to a client contact, and marks them submitted to client"
+              }
+            >
+              <Send className="w-3 h-3" />
+              Email to Client
+            </button>
+            <button
               onClick={openGroupModal}
               disabled={busy}
               className="flex items-center gap-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
@@ -615,6 +699,49 @@ export default function MandateCandidatesTable({
                 className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
               >
                 {busy ? "Adding..." : "Add"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {emailModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setEmailModalOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              Email {selected.size} candidate{selected.size === 1 ? "" : "s"} to the client
+            </h3>
+            <p className="text-[12px] text-slate-400 mb-3">
+              Sends a summary + resumes to the contact(s) you pick, and marks {selected.size === 1 ? "this candidate" : "these candidates"} submitted
+              to client / in the client shortlist.
+            </p>
+            <div className="space-y-1.5 mb-3 max-h-48 overflow-y-auto">
+              {contactsWithEmail.map((c) => (
+                <label
+                  key={c.id}
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                >
+                  <input type="checkbox" checked={chosenContactIds.has(c.id)} onChange={() => toggleContact(c.id)} />
+                  <span className="flex-1">
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{c.full_name}</span>
+                    {c.is_primary && <span className="ml-1.5 text-[10px] text-purple-600 font-medium">Primary</span>}
+                    <span className="block text-[11px] text-slate-400">{c.email}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEmailModalOpen(false)}
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendToClient}
+                disabled={chosenContactIds.size === 0 || sendingClientEmail}
+                className="flex-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+              >
+                {sendingClientEmail ? "Sending..." : "Send"}
               </button>
             </div>
           </div>

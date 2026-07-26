@@ -63,6 +63,17 @@ export default async function MandateDetailPage({
     .eq("mandate_id", id)
     .maybeSingle();
 
+  // Fetched here (not lazily on the client) so the "Email to Client" bulk
+  // action's contact picker opens instantly with the list already in hand,
+  // same reasoning as fetching allCandidates/allStaffProfiles above.
+  const { data: clientContacts } = mandate.client_id
+    ? await supabase
+        .from("client_contacts")
+        .select("id, full_name, email, is_primary")
+        .eq("client_id", mandate.client_id)
+        .order("is_primary", { ascending: false })
+    : { data: [] };
+
   // Same staleness check the daily email digest runs, but instant here --
   // no need to wait for cron to see it once you're already on the page.
   //
@@ -256,6 +267,8 @@ export default async function MandateDetailPage({
             cities: mandate.cities ?? (mandate.city ? [mandate.city] : []),
             client_name: mandate.client_name,
             screening_questions: mandate.screening_questions ?? [],
+            clientId: mandate.client_id,
+            clientContacts: clientContacts ?? [],
           }}
         />
         }
