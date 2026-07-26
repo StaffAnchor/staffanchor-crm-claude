@@ -16,9 +16,11 @@ export default function ShortlistLinkPanel({
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const url = existingToken
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/shortlist/${existingToken}`
-    : null;
+  // Hardcoded to the branded client-facing subdomain rather than
+  // window.location.origin -- so the link shown/copied here is always the
+  // short clients.staffanchor.com URL, regardless of which host the
+  // recruiter is viewing the CRM from.
+  const url = existingToken ? `https://clients.staffanchor.com/shortlist/${existingToken}` : null;
 
   async function handleGenerate() {
     setCreating(true);

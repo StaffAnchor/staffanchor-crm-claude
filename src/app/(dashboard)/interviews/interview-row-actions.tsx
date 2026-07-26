@@ -72,7 +72,10 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
         .insert({ token, link_id: row.id, expires_at: expiresAt });
       if (tokenErr) throw tokenErr;
 
-      setGeneratedUrl(`${window.location.origin}/schedule/${token}`);
+      // Same client-facing branded subdomain as the shortlist link, rather
+      // than window.location.origin, so this link is always short and
+      // branded regardless of which host the recruiter is on.
+      setGeneratedUrl(`https://clients.staffanchor.com/schedule/${token}`);
     } catch (err) {
       setLinkError(err instanceof Error ? err.message : "Could not create the scheduling link.");
     } finally {

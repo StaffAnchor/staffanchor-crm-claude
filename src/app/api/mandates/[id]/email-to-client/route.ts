@@ -99,7 +99,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     token = crypto.randomUUID().replace(/-/g, "");
     await supabase.from("shortlist_tokens").insert({ token, mandate_id: mandateId });
   }
-  const shortlistUrl = `${req.nextUrl.origin}/shortlist/${token}`;
+  // Hardcoded to the branded client-facing subdomain rather than
+  // req.nextUrl.origin -- otherwise this would follow whatever host the
+  // recruiter happened to be on (e.g. the raw .vercel.app URL) instead of
+  // always handing clients the short, branded link.
+  const shortlistUrl = `https://clients.staffanchor.com/shortlist/${token}`;
 
   type Cand = {
     id: string;
