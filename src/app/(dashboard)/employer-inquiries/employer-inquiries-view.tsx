@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Phone, Building2, Briefcase, ArrowRight } from "lucide-react";
+import { Mail, Phone, Building2, Briefcase, ArrowRight, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -128,6 +128,14 @@ export default function EmployerInquiriesView({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  // Bulk-select for spam cleanup -- most spam here is bot-submitted garbage
+  // (garbled names, dotted-gmail-trick emails, random digit "phone numbers")
+  // that a recruiter wants gone permanently, not just relabeled "Dismissed"
+  // while still cluttering the list. This is a hard delete, not a status
+  // change -- there is deliberately no undo, since these rows have zero
+  // legitimate value once identified as spam.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   // For a given inquiry's category, show the specialists first (matching
   // team member specialties), then everyone else -- so the recruiter doesn't
@@ -332,9 +340,77 @@ export default function EmployerInquiriesView({
     }
   }
 
+  function toggleSelected(id: string) {
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllFiltered() {
+    setSelected((cur) => {
+      const allSelected = filtered.length > 0 && filtered.every((r) => cur.has(r.id));
+      if (allSelected) return new Set();
+      return new Set(filtered.map((r) => r.id));
+    });
+  }
+
+  async function deleteSelected() {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    if (!window.confirm(`Permanently delete ${ids.length} inquir${ids.length === 1 ? "y" : "ies"}? This can't be undone.`)) {
+      return;
+    }
+    setDeleting(true);
+    setError(null);
+    const { error: deleteError } = await supabase.from("employer_inquiries").delete().in("id", ids);
+    setDeleting(false);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+    setRows((cur) => cur.filter((r) => !selected.has(r.id)));
+    setSelected(new Set());
+  }
+
   return (
     <div>
+      {selected.size > 0 && (
+        <div className="flex items-center justify-between gap-3 mb-3 rounded-ros-md border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-3 py-2">
+          <p className="text-[12.5px] font-medium text-rose-700 dark:text-rose-300">
+            {selected.size} selected
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-[12px] font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            >
+              Clear
+            </button>
+            <button
+              onClick={deleteSelected}
+              disabled={deleting}
+              className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
+            >
+              <Trash2 className="w-3 h-3" />
+              {deleting ? "Deleting…" : "Delete permanently"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-1.5 mb-3">
+        <label className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 mr-1 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={filtered.length > 0 && filtered.every((r) => selected.has(r.id))}
+            onChange={toggleSelectAllFiltered}
+            className="rounded border-slate-300 dark:border-slate-600"
+          />
+          Select all
+        </label>
         {FILTERS.map((f) => (
           <button
             key={f.key}
@@ -361,7 +437,14 @@ export default function EmployerInquiriesView({
           return (
             <Card key={row.id} padded={false} className="p-4">
               <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
+                <div className="flex items-start gap-3 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(row.id)}
+                    onChange={() => toggleSelected(row.id)}
+                    className="mt-1 rounded border-slate-300 dark:border-slate-600 shrink-0"
+                  />
+                  <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {row.company_name ?? row.full_name}
@@ -473,6 +556,7 @@ export default function EmployerInquiriesView({
                       </span>
                     )}
                     <span>{new Date(row.created_at).toLocaleDateString()}</span>
+                  </div>
                   </div>
                 </div>
 
