@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { formatExperience } from "@/lib/format-experience";
 import { createClient } from "@supabase/supabase-js";
+import { cookieNameFor, verifyShortlistCookie } from "@/lib/shortlist-auth";
+import AccessGate from "./access-gate";
 import FeedbackButtons from "./feedback-buttons";
 import ResumePreview from "./resume-preview";
 import ProfilePassportTrigger from "./profile-passport";
@@ -104,6 +107,18 @@ export default async function ClientShortlistPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+
+  // Email-OTP gate -- no candidate data is fetched or rendered at all until
+  // the visitor has proven control of an email registered as a
+  // client_contacts row for this mandate's client (see access-gate.tsx +
+  // /api/shortlist/[token]/request-code|verify-code). Previously the token
+  // string alone was sufficient, so a forwarded link gave anyone full access.
+  const cookieStore = await cookies();
+  const verifiedEmail = verifyShortlistCookie(cookieStore.get(cookieNameFor(token))?.value, token);
+  if (!verifiedEmail) {
+    return <AccessGate token={token} />;
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!

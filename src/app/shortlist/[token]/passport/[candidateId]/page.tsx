@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { SalesPassportView } from "@/components/passport/sales-passport-view";
+import { cookieNameFor, verifyShortlistCookie } from "@/lib/shortlist-auth";
+import AccessGate from "../../access-gate";
 
 // Full-page Sales Passport for a hiring manager on the no-login shortlist
 // link -- the same read-only view rendered on the recruiter's CRM "Passport"
@@ -19,6 +22,16 @@ export default async function ClientPassportPage({
   params: Promise<{ token: string; candidateId: string }>;
 }) {
   const { token, candidateId } = await params;
+
+  // Same email-OTP gate as the main shortlist listing (see page.tsx) --
+  // this route carries a full candidate Sales Passport, so it needs the
+  // same bar, not just a valid token.
+  const cookieStore = await cookies();
+  const verifiedEmail = verifyShortlistCookie(cookieStore.get(cookieNameFor(token))?.value, token);
+  if (!verifiedEmail) {
+    return <AccessGate token={token} />;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

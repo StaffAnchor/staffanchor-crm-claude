@@ -47,7 +47,11 @@ export async function updateSession(request: NextRequest) {
     // webhooks) with no staff cookie -- authorizes itself via
     // WHATSAPP_VERIFY_TOKEN on the GET handshake; same class of bug as
     // the two routes above, exempted up front this time.
-    request.nextUrl.pathname.startsWith("/api/whatsapp/webhook");
+    request.nextUrl.pathname.startsWith("/api/whatsapp/webhook") ||
+    // Client contacts requesting/verifying a shortlist-link access code have
+    // no staff cookie either -- these authorize themselves (client_contacts
+    // membership check + the code itself), same class of bug again.
+    /^\/api\/shortlist\/[^/]+\/(request-code|verify-code)$/.test(request.nextUrl.pathname);
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||

@@ -173,13 +173,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const text = `${greeting},\n\nPlease find below the candidate${candidates.length === 1 ? "" : "s"} we'd like to submit for ${mandate.role_title}${
     candidates.length === 1 ? "'s" : ""
-  }:\n\n${candidateLines}\n\nResumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.\n\nYou can also review the full shortlist, with more detail on each candidate, here: ${shortlistUrl}\n\nLet us know your thoughts whenever convenient.\n\nThanks,\n${recruiterName}\nStaffAnchor`;
+  }:\n\n${candidateLines}\n\nResumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.\n\nYou can also review the full shortlist, with more detail on each candidate, here: ${shortlistUrl}\n(Opening it will ask you to verify this email address with a one-time code -- that's expected, it's how we keep the shortlist private to this client.)\n\nLet us know your thoughts whenever convenient.\n\nThanks,\n${recruiterName}\nStaffAnchor`;
 
   const html = `<p>${greeting},</p>
 <p>Please find below the candidate${candidates.length === 1 ? "" : "s"} we'd like to submit for <strong>${mandate.role_title}</strong>:</p>
 <ul>${candidateListHtml}</ul>
 <p>Resumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.</p>
 <p>You can also review the full shortlist, with more detail on each candidate, here: <a href="${shortlistUrl}">${shortlistUrl}</a></p>
+<p style="color:#94a3b8;font-size:12px;">Opening it will ask you to verify this email address with a one-time code -- that's expected, it's how we keep the shortlist private to this client.</p>
 <p>Let us know your thoughts whenever convenient.</p>
 <p>Thanks,<br/>${recruiterName}<br/>StaffAnchor</p>`;
 
