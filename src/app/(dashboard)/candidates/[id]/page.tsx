@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Phone, Mail, MapPin, FileText, MessageCircle, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Phone, Mail, MapPin, FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -17,6 +17,8 @@ import SendInviteButton from "./send-invite-button";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
+import QuickContactActions from "./quick-contact-actions";
+import ActivityLogPanel from "./activity-log-panel";
 import { SalesPassportView } from "@/components/passport/sales-passport-view";
 import { mergeTimelines, computeStabilityScore, computeDomainConsistencyScore } from "@/lib/career-timeline";
 import { formatExperience } from "@/lib/format-experience";
@@ -217,6 +219,22 @@ export default async function CandidateDetailPage({
     .eq("entity", "candidate")
     .eq("entity_id", id)
     .order("at", { ascending: false });
+
+  const { data: activityRows } = await supabase
+    .from("activities")
+    .select("id, actor_id, kind, body, created_at, profiles(full_name)")
+    .eq("entity_type", "candidate")
+    .eq("entity_id", id)
+    .order("created_at", { ascending: false });
+
+  const activities = (activityRows ?? []).map((a) => ({
+    id: a.id,
+    actor_id: a.actor_id,
+    kind: a.kind,
+    body: a.body,
+    created_at: a.created_at,
+    actor_name: (a.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
+  })) as import("./activity-log-panel").Activity[];
 
   const { data: links } = await supabase
     .from("candidate_mandate_links")
@@ -455,29 +473,7 @@ export default async function CandidateDetailPage({
           )}
 
           <div className="flex items-center gap-2 mt-4">
-            {candidate.phone && (
-              <a
-                href={`tel:${candidate.phone}`}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
-              >
-                <Phone className="w-3 h-3" /> Call
-              </a>
-            )}
-            {candidate.phone && (
-              <a
-                href={`https://wa.me/91${candidate.phone.replace(/\D/g, "").slice(-10)}`}
-                target="_blank"
-                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
-              >
-                <MessageCircle className="w-3 h-3" /> WhatsApp
-              </a>
-            )}
-            <a
-              href={`mailto:${candidate.email}`}
-              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
-            >
-              <Mail className="w-3 h-3" /> Email
-            </a>
+            <QuickContactActions candidateId={candidate.id} phone={candidate.phone} email={candidate.email} />
             {resumeSignedUrl && resumeFileName && (
               <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} />
             )}
@@ -605,6 +601,10 @@ export default async function CandidateDetailPage({
                 {
                   label: "Notes",
                   content: <NotesPanel candidateId={candidate.id} notes={notes ?? []} />,
+                },
+                {
+                  label: "Activity",
+                  content: <ActivityLogPanel candidateId={candidate.id} activities={activities} />,
                 },
                 {
                   label: "Mandates",
