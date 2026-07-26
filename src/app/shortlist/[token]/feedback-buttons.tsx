@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, ThumbsUp, ThumbsDown } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -9,11 +9,31 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const OPTIONS: { value: string; label: string }[] = [
-  { value: "interested", label: "Interested" },
-  { value: "interview_requested", label: "Schedule interview" },
-  { value: "not_interested", label: "Not interested" },
+// Distinct color per action (not just a generic gray outline) so the
+// decision buttons read as the primary call-to-action on the card, not an
+// afterthought sitting below the candidate data -- selected state fills
+// solid in the same color, unselected stays tinted so it's still clearly a
+// button and not just data.
+const OPTIONS: { value: string; label: string; icon: typeof ThumbsUp; tone: "emerald" | "blue" | "rose" }[] = [
+  { value: "interested", label: "Interested", icon: ThumbsUp, tone: "emerald" },
+  { value: "interview_requested", label: "Schedule interview", icon: CalendarClock, tone: "blue" },
+  { value: "not_interested", label: "Not interested", icon: ThumbsDown, tone: "rose" },
 ];
+
+const TONE_CLASSES: Record<string, { selected: string; unselected: string }> = {
+  emerald: {
+    selected: "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/20",
+    unselected: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300",
+  },
+  blue: {
+    selected: "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20",
+    unselected: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300",
+  },
+  rose: {
+    selected: "bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-600/20",
+    unselected: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300",
+  },
+};
 
 function formatSlot(iso: string | null) {
   if (!iso) return null;
@@ -76,21 +96,25 @@ export default function FeedbackButtons({
 
   return (
     <div className="mt-4">
-      <div className="flex gap-2">
-        {OPTIONS.map((o) => (
-          <button
-            key={o.value}
-            onClick={() => handleClick(o.value)}
-            disabled={saving}
-            className={`text-sm px-3 py-1.5 rounded-lg font-medium disabled:opacity-60 ${
-              feedback === o.value
-                ? "bg-blue-600 text-white"
-                : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
-            }`}
-          >
-            {o.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-2">
+        {OPTIONS.map((o) => {
+          const Icon = o.icon;
+          const isSelected = feedback === o.value;
+          const tone = TONE_CLASSES[o.tone];
+          return (
+            <button
+              key={o.value}
+              onClick={() => handleClick(o.value)}
+              disabled={saving}
+              className={`flex items-center gap-1.5 text-sm px-3.5 py-2 rounded-lg font-semibold border transition-all duration-150 disabled:opacity-60 ${
+                isSelected ? tone.selected : tone.unselected
+              }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {o.label}
+            </button>
+          );
+        })}
       </div>
 
       {showScheduler && (
