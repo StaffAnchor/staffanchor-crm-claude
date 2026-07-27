@@ -24,6 +24,9 @@ export const SOURCES = [
   { key: "zoominfo", label: "ZoomInfo" },
   { key: "referral", label: "Referral" },
   { key: "inbound", label: "Inbound" },
+  // Leads converted over from Employer Inquiries via "Move to Sales Lead" --
+  // added to the sales_leads_source_check constraint alongside this entry.
+  { key: "website", label: "Website" },
 ] as const;
 
 export type SalesSource = (typeof SOURCES)[number]["key"];

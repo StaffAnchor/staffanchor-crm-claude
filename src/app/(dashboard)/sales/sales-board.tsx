@@ -27,6 +27,7 @@ const SOURCE_TONE: Record<string, "neutral" | "accent" | "success" | "warning" |
   zoominfo: "warning",
   referral: "neutral",
   inbound: "neutral",
+  website: "accent",
 };
 
 function isOverdue(dateStr: string | null) {
