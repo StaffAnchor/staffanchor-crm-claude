@@ -294,6 +294,11 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";
+  // "all" or one of SOURCES' keys -- lets a recruiter isolate e.g. just
+  // "Website" leads (the Employer Inquiries -> Sales Lead conversion path)
+  // to see how that channel is actually converting, same URL-synced
+  // pattern as the search box so it survives navigating into a lead.
+  const sourceFilter = searchParams.get("source") ?? "all";
 
   function setQuery(next: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -302,16 +307,24 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
     router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
   }
 
-  const filteredLeads = q.trim()
-    ? leads.filter((l) => {
-        const needle = q.trim().toLowerCase();
-        return (
-          l.company_name?.toLowerCase().includes(needle) ||
-          l.contact_name?.toLowerCase().includes(needle) ||
-          l.company_domain?.toLowerCase().includes(needle)
-        );
-      })
-    : leads;
+  function setSourceFilter(next: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next && next !== "all") params.set("source", next);
+    else params.delete("source");
+    router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+  }
+
+  const filteredLeads = leads
+    .filter((l) => sourceFilter === "all" || l.source === sourceFilter)
+    .filter((l) => {
+      if (!q.trim()) return true;
+      const needle = q.trim().toLowerCase();
+      return (
+        l.company_name?.toLowerCase().includes(needle) ||
+        l.contact_name?.toLowerCase().includes(needle) ||
+        l.company_domain?.toLowerCase().includes(needle)
+      );
+    });
 
   const byStage: Record<string, SalesLeadScoredRow[]> = {};
   STAGES.forEach((s) => (byStage[s.key] = []));
@@ -331,6 +344,18 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
           placeholder="Search company or contact..."
           className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
+        <select
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          className="text-[12.5px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        >
+          <option value="all">All sources</option>
+          {SOURCES.map((s) => (
+            <option key={s.key} value={s.key}>
+              {s.label}
+            </option>
+          ))}
+        </select>
         <p className="text-[11.5px] text-slate-400 flex-1">Click a card for full details, notes, and activity history.</p>
         <Button
           variant={sortByPriority ? "primary" : "secondary"}

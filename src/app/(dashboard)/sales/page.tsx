@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { StatTile } from "@/components/ui/stat-tile";
+import { Card } from "@/components/ui/card";
 import { Users2, Wallet, Trophy, TrendingUp } from "lucide-react";
 import SalesBoard from "./sales-board";
 import SalesBriefingPanel, { type SalesBriefingItem } from "./sales-briefing-panel";
-import { formatDealValue, type SalesLeadScoredRow } from "./sales-constants";
+import { formatDealValue, SOURCES, SOURCE_LABEL, type SalesLeadScoredRow } from "./sales-constants";
 
 export default async function SalesPage() {
   const supabase = await createClient();
@@ -38,6 +39,27 @@ export default async function SalesPage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const newThisMonth = rows.filter((r) => new Date(r.created_at) >= monthStart).length;
 
+  // Per-source conversion -- lets a recruiter see, e.g., whether the new
+  // "Website" channel (converted from Employer Inquiries) actually closes
+  // at a different rate than LinkedIn or Referral leads, not just how many
+  // leads came from each source. Sources with zero leads are hidden.
+  const bySource = SOURCES.map((s) => {
+    const sourceLeads = rows.filter((r) => r.source === s.key);
+    const sourceWon = sourceLeads.filter((r) => r.stage === "won").length;
+    const sourceLost = sourceLeads.filter((r) => r.stage === "lost").length;
+    const sourceClosed = sourceWon + sourceLost;
+    return {
+      key: s.key,
+      label: SOURCE_LABEL[s.key] ?? s.key,
+      total: sourceLeads.length,
+      won: sourceWon,
+      winRate: sourceClosed > 0 ? Math.round((sourceWon / sourceClosed) * 100) : null,
+      openValue: sourceLeads
+        .filter((r) => r.stage !== "won" && r.stage !== "lost")
+        .reduce((sum, r) => sum + (r.deal_value ?? 0), 0),
+    };
+  }).filter((s) => s.total > 0);
+
   return (
     <div>
       <div className="flex items-baseline justify-between mb-4">
@@ -56,6 +78,29 @@ export default async function SalesPage() {
         <StatTile icon={<Trophy className="w-4 h-4" />} label="Win rate (closed leads)" value={winRate !== null ? `${winRate}%` : "—"} />
         <StatTile icon={<TrendingUp className="w-4 h-4" />} label="New this month" value={newThisMonth} />
       </div>
+
+      {bySource.length > 1 && (
+        <Card className="mb-4">
+          <p className="text-[12.5px] font-semibold text-slate-700 dark:text-slate-300 mb-2.5">Conversion by source</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {bySource.map((s) => (
+              <div key={s.key} className="rounded-ros-md border border-slate-100 dark:border-slate-800 px-3 py-2.5">
+                <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">{s.label}</p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.total}</span>
+                  <span className="text-[11px] text-slate-400">lead{s.total === 1 ? "" : "s"}</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {s.winRate !== null ? `${s.winRate}% win rate (${s.won} won)` : "No closed leads yet"}
+                </p>
+                {s.openValue > 0 && (
+                  <p className="text-[11px] text-slate-400 mt-0.5">{formatDealValue(s.openValue, "INR")} open pipeline</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <SalesBriefingPanel initialItems={briefingItems} fetchError={briefingError?.message ?? null} />
 
