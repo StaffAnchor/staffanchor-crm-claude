@@ -7,6 +7,7 @@ import { ArrowLeft, Building2, Mail, Phone, Link2, Globe } from "lucide-react";
 import { SOURCE_LABEL, formatDealValue, type SalesActivityRow, type SalesLeadRow } from "../sales-constants";
 import LeadActivityPanel from "./lead-activity-panel";
 import LeadEditPanel from "./lead-edit-panel";
+import LeadOutreachPanel from "./lead-outreach-panel";
 
 export default async function SalesLeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -94,6 +95,10 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
       <div className="grid grid-cols-2 gap-4">
         <LeadEditPanel lead={row} />
         <LeadActivityPanel lead={row} activities={(activities ?? []) as SalesActivityRow[]} actorNames={actorNames} />
+      </div>
+
+      <div className="mt-4">
+        <LeadOutreachPanel leadId={row.id} />
       </div>
     </div>
   );

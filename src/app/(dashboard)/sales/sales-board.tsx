@@ -14,7 +14,9 @@ import {
   SOURCES,
   SOURCE_LABEL,
   formatDealValue,
-  type SalesLeadRow,
+  priorityTone,
+  priorityLabel,
+  type SalesLeadScoredRow,
 } from "./sales-constants";
 
 const SOURCE_TONE: Record<string, "neutral" | "accent" | "success" | "warning" | "info"> = {
@@ -32,7 +34,7 @@ function isOverdue(dateStr: string | null) {
   return new Date(dateStr) < new Date(new Date().toDateString());
 }
 
-async function moveStage(supabase: ReturnType<typeof createClient>, lead: SalesLeadRow, newStage: string) {
+async function moveStage(supabase: ReturnType<typeof createClient>, lead: SalesLeadScoredRow, newStage: string) {
   const nowIso = new Date().toISOString();
   const { error } = await supabase
     .from("sales_leads")
@@ -50,7 +52,7 @@ async function moveStage(supabase: ReturnType<typeof createClient>, lead: SalesL
   return true;
 }
 
-function LeadCard({ lead }: { lead: SalesLeadRow }) {
+function LeadCard({ lead }: { lead: SalesLeadScoredRow }) {
   const router = useRouter();
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
@@ -58,10 +60,18 @@ function LeadCard({ lead }: { lead: SalesLeadRow }) {
   return (
     <div className="rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-ros-sm hover:shadow-ros-md hover:-translate-y-px transition-all duration-200 ease-ros">
       <Link href={`/sales/${lead.id}`} className="block group">
-        <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
-          <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          {lead.company_name}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            {lead.company_name}
+          </p>
+          {/* Priority score from sales_leads_scored -- the "which lead should I
+              call first" signal. Recomputed fresh on every read, see the
+              sales_ae_assist_briefing_and_scoring migration. */}
+          <Badge tone={priorityTone(lead.priority_score)} size="sm" className="shrink-0 normal-case tracking-normal">
+            {priorityLabel(lead.priority_score)} · {lead.priority_score}
+          </Badge>
+        </div>
         {(lead.contact_name || lead.contact_title) && (
           <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             {lead.contact_name}
@@ -272,8 +282,9 @@ function AddLeadModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadRow[]; ownerNames: Record<string, string> }) {
+export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScoredRow[]; ownerNames: Record<string, string> }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [sortByPriority, setSortByPriority] = useState(false);
   void ownerNames; // reserved for a future "assigned to" filter
 
   // URL-based, like Candidates/Mandates -- so the search survives clicking
@@ -302,11 +313,14 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadRow[
       })
     : leads;
 
-  const byStage: Record<string, SalesLeadRow[]> = {};
+  const byStage: Record<string, SalesLeadScoredRow[]> = {};
   STAGES.forEach((s) => (byStage[s.key] = []));
   filteredLeads.forEach((l) => {
     (byStage[l.stage] ??= []).push(l);
   });
+  if (sortByPriority) {
+    Object.values(byStage).forEach((list) => list.sort((a, b) => b.priority_score - a.priority_score));
+  }
 
   return (
     <div>
@@ -318,6 +332,13 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadRow[
           className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
         <p className="text-[11.5px] text-slate-400 flex-1">Click a card for full details, notes, and activity history.</p>
+        <Button
+          variant={sortByPriority ? "primary" : "secondary"}
+          size="sm"
+          onClick={() => setSortByPriority((v) => !v)}
+        >
+          {sortByPriority ? "Sorted: priority" : "Sort by priority"}
+        </Button>
         <Button icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowAdd(true)}>
           Add lead
         </Button>

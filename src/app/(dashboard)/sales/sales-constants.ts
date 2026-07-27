@@ -63,6 +63,27 @@ export type SalesActivityRow = {
   at: string;
 };
 
+// Row shape from the sales_leads_scored view -- same columns as
+// sales_leads plus two computed-fresh-on-read fields used to sort "who
+// should I call next" instead of just "last touched". See the
+// sales_ae_assist_briefing_and_scoring migration for the scoring formula.
+export type SalesLeadScoredRow = SalesLeadRow & {
+  priority_score: number;
+  days_in_stage: number;
+};
+
+export function priorityTone(score: number): "success" | "warning" | "neutral" {
+  if (score >= 60) return "success";
+  if (score >= 35) return "warning";
+  return "neutral";
+}
+
+export function priorityLabel(score: number): string {
+  if (score >= 60) return "Hot";
+  if (score >= 35) return "Warm";
+  return "Cold";
+}
+
 export function formatDealValue(value: number | null, currency: string | null) {
   if (value == null) return null;
   const cur = currency ?? "INR";

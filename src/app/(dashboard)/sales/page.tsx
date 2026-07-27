@@ -2,16 +2,24 @@ import { createClient } from "@/lib/supabase/server";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Users2, Wallet, Trophy, TrendingUp } from "lucide-react";
 import SalesBoard from "./sales-board";
-import { formatDealValue, type SalesLeadRow } from "./sales-constants";
+import SalesBriefingPanel, { type SalesBriefingItem } from "./sales-briefing-panel";
+import { formatDealValue, type SalesLeadScoredRow } from "./sales-constants";
 
 export default async function SalesPage() {
   const supabase = await createClient();
 
+  // sales_leads_scored is a live-computed view (same columns as sales_leads
+  // plus priority_score/days_in_stage) -- see the
+  // sales_ae_assist_briefing_and_scoring migration. Recomputed on every
+  // read so the board never shows a stale score.
   const { data: leads } = await supabase
-    .from("sales_leads")
+    .from("sales_leads_scored")
     .select("*")
     .order("stage_updated_at", { ascending: false });
-  const rows = (leads ?? []) as SalesLeadRow[];
+  const rows = (leads ?? []) as SalesLeadScoredRow[];
+
+  const { data: briefing, error: briefingError } = await supabase.rpc("get_sales_briefing");
+  const briefingItems = (briefingError ? [] : briefing ?? []) as SalesBriefingItem[];
 
   const { data: profiles } = await supabase.from("profiles").select("id, full_name, email");
   const ownerNames: Record<string, string> = {};
@@ -48,6 +56,8 @@ export default async function SalesPage() {
         <StatTile icon={<Trophy className="w-4 h-4" />} label="Win rate (closed leads)" value={winRate !== null ? `${winRate}%` : "—"} />
         <StatTile icon={<TrendingUp className="w-4 h-4" />} label="New this month" value={newThisMonth} />
       </div>
+
+      <SalesBriefingPanel initialItems={briefingItems} fetchError={briefingError?.message ?? null} />
 
       <SalesBoard leads={rows} ownerNames={ownerNames} />
     </div>
