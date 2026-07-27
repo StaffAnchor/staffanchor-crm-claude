@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Phone, Building2, Briefcase, ArrowRight, Trash2 } from "lucide-react";
+import { Mail, Phone, Building2, Briefcase, ArrowRight, Trash2, ChevronDown, ChevronUp, Users2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ export interface EmployerInquiryRow {
   notes: string | null;
   converted_client_id: string | null;
   converted_mandate_id: string | null;
+  converted_lead_id: string | null;
   // Deeper brief fields -- present when the client filled these in
   // themselves via the shared mandate-request link, or when a recruiter
   // fills them in manually before promoting to a real mandate.
@@ -127,7 +128,26 @@ export default function EmployerInquiriesView({
   const [activeFilter, setActiveFilter] = useState<InquiryStatus | "all">("all");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Which row an error belongs to, so it renders under that specific card
+  // instead of one generic banner at the top the user has to guess about --
+  // null means the error isn't tied to a row (e.g. a bulk-delete failure).
+  const [errorRowId, setErrorRowId] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  // Cards show a truncated preview by default (company/role summary +
+  // 2-line message clamp); expanding shows the full message and every
+  // deeper-brief field the client filled in, since a lot of that was
+  // previously only reachable by truncated summary lines with no way to
+  // see the untruncated values.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   // Bulk-select for spam cleanup -- most spam here is bot-submitted garbage
   // (garbled names, dotted-gmail-trick emails, random digit "phone numbers")
   // that a recruiter wants gone permanently, not just relabeled "Dismissed"
@@ -199,6 +219,7 @@ export default function EmployerInquiriesView({
     if (!row.company_name || !row.role_title) return;
     setBusyId(row.id);
     setError(null);
+    setErrorRowId(null);
     try {
       const {
         data: { user },
@@ -214,7 +235,10 @@ export default function EmployerInquiriesView({
         .filter((l) => l !== null)
         .join("\n");
 
-      const cities = row.cities ?? (row.city ? [row.city] : []);
+      // cities/sub_domains can come back as an empty array (not null) when
+      // the client left the field blank, so `?? []` alone doesn't fall back
+      // to the singular `city` column -- check length explicitly.
+      const cities = row.cities?.length ? row.cities : row.city ? [row.city] : [];
       const subDomains = row.sub_domains ?? [];
 
       const { data: mandate, error: mandateError } = await supabase
@@ -284,6 +308,7 @@ export default function EmployerInquiriesView({
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create mandate");
+      setErrorRowId(row.id);
     } finally {
       setBusyId(null);
     }
@@ -297,6 +322,7 @@ export default function EmployerInquiriesView({
     if (!row.company_name) return; // Contact Us submissions carry no company name -- nothing to convert.
     setBusyId(row.id);
     setError(null);
+    setErrorRowId(null);
     try {
       const {
         data: { user },
@@ -335,6 +361,69 @@ export default function EmployerInquiriesView({
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to convert to client");
+      setErrorRowId(row.id);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Alternate conversion path: for an inquiry that isn't ready to become a
+  // real mandate yet (or is a B2B/B2C prospect rather than a hiring
+  // request), send it into the Sales pipeline instead so it isn't lost.
+  // Source is always "website" -- these came from staffanchor.com forms,
+  // not manual entry or a paid sourcing tool.
+  async function convertToSalesLead(row: EmployerInquiryRow) {
+    if (row.converted_lead_id) {
+      router.push(`/sales/${row.converted_lead_id}`);
+      return;
+    }
+    if (!row.company_name) return;
+    setBusyId(row.id);
+    setError(null);
+    setErrorRowId(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const noteLines = [row.message ?? "", row.role_title ? `\nRole of interest: ${row.role_title}` : null]
+        .filter((l) => l)
+        .join("\n");
+
+      const { data: lead, error: leadError } = await supabase
+        .from("sales_leads")
+        .insert({
+          company_name: row.company_name,
+          company_industry: row.industry === "Other" ? row.custom_industry : row.industry,
+          contact_name: row.full_name,
+          contact_title: row.designation,
+          contact_email: row.work_email,
+          contact_phone: row.mobile_number,
+          source: "website",
+          notes: noteLines || null,
+        })
+        .select("id")
+        .single();
+      if (leadError || !lead) throw leadError ?? new Error("Failed to create sales lead");
+
+      if (row.owner_id) {
+        await supabase.from("sales_leads").update({ owner_id: row.owner_id }).eq("id", lead.id);
+      }
+
+      const { error: inquiryError } = await supabase
+        .from("employer_inquiries")
+        .update({ status: "converted", converted_lead_id: lead.id, reviewed_by: user?.id ?? null })
+        .eq("id", row.id);
+      if (inquiryError) throw inquiryError;
+
+      setRows((cur) =>
+        cur.map((r) => (r.id === row.id ? { ...r, status: "converted", converted_lead_id: lead.id } : r))
+      );
+      router.push(`/sales/${lead.id}`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create sales lead");
+      setErrorRowId(row.id);
     } finally {
       setBusyId(null);
     }
@@ -369,6 +458,7 @@ export default function EmployerInquiriesView({
     setDeleting(false);
     if (deleteError) {
       setError(deleteError.message);
+      setErrorRowId(null);
       return;
     }
     setRows((cur) => cur.filter((r) => !selected.has(r.id)));
@@ -427,7 +517,7 @@ export default function EmployerInquiriesView({
         ))}
       </div>
 
-      {error && (
+      {error && !errorRowId && (
         <p className="text-[12px] text-rose-600 dark:text-rose-400 mb-3">{error}</p>
       )}
 
@@ -479,6 +569,20 @@ export default function EmployerInquiriesView({
                         {row.industry === "Other" ? row.custom_industry : row.industry}
                       </Badge>
                     )}
+                    <button
+                      onClick={() => toggleExpanded(row.id)}
+                      className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros shrink-0"
+                    >
+                      {expandedIds.has(row.id) ? (
+                        <>
+                          Less <ChevronUp className="w-3 h-3" />
+                        </>
+                      ) : (
+                        <>
+                          Full details <ChevronDown className="w-3 h-3" />
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {isMandate && (
@@ -544,7 +648,13 @@ export default function EmployerInquiriesView({
                     </p>
                   )}
                   {row.message && (
-                    <p className="text-[12.5px] text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{row.message}</p>
+                    <p
+                      className={`text-[12.5px] text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line ${
+                        expandedIds.has(row.id) ? "" : "line-clamp-2"
+                      }`}
+                    >
+                      {row.message}
+                    </p>
                   )}
                   <div className="flex items-center gap-3 mt-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">
@@ -557,6 +667,62 @@ export default function EmployerInquiriesView({
                     )}
                     <span>{new Date(row.created_at).toLocaleDateString()}</span>
                   </div>
+
+                  {expandedIds.has(row.id) && (
+                    <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-4 gap-y-1 text-[11.5px]">
+                      {[
+                        ["Category", row.category ? CATEGORY_LABEL[row.category] ?? row.category : null],
+                        ["Sub-domains", row.sub_domains?.length ? row.sub_domains.join(", ") : null],
+                        ["Cities", row.cities?.length ? row.cities.join(", ") : row.city],
+                        ["Budget", row.budget_min !== null || row.budget_max !== null ? `₹${row.budget_min ?? "0"}-${row.budget_max ?? "+"}L` : null],
+                        ["Experience", row.experience_min !== null || row.experience_max !== null ? `${row.experience_min ?? "0"}-${row.experience_max ?? "+"} yrs` : null],
+                        ["Hiring reason", row.hiring_reason],
+                        ["Team handling", row.team_handling],
+                        ["Team size", row.team_size_band],
+                        ["Work mode", row.work_mode],
+                        ["Working days", row.working_days],
+                        ["Shift timing", row.shift_timing],
+                        ["Reports to", row.reporting_manager_title],
+                        ["Company size", row.company_size_band],
+                        ["Sales cycle", row.sales_cycle],
+                        ["Deal size", row.deal_size_band ? `${row.deal_size_currency ?? ""} ${row.deal_size_band}`.trim() : null],
+                        ["Customer profile", row.customer_profile],
+                        ["3-month expectation", row.expectation_3_month],
+                        ["6-month expectation", row.expectation_6_month],
+                        ["1-year expectation", row.expectation_1_year],
+                        ["Selling style", row.selling_style],
+                        ["Background industries", row.preferred_industries?.length ? row.preferred_industries.join(", ") : null],
+                        ["Sells to industries", row.industries_sold_to?.length ? row.industries_sold_to.join(", ") : null],
+                        ["Languages required", row.languages_required?.length ? row.languages_required.join(", ") : null],
+                        [
+                          "Week off",
+                          row.week_off_type === "fixed"
+                            ? row.week_off?.length
+                              ? row.week_off.join(", ")
+                              : null
+                            : row.week_off_type === "rotational" && row.rotational_offs_per_week
+                            ? `${row.rotational_offs_per_week}/week rotational${row.mandatory_working_days?.length ? ` (${row.mandatory_working_days.join(", ")} mandatory)` : ""}`
+                            : null,
+                        ],
+                        ["Consumer types", row.b2c_customer_types?.length ? row.b2c_customer_types.join(", ") : null],
+                        ["Client profile / talks to", row.client_profile?.length ? row.client_profile.join(", ") : null],
+                        ["Company links", row.company_highlight_links?.length ? row.company_highlight_links.join(", ") : null],
+                        ["Audience", row.audience],
+                        ["Notes", row.notes],
+                      ]
+                        .filter(([, value]) => value)
+                        .map(([label, value]) => (
+                          <div key={label}>
+                            <span className="text-slate-400 dark:text-slate-500">{label}: </span>
+                            <span className="text-slate-700 dark:text-slate-300">{value}</span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  {errorRowId === row.id && error && (
+                    <p className="text-[11.5px] text-rose-600 dark:text-rose-400 mt-2">{error}</p>
+                  )}
                   </div>
                 </div>
 
@@ -632,6 +798,25 @@ export default function EmployerInquiriesView({
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     )
+                  )}
+
+                  {/* Not ready to be a mandate/client, or just want to keep
+                      it warm without committing -- send it to the Sales
+                      pipeline instead. Hidden once the inquiry has already
+                      been converted some other way. */}
+                  {row.company_name && !row.converted_mandate_id && !row.converted_client_id && (
+                    <button
+                      onClick={() => convertToSalesLead(row)}
+                      disabled={busyId === row.id}
+                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 transition-colors duration-200 ease-ros"
+                    >
+                      <Users2 className="w-3 h-3" />
+                      {row.converted_lead_id
+                        ? "View sales lead"
+                        : busyId === row.id
+                        ? "Moving…"
+                        : "Move to Sales Lead"}
+                    </button>
                   )}
                 </div>
               </div>
