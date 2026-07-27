@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, Building2, Link2, CalendarClock, X } from "lucide-react";
+import { Plus, Building2, Link2, CalendarClock, X, AlertTriangle } from "lucide-react";
 import {
   STAGES,
   STAGE_LABEL,
@@ -29,6 +29,31 @@ const SOURCE_TONE: Record<string, "neutral" | "accent" | "success" | "warning" |
   inbound: "neutral",
   website: "accent",
 };
+
+// Loose company-name matching for duplicate detection -- strips common
+// legal suffixes ("Pvt Ltd", "Inc", "Technologies", ...) and punctuation so
+// "Acme Pvt. Ltd." and "Acme Technologies" both normalize to "acme" and are
+// flagged as the same prospect, instead of only catching exact string matches.
+const COMPANY_SUFFIX_WORDS = [
+  "private", "pvt", "limited", "ltd", "llp", "llc", "inc", "incorporated",
+  "corp", "corporation", "co", "company", "technologies", "technology",
+  "tech", "solutions", "solution", "systems", "system", "services",
+  "service", "india", "group", "holdings",
+];
+function normalizeCompanyName(name: string) {
+  const words = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((w) => !COMPANY_SUFFIX_WORDS.includes(w));
+  return words.join(" ").trim();
+}
+function normalizeDomain(domain: string) {
+  return domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+}
+
+type DuplicateMatch = { kind: "lead" | "client"; id: string; label: string; detail: string };
 
 function isOverdue(dateStr: string | null) {
   if (!dateStr) return false;
@@ -126,10 +151,12 @@ function LeadCard({ lead }: { lead: SalesLeadScoredRow }) {
   );
 }
 
-function AddLeadModal({ onClose }: { onClose: () => void }) {
+function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existingLeads: SalesLeadScoredRow[] }) {
   const router = useRouter();
   const supabase = createClient();
   const [saving, setSaving] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
   const [form, setForm] = useState({
     company_name: "",
     company_domain: "",
@@ -150,6 +177,55 @@ function AddLeadModal({ onClose }: { onClose: () => void }) {
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  // Debounced duplicate check as the recruiter types the company name/domain
+  // -- catches both "we're already talking to them" (another sales_leads row)
+  // and "they're already a client" (a converted, closed-won relationship),
+  // so the same prospect doesn't get chased twice under slightly different
+  // spellings. Warns only; never blocks Save, since a repeat opportunity with
+  // a past client is often legitimate.
+  useEffect(() => {
+    const name = form.company_name.trim();
+    const domain = form.company_domain.trim();
+    if (name.length < 3 && !domain) {
+      setDuplicates([]);
+      return;
+    }
+    const normalizedName = normalizeCompanyName(name);
+    const normalizedDomain = domain ? normalizeDomain(domain) : null;
+
+    const timer = setTimeout(async () => {
+      setCheckingDuplicates(true);
+      const matches: DuplicateMatch[] = [];
+
+      existingLeads.forEach((lead) => {
+        const leadDomain = lead.company_domain ? normalizeDomain(lead.company_domain) : null;
+        const nameMatch = normalizedName.length >= 3 && normalizeCompanyName(lead.company_name) === normalizedName;
+        const domainMatch = normalizedDomain && leadDomain && leadDomain === normalizedDomain;
+        if (nameMatch || domainMatch) {
+          matches.push({ kind: "lead", id: lead.id, label: lead.company_name, detail: `Already a Sales lead (${lead.stage.replace("_", " ")})` });
+        }
+      });
+
+      if (normalizedName.length >= 3) {
+        const { data: clientMatches } = await supabase
+          .from("clients")
+          .select("id, name")
+          .ilike("name", `%${name.slice(0, 40)}%`)
+          .limit(5);
+        (clientMatches ?? []).forEach((c: { id: string; name: string }) => {
+          if (normalizeCompanyName(c.name) === normalizedName) {
+            matches.push({ kind: "client", id: c.id, label: c.name, detail: "Already an active StaffAnchor client" });
+          }
+        });
+      }
+
+      setDuplicates(matches);
+      setCheckingDuplicates(false);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [form.company_name, form.company_domain, existingLeads, supabase]);
 
   async function handleSave() {
     if (!form.company_name.trim()) {
@@ -198,9 +274,40 @@ function AddLeadModal({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-3">
           <div>
-            <label className={labelClass}>Company name *</label>
+            <label className={labelClass}>
+              Company name *
+              {checkingDuplicates && <span className="ml-1.5 normal-case font-normal text-slate-400">checking for duplicates...</span>}
+            </label>
             <input className={inputClass} value={form.company_name} onChange={(e) => set("company_name", e.target.value)} placeholder="Acme Corp" />
           </div>
+
+          {duplicates.length > 0 && (
+            <div className="rounded-ros-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5">
+              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                Possible duplicate{duplicates.length > 1 ? "s" : ""} found
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {duplicates.map((d) => (
+                  <li key={`${d.kind}-${d.id}`} className="text-[11.5px] text-amber-700 dark:text-amber-400">
+                    <Link
+                      href={d.kind === "lead" ? `/sales/${d.id}` : `/clients/${d.id}`}
+                      target="_blank"
+                      className="underline hover:text-amber-900 dark:hover:text-amber-200"
+                    >
+                      {d.label}
+                    </Link>
+                    {" — "}
+                    {d.detail}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[10.5px] text-amber-600 dark:text-amber-500 mt-1.5">
+                You can still add this lead — a repeat opportunity with a past client is often legitimate.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Domain</label>
@@ -401,7 +508,7 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
         </div>
       )}
 
-      {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} existingLeads={leads} />}
     </div>
   );
 }
