@@ -34,6 +34,9 @@ export async function generateSalesOutreach(input: {
   source?: string | null;
   notes?: string | null;
   stage?: string | null;
+  // Overridable so an ad hoc draft (company spotted on LinkedIn, not yet a
+  // sales_leads row) can still be signed correctly; defaults to the founder.
+  sender_name?: string | null;
 }): Promise<OutreachDraftResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -55,13 +58,17 @@ export async function generateSalesOutreach(input: {
   const channelInstructions =
     input.channel === "linkedin"
       ? "Write a LinkedIn connection/DM message. Under 500 characters, no subject line, casual-professional tone, no email-style greeting like 'Dear' or sign-off with a full name -- just a first-name opener if you have one."
-      : "Write a cold email. Include a short, specific subject line on its own first line prefixed 'Subject: ', then the email body. Keep the body under 120 words, end with a low-friction call to action (a quick call, not a hard pitch), and sign off with just a first name placeholder, e.g. 'Gagan'.";
+      : "Write a cold email. Include a short, specific subject line on its own first line prefixed 'Subject: ', then the email body. Keep the body under 120 words, end with a low-friction call to action (a quick call, not a hard pitch), and sign off with just a first name placeholder.";
 
-  const prompt = `You are a founder-led B2B sales-development assistant helping StaffAnchor's founder (a solo-run sales-recruitment agency in India that is also building an AI + human-backed Sales Passport / Recruitment OS product) reach a prospective client company -- someone who might be hiring for sales roles and could use StaffAnchor's recruiting service.
+  const senderName = input.sender_name?.trim() || "Gagan";
+
+  const prompt = `You are drafting a first-person outreach message for ${senderName}, founder of StaffAnchor -- a revenue-focused recruitment firm that specializes exclusively in placing B2B / Enterprise SaaS sales talent (Account Executives, SDRs/BDRs, Sales Leaders, Customer Success/Revenue roles). This message is sent directly by ${senderName} as the founder, not by a generic company account or a recruiter on staff -- write it in first person ("I").
+
+${senderName}'s own background, which is the core credibility to draw on (use it briefly and naturally, don't recite it like a resume): before founding StaffAnchor, ${senderName} personally led large B2B/Enterprise SaaS sales and revenue teams for 16 years -- so this isn't outreach from someone who has only recruited for sales roles, it's from someone who has carried the number themselves, hired and managed sales orgs, and understands exactly what "good" looks like in an AE, SDR, or sales leader. That's the differentiator versus a typical recruiter: this is a former sales/revenue leader helping other B2B/Enterprise SaaS companies hire the same caliber of talent he used to hire and manage himself.
 
 ${channelInstructions}
 
-Ground the message in a real, specific reason to reach out given the context below -- e.g. sales hiring is notoriously hard to verify, sales attrition is high, or something specific to their industry/size -- not a generic "we do recruiting" pitch. Do not invent facts about the company that aren't given below (funding, headcount, specific roles) -- if you don't have a detail, keep the reasoning general (e.g. "growing sales teams like yours") rather than inventing one. Never use the word "passionate" or "synergy". Do not fabricate quotes, stats, or claims about StaffAnchor beyond: it's a sales-specialist recruitment agency building verified, data-backed candidate profiles.
+Ground the message in a real, specific reason to reach out given the context below -- e.g. B2B/Enterprise SaaS sales hiring is notoriously hard to get right from the outside, sales attrition/ramp-time is a real cost, or something specific to their industry/size -- not a generic "we do recruiting" pitch. Do not invent facts about the company that aren't given below (funding, headcount, specific open roles) -- if you don't have a detail, keep the reasoning general (e.g. "scaling a B2B/Enterprise SaaS sales team like yours") rather than inventing one. Never use the word "passionate" or "synergy". Do not fabricate quotes, stats, or claims about StaffAnchor beyond: it specializes in B2B/Enterprise SaaS sales hiring and builds verified, data-backed candidate profiles.
 
 Context:
 ${contextLines || "(no further context provided)"}

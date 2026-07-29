@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, Building2, Link2, CalendarClock, X, AlertTriangle } from "lucide-react";
+import { Plus, Building2, Link2, CalendarClock, X, AlertTriangle, Sparkles } from "lucide-react";
+import QuickOutreachModal from "./quick-outreach-modal";
 import {
   STAGES,
   STAGE_LABEL,
@@ -392,6 +393,7 @@ function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existin
 
 export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScoredRow[]; ownerNames: Record<string, string> }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [showOutreach, setShowOutreach] = useState(false);
   const [sortByPriority, setSortByPriority] = useState(false);
   void ownerNames; // reserved for a future "assigned to" filter
 
@@ -472,6 +474,9 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
         >
           {sortByPriority ? "Sorted: priority" : "Sort by priority"}
         </Button>
+        <Button variant="secondary" icon={<Sparkles className="w-3.5 h-3.5" />} onClick={() => setShowOutreach(true)}>
+          Generate outreach
+        </Button>
         <Button icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowAdd(true)}>
           Add lead
         </Button>
@@ -509,6 +514,7 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
       )}
 
       {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} existingLeads={leads} />}
+      {showOutreach && <QuickOutreachModal onClose={() => setShowOutreach(false)} />}
     </div>
   );
 }
