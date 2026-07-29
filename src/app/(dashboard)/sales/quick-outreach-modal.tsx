@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Copy, Check, Loader2, X } from "lucide-react";
+import { Sparkles, Copy, Check, Loader2, X, NotebookPen } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 // Standalone outreach generator, separate from the per-lead draft panel on
 // /sales/[id] -- this one doesn't need the company to exist in the CRM yet.
@@ -22,6 +23,8 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [logging, setLogging] = useState(false);
+  const [logged, setLogged] = useState(false);
 
   async function generate() {
     if (!companyName.trim()) {
@@ -62,6 +65,33 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
     await navigator.clipboard.writeText(draft);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  async function logOutreach() {
+    setLogging(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const followUp = new Date();
+    followUp.setDate(followUp.getDate() + 3);
+    const { error: insertError } = await supabase.from("outreach_log").insert({
+      company_name: companyName.trim(),
+      contact_name: contactName.trim() || null,
+      contact_title: contactTitle.trim() || null,
+      role_hint: roleHint.trim() || null,
+      channel,
+      message_snippet: draft || null,
+      follow_up_date: followUp.toISOString().slice(0, 10),
+      notes: notes.trim() || null,
+      owner_id: user?.id ?? null,
+    });
+    setLogging(false);
+    if (insertError) {
+      setError(`Generated, but couldn't log it: ${insertError.message}`);
+      return;
+    }
+    setLogged(true);
   }
 
   const inputClass =
@@ -162,6 +192,17 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
           <Button variant="secondary" className="flex-1" onClick={onClose}>
             Close
           </Button>
+          {draft && (
+            <Button
+              variant={logged ? "secondary" : "primary"}
+              className="flex-1"
+              icon={logged ? <Check className="w-3.5 h-3.5" /> : <NotebookPen className="w-3.5 h-3.5" />}
+              onClick={logOutreach}
+              disabled={logging || logged}
+            >
+              {logged ? "Logged" : logging ? "Logging..." : "Log this outreach"}
+            </Button>
+          )}
         </div>
       </div>
     </div>

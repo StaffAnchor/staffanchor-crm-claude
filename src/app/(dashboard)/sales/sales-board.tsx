@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, Building2, Link2, CalendarClock, X, AlertTriangle, Sparkles } from "lucide-react";
+import { Plus, Building2, Link2, CalendarClock, X, AlertTriangle, Sparkles, NotebookText } from "lucide-react";
 import QuickOutreachModal from "./quick-outreach-modal";
 import {
   STAGES,
@@ -477,6 +477,11 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
         <Button variant="secondary" icon={<Sparkles className="w-3.5 h-3.5" />} onClick={() => setShowOutreach(true)}>
           Generate outreach
         </Button>
+        <Link href="/sales/outreach-log">
+          <Button variant="secondary" icon={<NotebookText className="w-3.5 h-3.5" />}>
+            Outreach log
+          </Button>
+        </Link>
         <Button icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowAdd(true)}>
           Add lead
         </Button>
