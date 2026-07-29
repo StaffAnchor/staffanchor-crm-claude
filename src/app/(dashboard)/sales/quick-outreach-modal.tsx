@@ -15,6 +15,7 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
   const [companyName, setCompanyName] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactTitle, setContactTitle] = useState("");
+  const [roleHint, setRoleHint] = useState("");
   const [companyIndustry, setCompanyIndustry] = useState("");
   const [notes, setNotes] = useState("");
   const [draft, setDraft] = useState("");
@@ -39,6 +40,7 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
           company_name: companyName,
           contact_name: contactName,
           contact_title: contactTitle,
+          role_hint: roleHint,
           company_industry: companyIndustry,
           notes,
         }),
@@ -96,6 +98,10 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
               <label className={labelClass}>Contact title</label>
               <input className={inputClass} value={contactTitle} onChange={(e) => setContactTitle(e.target.value)} placeholder="VP Sales / Head of RevOps" />
             </div>
+          </div>
+          <div>
+            <label className={labelClass}>Role they're hiring for (optional)</label>
+            <input className={inputClass} value={roleHint} onChange={(e) => setRoleHint(e.target.value)} placeholder="e.g. Inside Sales Specialist" />
           </div>
           <div>
             <label className={labelClass}>Company industry (optional)</label>

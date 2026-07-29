@@ -37,6 +37,10 @@ export async function generateSalesOutreach(input: {
   // Overridable so an ad hoc draft (company spotted on LinkedIn, not yet a
   // sales_leads row) can still be signed correctly; defaults to the founder.
   sender_name?: string | null;
+  // The specific open role spotted on LinkedIn (e.g. "Inside Sales
+  // Specialist") -- lets the opener reference it directly ("I understand
+  // you are hiring for X") instead of a generic "growing your sales team".
+  role_hint?: string | null;
 }): Promise<OutreachDraftResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -46,6 +50,7 @@ export async function generateSalesOutreach(input: {
   const contextLines = [
     `Company: ${input.company_name}`,
     input.contact_name ? `Contact: ${input.contact_name}${input.contact_title ? ` (${input.contact_title})` : ""}` : null,
+    input.role_hint ? `Role they appear to be hiring for: ${input.role_hint}` : null,
     input.company_industry ? `Industry: ${input.company_industry}` : null,
     input.company_size ? `Company size: ${input.company_size}` : null,
     input.source ? `How this lead came in: ${input.source}` : null,
@@ -57,18 +62,25 @@ export async function generateSalesOutreach(input: {
 
   const channelInstructions =
     input.channel === "linkedin"
-      ? "Write a LinkedIn connection/DM message. Under 500 characters, no subject line, casual-professional tone, no email-style greeting like 'Dear' or sign-off with a full name -- just a first-name opener if you have one."
-      : "Write a cold email. Include a short, specific subject line on its own first line prefixed 'Subject: ', then the email body. Keep the body under 120 words, end with a low-friction call to action (a quick call, not a hard pitch), and sign off with just a first name placeholder.";
+      ? "Write a LinkedIn connection/DM message. 2-4 short sentences, no subject line, no email-style greeting like 'Dear' or sign-off with a full name -- just a first-name opener if you have one."
+      : "Write a cold email. Include a short, plain subject line on its own first line prefixed 'Subject: ', then the email body. Keep the body to 3-5 short sentences, and sign off with just a first name placeholder.";
 
   const senderName = input.sender_name?.trim() || "Gagan";
 
-  const prompt = `You are drafting a first-person outreach message for ${senderName}, founder of StaffAnchor -- a revenue-focused recruitment firm that specializes exclusively in placing B2B / Enterprise SaaS sales talent (Account Executives, SDRs/BDRs, Sales Leaders, Customer Success/Revenue roles). This message is sent directly by ${senderName} as the founder, not by a generic company account or a recruiter on staff -- write it in first person ("I").
+  const prompt = `You are drafting a first-person outreach message for ${senderName}, founder of StaffAnchor -- a recruitment firm that focuses solely on Revenue/Sales roles hiring for B2B / Enterprise SaaS companies (Account Executives, SDRs/BDRs, Sales Leaders, Inside Sales Specialists, Customer Success/Revenue roles). ${senderName} sends this himself, as the founder -- write it in first person ("I"), not as a company/brand voice.
 
-${senderName}'s own background, which is the core credibility to draw on (use it briefly and naturally, don't recite it like a resume): before founding StaffAnchor, ${senderName} personally led large B2B/Enterprise SaaS sales and revenue teams for 16 years -- so this isn't outreach from someone who has only recruited for sales roles, it's from someone who has carried the number themselves, hired and managed sales orgs, and understands exactly what "good" looks like in an AE, SDR, or sales leader. That's the differentiator versus a typical recruiter: this is a former sales/revenue leader helping other B2B/Enterprise SaaS companies hire the same caliber of talent he used to hire and manage himself.
+VOICE -- this is the single most important instruction. Match this register exactly: plain, direct, unpolished, zero marketing language. Short sentences. State facts flatly instead of dressing them up. No metaphors, no "I understand how challenging X is", no "the exact profile that drives results", no "hire with confidence", no "reduce ramp time", no "data-backed", no "passionate", no "synergy", no exclamation points. This is a busy founder messaging another busy founder -- respect their time and don't perform enthusiasm.
 
-${channelInstructions}
+Here is the exact voice and structure to follow (a real message ${senderName} wrote and approved -- match this level of plainness and directness, not this exact wording):
+"Hi Sanchit, I understand you are hiring for Inside Sales professionals. I run StaffAnchor, which focuses on Revenue Roles hiring. Before I started this, I spent 16 years managing large Sales teams and deeply understand what it takes to hire the right sales talent. If you're open to working with external hiring partners, happy to connect."
 
-Ground the message in a real, specific reason to reach out given the context below -- e.g. B2B/Enterprise SaaS sales hiring is notoriously hard to get right from the outside, sales attrition/ramp-time is a real cost, or something specific to their industry/size -- not a generic "we do recruiting" pitch. Do not invent facts about the company that aren't given below (funding, headcount, specific open roles) -- if you don't have a detail, keep the reasoning general (e.g. "scaling a B2B/Enterprise SaaS sales team like yours") rather than inventing one. Never use the word "passionate" or "synergy". Do not fabricate quotes, stats, or claims about StaffAnchor beyond: it specializes in B2B/Enterprise SaaS sales hiring and builds verified, data-backed candidate profiles.
+Structure to follow, adapted to the context below:
+1. Open by naming the specific reason for reaching out -- if a role they're hiring for is given in the context, name it directly ("I understand you are hiring for X"); if not, keep this opener general rather than inventing a role.
+2. One plain sentence stating what StaffAnchor does (Revenue/Sales roles hiring for B2B/Enterprise SaaS companies) -- not a pitch, just a fact.
+3. One sentence of credibility: before this, ${senderName} spent 16 years leading large B2B/Enterprise SaaS sales and revenue teams, so he knows firsthand what it takes to hire the right sales talent.
+4. Close with a soft, low-pressure ask about being open to working with an external hiring partner -- not "let's hop on a call" or "I'd love to connect" (too eager), something closer to "if you're open to it, happy to connect."
+
+Do not invent facts about the company that aren't given below (funding, headcount, specific detail beyond a named role) -- if you don't have a detail, keep it general rather than inventing one.
 
 Context:
 ${contextLines || "(no further context provided)"}

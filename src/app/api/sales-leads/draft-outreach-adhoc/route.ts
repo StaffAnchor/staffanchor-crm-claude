@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     contact_title: typeof body?.contact_title === "string" ? body.contact_title.trim() || null : null,
     company_industry: typeof body?.company_industry === "string" ? body.company_industry.trim() || null : null,
     notes: typeof body?.notes === "string" ? body.notes.trim() || null : null,
+    role_hint: typeof body?.role_hint === "string" ? body.role_hint.trim() || null : null,
   });
 
   if (!result.ok) {
