@@ -150,6 +150,13 @@ export default async function ClientShortlistPage({
   const rows = data as ShortlistRow[];
   const { client_name, role_title } = rows[0];
 
+  // Only count real client visits (post-OTP) as an "open" -- the admin
+  // preview bypass above should never inflate the client-facing open count
+  // the recruiter sees on the mandate page's shortlist-link panel.
+  if (verifiedEmail) {
+    await supabase.rpc("mark_shortlist_opened", { p_token: token });
+  }
+
   const resumePaths = rows.map((r) => r.resume_file_url).filter((p): p is string => !!p);
   const resumeUrls = await getResumeSignedUrls(resumePaths);
 

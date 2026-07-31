@@ -7,9 +7,15 @@ import { createClient } from "@/lib/supabase/client";
 export default function ShortlistLinkPanel({
   mandateId,
   existingToken,
+  firstOpenedAt,
+  lastOpenedAt,
+  openCount,
 }: {
   mandateId: string;
   existingToken: string | null;
+  firstOpenedAt?: string | null;
+  lastOpenedAt?: string | null;
+  openCount?: number;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -50,6 +56,30 @@ export default function ShortlistLinkPanel({
         <div className="space-y-2">
           <div className="text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 break-all">
             {url}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs">
+            {firstOpenedAt ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span className="text-slate-500 dark:text-slate-400">
+                  Client opened {new Date(firstOpenedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  {" at "}
+                  {new Date(firstOpenedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                  {openCount && openCount > 1 && lastOpenedAt ? (
+                    <>
+                      {" · "}
+                      {openCount} view{openCount === 1 ? "" : "s"}, last{" "}
+                      {new Date(lastOpenedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </>
+                  ) : null}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                <span className="text-slate-400">Not yet opened by client</span>
+              </>
+            )}
           </div>
           <button
             onClick={handleCopy}

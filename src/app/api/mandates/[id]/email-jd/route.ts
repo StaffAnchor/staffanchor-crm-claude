@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: mandate, error: mandateError } = await supabase
     .from("mandates")
     .select(
-      "role_title, client_name, show_client_name, public_client_label, category, sub_domain, sub_domains, city, cities, budget_min, budget_max, experience_min, experience_max, work_mode, jd_overview, jd_responsibilities, jd_candidate_profile, jd_compensation_benefits, must_haves, good_to_haves"
+      "role_title, client_name, show_client_name, public_client_label, category, sub_domain, sub_domains, city, cities, budget_min, budget_max, experience_min, experience_max, work_mode, jd_overview, jd_responsibilities, jd_candidate_profile, jd_compensation_benefits, must_haves, good_to_haves, candidate_email_links"
     )
     .eq("id", id)
     .single();
@@ -63,6 +63,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .replace(/\s+/g, "-")
     .slice(0, 80);
 
+  // Optional recruiter-curated links (company website, YouTube, deck, etc.) --
+  // these live only on the mandate record and are never surfaced on the public
+  // job listing or included in the JD PDF itself; they're for this candidate
+  // email only, so a client's confidentiality preferences on the public listing
+  // are unaffected.
+  const emailLinks = (Array.isArray(mandate.candidate_email_links) ? mandate.candidate_email_links : []) as {
+    name?: string;
+    url?: string;
+  }[];
+  const validLinks = emailLinks.filter((l) => l?.name && l?.url);
+  const linksTextBlock =
+    validLinks.length > 0
+      ? `\n\nYou might also find these useful:\n${validLinks.map((l) => `- ${l.name}: ${l.url}`).join("\n")}`
+      : "";
+  const linksHtmlBlock =
+    validLinks.length > 0
+      ? `<p>You might also find these useful:</p><ul>${validLinks
+          .map((l) => `<li><a href="${l.url}">${l.name}</a></li>`)
+          .join("")}</ul>`
+      : "";
+
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: { user: gmailUser, pass: gmailPass },
@@ -81,8 +102,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         from: `"StaffAnchor" <${gmailUser}>`,
         to: candidate.email,
         subject: `Job Description: ${mandate.role_title} — ${clientDisplay}`,
-        text: `Hi ${candidate.full_name},\n\nPlease find attached the job description for ${mandate.role_title} at ${clientDisplay}.\n\nThanks,\nStaffAnchor Team`,
-        html: `<p>Hi ${candidate.full_name},</p><p>Please find attached the job description for <strong>${mandate.role_title}</strong> at <strong>${clientDisplay}</strong>.</p><p>Thanks,<br/>StaffAnchor Team</p>`,
+        text: `Hi ${candidate.full_name},\n\nPlease find attached the job description for ${mandate.role_title} at ${clientDisplay}.${linksTextBlock}\n\nThanks,\nStaffAnchor Team`,
+        html: `<p>Hi ${candidate.full_name},</p><p>Please find attached the job description for <strong>${mandate.role_title}</strong> at <strong>${clientDisplay}</strong>.</p>${linksHtmlBlock}<p>Thanks,<br/>StaffAnchor Team</p>`,
         attachments: [{ filename: `${fileNameSafe}.pdf`, content: pdfBuffer, contentType: "application/pdf" }],
       });
       sent.push(candidate.full_name);

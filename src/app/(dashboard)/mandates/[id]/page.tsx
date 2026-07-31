@@ -5,6 +5,7 @@ import ShortlistLinkPanel from "./shortlist-link-panel";
 import AlignCandidatesPanel from "./align-candidates-panel";
 import PublicListingPanel from "./public-listing-panel";
 import JobDescriptionPanel from "./job-description-panel";
+import CandidateEmailLinksPanel from "./candidate-email-links-panel";
 import BasicDetailsPanel from "./basic-details-panel";
 import GoldStandardPanel from "./gold-standard-panel";
 import ScreeningQuestionsPanel from "./screening-questions-panel";
@@ -59,7 +60,7 @@ export default async function MandateDetailPage({
 
   const { data: existingToken } = await supabase
     .from("shortlist_tokens")
-    .select("token")
+    .select("token, first_opened_at, last_opened_at, open_count")
     .eq("mandate_id", id)
     .maybeSingle();
 
@@ -354,6 +355,10 @@ export default async function MandateDetailPage({
                       client_name: mandate.client_name,
                     }}
                   />
+                  <CandidateEmailLinksPanel
+                    mandateId={id}
+                    initial={(mandate.candidate_email_links ?? []) as { name: string; url: string }[]}
+                  />
                   <MustHavesPanel
                     mandateId={id}
                     initialMustHaves={mandate.must_haves ?? []}
@@ -413,7 +418,13 @@ export default async function MandateDetailPage({
                     initialPublicClientLabel={mandate.public_client_label}
                     clientName={mandate.client_name}
                   />
-                  <ShortlistLinkPanel mandateId={id} existingToken={existingToken?.token ?? null} />
+                  <ShortlistLinkPanel
+                    mandateId={id}
+                    existingToken={existingToken?.token ?? null}
+                    firstOpenedAt={existingToken?.first_opened_at ?? null}
+                    lastOpenedAt={existingToken?.last_opened_at ?? null}
+                    openCount={existingToken?.open_count ?? 0}
+                  />
                 </>
               ),
             },
