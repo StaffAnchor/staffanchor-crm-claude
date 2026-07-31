@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ClientInfoPanel from "./client-info-panel";
 import ClientContactsPanel, { type ClientContact } from "./client-contacts-panel";
+import ClientResourcesPanel, { type ClientResource } from "./client-resources-panel";
 import ClientPortalAccessPanel from "./client-portal-access-panel";
 import ClientMandatesRollup, { type ClientMandateRow } from "./client-mandates-rollup";
 import ClientFunnelPanel from "./client-funnel-panel";
@@ -62,6 +63,12 @@ export default async function ClientDetailPage({
     .select("id, full_name, designation, email, phone, is_primary")
     .eq("client_id", id)
     .order("is_primary", { ascending: false })
+    .order("created_at", { ascending: true });
+
+  const { data: resources } = await supabase
+    .from("client_resources")
+    .select("id, kind, name, url, storage_path, content_type")
+    .eq("client_id", id)
     .order("created_at", { ascending: true });
 
   const { data: invites } = await supabase
@@ -132,6 +139,7 @@ export default async function ClientDetailPage({
           ownerOptions={ownerOptions}
         />
         <ClientContactsPanel clientId={id} initialContacts={(contacts ?? []) as ClientContact[]} />
+        <ClientResourcesPanel clientId={id} initial={(resources ?? []) as ClientResource[]} />
         <MandateRequestLinkPanel clientNamePrefill={clientRow.name} />
         <ClientPortalAccessPanel
           clientId={id}

@@ -100,6 +100,11 @@ export default function MandateCandidatesTable({
   // triggered by the email going out instead of a separate manual click.
   const clientContacts = (mandateContext.clientContacts as { id: string; full_name: string; email: string | null; is_primary: boolean }[]) ?? [];
   const contactsWithEmail = clientContacts.filter((c) => c.email);
+  // Client-level resource library (website, YouTube, profile PDF, etc.) --
+  // shared across every mandate for this client, so a recruiter picks which
+  // ones to include alongside the JD rather than always sending everything.
+  const clientResources =
+    (mandateContext.clientResources as { id: string; kind: "link" | "file"; name: string; url: string | null }[]) ?? [];
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [chosenContactIds, setChosenContactIds] = useState<Set<string>>(new Set());
   const [sendingClientEmail, setSendingClientEmail] = useState(false);
@@ -307,6 +312,23 @@ export default function MandateCandidatesTable({
     router.refresh();
   }
 
+  const [jdModalOpen, setJdModalOpen] = useState(false);
+  const [chosenResourceIds, setChosenResourceIds] = useState<Set<string>>(new Set());
+
+  function openJdModal() {
+    setChosenResourceIds(new Set());
+    setJdModalOpen(true);
+  }
+
+  function toggleResource(resourceId: string) {
+    setChosenResourceIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(resourceId)) next.delete(resourceId);
+      else next.add(resourceId);
+      return next;
+    });
+  }
+
   async function handleEmailJd() {
     setEmailingJd(true);
     setMessage(null);
@@ -317,10 +339,11 @@ export default function MandateCandidatesTable({
       const res = await fetch(`/api/mandates/${mandateContext.mandateId}/email-jd`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateIds }),
+        body: JSON.stringify({ candidateIds, resourceIds: Array.from(chosenResourceIds) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to email the JD.");
+      setJdModalOpen(false);
       const sentCount = data.sent?.length ?? 0;
       const failedCount = data.failed?.length ?? 0;
       setMessage({
@@ -436,10 +459,10 @@ export default function MandateCandidatesTable({
               Move to client shortlist
             </button>
             <button
-              onClick={handleEmailJd}
+              onClick={openJdModal}
               disabled={emailingJd}
               className="flex items-center gap-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
-              title="Emails the JD PDF to each selected candidate's email on file"
+              title="Emails the JD PDF (plus any company resources you pick) to each selected candidate's email on file"
             >
               {emailingJd ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
               Email JD
@@ -742,6 +765,54 @@ export default function MandateCandidatesTable({
                 className="flex-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
               >
                 {sendingClientEmail ? "Sending..." : "Send"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {jdModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setJdModalOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              Email JD to {selected.size} candidate{selected.size === 1 ? "" : "s"}
+            </h3>
+            <p className="text-[12px] text-slate-400 mb-3">
+              The JD PDF is always attached. Optionally include any of this client&apos;s company
+              resources below.
+            </p>
+            {clientResources.length > 0 ? (
+              <div className="space-y-1.5 mb-3 max-h-48 overflow-y-auto">
+                {clientResources.map((r) => (
+                  <label
+                    key={r.id}
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  >
+                    <input type="checkbox" checked={chosenResourceIds.has(r.id)} onChange={() => toggleResource(r.id)} />
+                    <span className="flex-1">
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{r.name}</span>
+                      <span className="ml-1.5 text-[10px] text-slate-400 uppercase">{r.kind}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[12px] text-slate-400 mb-3">
+                No company resources added yet for this client -- add some from the client&apos;s page.
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setJdModalOpen(false)}
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEmailJd}
+                disabled={emailingJd}
+                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+              >
+                {emailingJd ? "Sending..." : "Send"}
               </button>
             </div>
           </div>

@@ -5,7 +5,6 @@ import ShortlistLinkPanel from "./shortlist-link-panel";
 import AlignCandidatesPanel from "./align-candidates-panel";
 import PublicListingPanel from "./public-listing-panel";
 import JobDescriptionPanel from "./job-description-panel";
-import CandidateEmailLinksPanel from "./candidate-email-links-panel";
 import BasicDetailsPanel from "./basic-details-panel";
 import GoldStandardPanel from "./gold-standard-panel";
 import ScreeningQuestionsPanel from "./screening-questions-panel";
@@ -73,6 +72,18 @@ export default async function MandateDetailPage({
         .select("id, full_name, email, is_primary")
         .eq("client_id", mandate.client_id)
         .order("is_primary", { ascending: false })
+    : { data: [] };
+
+  // Client-level resource library (website, YouTube, profile PDF, etc.) --
+  // shared across every mandate for this client, so it's fetched off
+  // client_resources by client_id, not off the mandate itself. Surfaced as
+  // a checklist in the "Email JD to candidates" flow (mandate-candidates-table.tsx).
+  const { data: clientResources } = mandate.client_id
+    ? await supabase
+        .from("client_resources")
+        .select("id, kind, name, url, storage_path, content_type")
+        .eq("client_id", mandate.client_id)
+        .order("created_at", { ascending: true })
     : { data: [] };
 
   // Same staleness check the daily email digest runs, but instant here --
@@ -270,6 +281,7 @@ export default async function MandateDetailPage({
             screening_questions: mandate.screening_questions ?? [],
             clientId: mandate.client_id,
             clientContacts: clientContacts ?? [],
+            clientResources: clientResources ?? [],
           }}
         />
         }
@@ -354,10 +366,6 @@ export default async function MandateDetailPage({
                       budget_max: mandate.budget_max,
                       client_name: mandate.client_name,
                     }}
-                  />
-                  <CandidateEmailLinksPanel
-                    mandateId={id}
-                    initial={(mandate.candidate_email_links ?? []) as { name: string; url: string }[]}
                   />
                   <MustHavesPanel
                     mandateId={id}

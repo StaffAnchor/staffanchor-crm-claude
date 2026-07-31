@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { renderJdPdf, clientDisplayName, type JdPdfMandate } from "@/lib/generate-jd-pdf";
 
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 
-  const { candidateIds } = await req.json();
+  const { candidateIds, resourceIds } = await req.json();
   if (!Array.isArray(candidateIds) || candidateIds.length === 0) {
     return NextResponse.json({ error: "candidateIds is required" }, { status: 400 });
   }
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: mandate, error: mandateError } = await supabase
     .from("mandates")
     .select(
-      "role_title, client_name, show_client_name, public_client_label, category, sub_domain, sub_domains, city, cities, budget_min, budget_max, experience_min, experience_max, work_mode, jd_overview, jd_responsibilities, jd_candidate_profile, jd_compensation_benefits, must_haves, good_to_haves, candidate_email_links"
+      "client_id, role_title, client_name, show_client_name, public_client_label, category, sub_domain, sub_domains, city, cities, budget_min, budget_max, experience_min, experience_max, work_mode, jd_overview, jd_responsibilities, jd_candidate_profile, jd_compensation_benefits, must_haves, good_to_haves"
     )
     .eq("id", id)
     .single();
@@ -63,26 +64,55 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .replace(/\s+/g, "-")
     .slice(0, 80);
 
-  // Optional recruiter-curated links (company website, YouTube, deck, etc.) --
-  // these live only on the mandate record and are never surfaced on the public
-  // job listing or included in the JD PDF itself; they're for this candidate
-  // email only, so a client's confidentiality preferences on the public listing
-  // are unaffected.
-  const emailLinks = (Array.isArray(mandate.candidate_email_links) ? mandate.candidate_email_links : []) as {
-    name?: string;
-    url?: string;
-  }[];
-  const validLinks = emailLinks.filter((l) => l?.name && l?.url);
+  // Client-level resource library (website, YouTube, profile PDF/Word, etc.)
+  // -- shared across every mandate for this client, unlike the JD which is
+  // mandate-specific. Recruiter picks a subset in the UI; only those chosen
+  // rows are fetched and attached/linked here. Never surfaced on the public
+  // job listing -- this is candidate-email-only.
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const admin = serviceKey ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey) : null;
+
+  type Resource = { id: string; kind: "link" | "file"; name: string; url: string | null; storage_path: string | null };
+  let resources: Resource[] = [];
+  if (Array.isArray(resourceIds) && resourceIds.length > 0 && mandate.client_id) {
+    const { data: resourceRows } = await supabase
+      .from("client_resources")
+      .select("id, kind, name, url, storage_path")
+      .eq("client_id", mandate.client_id)
+      .in("id", resourceIds);
+    resources = (resourceRows ?? []) as Resource[];
+  }
+
+  const linkResources = resources.filter((r) => r.kind === "link" && r.url);
   const linksTextBlock =
-    validLinks.length > 0
-      ? `\n\nYou might also find these useful:\n${validLinks.map((l) => `- ${l.name}: ${l.url}`).join("\n")}`
+    linkResources.length > 0
+      ? `\n\nYou might also find these useful:\n${linkResources.map((r) => `- ${r.name}: ${r.url}`).join("\n")}`
       : "";
   const linksHtmlBlock =
-    validLinks.length > 0
-      ? `<p>You might also find these useful:</p><ul>${validLinks
-          .map((l) => `<li><a href="${l.url}">${l.name}</a></li>`)
+    linkResources.length > 0
+      ? `<p>You might also find these useful:</p><ul>${linkResources
+          .map((r) => `<li><a href="${r.url}">${r.name}</a></li>`)
           .join("")}</ul>`
       : "";
+
+  // File resources -- best-effort download from the client-resources bucket;
+  // a missing/unreadable file never blocks the send, it's just skipped.
+  const extraAttachments: { filename: string; content: Buffer }[] = [];
+  if (admin) {
+    for (const r of resources.filter((r) => r.kind === "file" && r.storage_path)) {
+      try {
+        const { data: fileData, error: downloadError } = await admin.storage
+          .from("client-resources")
+          .download(r.storage_path!);
+        if (downloadError || !fileData) continue;
+        const buffer = Buffer.from(await fileData.arrayBuffer());
+        const ext = r.storage_path!.includes(".") ? r.storage_path!.slice(r.storage_path!.lastIndexOf(".")) : "";
+        extraAttachments.push({ filename: `${r.name}${ext}`, content: buffer });
+      } catch {
+        // skip
+      }
+    }
+  }
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -104,7 +134,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         subject: `Job Description: ${mandate.role_title} — ${clientDisplay}`,
         text: `Hi ${candidate.full_name},\n\nPlease find attached the job description for ${mandate.role_title} at ${clientDisplay}.${linksTextBlock}\n\nThanks,\nStaffAnchor Team`,
         html: `<p>Hi ${candidate.full_name},</p><p>Please find attached the job description for <strong>${mandate.role_title}</strong> at <strong>${clientDisplay}</strong>.</p>${linksHtmlBlock}<p>Thanks,<br/>StaffAnchor Team</p>`,
-        attachments: [{ filename: `${fileNameSafe}.pdf`, content: pdfBuffer, contentType: "application/pdf" }],
+        attachments: [
+          { filename: `${fileNameSafe}.pdf`, content: pdfBuffer, contentType: "application/pdf" },
+          ...extraAttachments,
+        ],
       });
       sent.push(candidate.full_name);
     } catch (err) {
@@ -119,7 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       action: "jd_pdf_emailed",
       entity: "mandate",
       entity_id: id,
-      detail: { sent_to: sent, failed },
+      detail: { sent_to: sent, failed, resources_included: resources.map((r) => r.name) },
     });
   }
 
