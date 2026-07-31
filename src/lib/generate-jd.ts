@@ -153,3 +153,93 @@ Each array should have 3-8 concise bullets (no leading dashes or bullet characte
       : "AI JD generation failed. Please try again.";
   return { ok: false, status: 500, error: message };
 }
+
+// Applies a single, targeted change to an already-written JD -- e.g. "make
+// responsibilities shorter" or "add a requirement about SaaS experience" --
+// instead of regenerating all four fields from scratch like
+// generateJdFromNotes does. The model is instructed to change ONLY what the
+// instruction asks for and return every other field byte-for-byte as given,
+// so a recruiter can iterate on one section without the AI silently
+// rewriting the rest of the listing each time.
+export async function refineJd(input: {
+  overview: string;
+  responsibilities: string[];
+  candidate_profile: string[];
+  compensation_benefits: string[];
+  instruction: string;
+  client_name?: string;
+}): Promise<GenerateJdResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return {
+      ok: false,
+      status: 503,
+      error: "AI JD editing is not configured yet (missing GEMINI_API_KEY on the server).",
+    };
+  }
+  if (!input.instruction?.trim()) {
+    return { ok: false, status: 400, error: "Describe the change you want first." };
+  }
+
+  const currentJd = {
+    overview: input.overview,
+    responsibilities: input.responsibilities,
+    candidate_profile: input.candidate_profile,
+    compensation_benefits: input.compensation_benefits,
+  };
+
+  const prompt = `You are editing an existing job description for StaffAnchor, a specialist recruiting firm. Below is the JD's current content as a JSON object with four fields: overview, responsibilities, candidate_profile, compensation_benefits.
+
+A recruiter has one specific instruction for what to change. Apply ONLY that instruction. Every field or bullet the instruction doesn't ask you to touch must come back exactly as it was given -- same wording, same order, no rephrasing, no "polishing" other bullets, no adding extra bullets beyond what the instruction implies. Do not regenerate the JD from scratch; treat this as a surgical edit to the JSON below.
+
+CONFIDENTIALITY -- READ CAREFULLY: Never mention the hiring company's real name anywhere in your output; refer to the employer only as "our client" or similar neutral phrasing.${
+    input.client_name ? ` The client's name is "${input.client_name}" -- this exact name (and close variants of it) must never appear in your output.` : ""
+  }
+
+Current JD:
+${JSON.stringify(currentJd, null, 2)}
+
+Recruiter's instruction:
+${input.instruction}
+
+Return ONLY a JSON object (no markdown fence, no commentary) with this exact shape, containing the FULL updated JD (not just the changed part):
+{
+  "overview": "...",
+  "responsibilities": ["bullet 1", "bullet 2", ...],
+  "candidate_profile": ["bullet 1", "bullet 2", ...],
+  "compensation_benefits": ["bullet 1", "bullet 2", ...]
+}`;
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
+
+  let lastError: unknown = null;
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const raw = result.response.text().trim();
+      const jd = parseJdJson(raw);
+      if (!jd) {
+        lastError = new Error("Model response was not valid JSON.");
+        continue;
+      }
+      const scrubbed: GeneratedJd = {
+        overview: scrubClientName(jd.overview, input.client_name),
+        responsibilities: scrubClientName(jd.responsibilities, input.client_name),
+        candidate_profile: scrubClientName(jd.candidate_profile, input.client_name),
+        compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name),
+      };
+      return { ok: true, jd: scrubbed };
+    } catch (err) {
+      lastError = err;
+      console.error(`Gemini JD edit failed with model ${modelName}`, err);
+    }
+  }
+
+  const message =
+    lastError instanceof Error && lastError.message.includes("429")
+      ? "This Gemini API key has 0 free-tier quota on Google's side. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing for standard paid-tier limits."
+      : "AI JD edit failed. Please try again.";
+  return { ok: false, status: 500, error: message };
+}

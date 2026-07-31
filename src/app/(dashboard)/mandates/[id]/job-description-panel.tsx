@@ -45,6 +45,9 @@ export default function JobDescriptionPanel({
   const [rawNotes, setRawNotes] = useState("");
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
+  const [editInstruction, setEditInstruction] = useState("");
+  const [refining, setRefining] = useState(false);
+  const [refineError, setRefineError] = useState("");
   const hasAnyContent = !!(
     initial.jd_overview ||
     initial.jd_responsibilities ||
@@ -90,6 +93,41 @@ export default function JobDescriptionPanel({
       setGenError(e instanceof Error ? e.message : "AI generation failed.");
     } finally {
       setGenerating(false);
+    }
+  }
+
+  // Applies one targeted suggestion (e.g. "make responsibilities shorter" or
+  // "add a bullet about SaaS experience") on top of the JD as it stands
+  // right now, instead of regenerating everything from the rough notes
+  // above -- so a small tweak doesn't risk rewording sections the recruiter
+  // was already happy with.
+  async function handleRefine() {
+    setRefineError("");
+    setRefining(true);
+    try {
+      const res = await fetch("/api/refine-jd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          overview,
+          responsibilities: bulletList(responsibilities),
+          candidate_profile: bulletList(candidateProfile),
+          compensation_benefits: bulletList(benefits),
+          instruction: editInstruction,
+          client_name: context.client_name ?? "",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "AI edit failed.");
+      setOverview(data.overview ?? overview);
+      setResponsibilities((data.responsibilities ?? []).join("\n"));
+      setCandidateProfile((data.candidate_profile ?? []).join("\n"));
+      setBenefits((data.compensation_benefits ?? []).join("\n"));
+      setEditInstruction("");
+    } catch (e) {
+      setRefineError(e instanceof Error ? e.message : "AI edit failed.");
+    } finally {
+      setRefining(false);
     }
   }
 
@@ -190,6 +228,33 @@ export default function JobDescriptionPanel({
               className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y"
             />
           </div>
+          {(overview || responsibilities || candidateProfile || benefits) && (
+            <div className="rounded-lg border border-dashed border-violet-200 bg-violet-50/50 p-3">
+              <p className="text-[11px] font-medium text-violet-700 mb-1.5">
+                Suggest a change instead of rewriting everything
+              </p>
+              <p className="text-[10.5px] text-violet-500 mb-1.5">
+                e.g. &quot;make the responsibilities shorter&quot;, &quot;add a requirement about SaaS experience&quot;,
+                &quot;drop the health insurance bullet&quot; -- only this change is applied, nothing else is reworded.
+              </p>
+              <textarea
+                value={editInstruction}
+                onChange={(e) => setEditInstruction(e.target.value)}
+                rows={2}
+                placeholder="Describe the specific edit you want..."
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
+              />
+              <button
+                type="button"
+                onClick={handleRefine}
+                disabled={refining || !editInstruction.trim()}
+                className="mt-2 flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> {refining ? "Applying..." : "Apply this edit"}
+              </button>
+              {refineError && <p className="text-[11px] text-red-600 mt-1.5">{refineError}</p>}
+            </div>
+          )}
           <button
             onClick={handleSave}
             disabled={saving}

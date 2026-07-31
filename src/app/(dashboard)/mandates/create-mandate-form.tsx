@@ -102,6 +102,9 @@ export default function CreateMandateForm({
   const [error, setError] = useState("");
   const [generatingJd, setGeneratingJd] = useState(false);
   const [jdError, setJdError] = useState("");
+  const [jdEditInstruction, setJdEditInstruction] = useState("");
+  const [refiningJd, setRefiningJd] = useState(false);
+  const [jdRefineError, setJdRefineError] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
   const optionSets = useMandateOptionSets();
 
@@ -172,6 +175,42 @@ export default function CreateMandateForm({
       setJdError(e instanceof Error ? e.message : "AI generation failed.");
     } finally {
       setGeneratingJd(false);
+    }
+  }
+
+  // Targeted edit on top of whatever's currently in the four JD fields --
+  // e.g. "make responsibilities shorter" -- instead of re-running the full
+  // generation above and risking a reword of sections already approved.
+  async function handleRefineJd() {
+    setJdRefineError("");
+    setRefiningJd(true);
+    try {
+      const res = await fetch("/api/refine-jd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          overview: form.jd_overview,
+          responsibilities: form.jd_responsibilities.split("\n").map((l) => l.trim()).filter(Boolean),
+          candidate_profile: form.jd_candidate_profile.split("\n").map((l) => l.trim()).filter(Boolean),
+          compensation_benefits: form.jd_compensation_benefits.split("\n").map((l) => l.trim()).filter(Boolean),
+          instruction: jdEditInstruction,
+          client_name: form.client_name,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "AI edit failed.");
+      setForm((f) => ({
+        ...f,
+        jd_overview: data.overview ?? f.jd_overview,
+        jd_responsibilities: (data.responsibilities ?? []).join("\n"),
+        jd_candidate_profile: (data.candidate_profile ?? []).join("\n"),
+        jd_compensation_benefits: (data.compensation_benefits ?? []).join("\n"),
+      }));
+      setJdEditInstruction("");
+    } catch (e) {
+      setJdRefineError(e instanceof Error ? e.message : "AI edit failed.");
+    } finally {
+      setRefiningJd(false);
     }
   }
 
@@ -575,6 +614,34 @@ export default function CreateMandateForm({
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y"
           />
         </div>
+
+        {(form.jd_overview || form.jd_responsibilities || form.jd_candidate_profile || form.jd_compensation_benefits) && (
+          <div className="rounded-lg border border-dashed border-violet-200 bg-violet-50/50 p-3 mt-2">
+            <p className="text-[11px] font-medium text-violet-700 mb-1.5">
+              Suggest a change instead of rewriting everything
+            </p>
+            <p className="text-[10.5px] text-violet-500 mb-1.5">
+              e.g. &quot;make the responsibilities shorter&quot;, &quot;add a requirement about SaaS experience&quot; -- only this
+              change is applied, nothing else is reworded.
+            </p>
+            <textarea
+              value={jdEditInstruction}
+              onChange={(e) => setJdEditInstruction(e.target.value)}
+              rows={2}
+              placeholder="Describe the specific edit you want..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y bg-white dark:bg-slate-900"
+            />
+            <button
+              type="button"
+              onClick={handleRefineJd}
+              disabled={refiningJd || !jdEditInstruction.trim()}
+              className="mt-2 flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> {refiningJd ? "Applying..." : "Apply this edit"}
+            </button>
+            {jdRefineError && <p className="text-[11px] text-red-600 mt-1.5">{jdRefineError}</p>}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
