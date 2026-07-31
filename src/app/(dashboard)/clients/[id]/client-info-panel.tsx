@@ -11,12 +11,16 @@ export default function ClientInfoPanel({
   initialHqCity,
   initialWebsite,
   initialNotes,
+  initialOwnerId,
+  ownerOptions,
 }: {
   clientId: string;
   initialIndustry: string | null;
   initialHqCity: string | null;
   initialWebsite: string | null;
   initialNotes: string | null;
+  initialOwnerId?: string | null;
+  ownerOptions?: { id: string; label: string }[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -25,8 +29,11 @@ export default function ClientInfoPanel({
   const [hqCity, setHqCity] = useState(initialHqCity ?? "");
   const [website, setWebsite] = useState(initialWebsite ?? "");
   const [notes, setNotes] = useState(initialNotes ?? "");
+  const [ownerId, setOwnerId] = useState(initialOwnerId ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const ownerLabel = ownerOptions?.find((o) => o.id === initialOwnerId)?.label;
 
   async function handleSave() {
     setSaving(true);
@@ -38,6 +45,7 @@ export default function ClientInfoPanel({
         hq_city: hqCity.trim() || null,
         website: website.trim() || null,
         notes: notes.trim() || null,
+        owner_id: ownerId || null,
       })
       .eq("id", clientId);
     setSaving(false);
@@ -62,6 +70,10 @@ export default function ClientInfoPanel({
           </button>
         </div>
         <dl className="space-y-2 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-slate-400 text-[12px]">Owner (Partner)</dt>
+            <dd className="text-slate-700 dark:text-slate-300 text-right">{ownerLabel || "Unassigned"}</dd>
+          </div>
           <div className="flex justify-between gap-3">
             <dt className="text-slate-400 text-[12px]">Industry</dt>
             <dd className="text-slate-700 dark:text-slate-300 text-right">{initialIndustry || "—"}</dd>
@@ -97,6 +109,21 @@ export default function ClientInfoPanel({
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Edit client details</h2>
       <div className="space-y-3">
+        <div>
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Owner (Partner)</label>
+          <select
+            value={ownerId}
+            onChange={(e) => setOwnerId(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            <option value="">Unassigned</option>
+            {(ownerOptions ?? []).map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industry</label>
           <input

@@ -9,14 +9,27 @@ import { formatDealValue, SOURCES, SOURCE_LABEL, type SalesLeadScoredRow } from 
 export default async function SalesPage() {
   const supabase = await createClient();
 
+  // A Partner only sees leads they brought in themselves -- same scoping
+  // rule as Clients. Everyone else (admin/recruiter/freelancer) keeps
+  // seeing the full firm-wide pipeline unchanged.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
+  const isPartnerView = viewerProfile?.role === "partner";
+
   // sales_leads_scored is a live-computed view (same columns as sales_leads
   // plus priority_score/days_in_stage) -- see the
   // sales_ae_assist_briefing_and_scoring migration. Recomputed on every
   // read so the board never shows a stale score.
-  const { data: leads } = await supabase
+  let leadsQuery = supabase
     .from("sales_leads_scored")
     .select("*")
     .order("stage_updated_at", { ascending: false });
+  if (isPartnerView && user) leadsQuery = leadsQuery.eq("owner_id", user.id);
+  const { data: leads } = await leadsQuery;
   const rows = (leads ?? []) as SalesLeadScoredRow[];
 
   const { data: briefing, error: briefingError } = await supabase.rpc("get_sales_briefing");
@@ -66,8 +79,9 @@ export default async function SalesPage() {
         <div>
           <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Sales</h1>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-            StaffAnchor&apos;s own client-acquisition pipeline — target companies to sell recruiting services to.
-            Separate from candidates and mandates.
+            {isPartnerView
+              ? "Leads you brought in — target companies to sell recruiting services to."
+              : "StaffAnchor’s own client-acquisition pipeline — target companies to sell recruiting services to. Separate from candidates and mandates."}
           </p>
         </div>
       </div>

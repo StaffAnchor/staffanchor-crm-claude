@@ -19,6 +19,9 @@ export default function CreateClientForm() {
     if (!name.trim()) return;
     setSaving(true);
     setError(null);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { data, error: insertError } = await supabase
       .from("clients")
       .insert({
@@ -26,6 +29,11 @@ export default function CreateClientForm() {
         industry: industry.trim() || null,
         hq_city: hqCity.trim() || null,
         website: website.trim() || null,
+        // Whoever creates the client is its default owner -- matters most
+        // for a Partner bringing this client in themselves; admin/recruiter
+        // created clients can be reassigned to a partner afterward from the
+        // client detail page.
+        owner_id: user?.id ?? null,
       })
       .select("id")
       .single();

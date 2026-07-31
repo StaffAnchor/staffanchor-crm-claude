@@ -17,22 +17,41 @@ export default async function ClientsPage({
   const { q } = await searchParams;
   const supabase = await createClient();
 
+  // Partners bring clients in themselves, so a client not tied to any
+  // partner (yet) or tied to someone else's book shouldn't clutter their
+  // list -- everyone else (admin, recruiter, freelancer) keeps seeing the
+  // full firm-wide list unchanged, since only Partner scoping was asked for.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
+  const isPartnerView = viewerProfile?.role === "partner";
+
   let query = supabase
     .from("clients")
-    .select("id, name, industry, hq_city, website, created_at")
+    .select("id, name, industry, hq_city, website, created_at, owner_id")
     .order("name", { ascending: true });
   if (q) query = query.ilike("name", `%${q}%`);
+  if (isPartnerView && user) query = query.eq("owner_id", user.id);
 
   // These three queries don't depend on each other, but were previously run
   // one after another -- each one waiting on the last round-trip to finish
   // before starting the next. Running them concurrently cuts this page's
   // database wait time to roughly the slowest single query instead of the
   // sum of all three, which is the main reason this page felt slow to load.
-  const [{ data: clients }, { data: mandates }, { data: links }] = await Promise.all([
+  const [{ data: clients }, { data: mandates }, { data: links }, { data: profiles }] = await Promise.all([
     query,
     supabase.from("mandates").select("id, client_id, status, created_at"),
     supabase.from("candidate_mandate_links").select("mandate_id, stage").limit(20000),
+    supabase.from("profiles").select("id, full_name, email"),
   ]);
+
+  const ownerNames: Record<string, string> = {};
+  (profiles ?? []).forEach((p) => {
+    ownerNames[p.id] = p.full_name ?? p.email ?? "Unknown";
+  });
 
   // Derived from `stage`, not the legacy `in_shortlist` flag -- in_shortlist
   // is only ever set by the public shortlist-link flow or the dedicated
@@ -114,7 +133,8 @@ export default async function ClientsPage({
           <div>
             <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Clients</h1>
             <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-              {(clients ?? []).length} client{(clients ?? []).length === 1 ? "" : "s"} in your database
+              {(clients ?? []).length} client{(clients ?? []).length === 1 ? "" : "s"}
+              {isPartnerView ? " you brought in" : " in your database"}
             </p>
           </div>
         </div>
@@ -165,6 +185,9 @@ export default async function ClientsPage({
                       </Badge>
                     )}
                   </div>
+                  {c.owner_id && ownerNames[c.owner_id] && (
+                    <p className="text-[11px] text-slate-400 mb-2 -mt-1">Owner: {ownerNames[c.owner_id]}</p>
+                  )}
                   <div className="flex items-center gap-4 text-[12px] text-slate-500 dark:text-slate-400 mb-3">
                     {c.hq_city && (
                       <span className="flex items-center gap-1">

@@ -7,7 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { STAGES, STAGE_LABEL, SOURCES, type SalesLeadRow } from "../sales-constants";
 
-export default function LeadEditPanel({ lead }: { lead: SalesLeadRow }) {
+export default function LeadEditPanel({
+  lead,
+  ownerOptions,
+}: {
+  lead: SalesLeadRow;
+  ownerOptions?: { id: string; label: string }[];
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [saving, setSaving] = useState(false);
@@ -20,6 +26,7 @@ export default function LeadEditPanel({ lead }: { lead: SalesLeadRow }) {
     deal_value_currency: lead.deal_value_currency ?? "INR",
     next_follow_up_date: lead.next_follow_up_date ?? "",
     lost_reason: lead.lost_reason ?? "",
+    owner_id: lead.owner_id ?? "",
   });
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -41,6 +48,7 @@ export default function LeadEditPanel({ lead }: { lead: SalesLeadRow }) {
         deal_value_currency: form.deal_value_currency,
         next_follow_up_date: form.next_follow_up_date || null,
         lost_reason: form.lost_reason.trim() || null,
+        owner_id: form.owner_id || null,
         updated_at: nowIso,
         ...(stageChanged ? { stage_updated_at: nowIso } : {}),
       })
@@ -68,6 +76,17 @@ export default function LeadEditPanel({ lead }: { lead: SalesLeadRow }) {
     <Card>
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Deal details</h2>
       <div className="space-y-3">
+        <div>
+          <label className={labelClass}>Owner (Partner)</label>
+          <select className={inputClass} value={form.owner_id} onChange={(e) => set("owner_id", e.target.value)}>
+            <option value="">Unassigned</option>
+            {(ownerOptions ?? []).map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className={labelClass}>Stage</label>
           <select className={inputClass} value={form.stage} onChange={(e) => set("stage", e.target.value)}>

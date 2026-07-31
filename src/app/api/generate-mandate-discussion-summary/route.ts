@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !["admin", "recruiter", "freelancer"].includes(profile.role)) {
+  if (!profile || !["admin", "recruiter", "freelancer", "partner"].includes(profile.role)) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 

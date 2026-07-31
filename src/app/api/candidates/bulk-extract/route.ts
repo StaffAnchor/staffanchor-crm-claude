@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || !["admin", "recruiter"].includes(profile.role)) {
+  if (!profile || !["admin", "recruiter", "partner"].includes(profile.role)) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 

@@ -28,6 +28,7 @@ export default function RoleControl({
       className="rounded-lg border border-slate-300 px-2 py-1 text-xs disabled:opacity-50"
     >
       <option value="recruiter">Recruiter</option>
+      <option value="partner">Partner</option>
       <option value="admin">Admin</option>
       <option value="freelancer">Freelancer</option>
     </select>

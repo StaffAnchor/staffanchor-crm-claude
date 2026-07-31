@@ -14,7 +14,7 @@ export default async function InboxPage() {
   const { data: recruiters } = await supabase
     .from("profiles")
     .select("id, full_name, email")
-    .in("role", ["admin", "recruiter"])
+    .in("role", ["admin", "recruiter", "partner"])
     .order("full_name");
 
   const items: InboxItem[] = (error ? [] : data ?? []) as InboxItem[];

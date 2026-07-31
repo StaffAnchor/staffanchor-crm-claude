@@ -88,6 +88,7 @@ export default function CreateUserForm() {
         className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
       >
         <option value="recruiter">Recruiter</option>
+        <option value="partner">Partner</option>
         <option value="admin">Admin</option>
         <option value="freelancer">Freelancer (limited access)</option>
       </select>

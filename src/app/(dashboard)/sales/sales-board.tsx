@@ -79,7 +79,7 @@ async function moveStage(supabase: ReturnType<typeof createClient>, lead: SalesL
   return true;
 }
 
-function LeadCard({ lead }: { lead: SalesLeadScoredRow }) {
+function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: string }) {
   const router = useRouter();
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
@@ -106,6 +106,7 @@ function LeadCard({ lead }: { lead: SalesLeadScoredRow }) {
             {lead.contact_title}
           </p>
         )}
+        {ownerName && <p className="text-[10.5px] text-slate-400 mt-0.5 truncate">Owner: {ownerName}</p>}
       </Link>
 
       <div className="flex items-center gap-1.5 flex-wrap mt-2">
@@ -234,8 +235,15 @@ function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existin
       return;
     }
     setSaving(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { error } = await supabase.from("sales_leads").insert({
       company_name: form.company_name.trim(),
+      // Whoever adds the lead is its default owner -- matters most for a
+      // Partner bringing this prospect in themselves; can be reassigned
+      // afterward from the lead detail page.
+      owner_id: user?.id ?? null,
       company_domain: form.company_domain.trim() || null,
       company_industry: form.company_industry.trim() || null,
       company_size: form.company_size.trim() || null,
@@ -395,7 +403,6 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
   const [showAdd, setShowAdd] = useState(false);
   const [showOutreach, setShowOutreach] = useState(false);
   const [sortByPriority, setSortByPriority] = useState(false);
-  void ownerNames; // reserved for a future "assigned to" filter
 
   // URL-based, like Candidates/Mandates -- so the search survives clicking
   // into a lead and back, instead of silently resetting (gap #8, July 2026
@@ -508,7 +515,7 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
                 )}
                 <div className="space-y-2">
                   {stageLeads.map((lead) => (
-                    <LeadCard key={lead.id} lead={lead} />
+                    <LeadCard key={lead.id} lead={lead} ownerName={lead.owner_id ? ownerNames[lead.owner_id] : undefined} />
                   ))}
                   {stageLeads.length === 0 && <p className="text-[11px] text-slate-300 dark:text-slate-700 px-1">—</p>}
                 </div>

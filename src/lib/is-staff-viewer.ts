@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 
+// Central list of roles that can use the internal CRM (as opposed to
+// "freelancer", which is vendor-portal-only). Import this instead of
+// re-typing ["admin", "recruiter"] / ["admin", "recruiter", "partner"] --
+// a role list that's been copy-pasted across ~15 files is exactly the kind
+// of thing that silently drifts when a new role like "partner" is added.
+export const CRM_STAFF_ROLES = ["admin", "recruiter", "partner"] as const;
+
 // Lets a signed-in admin/recruiter open a no-login client shortlist link
 // (or its Sales Passport sub-page) without going through the client's
 // email-OTP gate -- so they can eyeball exactly what the client will see
@@ -17,7 +24,7 @@ export async function isStaffPreview(): Promise<boolean> {
     if (!user) return false;
 
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-    return !!profile && ["admin", "recruiter"].includes(profile.role);
+    return !!profile && (CRM_STAFF_ROLES as readonly string[]).includes(profile.role);
   } catch {
     // Any failure (no session, RLS denial, etc.) just falls back to the
     // normal client-facing OTP gate -- never fails open.

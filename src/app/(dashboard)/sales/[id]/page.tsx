@@ -27,6 +27,10 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
   (profiles ?? []).forEach((p) => {
     actorNames[p.id] = p.full_name ?? p.email ?? "Unknown";
   });
+  const ownerOptions = (profiles ?? []).map((p) => ({
+    id: p.id,
+    label: p.full_name ?? p.email ?? "Unknown",
+  }));
 
   const row = lead as SalesLeadRow;
 
@@ -93,7 +97,7 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
       </Card>
 
       <div className="grid grid-cols-2 gap-4">
-        <LeadEditPanel lead={row} />
+        <LeadEditPanel lead={row} ownerOptions={ownerOptions} />
         <LeadActivityPanel lead={row} activities={(activities ?? []) as SalesActivityRow[]} actorNames={actorNames} />
       </div>
 

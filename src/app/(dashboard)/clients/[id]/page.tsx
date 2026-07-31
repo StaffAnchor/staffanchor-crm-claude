@@ -75,6 +75,17 @@ export default async function ClientDetailPage({
     .select("id, email, full_name, created_at")
     .eq("client_id", id);
 
+  // Owner (Partner) assignment options -- any staff can be picked, since a
+  // client might be reassigned from an admin-created entry to a partner.
+  const { data: staffProfiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .order("full_name");
+  const ownerOptions = (staffProfiles ?? []).map((p) => ({
+    id: p.id,
+    label: p.full_name ?? p.email ?? "Unknown",
+  }));
+
   return (
     <div className="grid grid-cols-3 gap-6">
       <div className="col-span-2 space-y-6">
@@ -117,6 +128,8 @@ export default async function ClientDetailPage({
           initialHqCity={clientRow.hq_city}
           initialWebsite={clientRow.website}
           initialNotes={clientRow.notes}
+          initialOwnerId={clientRow.owner_id}
+          ownerOptions={ownerOptions}
         />
         <ClientContactsPanel clientId={id} initialContacts={(contacts ?? []) as ClientContact[]} />
         <MandateRequestLinkPanel clientNamePrefill={clientRow.name} />
