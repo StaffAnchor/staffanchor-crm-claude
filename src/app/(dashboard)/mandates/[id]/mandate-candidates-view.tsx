@@ -7,10 +7,10 @@ import MandateCandidatesBoard from "./mandate-candidates-board";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 
 // Thin toggle wrapper -- Board is the new default (matches the reference
-// ATS screenshot the user liked), but the existing Table view is kept
-// intact for its bulk actions (shortlist, email JD, add-to-group,
-// reject/remove, screening) which the board deliberately doesn't try to
-// replicate as drag targets.
+// ATS screenshot the user liked). Both views now share the same bulk
+// selection + actions (shortlist, email JD, email to client, add-to-group,
+// reject/remove) via MandateBulkActionsBar, so the full mandateContext
+// (including clientContacts/clientResources) is passed to both.
 export default function MandateCandidatesView({
   rows,
   mandateContext,
@@ -44,14 +44,7 @@ export default function MandateCandidatesView({
       </div>
 
       {view === "board" ? (
-        <MandateCandidatesBoard
-          rows={rows}
-          mandateContext={{
-            mandateId: mandateContext.mandateId as string,
-            role_title: mandateContext.role_title as string,
-            client_name: mandateContext.client_name as string,
-          }}
-        />
+        <MandateCandidatesBoard rows={rows} mandateContext={mandateContext} />
       ) : (
         <MandateCandidatesTable rows={rows} mandateContext={mandateContext} />
       )}

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import { STAGES, applyStageChange, type Stage } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
+import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 
 // Kanban view of the same rows the table shows, grouped by pipeline stage --
 // inspired by the reference ATS screenshot the user shared ("Look how
@@ -79,7 +80,7 @@ export default function MandateCandidatesBoard({
   mandateContext,
 }: {
   rows: MandateCandidateRow[];
-  mandateContext: { mandateId: string; role_title: string; client_name: string };
+  mandateContext: { mandateId: string; role_title: string; client_name: string; [key: string]: unknown };
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -88,6 +89,20 @@ export default function MandateCandidatesBoard({
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  // Same selection + bulk-actions capability the Table view has (shortlist,
+  // email JD, email to client, add to group, reject/remove) -- lets a
+  // recruiter select cards here too instead of switching to Table just to
+  // share something. See mandate-bulk-actions-bar.tsx for the shared logic.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleSelected(linkId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(linkId)) next.delete(linkId);
+      else next.add(linkId);
+      return next;
+    });
+  }
 
   const counters = useMemo(() => {
     const hired = rows.filter((r) => r.stage === "placed").length;
@@ -161,6 +176,15 @@ export default function MandateCandidatesBoard({
         </div>
       )}
 
+      <MandateBulkActionsBar
+        rows={rows}
+        setRows={setRows}
+        selected={selected}
+        setSelected={setSelected}
+        setMessage={setMessage}
+        mandateContext={mandateContext}
+      />
+
       {/* Top counters, matching the Hired / In pipeline / Dropped strip from
           the reference screenshot. */}
       <div className="flex items-center gap-2 mb-4">
@@ -209,11 +233,19 @@ export default function MandateCandidatesBoard({
                         setDraggingId(row.id);
                       }}
                       onDragEnd={() => setDraggingId(null)}
-                      className={`bg-white dark:bg-slate-900 rounded-ros-md border border-slate-200 dark:border-slate-700 p-2.5 shadow-ros-sm cursor-grab active:cursor-grabbing transition-all duration-150 ease-ros hover:-translate-y-px hover:shadow-md ${
-                        draggingId === row.id ? "opacity-40" : ""
-                      } ${isMoving ? "opacity-60 pointer-events-none" : ""}`}
+                      className={`bg-white dark:bg-slate-900 rounded-ros-md border p-2.5 shadow-ros-sm cursor-grab active:cursor-grabbing transition-all duration-150 ease-ros hover:-translate-y-px hover:shadow-md ${
+                        selected.has(row.id) ? "border-blue-400 ring-1 ring-blue-300" : "border-slate-200 dark:border-slate-700"
+                      } ${draggingId === row.id ? "opacity-40" : ""} ${isMoving ? "opacity-60 pointer-events-none" : ""}`}
                     >
                       <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(row.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onChange={() => toggleSelected(row.id)}
+                          className="shrink-0 mt-1"
+                        />
                         <div
                           className={`shrink-0 w-7 h-7 rounded-ros-full ${avatarColor(row.candidate.full_name)} text-white text-[10.5px] font-semibold flex items-center justify-center`}
                         >
