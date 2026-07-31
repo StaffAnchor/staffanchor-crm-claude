@@ -17,12 +17,12 @@ export default async function CandidateGroupDetailPage({ params }: { params: Pro
   const { data: members } = await supabase
     .from("candidate_group_members")
     .select(
-      "candidate_id, added_at, candidates:candidate_id(id, full_name, email, phone, current_employer, status, candidate_number, current_location, current_fixed_ctc, total_experience_years, notice_period, current_industry, sub_domain, open_to_relocation)"
+      "candidate_id, added_at, candidates:candidate_id(id, full_name, email, phone, current_employer, status, candidate_number, current_location, current_fixed_ctc, total_experience_years, notice_period, current_industry, sub_domain, open_to_relocation, resume_file_url)"
     )
     .eq("group_id", id)
     .order("added_at", { ascending: false });
 
-  const rows = (members ?? [])
+  const rawRows = (members ?? [])
     .map((m) => {
       const c = m.candidates as unknown as {
         id: string;
@@ -39,11 +39,36 @@ export default async function CandidateGroupDetailPage({ params }: { params: Pro
         current_industry: string | null;
         sub_domain: string | null;
         open_to_relocation: string | null;
+        resume_file_url: string | null;
       } | null;
       if (!c) return null;
       return { ...c, addedAt: m.added_at as string };
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
+
+  // Same batched-signed-URL pattern as the main Candidates table -- one
+  // Storage API call for every resume in the group instead of a per-row
+  // request, which is what let the Resume column ship there without
+  // slowing the page down.
+  const resumePaths = Array.from(
+    new Set(
+      rawRows
+        .map((r) => r.resume_file_url)
+        .filter((p): p is string => Boolean(p))
+        .map((p) => p.replace(/^resumes\//, ""))
+    )
+  );
+  const resumeUrlByPath: Record<string, string> = {};
+  if (resumePaths.length > 0) {
+    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60);
+    (signedBatch ?? []).forEach((s) => {
+      if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
+    });
+  }
+  const rows = rawRows.map((r) => ({
+    ...r,
+    resume_signed_url: r.resume_file_url ? resumeUrlByPath[r.resume_file_url.replace(/^resumes\//, "")] ?? null : null,
+  }));
 
   return (
     <div>

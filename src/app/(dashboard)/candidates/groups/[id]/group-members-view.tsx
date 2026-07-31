@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { X, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatExperience } from "@/lib/format-experience";
+import ResumePreview from "../../[id]/resume-preview";
 
 type Member = {
   id: string;
@@ -22,8 +23,19 @@ type Member = {
   current_industry: string | null;
   sub_domain: string | null;
   open_to_relocation: string | null;
+  resume_file_url: string | null;
+  resume_signed_url: string | null;
   addedAt: string;
 };
+
+// Same pattern as the main Candidates table's ResumeCell -- signed URLs are
+// batch-generated server-side (see page.tsx), so this is a pure render with
+// no per-row Storage API call.
+function ResumeCell({ resumeFileUrl, resumeSignedUrl }: { resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
+  if (!resumeFileUrl) return <span className="text-[11px] text-slate-300">—</span>;
+  if (!resumeSignedUrl) return <span className="text-[11px] text-red-500">Not found</span>;
+  return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
+}
 
 function uniqueSorted(values: (string | null | undefined)[]) {
   return Array.from(new Set(values.filter((v): v is string => !!v))).sort();
@@ -161,6 +173,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
               <th className="text-left px-3 py-2.5 whitespace-nowrap">Notice</th>
               <th className="text-left px-3 py-2.5 whitespace-nowrap">Relocation</th>
               <th className="text-left px-3 py-2.5 whitespace-nowrap">Status</th>
+              <th className="text-left px-3 py-2.5 whitespace-nowrap">Resume</th>
               <th className="text-left px-3 py-2.5 whitespace-nowrap">Added</th>
               <th className="px-3 py-2.5"></th>
             </tr>
@@ -187,6 +200,9 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
                 <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{m.notice_period ?? "—"}</td>
                 <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{m.open_to_relocation ?? "—"}</td>
                 <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{m.status ?? "—"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap">
+                  <ResumeCell resumeFileUrl={m.resume_file_url} resumeSignedUrl={m.resume_signed_url} />
+                </td>
                 <td className="px-3 py-2.5 text-slate-400 text-[12px] whitespace-nowrap">{new Date(m.addedAt).toLocaleDateString()}</td>
                 <td className="px-3 py-2.5">
                   <button
@@ -202,7 +218,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={14} className="px-4 py-6 text-center text-slate-400 text-[12.5px]">
+                <td colSpan={15} className="px-4 py-6 text-center text-slate-400 text-[12.5px]">
                   No candidates match these filters.
                 </td>
               </tr>
