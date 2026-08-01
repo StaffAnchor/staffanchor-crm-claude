@@ -11,7 +11,12 @@ import path from "path";
 // (src/lib/generate-jd-pdf.tsx) -- same logo, same palette.
 
 const LOGO_CID = "staffanchor-logo";
-const LOGO_PATH = path.join(process.cwd(), "public", "staffanchor-logo-pdf.png");
+// staffanchor-logo-pdf.png is a 240x240 square canvas with a lot of blank
+// padding around the actual mark -- rendering it at a landscape width/height
+// (e.g. 104x41) stretched the icon+wordmark horizontally. This cropped
+// variant is trimmed tight to the visible mark (196x122, ~1.6:1), so setting
+// width/height in that same ratio below renders it undistorted.
+const LOGO_PATH = path.join(process.cwd(), "public", "staffanchor-logo-email.png");
 
 // Same palette as generate-jd-pdf.tsx.
 const NAVY = "#0F172A";
@@ -42,7 +47,7 @@ export function renderEmailShell({ preheader, bodyHtml }: { preheader?: string; 
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background-color:#FFFFFF;border:1px solid ${BORDER};border-radius:10px;">
             <tr>
               <td style="padding:26px 28px 18px 28px;">
-                <img src="cid:${LOGO_CID}" width="104" height="41" alt="StaffAnchor" style="display:block;border:0;outline:none;" />
+                <img src="cid:${LOGO_CID}" width="130" height="81" alt="StaffAnchor" style="display:block;border:0;outline:none;" />
               </td>
             </tr>
             <tr>
@@ -58,7 +63,7 @@ export function renderEmailShell({ preheader, bodyHtml }: { preheader?: string; 
             </tr>
             <tr>
               <td style="padding:16px 28px;font-family:${FONT_STACK};font-size:11px;color:${MUTED};">
-                <span style="color:${NAVY};font-weight:600;">StaffAnchor</span>&nbsp;&middot;&nbsp;www.staffanchor.com
+                <span style="color:${NAVY};font-weight:600;">StaffAnchor Talent Solutions</span>&nbsp;&middot;&nbsp;www.staffanchor.com
               </td>
             </tr>
           </table>
