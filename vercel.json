@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/sales-briefing-sweep",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/profile-nudge-sweep",
+      "schedule": "0 8 * * *"
     }
   ]
 }

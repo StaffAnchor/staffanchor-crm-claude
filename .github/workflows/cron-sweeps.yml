@@ -44,7 +44,7 @@ jobs:
         run: |
           set -e
           # Always run: cheap, no Gemini generateContent calls.
-          ROUTES="inbox-sweep client-followup embed-candidates"
+          ROUTES="inbox-sweep client-followup embed-candidates profile-nudge-sweep"
 
           # Gemini-backed routes: gated to the same day-of-week as
           # vercel.json (1=Mon .. 7=Sun, UTC).
