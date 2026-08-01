@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { renderJdPdf, clientDisplayName, type JdPdfMandate } from "@/lib/generate-jd-pdf";
 
 // Emails the same JD PDF (see /api/mandates/[id]/jd-pdf) directly to one or
@@ -114,11 +114,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: gmailUser, pass: gmailPass },
-  });
-
   const sent: string[] = [];
   const failed: { name: string; reason: string }[] = [];
 
@@ -128,12 +123,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       continue;
     }
     try {
-      await transporter.sendMail({
-        from: `"StaffAnchor" <${gmailUser}>`,
+      await sendEmail({
         to: candidate.email,
         subject: `Job Description: ${mandate.role_title} — ${clientDisplay}`,
         text: `Hi ${candidate.full_name},\n\nPlease find attached the job description for ${mandate.role_title} at ${clientDisplay}.${linksTextBlock}\n\nThanks,\nStaffAnchor Team`,
-        html: `<p>Hi ${candidate.full_name},</p><p>Please find attached the job description for <strong>${mandate.role_title}</strong> at <strong>${clientDisplay}</strong>.</p>${linksHtmlBlock}<p>Thanks,<br/>StaffAnchor Team</p>`,
+        html: renderEmailShell({
+          preheader: `The job description for ${mandate.role_title} is attached.`,
+          bodyHtml: `<p>Hi ${candidate.full_name},</p><p>Please find attached the job description for <strong>${mandate.role_title}</strong> at <strong>${clientDisplay}</strong>.</p>${linksHtmlBlock}<p>Thanks,<br/>StaffAnchor Team</p>`,
+        }),
         attachments: [
           { filename: `${fileNameSafe}.pdf`, content: pdfBuffer, contentType: "application/pdf" },
           ...extraAttachments,

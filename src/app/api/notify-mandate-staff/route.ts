@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 // Fires alongside assign_mandate_staff (which already writes the in-app
 // notification-bell row) to also email whoever was just staffed on a
@@ -52,17 +52,14 @@ export async function POST(req: NextRequest) {
   const clientLabel = mandate.client_name ?? "a client";
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailUser, pass: gmailPass },
-    });
-
-    await transporter.sendMail({
-      from: `"StaffAnchor" <${gmailUser}>`,
+    await sendEmail({
       to: person.email,
       subject: `You've been assigned: ${mandate.role_title ?? "a mandate"} (${clientLabel})`,
       text: `Hi ${person.full_name ?? ""},\n\nYou've been staffed on a mandate:\n\n${mandate.role_title ?? "Role"} -- ${clientLabel}\n\nOpen it here: ${mandateUrl}\n\nThanks,\nStaffAnchor Team`,
-      html: `<p>Hi ${person.full_name ?? ""},</p><p>You've been staffed on a mandate:</p><p><strong>${mandate.role_title ?? "Role"}</strong> -- ${clientLabel}</p><p><a href="${mandateUrl}">Open it in the CRM</a></p><p>Thanks,<br/>StaffAnchor Team</p>`,
+      html: renderEmailShell({
+        preheader: `You've been staffed on ${mandate.role_title ?? "a mandate"}.`,
+        bodyHtml: `<p>Hi ${person.full_name ?? ""},</p><p>You've been staffed on a mandate:</p><p><strong>${mandate.role_title ?? "Role"}</strong> -- ${clientLabel}</p><p><a href="${mandateUrl}">Open it in the CRM</a></p><p>Thanks,<br/>StaffAnchor Team</p>`,
+      }),
     });
 
     await supabase.from("audit_log").insert({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 // Daily digest: a joining date was captured (at Offer or Placed), but
 // nothing ever followed up on whether the candidate actually joined --
@@ -76,8 +76,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: gmailUser, pass: gmailPass } });
-
   for (const group of byMandate.values()) {
     const { data: admins } = await admin.from("profiles").select("email").eq("role", "admin");
     const { data: assignments } = await admin
@@ -106,12 +104,14 @@ export async function GET(req: NextRequest) {
     const mandateUrl = `https://staffanchor-crm-claude.vercel.app/mandates/${group.mandateId}`;
 
     try {
-      await transporter.sendMail({
-        from: `"StaffAnchor CRM" <${gmailUser}>`,
+      await sendEmail({
         to: recipients.join(","),
         subject: `Joining follow-up: ${group.clientName} — ${group.roleTitle}`,
         text: `Joining dates to confirm for ${group.roleTitle} at ${group.clientName}:\n\n${listText}\n\n${mandateUrl}`,
-        html: `<p>Joining dates to confirm for <strong>${group.roleTitle}</strong> at <strong>${group.clientName}</strong>:</p><ul>${listHtml}</ul><p><a href="${mandateUrl}">${mandateUrl}</a></p>`,
+        html: renderEmailShell({
+          preheader: `Joining dates to confirm for ${group.roleTitle} at ${group.clientName}.`,
+          bodyHtml: `<p>Joining dates to confirm for <strong>${group.roleTitle}</strong> at <strong>${group.clientName}</strong>:</p><ul>${listHtml}</ul><p><a href="${mandateUrl}">${mandateUrl}</a></p>`,
+        }),
       });
       results.push({ mandate_id: group.mandateId, notified: recipients.length });
     } catch (err) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 // Weekly digest: gap #5 from the July 2026 audit. An invited client who
 // never logs into the portal (or stopped logging in) was previously
@@ -78,8 +78,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: gmailUser, pass: gmailPass } });
-
   for (const group of byClient.values()) {
     const { data: admins } = await admin.from("profiles").select("email").eq("role", "admin");
     const { data: mandates } = await admin.from("mandates").select("id").eq("client_id", group.clientId);
@@ -106,12 +104,14 @@ export async function GET(req: NextRequest) {
     const listHtml = group.flags.map((f) => `<li>${describe(f)}</li>`).join("");
 
     try {
-      await transporter.sendMail({
-        from: `"StaffAnchor CRM" <${gmailUser}>`,
+      await sendEmail({
         to: recipients.join(","),
         subject: `Client portal inactivity: ${group.clientName}`,
         text: `${group.clientName}'s portal contacts have gone quiet:\n\n${listText}\n\nWorth a check-in call.`,
-        html: `<p><strong>${group.clientName}</strong>'s portal contacts have gone quiet:</p><ul>${listHtml}</ul><p>Worth a check-in call.</p>`,
+        html: renderEmailShell({
+          preheader: `${group.clientName}'s portal contacts have gone quiet.`,
+          bodyHtml: `<p><strong>${group.clientName}</strong>'s portal contacts have gone quiet:</p><ul>${listHtml}</ul><p>Worth a check-in call.</p>`,
+        }),
       });
       results.push({ client_id: group.clientId, notified: recipients.length });
     } catch (err) {

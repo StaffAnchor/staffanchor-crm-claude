@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -83,17 +83,14 @@ export async function POST(req: NextRequest) {
       : "";
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailUser, pass: gmailPass },
-    });
-
-    await transporter.sendMail({
-      from: `"StaffAnchor" <${gmailUser}>`,
+    await sendEmail({
       to: candidate.email,
       subject: "Complete your StaffAnchor candidate profile",
       text: `Hi ${candidate.full_name},\n\nA StaffAnchor recruiter has started a profile for you.${missingFieldText} Please complete it here so we can match you to the right roles:\n\n${registerUrl}\n\nThanks,\nStaffAnchor Team`,
-      html: `<p>Hi ${candidate.full_name},</p><p>A StaffAnchor recruiter has started a profile for you.${missingFieldText}</p><p>Please complete it so we can match you to the right roles:</p><p><a href="${registerUrl}">${registerUrl}</a></p><p>Thanks,<br/>StaffAnchor Team</p>`,
+      html: renderEmailShell({
+        preheader: "Complete your candidate profile so we can match you to the right roles.",
+        bodyHtml: `<p>Hi ${candidate.full_name},</p><p>A StaffAnchor recruiter has started a profile for you.${missingFieldText}</p><p>Please complete it so we can match you to the right roles:</p><p><a href="${registerUrl}">${registerUrl}</a></p><p>Thanks,<br/>StaffAnchor Team</p>`,
+      }),
     });
 
     await supabase.from("audit_log").insert({

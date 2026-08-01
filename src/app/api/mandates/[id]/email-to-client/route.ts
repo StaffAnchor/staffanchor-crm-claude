@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { STAGES, applyStageChange } from "@/lib/mandate-stage";
 
 // Emails a hand-picked set of candidates on this mandate straight to one or
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         c.current_employer ? `currently at ${c.current_employer}` : null,
         c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L fixed CTC` : null,
       ].filter(Boolean);
-      return `<li><strong>${c.full_name}</strong>${bits.length ? ` — ${bits.join(", ")}` : ""}</li>`;
+      return `<li style="margin-bottom:6px;"><strong>${c.full_name}</strong>${bits.length ? ` — ${bits.join(", ")}` : ""}</li>`;
     })
     .join("");
 
@@ -179,23 +179,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     candidates.length === 1 ? "'s" : ""
   }:\n\n${candidateLines}\n\nResumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.\n\nYou can also review the full shortlist, with more detail on each candidate, here: ${shortlistUrl}\n(Opening it will ask you to verify this email address with a one-time code -- that's expected, it's how we keep the shortlist private to this client.)\n\nLet us know your thoughts whenever convenient.\n\nThanks,\n${recruiterName}\nStaffAnchor`;
 
-  const html = `<p>${greeting},</p>
+  const html = renderEmailShell({
+    preheader: `${candidates.length} candidate${candidates.length === 1 ? "" : "s"} shared for ${mandate.role_title}.`,
+    bodyHtml: `<p>${greeting},</p>
 <p>Please find below the candidate${candidates.length === 1 ? "" : "s"} we'd like to submit for <strong>${mandate.role_title}</strong>:</p>
-<ul>${candidateListHtml}</ul>
+<ul style="margin:0 0 16px 0;padding-left:20px;">${candidateListHtml}</ul>
 <p>Resumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.</p>
 <p>You can also review the full shortlist, with more detail on each candidate, here: <a href="${shortlistUrl}">${shortlistUrl}</a></p>
 <p style="color:#94a3b8;font-size:12px;">Opening it will ask you to verify this email address with a one-time code -- that's expected, it's how we keep the shortlist private to this client.</p>
 <p>Let us know your thoughts whenever convenient.</p>
-<p>Thanks,<br/>${recruiterName}<br/>StaffAnchor</p>`;
+<p>Thanks,<br/>${recruiterName}<br/>StaffAnchor</p>`,
+  });
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailUser, pass: gmailPass },
-    });
-
-    await transporter.sendMail({
-      from: `"StaffAnchor" <${gmailUser}>`,
+    await sendEmail({
       to: validContacts.map((c) => c.email).join(", "),
       subject,
       text,

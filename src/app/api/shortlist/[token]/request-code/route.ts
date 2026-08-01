@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { generateSixDigitCode } from "@/lib/shortlist-auth";
 
 // Step 1 of the email-OTP gate in front of the no-login /shortlist/[token]
@@ -57,13 +57,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   await admin.from("shortlist_access_codes").insert({ token, email: email.trim(), code, expires_at: expiresAt });
 
   try {
-    const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: gmailUser, pass: gmailPass } });
-    await transporter.sendMail({
-      from: `"StaffAnchor" <${gmailUser}>`,
+    await sendEmail({
       to: email.trim(),
       subject: "Your StaffAnchor shortlist access code",
       text: `Your access code is ${code}. It expires in 10 minutes.\n\nIf you didn't request this, you can safely ignore this email.`,
-      html: `<p>Your access code is <strong style="font-size:20px;letter-spacing:2px;">${code}</strong>.</p><p>It expires in 10 minutes.</p><p style="color:#94a3b8;font-size:12px;">If you didn't request this, you can safely ignore this email.</p>`,
+      html: renderEmailShell({
+        preheader: `Your access code is ${code}.`,
+        bodyHtml: `<p>Your access code is <strong style="font-size:20px;letter-spacing:2px;">${code}</strong>.</p><p>It expires in 10 minutes.</p><p style="color:#94a3b8;font-size:12px;">If you didn't request this, you can safely ignore this email.</p>`,
+      }),
     });
   } catch (err) {
     console.error("Shortlist access code email failed", token, err);

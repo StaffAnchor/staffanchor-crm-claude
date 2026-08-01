@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 export const runtime = "nodejs";
 
@@ -203,11 +203,6 @@ async function sendRecruiterCreatedWelcomeEmail(
   }
   const actionLink = data.properties.action_link;
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: gmailUser, pass: gmailPass },
-  });
-
   const firstName = fullName.split(" ")[0] || "there";
   const missingFieldText =
     missingFields.length > 0
@@ -215,13 +210,10 @@ async function sendRecruiterCreatedWelcomeEmail(
       : "";
   const subject = "A recruiter started your StaffAnchor profile — here's what's next";
   const text = `Hi ${firstName},\n\nA StaffAnchor recruiter has started a profile for you so we can match you to the right sales roles.${missingFieldText}\n\nYour profile is currently ${completionScore}% complete. Sign in below to review it, add the rest of your details, and start hearing about relevant openings:\n\n${actionLink}\n\nNo password needed -- that link logs you straight in.\n\nThanks,\nStaffAnchor Team`;
-  const html = `<p>Hi ${firstName},</p><p>A StaffAnchor recruiter has started a profile for you so we can match you to the right sales roles.${missingFieldText}</p><p>Your profile is currently <strong>${completionScore}% complete</strong>. Sign in below to review it, add the rest of your details, and start hearing about relevant openings:</p><p><a href="${actionLink}">${actionLink}</a></p><p>No password needed — that link logs you straight in.</p><p>Thanks,<br/>StaffAnchor Team</p>`;
-
-  await transporter.sendMail({
-    from: `"StaffAnchor" <${gmailUser}>`,
-    to: email,
-    subject,
-    text,
-    html,
+  const html = renderEmailShell({
+    preheader: `Your profile is ${completionScore}% complete -- sign in to finish it.`,
+    bodyHtml: `<p>Hi ${firstName},</p><p>A StaffAnchor recruiter has started a profile for you so we can match you to the right sales roles.${missingFieldText}</p><p>Your profile is currently <strong>${completionScore}% complete</strong>. Sign in below to review it, add the rest of your details, and start hearing about relevant openings:</p><p><a href="${actionLink}">${actionLink}</a></p><p>No password needed — that link logs you straight in.</p><p>Thanks,<br/>StaffAnchor Team</p>`,
   });
+
+  await sendEmail({ to: email, subject, text, html });
 }

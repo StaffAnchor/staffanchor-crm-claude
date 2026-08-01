@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 const STALE_DAYS = 4;
 
@@ -101,8 +101,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: gmailUser, pass: gmailPass } });
-
   for (const group of byMandate.values()) {
     // Recipients: admins (always) + this mandate's assigned recruiter(s).
     const { data: admins } = await admin.from("profiles").select("email").eq("role", "admin");
@@ -131,12 +129,14 @@ export async function GET(req: NextRequest) {
     const mandateUrl = `https://staffanchor-crm-claude.vercel.app/mandates/${group.mandateId}`;
 
     try {
-      await transporter.sendMail({
-        from: `"StaffAnchor CRM" <${gmailUser}>`,
+      await sendEmail({
         to: recipients.join(","),
         subject: `Follow-up needed: ${group.clientName} hasn't responded on ${group.roleTitle}`,
         text: `${group.clientName} was shared a shortlist for ${group.roleTitle} and hasn't given feedback on:\n\n${listText}\n\nWorth a nudge: ${mandateUrl}`,
-        html: `<p><strong>${group.clientName}</strong> was shared a shortlist for <strong>${group.roleTitle}</strong> and hasn't given feedback on:</p><ul>${listHtml}</ul><p>Worth a nudge: <a href="${mandateUrl}">${mandateUrl}</a></p>`,
+        html: renderEmailShell({
+          preheader: `${group.clientName} hasn't responded on ${group.roleTitle}.`,
+          bodyHtml: `<p><strong>${group.clientName}</strong> was shared a shortlist for <strong>${group.roleTitle}</strong> and hasn't given feedback on:</p><ul>${listHtml}</ul><p>Worth a nudge: <a href="${mandateUrl}">${mandateUrl}</a></p>`,
+        }),
       });
       results.push({ mandate_id: group.mandateId, notified: recipients.length });
     } catch (err) {
