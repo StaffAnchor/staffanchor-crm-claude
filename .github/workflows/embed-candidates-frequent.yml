@@ -1,0 +1,46 @@
+name: Embed candidates (frequent backfill)
+
+# Runs /api/cron/embed-candidates every 3 hours, independent of the daily
+# cron-sweeps.yml backstop above. Vercel's Hobby plan caps native cron jobs
+# at once per day (a schedule like "every 3 hours" fails at deploy time),
+# so this route's higher-frequency schedule has to live here instead of
+# vercel.json.
+#
+# This route is deliberately the one running this often: it embeds
+# candidates via Gemini's text-embedding-004 model, which sits in a
+# SEPARATE free-tier quota bucket from the generateContent models
+# (gemini-2.5-flash-lite/flash/2.0-flash) that auto-summarize,
+# career-timeline-sweep, and mandate-auto-rematch all share and are
+# already tight on (~20 generateContent requests/day total). Running this
+# every 3 hours does not compete with or put that quota at risk -- the
+# goal is for the system to have every candidate memorized (embedded) as
+# close to real-time as possible, so matchCandidatesForMandate's semantic
+# recall always has the full candidate pool available, not just whoever
+# the once-daily sweep got to.
+#
+# Uses the same CRON_SECRET repo/Vercel-env secret as cron-sweeps.yml --
+# no additional setup needed if that's already configured.
+
+on:
+  schedule:
+    - cron: "0 */3 * * *" # every 3 hours
+  workflow_dispatch: {}
+
+jobs:
+  embed-candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit embed-candidates
+        env:
+          BASE_URL: ${{ vars.CRM_BASE_URL || 'https://staffanchor-crm-claude.vercel.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -e
+          if [ -n "$CRON_SECRET" ]; then
+            curl -sS -o - -w "\nHTTP %{http_code}\n" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "$BASE_URL/api/cron/embed-candidates"
+          else
+            curl -sS -o - -w "\nHTTP %{http_code}\n" \
+              "$BASE_URL/api/cron/embed-candidates"
+          fi

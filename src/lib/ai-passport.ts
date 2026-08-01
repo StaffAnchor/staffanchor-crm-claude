@@ -8,6 +8,7 @@ import {
   type ResumeTimelineEntry,
 } from "@/lib/career-timeline";
 import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
+import { embedCandidate } from "@/lib/embeddings";
 
 export type AiPassport = {
   headline?: string;
@@ -236,6 +237,12 @@ export async function generateAiPassportForCandidate(
 
 Use ONLY facts given below (structured data + resume excerpt) -- never invent employers, numbers, skills, or achievements that are not present. If the structured data and resume excerpt conflict, trust the structured data. If a field is missing, omit it rather than guessing.
 
+Education/certification accuracy -- this has caused real errors, be careful:
+- Resume headers commonly cram multiple DIFFERENT credentials into one pipe- or comma-separated line, e.g. "MBA (Marketing) | IIM Ahmedabad Leadership Program | Six Sigma Green Belt Certified". Each segment is its OWN separate credential from its OWN institution -- never merge adjacent segments into one claim (e.g. that line does NOT mean "MBA from IIM Ahmedabad"; it means an MBA from wherever the resume's Education/Academic Credentials section says, PLUS a separate, shorter leadership program at IIM Ahmedabad, PLUS a separate Six Sigma certification).
+- A "Leadership Program", "Executive Program", "Certificate Program", or similar at a prestigious institute is NOT the same as a full degree (MBA/BE/BTech/etc.) from that institute -- never upgrade a short program into "holds an MBA/degree from X".
+- If the resume has an explicit "Education"/"Academic Credentials"/"Qualifications" section, that section is the authoritative source for which institution actually granted each degree -- prefer it over a header/summary line whenever the two could be read as conflicting or ambiguous.
+- When in doubt about which institution a specific degree came from, state the degree without the institution rather than guessing wrong.
+
 Writing rules -- these matter as much as the facts:
 1. Use the candidate's first name ("${firstName}") as the subject of every sentence, not "they/their/them" -- we don't know this candidate's gender, and defaulting to "they" reads impersonal and slightly awkward for a document meant to sound like a person wrote it. Repeating the first name across sentences is fine and preferred (e.g. "Vivek is looking for..." / "Vivek's targets show..."), just never repeat the full name (first + last) more than once.
 2. Never just list raw numbers back-to-back. Synthesize. For achievement history specifically: don't dump every percentage range as a comma list -- describe the pattern instead, e.g. "consistently hitting 90%+ of target in 3 of the last 4 quarters, with one softer stretch at 50-75%" rather than "86-90%, 96-100%, 96-100%, and 50-75%".
@@ -248,12 +255,12 @@ Return ONLY a JSON object (no markdown fence, no commentary) with exactly these 
 - "targets_line": one sentence synthesizing quota/target performance into a pattern or trend (see rule 2 above). Where the underlying fields are present in segment data, work in the actual target size (e.g. "ic_targets"/quarterly or period target amount, with its currency) and typical deal size ("deal_size" band, with its currency) alongside the achievement trend -- don't just report the achievement percentages in isolation when the target amount and deal size are sitting right there in the data. Omit key entirely if no target/achievement data exists at all.
 - "stability_line": one honest sentence about ${firstName}'s job tenure pattern, based ONLY on the "career_stability" data below (never estimate tenure from the resume excerpt yourself -- these numbers are computed from actual dates). If "stability_label" is "Frequent Job-Hopper" or several roles show short tenure_months, say so plainly and name the specific role(s)/company(ies) with short stints (e.g. "has moved roles frequently in the last two years, including two-and-a-half-month and two-month stints at X and Y") -- do not soften or omit a real job-hopping pattern just to sound positive. If "stability_label" is "Stable" or "Some Movement" with no notably short stints, note the steady tenure instead. Omit key entirely if "career_stability" is null.
 - Note on "best"/"lost" self-assessment write-ups: these are the candidate's own words about a specific win/loss, not resume content. If used, fold the concrete fact (e.g. a named client or deal size mentioned there) into "targets_line" rather than "resume_highlights", since "resume_highlights" is reserved for facts pulled from the actual resume excerpt below.
-- "resume_highlights": an array of 2-4 short bullet-point strings pulled from the resume excerpt below -- concrete, factual points only (notable employers/clients, tenure pattern, certifications, named achievements) that AREN'T already covered by the headline/compensation/targets lines. Omit key (or return empty array) if no resume excerpt is provided or nothing factual/notable is extractable.
+- "resume_highlights": an array of 2-4 short bullet-point strings pulled from the resume excerpt below -- concrete, factual points only (notable employers/clients, tenure pattern, certifications, named achievements) that AREN'T already covered by the headline/compensation/targets lines. Omit key (or return empty array) if no resume excerpt is provided or nothing factual/notable is extractable. If a highlight mentions a degree/certification, follow the education-accuracy rule above exactly -- attribute each credential to its own institution, don't merge a header line's pipe-separated items into one claim.
 
 The following four keys are for INTERNAL recruiter decision-support only -- never shown to clients or the candidate, so be direct and unsparing here even where the lines above stay diplomatic:
 - "green_flags": array of 1-4 short phrases, each a concrete factual reason this candidate is a strong match (e.g. "Consistently exceeded quota for 6 straight quarters", "5+ years in the exact same sub-domain and industry as this hiring need"). Grounded only in the structured data / resume / career_stability -- never invent.
-- "red_flags": array of 0-4 short phrases naming concrete risks a recruiter should probe before shortlisting (e.g. "Two roles under 3 months each in the last 18 months", "No quota/achievement data provided", "Expected CTC is a large jump over current fixed CTC with no context given"). Empty array if genuinely nothing stands out -- do not invent a red flag to fill the array.
-- "watch_areas": array of 0-3 short phrases for genuinely ambiguous/uncertain points that are neither clearly good nor bad and need a human judgment call or a clarifying question in the interview (e.g. "Reason for leaving current role not stated", "Industry experience is adjacent but not identical to this mandate's domain"). Empty array if none.
+- "red_flags": array of 0-4 short phrases naming concrete risks a recruiter should probe before shortlisting (e.g. "Two roles under 3 months each in the last 18 months", "No quota/achievement data provided", "Expected CTC is a large jump over current fixed CTC with no context given"). Empty array if genuinely nothing stands out -- do not invent a red flag to fill the array. IMPORTANT: this passport is generated once for the candidate generally, not against any one specific mandate -- never flag a candidate's seniority/title level (e.g. "this role is more senior than typical", "overqualified") as a red flag or watch area, since whether a given seniority is a mismatch is entirely relative to whatever specific mandate they're later considered for, which isn't known here. A senior title is a fact about the candidate, not a risk in itself.
+- "watch_areas": array of 0-3 short phrases for genuinely ambiguous/uncertain points that are neither clearly good nor bad and need a human judgment call or a clarifying question in the interview (e.g. "Reason for leaving current role not stated", "Industry experience is adjacent but not identical to this mandate's domain"). Empty array if none. Same seniority-level caveat as red_flags above applies here too.
 - "recommendation": your own overall read as exactly one of "Strong Fit", "Fit with Reservations", or "Not a Fit" -- the same three-way scale recruiters use in their own manual scorecard (recruiter_scorecard.overall_recommendation below, if already filled in) -- based on weighing green_flags against red_flags/watch_areas. This is a second, independent opinion sitting alongside the recruiter's own call, not a replacement for it.
 
 The following four keys build a structured skill inventory -- also internal only, used to match this candidate against future mandates far more precisely than the free-text "skills" field allows. Extract from BOTH the structured data and resume excerpt; be specific (named tools/platforms, not vague categories) and don't pad with generic filler ("teamwork", "communication") unless the resume/self-assessment genuinely emphasizes it:
@@ -319,6 +326,49 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         entity_id: candidateId,
         detail: { model: modelName, used_resume_text: !!resumeExcerpt, note: auditActor.note },
       });
+
+      // Memorize this candidate for fast mandate matching -- every full
+      // generation (new-profile auto-trigger, manual regenerate, or the
+      // smart regenerate-on-view after an assessment update) also refreshes
+      // the embedding, so the profile is immediately findable by
+      // matchCandidatesForMandate's semantic recall path without waiting
+      // for the next embed-candidates cron sweep. Uses a separate Gemini
+      // quota bucket (text-embedding-004) from the generateContent calls
+      // above, so this never competes with summary-generation quota.
+      //
+      // Awaited (not fire-and-forget) deliberately -- this function is
+      // called both from waitUntil()-wrapped background triggers AND
+      // directly awaited from the candidate detail page's smart
+      // regenerate-on-view. In the latter case there's no waitUntil()
+      // registered, so an un-awaited promise here would risk the exact
+      // same "Vercel freezes the invocation right after the response is
+      // sent" bug already fixed elsewhere for this same reason. Wrapped in
+      // try/catch so an embedding failure never fails the generation that
+      // already succeeded.
+      try {
+        await embedCandidate(
+          {
+            id: candidateId,
+            full_name: candidate.full_name as string | null,
+            category: candidate.category as string | null,
+            sub_domain: candidate.sub_domain as string | null,
+            secondary_sub_domains: candidate.secondary_sub_domains as string[] | null,
+            current_job_title: candidate.current_job_title as string | null,
+            current_employer: candidate.current_employer as string | null,
+            current_industry: candidate.current_industry as string | null,
+            industries: candidate.industries as string[] | null,
+            total_experience_years: candidate.total_experience_years as number | null,
+            current_location: candidate.current_location as string | null,
+            skills: candidate.skills as string | null,
+            segment_data: candidate.segment_data as Record<string, unknown> | null,
+            ai_summary: summary,
+            resume_text: resumeText,
+          },
+          supabase
+        );
+      } catch (err) {
+        console.error("Embedding refresh failed after AI passport generation", candidateId, err);
+      }
 
       return {
         ok: true,
