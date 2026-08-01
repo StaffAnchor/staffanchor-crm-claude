@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
+import { waitUntil } from "@vercel/functions";
 
 export const runtime = "nodejs";
 
@@ -90,13 +91,26 @@ export async function POST(req: NextRequest) {
     // stability_line reads the freshly-extracted timeline rather than racing
     // it. Never awaited by the response -- both functions catch their own
     // errors internally and this route's response shouldn't wait on Gemini.
-    generateCareerTimelineForCandidate(candidateId, admin)
-      .catch((err) => console.error("Auto career-timeline generation failed for new candidate", candidateId, err))
-      .finally(() => {
-        generateAiPassportForCandidate(candidateId, admin, { note: "auto_generated_on_create" }).catch((err) =>
-          console.error("Auto AI passport generation failed for new candidate", candidateId, err)
-        );
-      });
+    //
+    // IMPORTANT: this MUST be registered with waitUntil(). A Vercel Node.js
+    // serverless function's execution environment can be frozen/torn down
+    // the instant the HTTP response is flushed -- an un-awaited promise with
+    // only a bare .catch() is not guaranteed to run to completion, it's only
+    // "usually fast enough to sneak in before freeze." That's exactly why
+    // some new profiles were silently ending up with no ai_summary/
+    // stability_score despite having a resume: the generation got cut off
+    // mid-flight. waitUntil() tells the Vercel runtime to keep the
+    // invocation alive until this promise settles, even after the response
+    // has been returned to the client.
+    waitUntil(
+      generateCareerTimelineForCandidate(candidateId, admin)
+        .catch((err) => console.error("Auto career-timeline generation failed for new candidate", candidateId, err))
+        .finally(() => {
+          return generateAiPassportForCandidate(candidateId, admin, { note: "auto_generated_on_create" }).catch(
+            (err) => console.error("Auto AI passport generation failed for new candidate", candidateId, err)
+          );
+        })
+    );
 
     const { error: linkError } = await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);
     if (linkError) {
