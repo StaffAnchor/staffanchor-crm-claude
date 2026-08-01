@@ -4,18 +4,29 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sparkles, Loader2, Check, X, HelpCircle, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Loader2, Check, X, HelpCircle, UserPlus, ChevronDown, ChevronUp, Info, AlertTriangle } from "lucide-react";
 
 type RequirementStatus = "met" | "not_met" | "unclear";
 type RequirementCheck = { requirement: string; status: RequirementStatus; evidence: string };
+
+type ScoreBreakdown = {
+  must_haves_fit: number;
+  good_to_haves_fit: number;
+  experience_fit: number;
+  domain_relevance: number;
+  notes: string;
+};
 
 type CandidateMatch = {
   candidate_id: string;
   full_name: string;
   score: number;
+  score_breakdown: ScoreBreakdown | null;
   reason: string;
   must_haves: RequirementCheck[];
   good_to_haves: RequirementCheck[];
+  stability_score: number | null;
+  has_ai_summary: boolean;
 };
 
 // Cached auto_match_results may still be in the pre-upgrade shape
@@ -32,9 +43,13 @@ function normalizeCachedMatches(raw: unknown): CandidateMatch[] {
       candidate_id: String(row.candidate_id ?? ""),
       full_name: String(row.full_name ?? "Unknown"),
       score: typeof row.score === "number" ? row.score : 0,
+      score_breakdown:
+        row.score_breakdown && typeof row.score_breakdown === "object" ? (row.score_breakdown as ScoreBreakdown) : null,
       reason: String(row.reason ?? ""),
       must_haves: isNewShape(row.must_haves) ? row.must_haves : [],
       good_to_haves: isNewShape(row.good_to_haves) ? row.good_to_haves : [],
+      stability_score: typeof row.stability_score === "number" ? row.stability_score : null,
+      has_ai_summary: !!row.has_ai_summary,
     };
   });
 }
@@ -50,6 +65,27 @@ function matchCountColor(met: number, total: number) {
   if (met === total) return "text-emerald-700 bg-emerald-50";
   if (met === 0) return "text-red-700 bg-red-50";
   return "text-amber-700 bg-amber-50";
+}
+
+function stabilityLabel(score: number): { label: string; tone: string } {
+  if (score >= 71) return { label: "Stable", tone: "text-emerald-700 bg-emerald-50" };
+  if (score >= 36) return { label: "Some Movement", tone: "text-amber-700 bg-amber-50" };
+  return { label: "Frequent Job-Hopper", tone: "text-red-700 bg-red-50" };
+}
+
+function ScoreBreakdownBar({ label, value }: { label: string; value: number }) {
+  const barColor = value >= 75 ? "bg-emerald-500" : value >= 50 ? "bg-amber-500" : "bg-red-400";
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">
+        <span>{label}</span>
+        <span className="tabular-nums">{value}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
+    </div>
+  );
 }
 
 function StatusChip({ check }: { check: RequirementCheck }) {
@@ -96,6 +132,7 @@ export default function FindMatchesPanel({
   const [scanned, setScanned] = useState(0);
   const [computedAt, setComputedAt] = useState<string | null>(initialComputedAt ?? null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [scoreOpen, setScoreOpen] = useState<Set<string>>(new Set());
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [addingId, setAddingId] = useState<string | null>(null);
   const [calibration, setCalibration] = useState<{ positive: number; negative: number } | null>(null);
@@ -127,6 +164,15 @@ export default function FindMatchesPanel({
 
   function toggleExpanded(id: string) {
     setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleScoreOpen(id: string) {
+    setScoreOpen((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -217,9 +263,11 @@ export default function FindMatchesPanel({
           <div className="space-y-2 max-h-[32rem] overflow-y-auto">
             {matches.map((m) => {
               const isOpen = expanded.has(m.candidate_id);
+              const isScoreOpen = scoreOpen.has(m.candidate_id);
               const added = addedIds.has(m.candidate_id);
               const metCount = m.must_haves.filter((c) => c.status === "met").length;
               const totalCount = m.must_haves.length;
+              const stability = m.stability_score != null ? stabilityLabel(m.stability_score) : null;
               return (
                 <div key={m.candidate_id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-3">
                   <div className="flex items-start justify-between gap-2">
@@ -231,16 +279,48 @@ export default function FindMatchesPanel({
                         >
                           {m.full_name}
                         </Link>
-                        <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${scoreColor(m.score)}`}>
-                          {m.score}
-                        </span>
+                        <button
+                          onClick={() => toggleScoreOpen(m.candidate_id)}
+                          title="Click to see how this score was calculated"
+                          className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded hover:ring-1 hover:ring-current ${scoreColor(m.score)}`}
+                        >
+                          {m.score} <Info className="w-2.5 h-2.5" />
+                        </button>
                         {totalCount > 0 && (
                           <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${matchCountColor(metCount, totalCount)}`}>
                             {metCount}/{totalCount} must-haves
                           </span>
                         )}
+                        {stability && (
+                          <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${stability.tone}`}>
+                            {stability.label}
+                          </span>
+                        )}
+                        {!m.has_ai_summary && (
+                          <Link
+                            href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
+                            className="inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 hover:bg-orange-100"
+                            title="Open the profile to generate one"
+                          >
+                            <AlertTriangle className="w-2.5 h-2.5" /> Summary not generated yet
+                          </Link>
+                        )}
                       </div>
                       <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{m.reason}</p>
+
+                      {isScoreOpen && m.score_breakdown && (
+                        <div className="mt-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 space-y-1.5">
+                          <ScoreBreakdownBar label="Must-haves fit (50%)" value={m.score_breakdown.must_haves_fit} />
+                          <ScoreBreakdownBar label="Good-to-haves fit (10%)" value={m.score_breakdown.good_to_haves_fit} />
+                          <ScoreBreakdownBar label="Experience fit (20%)" value={m.score_breakdown.experience_fit} />
+                          <ScoreBreakdownBar label="Domain relevance (20%)" value={m.score_breakdown.domain_relevance} />
+                          {m.score_breakdown.notes && (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic pt-1">
+                              {m.score_breakdown.notes}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => toggleExpanded(m.candidate_id)}

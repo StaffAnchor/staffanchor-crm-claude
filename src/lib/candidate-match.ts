@@ -22,13 +22,38 @@ export type RequirementCheck = {
   evidence: string;
 };
 
+// Named, weighted components behind the overall score -- computed by the
+// same Gemini call using an explicit formula (see prompt below), not a
+// black box. Surfaced so a recruiter can click the score and see exactly
+// why a candidate landed at, say, 62 instead of just trusting a number.
+export type ScoreBreakdown = {
+  must_haves_fit: number; // 0-100, weighted ~50% of score
+  good_to_haves_fit: number; // 0-100, weighted ~10%
+  experience_fit: number; // 0-100, weighted ~20%
+  domain_relevance: number; // 0-100, weighted ~20%
+  notes: string; // one or two sentences on what pulled the score up/down
+};
+
 export type CandidateMatch = {
   candidate_id: string;
   full_name: string;
   score: number;
+  score_breakdown: ScoreBreakdown | null;
   reason: string;
   must_haves: RequirementCheck[];
   good_to_haves: RequirementCheck[];
+  // Attached directly from the candidate's own row data (never from the
+  // LLM) so it's exact, not a paraphrase -- lets the match list itself flag
+  // "no AI summary yet" and stability score without a second round trip to
+  // the candidate's profile.
+  stability_score: number | null;
+  has_ai_summary: boolean;
+  current_job_title: string | null;
+  current_employer: string | null;
+  current_location: string | null;
+  total_experience_years: number | null;
+  expected_fixed_ctc: number | null;
+  notice_period: string | null;
 };
 
 export type MatchMandateResult =
@@ -62,6 +87,7 @@ type CandidateRow = {
   recruiter_assessment: Record<string, unknown> | null;
   resume_text: string | null;
   ai_summary: string | null;
+  stability_score: number | null;
 };
 
 function parseJsonArray(raw: string): CandidateMatch[] | null {
@@ -171,7 +197,7 @@ export async function matchCandidatesForMandate(
   // hard filters, since a strong adjacent-domain candidate is still worth
   // surfacing to the recruiter with a lower score.
   const SELECT_COLUMNS =
-    "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, skill_inventory, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary";
+    "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, skill_inventory, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary, stability_score";
 
   let query = supabase.from("candidates").select(SELECT_COLUMNS).neq("status", "awaiting_input").limit(400);
 
@@ -348,9 +374,17 @@ Getting this three-way split right (met vs. not_met vs. unclear) matters more th
 
 For EACH candidate, decide if they are worth surfacing to the recruiter at all. Only include candidates with a genuine, defensible case for fit -- omit weak/irrelevant candidates entirely rather than padding the list. A candidate with one or more "not_met" hard must-haves can still be included if otherwise strong, but their score must reflect the real gap.
 
+SCORE FORMULA -- the overall score must be explainable, not a vibe. Compute it from four named components, each 0-100, so a recruiter can see exactly why a candidate landed where they did:
+- must_haves_fit (weight ~50%): 100 if every must-have is "met"; each "not_met" should drag this down hard (a single not_met should put this component below 40); each "unclear" should drag it down moderately (below 75), since it's a real unknown even if not a proven fail.
+- good_to_haves_fit (weight ~10%): proportion of good-to-haves met.
+- experience_fit (weight ~20%): how well total_experience_years sits inside the mandate's experience range (100 if comfortably inside; lower the further outside).
+- domain_relevance (weight ~20%): how well category/sub-domain/industry/skill_inventory align with the mandate's category/sub-domain, independent of the must-have checklist.
+Compute "score" as approximately the weighted sum of these four (round to nearest integer), then nudge it slightly using the recruiter calibration signal if provided above. Report the four components themselves so the math is auditable, not just the final number.
+
 Return ONLY a JSON array (no markdown fence, no commentary), one object per included candidate, each with exactly these keys:
 - "candidate_id": copy exactly from the input.
-- "score": integer 0-100, overall fit against the mandate. Weigh must-haves heavily: any "not_met" must-have should cap the score well below 40; an "unclear" must-have should cap it below 70 (real uncertainty, not a proven gap, but still a genuine risk until confirmed).
+- "score": integer 0-100, per the SCORE FORMULA above.
+- "score_breakdown": object {"must_haves_fit": <0-100>, "good_to_haves_fit": <0-100>, "experience_fit": <0-100>, "domain_relevance": <0-100>, "notes": "<one or two sentences on what specifically pulled the score up or down, referencing the actual gap -- e.g. 'Capped by one not_met must-have (language) and experience 1 year below range; strong domain match otherwise.'>"}.
 - "reason": one tight sentence a recruiter would say explaining why this candidate is worth considering (or notable caveat), grounded in specific facts, not generic praise.
 - "must_haves": array of objects, one per must-have clause (mandate's own must_haves, in order, followed by any ad hoc clauses you split out of the extra criteria text) -- each object is exactly {"requirement": "<the clause text>", "status": "met" | "not_met" | "unclear", "evidence": "<short grounding note, or 'Not mentioned in profile or resume -- confirm on call' for unclear>"}.
 - "good_to_haves": array of objects in the same {"requirement", "status", "evidence"} shape, one per good-to-have clause.
@@ -373,6 +407,20 @@ Sort the array by score descending. Include at most 20 candidates.`;
       }
 
       const nameById = new Map(shortlist.map((c) => [c.id, c.full_name]));
+      const rowById = new Map(shortlist.map((c) => [c.id, c]));
+
+      function normalizeBreakdown(raw: unknown): ScoreBreakdown | null {
+        if (!raw || typeof raw !== "object") return null;
+        const b = raw as Record<string, unknown>;
+        const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : 0);
+        return {
+          must_haves_fit: num(b.must_haves_fit),
+          good_to_haves_fit: num(b.good_to_haves_fit),
+          experience_fit: num(b.experience_fit),
+          domain_relevance: num(b.domain_relevance),
+          notes: typeof b.notes === "string" ? b.notes : "",
+        };
+      }
 
       function normalizeChecks(raw: unknown): RequirementCheck[] {
         if (!Array.isArray(raw)) return [];
@@ -393,20 +441,36 @@ Sort the array by score descending. Include at most 20 candidates.`;
         parsed as unknown as {
           candidate_id: string;
           score?: number;
+          score_breakdown?: unknown;
           reason?: string;
           must_haves?: unknown;
           good_to_haves?: unknown;
         }[]
       )
         .filter((row) => nameById.has(row.candidate_id))
-        .map((row) => ({
-          candidate_id: row.candidate_id,
-          full_name: nameById.get(row.candidate_id) ?? "Unknown",
-          score: typeof row.score === "number" ? row.score : 0,
-          reason: row.reason ?? "",
-          must_haves: normalizeChecks(row.must_haves),
-          good_to_haves: normalizeChecks(row.good_to_haves),
-        }))
+        .map((row) => {
+          const candidateRow = rowById.get(row.candidate_id);
+          return {
+            candidate_id: row.candidate_id,
+            full_name: nameById.get(row.candidate_id) ?? "Unknown",
+            score: typeof row.score === "number" ? row.score : 0,
+            score_breakdown: normalizeBreakdown(row.score_breakdown),
+            reason: row.reason ?? "",
+            must_haves: normalizeChecks(row.must_haves),
+            good_to_haves: normalizeChecks(row.good_to_haves),
+            // Sourced directly from the candidate's own row, never the LLM --
+            // exact and lets the match card itself flag "no AI summary yet"
+            // or show stability without a click into the profile.
+            stability_score: candidateRow?.stability_score ?? null,
+            has_ai_summary: !!candidateRow?.ai_summary,
+            current_job_title: candidateRow?.current_job_title ?? null,
+            current_employer: candidateRow?.current_employer ?? null,
+            current_location: candidateRow?.current_location ?? null,
+            total_experience_years: candidateRow?.total_experience_years ?? null,
+            expected_fixed_ctc: candidateRow?.expected_fixed_ctc ?? null,
+            notice_period: candidateRow?.notice_period ?? null,
+          };
+        })
         // Primary sort: how many hard must-haves are actually confirmed met
         // (this is what the recruiter asked for -- "3/3 matched" candidates
         // should surface above a higher-score candidate who's missing one),
