@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { ensureMandateEmbedding } from "@/lib/embeddings";
 
 export type CandidateMatch = {
   candidate_id: string;
@@ -34,6 +35,7 @@ type CandidateRow = {
   notice_period: string | null;
   expected_fixed_ctc: number | null;
   skills: string | null;
+  skill_inventory: Record<string, unknown> | null;
   current_industry: string | null;
   industries: string[] | null;
   segment_data: Record<string, unknown> | null;
@@ -74,7 +76,7 @@ export async function matchCandidatesForMandate(
   const { data: mandate, error: mandateError } = await supabase
     .from("mandates")
     .select(
-      "id, role_title, client_name, category, sub_domain, city, budget_min, budget_max, experience_min, experience_max, job_description, must_haves, good_to_haves"
+      "id, role_title, client_name, category, sub_domain, sub_domains, city, budget_min, budget_max, experience_min, experience_max, job_description, jd_overview, jd_responsibilities, jd_candidate_profile, must_haves, good_to_haves, embedding, embedding_source_hash"
     )
     .eq("id", mandateId)
     .single();
@@ -138,13 +140,10 @@ export async function matchCandidatesForMandate(
   // and experience/CTC are soft signals folded into scoring below rather than
   // hard filters, since a strong adjacent-domain candidate is still worth
   // surfacing to the recruiter with a lower score.
-  let query = supabase
-    .from("candidates")
-    .select(
-      "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary"
-    )
-    .neq("status", "awaiting_input")
-    .limit(400);
+  const SELECT_COLUMNS =
+    "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, skill_inventory, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary";
+
+  let query = supabase.from("candidates").select(SELECT_COLUMNS).neq("status", "awaiting_input").limit(400);
 
   if (mandate.category) query = query.eq("category", mandate.category);
 
@@ -154,6 +153,60 @@ export async function matchCandidatesForMandate(
   }
 
   const candidates = ((pool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+
+  // Semantic recall: a fast, "does the system already remember someone
+  // like this" pass over every candidate's stored embedding (computed by
+  // the embed-candidates cron), independent of the SQL prefilter above.
+  // Catches strong adjacent-domain or oddly-categorized candidates the
+  // rigid category/sub_domain/experience/CTC filter would otherwise never
+  // surface, without spending an extra Gemini call -- everything still
+  // funnels into the single scoring call below. mandate.embedding is
+  // computed lazily here (cheap -- one embedding call, not a full Gemini
+  // generation) rather than via its own cron, since mandates change far
+  // less often than candidates are created.
+  const similarityById = new Map<string, number>();
+  try {
+    const mandateEmbedding = await ensureMandateEmbedding(
+      {
+        id: mandate.id,
+        role_title: mandate.role_title,
+        category: mandate.category,
+        sub_domain: mandate.sub_domain,
+        sub_domains: (mandate as { sub_domains?: string[] | null }).sub_domains ?? null,
+        job_description: mandate.job_description,
+        jd_overview: (mandate as { jd_overview?: string | null }).jd_overview ?? null,
+        jd_responsibilities: (mandate as { jd_responsibilities?: string | null }).jd_responsibilities ?? null,
+        jd_candidate_profile: (mandate as { jd_candidate_profile?: string | null }).jd_candidate_profile ?? null,
+        must_haves: mandate.must_haves as string[] | null,
+        good_to_haves: mandate.good_to_haves as string[] | null,
+        embedding_source_hash: (mandate as { embedding_source_hash?: string | null }).embedding_source_hash ?? null,
+      },
+      supabase
+    );
+
+    if (mandateEmbedding) {
+      const { data: semanticMatches } = await supabase.rpc("match_candidates", {
+        query_embedding: mandateEmbedding,
+        match_count: 60,
+      });
+      const existingIds = new Set(candidates.map((c) => c.id));
+      const newIds: string[] = [];
+      for (const sm of (semanticMatches ?? []) as { id: string; status: string; similarity: number }[]) {
+        if (linkedIds.has(sm.id) || sm.status === "awaiting_input") continue;
+        similarityById.set(sm.id, sm.similarity);
+        if (!existingIds.has(sm.id)) newIds.push(sm.id);
+      }
+      if (newIds.length > 0) {
+        const { data: extra } = await supabase.from("candidates").select(SELECT_COLUMNS).in("id", newIds);
+        for (const c of (extra ?? []) as CandidateRow[]) candidates.push(c);
+      }
+    }
+  } catch (err) {
+    // Best-effort recall path -- a failure here should never block matching,
+    // just fall back to the SQL-prefilter-only pool.
+    console.error("Embedding-based recall failed for mandate match", mandateId, err);
+  }
+
   const calibration = { positive: calibrationPositive.length, negative: calibrationNegative.length };
 
   if (candidates.length === 0) {
@@ -161,9 +214,12 @@ export async function matchCandidatesForMandate(
   }
 
   // Score a cheap heuristic to rank/trim the pool before spending AI tokens
-  // on it -- keeps the Gemini call bounded to a sane shortlist size.
+  // on it -- keeps the Gemini call bounded to a sane shortlist size. Blends
+  // in the embedding similarity (0-1, scaled to 0-3) so a semantically
+  // strong match that the rigid filters above would score zero on still
+  // has a real shot at making the shortlist.
   function heuristicScore(c: CandidateRow): number {
-    let s = 0;
+    let s = (similarityById.get(c.id) ?? 0) * 3;
     if (m.sub_domain && c.sub_domain === m.sub_domain) s += 3;
     if (m.sub_domain && c.secondary_sub_domains?.includes(m.sub_domain)) s += 1.5;
     if (m.city && c.current_location?.toLowerCase().includes(String(m.city).toLowerCase())) s += 1.5;
@@ -207,6 +263,7 @@ export async function matchCandidatesForMandate(
     notice_period: c.notice_period,
     expected_fixed_ctc_lakhs: c.expected_fixed_ctc,
     skills: c.skills,
+    skill_inventory: c.skill_inventory,
     current_industry: c.current_industry,
     other_industries_worked_in: (c.industries as string[] | null)?.filter((i) => i !== c.current_industry),
     self_reported_segment_data: c.segment_data,

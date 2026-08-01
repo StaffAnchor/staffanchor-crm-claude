@@ -73,7 +73,14 @@ export default function AssessmentForm({
 
   async function handleSave() {
     setSaving(true);
-    await supabase.from("candidates").update({ recruiter_assessment: form }).eq("id", candidateId);
+    // Stamped so the candidate detail page can tell "assessment changed
+    // since the AI summary was last generated" and silently refresh the AI
+    // summary on next view to fold these scorecard points in -- see
+    // page.tsx's smart-regenerate check and ai_summary_generated_at.
+    await supabase
+      .from("candidates")
+      .update({ recruiter_assessment: form, recruiter_assessment_updated_at: new Date().toISOString() })
+      .eq("id", candidateId);
     setSaving(false);
     router.refresh();
   }

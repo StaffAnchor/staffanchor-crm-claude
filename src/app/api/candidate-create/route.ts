@@ -3,7 +3,6 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { generateAiPassportForCandidate } from "@/lib/ai-passport";
-import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
 import { waitUntil } from "@vercel/functions";
 
 export const runtime = "nodejs";
@@ -83,14 +82,14 @@ export async function POST(req: NextRequest) {
     }
     const candidateId = inserted.id as string;
 
-    // Fire-and-forget: generate the career timeline (which computes
-    // stability_score/domain_consistency_score from the resume) and then the
-    // AI summary/passport, so a recruiter-created profile shows a stability
-    // score and an AI summary immediately instead of waiting for the
-    // twice-weekly cron sweeps. Sequenced (timeline first) so the passport's
-    // stability_line reads the freshly-extracted timeline rather than racing
-    // it. Never awaited by the response -- both functions catch their own
-    // errors internally and this route's response shouldn't wait on Gemini.
+    // Fire-and-forget: generateAiPassportForCandidate now runs the career-
+    // timeline extraction (stability_score/domain_consistency_score) itself
+    // first, then the summary/passport/decision-flags/skill-inventory --
+    // one call does the whole job, so a recruiter-created profile shows a
+    // stability score, AI summary, and skill inventory immediately instead
+    // of waiting for the twice-weekly cron sweeps. Never awaited by the
+    // response -- it catches its own errors internally and this route's
+    // response shouldn't wait on Gemini.
     //
     // IMPORTANT: this MUST be registered with waitUntil(). A Vercel Node.js
     // serverless function's execution environment can be frozen/torn down
@@ -103,13 +102,9 @@ export async function POST(req: NextRequest) {
     // invocation alive until this promise settles, even after the response
     // has been returned to the client.
     waitUntil(
-      generateCareerTimelineForCandidate(candidateId, admin)
-        .catch((err) => console.error("Auto career-timeline generation failed for new candidate", candidateId, err))
-        .finally(() => {
-          return generateAiPassportForCandidate(candidateId, admin, { note: "auto_generated_on_create" }).catch(
-            (err) => console.error("Auto AI passport generation failed for new candidate", candidateId, err)
-          );
-        })
+      generateAiPassportForCandidate(candidateId, admin, { note: "auto_generated_on_create" }).catch((err) =>
+        console.error("Auto AI passport generation failed for new candidate", candidateId, err)
+      )
     );
 
     const { error: linkError } = await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);

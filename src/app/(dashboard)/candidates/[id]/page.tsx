@@ -21,6 +21,7 @@ import QuickContactActions from "./quick-contact-actions";
 import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
 import { formatExperience } from "@/lib/format-experience";
+import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 
 // ROS design language: one neutral avatar treatment for every candidate --
 // no per-category color-coding (see candidates-table.tsx for the reasoning:
@@ -73,6 +74,33 @@ export default async function CandidateDetailPage({
     .single();
 
   if (!candidate) notFound();
+
+  // Smart regenerate-on-view: if the recruiter's manual assessment
+  // (communication/confidence/attitude/job_stability scorecard) was saved
+  // more recently than the last AI generation, refresh the AI summary right
+  // now so it actually reflects the assessment -- but ONLY when something
+  // new exists to incorporate. Regenerating on every single profile open
+  // would burn through Gemini's free-tier quota almost immediately (we've
+  // already seen real 429s in production logs at a 20-requests/day limit),
+  // so this only fires on the rare "assessment just changed" case, not on
+  // routine browsing.
+  if (
+    candidate.recruiter_assessment_updated_at &&
+    (!candidate.ai_summary_generated_at ||
+      new Date(candidate.recruiter_assessment_updated_at as string) >
+        new Date(candidate.ai_summary_generated_at as string))
+  ) {
+    const result = await generateAiPassportForCandidate(candidate.id, supabase, {
+      note: "auto_regenerated_on_view_after_assessment",
+    });
+    if (result.ok) {
+      candidate.ai_summary = result.summary;
+      candidate.ai_passport = result.passport;
+      candidate.ai_decision_flags = result.decisionFlags;
+      candidate.skill_inventory = result.skillInventory;
+      candidate.stability_score = result.stabilityScore;
+    }
+  }
 
   // Prev/next navigation within whatever filtered list the recruiter came
   // from -- `from` is the exact query string of /candidates?... they were
@@ -512,6 +540,8 @@ export default async function CandidateDetailPage({
           initialSummary={candidate.ai_summary}
           initialPassport={candidate.ai_passport}
           initialDecisionFlags={candidate.ai_decision_flags}
+          initialSkillInventory={candidate.skill_inventory}
+          initialStabilityScore={candidate.stability_score}
         />
       </Card>
 
@@ -606,7 +636,6 @@ export default async function CandidateDetailPage({
                       initialResumeEntries={(candidate.career_timeline_resume ?? []) as never}
                       initialStabilityScore={candidate.stability_score ?? null}
                       initialDomainConsistencyScore={candidate.domain_consistency_score ?? null}
-                      hasResumeText={!!candidate.resume_text}
                     />
                   ),
                 },

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -112,4 +113,76 @@ export async function embedCandidate(
     .eq("id", candidate.id);
 
   return !error;
+}
+
+type MandateForEmbedding = {
+  id: string;
+  role_title: string | null;
+  category: string | null;
+  sub_domain: string | null;
+  sub_domains: string[] | null;
+  job_description: string | null;
+  jd_overview: string | null;
+  jd_responsibilities: string | null;
+  jd_candidate_profile: string | null;
+  must_haves: string[] | null;
+  good_to_haves: string[] | null;
+  embedding_source_hash: string | null;
+};
+
+function buildMandateEmbeddingText(m: MandateForEmbedding): string {
+  const parts: string[] = [];
+  if (m.role_title) parts.push(m.role_title);
+  if (m.category || m.sub_domain) {
+    parts.push(`Function/Domain: ${[m.category, m.sub_domain].filter(Boolean).join(" - ")}.`);
+  }
+  if (m.sub_domains?.length) parts.push(`Also relevant sub-domains: ${m.sub_domains.join(", ")}.`);
+  if (m.jd_overview) parts.push(m.jd_overview);
+  if (m.jd_responsibilities) parts.push(m.jd_responsibilities);
+  if (m.jd_candidate_profile) parts.push(m.jd_candidate_profile);
+  if (m.job_description) parts.push(m.job_description);
+  if (m.must_haves?.length) parts.push(`Must haves: ${m.must_haves.join(", ")}.`);
+  if (m.good_to_haves?.length) parts.push(`Good to haves: ${m.good_to_haves.join(", ")}.`);
+  return parts.join(" ");
+}
+
+/**
+ * Ensures a mandate has an up-to-date embedding, computing/persisting one
+ * only if missing or if the JD-relevant fields have changed since the last
+ * computation (mandates has no generic updated_at column to compare
+ * against, so this hashes the same text that gets embedded -- same
+ * staleness pattern as candidates.career_timeline_resume_source_hash).
+ * Called lazily from mandate-auto-rematch rather than on a dedicated cron,
+ * since mandates change far less often than candidates are created.
+ * Returns the embedding (existing or freshly computed), or null if it
+ * can't be produced (no GEMINI_API_KEY, empty JD text, API failure).
+ */
+export async function ensureMandateEmbedding(
+  mandate: MandateForEmbedding,
+  supabase: SupabaseClient
+): Promise<number[] | null> {
+  const text = buildMandateEmbeddingText(mandate);
+  if (!text.trim()) return null;
+  const hash = crypto.createHash("md5").update(text).digest("hex");
+
+  if (mandate.embedding_source_hash === hash) {
+    const { data } = await supabase.from("mandates").select("embedding").eq("id", mandate.id).single();
+    const existing = data?.embedding as unknown;
+    if (Array.isArray(existing) && existing.length === EMBEDDING_DIMS) return existing as number[];
+    // Hash matches but embedding is missing/malformed -- fall through and recompute.
+  }
+
+  const embedding = await generateEmbedding(text);
+  if (!embedding) return null;
+
+  await supabase
+    .from("mandates")
+    .update({
+      embedding,
+      embedding_updated_at: new Date().toISOString(),
+      embedding_source_hash: hash,
+    })
+    .eq("id", mandate.id);
+
+  return embedding;
 }

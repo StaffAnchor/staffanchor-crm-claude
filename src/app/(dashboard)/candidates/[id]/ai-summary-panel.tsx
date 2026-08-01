@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Loader2, BadgeCheck, AlertTriangle, CircleHelp, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Sparkles, Loader2, BadgeCheck, AlertTriangle, CircleHelp, ThumbsUp, ThumbsDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 
@@ -26,10 +26,32 @@ type AiDecisionFlags = {
   recommendation?: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
 };
 
+// Internal-only structured skill extraction -- see src/lib/ai-passport.ts's
+// SkillInventory type comment for why this is a separate field, purpose-built
+// to feed mandate-candidate matching rather than just decorate the profile.
+type SkillInventory = {
+  core_skills?: string[];
+  tools_platforms?: string[];
+  domain_expertise?: string[];
+  soft_skills?: string[];
+};
+
 const RECOMMENDATION_TONE: Record<string, BadgeTone> = {
   "Strong Fit": "success",
   "Fit with Reservations": "warning",
   "Not a Fit": "danger",
+};
+
+function stabilityLabelForScore(score: number): "Stable" | "Some Movement" | "Frequent Job-Hopper" {
+  if (score >= 71) return "Stable";
+  if (score >= 36) return "Some Movement";
+  return "Frequent Job-Hopper";
+}
+
+const STABILITY_TONE: Record<string, BadgeTone> = {
+  Stable: "success",
+  "Some Movement": "warning",
+  "Frequent Job-Hopper": "danger",
 };
 
 export default function AiSummaryPanel({
@@ -37,11 +59,15 @@ export default function AiSummaryPanel({
   initialSummary,
   initialPassport,
   initialDecisionFlags,
+  initialSkillInventory,
+  initialStabilityScore,
 }: {
   candidateId: string;
   initialSummary: string | null;
   initialPassport?: AiPassport | null;
   initialDecisionFlags?: AiDecisionFlags | null;
+  initialSkillInventory?: SkillInventory | null;
+  initialStabilityScore?: number | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -49,6 +75,8 @@ export default function AiSummaryPanel({
   const [summary, setSummary] = useState(initialSummary);
   const [passport, setPassport] = useState<AiPassport | null>(initialPassport ?? null);
   const [decisionFlags, setDecisionFlags] = useState<AiDecisionFlags | null>(initialDecisionFlags ?? null);
+  const [skillInventory, setSkillInventory] = useState<SkillInventory | null>(initialSkillInventory ?? null);
+  const [stabilityScore, setStabilityScore] = useState<number | null>(initialStabilityScore ?? null);
 
   async function handleGenerate() {
     setLoading(true);
@@ -66,6 +94,8 @@ export default function AiSummaryPanel({
         setSummary(json.summary);
         setPassport(json.passport ?? null);
         setDecisionFlags(json.decisionFlags ?? null);
+        setSkillInventory(json.skillInventory ?? null);
+        setStabilityScore(json.stabilityScore ?? null);
         router.refresh();
       }
     } catch {
@@ -81,6 +111,15 @@ export default function AiSummaryPanel({
       (decisionFlags.red_flags?.length ?? 0) > 0 ||
       (decisionFlags.watch_areas?.length ?? 0) > 0 ||
       !!decisionFlags.recommendation);
+
+  const stabilityLabel = stabilityScore != null ? stabilityLabelForScore(stabilityScore) : null;
+
+  const hasSkillInventory =
+    !!skillInventory &&
+    ((skillInventory.core_skills?.length ?? 0) > 0 ||
+      (skillInventory.tools_platforms?.length ?? 0) > 0 ||
+      (skillInventory.domain_expertise?.length ?? 0) > 0 ||
+      (skillInventory.soft_skills?.length ?? 0) > 0);
 
   return (
     <div>
@@ -112,11 +151,18 @@ export default function AiSummaryPanel({
             <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               AI read (internal — not shown to client)
             </p>
-            {decisionFlags?.recommendation && (
-              <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm">
-                {decisionFlags.recommendation}
-              </Badge>
-            )}
+            <div className="flex items-center gap-1.5">
+              {stabilityLabel && (
+                <Badge tone={STABILITY_TONE[stabilityLabel] ?? "neutral"} size="sm" icon={<TrendingUp className="w-3 h-3" />}>
+                  {stabilityScore}/100 · {stabilityLabel}
+                </Badge>
+              )}
+              {decisionFlags?.recommendation && (
+                <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm">
+                  {decisionFlags.recommendation}
+                </Badge>
+              )}
+            </div>
           </div>
           {decisionFlags?.green_flags && decisionFlags.green_flags.length > 0 && (
             <div className="space-y-1">
@@ -167,6 +213,38 @@ export default function AiSummaryPanel({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Skill inventory: internal-only, structured extraction (not the
+          free-text skills field) purpose-built to feed mandate-candidate
+          matching -- see src/lib/ai-passport.ts SkillInventory comment. */}
+      {hasSkillInventory && (
+        <div className="mt-2 rounded-ros-md border border-slate-200 dark:border-slate-700 p-3 space-y-2">
+          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            Skill inventory (internal — powers mandate matching)
+          </p>
+          {(
+            [
+              ["Core skills", skillInventory?.core_skills],
+              ["Tools & platforms", skillInventory?.tools_platforms],
+              ["Domain expertise", skillInventory?.domain_expertise],
+              ["Soft skills", skillInventory?.soft_skills],
+            ] as const
+          ).map(([label, items]) =>
+            items && items.length > 0 ? (
+              <div key={label}>
+                <p className="text-[10px] text-slate-400 mb-1">{label}</p>
+                <div className="flex flex-wrap gap-1">
+                  {items.map((s, i) => (
+                    <Badge key={i} tone="accent" size="sm">
+                      {s}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null
+          )}
         </div>
       )}
     </div>

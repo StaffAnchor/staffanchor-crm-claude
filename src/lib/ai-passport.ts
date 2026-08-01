@@ -7,6 +7,7 @@ import {
   type ProfileTimelineEntry,
   type ResumeTimelineEntry,
 } from "@/lib/career-timeline";
+import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
 
 export type AiPassport = {
   headline?: string;
@@ -34,15 +35,33 @@ export type AiDecisionFlags = {
   recommendation?: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
 };
 
+// Structured skill extraction, purpose-built to feed mandate-candidate
+// matching (src/lib/candidate-match.ts) with real signal instead of the
+// free-text `skills` column alone. Internal-only, same reasoning as
+// AiDecisionFlags -- not selected by any client/candidate-facing query.
+export type SkillInventory = {
+  core_skills?: string[];
+  tools_platforms?: string[];
+  domain_expertise?: string[];
+  soft_skills?: string[];
+};
+
 export type GenerateAiPassportResult =
-  | { ok: true; summary: string; passport: AiPassport | null; decisionFlags: AiDecisionFlags | null }
+  | {
+      ok: true;
+      summary: string;
+      passport: AiPassport | null;
+      decisionFlags: AiDecisionFlags | null;
+      skillInventory: SkillInventory | null;
+      stabilityScore: number | null;
+    }
   | { ok: false; status: number; error: string };
 
 // Everything the model is asked to return in one JSON object (cheaper than a
 // second Gemini call) -- immediately split into the client-safe AiPassport
-// subset and the internal-only AiDecisionFlags subset before anything is
-// persisted or returned up the call stack.
-type RawAiOutput = AiPassport & AiDecisionFlags;
+// subset and the internal-only AiDecisionFlags/SkillInventory subsets before
+// anything is persisted or returned up the call stack.
+type RawAiOutput = AiPassport & AiDecisionFlags & SkillInventory;
 
 function parsePassportJson(raw: string): RawAiOutput | null {
   // Gemini sometimes wraps JSON in a ```json fence despite instructions not to.
@@ -59,7 +78,9 @@ function parsePassportJson(raw: string): RawAiOutput | null {
 // Explicit allowlist split -- never spread the raw model output into either
 // stored object, so an unexpected/extra key the model invents can never
 // accidentally cross from the internal side to the client-visible side.
-function splitRawOutput(raw: RawAiOutput): { passport: AiPassport; decisionFlags: AiDecisionFlags } {
+function splitRawOutput(
+  raw: RawAiOutput
+): { passport: AiPassport; decisionFlags: AiDecisionFlags; skillInventory: SkillInventory } {
   return {
     passport: {
       headline: raw.headline,
@@ -73,6 +94,12 @@ function splitRawOutput(raw: RawAiOutput): { passport: AiPassport; decisionFlags
       red_flags: raw.red_flags,
       watch_areas: raw.watch_areas,
       recommendation: raw.recommendation,
+    },
+    skillInventory: {
+      core_skills: raw.core_skills,
+      tools_platforms: raw.tools_platforms,
+      domain_expertise: raw.domain_expertise,
+      soft_skills: raw.soft_skills,
     },
   };
 }
@@ -94,10 +121,23 @@ export async function generateAiPassportForCandidate(
   supabase: SupabaseClient,
   auditActor: { actor?: string; note?: string } = {}
 ): Promise<GenerateAiPassportResult> {
+  // Single entry point for "give me everything about this candidate,
+  // freshly generated" -- career-timeline extraction (which computes
+  // stability_score/domain_consistency_score from the resume) always runs
+  // first, so the summary/passport/skill-inventory generated below is built
+  // on an up-to-date stability read rather than a stale or missing one.
+  // This replaces what used to be two independently-triggered efforts (the
+  // Career tab's own "Regenerate from resume" button, and this function) --
+  // now there's exactly one "Generate/Regenerate" action anywhere on the
+  // candidate profile, and it does both jobs in sequence.
+  await generateCareerTimelineForCandidate(candidateId, supabase).catch((err) =>
+    console.error("Career-timeline step of AI passport generation failed", candidateId, err)
+  );
+
   const { data: candidate, error } = await supabase
     .from("candidates")
     .select(
-      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text, status, career_timeline_resume, career_timeline_profile"
+      "full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, notice_period, current_fixed_ctc, current_variable_ctc, expected_fixed_ctc, skills, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_file_url, resume_text, status, career_timeline_resume, career_timeline_profile, stability_score, domain_consistency_score"
     )
     .eq("id", candidateId)
     .single();
@@ -187,6 +227,7 @@ export async function generateAiPassportForCandidate(
     self_assessment_writeups: candidate.self_assessment,
     recruiter_scorecard: candidate.recruiter_assessment,
     career_stability: careerStability,
+    domain_consistency_score_out_of_100: candidate.domain_consistency_score,
   };
 
   const firstName = (candidate.full_name as string | null)?.trim().split(/\s+/)[0] ?? "This candidate";
@@ -215,6 +256,12 @@ The following four keys are for INTERNAL recruiter decision-support only -- neve
 - "watch_areas": array of 0-3 short phrases for genuinely ambiguous/uncertain points that are neither clearly good nor bad and need a human judgment call or a clarifying question in the interview (e.g. "Reason for leaving current role not stated", "Industry experience is adjacent but not identical to this mandate's domain"). Empty array if none.
 - "recommendation": your own overall read as exactly one of "Strong Fit", "Fit with Reservations", or "Not a Fit" -- the same three-way scale recruiters use in their own manual scorecard (recruiter_scorecard.overall_recommendation below, if already filled in) -- based on weighing green_flags against red_flags/watch_areas. This is a second, independent opinion sitting alongside the recruiter's own call, not a replacement for it.
 
+The following four keys build a structured skill inventory -- also internal only, used to match this candidate against future mandates far more precisely than the free-text "skills" field allows. Extract from BOTH the structured data and resume excerpt; be specific (named tools/platforms, not vague categories) and don't pad with generic filler ("teamwork", "communication") unless the resume/self-assessment genuinely emphasizes it:
+- "core_skills": array of the candidate's main functional/sales skills (e.g. "Enterprise B2B sales", "Outbound demand generation", "Key account management").
+- "tools_platforms": array of named tools/software/CRMs/platforms they've actually used (e.g. "Salesforce", "HubSpot", "Zoho CRM", "Excel/PowerBI").
+- "domain_expertise": array of industry/domain areas they have real experience in (e.g. "SaaS", "EdTech", "FinTech B2B").
+- "soft_skills": array of 0-3 soft skills ONLY if concretely evidenced (e.g. "coached team to a 25% qualification-rate lift" -> "team coaching"), never generic unsupported claims. Empty array if nothing concrete.
+
 Structured candidate data (JSON):
 ${JSON.stringify(factSheet, null, 2)}
 
@@ -234,9 +281,9 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
       const result = await model.generateContent(prompt);
       const raw = result.response.text().trim();
       const rawOutput = parsePassportJson(raw);
-      const { passport, decisionFlags } = rawOutput
+      const { passport, decisionFlags, skillInventory } = rawOutput
         ? splitRawOutput(rawOutput)
-        : { passport: null, decisionFlags: null };
+        : { passport: null, decisionFlags: null, skillInventory: null };
 
       // Fall back to treating the raw response as plain prose if JSON parsing
       // fails for some reason -- better a slightly-off summary than none.
@@ -259,7 +306,9 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
           ai_summary: summary,
           ai_passport: finalPassport,
           ai_decision_flags: decisionFlags,
+          skill_inventory: skillInventory,
           ai_summary_generated_status: candidateStatus,
+          ai_summary_generated_at: new Date().toISOString(),
         })
         .eq("id", candidateId);
 
@@ -271,7 +320,14 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         detail: { model: modelName, used_resume_text: !!resumeExcerpt, note: auditActor.note },
       });
 
-      return { ok: true, summary, passport: finalPassport, decisionFlags };
+      return {
+        ok: true,
+        summary,
+        passport: finalPassport,
+        decisionFlags,
+        skillInventory,
+        stabilityScore: (candidate.stability_score as number | null) ?? stability?.score ?? null,
+      };
     } catch (err) {
       lastError = err;
       console.error(`Gemini summary generation failed with model ${modelName}`, err);

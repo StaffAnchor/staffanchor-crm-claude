@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import {
   BriefcaseBusiness,
-  Sparkles,
   AlertTriangle,
   Plus,
   Pencil,
@@ -208,7 +207,6 @@ export default function CareerTimelinePanel({
   initialResumeEntries,
   initialStabilityScore,
   initialDomainConsistencyScore,
-  hasResumeText,
 }: {
   candidateId: string;
   currentEmployer: string | null;
@@ -216,7 +214,6 @@ export default function CareerTimelinePanel({
   initialResumeEntries: ResumeTimelineEntry[];
   initialStabilityScore: number | null;
   initialDomainConsistencyScore: number | null;
-  hasResumeText: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -225,7 +222,6 @@ export default function CareerTimelinePanel({
   const [form, setForm] = useState<ProfileTimelineEntry | null>(null);
   const [dealCurrency, setDealCurrency] = useState<CurrencyValue>("INR");
   const [saving, setSaving] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState("");
 
   const merged = useMemo(() => mergeTimelines(profileEntries, resumeEntries), [profileEntries, resumeEntries]);
@@ -294,25 +290,6 @@ export default function CareerTimelinePanel({
     setForm({ ...entry });
   }
 
-  async function handleRegenerate() {
-    setRegenerating(true);
-    setError("");
-    try {
-      const res = await fetch("/api/generate-career-timeline", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidate_id: candidateId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to regenerate from resume.");
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to regenerate from resume.");
-    } finally {
-      setRegenerating(false);
-    }
-  }
-
   const isSalesCategory = form?.category === "b2b_sales" || form?.category === "b2c_sales";
   const isB2B = form?.category === "b2b_sales";
   const isB2C = form?.category === "b2c_sales";
@@ -327,18 +304,11 @@ export default function CareerTimelinePanel({
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
           <BriefcaseBusiness className="w-3.5 h-3.5 text-slate-400" /> Career Timeline
         </h2>
-        <button
-          onClick={handleRegenerate}
-          disabled={regenerating || !hasResumeText}
-          title={hasResumeText ? undefined : "No resume text on file yet"}
-          className="flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50"
-        >
-          <Sparkles className="w-3.5 h-3.5" /> {regenerating ? "Reading resume..." : "Regenerate from resume"}
-        </button>
       </div>
       <p className="text-[12px] text-slate-400 mb-3">
         Per-job history from two sources -- the resume (auto-extracted) and the confirmed profile. Scores use
-        whichever is more trustworthy for each role.
+        whichever is more trustworthy for each role. Re-extracting from the resume now happens automatically as
+        part of the main AI summary&apos;s single &quot;Regenerate&quot; button above, rather than a separate action here.
       </p>
 
       {(stabilityScore != null || domainScore != null) && (
