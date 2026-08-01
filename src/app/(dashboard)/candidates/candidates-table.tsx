@@ -93,7 +93,11 @@ const STATUS_LABEL: Record<string, string> = {
   lead: "Lead",
   registered: "Registered",
   under_review: "Under Review",
-  shortlisted: "Shortlisted",
+  // This is candidates.status (profile lifecycle), a different field from
+  // candidate_mandate_links.stage -- which also has its own "shortlisted"
+  // value plus a separate "client_shortlisted". Suffixed to stop the three
+  // from reading as the same thing (gap #7, July 2026 audit).
+  shortlisted: "Shortlisted (profile)",
   submitted: "Submitted",
   client_interview: "Client Interview",
   offer: "Offer",
@@ -948,6 +952,13 @@ export default function CandidatesTable({
   const [chosenMandate, setChosenMandate] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkMessage, setBulkMessage] = useState<string | null>(null);
+  // "Send profile completion emails" used to fire immediately on click with
+  // no way to see who'd actually get an email vs. get silently skipped
+  // (anyone not Awaiting Input/Lead) until after the send -- a recruiter who
+  // multi-selected a mixed batch had no way to sanity-check the blast list
+  // first. Now shows the eligible/skipped breakdown and requires a second
+  // confirm click.
+  const [confirmingInvite, setConfirmingInvite] = useState(false);
   // "Add to group" -- saved candidate segments (see /candidates/groups),
   // modeled on Ceipal's Applicant Groups. Groups are fetched lazily only
   // once the picker actually opens, since most sessions never touch this.
@@ -1185,16 +1196,21 @@ export default function CandidatesTable({
     router.refresh();
   }
 
+  const inviteTargets = candidates.filter(
+    (c) => selected.has(c.id) && (c.status === "awaiting_input" || c.status === "lead")
+  );
+  const inviteSkipped = selected.size - inviteTargets.length;
+
   async function handleBulkInvite() {
     if (selected.size === 0) return;
-    const targets = candidates.filter(
-      (c) => selected.has(c.id) && (c.status === "awaiting_input" || c.status === "lead")
-    );
-    const skipped = selected.size - targets.length;
+    const targets = inviteTargets;
+    const skipped = inviteSkipped;
     if (targets.length === 0) {
+      setConfirmingInvite(false);
       setBulkMessage("None of the selected candidates have an incomplete profile, so no invites were sent.");
       return;
     }
+    setConfirmingInvite(false);
     setBulkBusy(true);
     setBulkMessage(null);
     let sent = 0;
@@ -1232,9 +1248,17 @@ export default function CandidatesTable({
         </p>
         <div className="flex items-center gap-1">
           <a
-            href={`/api/export/candidates${fromQS ? `?${fromQS}` : ""}`}
+            href={`/api/export/candidates?${new URLSearchParams({
+              ...(fromQS ? Object.fromEntries(new URLSearchParams(fromQS)) : {}),
+              // Export used to always use a fixed default column set,
+              // ignoring whatever the recruiter had actually customized the
+              // table to show/hide/reorder via the columns panel (gap #7,
+              // July 2026 audit). Pass the current visible order straight
+              // through so the CSV matches what's on screen.
+              cols: visibleColumns.map((c) => c.key).join(","),
+            }).toString()}`}
             className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
-            title="Export the current filtered list as CSV"
+            title="Export the current filtered list as CSV, matching your customized columns"
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </a>
@@ -1323,7 +1347,7 @@ export default function CandidatesTable({
           <Button
             variant="secondary"
             size="sm"
-            onClick={handleBulkInvite}
+            onClick={() => setConfirmingInvite(true)}
             disabled={bulkBusy}
             icon={bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <SendIcon className="w-3.5 h-3.5" />}
           >
@@ -1361,6 +1385,40 @@ export default function CandidatesTable({
           <button onClick={clearSelection} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 ml-auto">
             Clear selection
           </button>
+        </div>
+      )}
+
+      {confirmingInvite && (
+        <div className="px-4 py-3 bg-amber-50 border-b border-amber-100 flex flex-wrap items-center gap-3">
+          <p className="text-[12.5px] text-amber-900">
+            {inviteTargets.length === 0 ? (
+              <>None of the {selected.size} selected candidates have an incomplete profile -- nothing to send.</>
+            ) : (
+              <>
+                Will email <span className="font-semibold">{inviteTargets.length}</span> candidate
+                {inviteTargets.length === 1 ? "" : "s"} (Awaiting Input / Lead).
+                {inviteSkipped > 0 && (
+                  <span className="text-amber-700">
+                    {" "}
+                    {inviteSkipped} other{inviteSkipped === 1 ? "" : "s"} skipped -- already past that stage.
+                  </span>
+                )}
+              </>
+            )}
+          </p>
+          <div className="flex items-center gap-2 ml-auto">
+            {inviteTargets.length > 0 && (
+              <Button variant="secondary" size="sm" onClick={handleBulkInvite} disabled={bulkBusy}>
+                {bulkBusy ? "Sending..." : `Send ${inviteTargets.length} email${inviteTargets.length === 1 ? "" : "s"}`}
+              </Button>
+            )}
+            <button
+              onClick={() => setConfirmingInvite(false)}
+              className="text-[12px] text-amber-700 hover:text-amber-900"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 

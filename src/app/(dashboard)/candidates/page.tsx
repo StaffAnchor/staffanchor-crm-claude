@@ -104,7 +104,10 @@ const STATUS_LABEL: Record<string, string> = {
   lead: "Lead",
   registered: "Registered",
   under_review: "Under Review",
-  shortlisted: "Shortlisted",
+  // candidates.status (profile lifecycle) -- disambiguated from
+  // candidate_mandate_links.stage's own "shortlisted" and "client_shortlisted"
+  // values below, which used to read as the same word (gap #7, July 2026 audit).
+  shortlisted: "Shortlisted (profile)",
   submitted: "Submitted",
   client_interview: "Client Interview",
   offer: "Offer",

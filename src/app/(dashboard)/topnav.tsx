@@ -32,12 +32,33 @@ export default function TopNav({
   const [search, setSearch] = useState("");
   const createRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   function handleSearchKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && search.trim()) {
       router.push(`/candidates?q=${encodeURIComponent(search.trim())}`);
     }
   }
+
+  // The "/" hint next to the search box was purely decorative -- nothing
+  // ever wired the key up, so typing "/" anywhere on the page just typed a
+  // literal slash into whatever was focused. Ignore it while the user is
+  // already typing in a text field (so it doesn't hijack a legitimate "/"
+  // keystroke elsewhere), otherwise focus the search box, matching what the
+  // kbd hint has always implied.
+  useEffect(() => {
+    function handleGlobalKeydown(e: KeyboardEvent) {
+      if (e.key !== "/") return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
+      if (isTyping) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    }
+    document.addEventListener("keydown", handleGlobalKeydown);
+    return () => document.removeEventListener("keydown", handleGlobalKeydown);
+  }, []);
 
   // Click-outside-to-close instead of onBlur+setTimeout: the old blur-based
   // close raced against the Link's own click/navigation (a mousedown that
@@ -108,6 +129,7 @@ export default function TopNav({
         <div className="hidden lg:flex items-center gap-2 bg-slate-900/50 hover:border-slate-700 focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-lg px-3 py-1.5 w-64 min-w-[8rem] shrink border border-slate-800">
           <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" strokeWidth={2} />
           <input
+            ref={searchInputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleSearchKey}
@@ -143,7 +165,7 @@ export default function TopNav({
                 New candidate
               </Link>
               <Link
-                href="/mandates"
+                href="/mandates#new-mandate"
                 onClick={() => setCreateOpen(false)}
                 className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:hover:bg-slate-700"
               >

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Users, Plus, Trash2, Loader2 } from "lucide-react";
+import { Users, Plus, Trash2, Loader2, Pencil, Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type GroupRow = {
@@ -23,6 +23,13 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Rename was the one thing you couldn't do to a saved group after
+  // creating it -- only create/delete existed, so a group named too
+  // narrowly (or with a typo) had to be deleted and rebuilt from scratch,
+  // losing its membership in the process.
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameBusy, setRenameBusy] = useState(false);
 
   async function handleCreate() {
     if (!name.trim()) return;
@@ -44,6 +51,25 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
     setCreating(false);
     setName("");
     setDescription("");
+    router.refresh();
+  }
+
+  function startRename(g: GroupRow) {
+    setRenamingId(g.id);
+    setRenameValue(g.name);
+  }
+
+  async function handleRename(id: string) {
+    const trimmed = renameValue.trim();
+    if (!trimmed) return;
+    setRenameBusy(true);
+    const { error: updateError } = await supabase.from("candidate_groups").update({ name: trimmed }).eq("id", id);
+    setRenameBusy(false);
+    if (updateError) {
+      window.alert(`Couldn't rename: ${updateError.message}`);
+      return;
+    }
+    setRenamingId(null);
     router.refresh();
   }
 
@@ -118,28 +144,68 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg shadow-ros-sm divide-y divide-slate-100 dark:divide-slate-800">
-          {groups.map((g) => (
-            <div key={g.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <Link href={`/candidates/groups/${g.id}`} className="min-w-0 flex-1 group">
-                <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-blue-600 truncate">
-                  {g.name} <span className="text-slate-400 font-normal">({g.count})</span>
-                </p>
-                {g.description && <p className="text-[12px] text-slate-400 truncate">{g.description}</p>}
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {g.createdByName ? `Created by ${g.createdByName} · ` : ""}
-                  {new Date(g.createdAt).toLocaleDateString()}
-                </p>
-              </Link>
-              <button
-                type="button"
-                onClick={() => handleDelete(g.id, g.name)}
-                className="text-slate-300 hover:text-rose-600 shrink-0"
-                title="Delete group"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+          {groups.map((g) =>
+            renamingId === g.id ? (
+              <div key={g.id} className="flex items-center gap-2 px-4 py-3">
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRename(g.id);
+                    if (e.key === "Escape") setRenamingId(null);
+                  }}
+                  className="flex-1 min-w-0 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRename(g.id)}
+                  disabled={!renameValue.trim() || renameBusy}
+                  className="text-emerald-600 hover:text-emerald-700 disabled:opacity-40 shrink-0"
+                  title="Save"
+                >
+                  {renameBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRenamingId(null)}
+                  className="text-slate-400 hover:text-slate-700 shrink-0"
+                  title="Cancel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div key={g.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <Link href={`/candidates/groups/${g.id}`} className="min-w-0 flex-1 group">
+                  <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-blue-600 truncate">
+                    {g.name} <span className="text-slate-400 font-normal">({g.count})</span>
+                  </p>
+                  {g.description && <p className="text-[12px] text-slate-400 truncate">{g.description}</p>}
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {g.createdByName ? `Created by ${g.createdByName} · ` : ""}
+                    {new Date(g.createdAt).toLocaleDateString()}
+                  </p>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => startRename(g)}
+                  className="text-slate-300 hover:text-blue-600 shrink-0"
+                  title="Rename group"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(g.id, g.name)}
+                  className="text-slate-300 hover:text-rose-600 shrink-0"
+                  title="Delete group"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )
+          )}
         </div>
       )}
     </div>

@@ -28,7 +28,10 @@ const BOARD_STAGES: Stage[] = STAGES.filter((s) => s !== "rejected" && s !== "pu
 const STAGE_LABEL: Record<string, string> = {
   sourced: "Sourced",
   screened: "Screened",
-  shortlisted: "Shortlisted",
+  // Column headers sit right next to "Client Shortlisted" below -- bare
+  // "Shortlisted" was easy to misread as the same stage despite being the
+  // recruiter's own earlier, internal call (gap #7, July 2026 audit).
+  shortlisted: "Recruiter Shortlist",
   submitted: "Submitted",
   client_interview: "Client Interview",
   client_shortlisted: "Client Shortlisted",

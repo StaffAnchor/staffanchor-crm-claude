@@ -30,7 +30,11 @@ export type PipelineStage = (typeof STAGE_ORDER)[number];
 export const STAGE_LABELS: Record<PipelineStage, string> = {
   sourced: "Sourced",
   screened: "Screened",
-  shortlisted: "Shortlisted",
+  // Disambiguated from "Client Shortlisted" below -- these are two distinct
+  // stages (recruiter's own pre-submission call vs. client saying yes
+  // post-interview), and the bare word read as the same thing (gap #7,
+  // July 2026 audit).
+  shortlisted: "Shortlisted (recruiter)",
   submitted: "Submitted",
   client_interview: "Interview",
   client_shortlisted: "Client Shortlisted",

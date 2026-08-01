@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   Flame,
   CalendarClock,
@@ -181,8 +182,30 @@ export default function InboxView({
   const [items, setItems] = useState<InboxItem[]>(initialItems);
   const [focusedIdx, setFocusedIdx] = useState(0);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<string>("ALL");
-  const [recruiterFilter, setRecruiterFilter] = useState<string>("ALL");
+  // URL-persisted, same pattern as the Sales board fix (gap #8, July 2026
+  // audit) -- filtering to just "Interview reminders" or one recruiter and
+  // then clicking into a candidate/mandate and back used to silently reset
+  // to "All" every time, since it lived in useState alone.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeFilter = searchParams.get("type") ?? "ALL";
+  const recruiterFilter = searchParams.get("recruiter") ?? "ALL";
+
+  function setActiveFilter(next: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next && next !== "ALL") params.set("type", next);
+    else params.delete("type");
+    router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+  }
+
+  function setRecruiterFilter(next: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next && next !== "ALL") params.set("recruiter", next);
+    else params.delete("recruiter");
+    router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+  }
+
   const listRef = useRef<HTMLDivElement>(null);
 
   // Filtering by task type / recruiter is purely a view-layer concern --

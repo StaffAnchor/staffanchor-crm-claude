@@ -23,7 +23,11 @@ const MAIN_FUNNEL = STAGES.filter((s) => s !== "rejected" && s !== "pulled_back"
 const STAGE_DOT_LABEL: Record<string, string> = {
   sourced: "Sourced",
   screened: "Screened",
-  shortlisted: "Shortlisted",
+  // "Shortlisted" alone reads as identical to "Client shortlist" below despite
+  // being an entirely different point in the funnel (recruiter's own
+  // pre-submission call vs. the client saying yes post-interview) -- gap #7,
+  // July 2026 audit. Labeled to disambiguate everywhere this stage appears.
+  shortlisted: "Shortlisted (recruiter)",
   submitted: "Submitted",
   client_interview: "Interview",
   client_shortlisted: "Client shortlist",

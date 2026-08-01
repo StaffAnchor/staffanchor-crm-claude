@@ -311,6 +311,22 @@ export default async function MandatesPage({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* One-click "just mine" quick filter, mirroring the "My
+                Candidates" pill on the Candidates page -- Mandates only had
+                the full Recruiter list in the filter rail before, no
+                one-click shortcut for the recruiter's own book of open roles. */}
+            {currentUser && (
+              <Link
+                href={recruiter === currentUser.id ? "/mandates" : filterHref("recruiter", currentUser.id)}
+                className={`flex items-center gap-1.5 text-[12px] font-semibold rounded-lg px-2.5 py-1.5 transition-colors ${
+                  recruiter === currentUser.id
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                {recruiter === currentUser.id ? "★ My Mandates" : "My Mandates"}
+              </Link>
+            )}
             <Link
               href="/mandates/trash"
               className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
