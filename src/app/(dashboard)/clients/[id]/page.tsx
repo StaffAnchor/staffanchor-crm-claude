@@ -22,6 +22,22 @@ export default async function ClientDetailPage({
   const { data: clientRow } = await supabase.from("clients").select("*").eq("id", id).single();
   if (!clientRow) notFound();
 
+  // The list page (clients/page.tsx) already hides other reps' clients from
+  // a Partner's view -- but that's only a query filter on the list, not an
+  // access boundary. Without this check, a Partner who obtained a client ID
+  // any other way (a stale link, guessing a URL) could still view and edit
+  // a client that isn't theirs. Enforce the same scoping here, at the
+  // actual data-fetch layer.
+  const {
+    data: { user: viewerUser },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = viewerUser
+    ? await supabase.from("profiles").select("role").eq("id", viewerUser.id).single()
+    : { data: null };
+  if (viewerProfile?.role === "partner" && clientRow.owner_id !== viewerUser?.id) {
+    notFound();
+  }
+
   const { data: mandates } = await supabase
     .from("mandates")
     .select("id, role_title, status, city")

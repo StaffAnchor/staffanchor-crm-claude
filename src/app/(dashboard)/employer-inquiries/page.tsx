@@ -24,7 +24,25 @@ export default async function EmployerInquiriesPage() {
     )
     .order("created_at", { ascending: false });
 
-  const rows = (inquiries ?? []) as EmployerInquiryRow[];
+  const allRows = (inquiries ?? []) as EmployerInquiryRow[];
+
+  // The "Assign owner" dropdown was previously purely advisory -- any staff
+  // member could still view, convert, or bulk-delete any inquiry regardless
+  // of who it was assigned to. That's fine for Admin/Recruiter (this intake
+  // inbox is a shared triage queue for them, same as the rest of the app),
+  // but it broke the Partner-scoping model used everywhere else (Clients,
+  // Sales): a Partner should only work inquiries assigned to them, plus
+  // still-unclaimed ones they can pick up, not every other rep's leads too.
+  const {
+    data: { user: viewerUser },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = viewerUser
+    ? await supabase.from("profiles").select("role").eq("id", viewerUser.id).single()
+    : { data: null };
+  const isPartnerViewer = viewerProfile?.role === "partner";
+  const rows = isPartnerViewer
+    ? allRows.filter((r) => !r.owner_id || r.owner_id === viewerUser?.id)
+    : allRows;
 
   // For the owner-assignment dropdown -- specialties let the UI suggest a
   // matching B2B/B2C/Non-Sales specialist first for a given inquiry's category.

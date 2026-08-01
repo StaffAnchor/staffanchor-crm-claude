@@ -16,6 +16,20 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
   const { data: lead } = await supabase.from("sales_leads").select("*").eq("id", id).single();
   if (!lead) notFound();
 
+  // Same reasoning as clients/[id]/page.tsx: the Sales list page already
+  // scopes a Partner to leads they own, but that's only a list-query filter.
+  // Enforce it at the detail-fetch layer too, or a Partner with any other
+  // rep's lead ID (stale link, guessed URL) could still view/edit it.
+  const {
+    data: { user: viewerUser },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = viewerUser
+    ? await supabase.from("profiles").select("role").eq("id", viewerUser.id).single()
+    : { data: null };
+  if (viewerProfile?.role === "partner" && lead.owner_id !== viewerUser?.id) {
+    notFound();
+  }
+
   const { data: activities } = await supabase
     .from("sales_lead_activities")
     .select("*")

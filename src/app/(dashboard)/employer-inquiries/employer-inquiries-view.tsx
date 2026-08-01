@@ -328,11 +328,16 @@ export default function EmployerInquiriesView({
         data: { user },
       } = await supabase.auth.getUser();
 
+      // Owner defaults to whoever is doing the converting, so the record
+      // doesn't disappear from their own "my clients" list right after they
+      // created it. A pre-existing inquiry assignment (row.owner_id) still
+      // wins if one was set, since that reflects a deliberate handoff.
       const { data: client, error: clientError } = await supabase
         .from("clients")
         .insert({
           name: row.company_name,
           industry: row.industry === "Other" ? row.custom_industry : row.industry,
+          owner_id: row.owner_id ?? user?.id ?? null,
         })
         .select("id")
         .single();
@@ -406,9 +411,10 @@ export default function EmployerInquiriesView({
         .single();
       if (leadError || !lead) throw leadError ?? new Error("Failed to create sales lead");
 
-      if (row.owner_id) {
-        await supabase.from("sales_leads").update({ owner_id: row.owner_id }).eq("id", lead.id);
-      }
+      // Same owner-defaulting rule as convertToClient above: fall back to
+      // the converting user so the lead doesn't vanish from their own
+      // scoped Sales view the moment they create it.
+      await supabase.from("sales_leads").update({ owner_id: row.owner_id ?? user?.id ?? null }).eq("id", lead.id);
 
       const { error: inquiryError } = await supabase
         .from("employer_inquiries")

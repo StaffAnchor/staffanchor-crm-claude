@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { formatExperience } from "@/lib/format-experience";
 import { createClient } from "@supabase/supabase-js";
 import { cookieNameFor, verifyShortlistCookie } from "@/lib/shortlist-auth";
-import { isStaffPreview } from "@/lib/is-staff-viewer";
+import { getStaffPreviewRole } from "@/lib/is-staff-viewer";
 import AccessGate from "./access-gate";
 import FeedbackButtons from "./feedback-buttons";
 import ResumePreview from "./resume-preview";
@@ -116,9 +116,13 @@ export default async function ClientShortlistPage({
   // string alone was sufficient, so a forwarded link gave anyone full access.
   const cookieStore = await cookies();
   const verifiedEmail = verifyShortlistCookie(cookieStore.get(cookieNameFor(token))?.value, token);
-  // Admin/recruiter viewing while signed into the CRM skips the client OTP
-  // gate entirely -- lets the founder sanity-check a link before sending it.
-  const staffPreview = await isStaffPreview();
+  // Admin/recruiter/partner viewing while signed into the CRM skips the
+  // client OTP gate entirely -- lets staff sanity-check a link before
+  // sending it.
+  const staffPreviewRole = await getStaffPreviewRole();
+  const staffPreview = staffPreviewRole !== null;
+  const staffPreviewLabel =
+    staffPreviewRole === "admin" ? "Admin" : staffPreviewRole === "partner" ? "Partner" : "Recruiter";
   if (!verifiedEmail && !staffPreview) {
     return <AccessGate token={token} />;
   }
@@ -182,8 +186,8 @@ export default async function ClientShortlistPage({
     <div className="min-h-screen bg-slate-50">
       {!verifiedEmail && staffPreview && (
         <div className="bg-amber-400 text-amber-950 text-center text-xs font-semibold py-1.5 px-4">
-          Admin preview — you're bypassing the client email verification. This is exactly what the client will see
-          once they verify.
+          {staffPreviewLabel} preview — you&apos;re bypassing the client email verification. This is exactly what the
+          client will see once they verify.
         </div>
       )}
       <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white">

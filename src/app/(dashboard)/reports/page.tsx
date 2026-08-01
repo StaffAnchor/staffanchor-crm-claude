@@ -115,6 +115,23 @@ export default async function ReportsPage({
   const { range: rangeParam } = await searchParams;
   const range = rangeParam ?? "30";
   const supabase = await createClient();
+
+  // Reports is otherwise firm-wide for everyone (candidates/mandates aren't
+  // owner-scoped anywhere in the app, so most of this page is legitimately
+  // shared). The one exception is the Recruiter Performance tab -- per-person
+  // conversion rates and placement counts for the actual sourcing team --
+  // which is internal team-productivity data a Partner (a client-acquisition
+  // role, not a recruiter) has no working need to see, and showing it here
+  // would be the one place that contradicts the owner-scoping already
+  // enforced on Clients/Sales for that role.
+  const {
+    data: { user: viewerUser },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = viewerUser
+    ? await supabase.from("profiles").select("role").eq("id", viewerUser.id).single()
+    : { data: null };
+  const isPartnerViewer = viewerProfile?.role === "partner";
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const { from: rangeFrom, to: rangeTo } = rangeBoundsFor(range, today);
@@ -715,6 +732,13 @@ export default async function ReportsPage({
       <Tabs
         defaultKey="overview"
         items={[
+          // Recruiter Performance (key "recruiters") is filtered out below
+          // for Partner viewers -- see isPartnerViewer above. It's internal
+          // per-person conversion/placement data for the sourcing team,
+          // which a Partner (client-acquisition role) has no working need
+          // for, and showing it here would be the one place in the app
+          // that contradicts the owner-scoping already enforced for that
+          // role on Clients and Sales.
           {
             key: "overview",
             label: "Overview",
@@ -1197,7 +1221,7 @@ export default async function ReportsPage({
               </>
             ),
           },
-        ]}
+        ].filter((tab) => !(isPartnerViewer && tab.key === "recruiters"))}
       />
     </div>
   );

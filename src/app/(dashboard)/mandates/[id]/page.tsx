@@ -41,6 +41,19 @@ export default async function MandateDetailPage({
   const { data: mandate } = await supabase.from("mandates").select("*").eq("id", id).single();
   if (!mandate) notFound();
 
+  // PublishMandateButton's own comment calls this a "recruiter-gated
+  // publish step," but until now nothing actually enforced that -- any
+  // signed-in staff role, including Partner, could flip a draft mandate
+  // live behind only a plain window.confirm(). Fetched here and passed
+  // down so the button can actually honor what it already claims to do.
+  const {
+    data: { user: viewerUser },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = viewerUser
+    ? await supabase.from("profiles").select("role").eq("id", viewerUser.id).single()
+    : { data: null };
+  const viewerRole = viewerProfile?.role ?? null;
+
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
@@ -193,7 +206,9 @@ export default async function MandateDetailPage({
         </div>
       </div>
 
-      {mandate.status === "draft" && <PublishMandateButton mandateId={id} staffCount={assignedStaff.length} />}
+      {mandate.status === "draft" && (
+        <PublishMandateButton mandateId={id} staffCount={assignedStaff.length} viewerRole={viewerRole} />
+      )}
 
       {/* Health strip -- everything a recruiter needs to answer "is this
           mandate in trouble" without opening a single panel below. */}

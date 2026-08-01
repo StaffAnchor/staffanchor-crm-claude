@@ -14,21 +14,30 @@ type PreviewMatch = { candidate_id: string; full_name: string; score: number; re
 // on jobs.staffanchor.com no matter what. This button is the only thing
 // that flips it to "open" (live). It's meant to be clicked only after the
 // recruiter has reviewed/edited the mandate's details below.
+// Roles allowed to actually flip a draft mandate live. Partner is a
+// client-acquisition/closing role, not a recruiting one, and freelancers
+// never reach this internal page -- so publish is admin/recruiter only,
+// matching what this component's own comment has always claimed.
+const CAN_PUBLISH_ROLES = new Set(["admin", "recruiter"]);
+
 export default function PublishMandateButton({
   mandateId,
   staffCount,
+  viewerRole,
 }: {
   mandateId: string;
   // Internal recruiter/vendor staffing count (mandate_assignments). Required
   // before publish as a safety net for older drafts created before this
   // became mandatory at creation time -- new mandates always have one already.
   staffCount: number;
+  viewerRole: string | null;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const missingOwner = staffCount === 0;
+  const canPublish = viewerRole !== null && CAN_PUBLISH_ROLES.has(viewerRole);
 
   // Sample-candidates preview -- reuses the same matching engine as the
   // "Find matching candidates" panel, but surfaced right where a recruiter
@@ -66,7 +75,7 @@ export default function PublishMandateButton({
   }
 
   async function handlePublish() {
-    if (missingOwner) return;
+    if (missingOwner || !canPublish) return;
     const confirmed = window.confirm(
       "Publish this mandate? It will immediately become visible as a live job listing on jobs.staffanchor.com."
     );
@@ -96,18 +105,25 @@ export default function PublishMandateButton({
               Assign a recruiter or vendor (above) before publishing -- required for internal tracking.
             </p>
           )}
+          {!canPublish && (
+            <p className="text-[12px] text-amber-900 font-medium mt-1">
+              Only Admins and Recruiters can publish a mandate live.
+            </p>
+          )}
           {error && <p className="text-[12px] text-red-600 mt-1">{error}</p>}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <button
-            onClick={handlePublish}
-            disabled={publishing || missingOwner}
-            title={missingOwner ? "Assign a recruiter first" : undefined}
-            className="flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[12px] font-medium px-3 py-2 transition-colors"
-          >
-            {publishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
-            {publishing ? "Publishing…" : "Publish mandate"}
-          </button>
+          {canPublish && (
+            <button
+              onClick={handlePublish}
+              disabled={publishing || missingOwner}
+              title={missingOwner ? "Assign a recruiter first" : undefined}
+              className="flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[12px] font-medium px-3 py-2 transition-colors"
+            >
+              {publishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
+              {publishing ? "Publishing…" : "Publish mandate"}
+            </button>
+          )}
           <button
             onClick={runPreview}
             disabled={previewLoading}

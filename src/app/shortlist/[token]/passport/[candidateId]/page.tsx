@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { SalesPassportView } from "@/components/passport/sales-passport-view";
 import { cookieNameFor, verifyShortlistCookie } from "@/lib/shortlist-auth";
-import { isStaffPreview } from "@/lib/is-staff-viewer";
+import { getStaffPreviewRole } from "@/lib/is-staff-viewer";
 import AccessGate from "../../access-gate";
 
 // Full-page Sales Passport for a hiring manager on the no-login shortlist
@@ -29,7 +29,10 @@ export default async function ClientPassportPage({
   // same bar, not just a valid token.
   const cookieStore = await cookies();
   const verifiedEmail = verifyShortlistCookie(cookieStore.get(cookieNameFor(token))?.value, token);
-  const staffPreview = await isStaffPreview();
+  const staffPreviewRole = await getStaffPreviewRole();
+  const staffPreview = staffPreviewRole !== null;
+  const staffPreviewLabel =
+    staffPreviewRole === "admin" ? "Admin" : staffPreviewRole === "partner" ? "Partner" : "Recruiter";
   if (!verifiedEmail && !staffPreview) {
     return <AccessGate token={token} />;
   }
@@ -90,7 +93,7 @@ export default async function ClientPassportPage({
     <div className="min-h-screen bg-slate-50">
       {!verifiedEmail && staffPreview && (
         <div className="bg-amber-400 text-amber-950 text-center text-xs font-semibold py-1.5 px-4">
-          Admin preview — you're bypassing the client email verification.
+          {staffPreviewLabel} preview — you&apos;re bypassing the client email verification.
         </div>
       )}
       <header className="bg-white border-b border-slate-200">
