@@ -20,8 +20,6 @@ import EditProfileButton from "./edit-profile-button";
 import QuickContactActions from "./quick-contact-actions";
 import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
-import { SalesPassportView } from "@/components/passport/sales-passport-view";
-import { mergeTimelines, computeStabilityScore, computeDomainConsistencyScore } from "@/lib/career-timeline";
 import { formatExperience } from "@/lib/format-experience";
 
 // ROS design language: one neutral avatar treatment for every candidate --
@@ -317,16 +315,6 @@ export default async function CandidateDetailPage({
     return `/candidates/${neighbor.id}?from=${encodeURIComponent(from ?? "")}`;
   }
 
-  // Recomputed here (not just read off the stored stability_score column) so
-  // the Passport tab's "Stable"/"Some Movement"/"Frequent Job-Hopper" label
-  // always matches the same merged-timeline logic the Career tab uses --
-  // the stored column only ever held the numeric score, not the label.
-  const profileTimelineEntries = (candidate.career_timeline_profile ?? []) as never[];
-  const resumeTimelineEntries = (candidate.career_timeline_resume ?? []) as never[];
-  const mergedForStability = mergeTimelines(profileTimelineEntries as never, resumeTimelineEntries as never);
-  const stabilityResult = computeStabilityScore(mergedForStability);
-  const domainConsistencyResult = computeDomainConsistencyScore(profileTimelineEntries as never);
-
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -519,7 +507,12 @@ export default async function CandidateDetailPage({
 
       {/* --- AI summary: front and center, not buried in a tab --- */}
       <Card className="mt-4">
-        <AiSummaryPanel candidateId={candidate.id} initialSummary={candidate.ai_summary} initialPassport={candidate.ai_passport} />
+        <AiSummaryPanel
+          candidateId={candidate.id}
+          initialSummary={candidate.ai_summary}
+          initialPassport={candidate.ai_passport}
+          initialDecisionFlags={candidate.ai_decision_flags}
+        />
       </Card>
 
       <div className="grid grid-cols-3 gap-6 mt-6">
@@ -531,49 +524,17 @@ export default async function CandidateDetailPage({
                   label: "Overview",
                   content: (
                     <div className="space-y-6">
-                      {(candidate.skills || candidate.current_industry || (candidate.industries && candidate.industries.length > 0)) && (
+                      {/* Current industry + previous industries already shown in the
+                          header (line ~401, "Previously:" badges) -- not repeated here. */}
+                      {candidate.skills && (
                         <div>
-                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills &amp; industries</h3>
-                          <div className="space-y-3">
-                            {candidate.skills && (
-                              <div>
-                                <p className="text-[11px] text-slate-400 mb-1.5">Skills</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {candidate.skills.split(",").map((s: string) => s.trim()).filter(Boolean).map((skill: string) => (
-                                    <Badge key={skill} tone="accent" size="sm" className="normal-case tracking-normal">
-                                      {skill}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {candidate.current_industry && (
-                              <div>
-                                <p className="text-[11px] text-slate-400 mb-1.5">Current industry</p>
-                                <Badge tone="success" size="sm" className="normal-case tracking-normal">
-                                  {candidate.current_industry}
-                                </Badge>
-                              </div>
-                            )}
-                            {(() => {
-                              const others = (candidate.industries ?? []).filter(
-                                (i: string) => i !== candidate.current_industry
-                              );
-                              return (
-                                others.length > 0 && (
-                                  <div>
-                                    <p className="text-[11px] text-slate-400 mb-1.5">Previous industries</p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {others.map((i: string) => (
-                                        <Badge key={i} tone="neutral" size="sm" className="normal-case tracking-normal">
-                                          {i}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )
-                              );
-                            })()}
+                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
+                          <div className="flex flex-wrap gap-1.5">
+                            {candidate.skills.split(",").map((s: string) => s.trim()).filter(Boolean).map((skill: string) => (
+                              <Badge key={skill} tone="accent" size="sm" className="normal-case tracking-normal">
+                                {skill}
+                              </Badge>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -632,38 +593,6 @@ export default async function CandidateDetailPage({
                       candidateName={candidate.full_name}
                       links={(links ?? []) as never}
                       openMandates={openMandates ?? []}
-                    />
-                  ),
-                },
-                {
-                  label: "Passport",
-                  content: (
-                    <SalesPassportView
-                      viewer="recruiter"
-                      fullName={candidate.full_name}
-                      currentJobTitle={candidate.current_job_title}
-                      currentEmployer={candidate.current_employer}
-                      currentLocation={candidate.current_location}
-                      totalExperienceYears={candidate.total_experience_years}
-                      subDomain={candidate.sub_domain}
-                      secondarySubDomains={candidate.secondary_sub_domains}
-                      expectedFixedCtc={candidate.expected_fixed_ctc}
-                      currentFixedCtc={candidate.current_fixed_ctc}
-                      noticePeriod={candidate.notice_period}
-                      verifiedRelocation={(assessment.relocation_verified as string | undefined) ?? null}
-                      openToRelocation={candidate.open_to_relocation ?? null}
-                      verifiedNotice={(assessment.notice_verified as string | undefined) ?? null}
-                      currentIndustry={candidate.current_industry}
-                      industries={candidate.industries}
-                      skills={candidate.skills}
-                      segmentData={segment}
-                      careerTimeline={profileTimelineEntries as never}
-                      stabilityScore={stabilityResult?.score ?? candidate.stability_score ?? null}
-                      stabilityLabel={stabilityResult?.label ?? null}
-                      domainConsistencyScore={domainConsistencyResult?.score ?? candidate.domain_consistency_score ?? null}
-                      scores={scores}
-                      recommendation={recommendation}
-                      redFlags={redFlags}
                     />
                   ),
                 },

@@ -30,5 +30,8 @@ export async function POST(req: NextRequest) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
-  return NextResponse.json({ summary: result.summary, passport: result.passport });
+  // Internal, staff-authenticated route only -- safe to also return
+  // decisionFlags here (unlike api/public-ai-summary, which must never
+  // include it since that route is reachable by clients/candidates).
+  return NextResponse.json({ summary: result.summary, passport: result.passport, decisionFlags: result.decisionFlags });
 }
