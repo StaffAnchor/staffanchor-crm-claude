@@ -145,18 +145,22 @@ function ScoreBreakdownBar({ label, value }: { label: string; value: number }) {
   );
 }
 
+type ProactiveMatchRow = { id: string; candidate_id: string; match: unknown; created_at: string };
+
 export default function MatchesWorkspace({
   mandateId,
   mustHaves,
   goodToHaves,
   initialMatches,
   initialComputedAt,
+  proactiveMatches: initialProactiveMatches,
 }: {
   mandateId: string;
   mustHaves: string[];
   goodToHaves: string[];
   initialMatches?: unknown;
   initialComputedAt?: string | null;
+  proactiveMatches?: ProactiveMatchRow[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -240,6 +244,25 @@ export default function MatchesWorkspace({
     }
   }
 
+  const [proactiveMatches, setProactiveMatches] = useState<(ProactiveMatchRow & { parsed: CandidateMatch })[]>(
+    (initialProactiveMatches ?? [])
+      .map((row) => {
+        const parsed = normalizeCachedMatches([row.match])[0];
+        return parsed ? { ...row, parsed } : null;
+      })
+      .filter((r): r is ProactiveMatchRow & { parsed: CandidateMatch } => r !== null)
+  );
+  const [dismissingProactiveId, setDismissingProactiveId] = useState<string | null>(null);
+
+  async function dismissProactiveMatch(rowId: string) {
+    setDismissingProactiveId(rowId);
+    const { error } = await supabase.from("mandate_proactive_matches").delete().eq("id", rowId);
+    setDismissingProactiveId(null);
+    if (!error) {
+      setProactiveMatches((prev) => prev.filter((r) => r.id !== rowId));
+    }
+  }
+
   const sortedMatches = useMemo(() => {
     if (!matches) return null;
     const sorted = [...matches].sort((a, b) => {
@@ -253,7 +276,65 @@ export default function MatchesWorkspace({
   }, [matches, fullMatchesOnly]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+    <div className="mt-4">
+      {proactiveMatches.length > 0 && (
+        <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 mb-4">
+          <h2 className="text-[13px] font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-1.5 mb-2">
+            <Sparkles className="w-3.5 h-3.5" /> New since you last looked ({proactiveMatches.length})
+          </h2>
+          <p className="text-[11px] text-purple-700/80 dark:text-purple-300/70 mb-3">
+            Candidates the system flagged as strong prospects for this mandate as soon as they registered/updated
+            their profile — evaluated automatically, no one had to click "Find matches".
+          </p>
+          <div className="space-y-2">
+            {proactiveMatches.map(({ id: rowId, parsed: m }) => (
+              <div
+                key={rowId}
+                className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 rounded-lg border border-purple-100 dark:border-purple-900 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
+                      className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate"
+                    >
+                      {m.full_name}
+                    </Link>
+                    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${scoreColor(m.score)}`}>
+                      {m.score}
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-slate-600 dark:text-slate-400 truncate">{m.reason}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => addToPipeline(m.candidate_id)}
+                    disabled={addedIds.has(m.candidate_id) || addingId === m.candidate_id}
+                    className="flex items-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12px] px-2.5 py-1.5 disabled:opacity-50"
+                  >
+                    {addedIds.has(m.candidate_id) ? (
+                      <Check className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <UserPlus className="w-3 h-3" />
+                    )}
+                    {addedIds.has(m.candidate_id) ? "Added" : "Add"}
+                  </button>
+                  <button
+                    onClick={() => dismissProactiveMatch(rowId)}
+                    disabled={dismissingProactiveId === rowId}
+                    className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-50"
+                    title="Dismiss"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-1 space-y-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Mandate must-haves</h2>
@@ -517,6 +598,7 @@ export default function MatchesWorkspace({
             })}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

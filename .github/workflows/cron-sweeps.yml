@@ -9,12 +9,14 @@ name: Cron sweeps backstop
 #
 # Three routes (inbox-sweep, client-followup, embed-candidates) are cheap
 # and don't call Gemini's generateContent endpoint, so they still run daily.
-# The other three (auto-summarize, career-timeline-sweep, mandate-auto-
-# rematch) each call Gemini once per record processed, and the free-tier key
-# only gets ~20 generateContent requests/day for the whole project -- so
-# they're staggered to different days of the week, matching vercel.json
-# exactly, so this backstop doesn't undo that throttling by hitting all
-# three on the same day anyway.
+# The other four (auto-summarize, career-timeline-sweep, mandate-auto-
+# rematch, proactive-match-sweep) each call Gemini per record/group
+# processed, and the free-tier key only gets ~20 generateContent requests/day
+# for the whole project -- so they're staggered to different days of the
+# week, matching vercel.json exactly, so this backstop doesn't undo that
+# throttling by hitting more than one on the same day. proactive-match-sweep
+# gets Sunday, the one day otherwise free of Gemini-backed crons, and is
+# additionally capped internally to a handful of Gemini calls per run.
 #
 # Setup (one-time):
 #   1. In the Vercel project -> Settings -> Environment Variables, add
@@ -53,6 +55,7 @@ jobs:
             1|4) ROUTES="$ROUTES auto-summarize" ;;       # Mon & Thu
             2|5) ROUTES="$ROUTES career-timeline-sweep" ;; # Tue & Fri
             3|6) ROUTES="$ROUTES mandate-auto-rematch" ;;  # Wed & Sat
+            7) ROUTES="$ROUTES proactive-match-sweep" ;;   # Sun
           esac
 
           for route in $ROUTES; do

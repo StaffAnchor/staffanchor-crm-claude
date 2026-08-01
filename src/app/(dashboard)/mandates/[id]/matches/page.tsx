@@ -30,6 +30,16 @@ export default async function MandateMatchesPage({
     .single();
   if (!mandate) notFound();
 
+  // Proactive matches: candidates the gated proactive matcher (a cheap
+  // pgvector similarity check at registration/regeneration time, evaluated
+  // by api/cron/proactive-match-sweep) already flagged as strong prospects
+  // for this mandate, without a recruiter ever clicking "Find matches".
+  const { data: proactiveMatches } = await supabase
+    .from("mandate_proactive_matches")
+    .select("id, candidate_id, match, created_at")
+    .eq("mandate_id", id)
+    .order("created_at", { ascending: false });
+
   return (
     <div>
       <Link
@@ -69,6 +79,7 @@ export default async function MandateMatchesPage({
         goodToHaves={mandate.good_to_haves ?? []}
         initialMatches={mandate.auto_match_results ?? null}
         initialComputedAt={mandate.auto_match_computed_at ?? null}
+        proactiveMatches={proactiveMatches ?? []}
       />
     </div>
   );

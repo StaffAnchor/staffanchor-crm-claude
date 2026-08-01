@@ -8,6 +8,7 @@ import AssessmentForm from "./assessment-form";
 import MandateDiscussions from "./mandate-discussions";
 import CareerTimelinePanel from "./career-timeline-panel";
 import NotesPanel from "./notes-panel";
+import VerifiedFactsPanel from "./verified-facts-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
 import Tabs from "./tabs";
@@ -237,6 +238,12 @@ export default async function CandidateDetailPage({
   const { data: notes } = await supabase
     .from("recruiter_notes")
     .select("id, note_type, content, created_at, author_id")
+    .eq("candidate_id", id)
+    .order("created_at", { ascending: false });
+
+  const { data: verifiedFacts } = await supabase
+    .from("candidate_verified_facts")
+    .select("id, fact_type, note, created_at")
     .eq("candidate_id", id)
     .order("created_at", { ascending: false });
 
@@ -543,6 +550,15 @@ export default async function CandidateDetailPage({
           initialSkillInventory={candidate.skill_inventory}
           initialStabilityScore={candidate.stability_score}
         />
+      </Card>
+
+      {/* Durable, recruiter-confirmed facts about this candidate as a
+          person (not tied to any one mandate) -- fed into future mandate
+          matching (src/lib/candidate-match.ts) as a real signal, distinct
+          from the per-mandate must-have checklist. Sits right under the AI
+          summary since it directly shapes what that summary/matching sees. */}
+      <Card className="mt-4">
+        <VerifiedFactsPanel candidateId={candidate.id} initialFacts={verifiedFacts ?? []} />
       </Card>
 
       <div className="grid grid-cols-3 gap-6 mt-6">

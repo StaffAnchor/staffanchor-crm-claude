@@ -9,6 +9,7 @@ import {
 } from "@/lib/career-timeline";
 import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
 import { embedCandidate } from "@/lib/embeddings";
+import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 
 export type AiPassport = {
   headline?: string;
@@ -47,6 +48,20 @@ export type SkillInventory = {
   soft_skills?: string[];
 };
 
+// Compact, sales-specific structured index -- the "Talent Micro-Index".
+// Deliberately tiny (well under 120 words rendered) so Stage 2 mandate
+// matching (src/lib/candidate-match.ts) can send 150 candidates to Gemini
+// per run instead of 60, by passing this instead of full resume text/
+// self-assessment/recruiter-scorecard blobs for the bulk of the pool.
+// Internal-only, same reasoning as AiDecisionFlags/SkillInventory.
+export type TalentMicroIndex = {
+  core_motion?: string; // e.g. "Field AE | Inside SDR | Channel | B2C"
+  normalized_acv_band?: string; // e.g. "<$50k" | "$50k-$150k" | "$150k+" (or INR equivalent)
+  buyer_personas_sold_to?: string[]; // e.g. ["CISO", "CFO", "VP Engineering"]
+  verified_quota_attainment_pct?: number; // most recent/typical period, if stated
+  disqualifiers?: string[]; // short, factual gaps (e.g. "No team management exp")
+};
+
 export type GenerateAiPassportResult =
   | {
       ok: true;
@@ -54,15 +69,16 @@ export type GenerateAiPassportResult =
       passport: AiPassport | null;
       decisionFlags: AiDecisionFlags | null;
       skillInventory: SkillInventory | null;
+      talentMicroIndex: TalentMicroIndex | null;
       stabilityScore: number | null;
     }
   | { ok: false; status: number; error: string };
 
 // Everything the model is asked to return in one JSON object (cheaper than a
 // second Gemini call) -- immediately split into the client-safe AiPassport
-// subset and the internal-only AiDecisionFlags/SkillInventory subsets before
-// anything is persisted or returned up the call stack.
-type RawAiOutput = AiPassport & AiDecisionFlags & SkillInventory;
+// subset and the internal-only AiDecisionFlags/SkillInventory/TalentMicroIndex
+// subsets before anything is persisted or returned up the call stack.
+type RawAiOutput = AiPassport & AiDecisionFlags & SkillInventory & TalentMicroIndex;
 
 function parsePassportJson(raw: string): RawAiOutput | null {
   // Gemini sometimes wraps JSON in a ```json fence despite instructions not to.
@@ -79,9 +95,12 @@ function parsePassportJson(raw: string): RawAiOutput | null {
 // Explicit allowlist split -- never spread the raw model output into either
 // stored object, so an unexpected/extra key the model invents can never
 // accidentally cross from the internal side to the client-visible side.
-function splitRawOutput(
-  raw: RawAiOutput
-): { passport: AiPassport; decisionFlags: AiDecisionFlags; skillInventory: SkillInventory } {
+function splitRawOutput(raw: RawAiOutput): {
+  passport: AiPassport;
+  decisionFlags: AiDecisionFlags;
+  skillInventory: SkillInventory;
+  talentMicroIndex: TalentMicroIndex;
+} {
   return {
     passport: {
       headline: raw.headline,
@@ -101,6 +120,13 @@ function splitRawOutput(
       tools_platforms: raw.tools_platforms,
       domain_expertise: raw.domain_expertise,
       soft_skills: raw.soft_skills,
+    },
+    talentMicroIndex: {
+      core_motion: raw.core_motion,
+      normalized_acv_band: raw.normalized_acv_band,
+      buyer_personas_sold_to: raw.buyer_personas_sold_to,
+      verified_quota_attainment_pct: raw.verified_quota_attainment_pct,
+      disqualifiers: raw.disqualifiers,
     },
   };
 }
@@ -269,6 +295,13 @@ The following four keys build a structured skill inventory -- also internal only
 - "domain_expertise": array of industry/domain areas they have real experience in (e.g. "SaaS", "EdTech", "FinTech B2B").
 - "soft_skills": array of 0-3 soft skills ONLY if concretely evidenced (e.g. "coached team to a 25% qualification-rate lift" -> "team coaching"), never generic unsupported claims. Empty array if nothing concrete.
 
+The following five keys build a compact "Talent Micro-Index" -- also internal only. Its whole purpose is to let mandate matching evaluate 150 candidates per run instead of 60 by sending this tiny object instead of full resume/assessment text for most of the pool, so keep the whole thing genuinely compact (well under 120 words total across all five fields) while still being specific enough to be useful:
+- "core_motion": one short phrase for their primary sales motion (e.g. "Field AE", "Inside SDR", "Channel/Partner sales", "B2C direct sales", "Enterprise B2B sales") -- pick the closest fit, don't invent a new category.
+- "normalized_acv_band": their typical deal size, normalized to one of "<$50k", "$50k-$150k", "$150k+" (convert INR or other currencies to rough USD-equivalent bands mentally, don't just restate the raw number) -- omit if no deal-size data exists anywhere.
+- "buyer_personas_sold_to": array of 0-4 short titles/roles they've actually sold to if stated or clearly implied (e.g. "CFO", "VP Engineering", "Small business owners") -- omit or empty array if not evidenced.
+- "verified_quota_attainment_pct": their most recent or most typical quota attainment as a single integer percent, if genuinely stated -- omit entirely if no attainment data exists (never estimate one).
+- "disqualifiers": array of 0-3 short, factual capability gaps a recruiter would want flagged fast when skimming (e.g. "No team management experience", "No enterprise deal experience", "No experience carrying an individual quota") -- empty array if none apparent.
+
 Structured candidate data (JSON):
 ${JSON.stringify(factSheet, null, 2)}
 
@@ -288,9 +321,9 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
       const result = await model.generateContent(prompt);
       const raw = result.response.text().trim();
       const rawOutput = parsePassportJson(raw);
-      const { passport, decisionFlags, skillInventory } = rawOutput
+      const { passport, decisionFlags, skillInventory, talentMicroIndex } = rawOutput
         ? splitRawOutput(rawOutput)
-        : { passport: null, decisionFlags: null, skillInventory: null };
+        : { passport: null, decisionFlags: null, skillInventory: null, talentMicroIndex: null };
 
       // Fall back to treating the raw response as plain prose if JSON parsing
       // fails for some reason -- better a slightly-off summary than none.
@@ -314,6 +347,7 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
           ai_passport: finalPassport,
           ai_decision_flags: decisionFlags,
           skill_inventory: skillInventory,
+          talent_micro_index: talentMicroIndex,
           ai_summary_generated_status: candidateStatus,
           ai_summary_generated_at: new Date().toISOString(),
         })
@@ -370,12 +404,28 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         console.error("Embedding refresh failed after AI passport generation", candidateId, err);
       }
 
+      // Gated proactive matcher: a cheap (~<10ms, $0 API cost) pgvector
+      // similarity check of this candidate's just-refreshed embedding
+      // against every open mandate's embedding. Only pairs crossing a high
+      // confidence threshold get queued for the next batched Gemini
+      // evaluation sweep (api/cron/proactive-match-sweep) -- this is the
+      // "system notices a strong candidate the moment they register/update,
+      // without burning a Gemini call per registration" behavior. Never
+      // throws into the generation result; a failure here just means this
+      // candidate waits for the sweep's own periodic scan instead.
+      try {
+        await queueProactiveMatchesForCandidate(candidateId, supabase);
+      } catch (err) {
+        console.error("Proactive-match queueing failed after AI passport generation", candidateId, err);
+      }
+
       return {
         ok: true,
         summary,
         passport: finalPassport,
         decisionFlags,
         skillInventory,
+        talentMicroIndex,
         stabilityScore: (candidate.stability_score as number | null) ?? stability?.score ?? null,
       };
     } catch (err) {

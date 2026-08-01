@@ -88,6 +88,7 @@ type CandidateRow = {
   resume_text: string | null;
   ai_summary: string | null;
   stability_score: number | null;
+  talent_micro_index: Record<string, unknown> | null;
 };
 
 function parseJsonArray(raw: string): CandidateMatch[] | null {
@@ -127,6 +128,13 @@ export async function matchCandidatesForMandate(
     // recruiter's view of this mandate) is unaffected. Lets a recruiter
     // probe "what if I also required X" without editing the JD.
     extraCriteria?: string;
+    // Gated proactive matcher (api/cron/proactive-match-sweep): when set,
+    // skip the SQL pre-filter and embedding recall entirely and evaluate
+    // ONLY these specific candidate ids against the mandate -- these are
+    // candidates a cheap pgvector similarity check already flagged as
+    // strong prospects for this mandate, so there's no need to re-derive
+    // a pool; just run the same clause-level Gemini evaluation on them.
+    candidateIdsOverride?: string[];
   }
 ): Promise<MatchMandateResult> {
   const { data: mandate, error: mandateError } = await supabase
@@ -197,70 +205,91 @@ export async function matchCandidatesForMandate(
   // hard filters, since a strong adjacent-domain candidate is still worth
   // surfacing to the recruiter with a lower score.
   const SELECT_COLUMNS =
-    "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, skill_inventory, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary, stability_score";
+    "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, skill_inventory, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary, stability_score, talent_micro_index";
 
-  let query = supabase.from("candidates").select(SELECT_COLUMNS).neq("status", "awaiting_input").limit(400);
-
-  if (mandate.category) query = query.eq("category", mandate.category);
-
-  const { data: pool, error: poolError } = await query;
-  if (poolError) {
-    return { ok: false, status: 500, error: poolError.message };
-  }
-
-  const candidates = ((pool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
-
-  // Semantic recall: a fast, "does the system already remember someone
-  // like this" pass over every candidate's stored embedding (computed by
-  // the embed-candidates cron), independent of the SQL prefilter above.
-  // Catches strong adjacent-domain or oddly-categorized candidates the
-  // rigid category/sub_domain/experience/CTC filter would otherwise never
-  // surface, without spending an extra Gemini call -- everything still
-  // funnels into the single scoring call below. mandate.embedding is
-  // computed lazily here (cheap -- one embedding call, not a full Gemini
-  // generation) rather than via its own cron, since mandates change far
-  // less often than candidates are created.
+  const override = options?.candidateIdsOverride;
+  let candidates: CandidateRow[];
   const similarityById = new Map<string, number>();
-  try {
-    const mandateEmbedding = await ensureMandateEmbedding(
-      {
-        id: mandate.id,
-        role_title: mandate.role_title,
-        category: mandate.category,
-        sub_domain: mandate.sub_domain,
-        sub_domains: (mandate as { sub_domains?: string[] | null }).sub_domains ?? null,
-        job_description: mandate.job_description,
-        jd_overview: (mandate as { jd_overview?: string | null }).jd_overview ?? null,
-        jd_responsibilities: (mandate as { jd_responsibilities?: string | null }).jd_responsibilities ?? null,
-        jd_candidate_profile: (mandate as { jd_candidate_profile?: string | null }).jd_candidate_profile ?? null,
-        must_haves: mandate.must_haves as string[] | null,
-        good_to_haves: mandate.good_to_haves as string[] | null,
-        embedding_source_hash: (mandate as { embedding_source_hash?: string | null }).embedding_source_hash ?? null,
-      },
-      supabase
-    );
 
-    if (mandateEmbedding) {
-      const { data: semanticMatches } = await supabase.rpc("match_candidates", {
-        query_embedding: mandateEmbedding,
-        match_count: 100,
-      });
-      const existingIds = new Set(candidates.map((c) => c.id));
-      const newIds: string[] = [];
-      for (const sm of (semanticMatches ?? []) as { id: string; status: string; similarity: number }[]) {
-        if (linkedIds.has(sm.id) || sm.status === "awaiting_input") continue;
-        similarityById.set(sm.id, sm.similarity);
-        if (!existingIds.has(sm.id)) newIds.push(sm.id);
-      }
-      if (newIds.length > 0) {
-        const { data: extra } = await supabase.from("candidates").select(SELECT_COLUMNS).in("id", newIds);
-        for (const c of (extra ?? []) as CandidateRow[]) candidates.push(c);
-      }
+  if (override && override.length > 0) {
+    // Proactive-matcher path: the pool is already known (a pgvector
+    // similarity check upstream already decided these are worth a real
+    // look), so skip the SQL pre-filter and semantic recall entirely.
+    const { data: overridePool, error: overrideError } = await supabase
+      .from("candidates")
+      .select(SELECT_COLUMNS)
+      .in("id", override);
+    if (overrideError) {
+      return { ok: false, status: 500, error: overrideError.message };
     }
-  } catch (err) {
-    // Best-effort recall path -- a failure here should never block matching,
-    // just fall back to the SQL-prefilter-only pool.
-    console.error("Embedding-based recall failed for mandate match", mandateId, err);
+    candidates = ((overridePool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+  } else {
+    // Stage 1: cheap SQL pre-filter. Same category is required (a B2C hunter
+    // profile isn't useful for a B2B enterprise mandate); sub-domain, location,
+    // and experience/CTC are soft signals folded into scoring below rather than
+    // hard filters, since a strong adjacent-domain candidate is still worth
+    // surfacing to the recruiter with a lower score.
+    let query = supabase.from("candidates").select(SELECT_COLUMNS).neq("status", "awaiting_input").limit(400);
+    if (mandate.category) query = query.eq("category", mandate.category);
+
+    const { data: pool, error: poolError } = await query;
+    if (poolError) {
+      return { ok: false, status: 500, error: poolError.message };
+    }
+
+    candidates = ((pool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+
+    // Semantic recall: a fast, "does the system already remember someone
+    // like this" pass over every candidate's stored embedding (computed by
+    // the embed-candidates cron), independent of the SQL prefilter above.
+    // Catches strong adjacent-domain or oddly-categorized candidates the
+    // rigid category/sub_domain/experience/CTC filter would otherwise never
+    // surface, without spending an extra Gemini call -- everything still
+    // funnels into the single scoring call below. mandate.embedding is
+    // computed lazily here (cheap -- one embedding call, not a full Gemini
+    // generation) rather than via its own cron, since mandates change far
+    // less often than candidates are created.
+    try {
+      const mandateEmbedding = await ensureMandateEmbedding(
+        {
+          id: mandate.id,
+          role_title: mandate.role_title,
+          category: mandate.category,
+          sub_domain: mandate.sub_domain,
+          sub_domains: (mandate as { sub_domains?: string[] | null }).sub_domains ?? null,
+          job_description: mandate.job_description,
+          jd_overview: (mandate as { jd_overview?: string | null }).jd_overview ?? null,
+          jd_responsibilities: (mandate as { jd_responsibilities?: string | null }).jd_responsibilities ?? null,
+          jd_candidate_profile: (mandate as { jd_candidate_profile?: string | null }).jd_candidate_profile ?? null,
+          must_haves: mandate.must_haves as string[] | null,
+          good_to_haves: mandate.good_to_haves as string[] | null,
+          embedding_source_hash: (mandate as { embedding_source_hash?: string | null }).embedding_source_hash ?? null,
+        },
+        supabase
+      );
+
+      if (mandateEmbedding) {
+        const { data: semanticMatches } = await supabase.rpc("match_candidates", {
+          query_embedding: mandateEmbedding,
+          match_count: 100,
+        });
+        const existingIds = new Set(candidates.map((c) => c.id));
+        const newIds: string[] = [];
+        for (const sm of (semanticMatches ?? []) as { id: string; status: string; similarity: number }[]) {
+          if (linkedIds.has(sm.id) || sm.status === "awaiting_input") continue;
+          similarityById.set(sm.id, sm.similarity);
+          if (!existingIds.has(sm.id)) newIds.push(sm.id);
+        }
+        if (newIds.length > 0) {
+          const { data: extra } = await supabase.from("candidates").select(SELECT_COLUMNS).in("id", newIds);
+          for (const c of (extra ?? []) as CandidateRow[]) candidates.push(c);
+        }
+      }
+    } catch (err) {
+      // Best-effort recall path -- a failure here should never block matching,
+      // just fall back to the SQL-prefilter-only pool.
+      console.error("Embedding-based recall failed for mandate match", mandateId, err);
+    }
   }
 
   const calibration = { positive: calibrationPositive.length, negative: calibrationNegative.length };
@@ -299,12 +328,50 @@ export async function matchCandidatesForMandate(
     return s;
   }
 
+  // Expanded 60 -> 150: made affordable by sending the compact
+  // talent_micro_index (~120 words) per candidate below instead of full
+  // resume text/self-assessment/recruiter-scorecard blobs, so 150 fits in
+  // roughly the token budget 60 used to need. Override path (proactive
+  // matcher) already hands us a small, pre-qualified set, so the cap here
+  // is a no-op for it.
   const shortlist = candidates
     .map((c) => ({ c, s: heuristicScore(c) }))
     .sort((a, b) => b.s - a.s)
-    .slice(0, 60)
+    .slice(0, 150)
     .map(({ c }) => c);
 
+  // Durable, recruiter-confirmed facts (candidate_verified_facts) -- these
+  // are candidate-intrinsic signals a recruiter has explicitly verified
+  // (e.g. "resume claims don't hold up on a call", "job-hops without good
+  // reason"), NOT raw rejection reasons from some other mandate. Fetched
+  // for just this shortlist and folded into each factSheet below so the
+  // scoring/reasoning can weigh them without ever silently penalizing a
+  // candidate for something mandate-specific and irrelevant here.
+  const verifiedFactsByCandidate = new Map<string, { fact_type: string; note: string | null }[]>();
+  try {
+    const { data: verifiedFacts } = await supabase
+      .from("candidate_verified_facts")
+      .select("candidate_id, fact_type, note")
+      .in(
+        "candidate_id",
+        shortlist.map((c) => c.id)
+      );
+    for (const f of verifiedFacts ?? []) {
+      const list = verifiedFactsByCandidate.get(f.candidate_id as string) ?? [];
+      list.push({ fact_type: f.fact_type as string, note: f.note as string | null });
+      verifiedFactsByCandidate.set(f.candidate_id as string, list);
+    }
+  } catch (err) {
+    console.error("Fetching candidate_verified_facts failed for mandate match", mandateId, err);
+  }
+
+  // Lightweight fact sheet -- deliberately drops the heaviest fields (full
+  // resume excerpt, self-assessment write-ups, recruiter scorecard, prior
+  // AI summary) in favor of the compact talent_micro_index, so 150
+  // candidates fit in roughly the token budget 60 used to need. skills/
+  // skill_inventory are kept (already compact, and still cover
+  // language/certification-type must-haves the micro-index doesn't) so
+  // clause-level checking doesn't lose too much fidelity.
   const factSheets = shortlist.map((c) => ({
     candidate_id: c.id,
     name: c.full_name,
@@ -322,11 +389,8 @@ export async function matchCandidatesForMandate(
     skill_inventory: c.skill_inventory,
     current_industry: c.current_industry,
     other_industries_worked_in: (c.industries as string[] | null)?.filter((i) => i !== c.current_industry),
-    self_reported_segment_data: c.segment_data,
-    self_assessment_writeups: c.self_assessment,
-    recruiter_scorecard: c.recruiter_assessment,
-    resume_excerpt: c.resume_text ? c.resume_text.slice(0, 3000) : null,
-    existing_ai_summary: c.ai_summary,
+    talent_micro_index: c.talent_micro_index,
+    recruiter_verified_facts: verifiedFactsByCandidate.get(c.id) ?? [],
   }));
 
 const calibrationBlock =
@@ -363,7 +427,7 @@ Mandate:
 - Good to haves (nice-to-haves): ${JSON.stringify(m.good_to_haves ?? [])}${extraCriteriaBlock}
 ${calibrationBlock}
 
-Candidates to evaluate (JSON array -- includes their filled-in profile fields, self-assessment, recruiter scorecard, AND resume text, so check ALL of these before ruling a requirement unmet):
+Candidates to evaluate (JSON array). Each candidate includes their core profile fields, skills/skill_inventory, a compact "talent_micro_index" (core sales motion, normalized deal-size band, buyer personas sold to, verified quota attainment, and known disqualifiers -- treat this as reliable, pre-extracted signal, not something to second-guess), and "recruiter_verified_facts" -- durable, recruiter-confirmed signals about the candidate as a person (e.g. fact_type "job_hopping_flag" or "resume_claims_unverified") that are NOT specific to this mandate. Weigh recruiter_verified_facts as a real signal: "resume_claims_unverified" should make you more conservative about trusting resume-derived "met" verdicts for that candidate; "job_hopping_flag" or "location_inflexibility" should factor into domain_relevance/experience_fit and the overall reason, not be ignored. Full resume text is NOT included here for most candidates (that's what talent_micro_index/skill_inventory are for) -- if a specific requirement genuinely can't be assessed from what's given, mark it "unclear" rather than guessing:
 ${JSON.stringify(factSheets, null, 2)}
 
 CRITICAL -- how to evaluate each must-have / good-to-have / ad hoc requirement, one clause at a time. This is the single most important instruction: for EVERY requirement, decide one of exactly three verdicts, and do not conflate them:
