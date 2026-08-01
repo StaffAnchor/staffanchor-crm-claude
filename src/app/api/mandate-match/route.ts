@@ -21,23 +21,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 
-  const { mandateId } = await req.json();
+  const { mandateId, extraCriteria } = await req.json();
   if (!mandateId) {
     return NextResponse.json({ error: "mandateId is required" }, { status: 400 });
   }
 
-  const result = await matchCandidatesForMandate(mandateId, supabase);
+  const hasExtraCriteria = typeof extraCriteria === "string" && extraCriteria.trim().length > 0;
+
+  const result = await matchCandidatesForMandate(mandateId, supabase, hasExtraCriteria ? { extraCriteria } : undefined);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  // Cache the result on the mandate so it's already there next time someone
-  // opens this mandate's page -- both for the manual "Find matches" click
-  // and the auto-run fired right after mandate creation.
-  await supabase
-    .from("mandates")
-    .update({ auto_match_results: result.matches, auto_match_computed_at: new Date().toISOString() })
-    .eq("id", mandateId);
+  // Only cache the standard (no ad hoc criteria) run as the mandate's
+  // persistent auto_match_results -- an ad hoc search is a one-off "what if
+  // I also required X" probe for the recruiter running it, and must not
+  // overwrite the shared cached view every other recruiter/the Mandates
+  // list sees for this mandate.
+  if (!hasExtraCriteria) {
+    await supabase
+      .from("mandates")
+      .update({ auto_match_results: result.matches, auto_match_computed_at: new Date().toISOString() })
+      .eq("id", mandateId);
+  }
 
-  return NextResponse.json({ matches: result.matches, scanned: result.scanned, calibration: result.calibration });
+  return NextResponse.json({
+    matches: result.matches,
+    scanned: result.scanned,
+    calibration: result.calibration,
+    requirementsChecked: result.requirementsChecked,
+  });
 }

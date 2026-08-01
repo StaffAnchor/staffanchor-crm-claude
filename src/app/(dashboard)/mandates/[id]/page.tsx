@@ -419,6 +419,12 @@ export default async function MandateDetailPage({
                     initialMatches={mandate.auto_match_results ?? null}
                     initialComputedAt={mandate.auto_match_computed_at ?? null}
                   />
+                  <Link
+                    href={`/mandates/${id}/matches`}
+                    className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-[13px] font-medium py-2"
+                  >
+                    Open full matching workspace →
+                  </Link>
                 </>
               ),
             },

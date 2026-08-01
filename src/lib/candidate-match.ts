@@ -2,18 +2,37 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ensureMandateEmbedding } from "@/lib/embeddings";
 
+// Three-way per-requirement verdict -- this is the crux of the accuracy
+// upgrade. "not_met" means the data actively contradicts/fails the
+// requirement (e.g. stated experience is outside the mandated range, or a
+// language list is given and the required language isn't in it) -- a real
+// gap. "unclear" means the requirement is simply never addressed anywhere
+// in the candidate's data (profile fields, self-assessment, resume text) --
+// this is NOT the same as failing it, it just means nobody has asked yet,
+// so the recruiter should confirm on a call rather than reject outright.
+// Conflating these two (as the old must_haves_missing array did) is exactly
+// the kind of false-negative that makes AI matching feel untrustworthy.
+export type RequirementStatus = "met" | "not_met" | "unclear";
+
+export type RequirementCheck = {
+  requirement: string;
+  status: RequirementStatus;
+  // Short grounding note: the specific fact that justified the verdict, or
+  // for "unclear", a plain confirmation this simply wasn't mentioned.
+  evidence: string;
+};
+
 export type CandidateMatch = {
   candidate_id: string;
   full_name: string;
   score: number;
   reason: string;
-  must_haves_met: string[];
-  must_haves_missing: string[];
-  good_to_haves_met: string[];
+  must_haves: RequirementCheck[];
+  good_to_haves: RequirementCheck[];
 };
 
 export type MatchMandateResult =
-  | { ok: true; matches: CandidateMatch[]; scanned: number; calibration: { positive: number; negative: number } }
+  | { ok: true; matches: CandidateMatch[]; scanned: number; calibration: { positive: number; negative: number }; requirementsChecked: string[] }
   | { ok: false; status: number; error: string };
 
 // Stages that represent the recruiter having actively said "yes" to a
@@ -71,7 +90,18 @@ function parseJsonArray(raw: string): CandidateMatch[] | null {
  */
 export async function matchCandidatesForMandate(
   mandateId: string,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  options?: {
+    // Free-text, ad hoc extra requirements typed by a recruiter for one
+    // specific search -- e.g. "Punjabi language is must, 5-9 years
+    // experience mandatory, B2C Sales mandatory". These are treated as
+    // ADDITIONAL hard must-haves layered on top of the mandate's own
+    // must_haves for this run only; they are never written back to the
+    // mandate record, so the standard cached match (and every other
+    // recruiter's view of this mandate) is unaffected. Lets a recruiter
+    // probe "what if I also required X" without editing the JD.
+    extraCriteria?: string;
+  }
 ): Promise<MatchMandateResult> {
   const { data: mandate, error: mandateError } = await supabase
     .from("mandates")
@@ -187,7 +217,7 @@ export async function matchCandidatesForMandate(
     if (mandateEmbedding) {
       const { data: semanticMatches } = await supabase.rpc("match_candidates", {
         query_embedding: mandateEmbedding,
-        match_count: 60,
+        match_count: 100,
       });
       const existingIds = new Set(candidates.map((c) => c.id));
       const newIds: string[] = [];
@@ -210,7 +240,7 @@ export async function matchCandidatesForMandate(
   const calibration = { positive: calibrationPositive.length, negative: calibrationNegative.length };
 
   if (candidates.length === 0) {
-    return { ok: true, matches: [], scanned: 0, calibration };
+    return { ok: true, matches: [], scanned: 0, calibration, requirementsChecked: (m.must_haves as string[] | null) ?? [] };
   }
 
   // Score a cheap heuristic to rank/trim the pool before spending AI tokens
@@ -246,7 +276,7 @@ export async function matchCandidatesForMandate(
   const shortlist = candidates
     .map((c) => ({ c, s: heuristicScore(c) }))
     .sort((a, b) => b.s - a.s)
-    .slice(0, 40)
+    .slice(0, 60)
     .map(({ c }) => c);
 
   const factSheets = shortlist.map((c) => ({
@@ -283,6 +313,17 @@ Recruiter calibration for THIS mandate (learn from this, don't just re-derive fi
 - Candidates the recruiter has explicitly rejected for this mandate -- treat profiles resembling these as weaker signal, and factor in any stated rejection reason: ${JSON.stringify(calibrationNegative)}
 Use these examples to calibrate what "good fit" actually means for this specific role and client, beyond what's written in the JD.`;
 
+  // The recruiter's own must_haves (structured, one clause per array entry)
+  // plus any one-off ad hoc criteria typed into the matching page's prompt
+  // box for this run. Ad hoc text is free-form ("Punjabi language is must,
+  // 5-9 years mandatory, B2C Sales mandatory") so Gemini is asked to split
+  // it into the same atomic-clause shape as must_haves before evaluating --
+  // every clause, from either source, gets the identical three-way
+  // met/not_met/unclear treatment below.
+  const extraCriteriaBlock = options?.extraCriteria?.trim()
+    ? `\n- Additional ad hoc must-have requirements the recruiter typed in for THIS search only (split this into distinct atomic requirements yourself if it lists several things at once, then evaluate each exactly like a must-have below): ${JSON.stringify(options.extraCriteria.trim())}`
+    : "";
+
   const prompt = `You are a sharp sales recruiter matching candidates from an existing candidate pool against one open mandate (job requisition). Score and rank ONLY the candidates given below -- never invent a candidate, employer, skill, or fact not present in their data.
 
 Mandate:
@@ -293,23 +334,28 @@ Mandate:
 - Budget (fixed CTC, lakhs): up to ${m.budget_max ?? "not specified"}
 - Job description: ${m.job_description ?? "(none provided)"}
 - Must haves (hard requirements): ${JSON.stringify(m.must_haves ?? [])}
-- Good to haves (nice-to-haves): ${JSON.stringify(m.good_to_haves ?? [])}
+- Good to haves (nice-to-haves): ${JSON.stringify(m.good_to_haves ?? [])}${extraCriteriaBlock}
 ${calibrationBlock}
 
-Candidates to evaluate (JSON array):
+Candidates to evaluate (JSON array -- includes their filled-in profile fields, self-assessment, recruiter scorecard, AND resume text, so check ALL of these before ruling a requirement unmet):
 ${JSON.stringify(factSheets, null, 2)}
 
-For EACH candidate, decide if they are worth surfacing to the recruiter at all. Only include candidates with a genuine, defensible case for fit -- omit weak/irrelevant candidates entirely rather than padding the list.
+CRITICAL -- how to evaluate each must-have / good-to-have / ad hoc requirement, one clause at a time. This is the single most important instruction: for EVERY requirement, decide one of exactly three verdicts, and do not conflate them:
+- "met": the candidate's data (any of profile fields, self-assessment, recruiter scorecard, resume text) POSITIVELY confirms this requirement. Give the specific fact as evidence.
+- "not_met": the candidate's data ACTIVELY CONTRADICTS or fails this requirement -- e.g. the mandate needs 5-9 years and this candidate has 2 or 14; the mandate needs a specific language and the candidate lists several languages spoken but not that one; the mandate needs B2C and the candidate's whole background is explicitly B2B with no B2C mentioned as a list item where it would have appeared. Give the specific contradicting fact as evidence.
+- "unclear": the requirement is simply never addressed ANYWHERE in the candidate's data -- there is no language section at all, no explicit B2B/B2C label, etc. This is NOT the same as "not_met". Never guess or assume failure just because something wasn't mentioned -- mark it "unclear" and say so plainly in the evidence (e.g. "Not mentioned in profile or resume -- confirm on call"), so the recruiter knows to ask rather than being told the candidate lacks something that was simply never asked about.
+Getting this three-way split right (met vs. not_met vs. unclear) matters more than the numeric score -- it's what lets a recruiter trust the tool enough to call a borderline candidate instead of skipping them.
+
+For EACH candidate, decide if they are worth surfacing to the recruiter at all. Only include candidates with a genuine, defensible case for fit -- omit weak/irrelevant candidates entirely rather than padding the list. A candidate with one or more "not_met" hard must-haves can still be included if otherwise strong, but their score must reflect the real gap.
 
 Return ONLY a JSON array (no markdown fence, no commentary), one object per included candidate, each with exactly these keys:
 - "candidate_id": copy exactly from the input.
-- "score": integer 0-100, overall fit against the mandate (weigh must-haves heavily -- missing a must-have should cap the score well below 70).
+- "score": integer 0-100, overall fit against the mandate. Weigh must-haves heavily: any "not_met" must-have should cap the score well below 40; an "unclear" must-have should cap it below 70 (real uncertainty, not a proven gap, but still a genuine risk until confirmed).
 - "reason": one tight sentence a recruiter would say explaining why this candidate is worth considering (or notable caveat), grounded in specific facts, not generic praise.
-- "must_haves_met": array of strings from the mandate's must-haves list that this candidate appears to satisfy, based on their data/resume.
-- "must_haves_missing": array of strings from the mandate's must-haves list that this candidate does NOT appear to satisfy or that can't be confirmed from available data.
-- "good_to_haves_met": array of strings from the mandate's good-to-haves list this candidate satisfies.
+- "must_haves": array of objects, one per must-have clause (mandate's own must_haves, in order, followed by any ad hoc clauses you split out of the extra criteria text) -- each object is exactly {"requirement": "<the clause text>", "status": "met" | "not_met" | "unclear", "evidence": "<short grounding note, or 'Not mentioned in profile or resume -- confirm on call' for unclear>"}.
+- "good_to_haves": array of objects in the same {"requirement", "status", "evidence"} shape, one per good-to-have clause.
 
-Sort the array by score descending. Include at most 15 candidates.`;
+Sort the array by score descending. Include at most 20 candidates.`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
@@ -327,20 +373,57 @@ Sort the array by score descending. Include at most 15 candidates.`;
       }
 
       const nameById = new Map(shortlist.map((c) => [c.id, c.full_name]));
-      const matches: CandidateMatch[] = parsed
-        .filter((m) => nameById.has(m.candidate_id))
-        .map((m) => ({
-          candidate_id: m.candidate_id,
-          full_name: nameById.get(m.candidate_id) ?? "Unknown",
-          score: typeof m.score === "number" ? m.score : 0,
-          reason: m.reason ?? "",
-          must_haves_met: Array.isArray(m.must_haves_met) ? m.must_haves_met : [],
-          must_haves_missing: Array.isArray(m.must_haves_missing) ? m.must_haves_missing : [],
-          good_to_haves_met: Array.isArray(m.good_to_haves_met) ? m.good_to_haves_met : [],
-        }))
-        .sort((a, b) => b.score - a.score);
 
-      return { ok: true, matches, scanned: candidates.length, calibration };
+      function normalizeChecks(raw: unknown): RequirementCheck[] {
+        if (!Array.isArray(raw)) return [];
+        return raw
+          .filter((item): item is { requirement?: unknown; status?: unknown; evidence?: unknown } => !!item && typeof item === "object")
+          .map((item) => {
+            const status = item.status === "met" || item.status === "not_met" ? item.status : "unclear";
+            return {
+              requirement: typeof item.requirement === "string" ? item.requirement : "",
+              status: status as RequirementStatus,
+              evidence: typeof item.evidence === "string" ? item.evidence : "",
+            };
+          })
+          .filter((c) => c.requirement.length > 0);
+      }
+
+      const matches: CandidateMatch[] = (
+        parsed as unknown as {
+          candidate_id: string;
+          score?: number;
+          reason?: string;
+          must_haves?: unknown;
+          good_to_haves?: unknown;
+        }[]
+      )
+        .filter((row) => nameById.has(row.candidate_id))
+        .map((row) => ({
+          candidate_id: row.candidate_id,
+          full_name: nameById.get(row.candidate_id) ?? "Unknown",
+          score: typeof row.score === "number" ? row.score : 0,
+          reason: row.reason ?? "",
+          must_haves: normalizeChecks(row.must_haves),
+          good_to_haves: normalizeChecks(row.good_to_haves),
+        }))
+        // Primary sort: how many hard must-haves are actually confirmed met
+        // (this is what the recruiter asked for -- "3/3 matched" candidates
+        // should surface above a higher-score candidate who's missing one),
+        // then by score as the tiebreaker within the same match count.
+        .sort((a, b) => {
+          const metA = a.must_haves.filter((c) => c.status === "met").length;
+          const metB = b.must_haves.filter((c) => c.status === "met").length;
+          if (metB !== metA) return metB - metA;
+          return b.score - a.score;
+        });
+
+      const requirementsChecked = [
+        ...((m.must_haves as string[] | null) ?? []),
+        ...(matches[0]?.must_haves.map((c) => c.requirement).filter((r) => !((m.must_haves as string[] | null) ?? []).includes(r)) ?? []),
+      ];
+
+      return { ok: true, matches, scanned: candidates.length, calibration, requirementsChecked };
     } catch (err) {
       lastError = err;
       console.error(`Gemini candidate matching failed with model ${modelName}`, err);

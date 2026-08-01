@@ -4,22 +4,77 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sparkles, Loader2, Check, X, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Loader2, Check, X, HelpCircle, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
+
+type RequirementStatus = "met" | "not_met" | "unclear";
+type RequirementCheck = { requirement: string; status: RequirementStatus; evidence: string };
 
 type CandidateMatch = {
   candidate_id: string;
   full_name: string;
   score: number;
   reason: string;
-  must_haves_met: string[];
-  must_haves_missing: string[];
-  good_to_haves_met: string[];
+  must_haves: RequirementCheck[];
+  good_to_haves: RequirementCheck[];
 };
+
+// Cached auto_match_results may still be in the pre-upgrade shape
+// (must_haves_met/must_haves_missing string arrays) until the next match
+// run overwrites it -- normalize defensively so an old cached blob never
+// crashes this panel.
+function normalizeCachedMatches(raw: unknown): CandidateMatch[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((m) => {
+    const row = m as Record<string, unknown>;
+    const isNewShape = (arr: unknown): arr is RequirementCheck[] =>
+      Array.isArray(arr) && arr.every((x) => x && typeof x === "object" && "status" in (x as object));
+    return {
+      candidate_id: String(row.candidate_id ?? ""),
+      full_name: String(row.full_name ?? "Unknown"),
+      score: typeof row.score === "number" ? row.score : 0,
+      reason: String(row.reason ?? ""),
+      must_haves: isNewShape(row.must_haves) ? row.must_haves : [],
+      good_to_haves: isNewShape(row.good_to_haves) ? row.good_to_haves : [],
+    };
+  });
+}
 
 function scoreColor(score: number) {
   if (score >= 75) return "text-emerald-700 bg-emerald-50";
   if (score >= 50) return "text-amber-700 bg-amber-50";
   return "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800";
+}
+
+function matchCountColor(met: number, total: number) {
+  if (total === 0) return "text-slate-500 bg-slate-100 dark:bg-slate-800";
+  if (met === total) return "text-emerald-700 bg-emerald-50";
+  if (met === 0) return "text-red-700 bg-red-50";
+  return "text-amber-700 bg-amber-50";
+}
+
+function StatusChip({ check }: { check: RequirementCheck }) {
+  if (check.status === "met") {
+    return (
+      <span title={check.evidence} className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5">
+        <Check className="w-2.5 h-2.5" /> {check.requirement}
+      </span>
+    );
+  }
+  if (check.status === "not_met") {
+    return (
+      <span title={check.evidence} className="inline-flex items-center gap-0.5 rounded-full bg-red-50 text-red-700 px-2 py-0.5">
+        <X className="w-2.5 h-2.5" /> {check.requirement}
+      </span>
+    );
+  }
+  return (
+    <span
+      title={check.evidence || "Not mentioned in profile or resume — confirm on call"}
+      className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5"
+    >
+      <HelpCircle className="w-2.5 h-2.5" /> {check.requirement}
+    </span>
+  );
 }
 
 export default function FindMatchesPanel({
@@ -28,14 +83,16 @@ export default function FindMatchesPanel({
   initialComputedAt,
 }: {
   mandateId: string;
-  initialMatches?: CandidateMatch[] | null;
+  initialMatches?: unknown;
   initialComputedAt?: string | null;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [matches, setMatches] = useState<CandidateMatch[] | null>(initialMatches ?? null);
+  const [matches, setMatches] = useState<CandidateMatch[] | null>(
+    initialMatches ? normalizeCachedMatches(initialMatches) : null
+  );
   const [scanned, setScanned] = useState(0);
   const [computedAt, setComputedAt] = useState<string | null>(initialComputedAt ?? null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -161,11 +218,13 @@ export default function FindMatchesPanel({
             {matches.map((m) => {
               const isOpen = expanded.has(m.candidate_id);
               const added = addedIds.has(m.candidate_id);
+              const metCount = m.must_haves.filter((c) => c.status === "met").length;
+              const totalCount = m.must_haves.length;
               return (
                 <div key={m.candidate_id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
                           className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate"
@@ -175,6 +234,11 @@ export default function FindMatchesPanel({
                         <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${scoreColor(m.score)}`}>
                           {m.score}
                         </span>
+                        {totalCount > 0 && (
+                          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${matchCountColor(metCount, totalCount)}`}>
+                            {metCount}/{totalCount} must-haves
+                          </span>
+                        )}
                       </div>
                       <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{m.reason}</p>
                     </div>
@@ -188,30 +252,17 @@ export default function FindMatchesPanel({
 
                   {isOpen && (
                     <div className="mt-2 space-y-1.5 text-[11px]">
-                      {m.must_haves_met.length > 0 && (
+                      {m.must_haves.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {m.must_haves_met.map((item, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5">
-                              <Check className="w-2.5 h-2.5" /> {item}
-                            </span>
+                          {m.must_haves.map((check, i) => (
+                            <StatusChip key={i} check={check} />
                           ))}
                         </div>
                       )}
-                      {m.must_haves_missing.length > 0 && (
+                      {m.good_to_haves.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {m.must_haves_missing.map((item, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-red-50 text-red-700 px-2 py-0.5">
-                              <X className="w-2.5 h-2.5" /> {item}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {m.good_to_haves_met.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {m.good_to_haves_met.map((item, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-blue-50 text-blue-700 px-2 py-0.5">
-                              <Check className="w-2.5 h-2.5" /> {item}
-                            </span>
+                          {m.good_to_haves.map((check, i) => (
+                            <StatusChip key={i} check={check} />
                           ))}
                         </div>
                       )}
