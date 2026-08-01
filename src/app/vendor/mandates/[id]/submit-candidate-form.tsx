@@ -4,6 +4,15 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UploadCloud, X } from "lucide-react";
+import { friendlyVendorError } from "@/lib/friendly-error";
+
+// Gap identified in the July 2026 audit: a vendor had no size limit on the
+// resume they could pick, so a huge file just hung on "Submitting..." with
+// no feedback -- and no upload-progress indicator existed at all, native
+// browser file upload progress isn't exposed to us since supabase-js's
+// storage.upload() doesn't emit progress events, so we use a determinate
+// "Uploading resume..." step label instead of a fake percentage.
+const MAX_RESUME_SIZE_MB = 10;
 
 export default function SubmitCandidateForm({ mandateId }: { mandateId: string }) {
   const router = useRouter();
@@ -12,8 +21,15 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  // Gap identified in the July 2026 audit: after a successful submit the
+  // form stayed open, still showing the (now-cleared) fields, so a vendor
+  // couldn't tell whether their submission had actually gone through or the
+  // page had just reset in front of them. Collapsing back to the "+ Submit
+  // a candidate" button, with a lightweight confirmation next to it, makes
+  // the success state unambiguous.
+  const [justSubmitted, setJustSubmitted] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     full_name: "",
@@ -41,13 +57,15 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
 
     let resumeFileUrl: string | null = null;
     if (resumeFile) {
+      setUploadingResume(true);
       const path = `${crypto.randomUUID()}-${resumeFile.name}`;
       const { error: uploadError } = await supabase.storage.from("resumes").upload(path, resumeFile, {
         contentType: resumeFile.type || undefined,
       });
+      setUploadingResume(false);
       if (uploadError) {
         setSaving(false);
-        setError(`Resume upload failed: ${uploadError.message}`);
+        setError(friendlyVendorError(uploadError.message, "resume-upload"));
         return;
       }
       resumeFileUrl = path;
@@ -68,11 +86,10 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
 
     setSaving(false);
     if (rpcError) {
-      setError(rpcError.message);
+      setError(friendlyVendorError(rpcError.message, "submit-candidate"));
       return;
     }
 
-    setSuccess(true);
     setForm({
       full_name: "",
       email: "",
@@ -85,19 +102,33 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
     });
     setResumeFile(null);
     router.refresh();
+
+    // Collapse back to the button rather than leaving the (now-empty) form
+    // open -- the vendor gets an unambiguous "this is done" signal instead
+    // of wondering if the form just silently reset.
+    setOpen(false);
+    setJustSubmitted(true);
+    setTimeout(() => setJustSubmitted(false), 6000);
   }
 
   if (!open) {
     return (
-      <button
-        onClick={() => {
-          setOpen(true);
-          setSuccess(false);
-        }}
-        className="w-full sm:w-auto rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-4 py-2.5"
-      >
-        + Submit a candidate
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => {
+            setOpen(true);
+            setJustSubmitted(false);
+          }}
+          className="w-full sm:w-auto rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-4 py-2.5"
+        >
+          + Submit a candidate
+        </button>
+        {justSubmitted && (
+          <span className="text-[12px] text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-2.5 py-1.5">
+            Candidate submitted -- it&apos;ll show up in your submissions list right away.
+          </span>
+        )}
+      </div>
     );
   }
 
@@ -110,11 +141,6 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
         </button>
       </div>
 
-      {success && (
-        <div className="mb-3 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-[12px] text-teal-700">
-          Candidate submitted. It&apos;ll show up in your submissions list right away.
-        </div>
-      )}
       {error && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</div>
       )}
@@ -176,17 +202,35 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
           className="rounded-lg border border-slate-300 px-3 py-2 text-[13px] sm:col-span-2"
         />
 
-        <label className="sm:col-span-2 flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-[13px] text-slate-500 cursor-pointer hover:bg-slate-50">
-          <UploadCloud className="w-4 h-4 shrink-0" />
-          <span className="truncate">{resumeFile ? resumeFile.name : "Click to upload their resume (PDF, DOC, DOCX)"}</span>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.doc,.docx"
-            className="hidden"
-            onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
-          />
-        </label>
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-[13px] text-slate-500 cursor-pointer hover:bg-slate-50">
+            <UploadCloud className="w-4 h-4 shrink-0" />
+            <span className="truncate">
+              {uploadingResume
+                ? "Uploading resume..."
+                : resumeFile
+                ? resumeFile.name
+                : "Click to upload their resume (PDF, DOC, DOCX, max 10MB)"}
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                if (file && file.size > MAX_RESUME_SIZE_MB * 1024 * 1024) {
+                  setError(`That resume is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB) -- max is ${MAX_RESUME_SIZE_MB}MB.`);
+                  e.target.value = "";
+                  setResumeFile(null);
+                  return;
+                }
+                setError("");
+                setResumeFile(file);
+              }}
+            />
+          </label>
+        </div>
 
         <div className="sm:col-span-2 flex items-center gap-2 pt-1">
           <button
@@ -194,7 +238,7 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
             disabled={saving}
             className="flex-1 sm:flex-none rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-4 py-2 disabled:opacity-60"
           >
-            {saving ? "Submitting..." : "Submit candidate"}
+            {uploadingResume ? "Uploading resume..." : saving ? "Submitting..." : "Submit candidate"}
           </button>
           <button
             type="button"

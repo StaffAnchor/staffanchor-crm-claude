@@ -35,10 +35,22 @@ const TONE_CLASSES: Record<string, { selected: string; unselected: string }> = {
   },
 };
 
+// FIX (gap #7, July 2026 audit): unlabeled time was ambiguous for external
+// clients who may not be in India -- pin to Asia/Kolkata explicitly (the
+// zone every interview slot is actually agreed in) and label it, rather than
+// silently rendering in whatever timezone the client's own browser is set to.
 function formatSlot(iso: string | null) {
   if (!iso) return null;
   const d = new Date(iso);
-  return d.toLocaleString("en-IN", { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  const formatted = d.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${formatted} IST`;
 }
 
 export default function FeedbackButtons({

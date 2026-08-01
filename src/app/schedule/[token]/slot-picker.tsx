@@ -6,11 +6,16 @@ import { Calendar, Check, Clock } from "lucide-react";
 
 type Slot = { id: string; startsAt: string; durationMinutes: number };
 
+// FIX (gap #7, July 2026 audit): candidates picking a slot here may not be
+// in India -- pin the render to Asia/Kolkata explicitly (the zone the
+// interview is actually scheduled in) and label the time "IST", rather than
+// silently showing it in whatever timezone the candidate's browser happens
+// to be set to, which could lead them to show up at the wrong local time.
 function formatSlot(iso: string) {
   const d = new Date(iso);
   return {
-    day: d.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "short" }),
-    time: d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+    day: d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", day: "2-digit", month: "short" }),
+    time: `${d.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST`,
   };
 }
 

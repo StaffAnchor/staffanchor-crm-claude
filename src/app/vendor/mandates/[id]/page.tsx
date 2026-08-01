@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft, MapPin } from "lucide-react";
 import SubmitCandidateForm from "./submit-candidate-form";
 import type { VendorMandate } from "../page";
+import { formatDateTimeIST } from "@/lib/format-datetime";
+import { friendlyVendorError } from "@/lib/friendly-error";
 
 const STAGE_LABELS: Record<string, { label: string; tint: string }> = {
   sourced: { label: "Sourced", tint: "bg-slate-100 text-slate-600" },
@@ -50,7 +52,7 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
 
       {mandatesError && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
-          Couldn&apos;t load this mandate: {mandatesError.message}
+          {friendlyVendorError(mandatesError.message, "mandate-detail")}
         </div>
       )}
 
@@ -90,7 +92,7 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
 
       {submissionsError && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
-          Couldn&apos;t load your submissions: {submissionsError.message}
+          {friendlyVendorError(submissionsError.message, "mandate-detail-submissions")}
         </div>
       )}
 
@@ -108,9 +110,14 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
                 className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0"
               >
                 <span className="text-[13px] font-medium text-slate-900">{s.candidate_name}</span>
-                <span className={`text-[11px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
-                  {stageMeta.label}
-                </span>
+                <div className="shrink-0 flex flex-col items-end gap-1">
+                  <span className={`text-[11px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
+                    {stageMeta.label}
+                  </span>
+                  {s.stage === "client_interview" && s.confirmed_interview_at && (
+                    <span className="text-[11px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
+                  )}
+                </div>
               </div>
             );
           })}

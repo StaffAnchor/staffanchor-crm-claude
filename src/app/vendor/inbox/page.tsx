@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import InboxView, { type InboxItem } from "@/app/(dashboard)/inbox/inbox-view";
+import { friendlyVendorError } from "@/lib/friendly-error";
 
 // Reuses the exact same get_my_inbox() RPC and InboxView component as the
 // internal dashboard -- RLS + the RPC's own WHERE clause already restrict a
@@ -16,5 +17,11 @@ export default async function VendorInboxPage() {
   // only lets them update rows already assigned to themselves anyway, so an
   // empty roster here just means the dropdown quietly shows "Unassigned"
   // with no reassignment options rather than exposing the full staff list.
-  return <InboxView initialItems={items} fetchError={error?.message ?? null} recruiters={[]} />;
+  return (
+    <InboxView
+      initialItems={items}
+      fetchError={error ? friendlyVendorError(error.message, "vendor-inbox") : null}
+      recruiters={[]}
+    />
+  );
 }

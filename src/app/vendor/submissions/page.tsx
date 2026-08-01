@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { formatDateTimeIST } from "@/lib/format-datetime";
+import { friendlyVendorError } from "@/lib/friendly-error";
 
 const STAGE_LABELS: Record<string, { label: string; tint: string }> = {
   sourced: { label: "Sourced", tint: "bg-slate-100 text-slate-600" },
@@ -40,7 +42,7 @@ export default async function VendorSubmissionsPage() {
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
-          Couldn&apos;t load your submissions: {error.message}
+          {friendlyVendorError(error.message, "submissions-list")}
         </div>
       )}
 
@@ -68,9 +70,17 @@ export default async function VendorSubmissionsPage() {
                     {s.role_title} · {s.client_display}
                   </Link>
                 </div>
-                <span className={`shrink-0 text-[11px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
-                  {stageMeta.label}
-                </span>
+                <div className="shrink-0 flex flex-col items-end gap-1">
+                  <span className={`text-[11px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
+                    {stageMeta.label}
+                  </span>
+                  {/* Interview time was fetched but never shown to vendors (gap
+                      identified in the July 2026 audit) -- a vendor had no way to
+                      know when their candidate's client interview was scheduled. */}
+                  {s.stage === "client_interview" && s.confirmed_interview_at && (
+                    <span className="text-[11px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
+                  )}
+                </div>
               </div>
             );
           })}

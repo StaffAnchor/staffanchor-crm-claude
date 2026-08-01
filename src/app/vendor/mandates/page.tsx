@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Briefcase, MapPin, ArrowRight } from "lucide-react";
+import { friendlyVendorError } from "@/lib/friendly-error";
 
 export type VendorMandate = {
   mandate_id: string;
@@ -32,7 +33,7 @@ export default async function VendorMandatesPage() {
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
-          Couldn&apos;t load your mandates: {error.message}
+          {friendlyVendorError(error.message, "mandates-list")}
         </div>
       )}
 

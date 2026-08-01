@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { formatDateTimeIST } from "@/lib/format-datetime";
 
 export default function ShortlistLinkPanel({
   mandateId,
@@ -62,14 +63,11 @@ export default function ShortlistLinkPanel({
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 <span className="text-slate-500 dark:text-slate-400">
-                  Client opened {new Date(firstOpenedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  {" at "}
-                  {new Date(firstOpenedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                  Client opened {formatDateTimeIST(firstOpenedAt)}
                   {openCount && openCount > 1 && lastOpenedAt ? (
                     <>
                       {" · "}
-                      {openCount} view{openCount === 1 ? "" : "s"}, last{" "}
-                      {new Date(lastOpenedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      {openCount} view{openCount === 1 ? "" : "s"}, last {formatDateTimeIST(lastOpenedAt)}
                     </>
                   ) : null}
                 </span>

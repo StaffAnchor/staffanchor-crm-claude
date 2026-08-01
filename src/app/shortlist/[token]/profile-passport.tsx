@@ -168,11 +168,18 @@ export default function ProfilePassportTrigger({
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Current fixed CTC</p>
-                  <p className="text-slate-700">{currentFixedCtc ? `₹${currentFixedCtc}L` : "—"}</p>
+                  {/* Gap identified in the July 2026 audit: "L" (lakhs) was
+                      shown with no explanation for external, possibly
+                      non-Indian, viewers of this passport. */}
+                  <p className="text-slate-700" title="L = lakhs. 1L = ₹1,00,000 (INR 100,000).">
+                    {currentFixedCtc ? `₹${currentFixedCtc}L` : "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Expected fixed CTC</p>
-                  <p className="text-slate-700">{expectedFixedCtc ? `₹${expectedFixedCtc}L` : "—"}</p>
+                  <p className="text-slate-700" title="L = lakhs. 1L = ₹1,00,000 (INR 100,000).">
+                    {expectedFixedCtc ? `₹${expectedFixedCtc}L` : "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Relocation — verified</p>

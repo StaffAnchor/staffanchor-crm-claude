@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const RESEND_COOLDOWN_SECONDS = 30;
 
 // Two-step email-OTP gate shown instead of any candidate data until the
 // visitor proves control of an email address registered as a client_contacts
@@ -16,8 +18,21 @@ export default function AccessGate({ token }: { token: string }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Gap identified in the July 2026 audit: a client whose code got lost in
+  // spam, took too long to arrive, or simply mistyped it had no way to get a
+  // new one short of reloading the page and re-entering their email from
+  // scratch. A short cooldown (rather than no limit) keeps this from being
+  // an easy way to spam the mail provider.
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resent, setResent] = useState(false);
 
-  async function requestCode() {
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  async function requestCode(isResend = false) {
     if (!email.trim()) return;
     setLoading(true);
     setError("");
@@ -30,6 +45,11 @@ export default function AccessGate({ token }: { token: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Couldn't send a code.");
       setStep("code");
+      if (isResend) {
+        setResent(true);
+        setTimeout(() => setResent(false), 4000);
+      }
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't send a code.");
     } finally {
@@ -85,7 +105,7 @@ export default function AccessGate({ token }: { token: string }) {
             />
             {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
             <button
-              onClick={requestCode}
+              onClick={() => requestCode()}
               disabled={loading || !email.trim()}
               className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 disabled:opacity-50"
             >
@@ -109,6 +129,7 @@ export default function AccessGate({ token }: { token: string }) {
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-3 tracking-[0.3em] text-center font-mono"
               autoFocus
             />
+            {resent && <p className="text-xs text-emerald-600 mb-3">A new code is on its way.</p>}
             {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
             <button
               onClick={verifyCode}
@@ -117,16 +138,25 @@ export default function AccessGate({ token }: { token: string }) {
             >
               {loading ? "Verifying..." : "Verify"}
             </button>
-            <button
-              onClick={() => {
-                setStep("email");
-                setCode("");
-                setError("");
-              }}
-              className="w-full text-xs text-slate-400 hover:text-slate-600 mt-2"
-            >
-              Use a different email
-            </button>
+            <div className="flex items-center justify-between mt-2">
+              <button
+                onClick={() => {
+                  setStep("email");
+                  setCode("");
+                  setError("");
+                }}
+                className="text-xs text-slate-400 hover:text-slate-600"
+              >
+                Use a different email
+              </button>
+              <button
+                onClick={() => requestCode(true)}
+                disabled={loading || resendCooldown > 0}
+                className="text-xs text-slate-400 hover:text-slate-600 disabled:opacity-50 disabled:hover:text-slate-400"
+              >
+                {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : "Resend code"}
+              </button>
+            </div>
           </>
         )}
       </div>

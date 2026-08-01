@@ -5,10 +5,24 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { InterviewRow } from "./page";
 
+// FIX (gap #7, July 2026 audit): every rendered time in this app was a bare
+// toLocaleString() with no timezone label -- ambiguous the moment anyone
+// reading it (recruiter, client, or an out-of-region vendor) isn't sure what
+// zone it's in. All interview/schedule times here are IST by convention, so
+// we pin the render to Asia/Kolkata explicitly and label it, rather than
+// silently using the viewer's local browser timezone.
 function formatSlot(iso: string | null) {
   if (!iso) return null;
   const d = new Date(iso);
-  return d.toLocaleString("en-IN", { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  const formatted = d.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${formatted} IST`;
 }
 
 function toDateInput(iso: string | null) {

@@ -65,14 +65,19 @@ export type SalesPassportProps = {
   redFlags?: string[];
 };
 
-function Stat({ label, value }: { label: string; value?: string | number | null }) {
+function Stat({ label, value, title }: { label: string; value?: string | number | null; title?: string }) {
   return (
-    <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
+    <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2" title={title}>
       <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
       <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
     </div>
   );
 }
+
+// Gap identified in the July 2026 audit: CTC rendered as raw "₹XL" with no
+// explanation that "L" means lakhs -- this passport is viewed by hiring
+// managers/clients who may not use Indian salary notation.
+const CTC_LAKHS_TOOLTIP = "L = lakhs. 1L = ₹1,00,000 (INR 100,000).";
 
 export function SalesPassportView(props: SalesPassportProps) {
   const {
@@ -178,8 +183,16 @@ export function SalesPassportView(props: SalesPassportProps) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
-          <Stat label="Current fixed CTC" value={currentFixedCtc ? `₹${currentFixedCtc}L` : undefined} />
-          <Stat label="Expected fixed CTC" value={expectedFixedCtc ? `₹${expectedFixedCtc}L` : undefined} />
+          <Stat
+            label="Current fixed CTC"
+            value={currentFixedCtc ? `₹${currentFixedCtc}L` : undefined}
+            title={CTC_LAKHS_TOOLTIP}
+          />
+          <Stat
+            label="Expected fixed CTC"
+            value={expectedFixedCtc ? `₹${expectedFixedCtc}L` : undefined}
+            title={CTC_LAKHS_TOOLTIP}
+          />
           <Stat label="Days to join" value={verifiedNotice ?? noticePeriod} />
           <Stat
             label={verifiedRelocation ? "Relocation — verified" : "Relocation — self-reported"}

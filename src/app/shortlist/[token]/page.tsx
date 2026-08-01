@@ -9,6 +9,13 @@ import FeedbackButtons from "./feedback-buttons";
 import ResumePreview from "./resume-preview";
 import ProfilePassportTrigger from "./profile-passport";
 
+// Gap identified in the July 2026 audit: CTC is shown as raw "₹XL" with no
+// explanation that "L" means lakhs (1L = INR 100,000) -- fine for an Indian
+// recruiter, but this page is also opened by clients who may not use that
+// notation. A hover tooltip spells it out without cluttering the compact
+// stat chip itself.
+const CTC_LAKHS_TOOLTIP = "L = lakhs. 1L = ₹1,00,000 (INR 100,000).";
+
 type AiPassport = {
   headline?: string;
   compensation_line?: string;
@@ -225,7 +232,15 @@ export default async function ClientShortlistPage({
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-4">
         {(medianCtc !== null || availableSoonCount > 0) && (
           <p className="text-xs text-slate-500 bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 shadow-sm">
-            {medianCtc !== null && <>Median expected CTC in this shortlist: <span className="font-semibold text-slate-700">₹{medianCtc}L</span></>}
+            {medianCtc !== null && (
+              <>
+                Median expected CTC in this shortlist:{" "}
+                <span className="font-semibold text-slate-700" title={CTC_LAKHS_TOOLTIP}>
+                  ₹{medianCtc}L
+                </span>{" "}
+                <span className="text-slate-400">(L = lakhs, ₹1L = ₹1,00,000)</span>
+              </>
+            )}
             {medianCtc !== null && availableSoonCount > 0 && " · "}
             {availableSoonCount > 0 && (
               <>
@@ -336,10 +351,12 @@ function CandidateCard({
         <StatChip
           label="Current fixed CTC"
           value={candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "—"}
+          title={CTC_LAKHS_TOOLTIP}
         />
         <StatChip
           label="Expected fixed CTC"
           value={candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "—"}
+          title={CTC_LAKHS_TOOLTIP}
         />
         <StatChip label="Relocation — verified" value={candidate.verified_relocation ?? "—"} />
         <StatChip label="Notice period — verified" value={candidate.verified_notice ?? "—"} />
@@ -371,9 +388,9 @@ function CandidateCard({
   );
 }
 
-function StatChip({ label, value }: { label: string; value: string }) {
+function StatChip({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
-    <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+    <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2" title={title}>
       <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
       <p className="text-[13.5px] font-semibold text-slate-800 mt-0.5">{value}</p>
     </div>
