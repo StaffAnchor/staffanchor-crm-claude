@@ -85,8 +85,26 @@ export type CandidateRow = {
   // its own client-side Storage round trip -- see ResumeCell below.
   resume_signed_url: string | null;
   ai_summary: string | null;
+  // AI-derived, tenure-weighted 0-100 score computed from the candidate's
+  // merged resume + profile career timeline (src/lib/career-timeline.ts,
+  // computeStabilityScore) -- distinct from recruiter_assessment.job_stability
+  // above, which is the recruiter's own subjective judgment call. This is the
+  // automated one, populated as soon as a resume is on file (see
+  // generateCareerTimelineForCandidate, now fired on every new candidate).
+  stability_score: number | null;
   created_at: string;
 };
+
+// Mirrors the score thresholds inside computeStabilityScore (avgMonths >= 30
+// -> "Stable", >= 15 -> "Some Movement", else "Frequent Job-Hopper"), just
+// re-expressed against the already-computed 0-100 score stored on the row
+// (score = avgMonths / 42 * 100) so this table doesn't need the full merged
+// timeline just to render a label.
+function stabilityLabelForScore(score: number): "Stable" | "Some Movement" | "Frequent Job-Hopper" {
+  if (score >= 71) return "Stable";
+  if (score >= 36) return "Some Movement";
+  return "Frequent Job-Hopper";
+}
 
 const STATUS_LABEL: Record<string, string> = {
   awaiting_input: "Awaiting Input",
@@ -790,6 +808,23 @@ const COLUMN_DEFS: ColumnDef[] = [
     ),
   },
   {
+    key: "stability_score",
+    label: "Stability Score (AI)",
+    render: (c) => {
+      const score = c.stability_score;
+      if (score === null || score === undefined) {
+        return <span className="text-[11px] text-slate-400">Not yet generated</span>;
+      }
+      const label = stabilityLabelForScore(score);
+      const tone = label === "Stable" ? "success" : label === "Some Movement" ? "warning" : "danger";
+      return (
+        <Badge tone={tone} size="sm" className="normal-case tracking-normal whitespace-nowrap">
+          {label} · {score}
+        </Badge>
+      );
+    },
+  },
+  {
     key: "relocation_verified",
     label: "Relocation — Verified",
     render: (c) => (
@@ -859,6 +894,7 @@ const DEFAULT_VISIBLE = new Set([
   "recommendation",
   "status",
   "resume",
+  "stability_score",
 ]);
 
 const STORAGE_KEY = "sa_candidates_columns_v1";

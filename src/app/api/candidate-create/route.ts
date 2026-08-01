@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { generateAiPassportForCandidate } from "@/lib/ai-passport";
+import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
 
 export const runtime = "nodejs";
 
@@ -79,6 +81,22 @@ export async function POST(req: NextRequest) {
       throw new Error(insertError?.message ?? "Could not save this candidate.");
     }
     const candidateId = inserted.id as string;
+
+    // Fire-and-forget: generate the career timeline (which computes
+    // stability_score/domain_consistency_score from the resume) and then the
+    // AI summary/passport, so a recruiter-created profile shows a stability
+    // score and an AI summary immediately instead of waiting for the
+    // twice-weekly cron sweeps. Sequenced (timeline first) so the passport's
+    // stability_line reads the freshly-extracted timeline rather than racing
+    // it. Never awaited by the response -- both functions catch their own
+    // errors internally and this route's response shouldn't wait on Gemini.
+    generateCareerTimelineForCandidate(candidateId, admin)
+      .catch((err) => console.error("Auto career-timeline generation failed for new candidate", candidateId, err))
+      .finally(() => {
+        generateAiPassportForCandidate(candidateId, admin, { note: "auto_generated_on_create" }).catch((err) =>
+          console.error("Auto AI passport generation failed for new candidate", candidateId, err)
+        );
+      });
 
     const { error: linkError } = await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);
     if (linkError) {
