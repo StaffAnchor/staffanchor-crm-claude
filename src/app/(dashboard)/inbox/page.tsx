@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import InboxView, { type InboxItem } from "./inbox-view";
 import MyPerformanceCard from "./my-performance-card";
+import MorningBriefing from "./morning-briefing";
 
 // Server component: fetches the whole team's open Priority Actions via the
 // get_my_inbox() RPC (every staff member sees every task; the UI filters by
@@ -33,6 +34,29 @@ export default async function InboxPage() {
     } | null;
   };
 
+  // Morning Briefing: only meaningful for a signed-in staff member with
+  // their own mandate/candidate scope -- skipped entirely (renders
+  // nothing) rather than shown empty for e.g. the vendor inbox reusing
+  // this same page component with no equivalent concept yet.
+  type MorningBriefingData = {
+    interviews_today: number;
+    overdue_followups: number;
+    hot_profiles_overnight: number;
+    clients_waiting: number;
+    predicted_billing_lakhs: number;
+    top_mandate: string | null;
+  };
+  let briefing: MorningBriefingData | null = null;
+  let firstName = "there";
+  if (user) {
+    const [{ data: briefingData }, { data: profile }] = await Promise.all([
+      supabase.rpc("get_my_morning_briefing"),
+      supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
+    ]);
+    briefing = (briefingData ?? null) as MorningBriefingData | null;
+    firstName = (profile?.full_name ?? profile?.email ?? "there").split(" ")[0];
+  }
+
   // Whether the recruiter is staffed on any currently-open mandate --
   // drives which of the three inbox boxes opens by default (Mandate Tasks
   // vs. Build Pipeline). See inbox-view.tsx's BOX_META/activeBox.
@@ -56,18 +80,31 @@ export default async function InboxPage() {
       currentUserId={user?.id ?? null}
       hasActiveMandates={hasActiveMandates}
       performanceCard={
-        scorecard ? (
-          <MyPerformanceCard
-            linked={Number(scorecard.linked ?? 0)}
-            submitted={Number(scorecard.submitted ?? 0)}
-            interviewed={Number(scorecard.interviewed ?? 0)}
-            offered={Number(scorecard.offered ?? 0)}
-            placed={Number(scorecard.placed ?? 0)}
-            candidatesAddedWeek={Number(scorecard.candidates_added_week ?? 0)}
-            candidatesAddedTotal={Number(scorecard.candidates_added_total ?? 0)}
-            profilesCompleted={Number(scorecard.profiles_completed ?? 0)}
-          />
-        ) : null
+        <>
+          {briefing && (
+            <MorningBriefing
+              firstName={firstName}
+              interviewsToday={Number(briefing.interviews_today ?? 0)}
+              overdueFollowups={Number(briefing.overdue_followups ?? 0)}
+              hotProfilesOvernight={Number(briefing.hot_profiles_overnight ?? 0)}
+              clientsWaiting={Number(briefing.clients_waiting ?? 0)}
+              predictedBillingLakhs={Number(briefing.predicted_billing_lakhs ?? 0)}
+              topMandate={briefing.top_mandate}
+            />
+          )}
+          {scorecard ? (
+            <MyPerformanceCard
+              linked={Number(scorecard.linked ?? 0)}
+              submitted={Number(scorecard.submitted ?? 0)}
+              interviewed={Number(scorecard.interviewed ?? 0)}
+              offered={Number(scorecard.offered ?? 0)}
+              placed={Number(scorecard.placed ?? 0)}
+              candidatesAddedWeek={Number(scorecard.candidates_added_week ?? 0)}
+              candidatesAddedTotal={Number(scorecard.candidates_added_total ?? 0)}
+              profilesCompleted={Number(scorecard.profiles_completed ?? 0)}
+            />
+          ) : null}
+        </>
       }
     />
   );

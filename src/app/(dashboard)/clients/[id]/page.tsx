@@ -152,6 +152,7 @@ export default async function ClientDetailPage({
           initialWebsite={clientRow.website}
           initialNotes={clientRow.notes}
           initialOwnerId={clientRow.owner_id}
+          initialFeePercentage={clientRow.fee_percentage}
           ownerOptions={ownerOptions}
         />
         <ClientContactsPanel clientId={id} initialContacts={(contacts ?? []) as ClientContact[]} />

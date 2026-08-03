@@ -12,6 +12,7 @@ export default function ClientInfoPanel({
   initialWebsite,
   initialNotes,
   initialOwnerId,
+  initialFeePercentage,
   ownerOptions,
 }: {
   clientId: string;
@@ -20,6 +21,11 @@ export default function ClientInfoPanel({
   initialWebsite: string | null;
   initialNotes: string | null;
   initialOwnerId?: string | null;
+  // Feeds the Morning Briefing's billing forecast (get_my_morning_briefing)
+  // -- defaults to 8.33% (one month's CTC, the standard Indian staffing
+  // rate) at the DB level for every client, editable here per client since
+  // negotiated rates vary.
+  initialFeePercentage?: number | null;
   ownerOptions?: { id: string; label: string }[];
 }) {
   const router = useRouter();
@@ -30,6 +36,7 @@ export default function ClientInfoPanel({
   const [website, setWebsite] = useState(initialWebsite ?? "");
   const [notes, setNotes] = useState(initialNotes ?? "");
   const [ownerId, setOwnerId] = useState(initialOwnerId ?? "");
+  const [feePercentage, setFeePercentage] = useState(String(initialFeePercentage ?? 8.33));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +45,12 @@ export default function ClientInfoPanel({
   async function handleSave() {
     setSaving(true);
     setError(null);
+    const parsedFee = parseFloat(feePercentage);
+    if (feePercentage.trim() && (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 100)) {
+      setSaving(false);
+      setError("Fee % must be a number between 0 and 100.");
+      return;
+    }
     const { error: updateError } = await supabase
       .from("clients")
       .update({
@@ -46,6 +59,7 @@ export default function ClientInfoPanel({
         website: website.trim() || null,
         notes: notes.trim() || null,
         owner_id: ownerId || null,
+        fee_percentage: feePercentage.trim() ? parsedFee : 8.33,
       })
       .eq("id", clientId);
     setSaving(false);
@@ -93,6 +107,10 @@ export default function ClientInfoPanel({
                 "—"
               )}
             </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-slate-400 text-[12px]">Placement fee</dt>
+            <dd className="text-slate-700 dark:text-slate-300 text-right">{(initialFeePercentage ?? 8.33)}% of CTC</dd>
           </div>
           {initialNotes && (
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -147,6 +165,24 @@ export default function ClientInfoPanel({
             onChange={(e) => setWebsite(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-500"
           />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+            Placement fee (% of candidate CTC)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            value={feePercentage}
+            onChange={(e) => setFeePercentage(e.target.value)}
+            placeholder="8.33"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-500"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">
+            Drives the Morning Briefing&apos;s billing forecast. Defaults to 8.33% (one month&apos;s CTC) if left blank.
+          </p>
         </div>
         <div>
           <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Notes</label>
