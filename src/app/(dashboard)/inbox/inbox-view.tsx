@@ -955,16 +955,35 @@ function ContextDrawer({
       </div>
 
       <div className="space-y-2 mb-5">
-        {item.candidate_id && (
+        {item.candidate_id && item.task_type === "INCOMPLETE_PROFILE" ? (
+          // Distinct, unambiguous CTA for profile-completion tasks specifically
+          // -- this is the affordance for "how does a recruiter pick which
+          // profile to complete": click through here, fill in the missing
+          // fields on the candidate edit form, and save. Attribution for the
+          // completion is handled automatically server-side (a DB trigger
+          // stamps profile_completed_by/at the moment the record flips from
+          // incomplete to complete), so there's nothing else to click.
           <Link
             href={item.mandate_id ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}` : `/candidates/${item.candidate_id}`}
-            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
+            className="flex items-center justify-between rounded-lg bg-teal-600 hover:bg-teal-700 px-3 py-2.5 text-[12.5px] text-white transition-colors"
           >
-            <span>
-              Candidate: <span className="font-medium">{item.candidate_name ?? "View profile"}</span>
+            <span className="font-medium">
+              Open profile to complete: {item.candidate_name ?? "this candidate"}
             </span>
-            <ArrowRight className="w-3 h-3 text-slate-400" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
+        ) : (
+          item.candidate_id && (
+            <Link
+              href={item.mandate_id ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}` : `/candidates/${item.candidate_id}`}
+              className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
+            >
+              <span>
+                Candidate: <span className="font-medium">{item.candidate_name ?? "View profile"}</span>
+              </span>
+              <ArrowRight className="w-3 h-3 text-slate-400" />
+            </Link>
+          )
         )}
         {item.mandate_id && (
           <Link

@@ -140,7 +140,7 @@ export default async function ReportsPage({
   const { data: candidates } = await supabase
     .from("candidates")
     .select(
-      "id, category, sub_domain, secondary_sub_domains, current_fixed_ctc, current_location, created_at, status, created_by"
+      "id, category, sub_domain, secondary_sub_domains, current_fixed_ctc, current_location, created_at, status, created_by, created_by_user, profile_completed_by"
     );
 
   const rows = candidates ?? [];
@@ -597,18 +597,44 @@ export default async function ReportsPage({
     if (rank >= RANK.offer) bucket.offer.add(l.candidate_id);
     if (rank >= RANK.placed) bucket.placed.add(l.candidate_id);
   });
-  const recruiterRows = Object.entries(byRecruiter)
-    .map(([id, b]) => ({
-      id,
-      name: profileNames[id] ?? "Unknown",
-      isVendor: profileIsVendor[id] ?? false,
-      linked: b.linked.size,
-      submitted: b.submitted.size,
-      interview: b.interview.size,
-      offer: b.offer.size,
-      placed: b.placed.size,
-      conversion: b.linked.size > 0 ? Math.round((b.placed.size / b.linked.size) * 100) : 0,
-    }))
+  // ---- Pipeline-building activity per recruiter: candidates added and
+  // profiles completed. Kept as separate maps (not folded into byRecruiter,
+  // which is keyed off candidate_mandate_links) because a recruiter can add
+  // candidates or complete profiles on days with no active mandate at all --
+  // exactly the "no active mandates" work surfaced in the inbox's Build
+  // Pipeline box. This is the answer to "where will admin/manager see her
+  // performance" for that work: previously nowhere outside her own inbox card.
+  const candidatesAddedBy: Record<string, number> = {};
+  const profilesCompletedBy: Record<string, number> = {};
+  rows.forEach((c) => {
+    const addedBy = (c as { created_by_user?: string | null }).created_by_user;
+    const completedBy = (c as { profile_completed_by?: string | null }).profile_completed_by;
+    if (addedBy) candidatesAddedBy[addedBy] = (candidatesAddedBy[addedBy] ?? 0) + 1;
+    if (completedBy) profilesCompletedBy[completedBy] = (profilesCompletedBy[completedBy] ?? 0) + 1;
+  });
+  const knownProfileIds = new Set((profiles ?? []).map((p) => p.id));
+  const allRecruiterIds = new Set(
+    [...Object.keys(byRecruiter), ...Object.keys(candidatesAddedBy), ...Object.keys(profilesCompletedBy)].filter((id) =>
+      knownProfileIds.has(id)
+    )
+  );
+  const recruiterRows = Array.from(allRecruiterIds)
+    .map((id) => {
+      const b = byRecruiter[id];
+      return {
+        id,
+        name: profileNames[id] ?? "Unknown",
+        isVendor: profileIsVendor[id] ?? false,
+        linked: b?.linked.size ?? 0,
+        submitted: b?.submitted.size ?? 0,
+        interview: b?.interview.size ?? 0,
+        offer: b?.offer.size ?? 0,
+        placed: b?.placed.size ?? 0,
+        conversion: b && b.linked.size > 0 ? Math.round((b.placed.size / b.linked.size) * 100) : 0,
+        candidatesAdded: candidatesAddedBy[id] ?? 0,
+        profilesCompleted: profilesCompletedBy[id] ?? 0,
+      };
+    })
     .sort((a, b) => b.placed - a.placed || b.conversion - a.conversion || b.linked - a.linked);
 
   const totalPlaced = recruiterRows.reduce((sum, r) => sum + r.placed, 0);
@@ -1023,11 +1049,13 @@ export default async function ReportsPage({
                   </span>
                 </div>
                 {recruiterRows.length === 0 ? (
-                  <p className="text-[13px] text-slate-400">No candidates have been linked to mandates yet.</p>
+                  <p className="text-[13px] text-slate-400">No recruiter activity recorded yet -- no candidates added, linked, or completed.</p>
                 ) : (
                   <div>
-                    <div className="grid grid-cols-[1fr_60px_70px_70px_60px_60px_70px] gap-2 px-1 pb-2 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
+                    <div className="grid grid-cols-[1fr_55px_65px_55px_70px_70px_60px_60px_60px] gap-2 px-1 pb-2 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
                       <span>Recruiter</span>
+                      <span className="text-right">Added</span>
+                      <span className="text-right">Completed</span>
                       <span className="text-right">Linked</span>
                       <span className="text-right">Submitted+</span>
                       <span className="text-right">Interview+</span>
@@ -1037,12 +1065,16 @@ export default async function ReportsPage({
                     </div>
                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {recruiterRows.map((r, idx) => (
-                        <div key={r.id} className="grid grid-cols-[1fr_60px_70px_70px_60px_60px_70px] gap-2 items-center py-2.5 px-1">
+                        <div key={r.id} className="grid grid-cols-[1fr_55px_65px_55px_70px_70px_60px_60px_60px] gap-2 items-center py-2.5 px-1">
                           <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
                             {idx === 0 && r.placed > 0 && <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                             <span className="truncate">{r.name}</span>
                             {r.isVendor && <span className="text-[9.5px] uppercase text-slate-400 shrink-0">vendor</span>}
                           </p>
+                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros">
+                            {r.candidatesAdded}
+                          </Link>
+                          <span className="text-[12px] text-right tabular-nums text-teal-700">{r.profilesCompleted}</span>
                           <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros">
                             {r.linked}
                           </Link>
