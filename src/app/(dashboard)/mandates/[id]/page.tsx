@@ -34,11 +34,28 @@ function daysOpen(createdAt: string) {
 
 export default async function MandateDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ back?: string; box?: string }>;
 }) {
   const { id } = await params;
+  const { back, box } = await searchParams;
   const supabase = await createClient();
+
+  // Opened from a My Desk "Mandate Tasks" item -- send "back" to that box
+  // instead of the firm-wide /mandates list, matching the same fix applied
+  // to the candidate detail page for profile-completion tasks (a recruiter
+  // clicking through from My Desk shouldn't lose that context on the way
+  // back).
+  const INBOX_BOX_LABEL: Record<string, string> = {
+    mandate: "Mandate Tasks",
+    pipeline: "Build Pipeline",
+    profiles: "Profile Completion",
+  };
+  const backHref = back === "inbox" ? `/inbox?box=${box && INBOX_BOX_LABEL[box] ? box : "mandate"}` : "/mandates";
+  const backLabel =
+    back === "inbox" ? `← My Desk — ${INBOX_BOX_LABEL[box && INBOX_BOX_LABEL[box] ? box : "mandate"]}` : "← All mandates";
 
   const { data: mandate } = await supabase.from("mandates").select("*").eq("id", id).single();
   if (!mandate) notFound();
@@ -193,8 +210,8 @@ export default async function MandateDetailPage({
 
   return (
     <div>
-      <Link href="/mandates" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200">
-        ← All mandates
+      <Link href={backHref} className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200">
+        {backLabel}
       </Link>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 mt-2 shadow-sm flex items-start justify-between gap-4">

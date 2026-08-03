@@ -867,6 +867,13 @@ function ContextDrawer({
 }) {
   const meta = metaFor(item.task_type);
   const Icon = meta.icon;
+  // Which of the three My Desk boxes this item lives in -- carried onto
+  // every candidate link below (back=inbox&box=...) so "back" on the
+  // candidate page returns here instead of defaulting to /candidates.
+  // Only used when there's no mandate_id: a mandate-tied task (interview
+  // reminder, stale candidate, etc.) intentionally sends "back" to that
+  // mandate instead, since that's where the actual work item lives.
+  const box = boxFor(item.task_type);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [, forceRerender] = useState(0);
@@ -1043,8 +1050,8 @@ function ContextDrawer({
           <Link
             href={
               item.mandate_id
-                ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}&back=inbox-profiles`
-                : `/candidates/${item.candidate_id}?back=inbox-profiles`
+                ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}&back=inbox&box=${box}`
+                : `/candidates/${item.candidate_id}?back=inbox&box=${box}`
             }
             className="flex items-center justify-between rounded-lg bg-teal-600 hover:bg-teal-700 px-3 py-2.5 text-[12.5px] text-white transition-colors"
           >
@@ -1056,7 +1063,11 @@ function ContextDrawer({
         ) : (
           item.candidate_id && (
             <Link
-              href={item.mandate_id ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}` : `/candidates/${item.candidate_id}`}
+              href={
+                item.mandate_id
+                  ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}`
+                  : `/candidates/${item.candidate_id}?back=inbox&box=${box}`
+              }
               className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             >
               <span>
@@ -1068,7 +1079,7 @@ function ContextDrawer({
         )}
         {item.mandate_id && (
           <Link
-            href={`/mandates/${item.mandate_id}`}
+            href={`/mandates/${item.mandate_id}?back=inbox&box=${box}`}
             className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
           >
             <span>

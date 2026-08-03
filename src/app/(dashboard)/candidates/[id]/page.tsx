@@ -62,10 +62,10 @@ export default async function CandidateDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string; mandateId?: string; groupId?: string; back?: string }>;
+  searchParams: Promise<{ from?: string; mandateId?: string; groupId?: string; back?: string; box?: string }>;
 }) {
   const { id } = await params;
-  const { from, mandateId, groupId, back } = await searchParams;
+  const { from, mandateId, groupId, back, box } = await searchParams;
   const supabase = await createClient();
 
   const { data: candidate } = await supabase
@@ -218,15 +218,24 @@ export default async function CandidateDetailPage({
     }
   }
 
-  // Opened from a My Desk "Profile Completion" task -- overrides whatever
+  // Opened from a My Desk task with no mandate context (e.g. a
+  // profile-completion or pipeline task) -- overrides whatever
   // backHref/backLabel the mandateId/groupId/from branches above computed
   // (prev/next roster from those branches, if any, is left as-is; only
-  // where "back" points changes) so a recruiter who clicked in to complete
-  // a profile lands back on that same box instead of the firm-wide
-  // /candidates list, which is what they actually came from.
-  if (back === "inbox-profiles") {
-    backHref = "/inbox?box=profiles";
-    backLabel = "← My Desk — Profile Completion";
+  // where "back" points changes) so a recruiter who clicked in from My
+  // Desk lands back on that same box instead of the firm-wide /candidates
+  // list. Mandate-tied tasks deliberately don't use this -- they already
+  // send "back" to the mandate itself via mandateId, which is where that
+  // work actually lives.
+  const INBOX_BOX_LABEL: Record<string, string> = {
+    mandate: "Mandate Tasks",
+    pipeline: "Build Pipeline",
+    profiles: "Profile Completion",
+  };
+  if (back === "inbox") {
+    const boxKey = box && INBOX_BOX_LABEL[box] ? box : "mandate";
+    backHref = `/inbox?box=${boxKey}`;
+    backLabel = `← My Desk — ${INBOX_BOX_LABEL[boxKey]}`;
   }
 
   let resumeSignedUrl: string | null = null;
