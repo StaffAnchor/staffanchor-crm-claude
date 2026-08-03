@@ -333,10 +333,49 @@ export default function MandatesTable({
   async function handleBulkStatus() {
     if (selected.size === 0 || !chosenStatus) return;
     setBulkBusy(true);
-    const { error } = await supabase
-      .from("mandates")
-      .update({ status: chosenStatus })
-      .in("id", Array.from(selected));
+    const ids = Array.from(selected);
+    let error: { message: string } | null = null;
+
+    if (chosenStatus === "archived") {
+      // Picking "archived" from this generic dropdown skips ArchiveMandateButton's
+      // reason prompt, but it must still record archived_from_status per-row (each
+      // selected mandate can have a different current status) -- otherwise
+      // Reactivate has nothing to restore to and silently falls back to "open",
+      // losing whatever status (e.g. "filled") it actually came from.
+      const { data: userData } = await supabase.auth.getUser();
+      const rowsById = new Map(mandates.map((m) => [m.id, m]));
+      const results = await Promise.all(
+        ids.map((id) =>
+          supabase
+            .from("mandates")
+            .update({
+              status: "archived",
+              archived_reason: "Bulk status change",
+              archived_from_status: rowsById.get(id)?.status ?? "open",
+              archived_at: new Date().toISOString(),
+              archived_by: userData.user?.id ?? null,
+            })
+            .eq("id", id)
+        )
+      );
+      error = results.find((r) => r.error)?.error ?? null;
+    } else {
+      // Moving OUT of archived (or between any two non-archived statuses) via
+      // this dropdown -- clear the archive metadata either way so a stale
+      // archived_from_status doesn't linger and mislead a future Reactivate.
+      const { error: err } = await supabase
+        .from("mandates")
+        .update({
+          status: chosenStatus,
+          archived_reason: null,
+          archived_from_status: null,
+          archived_at: null,
+          archived_by: null,
+        })
+        .in("id", ids);
+      error = err;
+    }
+
     setBulkBusy(false);
     setStatusModalOpen(false);
     if (error) {
