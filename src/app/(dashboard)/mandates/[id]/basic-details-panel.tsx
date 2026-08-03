@@ -19,18 +19,16 @@ export type MandateBasicDetails = {
   status: string;
 };
 
-// "archived" is included here for consistency, but picking it from this
-// generic dropdown skips the reason-capture + archived_from_status bookkeeping
-// the dedicated Archive/Reactivate buttons on the page header do -- those are
-// the intended path; this stays as a manual override for edge cases.
-const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled", "archived"];
+// "archived" is deliberately not a status value -- it's a separate
+// is_archived flag (see archive-mandate-button.tsx), decoupled from the
+// real lifecycle status so archiving never has to overwrite or guess it.
+const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled"];
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft (not published)",
   open: "Open",
   on_hold: "On hold",
   closed: "Closed",
   filled: "Filled",
-  archived: "Archived",
 };
 
 export default function BasicDetailsPanel({
@@ -90,27 +88,6 @@ export default function BasicDetailsPanel({
     setSaved(false);
     setError("");
 
-    // Same bookkeeping ArchiveMandateButton/UnarchiveMandateButton do,
-    // needed here too since this generic status picker can also cross the
-    // archived boundary. Without this, archiving from here leaves
-    // archived_from_status unset (Reactivate would silently fall back to
-    // "open" instead of restoring the real prior status), and un-archiving
-    // from here would leave stale archive metadata behind.
-    const enteringArchive = form.status === "archived" && initial.status !== "archived";
-    const leavingArchive = form.status !== "archived" && initial.status === "archived";
-    let archiveFields: Record<string, unknown> = {};
-    if (enteringArchive) {
-      const { data: userData } = await supabase.auth.getUser();
-      archiveFields = {
-        archived_reason: "Changed via Basic Details",
-        archived_from_status: initial.status,
-        archived_at: new Date().toISOString(),
-        archived_by: userData.user?.id ?? null,
-      };
-    } else if (leavingArchive) {
-      archiveFields = { archived_reason: null, archived_from_status: null, archived_at: null, archived_by: null };
-    }
-
     const { error: err } = await supabase
       .from("mandates")
       .update({
@@ -126,7 +103,6 @@ export default function BasicDetailsPanel({
         experience_min: form.experience_min ? Number(form.experience_min) : null,
         experience_max: form.experience_max ? Number(form.experience_max) : null,
         status: form.status,
-        ...archiveFields,
       })
       .eq("id", mandateId);
     setSaving(false);

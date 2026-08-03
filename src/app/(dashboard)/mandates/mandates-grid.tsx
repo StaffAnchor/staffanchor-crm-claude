@@ -28,6 +28,9 @@ export type MandateSummary = {
   sub_domain: string | null;
   city: string | null;
   status: string;
+  // Separate from status -- a mandate can be "filled" and archived, or
+  // "on_hold" and archived, etc. See archive-mandate-button.tsx.
+  is_archived: boolean;
   created_at: string;
   daysOpen: number;
   linked: number;

@@ -35,6 +35,7 @@ export default async function MandatesPage({
 }: {
   searchParams: Promise<{
     status?: string;
+    archived?: string;
     category?: string;
     city?: string;
     client?: string;
@@ -43,9 +44,11 @@ export default async function MandatesPage({
     newClientName?: string;
   }>;
 }) {
-  const { status, category, city, client, recruiter, newClientId, newClientName } = await searchParams;
+  const { status, archived, category, city, client, recruiter, newClientId, newClientName } = await searchParams;
+  const showArchived = archived === "1";
   const exportQS = [
     status ? `status=${encodeURIComponent(status)}` : "",
+    showArchived ? "archived=1" : "",
     category ? `category=${encodeURIComponent(category)}` : "",
     city ? `city=${encodeURIComponent(city)}` : "",
     client ? `client=${encodeURIComponent(client)}` : "",
@@ -81,15 +84,16 @@ export default async function MandatesPage({
 
   let query = supabase
     .from("mandates")
-    .select("id, client_name, role_title, category, sub_domain, city, status, created_at, auto_match_results")
+    .select("id, client_name, role_title, category, sub_domain, city, status, is_archived, created_at, auto_match_results")
     .order("created_at", { ascending: false });
-  // Archived mandates (client withdrew, filled elsewhere, etc.) are kept in
-  // the table rather than deleted, but shouldn't clutter the default view
-  // the way an unfiltered list would otherwise show them alongside active
-  // work. Explicitly asking for status=archived (via the stat tile) still
-  // works normally, same pattern the other status tiles already use.
+  // is_archived is a visibility flag, separate from status (a mandate can
+  // be "filled" and archived, "on_hold" and archived, etc. -- see
+  // archive-mandate-button.tsx). Default view hides archived mandates
+  // regardless of which status tile is clicked; the "Archived" tile
+  // explicitly asks to see them instead, still combinable with a status
+  // filter (e.g. archived AND closed).
+  query = query.eq("is_archived", showArchived);
   if (status) query = query.eq("status", status);
-  else query = query.neq("status", "archived");
   if (category) query = query.eq("category", category);
   if (city) query = query.eq("city", city);
   if (client) query = query.eq("client_name", client);
@@ -146,13 +150,19 @@ export default async function MandatesPage({
   // round trips even though they're reading the same rows.
   const { data: allMandates } = await supabase
     .from("mandates")
-    .select("id, client_name, status, created_at, category, city");
+    .select("id, client_name, status, is_archived, created_at, category, city");
   const existingClients = Array.from(
     new Set((allMandates ?? []).map((r) => r.client_name).filter(Boolean))
   ).sort();
+  // Status tiles count active (non-archived) mandates only, matching what
+  // the default list actually shows -- a "filled" mandate that's also
+  // archived shouldn't inflate the "Filled" tile a recruiter would click
+  // expecting to see currently-visible rows. The Archived tile below counts
+  // separately, across every status.
+  const archivedCount = (allMandates ?? []).filter((m) => m.is_archived).length;
   const statusCounts: Record<string, number> = {};
   let agingCount = 0;
-  (allMandates ?? []).forEach((m) => {
+  (allMandates ?? []).filter((m) => !m.is_archived).forEach((m) => {
     statusCounts[m.status] = (statusCounts[m.status] ?? 0) + 1;
     if (m.status === "open" && daysOpen(m.created_at) >= 21 && !submittedByMandate[m.id]) {
       agingCount += 1;
@@ -225,6 +235,7 @@ export default async function MandatesPage({
       sub_domain: m.sub_domain,
       city: m.city,
       status: m.status,
+      is_archived: m.is_archived,
       created_at: m.created_at,
       daysOpen: daysOpenNum,
       linked,
@@ -243,14 +254,24 @@ export default async function MandatesPage({
     { label: "Open", value: statusCounts["open"] ?? 0, icon: CheckCircle2, accent: true, href: "/mandates?status=open" },
     { label: "On hold", value: statusCounts["on_hold"] ?? 0, icon: PauseCircle, href: "/mandates?status=on_hold" },
     { label: "Closed", value: statusCounts["closed"] ?? 0, icon: Briefcase, href: "/mandates?status=closed" },
-    { label: "Archived", value: statusCounts["archived"] ?? 0, icon: Archive, href: "/mandates?status=archived" },
+    { label: "Archived", value: archivedCount, icon: Archive, href: "/mandates?archived=1" },
     { label: "Aging, no submissions", value: agingCount, icon: AlertTriangle },
   ];
 
-  const activeFilters: Record<string, string | undefined> = { status, category, city, client, recruiter };
+  const activeFilters: Record<string, string | undefined> = {
+    status,
+    archived: showArchived ? "1" : undefined,
+    category,
+    city,
+    client,
+    recruiter,
+  };
   // Clicking an already-active value clears that one facet; clicking any
   // other value replaces it -- every other active facet is preserved either
   // way, so filters stack (e.g. category=b2b_sales&city=Mumbai together).
+  // Preserving `archived` here matters so narrowing by category/city/etc.
+  // while already looking at the Archived view doesn't silently drop back
+  // to the active list.
   function filterHref(key: "category" | "city" | "client" | "recruiter", value: string) {
     const next = { ...activeFilters, [key]: activeFilters[key] === value ? undefined : value };
     const qs = new URLSearchParams();
@@ -260,7 +281,7 @@ export default async function MandatesPage({
     const s = qs.toString();
     return s ? `/mandates?${s}` : "/mandates";
   }
-  const hasAnyFilter = Boolean(status || category || city || client || recruiter);
+  const hasAnyFilter = Boolean(status || showArchived || category || city || client || recruiter);
 
   return (
     <div className="flex gap-6">

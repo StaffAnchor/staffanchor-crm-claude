@@ -27,10 +27,12 @@ const STATUS_TONE: Record<string, BadgeTone> = {
   on_hold: "warning",
   closed: "neutral",
   filled: "accent",
-  archived: "neutral",
 };
 
-const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled", "archived"];
+// Not a status value -- "archived" is now the separate is_archived flag
+// (see archive-mandate-button.tsx), rendered as its own small tag next to
+// the real status badge (below) rather than a status option itself.
+const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled"];
 
 // Matches the label set on the Candidates table (candidates-table.tsx) and
 // the Mandates sidebar filter (page.tsx) for these same category values --
@@ -91,9 +93,18 @@ const COLUMN_DEFS: ColumnDef[] = [
     key: "status",
     label: "Status",
     render: (m) => (
-      <Badge tone={STATUS_TONE[m.status] ?? "neutral"} size="sm" className="normal-case tracking-normal">
-        {m.status.replace("_", " ")}
-      </Badge>
+      <span className="inline-flex items-center gap-1">
+        <Badge tone={STATUS_TONE[m.status] ?? "neutral"} size="sm" className="normal-case tracking-normal">
+          {m.status.replace("_", " ")}
+        </Badge>
+        {m.is_archived && (
+          <span title="Hidden from the active list">
+            <Badge tone="neutral" size="sm" className="normal-case tracking-normal opacity-70">
+              archived
+            </Badge>
+          </span>
+        )}
+      </span>
     ),
   },
   {
@@ -333,49 +344,13 @@ export default function MandatesTable({
   async function handleBulkStatus() {
     if (selected.size === 0 || !chosenStatus) return;
     setBulkBusy(true);
-    const ids = Array.from(selected);
-    let error: { message: string } | null = null;
-
-    if (chosenStatus === "archived") {
-      // Picking "archived" from this generic dropdown skips ArchiveMandateButton's
-      // reason prompt, but it must still record archived_from_status per-row (each
-      // selected mandate can have a different current status) -- otherwise
-      // Reactivate has nothing to restore to and silently falls back to "open",
-      // losing whatever status (e.g. "filled") it actually came from.
-      const { data: userData } = await supabase.auth.getUser();
-      const rowsById = new Map(mandates.map((m) => [m.id, m]));
-      const results = await Promise.all(
-        ids.map((id) =>
-          supabase
-            .from("mandates")
-            .update({
-              status: "archived",
-              archived_reason: "Bulk status change",
-              archived_from_status: rowsById.get(id)?.status ?? "open",
-              archived_at: new Date().toISOString(),
-              archived_by: userData.user?.id ?? null,
-            })
-            .eq("id", id)
-        )
-      );
-      error = results.find((r) => r.error)?.error ?? null;
-    } else {
-      // Moving OUT of archived (or between any two non-archived statuses) via
-      // this dropdown -- clear the archive metadata either way so a stale
-      // archived_from_status doesn't linger and mislead a future Reactivate.
-      const { error: err } = await supabase
-        .from("mandates")
-        .update({
-          status: chosenStatus,
-          archived_reason: null,
-          archived_from_status: null,
-          archived_at: null,
-          archived_by: null,
-        })
-        .in("id", ids);
-      error = err;
-    }
-
+    // Plain status update -- archiving is a separate is_archived flag now
+    // (see archive-mandate-button.tsx), not a status value, so there's
+    // nothing special to reconcile here anymore.
+    const { error } = await supabase
+      .from("mandates")
+      .update({ status: chosenStatus })
+      .in("id", Array.from(selected));
     setBulkBusy(false);
     setStatusModalOpen(false);
     if (error) {

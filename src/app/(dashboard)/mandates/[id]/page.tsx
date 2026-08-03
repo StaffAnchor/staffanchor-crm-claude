@@ -204,8 +204,8 @@ export default async function MandateDetailPage({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <DownloadJdButton mandateId={id} />
-          {mandate.status === "archived" ? (
-            <UnarchiveMandateButton mandateId={id} archivedFromStatus={mandate.archived_from_status} />
+          {mandate.is_archived ? (
+            <UnarchiveMandateButton mandateId={id} />
           ) : (
             <ArchiveMandateButton mandateId={id} currentStatus={mandate.status} />
           )}
@@ -213,10 +213,11 @@ export default async function MandateDetailPage({
         </div>
       </div>
 
-      {mandate.status === "archived" && (
+      {mandate.is_archived && (
         <div className="mt-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-4 py-3">
           <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
-            This mandate is archived{mandate.archived_reason ? ` -- ${mandate.archived_reason}` : ""}
+            This mandate is archived -- real status is still &quot;{mandate.status.replace("_", " ")}
+            &quot;{mandate.archived_reason ? ` (${mandate.archived_reason})` : ""}
           </p>
           <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
             {mandate.archived_at ? `Archived ${new Date(mandate.archived_at).toLocaleDateString()}. ` : ""}

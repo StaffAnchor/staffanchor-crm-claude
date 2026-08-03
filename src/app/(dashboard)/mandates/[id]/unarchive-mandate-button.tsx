@@ -5,40 +5,27 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ArchiveRestore, Loader2 } from "lucide-react";
 
-// Reverses ArchiveMandateButton -- restores status to whatever it was
-// archived FROM (draft/open/on_hold/closed/filled), falling back to "open"
-// for any archived mandate that predates this feature and has no
-// archived_from_status recorded. Clears the archive metadata since it no
-// longer applies once reactivated.
-export default function UnarchiveMandateButton({
-  mandateId,
-  archivedFromStatus,
-}: {
-  mandateId: string;
-  archivedFromStatus: string | null;
-}) {
+// Reverses ArchiveMandateButton. Since archiving no longer overwrites
+// status (is_archived is a separate flag -- see archive-mandate-button.tsx),
+// reactivating never has to guess what status to restore: the real status
+// (on_hold/closed/filled) was never touched, so this just un-hides it from
+// the active Mandates list. If the underlying status also needs to change
+// (e.g. the client actually wants to reopen a closed role), that's a
+// separate, deliberate edit via "Update status" or Basic Details.
+export default function UnarchiveMandateButton({ mandateId }: { mandateId: string }) {
   const router = useRouter();
   const supabase = createClient();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleUnarchive() {
-    const restoredStatus = archivedFromStatus ?? "open";
-    const confirmed = window.confirm(
-      `Reactivate this mandate? It'll go back to "${restoredStatus.replace(/_/g, " ")}" and reappear in the active Mandates list.`
-    );
+    const confirmed = window.confirm("Reactivate this mandate? It'll reappear in the active Mandates list.");
     if (!confirmed) return;
     setSaving(true);
     setError(null);
     const { error: err } = await supabase
       .from("mandates")
-      .update({
-        status: restoredStatus,
-        archived_reason: null,
-        archived_from_status: null,
-        archived_at: null,
-        archived_by: null,
-      })
+      .update({ is_archived: false, archived_reason: null, archived_at: null, archived_by: null })
       .eq("id", mandateId);
     setSaving(false);
     if (err) {
