@@ -1041,7 +1041,11 @@ function ContextDrawer({
           // stamps profile_completed_by/at the moment the record flips from
           // incomplete to complete), so there's nothing else to click.
           <Link
-            href={item.mandate_id ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}` : `/candidates/${item.candidate_id}`}
+            href={
+              item.mandate_id
+                ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}&back=inbox-profiles`
+                : `/candidates/${item.candidate_id}?back=inbox-profiles`
+            }
             className="flex items-center justify-between rounded-lg bg-teal-600 hover:bg-teal-700 px-3 py-2.5 text-[12.5px] text-white transition-colors"
           >
             <span className="font-medium">

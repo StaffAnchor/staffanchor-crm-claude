@@ -62,10 +62,10 @@ export default async function CandidateDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string; mandateId?: string; groupId?: string }>;
+  searchParams: Promise<{ from?: string; mandateId?: string; groupId?: string; back?: string }>;
 }) {
   const { id } = await params;
-  const { from, mandateId, groupId } = await searchParams;
+  const { from, mandateId, groupId, back } = await searchParams;
   const supabase = await createClient();
 
   const { data: candidate } = await supabase
@@ -216,6 +216,17 @@ export default async function CandidateDetailPage({
         nextCandidate = idx < listRows.length - 1 ? listRows[idx + 1] : null;
       }
     }
+  }
+
+  // Opened from a My Desk "Profile Completion" task -- overrides whatever
+  // backHref/backLabel the mandateId/groupId/from branches above computed
+  // (prev/next roster from those branches, if any, is left as-is; only
+  // where "back" points changes) so a recruiter who clicked in to complete
+  // a profile lands back on that same box instead of the firm-wide
+  // /candidates list, which is what they actually came from.
+  if (back === "inbox-profiles") {
+    backHref = "/inbox?box=profiles";
+    backLabel = "← My Desk — Profile Completion";
   }
 
   let resumeSignedUrl: string | null = null;
