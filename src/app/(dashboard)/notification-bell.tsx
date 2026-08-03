@@ -94,7 +94,7 @@ export default function NotificationBell() {
       <button
         onClick={handleOpen}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="ros-focusable relative text-slate-400 hover:text-white transition-colors"
+        className="ros-focusable relative flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 hover:text-teal-700 dark:hover:text-white hover:bg-teal-50 dark:hover:bg-white/[0.08] transition-colors duration-200"
         title="Notifications"
         aria-label="Notifications"
         aria-haspopup="menu"
