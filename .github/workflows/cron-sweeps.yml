@@ -7,8 +7,11 @@ name: Cron sweeps backstop
 # second, independent path to actually fire every day regardless of
 # anything on Vercel's side.
 #
-# Three routes (inbox-sweep, client-followup, embed-candidates) are cheap
-# and don't call Gemini's generateContent endpoint, so they still run daily.
+# Four routes (inbox-sweep, client-followup, embed-candidates,
+# outcome-reweight-sweep) are cheap and don't call Gemini's generateContent
+# endpoint, so they still run daily. outcome-reweight-sweep is pure SQL
+# (Postgres corr() over candidate_mandate_links) -- no external API calls at
+# all.
 # The other four (auto-summarize, career-timeline-sweep, mandate-auto-
 # rematch, proactive-match-sweep) each call Gemini per record/group
 # processed, and the free-tier key only gets ~20 generateContent requests/day
@@ -46,7 +49,7 @@ jobs:
         run: |
           set -e
           # Always run: cheap, no Gemini generateContent calls.
-          ROUTES="inbox-sweep client-followup embed-candidates profile-nudge-sweep"
+          ROUTES="inbox-sweep client-followup embed-candidates profile-nudge-sweep outcome-reweight-sweep"
 
           # Gemini-backed routes: gated to the same day-of-week as
           # vercel.json (1=Mon .. 7=Sun, UTC).

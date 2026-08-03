@@ -33,6 +33,8 @@ type CandidateMatch = {
   full_name: string;
   score: number;
   score_breakdown: ScoreBreakdown | null;
+  outcome_adjusted_score: number | null;
+  embedding_similarity: number | null;
   reason: string;
   must_haves: RequirementCheck[];
   good_to_haves: RequirementCheck[];
@@ -65,6 +67,8 @@ function normalizeCachedMatches(raw: unknown): CandidateMatch[] {
       full_name: String(row.full_name ?? "Unknown"),
       score: typeof row.score === "number" ? row.score : 0,
       score_breakdown: breakdown,
+      outcome_adjusted_score: typeof row.outcome_adjusted_score === "number" ? row.outcome_adjusted_score : null,
+      embedding_similarity: typeof row.embedding_similarity === "number" ? row.embedding_similarity : null,
       reason: String(row.reason ?? ""),
       must_haves: isChecks(row.must_haves) ? row.must_haves : [],
       good_to_haves: isChecks(row.good_to_haves) ? row.good_to_haves : [],
@@ -227,7 +231,14 @@ export default function MatchesWorkspace({
     });
   }
 
-  async function addToPipeline(candidateId: string) {
+  // Snapshots the match's score/breakdown/embedding-similarity onto the
+  // candidate_mandate_links row at the moment it's created -- this is the
+  // only point where "what did the system think of this candidate" and
+  // "what actually happened to them on this mandate" can be tied together
+  // later by the outcome-reweight-sweep cron. source distinguishes a
+  // recruiter-initiated standard/ad-hoc search from a proactive-matcher hit.
+  async function addToPipeline(match: CandidateMatch, source: "gemini_stage2" | "proactive_matcher") {
+    const candidateId = match.candidate_id;
     setAddingId(candidateId);
     const {
       data: { user },
@@ -236,6 +247,11 @@ export default function MatchesWorkspace({
       candidate_id: candidateId,
       mandate_id: mandateId,
       added_by: user?.id ?? null,
+      match_score: match.score,
+      match_score_breakdown: match.score_breakdown,
+      match_embedding_similarity: match.embedding_similarity,
+      match_source: source,
+      matched_at: new Date().toISOString(),
     });
     setAddingId(null);
     if (!error) {
@@ -269,7 +285,7 @@ export default function MatchesWorkspace({
       const metA = a.must_haves.filter((c) => c.status === "met").length;
       const metB = b.must_haves.filter((c) => c.status === "met").length;
       if (metB !== metA) return metB - metA;
-      return b.score - a.score;
+      return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
     });
     if (!fullMatchesOnly) return sorted;
     return sorted.filter((m) => m.must_haves.length > 0 && m.must_haves.every((c) => c.status === "met"));
@@ -308,7 +324,7 @@ export default function MatchesWorkspace({
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => addToPipeline(m.candidate_id)}
+                    onClick={() => addToPipeline(m, "proactive_matcher")}
                     disabled={addedIds.has(m.candidate_id) || addingId === m.candidate_id}
                     className="flex items-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12px] px-2.5 py-1.5 disabled:opacity-50"
                   >
@@ -579,7 +595,7 @@ export default function MatchesWorkspace({
                   )}
 
                   <button
-                    onClick={() => addToPipeline(m.candidate_id)}
+                    onClick={() => addToPipeline(m, "gemini_stage2")}
                     disabled={added || addingId === m.candidate_id}
                     className="w-full mt-2 flex items-center justify-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12px] py-1.5 disabled:opacity-50"
                   >

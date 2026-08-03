@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ensureMandateEmbedding } from "@/lib/embeddings";
+import { getLatestOutcomeWeights, outcomeAdjustedScore } from "@/lib/outcome-weights";
 
 // Three-way per-requirement verdict -- this is the crux of the accuracy
 // upgrade. "not_met" means the data actively contradicts/fails the
@@ -39,6 +40,18 @@ export type CandidateMatch = {
   full_name: string;
   score: number;
   score_breakdown: ScoreBreakdown | null;
+  // Score re-weighted using outcome-derived component weights instead of the
+  // fixed 50/10/20/20 the prompt targets -- null until enough resolved
+  // pipeline outcomes exist (see lib/outcome-weights.ts). Never shown as a
+  // replacement for "score"; used only as a secondary sort signal so the
+  // ranking itself gets sharper as real placement/rejection data accrues.
+  outcome_adjusted_score: number | null;
+  // 0-1 pgvector cosine similarity between this candidate and the mandate,
+  // when this candidate came through the semantic recall path (null for
+  // SQL-prefilter-only or override-path candidates). Snapshotted into
+  // candidate_mandate_links.match_embedding_similarity on add-to-pipeline so
+  // it becomes training signal for the outcome re-ranker.
+  embedding_similarity: number | null;
   reason: string;
   must_haves: RequirementCheck[];
   good_to_haves: RequirementCheck[];
@@ -472,6 +485,7 @@ Sort the array by score descending. Include at most 20 candidates.`;
 
       const nameById = new Map(shortlist.map((c) => [c.id, c.full_name]));
       const rowById = new Map(shortlist.map((c) => [c.id, c]));
+      const { weights: outcomeWeights } = await getLatestOutcomeWeights(supabase);
 
       function normalizeBreakdown(raw: unknown): ScoreBreakdown | null {
         if (!raw || typeof raw !== "object") return null;
@@ -514,11 +528,14 @@ Sort the array by score descending. Include at most 20 candidates.`;
         .filter((row) => nameById.has(row.candidate_id))
         .map((row) => {
           const candidateRow = rowById.get(row.candidate_id);
+          const breakdown = normalizeBreakdown(row.score_breakdown);
           return {
             candidate_id: row.candidate_id,
             full_name: nameById.get(row.candidate_id) ?? "Unknown",
             score: typeof row.score === "number" ? row.score : 0,
-            score_breakdown: normalizeBreakdown(row.score_breakdown),
+            score_breakdown: breakdown,
+            outcome_adjusted_score: outcomeAdjustedScore(breakdown, outcomeWeights),
+            embedding_similarity: similarityById.get(row.candidate_id) ?? null,
             reason: row.reason ?? "",
             must_haves: normalizeChecks(row.must_haves),
             good_to_haves: normalizeChecks(row.good_to_haves),
@@ -538,12 +555,15 @@ Sort the array by score descending. Include at most 20 candidates.`;
         // Primary sort: how many hard must-haves are actually confirmed met
         // (this is what the recruiter asked for -- "3/3 matched" candidates
         // should surface above a higher-score candidate who's missing one),
-        // then by score as the tiebreaker within the same match count.
+        // then by outcome_adjusted_score as the tiebreaker within the same
+        // match count -- identical to sorting by raw score until enough
+        // resolved pipeline outcomes exist to move the weights away from the
+        // fixed 50/10/20/20 default (see lib/outcome-weights.ts).
         .sort((a, b) => {
           const metA = a.must_haves.filter((c) => c.status === "met").length;
           const metB = b.must_haves.filter((c) => c.status === "met").length;
           if (metB !== metA) return metB - metA;
-          return b.score - a.score;
+          return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
         });
 
       const requirementsChecked = [

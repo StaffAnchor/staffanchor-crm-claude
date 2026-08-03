@@ -22,6 +22,8 @@ type CandidateMatch = {
   full_name: string;
   score: number;
   score_breakdown: ScoreBreakdown | null;
+  outcome_adjusted_score: number | null;
+  embedding_similarity: number | null;
   reason: string;
   must_haves: RequirementCheck[];
   good_to_haves: RequirementCheck[];
@@ -45,6 +47,8 @@ function normalizeCachedMatches(raw: unknown): CandidateMatch[] {
       score: typeof row.score === "number" ? row.score : 0,
       score_breakdown:
         row.score_breakdown && typeof row.score_breakdown === "object" ? (row.score_breakdown as ScoreBreakdown) : null,
+      outcome_adjusted_score: typeof row.outcome_adjusted_score === "number" ? row.outcome_adjusted_score : null,
+      embedding_similarity: typeof row.embedding_similarity === "number" ? row.embedding_similarity : null,
       reason: String(row.reason ?? ""),
       must_haves: isNewShape(row.must_haves) ? row.must_haves : [],
       good_to_haves: isNewShape(row.good_to_haves) ? row.good_to_haves : [],
@@ -180,7 +184,12 @@ export default function FindMatchesPanel({
     });
   }
 
-  async function addToPipeline(candidateId: string) {
+  // Snapshots the match's score/breakdown/embedding-similarity onto the
+  // candidate_mandate_links row at the moment it's created, same as the full
+  // matching workspace -- lets the outcome-reweight-sweep cron later tie
+  // "what the system thought" to "what actually happened" on this mandate.
+  async function addToPipeline(match: CandidateMatch) {
+    const candidateId = match.candidate_id;
     setAddingId(candidateId);
     const {
       data: { user },
@@ -189,6 +198,11 @@ export default function FindMatchesPanel({
       candidate_id: candidateId,
       mandate_id: mandateId,
       added_by: user?.id ?? null,
+      match_score: match.score,
+      match_score_breakdown: match.score_breakdown,
+      match_embedding_similarity: match.embedding_similarity,
+      match_source: "gemini_stage2",
+      matched_at: new Date().toISOString(),
     });
     setAddingId(null);
     if (!error) {
@@ -350,7 +364,7 @@ export default function FindMatchesPanel({
                   )}
 
                   <button
-                    onClick={() => addToPipeline(m.candidate_id)}
+                    onClick={() => addToPipeline(m)}
                     disabled={added || addingId === m.candidate_id}
                     className="w-full mt-2 flex items-center justify-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12px] py-1.5 disabled:opacity-50"
                   >
