@@ -40,6 +40,25 @@ function fmtDate(iso: string | null) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
+
+// Execution-audit gap: the only place staleness was ever visible was the
+// Priority Actions inbox's own sweep_recruiter_inbox() thresholds (5 days
+// for sourced/screened, 4 for client feedback, etc.) -- a recruiter looking
+// straight at a mandate's own pipeline board had no aging signal at all
+// unless that specific task happened to already be open in their inbox.
+// This mirrors the same "how long has this sat here" read directly on the
+// timeline itself, for every non-terminal stage, not just the two the sweep
+// happens to cover.
+function agingTone(days: number): { label: string; tone: string } | null {
+  if (days >= 10) return { label: `${days}d`, tone: "bg-red-100 text-red-700" };
+  if (days >= 5) return { label: `${days}d`, tone: "bg-amber-100 text-amber-700" };
+  return null;
+}
+
 export function StageTimeline({
   stage,
   stageUpdatedAt,
@@ -86,6 +105,20 @@ export function StageTimeline({
       {!isOffRamp && stageUpdatedAt && (
         <span className="ml-1.5 text-[10px] text-slate-400 whitespace-nowrap">{fmtDate(stageUpdatedAt)}</span>
       )}
+      {!isOffRamp &&
+        stage !== "placed" &&
+        (() => {
+          const days = daysSince(stageUpdatedAt);
+          const aging = days != null ? agingTone(days) : null;
+          return aging ? (
+            <span
+              title={`${days} days with no stage change -- worth a status check`}
+              className={`ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${aging.tone}`}
+            >
+              {aging.label}
+            </span>
+          ) : null;
+        })()}
     </div>
   );
 }

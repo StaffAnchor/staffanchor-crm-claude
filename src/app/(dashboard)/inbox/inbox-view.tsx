@@ -51,6 +51,14 @@ export type InboxItem = {
 };
 
 const UNASSIGNED_KEY = "__unassigned__";
+// Execution-audit gap: the inbox defaulted to showing the whole firm's open
+// items, with "just mine" only reachable via a manual filter step the
+// person had to remember to take every visit. MINE_KEY groups "assigned to
+// me" together with unassigned/team tasks (rather than a strict "only mine"
+// filter), since an unclaimed high-priority team task is still something a
+// recruiter should see on their default landing view, not just their own
+// named assignments.
+const MINE_KEY = "__mine__";
 
 const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: string }> = {
   TRIGGER_INTERVIEW_COORDINATION: {
@@ -173,10 +181,16 @@ export default function InboxView({
   initialItems,
   fetchError,
   recruiters,
+  currentUserId = null,
+  performanceCard = null,
+  noMandatesCard = null,
 }: {
   initialItems: InboxItem[];
   fetchError: string | null;
   recruiters: RecruiterOption[];
+  currentUserId?: string | null;
+  performanceCard?: React.ReactNode;
+  noMandatesCard?: React.ReactNode;
 }) {
   const supabase = createClient();
   const [items, setItems] = useState<InboxItem[]>(initialItems);
@@ -190,7 +204,13 @@ export default function InboxView({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeFilter = searchParams.get("type") ?? "ALL";
-  const recruiterFilter = searchParams.get("recruiter") ?? "ALL";
+  // Defaults to "My day" (mine + unassigned) rather than the whole firm --
+  // execution-audit gap #1: the only way to see "just what's on me today"
+  // used to be a manual filter step taken fresh on every visit. Explicitly
+  // choosing "Everyone" (or any other recruiter) still persists via the URL
+  // exactly as before. Falls back to ALL when no session user is known
+  // (shouldn't happen on an authenticated page, but keeps this safe).
+  const recruiterFilter = searchParams.get("recruiter") ?? (currentUserId ? MINE_KEY : "ALL");
 
   function setActiveFilter(next: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -222,7 +242,9 @@ export default function InboxView({
       items
         .filter((i) => {
           if (activeFilter !== "ALL" && i.task_type !== activeFilter) return false;
-          if (recruiterFilter !== "ALL") {
+          if (recruiterFilter === MINE_KEY) {
+            if (!(i.is_unassigned || i.recruiter_id === currentUserId)) return false;
+          } else if (recruiterFilter !== "ALL") {
             const key = i.is_unassigned ? UNASSIGNED_KEY : i.recruiter_id ?? UNASSIGNED_KEY;
             if (key !== recruiterFilter) return false;
           }
@@ -271,6 +293,11 @@ export default function InboxView({
         return a.label.localeCompare(b.label);
       });
   }, [items]);
+
+  const myDayCount = useMemo(
+    () => items.filter((i) => i.is_unassigned || i.recruiter_id === currentUserId).length,
+    [items, currentUserId]
+  );
 
   const resolve = useCallback(
     async (id: string, status: "done" | "dismissed") => {
@@ -364,6 +391,8 @@ export default function InboxView({
 
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-6">
+      {noMandatesCard}
+      {performanceCard}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -422,7 +451,7 @@ export default function InboxView({
             })}
           </div>
 
-          {recruiterOptions.length > 1 && (
+          {(recruiterOptions.length > 1 || currentUserId) && (
             <div className="flex items-center gap-1.5 shrink-0 ml-auto">
               <Users className="w-3.5 h-3.5 text-slate-400" />
               <select
@@ -437,6 +466,7 @@ export default function InboxView({
                   backgroundSize: "14px",
                 }}
               >
+                {currentUserId && <option value={MINE_KEY}>My day ({myDayCount})</option>}
                 <option value="ALL">Everyone ({items.length})</option>
                 {recruiterOptions.map((opt) => (
                   <option key={opt.key} value={opt.key}>
@@ -460,6 +490,11 @@ export default function InboxView({
           className="py-16"
           icon={<Flame className="w-5 h-5 text-slate-400" />}
           title="No items in this filter"
+          description={
+            recruiterFilter === MINE_KEY
+              ? "Nothing assigned to you or the team right now -- switch to \"Everyone\" above to see what else is open."
+              : undefined
+          }
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-5 items-start">
