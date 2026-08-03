@@ -24,6 +24,7 @@ type VendorSubmission = {
   stage: string;
   confirmed_interview_at: string | null;
   submitted_at: string;
+  rejection_reason: string | null;
 };
 
 export default async function VendorSubmissionsPage() {
@@ -79,6 +80,12 @@ export default async function VendorSubmissionsPage() {
                       know when their candidate's client interview was scheduled. */}
                   {s.stage === "client_interview" && s.confirmed_interview_at && (
                     <span className="text-[11px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
+                  )}
+                  {/* Previously invisible to vendors -- they'd see "not moving
+                      forward" with no way to learn what to submit
+                      differently next time for this client. */}
+                  {s.stage === "rejected" && s.rejection_reason && (
+                    <span className="text-[11px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
                   )}
                 </div>
               </div>

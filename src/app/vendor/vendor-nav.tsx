@@ -22,6 +22,7 @@ function VendorSignOutButton() {
 const NAV_LINKS = [
   { href: "/vendor/mandates", label: "My Mandates" },
   { href: "/vendor/submissions", label: "My Submissions" },
+  { href: "/vendor/scorecard", label: "My Scorecard" },
   { href: "/vendor/inbox", label: "Priority Actions" },
 ];
 

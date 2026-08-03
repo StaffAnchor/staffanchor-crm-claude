@@ -28,6 +28,7 @@ type VendorSubmission = {
   stage: string;
   confirmed_interview_at: string | null;
   submitted_at: string;
+  rejection_reason: string | null;
 };
 
 export default async function VendorMandateDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -116,6 +117,9 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
                   </span>
                   {s.stage === "client_interview" && s.confirmed_interview_at && (
                     <span className="text-[11px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
+                  )}
+                  {s.stage === "rejected" && s.rejection_reason && (
+                    <span className="text-[11px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
                   )}
                 </div>
               </div>

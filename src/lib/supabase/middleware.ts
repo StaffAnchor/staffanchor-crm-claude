@@ -51,7 +51,11 @@ export async function updateSession(request: NextRequest) {
     // Client contacts requesting/verifying a shortlist-link access code have
     // no staff cookie either -- these authorize themselves (client_contacts
     // membership check + the code itself), same class of bug again.
-    /^\/api\/shortlist\/[^/]+\/(request-code|verify-code)$/.test(request.nextUrl.pathname);
+    /^\/api\/shortlist\/[^/]+\/(request-code|verify-code)$/.test(request.nextUrl.pathname) ||
+    // Self-serve vendor signup -- authorizes itself via the vendor_agencies
+    // invite_token (checked server-side in the route), not a staff cookie.
+    // No account exists yet at this point, so there's nothing to redirect to.
+    /^\/api\/vendor-signup\/[^/]+$/.test(request.nextUrl.pathname);
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||
@@ -60,7 +64,10 @@ export async function updateSession(request: NextRequest) {
     // No-login candidate interview scheduling link (Feature 5) -- same
     // class of route as /shortlist above: authorizes itself via the
     // interview_scheduling_tokens token inside the RPCs, not a staff cookie.
-    request.nextUrl.pathname.startsWith("/schedule");
+    request.nextUrl.pathname.startsWith("/schedule") ||
+    // Same class again: a would-be vendor has no account yet, so there's no
+    // session to check -- the invite token itself is the credential.
+    request.nextUrl.pathname.startsWith("/vendor-signup");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
