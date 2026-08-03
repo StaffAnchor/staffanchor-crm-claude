@@ -55,16 +55,30 @@ export type MandateCandidateRow = {
     current_employer: string | null;
     career_timeline_resume: unknown;
     career_timeline_profile: unknown;
+    owner_id: string | null;
   };
 };
 
 export default function MandateCandidatesTable({
   rows: initialRows,
   mandateContext,
+  teamMembers = [],
+  isAdmin = false,
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
+  // Owner visibility + admin-only reassignment -- see mandate-candidates-view.tsx
+  // for where these are sourced. Surfacing "who owns this candidate" here
+  // (not just on the candidate's own profile page) is what stops two
+  // recruiters from unknowingly working the same person on this mandate.
+  teamMembers?: { id: string; full_name: string | null; email: string }[];
+  isAdmin?: boolean;
 }) {
+  const ownerLabel = (id: string | null) => {
+    if (!id) return "Unassigned";
+    const m = teamMembers.find((tm) => tm.id === id);
+    return m?.full_name?.trim() || m?.email || "Unknown";
+  };
   const router = useRouter();
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
@@ -79,6 +93,22 @@ export default function MandateCandidatesTable({
   const [rejectionReason, setRejectionReason] = useState("");
   const [dateOfJoining, setDateOfJoining] = useState("");
   const [savingStage, setSavingStage] = useState(false);
+
+  const [reassigningId, setReassigningId] = useState<string | null>(null);
+
+  async function reassignOwner(candidateId: string, newOwnerId: string) {
+    setReassigningId(candidateId);
+    const { error } = await supabase.rpc("admin_reassign_candidate_owner", {
+      p_candidate_id: candidateId,
+      p_new_owner_id: newOwnerId || null,
+    });
+    setReassigningId(null);
+    if (error) {
+      setMessage({ type: "error", text: `Couldn't reassign: ${error.message}` });
+      return;
+    }
+    router.refresh();
+  }
 
   function toggleRow(linkId: string) {
     setSelected((prev) => {
@@ -234,6 +264,7 @@ export default function MandateCandidatesTable({
               />
             </th>
             <th className="text-left px-4 py-2.5">Candidate</th>
+            <th className="text-left px-4 py-2.5">Owner</th>
             <th className="text-left px-4 py-2.5">Fixed CTC</th>
             <th className="text-left px-4 py-2.5">Recommendation</th>
             <th className="text-left px-4 py-2.5">Screening</th>
@@ -252,6 +283,28 @@ export default function MandateCandidatesTable({
                   {l.candidate.full_name}
                 </Link>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
+              </td>
+              <td className="px-4 py-3">
+                {isAdmin ? (
+                  <select
+                    defaultValue={l.candidate.owner_id ?? ""}
+                    disabled={reassigningId === l.candidate.id}
+                    onChange={(e) => reassignOwner(l.candidate.id, e.target.value)}
+                    className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 bg-white dark:bg-slate-900 max-w-[130px]"
+                    title="Admin: reassign this candidate's owner"
+                  >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.full_name?.trim() || m.email}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 truncate block max-w-[130px]" title="Owner -- this candidate's responsibility">
+                    {ownerLabel(l.candidate.owner_id)}
+                  </span>
+                )}
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 {l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}

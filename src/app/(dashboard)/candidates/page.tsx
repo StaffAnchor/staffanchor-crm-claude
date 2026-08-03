@@ -215,6 +215,10 @@ export default async function CandidatesPage({
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
+  const { data: currentProfile } = currentUser
+    ? await supabase.from("profiles").select("role").eq("id", currentUser.id).single()
+    : { data: null };
+  const isAdmin = currentProfile?.role === "admin";
 
   const pageNum = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const rangeFrom = (pageNum - 1) * PAGE_SIZE;
@@ -1185,6 +1189,7 @@ export default async function CandidatesPage({
         totalCount={totalFiltered}
         rangeStart={rangeStart}
         rangeEnd={rangeEnd}
+        isAdmin={isAdmin}
       />
 
       {totalPages > 1 && (

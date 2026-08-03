@@ -72,9 +72,14 @@ export async function POST(req: NextRequest) {
       userId = created.user.id;
     }
 
+    // owner_id = the recruiter who created this candidate -- a candidate a
+    // recruiter creates or bulk-uploads is that recruiter's responsibility
+    // for profile completion, full stop. Setting it explicitly here means
+    // the DB's autoassign-on-insert trigger (which only fires when owner_id
+    // is null) never overrides it with a round-robin pick.
     const { data: inserted, error: insertError } = await admin
       .from("candidates")
-      .insert({ ...candidateFields, created_by_user: user.id })
+      .insert({ ...candidateFields, created_by_user: user.id, owner_id: user.id })
       .select("id")
       .single();
     if (insertError || !inserted) {

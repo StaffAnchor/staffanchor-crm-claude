@@ -141,6 +141,16 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
 const SECTION_LABEL = "block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5";
 const FIELD_LABEL = "block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1";
 const INPUT_CLS = "w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm";
+// Applied to the 12 "Stage 1B" fields (the same set INCOMPLETE_PROFILE
+// inbox tasks flag as missing -- see is_candidate_profile_incomplete() in
+// the DB) whenever they're still empty, so a recruiter opening this form
+// to "complete" a profile sees exactly what's left at a glance instead of
+// having to scan every field. Clears live as soon as the field is filled in
+// (it reads current form state, not the original candidate record).
+const MISSING_CLS = "border-rose-300 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/20";
+function fieldCls(isMissing: boolean, extra?: string) {
+  return `${INPUT_CLS}${isMissing ? ` ${MISSING_CLS}` : ""}${extra ? ` ${extra}` : ""}`;
+}
 
 function CheckboxGroup({
   options,
@@ -626,7 +636,7 @@ export default function EditProfileButton({
         onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
-        <Pencil className="w-3 h-3" /> Edit profile
+        <Pencil className="w-3 h-3" /> Edit / Complete Profile
       </button>
 
       {open && (
@@ -658,7 +668,7 @@ export default function EditProfileButton({
             <div className="flex-1 min-w-0 overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
               <div className="flex items-center gap-2">
-                <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit profile</h3>
+                <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit / Complete Profile</h3>
                 <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${READINESS_BADGE[readinessTier]}`}>
                   {readinessTier} · {readinessScore}%
                 </span>
@@ -669,6 +679,9 @@ export default function EditProfileButton({
             </div>
 
             <div className="p-5 space-y-6">
+              <p className="flex items-center gap-1.5 text-[11.5px] text-rose-700 dark:text-rose-400 -mt-1">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm border border-rose-300 bg-rose-50" /> Fields still missing to complete this profile are highlighted like this
+              </p>
               {/* --- Basic Info --- */}
               <section>
                 <span className={SECTION_LABEL}>Basic Information</span>
@@ -712,7 +725,12 @@ export default function EditProfileButton({
                       <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-1 truncate">Currently on file</p>
                     )}
                     {resumeFile && <p className="text-[12px] text-slate-700 dark:text-slate-300 mb-1 truncate">{resumeFile.name} (replacing)</p>}
-                    <label className="flex items-center gap-1.5 text-[12px] text-slate-600 dark:text-slate-400 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 w-fit">
+                    <label
+                      className={`flex items-center gap-1.5 text-[12px] text-slate-600 dark:text-slate-400 border border-dashed rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 w-fit ${
+                        !candidate.resume_file_url && !resumeFile ? `${MISSING_CLS} border-dashed` : "border-slate-300"
+                      }`}
+                    >
+
                       <Upload className="w-3 h-3" />
                       {candidate.resume_file_url ? "Replace resume" : "Upload resume"}
                       <input
@@ -854,15 +872,15 @@ export default function EditProfileButton({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={FIELD_LABEL}>Current job title</label>
-                    <input value={form.currentJobTitle} onChange={(e) => set("currentJobTitle", e.target.value)} className={INPUT_CLS} />
+                    <input value={form.currentJobTitle} onChange={(e) => set("currentJobTitle", e.target.value)} className={fieldCls(!form.currentJobTitle)} />
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Current employer</label>
-                    <input value={form.currentEmployer} onChange={(e) => set("currentEmployer", e.target.value)} className={INPUT_CLS} />
+                    <input value={form.currentEmployer} onChange={(e) => set("currentEmployer", e.target.value)} className={fieldCls(!form.currentEmployer)} />
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Employment status</label>
-                    <select value={form.employmentStatus} onChange={(e) => set("employmentStatus", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.employmentStatus} onChange={(e) => set("employmentStatus", e.target.value)} className={fieldCls(!form.employmentStatus)}>
                       <option value="">Select...</option>
                       {employmentStatusOptions.map((o) => (
                         <option key={o} value={o}>{o}</option>
@@ -871,7 +889,7 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Total experience</label>
-                    <select value={form.totalExperienceYears} onChange={(e) => set("totalExperienceYears", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.totalExperienceYears} onChange={(e) => set("totalExperienceYears", e.target.value)} className={fieldCls(!form.totalExperienceYears)}>
                       <option value="">Select...</option>
                       {experienceOptions.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -880,7 +898,7 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Current fixed CTC</label>
-                    <select value={form.currentFixedCtc} onChange={(e) => set("currentFixedCtc", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.currentFixedCtc} onChange={(e) => set("currentFixedCtc", e.target.value)} className={fieldCls(!form.currentFixedCtc)}>
                       <option value="">Select...</option>
                       {ctcOptions.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -898,7 +916,7 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Expected fixed CTC</label>
-                    <select value={form.expectedFixedCtc} onChange={(e) => set("expectedFixedCtc", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.expectedFixedCtc} onChange={(e) => set("expectedFixedCtc", e.target.value)} className={fieldCls(!form.expectedFixedCtc)}>
                       <option value="">Select...</option>
                       {ctcOptions.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -926,7 +944,7 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>When can they join?</label>
-                    <select value={form.noticePeriod} onChange={(e) => set("noticePeriod", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.noticePeriod} onChange={(e) => set("noticePeriod", e.target.value)} className={fieldCls(!form.noticePeriod)}>
                       <option value="">Select...</option>
                       {noticePeriodOptions.map((n) => (
                         <option key={n} value={n}>{n}</option>
@@ -935,7 +953,7 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Highest qualification</label>
-                    <select value={form.highestQualification} onChange={(e) => set("highestQualification", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.highestQualification} onChange={(e) => set("highestQualification", e.target.value)} className={fieldCls(!form.highestQualification)}>
                       <option value="">Select...</option>
                       {highestQualificationOptions.map((o) => (
                         <option key={o} value={o}>{o}</option>
@@ -952,7 +970,7 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Work mode</label>
-                    <select value={form.workMode} onChange={(e) => set("workMode", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.workMode} onChange={(e) => set("workMode", e.target.value)} className={fieldCls(!form.workMode)}>
                       <option value="">Select...</option>
                       {workModeOptions.map((o) => (
                         <option key={o} value={o}>{o}</option>
@@ -961,7 +979,7 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Open to relocation?</label>
-                    <select value={form.openToRelocation} onChange={(e) => set("openToRelocation", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.openToRelocation} onChange={(e) => set("openToRelocation", e.target.value)} className={fieldCls(!form.openToRelocation)}>
                       <option value="">Select...</option>
                       {relocationOptions.map((o) => (
                         <option key={o} value={o}>{o}</option>
@@ -1240,7 +1258,7 @@ export default function EditProfileButton({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={FIELD_LABEL}>Current industry</label>
-                    <select value={form.currentIndustry} onChange={(e) => set("currentIndustry", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.currentIndustry} onChange={(e) => set("currentIndustry", e.target.value)} className={fieldCls(!form.currentIndustry)}>
                       <option value="">Select...</option>
                       {industryOptions.map((i) => (
                         <option key={i} value={i}>{i}</option>

@@ -81,13 +81,40 @@ function timeAgo(iso: string | null): string {
 export default function MandateCandidatesBoard({
   rows: initialRows,
   mandateContext,
+  teamMembers = [],
+  isAdmin = false,
 }: {
   rows: MandateCandidateRow[];
   mandateContext: { mandateId: string; role_title: string; client_name: string; [key: string]: unknown };
+  // Owner visibility + admin-only reassignment, same data as the Table view
+  // -- see mandate-candidates-view.tsx.
+  teamMembers?: { id: string; full_name: string | null; email: string }[];
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
+  const [reassigningId, setReassigningId] = useState<string | null>(null);
+
+  function ownerLabel(id: string | null) {
+    if (!id) return "Unassigned";
+    const m = teamMembers.find((tm) => tm.id === id);
+    return m?.full_name?.trim() || m?.email || "Unknown";
+  }
+
+  async function reassignOwner(candidateId: string, newOwnerId: string) {
+    setReassigningId(candidateId);
+    const { error } = await supabase.rpc("admin_reassign_candidate_owner", {
+      p_candidate_id: candidateId,
+      p_new_owner_id: newOwnerId || null,
+    });
+    setReassigningId(null);
+    if (error) {
+      setMessage({ type: "error", text: `Couldn't reassign: ${error.message}` });
+      return;
+    }
+    router.refresh();
+  }
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
@@ -267,6 +294,34 @@ export default function MandateCandidatesBoard({
                           </p>
                         </div>
                         {isMoving && <Loader2 className="w-3 h-3 animate-spin text-slate-400 shrink-0" />}
+                      </div>
+
+                      {/* Owner -- who this candidate belongs to, so two
+                          recruiters never unknowingly work the same person
+                          on this mandate. Admin can move it (e.g. covering
+                          for someone on leave); everyone else sees it read-only. */}
+                      <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+                        {isAdmin ? (
+                          <select
+                            defaultValue={row.candidate.owner_id ?? ""}
+                            disabled={reassigningId === row.candidate.id}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onChange={(e) => reassignOwner(row.candidate.id, e.target.value)}
+                            className="w-full text-[10px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1 py-0.5 bg-white dark:bg-slate-900"
+                            title="Admin: reassign this candidate's owner"
+                          >
+                            <option value="">Unassigned</option>
+                            {teamMembers.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.full_name?.trim() || m.email}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-[10px] text-slate-400" title="Owner -- this candidate's responsibility">
+                            Owner: {ownerLabel(row.candidate.owner_id)}
+                          </span>
+                        )}
                       </div>
 
                       <div className="mt-2 flex items-center justify-between">

@@ -436,6 +436,8 @@ const ROLE_TYPE_LABEL: Record<string, string> = {
 // existing object rather than overwriting the whole thing.
 type RenderHelpers = {
   updateField: (id: string, field: string, value: unknown) => Promise<void>;
+  reassignOwner: (id: string, newOwnerId: string | null) => Promise<void>;
+  isAdmin: boolean;
   updateSegmentField: (id: string, current: Record<string, unknown> | null, key: string, value: unknown) => Promise<void>;
   updateVerification: (id: string, level: number) => Promise<void>;
   teamMembers: TeamMember[];
@@ -463,29 +465,39 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "owner",
     label: "Owner",
-    // Every candidate is auto-assigned an owner on creation (round-robin
-    // trigger), but this stays reassignable by any recruiter -- e.g. when
-    // a specialist should take over from whoever the rotation landed on.
-    render: (c, { updateField, teamMembers }) => (
-      <InlineSelectCell
-        value={c.owner_id}
-        options={teamMembers.map((m) => m.id)}
-        labels={Object.fromEntries(teamMembers.map((m) => [m.id, teamMemberLabel(m)]))}
-        placeholder="Unassigned"
-        renderClosed={(v) => {
-          const m = teamMembers.find((tm) => tm.id === v);
-          return (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/50 text-[9px] font-semibold text-blue-700 dark:text-blue-300">
-                {initialsFor(m ? teamMemberLabel(m) : "?")}
-              </span>
-              <span className="text-slate-600 dark:text-slate-300 truncate max-w-[100px]">{m ? teamMemberLabel(m) : v}</span>
+    // Every candidate is auto-assigned an owner on creation (recruiter-created
+    // -> the creating recruiter; self-registered -> round robin across
+    // recruiters; job-application -> round robin among recruiters staffed on
+    // that mandate) -- see admin_reassign_candidate_owner / the DB trigger
+    // guard. Reassignment is admin-only now (previously any staff role could
+    // silently move a candidate off a recruiter's plate) so it goes through
+    // that RPC instead of a raw column update; non-admins get a read-only chip.
+    render: (c, { reassignOwner, teamMembers, isAdmin }) => {
+      const renderChip = (v: string | null | undefined) => {
+        const m = teamMembers.find((tm) => tm.id === v);
+        return (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/50 text-[9px] font-semibold text-blue-700 dark:text-blue-300">
+              {initialsFor(m ? teamMemberLabel(m) : "?")}
             </span>
-          );
-        }}
-        onSave={(v) => updateField(c.id, "owner_id", v)}
-      />
-    ),
+            <span className="text-slate-600 dark:text-slate-300 truncate max-w-[100px]">{m ? teamMemberLabel(m) : v ?? "Unassigned"}</span>
+          </span>
+        );
+      };
+      if (!isAdmin) {
+        return renderChip(c.owner_id);
+      }
+      return (
+        <InlineSelectCell
+          value={c.owner_id}
+          options={teamMembers.map((m) => m.id)}
+          labels={Object.fromEntries(teamMembers.map((m) => [m.id, teamMemberLabel(m)]))}
+          placeholder="Unassigned"
+          renderClosed={renderChip}
+          onSave={(v) => reassignOwner(c.id, v)}
+        />
+      );
+    },
   },
   {
     key: "verification_level",
@@ -927,6 +939,7 @@ export default function CandidatesTable({
   totalCount,
   rangeStart,
   rangeEnd,
+  isAdmin = false,
 }: {
   candidates: CandidateRow[];
   openMandates: OpenMandate[];
@@ -938,6 +951,9 @@ export default function CandidatesTable({
   totalCount?: number;
   rangeStart?: number;
   rangeEnd?: number;
+  // Gates the Owner column's edit affordance -- reassignment is admin-only
+  // now (a DB trigger also enforces this server-side either way).
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1190,6 +1206,24 @@ export default function CandidatesTable({
     const { error } = await supabase.from("candidates").update({ [field]: value }).eq("id", id);
     if (error) {
       window.alert(`Couldn't save: ${error.message}`);
+      return;
+    }
+    router.refresh();
+  }
+
+  // Owner reassignment goes through the admin-gated admin_reassign_candidate_owner
+  // RPC instead of a raw column update -- a DB trigger now blocks a direct
+  // client update to owner_id from anyone but an admin, so this is the only
+  // path that still works (the owner cell itself is also hidden from
+  // non-admins, see COLUMN_DEFS above, but this keeps the write path honest
+  // even if called some other way).
+  async function reassignOwner(id: string, newOwnerId: string | null) {
+    const { error } = await supabase.rpc("admin_reassign_candidate_owner", {
+      p_candidate_id: id,
+      p_new_owner_id: newOwnerId,
+    });
+    if (error) {
+      window.alert(`Couldn't reassign: ${error.message}`);
       return;
     }
     router.refresh();
@@ -1666,7 +1700,7 @@ export default function CandidatesTable({
                 </td>
                 {visibleColumns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
-                    {col.render(c, { updateField, updateSegmentField, updateVerification, teamMembers })}
+                    {col.render(c, { updateField, reassignOwner, isAdmin, updateSegmentField, updateVerification, teamMembers })}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-right">

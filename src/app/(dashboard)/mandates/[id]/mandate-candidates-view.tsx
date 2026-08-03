@@ -14,9 +14,15 @@ import type { MandateScreeningContext } from "./mandate-screening-panel";
 export default function MandateCandidatesView({
   rows,
   mandateContext,
+  teamMembers = [],
+  isAdmin = false,
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
+  // Owner visibility (who this candidate belongs to) + admin-only
+  // reassignment, threaded down to both Board and Table views.
+  teamMembers?: { id: string; full_name: string | null; email: string }[];
+  isAdmin?: boolean;
 }) {
   const [view, setView] = useState<"board" | "table">("board");
 
@@ -44,9 +50,9 @@ export default function MandateCandidatesView({
       </div>
 
       {view === "board" ? (
-        <MandateCandidatesBoard rows={rows} mandateContext={mandateContext} />
+        <MandateCandidatesBoard rows={rows} mandateContext={mandateContext} teamMembers={teamMembers} isAdmin={isAdmin} />
       ) : (
-        <MandateCandidatesTable rows={rows} mandateContext={mandateContext} />
+        <MandateCandidatesTable rows={rows} mandateContext={mandateContext} teamMembers={teamMembers} isAdmin={isAdmin} />
       )}
     </div>
   );

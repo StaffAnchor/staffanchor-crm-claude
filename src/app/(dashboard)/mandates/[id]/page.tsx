@@ -57,7 +57,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile)"
+      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id)"
     )
     .eq("mandate_id", id);
 
@@ -298,6 +298,8 @@ export default async function MandateDetailPage({
             clientContacts: clientContacts ?? [],
             clientResources: clientResources ?? [],
           }}
+          teamMembers={allStaffProfiles ?? []}
+          isAdmin={viewerRole === "admin"}
         />
         }
         right={
