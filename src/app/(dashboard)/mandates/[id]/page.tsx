@@ -15,6 +15,8 @@ import MandateCandidatesView from "./mandate-candidates-view";
 import MandateSplitLayout from "./mandate-split-layout";
 import DeleteMandateButton from "./delete-mandate-button";
 import PublishMandateButton from "./publish-mandate-button";
+import ArchiveMandateButton from "./archive-mandate-button";
+import UnarchiveMandateButton from "./unarchive-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
 import DownloadJdButton from "./download-jd-button";
 import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
@@ -202,9 +204,26 @@ export default async function MandateDetailPage({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <DownloadJdButton mandateId={id} />
+          {mandate.status === "archived" ? (
+            <UnarchiveMandateButton mandateId={id} archivedFromStatus={mandate.archived_from_status} />
+          ) : (
+            <ArchiveMandateButton mandateId={id} currentStatus={mandate.status} />
+          )}
           <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
         </div>
       </div>
+
+      {mandate.status === "archived" && (
+        <div className="mt-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-4 py-3">
+          <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+            This mandate is archived{mandate.archived_reason ? ` -- ${mandate.archived_reason}` : ""}
+          </p>
+          <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
+            {mandate.archived_at ? `Archived ${new Date(mandate.archived_at).toLocaleDateString()}. ` : ""}
+            It won't show up in the active Mandates list, cron sweeps, or open-mandate counts until reactivated.
+          </p>
+        </div>
+      )}
 
       {mandate.status === "draft" && (
         <PublishMandateButton mandateId={id} staffCount={assignedStaff.length} viewerRole={viewerRole} />

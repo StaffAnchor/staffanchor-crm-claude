@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Briefcase, CheckCircle2, PauseCircle, AlertTriangle, FileEdit } from "lucide-react";
+import { Briefcase, CheckCircle2, PauseCircle, AlertTriangle, FileEdit, Archive } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CreateMandateForm from "./create-mandate-form";
 import { type MandateSummary, type HealthSignal } from "./mandates-grid";
@@ -83,7 +83,13 @@ export default async function MandatesPage({
     .from("mandates")
     .select("id, client_name, role_title, category, sub_domain, city, status, created_at, auto_match_results")
     .order("created_at", { ascending: false });
+  // Archived mandates (client withdrew, filled elsewhere, etc.) are kept in
+  // the table rather than deleted, but shouldn't clutter the default view
+  // the way an unfiltered list would otherwise show them alongside active
+  // work. Explicitly asking for status=archived (via the stat tile) still
+  // works normally, same pattern the other status tiles already use.
   if (status) query = query.eq("status", status);
+  else query = query.neq("status", "archived");
   if (category) query = query.eq("category", category);
   if (city) query = query.eq("city", city);
   if (client) query = query.eq("client_name", client);
@@ -237,6 +243,7 @@ export default async function MandatesPage({
     { label: "Open", value: statusCounts["open"] ?? 0, icon: CheckCircle2, accent: true, href: "/mandates?status=open" },
     { label: "On hold", value: statusCounts["on_hold"] ?? 0, icon: PauseCircle, href: "/mandates?status=on_hold" },
     { label: "Closed", value: statusCounts["closed"] ?? 0, icon: Briefcase, href: "/mandates?status=closed" },
+    { label: "Archived", value: statusCounts["archived"] ?? 0, icon: Archive, href: "/mandates?status=archived" },
     { label: "Aging, no submissions", value: agingCount, icon: AlertTriangle },
   ];
 

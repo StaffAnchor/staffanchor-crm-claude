@@ -19,13 +19,18 @@ export type MandateBasicDetails = {
   status: string;
 };
 
-const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled"];
+// "archived" is included here for consistency, but picking it from this
+// generic dropdown skips the reason-capture + archived_from_status bookkeeping
+// the dedicated Archive/Reactivate buttons on the page header do -- those are
+// the intended path; this stays as a manual override for edge cases.
+const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled", "archived"];
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft (not published)",
   open: "Open",
   on_hold: "On hold",
   closed: "Closed",
   filled: "Filled",
+  archived: "Archived",
 };
 
 export default function BasicDetailsPanel({

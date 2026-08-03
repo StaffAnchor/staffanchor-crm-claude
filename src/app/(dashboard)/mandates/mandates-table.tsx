@@ -27,9 +27,10 @@ const STATUS_TONE: Record<string, BadgeTone> = {
   on_hold: "warning",
   closed: "neutral",
   filled: "accent",
+  archived: "neutral",
 };
 
-const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled"];
+const STATUS_OPTIONS = ["draft", "open", "on_hold", "closed", "filled", "archived"];
 
 // Matches the label set on the Candidates table (candidates-table.tsx) and
 // the Mandates sidebar filter (page.tsx) for these same category values --
