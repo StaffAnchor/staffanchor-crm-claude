@@ -142,6 +142,7 @@ const ORIGIN_LABEL: Record<string, string> = {
   recruiter_created: "Recruiter Created (one at a time)",
   bulk_resume_upload: "Bulk CV Upload",
   bulk_import: "One-Time Upload (Zoho)",
+  browser_extension: "LinkedIn (Chrome Extension)",
 };
 
 
