@@ -44,7 +44,7 @@ type Command = {
 // switches to search). Each also has a bare-key global shortcut (no
 // modifier) so recruiters never need to open the palette at all for these.
 const COMMANDS: Command[] = [
-  { id: "inbox", label: "Priority Actions", hint: "G then I", icon: Flame, href: "/inbox" },
+  { id: "inbox", label: "My Desk", hint: "G then I", icon: Flame, href: "/inbox" },
   { id: "candidates", label: "Candidates", hint: "G then C", icon: Users, href: "/candidates" },
   { id: "mandates", label: "Mandates", hint: "G then M", icon: Briefcase, href: "/mandates" },
   { id: "clients", label: "Clients", hint: "", icon: Building2, href: "/clients" },

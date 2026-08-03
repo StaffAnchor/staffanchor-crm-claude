@@ -29,7 +29,10 @@ export default async function DashboardLayout({
     .toUpperCase();
 
   const navLinks = [
-    { href: "/inbox", label: "🔥 Priority Actions", enabled: true },
+    // Renamed from "Priority Actions" -- that's now just one of the three
+    // boxes on this page (Mandate Tasks/Build Pipeline/Profile Completion),
+    // so the tab needed a name covering all three, not just the first.
+    { href: "/inbox", label: "My Desk", enabled: true },
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
