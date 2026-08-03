@@ -379,6 +379,34 @@ export default function EditProfileButton({
     Premium: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   };
 
+  // Count of hard-required fields (the same rose-highlighted set as
+  // fieldCls/MISSING_CLS below) still blank -- drives the badge on the
+  // trigger button so a recruiter sees "4 fields left" before ever opening
+  // the modal, instead of the button looking identical whether a profile is
+  // 20% or 95% done.
+  const missingRequiredCount = [
+    !form.full_name.trim(),
+    !form.phone.trim(),
+    !form.city || (form.city === "Other" && !form.cityOther.trim()),
+    !form.linkedinUrl.trim(),
+    !candidate.resume_file_url && !resumeFile,
+    !form.category,
+    !form.subDomain || (form.subDomain === "Other" && !form.subDomainOther.trim()),
+    !form.roleType,
+    isTeamLead && !form.teamSize,
+    !form.currentJobTitle.trim(),
+    !form.currentEmployer.trim(),
+    !form.employmentStatus,
+    !form.currentIndustry,
+    !form.totalExperienceYears,
+    !form.currentFixedCtc,
+    !form.expectedFixedCtc,
+    !form.noticePeriod,
+    !form.highestQualification || (form.highestQualification === "Other" && !form.highestQualificationOther.trim()),
+    !form.workMode,
+    !form.openToRelocation,
+  ].filter(Boolean).length;
+
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
@@ -634,9 +662,19 @@ export default function EditProfileButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+        className={`flex items-center gap-1.5 text-[12px] font-semibold rounded-ros-md px-3.5 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
+          missingRequiredCount > 0
+            ? "text-white bg-teal-600 hover:bg-teal-500 shadow-sm shadow-teal-600/30"
+            : "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+        }`}
       >
-        <Pencil className="w-3 h-3" /> Edit / Complete Profile
+        <Pencil className="w-3 h-3" />
+        {missingRequiredCount > 0 ? "Complete Profile" : "Edit Profile"}
+        {missingRequiredCount > 0 && (
+          <span className="ml-0.5 rounded-full bg-white/25 px-1.5 py-0.5 text-[10.5px] leading-none">
+            {missingRequiredCount} left
+          </span>
+        )}
       </button>
 
       {open && (
@@ -688,7 +726,7 @@ export default function EditProfileButton({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={FIELD_LABEL}>Full name</label>
-                    <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} className={INPUT_CLS} />
+                    <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} className={fieldCls(!form.full_name.trim())} />
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Email</label>
@@ -696,15 +734,15 @@ export default function EditProfileButton({
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Phone</label>
-                    <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className={INPUT_CLS} />
+                    <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className={fieldCls(!form.phone.trim())} />
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>LinkedIn URL</label>
-                    <input value={form.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} className={INPUT_CLS} />
+                    <input value={form.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} className={fieldCls(!form.linkedinUrl.trim())} />
                   </div>
                   <div>
                     <label className={FIELD_LABEL}>Location</label>
-                    <select value={form.city} onChange={(e) => set("city", e.target.value)} className={INPUT_CLS}>
+                    <select value={form.city} onChange={(e) => set("city", e.target.value)} className={fieldCls(!form.city)}>
                       <option value="">Select...</option>
                       {cityOptions.map((c) => (
                         <option key={c} value={c}>{c}</option>
@@ -715,7 +753,7 @@ export default function EditProfileButton({
                         value={form.cityOther}
                         onChange={(e) => set("cityOther", e.target.value)}
                         placeholder="City, State"
-                        className={`${INPUT_CLS} mt-2`}
+                        className={fieldCls(!form.cityOther.trim(), "mt-2")}
                       />
                     )}
                   </div>
@@ -753,7 +791,7 @@ export default function EditProfileButton({
                     <select
                       value={form.category}
                       onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subDomain: "", secondarySubDomains: [] }))}
-                      className={INPUT_CLS}
+                      className={fieldCls(!form.category)}
                     >
                       <option value="">Select...</option>
                       <option value="b2b_sales">B2B Sales</option>
@@ -765,7 +803,7 @@ export default function EditProfileButton({
                     <label className={FIELD_LABEL}>Primary Specialization</label>
                     {subDomainOptions.length > 0 ? (
                       <>
-                        <select value={form.subDomain} onChange={(e) => set("subDomain", e.target.value)} className={INPUT_CLS}>
+                        <select value={form.subDomain} onChange={(e) => set("subDomain", e.target.value)} className={fieldCls(!form.subDomain)}>
                           <option value="">Select...</option>
                           {subDomainOptions.map((d) => (
                             <option key={d} value={d}>{d}</option>
@@ -776,7 +814,7 @@ export default function EditProfileButton({
                             value={form.subDomainOther}
                             onChange={(e) => set("subDomainOther", e.target.value)}
                             placeholder="e.g. SaaS Sales"
-                            className={`${INPUT_CLS} mt-2`}
+                            className={fieldCls(!form.subDomainOther.trim(), "mt-2")}
                           />
                         )}
                         {form.subDomain === "Other B2B" && (
@@ -844,7 +882,7 @@ export default function EditProfileButton({
                       onChange={(e) =>
                         setForm((f) => ({ ...f, roleType: e.target.value, teamSize: e.target.value === "Leading a Team" ? f.teamSize : "" }))
                       }
-                      className={INPUT_CLS}
+                      className={fieldCls(!form.roleType)}
                     >
                       <option value="">Select...</option>
                       {roleTypeOptions.map((o) => (
@@ -855,7 +893,7 @@ export default function EditProfileButton({
                   {isTeamLead && (
                     <div>
                       <label className={FIELD_LABEL}>Team size</label>
-                      <select value={form.teamSize} onChange={(e) => set("teamSize", e.target.value)} className={INPUT_CLS}>
+                      <select value={form.teamSize} onChange={(e) => set("teamSize", e.target.value)} className={fieldCls(!form.teamSize)}>
                         <option value="">Select...</option>
                         {teamSizeOptions.map((o) => (
                           <option key={o} value={o}>{o}</option>

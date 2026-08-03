@@ -51,6 +51,23 @@ export type InboxItem = {
   is_unassigned: boolean;
   recruiter_id: string | null;
   recruiter_name: string | null;
+  // Read-only candidate snapshot -- only populated when candidate_id is set
+  // (e.g. INCOMPLETE_PROFILE tasks) -- lets the task card show "who is this"
+  // at a glance (domain, category, experience, current role) instead of
+  // just a name, so a recruiter can judge interest/urgency before clicking
+  // in. Optional since older cached data or non-candidate tasks won't have it.
+  candidate_category?: string | null;
+  candidate_sub_domain?: string | null;
+  candidate_experience_years?: number | null;
+  candidate_current_job_title?: string | null;
+  candidate_current_employer?: string | null;
+  candidate_current_location?: string | null;
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  b2b_sales: "B2B Sales",
+  b2c_sales: "B2C Sales",
+  non_sales: "Non-Sales",
 };
 
 const UNASSIGNED_KEY = "__unassigned__";
@@ -718,7 +735,33 @@ export default function InboxView({
                           </Badge>
                         ) : null}
                       </span>
-                      <span className="block text-[11px] text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
+                      {item.task_type === "INCOMPLETE_PROFILE" ? (
+                        <span className="flex flex-wrap items-center gap-1 mt-1">
+                          {item.candidate_category && (
+                            <span className="inline-flex items-center rounded-md bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 text-[10.5px] font-medium px-1.5 py-0.5">
+                              {CATEGORY_LABEL[item.candidate_category] ?? item.candidate_category}
+                            </span>
+                          )}
+                          {item.candidate_sub_domain && (
+                            <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-medium px-1.5 py-0.5">
+                              {item.candidate_sub_domain}
+                            </span>
+                          )}
+                          {item.candidate_experience_years != null && (
+                            <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-medium px-1.5 py-0.5">
+                              {item.candidate_experience_years} yrs exp
+                            </span>
+                          )}
+                          {(item.candidate_current_job_title || item.candidate_current_employer) && (
+                            <span className="text-[10.5px] text-slate-400 truncate">
+                              {[item.candidate_current_job_title, item.candidate_current_employer].filter(Boolean).join(" @ ")}
+                            </span>
+                          )}
+                          <span className="text-[10.5px] text-slate-300">· {timeAgo(item.created_at)}</span>
+                        </span>
+                      ) : (
+                        <span className="block text-[11px] text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
+                      )}
                     </span>
                     {isResolving ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 shrink-0" />
@@ -917,6 +960,40 @@ function ContextDrawer({
           <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 leading-snug">{item.title}</p>
         </div>
       </div>
+
+      {item.task_type === "INCOMPLETE_PROFILE" &&
+        (item.candidate_category || item.candidate_sub_domain || item.candidate_experience_years != null || item.candidate_current_job_title) && (
+          <div className="rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2.5 mb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">At a glance</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {item.candidate_category && (
+                <Badge tone="neutral" size="sm" className="!bg-cyan-50 !text-cyan-700 dark:!bg-cyan-950/40 dark:!text-cyan-300 normal-case tracking-normal">
+                  {CATEGORY_LABEL[item.candidate_category] ?? item.candidate_category}
+                </Badge>
+              )}
+              {item.candidate_sub_domain && (
+                <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
+                  {item.candidate_sub_domain}
+                </Badge>
+              )}
+              {item.candidate_experience_years != null && (
+                <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
+                  {item.candidate_experience_years} yrs exp
+                </Badge>
+              )}
+              {item.candidate_current_location && (
+                <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
+                  {item.candidate_current_location}
+                </Badge>
+              )}
+            </div>
+            {(item.candidate_current_job_title || item.candidate_current_employer) && (
+              <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-1.5">
+                {[item.candidate_current_job_title, item.candidate_current_employer].filter(Boolean).join(" at ")}
+              </p>
+            )}
+          </div>
+        )}
 
       {item.detail && <p className="text-[13px] text-slate-600 dark:text-slate-400 mb-4">{item.detail}</p>}
 
