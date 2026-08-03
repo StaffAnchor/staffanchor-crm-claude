@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import InboxView, { type InboxItem } from "./inbox-view";
 import MyPerformanceCard from "./my-performance-card";
-import NoMandatesCard from "./no-mandates-card";
 
 // Server component: fetches the whole team's open Priority Actions via the
 // get_my_inbox() RPC (every staff member sees every task; the UI filters by
@@ -22,29 +21,29 @@ export default async function InboxPage() {
     .in("role", ["admin", "recruiter", "partner"])
     .order("full_name");
   const { data: scorecard } = (await supabase.rpc("get_my_recruiter_scorecard").maybeSingle()) as {
-    data: { linked: number; submitted: number; interviewed: number; offered: number; placed: number } | null;
+    data: {
+      linked: number;
+      submitted: number;
+      interviewed: number;
+      offered: number;
+      placed: number;
+      candidates_added_week: number;
+      candidates_added_total: number;
+      profiles_completed: number;
+    } | null;
   };
 
-  // "No active mandates" fallback work queue (execution-audit gap): a
-  // recruiter's day previously just went quiet with no assignments -- this
-  // checks whether they're staffed on any currently-open mandate, and if
-  // not, surfaces pipeline-building work instead (incomplete profiles,
-  // bulk upload) so idle time isn't wasted waiting.
-  let noMandatesCard: React.ReactNode = null;
+  // Whether the recruiter is staffed on any currently-open mandate --
+  // drives which of the three inbox boxes opens by default (Mandate Tasks
+  // vs. Build Pipeline). See inbox-view.tsx's BOX_META/activeBox.
+  let hasActiveMandates = true;
   if (user) {
     const { data: myAssignments } = await supabase
       .from("mandate_assignments")
       .select("mandate_id, mandates!inner(status)")
       .eq("freelancer_id", user.id)
       .eq("mandates.status", "open");
-
-    if (!myAssignments || myAssignments.length === 0) {
-      const { count: incompleteCount } = await supabase
-        .from("candidates")
-        .select("id", { count: "exact", head: true })
-        .in("status", ["awaiting_input", "lead"]);
-      noMandatesCard = <NoMandatesCard incompleteProfileCount={incompleteCount ?? 0} />;
-    }
+    hasActiveMandates = !!myAssignments && myAssignments.length > 0;
   }
 
   const items: InboxItem[] = (error ? [] : data ?? []) as InboxItem[];
@@ -55,7 +54,7 @@ export default async function InboxPage() {
       fetchError={error?.message ?? null}
       recruiters={recruiters ?? []}
       currentUserId={user?.id ?? null}
-      noMandatesCard={noMandatesCard}
+      hasActiveMandates={hasActiveMandates}
       performanceCard={
         scorecard ? (
           <MyPerformanceCard
@@ -64,6 +63,9 @@ export default async function InboxPage() {
             interviewed={Number(scorecard.interviewed ?? 0)}
             offered={Number(scorecard.offered ?? 0)}
             placed={Number(scorecard.placed ?? 0)}
+            candidatesAddedWeek={Number(scorecard.candidates_added_week ?? 0)}
+            candidatesAddedTotal={Number(scorecard.candidates_added_total ?? 0)}
+            profilesCompleted={Number(scorecard.profiles_completed ?? 0)}
           />
         ) : null
       }

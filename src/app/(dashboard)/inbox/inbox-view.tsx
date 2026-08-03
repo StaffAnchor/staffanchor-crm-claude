@@ -22,6 +22,9 @@ import {
   ChevronDown,
   Sparkles,
   UserCog,
+  Briefcase,
+  UploadCloud,
+  UserPlus,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -157,6 +160,59 @@ function groupFor(taskType: string): keyof typeof GROUP_META {
   return TASK_TYPE_GROUP[taskType] ?? "other";
 }
 
+// Rebuilt per direct feedback: a single flat "Priority Actions" list with
+// buried filter chips still made a recruiter hold the whole picture in her
+// head ("do I have mandate work? should I be sourcing instead?"). Three
+// fixed, always-visible boxes replace that -- exactly the three things a
+// recruiter is ever actually doing: working an active mandate, building
+// future pipeline (the answer to "what do I do with no mandate"), or
+// completing candidate profiles already in the system. Clicking a box is
+// the only navigation required; nothing here needs to be remembered.
+type BoxKey = "mandate" | "pipeline" | "profiles";
+
+const BOX_META: Record<BoxKey, { label: string; description: string; icon: typeof Flame; tint: string }> = {
+  mandate: {
+    label: "Mandate Tasks",
+    description: "Interviews, client feedback, stale candidates -- everything tied to a live mandate.",
+    icon: Briefcase,
+    tint: "border-blue-200 bg-blue-50/60 text-blue-900",
+  },
+  pipeline: {
+    label: "Build Pipeline",
+    description: "Add new candidates for future mandates -- especially when nothing's active right now.",
+    icon: UserPlus,
+    tint: "border-teal-200 bg-teal-50/60 text-teal-900",
+  },
+  profiles: {
+    label: "Profile Completion",
+    description: "Existing candidates missing fields -- get them match-ready before a mandate needs them.",
+    icon: UserCog,
+    tint: "border-amber-200 bg-amber-50/60 text-amber-900",
+  },
+};
+
+const BOX_ORDER: BoxKey[] = ["mandate", "pipeline", "profiles"];
+
+// Every task type maps to exactly one box; anything unmapped (future task
+// types) defaults to "mandate" -- the safest catch-all, since that's the
+// primary work queue and nothing should silently vanish from it.
+const TASK_TYPE_BOX: Record<string, BoxKey> = {
+  TRIGGER_INTERVIEW_COORDINATION: "mandate",
+  INTERVIEW_REMINDER: "mandate",
+  STALE_MANDATE: "mandate",
+  CLIENT_FEEDBACK_OVERDUE: "mandate",
+  STALE_CANDIDATE: "mandate",
+  MISSING_ASSESSMENT: "mandate",
+  FOLLOW_UP_ON_OFFER: "mandate",
+  POST_PLACEMENT_CHECKIN: "mandate",
+  NEW_REFERRAL: "pipeline",
+  INCOMPLETE_PROFILE: "profiles",
+};
+
+function boxFor(taskType: string): BoxKey {
+  return TASK_TYPE_BOX[taskType] ?? "mandate";
+}
+
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.round(diffMs / 60000);
@@ -183,14 +239,18 @@ export default function InboxView({
   recruiters,
   currentUserId = null,
   performanceCard = null,
-  noMandatesCard = null,
+  hasActiveMandates = true,
 }: {
   initialItems: InboxItem[];
   fetchError: string | null;
   recruiters: RecruiterOption[];
   currentUserId?: string | null;
   performanceCard?: React.ReactNode;
-  noMandatesCard?: React.ReactNode;
+  // Drives which box opens by default: a recruiter with no active mandate
+  // assignment lands on "Build Pipeline" instead of an empty "Mandate
+  // Tasks" box. Defaults true (no behavior change) for surfaces that don't
+  // know this yet (e.g. the vendor inbox, which passes nothing).
+  hasActiveMandates?: boolean;
 }) {
   const supabase = createClient();
   const [items, setItems] = useState<InboxItem[]>(initialItems);
@@ -211,6 +271,18 @@ export default function InboxView({
   // exactly as before. Falls back to ALL when no session user is known
   // (shouldn't happen on an authenticated page, but keeps this safe).
   const recruiterFilter = searchParams.get("recruiter") ?? (currentUserId ? MINE_KEY : "ALL");
+  // Which of the three boxes is open. Defaults to Mandate Tasks when the
+  // recruiter has an active assignment, otherwise Build Pipeline -- exactly
+  // the "what do I do with no mandate" answer from feedback, applied
+  // automatically instead of the recruiter having to notice and navigate.
+  const activeBox = (searchParams.get("box") as BoxKey | null) ?? (hasActiveMandates ? "mandate" : "pipeline");
+
+  function setActiveBox(next: BoxKey) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("box", next);
+    params.delete("type"); // sub-filter chips are scoped to a box; switching boxes clears a now-irrelevant one
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
 
   function setActiveFilter(next: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -237,17 +309,35 @@ export default function InboxView({
   // thinks in, high-priority-first within each group; Array#sort is a
   // stable sort so items keep their original relative order (the RPC's
   // own ordering) within a group/priority tier.
+  // Items after the recruiter-scope filter only (My day / Everyone / one
+  // person) -- the shared base every box's count and the active box's own
+  // list are both drawn from, so switching boxes never has to re-derive
+  // recruiter scoping.
+  const recruiterScopedItems = useMemo(
+    () =>
+      items.filter((i) => {
+        if (recruiterFilter === MINE_KEY) return i.is_unassigned || i.recruiter_id === currentUserId;
+        if (recruiterFilter === "ALL") return true;
+        const key = i.is_unassigned ? UNASSIGNED_KEY : i.recruiter_id ?? UNASSIGNED_KEY;
+        return key === recruiterFilter;
+      }),
+    [items, recruiterFilter, currentUserId]
+  );
+
+  // Count per box, within the current recruiter scope -- what each of the
+  // three boxes actually shows on its face.
+  const boxCounts = useMemo(() => {
+    const m = new Map<BoxKey, number>();
+    for (const i of recruiterScopedItems) m.set(boxFor(i.task_type), (m.get(boxFor(i.task_type)) ?? 0) + 1);
+    return m;
+  }, [recruiterScopedItems]);
+
   const visibleItems = useMemo(
     () =>
-      items
+      recruiterScopedItems
         .filter((i) => {
+          if (boxFor(i.task_type) !== activeBox) return false;
           if (activeFilter !== "ALL" && i.task_type !== activeFilter) return false;
-          if (recruiterFilter === MINE_KEY) {
-            if (!(i.is_unassigned || i.recruiter_id === currentUserId)) return false;
-          } else if (recruiterFilter !== "ALL") {
-            const key = i.is_unassigned ? UNASSIGNED_KEY : i.recruiter_id ?? UNASSIGNED_KEY;
-            if (key !== recruiterFilter) return false;
-          }
           return true;
         })
         .sort((a, b) => {
@@ -258,7 +348,7 @@ export default function InboxView({
           if (b.priority === "high" && a.priority !== "high") return 1;
           return 0;
         }),
-    [items, activeFilter, recruiterFilter]
+    [recruiterScopedItems, activeBox, activeFilter]
   );
   const focused = visibleItems[Math.min(focusedIdx, visibleItems.length - 1)] ?? null;
 
@@ -271,11 +361,18 @@ export default function InboxView({
     return m;
   }, [visibleItems]);
 
+  // Type sub-filter chips are scoped to the active box (e.g. no point
+  // showing an "Incomplete profile" chip while inside Mandate Tasks).
+  const itemsInActiveBox = useMemo(
+    () => recruiterScopedItems.filter((i) => boxFor(i.task_type) === activeBox),
+    [recruiterScopedItems, activeBox]
+  );
+
   const filterCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const i of items) counts.set(i.task_type, (counts.get(i.task_type) ?? 0) + 1);
+    for (const i of itemsInActiveBox) counts.set(i.task_type, (counts.get(i.task_type) ?? 0) + 1);
     return counts;
-  }, [items]);
+  }, [itemsInActiveBox]);
 
   const recruiterOptions = useMemo(() => {
     const byKey = new Map<string, { label: string; count: number }>();
@@ -391,7 +488,6 @@ export default function InboxView({
 
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-6">
-      {noMandatesCard}
       {performanceCard}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -400,9 +496,9 @@ export default function InboxView({
             Priority Actions
           </h1>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
-            {items.length === 0
+            {recruiterScopedItems.length === 0
               ? "You're all caught up."
-              : `${items.length} open item${items.length === 1 ? "" : "s"} needing action`}
+              : `${recruiterScopedItems.length} open item${recruiterScopedItems.length === 1 ? "" : "s"} across the three boxes below`}
           </p>
         </div>
         <div className="text-[11px] text-slate-400 hidden md:flex items-center gap-3">
@@ -428,28 +524,93 @@ export default function InboxView({
         </div>
       )}
 
-      {items.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <Chip active={activeFilter === "ALL"} onClick={() => setActiveFilter("ALL")}>
-              All ({items.length})
-            </Chip>
-            {filterOptions.map((taskType) => {
-              const meta = metaFor(taskType);
-              const Icon = meta.icon;
-              const active = activeFilter === taskType;
-              return (
-                <Chip
-                  key={taskType}
-                  active={active}
-                  icon={<Icon className="w-3 h-3" />}
-                  onClick={() => setActiveFilter(active ? "ALL" : taskType)}
+      {/* The three fixed boxes -- always visible, always in this order, so
+          "what do I work on" never requires remembering where a filter was
+          left. Each is its own click target, not a chip buried in a row. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        {BOX_ORDER.map((box) => {
+          const meta = BOX_META[box];
+          const Icon = meta.icon;
+          const count = boxCounts.get(box) ?? 0;
+          const active = activeBox === box;
+          return (
+            <button
+              key={box}
+              onClick={() => setActiveBox(box)}
+              className={`text-left rounded-xl border p-4 transition-all ${
+                active ? `${meta.tint} ring-2 ring-offset-1 ring-current` : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className={`flex items-center gap-1.5 text-[13px] font-semibold ${active ? "" : "text-slate-900 dark:text-slate-100"}`}>
+                  <Icon className="w-4 h-4" />
+                  {meta.label}
+                </span>
+                <span
+                  className={`text-[12px] font-bold tabular-nums rounded-full px-2 py-0.5 ${
+                    active ? "bg-white/70" : count > 0 ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300" : "bg-slate-50 dark:bg-slate-800/50 text-slate-400"
+                  }`}
                 >
-                  {meta.label} ({filterCounts.get(taskType)})
-                </Chip>
-              );
-            })}
+                  {count}
+                </span>
+              </div>
+              <p className={`text-[11.5px] ${active ? "opacity-80" : "text-slate-400"}`}>{meta.description}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {activeBox === "pipeline" && (
+        <div className="bg-teal-50/60 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4 mb-4">
+          {!hasActiveMandates && (
+            <p className="text-[12px] text-teal-800 dark:text-teal-300 mb-3">
+              No active mandate assigned to you right now -- this is exactly the time to build pipeline ahead of the
+              next one landing.
+            </p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Link
+              href="/candidates/new"
+              className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-lg border border-teal-100 dark:border-teal-900 px-3 py-2.5 hover:bg-teal-50/50 dark:hover:bg-teal-900/20"
+            >
+              <UserPlus className="w-4 h-4 text-teal-600 shrink-0" />
+              <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-300">Add a new candidate</span>
+            </Link>
+            <Link
+              href="/candidates/bulk-upload"
+              className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-lg border border-teal-100 dark:border-teal-900 px-3 py-2.5 hover:bg-teal-50/50 dark:hover:bg-teal-900/20"
+            >
+              <UploadCloud className="w-4 h-4 text-teal-600 shrink-0" />
+              <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-300">Bulk upload resumes</span>
+            </Link>
           </div>
+        </div>
+      )}
+
+      {itemsInActiveBox.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {activeBox === "mandate" && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <Chip active={activeFilter === "ALL"} onClick={() => setActiveFilter("ALL")}>
+                All ({itemsInActiveBox.length})
+              </Chip>
+              {filterOptions.map((taskType) => {
+                const meta = metaFor(taskType);
+                const Icon = meta.icon;
+                const active = activeFilter === taskType;
+                return (
+                  <Chip
+                    key={taskType}
+                    active={active}
+                    icon={<Icon className="w-3 h-3" />}
+                    onClick={() => setActiveFilter(active ? "ALL" : taskType)}
+                  >
+                    {meta.label} ({filterCounts.get(taskType)})
+                  </Chip>
+                );
+              })}
+            </div>
+          )}
 
           {(recruiterOptions.length > 1 || currentUserId) && (
             <div className="flex items-center gap-1.5 shrink-0 ml-auto">
@@ -479,7 +640,7 @@ export default function InboxView({
         </div>
       )}
 
-      {items.length === 0 && !fetchError ? (
+      {recruiterScopedItems.length === 0 && !fetchError ? (
         <EmptyState
           className="py-20"
           title="Nothing needs your attention right now"
@@ -489,7 +650,7 @@ export default function InboxView({
         <EmptyState
           className="py-16"
           icon={<Flame className="w-5 h-5 text-slate-400" />}
-          title="No items in this filter"
+          title={`Nothing in ${BOX_META[activeBox].label} right now`}
           description={
             recruiterFilter === MINE_KEY
               ? "Nothing assigned to you or the team right now -- switch to \"Everyone\" above to see what else is open."
@@ -509,7 +670,11 @@ export default function InboxView({
               const isResolving = resolvingId === item.id;
               const group = groupFor(item.task_type);
               const prevGroup = idx > 0 ? groupFor(visibleItems[idx - 1].task_type) : null;
-              const showGroupHeader = group !== prevGroup;
+              // Only the Mandate Tasks box mixes several task types worth
+              // sub-grouping (Interviews / Client relations / etc) -- Build
+              // Pipeline and Profile Completion are each a single task type,
+              // so a group header would just repeat the box name for no reason.
+              const showGroupHeader = activeBox === "mandate" && group !== prevGroup;
               const GroupIcon = GROUP_META[group].icon;
               return (
                 <div key={item.id}>
