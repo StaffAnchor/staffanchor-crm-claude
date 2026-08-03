@@ -31,6 +31,11 @@ export type MandateSummary = {
   // Separate from status -- a mandate can be "filled" and archived, or
   // "on_hold" and archived, etc. See archive-mandate-button.tsx.
   is_archived: boolean;
+  // Number of openings this mandate needs, and how many are placed so far
+  // (placed derived live from candidate_mandate_links, never stored).
+  // headcount is usually 1 -- only rendered when >1.
+  headcount: number;
+  placed: number;
   created_at: string;
   daysOpen: number;
   linked: number;
@@ -73,9 +78,18 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                     <Building2 className="w-3 h-3 shrink-0" /> {m.client_name}
                   </p>
                 </div>
-                <Badge tone={STATUS_TONE[m.status] ?? "neutral"} className="normal-case tracking-normal shrink-0">
-                  {m.status.replace("_", " ")}
-                </Badge>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Badge tone={STATUS_TONE[m.status] ?? "neutral"} className="normal-case tracking-normal">
+                    {m.status.replace("_", " ")}
+                  </Badge>
+                  {m.is_archived && (
+                    <span title="Hidden from the active list">
+                      <Badge tone="neutral" className="normal-case tracking-normal opacity-70">
+                        archived
+                      </Badge>
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-4 text-[12px] text-slate-500 dark:text-slate-400 mb-3">
@@ -90,6 +104,11 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" /> {m.daysOpen}d open
                 </span>
+                {m.headcount > 1 && (
+                  <span className="flex items-center gap-1 font-medium text-slate-600 dark:text-slate-300">
+                    {m.placed}/{m.headcount} filled
+                  </span>
+                )}
               </div>
 
               <div className="mb-3">
@@ -177,7 +196,7 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className={open.headcount > 1 ? "grid grid-cols-4 gap-2" : "grid grid-cols-3 gap-2"}>
                 <div className="rounded-ros-lg border border-slate-100 dark:border-slate-800 px-3 py-2.5 text-center">
                   <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{open.daysOpen}</p>
                   <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">Days open</p>
@@ -190,6 +209,14 @@ export default function MandatesGrid({ mandates }: { mandates: MandateSummary[] 
                   <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{open.submitted}</p>
                   <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">Submitted+</p>
                 </div>
+                {open.headcount > 1 && (
+                  <div className="rounded-ros-lg border border-slate-100 dark:border-slate-800 px-3 py-2.5 text-center">
+                    <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                      {open.placed}/{open.headcount}
+                    </p>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">Openings filled</p>
+                  </div>
+                )}
               </div>
 
               {open.topMatch && (

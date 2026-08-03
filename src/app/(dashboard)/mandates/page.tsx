@@ -84,7 +84,7 @@ export default async function MandatesPage({
 
   let query = supabase
     .from("mandates")
-    .select("id, client_name, role_title, category, sub_domain, city, status, is_archived, created_at, auto_match_results")
+    .select("id, client_name, role_title, category, sub_domain, city, status, is_archived, headcount, created_at, auto_match_results")
     .order("created_at", { ascending: false });
   // is_archived is a visibility flag, separate from status (a mandate can
   // be "filled" and archived, "on_hold" and archived, etc. -- see
@@ -117,6 +117,10 @@ export default async function MandatesPage({
   const countsByMandate: Record<string, number> = {};
   const submittedByMandate: Record<string, number> = {};
   const staleFeedbackByMandate: Record<string, number> = {};
+  // Derived live from candidate_mandate_links (never a stored column) --
+  // single source of truth for "how many of this mandate's openings have
+  // we actually filled." See mandates.headcount / mandates/[id]/page.tsx.
+  const placedByMandate: Record<string, number> = {};
   // Same 4-day staleness threshold the mandate detail page's client-feedback
   // nudge already uses -- surfaced here too so it's visible without opening
   // every mandate one at a time.
@@ -137,6 +141,9 @@ export default async function MandatesPage({
     countsByMandate[l.mandate_id] = (countsByMandate[l.mandate_id] ?? 0) + 1;
     if (["submitted", "client_interview", "offer", "placed"].includes(l.stage)) {
       submittedByMandate[l.mandate_id] = (submittedByMandate[l.mandate_id] ?? 0) + 1;
+    }
+    if (l.stage === "placed") {
+      placedByMandate[l.mandate_id] = (placedByMandate[l.mandate_id] ?? 0) + 1;
     }
     if (l.stage === "submitted" && l.stage_updated_at && new Date(l.stage_updated_at).getTime() < staleCutoff) {
       staleFeedbackByMandate[l.mandate_id] = (staleFeedbackByMandate[l.mandate_id] ?? 0) + 1;
@@ -236,6 +243,8 @@ export default async function MandatesPage({
       city: m.city,
       status: m.status,
       is_archived: m.is_archived,
+      headcount: m.headcount,
+      placed: placedByMandate[m.id] ?? 0,
       created_at: m.created_at,
       daysOpen: daysOpenNum,
       linked,

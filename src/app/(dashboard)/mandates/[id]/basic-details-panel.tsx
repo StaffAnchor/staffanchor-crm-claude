@@ -17,6 +17,9 @@ export type MandateBasicDetails = {
   experience_min: number | null;
   experience_max: number | null;
   status: string;
+  // Number of hires this mandate needs -- see create-mandate-form.tsx.
+  // Distinct from team_size_band (the size of the team the HIRE manages).
+  headcount: number;
 };
 
 // "archived" is deliberately not a status value -- it's a separate
@@ -34,9 +37,14 @@ const STATUS_LABEL: Record<string, string> = {
 export default function BasicDetailsPanel({
   mandateId,
   initial,
+  placedCount = 0,
 }: {
   mandateId: string;
   initial: MandateBasicDetails;
+  // Read-only context, derived from candidate_mandate_links (stage='placed')
+  // -- shown next to headcount so "how many are left to fill" is visible
+  // without leaving this panel. Never editable here.
+  placedCount?: number;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -61,6 +69,7 @@ export default function BasicDetailsPanel({
     experience_min: initial.experience_min?.toString() ?? "",
     experience_max: initial.experience_max?.toString() ?? "",
     status: initial.status,
+    headcount: initial.headcount?.toString() ?? "1",
   });
 
   const subDomainOptions = subDomainsForCategory(form.category || null);
@@ -103,6 +112,7 @@ export default function BasicDetailsPanel({
         experience_min: form.experience_min ? Number(form.experience_min) : null,
         experience_max: form.experience_max ? Number(form.experience_max) : null,
         status: form.status,
+        headcount: form.headcount ? Number(form.headcount) : 1,
       })
       .eq("id", mandateId);
     setSaving(false);
@@ -138,6 +148,12 @@ export default function BasicDetailsPanel({
               {initial.budget_max ? ` – ${initial.budget_max}` : ""} L · Experience: {initial.experience_min ?? "—"}
               {initial.experience_max ? ` – ${initial.experience_max}` : ""} yrs · Status:{" "}
               {STATUS_LABEL[initial.status] ?? initial.status}
+              {initial.headcount > 1 && (
+                <>
+                  {" "}
+                  · Openings: {placedCount}/{initial.headcount} filled
+                </>
+              )}
             </p>
             {saved && (
               <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
@@ -306,6 +322,22 @@ export default function BasicDetailsPanel({
           onChange={(e) => setForm((f) => ({ ...f, experience_max: e.target.value }))}
           className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
         />
+      </div>
+
+      <div className="flex gap-2 items-center">
+        <div className="w-28 shrink-0">
+          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Openings</label>
+          <input
+            type="number"
+            min={1}
+            value={form.headcount}
+            onChange={(e) => setForm((f) => ({ ...f, headcount: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          />
+        </div>
+        {Number(form.headcount) > 1 && (
+          <p className="text-[11px] text-slate-400 pt-4">{placedCount} filled so far</p>
+        )}
       </div>
 
       <select

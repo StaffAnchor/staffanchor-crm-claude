@@ -153,6 +153,10 @@ export default async function MandateDetailPage({
   const submittedCount = (links ?? []).filter((l) =>
     ["submitted", "client_interview", "offer", "placed"].includes(l.stage)
   ).length;
+  // Derived live from candidate_mandate_links, never a stored column --
+  // single source of truth for "how many of this mandate's openings have
+  // we actually filled" (see mandates.headcount / basic-details-panel.tsx).
+  const placedCount = (links ?? []).filter((l) => l.stage === "placed").length;
   const daysOpenNum = daysOpen(mandate.created_at);
   const screenedCount = screenedCandidateIds.length;
 
@@ -207,7 +211,12 @@ export default async function MandateDetailPage({
           {mandate.is_archived ? (
             <UnarchiveMandateButton mandateId={id} />
           ) : (
-            <ArchiveMandateButton mandateId={id} currentStatus={mandate.status} />
+            <ArchiveMandateButton
+              mandateId={id}
+              currentStatus={mandate.status}
+              headcount={mandate.headcount}
+              placedCount={placedCount}
+            />
           )}
           <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
         </div>
@@ -232,7 +241,11 @@ export default async function MandateDetailPage({
 
       {/* Health strip -- everything a recruiter needs to answer "is this
           mandate in trouble" without opening a single panel below. */}
-      <div className={fillProbability ? "mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5" : "mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"}>
+      <div
+        className={`mt-3 grid grid-cols-2 gap-2 ${
+          [true, fillProbability, mandate.headcount > 1].filter(Boolean).length >= 3 ? "sm:grid-cols-6" : fillProbability ? "sm:grid-cols-5" : "sm:grid-cols-4"
+        }`}
+      >
         <StatTile label="Days open" value={daysOpenNum} icon={<CalendarDays className="h-4 w-4" />} accent={daysOpenNum >= 21} />
         <StatTile label="In pipeline" value={pipelineCount} icon={<Users className="h-4 w-4" />} />
         <StatTile label="Submitted to client" value={submittedCount} icon={<Share2 className="h-4 w-4" />} />
@@ -241,6 +254,14 @@ export default async function MandateDetailPage({
           value={pipelineCount > 0 ? `${screenedCount}/${pipelineCount}` : "—"}
           icon={<ClipboardCheck className="h-4 w-4" />}
         />
+        {mandate.headcount > 1 && (
+          <StatTile
+            label="Openings filled"
+            value={`${placedCount}/${mandate.headcount}`}
+            icon={<Users className="h-4 w-4" />}
+            accent={placedCount >= mandate.headcount}
+          />
+        )}
         {fillProbability && <FillProbabilityTile probability={fillProbability} />}
       </div>
       {fillProbability && (
@@ -350,7 +371,9 @@ export default async function MandateDetailPage({
                       experience_min: mandate.experience_min,
                       experience_max: mandate.experience_max,
                       status: mandate.status,
+                      headcount: mandate.headcount,
                     }}
+                    placedCount={placedCount}
                   />
                   <GoldStandardPanel
                     mandateId={id}

@@ -129,6 +129,21 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (m) => <span className="text-slate-600 dark:text-slate-300 tabular-nums">{m.submitted}</span>,
   },
   {
+    key: "openings",
+    label: "Openings filled",
+    // Only meaningful once a mandate has more than one opening -- most
+    // mandates are headcount=1, where "1/1 filled" would just be noise
+    // on top of the Status badge already showing "filled".
+    render: (m) =>
+      m.headcount > 1 ? (
+        <span className={`tabular-nums font-medium ${m.placed >= m.headcount ? "text-emerald-600" : "text-slate-600 dark:text-slate-300"}`}>
+          {m.placed}/{m.headcount}
+        </span>
+      ) : (
+        <span className="text-slate-300 dark:text-slate-600">—</span>
+      ),
+  },
+  {
     key: "daysOpen",
     label: "Days Open",
     render: (m) => <span className="text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">{m.daysOpen}d</span>,

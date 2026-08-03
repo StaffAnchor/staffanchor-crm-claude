@@ -35,7 +35,20 @@ const REASON_OPTIONS: Record<string, string[]> = {
 // (hide from the active list) once the outcome is something other than
 // open. Reactivating later (unarchive-mandate-button.tsx) never has to
 // guess what to restore the status to, because status was never touched.
-export default function ArchiveMandateButton({ mandateId, currentStatus }: { mandateId: string; currentStatus: string }) {
+export default function ArchiveMandateButton({
+  mandateId,
+  currentStatus,
+  headcount = 1,
+  placedCount = 0,
+}: {
+  mandateId: string;
+  currentStatus: string;
+  // Fill-progress context, shown so "Still open" vs "Filled" is an informed
+  // call rather than a guess -- e.g. 3 openings, 2 placed: the recruiter
+  // can see at a glance there's one more to go before picking "Filled".
+  headcount?: number;
+  placedCount?: number;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
@@ -100,6 +113,13 @@ export default function ArchiveMandateButton({ mandateId, currentStatus }: { man
               Settle this first -- if there's more than one opening and only some are filled, pick "Still open" and
               nothing else changes.
             </p>
+
+            {headcount > 1 && (
+              <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 rounded-lg px-3 py-2 mb-3">
+                {placedCount} of {headcount} openings filled so far
+                {placedCount < headcount ? ` -- ${headcount - placedCount} still to go.` : "."}
+              </p>
+            )}
 
             <div className="space-y-1.5 mb-3">
               {STATUS_OPTIONS.map((o) => (
