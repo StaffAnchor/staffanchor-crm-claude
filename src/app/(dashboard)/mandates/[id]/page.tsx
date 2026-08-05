@@ -20,7 +20,8 @@ import UnarchiveMandateButton from "./unarchive-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
 import DownloadJdButton from "./download-jd-button";
 import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
-import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList } from "lucide-react";
+import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
+import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
@@ -159,6 +160,15 @@ export default async function MandateDetailPage({
     .order("created_at", { ascending: false })
     .limit(500);
   const availableCandidates = (allCandidates ?? []).filter((c) => !linkedCandidateIds.has(c.id));
+
+  // LinkedIn-sourced profiles for this mandate -- kept in their own table
+  // (mandate_sourced_profiles), deliberately separate from the real pipeline
+  // (candidate_mandate_links, above) and quick-apply Applicants.
+  const { data: sourcedProfiles } = await supabase
+    .from("mandate_sourced_profiles")
+    .select("id, linkedin_url, full_name, location, current_company, outreach_status, notes, created_at, promoted_candidate_id")
+    .eq("mandate_id", id)
+    .order("created_at", { ascending: false });
 
   // Health-strip math -- the same signals the mandates list page already
   // computes per row (Needs sourcing / Aging, no submissions / stale
@@ -495,6 +505,14 @@ export default async function MandateDetailPage({
               label: "Sourcing",
               icon: <Users className="h-3.5 w-3.5" />,
               content: <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />,
+            },
+            {
+              key: "linkedin-sourced",
+              label: "LinkedIn Sourced",
+              icon: <Link2 className="h-3.5 w-3.5" />,
+              content: (
+                <LinkedInSourcedPanel mandateId={id} initialProfiles={(sourcedProfiles ?? []) as SourcedProfile[]} />
+              ),
             },
             {
               key: "sharing",

@@ -59,6 +59,7 @@ const SOURCE_LABEL: Record<string, string> = {
   bulk_import: "One-Time Upload (Zoho)",
   recruiter_created: "Recruiter Created",
   browser_extension: "LinkedIn (Chrome Extension)",
+  linkedin_sourced: "LinkedIn (Manual Sourcing)",
 };
 
 const RANGES = [

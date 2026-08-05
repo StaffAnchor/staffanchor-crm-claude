@@ -143,6 +143,7 @@ const ORIGIN_LABEL: Record<string, string> = {
   bulk_resume_upload: "Bulk CV Upload",
   bulk_import: "One-Time Upload (Zoho)",
   browser_extension: "LinkedIn (Chrome Extension)",
+  linkedin_sourced: "LinkedIn (Manual Sourcing)",
 };
 
 
