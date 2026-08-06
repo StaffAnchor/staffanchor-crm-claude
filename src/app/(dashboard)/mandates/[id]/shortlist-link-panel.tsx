@@ -79,12 +79,26 @@ export default function ShortlistLinkPanel({
               </>
             )}
           </div>
-          <button
-            onClick={handleCopy}
-            className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2"
-          >
-            {copied ? "Copied!" : "Copy link"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopy}
+              className="flex-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2"
+            >
+              {copied ? "Copied!" : "Copy link"}
+            </button>
+            {/* Staff (admin/recruiter/partner) signed into the CRM skip the
+                client email-OTP gate automatically (see is-staff-viewer.ts) --
+                this just gives a one-click way to sanity-check the link
+                without retyping it into a new tab by hand. */}
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-sm font-medium py-2"
+            >
+              Open in new tab ↗
+            </a>
+          </div>
         </div>
       ) : (
         <button
