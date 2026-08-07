@@ -21,6 +21,7 @@ import MandateStaffingControl from "./mandate-staffing-control";
 import DownloadJdButton from "./download-jd-button";
 import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
+import FeeSchedulePanel from "./fee-schedule-panel";
 import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
@@ -459,6 +460,7 @@ export default async function MandateDetailPage({
                     initialMustHaves={mandate.must_haves ?? []}
                     initialGoodToHaves={mandate.good_to_haves ?? []}
                   />
+                  <FeeSchedulePanel mandateId={id} initial={(mandate.fee_tranche_template ?? []) as never} />
                 </>
               ),
             },

@@ -41,10 +41,16 @@ export default async function DashboardLayout({
     { href: "/interviews", label: "Interviews", enabled: true },
     { href: "/reports", label: "Reports", enabled: true },
     { href: "/referrals", label: "Referrals", enabled: true },
+    // Business-model batch (Aug 2026): retention check-ins and target
+    // accounts are working tools for any recruiter; billing (real money,
+    // tranche status) stays admin-only like Team/Vendors below.
+    { href: "/retention", label: "Retention", enabled: true },
+    { href: "/targets", label: "Targets", enabled: true },
     ...(profile?.role === "admin"
       ? [
           { href: "/team", label: "Team", enabled: true },
           { href: "/vendors", label: "Vendors", enabled: true },
+          { href: "/billing", label: "Billing", enabled: true },
         ]
       : []),
   ];

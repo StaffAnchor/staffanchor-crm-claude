@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AssessmentForm from "./assessment-form";
+import VettingScorePanel from "./vetting-score-panel";
 import MandateDiscussions from "./mandate-discussions";
 import CareerTimelinePanel from "./career-timeline-panel";
 import NotesPanel from "./notes-panel";
@@ -75,6 +76,16 @@ export default async function CandidateDetailPage({
     .single();
 
   if (!candidate) notFound();
+
+  // Attributed to whoever actually saves the vetting score (vetting-score-panel.tsx),
+  // same "who did this, not who owns the record" principle as profile_completed_by.
+  const {
+    data: { user: viewerUser },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = viewerUser
+    ? await supabase.from("profiles").select("full_name, email").eq("id", viewerUser.id).single()
+    : { data: null };
+  const scorerName = viewerProfile?.full_name ?? viewerProfile?.email ?? "Unknown";
 
   // Smart regenerate-on-view: if the recruiter's manual assessment
   // (communication/confidence/attitude/job_stability scorecard) was saved
@@ -714,6 +725,31 @@ export default async function CandidateDetailPage({
               linkedMandateCities={linkedMandateCities}
             />
             <MandateDiscussions entries={(candidate.mandate_discussion_summaries ?? []) as never} />
+          </Card>
+
+          {/* The recruiter's own structured, documented judgment call --
+              deliberately separate from the AI-generated scoring above
+              (stability_score / ai_decision_flags / talent_micro_index).
+              This is the compounding vetting asset the business model is
+              actually built on. */}
+          <Card className="mt-4">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Vetting score</h2>
+              {typeof candidate.vetting_score_overall === "number" && (
+                <Badge tone="accent" size="sm">
+                  {candidate.vetting_score_overall}/100
+                </Badge>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+              Structured, per-criterion score -- the documented judgment behind why this candidate is worth
+              presenting, not just a note buried in text.
+            </p>
+            <VettingScorePanel
+              candidateId={candidate.id}
+              initial={(candidate.vetting_score ?? {}) as never}
+              scorerName={scorerName}
+            />
           </Card>
         </div>
       </div>
