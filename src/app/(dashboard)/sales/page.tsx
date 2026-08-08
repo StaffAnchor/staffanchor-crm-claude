@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Users2, Wallet, Trophy, TrendingUp, LineChart } from "lucide-react";
 import SalesBoard from "./sales-board";
 import SalesBriefingPanel, { type SalesBriefingItem } from "./sales-briefing-panel";
+import MarketSignalsPanel, { type MarketSignalRow } from "./market-signals-panel";
 import { formatDealValue, SOURCES, SOURCE_LABEL, STAGE_WIN_PROBABILITY, type SalesLeadScoredRow } from "./sales-constants";
 
 export default async function SalesPage() {
@@ -34,6 +35,14 @@ export default async function SalesPage() {
 
   const { data: briefing, error: briefingError } = await supabase.rpc("get_sales_briefing");
   const briefingItems = (briefingError ? [] : briefing ?? []) as SalesBriefingItem[];
+
+  const { data: signals, error: signalsError } = await supabase
+    .from("market_signals")
+    .select("*")
+    .eq("status", "new")
+    .order("detected_at", { ascending: false })
+    .limit(30);
+  const signalItems = (signalsError ? [] : signals ?? []) as MarketSignalRow[];
 
   const { data: profiles } = await supabase.from("profiles").select("id, full_name, email");
   const ownerNames: Record<string, string> = {};
@@ -131,6 +140,8 @@ export default async function SalesPage() {
           </div>
         </Card>
       )}
+
+      <MarketSignalsPanel initialItems={signalItems} fetchError={signalsError?.message ?? null} />
 
       <SalesBriefingPanel initialItems={briefingItems} fetchError={briefingError?.message ?? null} />
 

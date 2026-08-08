@@ -30,6 +30,7 @@ const SOURCE_TONE: Record<string, "neutral" | "accent" | "success" | "warning" |
   referral: "neutral",
   inbound: "neutral",
   website: "accent",
+  market_signal: "success",
 };
 
 // Loose company-name matching for duplicate detection -- strips common

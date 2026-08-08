@@ -33,6 +33,9 @@ export const SOURCES = [
   // Leads converted over from Employer Inquiries via "Move to Sales Lead" --
   // added to the sales_leads_source_check constraint alongside this entry.
   { key: "website", label: "Website" },
+  // One-click "Add as lead" from the Market Signals feed (funding/hiring
+  // news scan) on the Sales page -- see market-signals-panel.tsx.
+  { key: "market_signal", label: "Market Signal" },
 ] as const;
 
 export type SalesSource = (typeof SOURCES)[number]["key"];
