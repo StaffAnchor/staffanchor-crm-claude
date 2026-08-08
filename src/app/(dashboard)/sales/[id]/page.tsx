@@ -79,6 +79,17 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
               </div>
             </div>
           </div>
+          {/* Auto-created the moment this lead's stage is set to "won" --
+              see fn_sales_lead_won_creates_client(). Previously winning a
+              deal here didn't create a client record at all. */}
+          {row.converted_client_id && (
+            <Link
+              href={`/clients/${row.converted_client_id}`}
+              className="shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium px-3 py-1.5 transition-colors"
+            >
+              View client →
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-[12.5px]">

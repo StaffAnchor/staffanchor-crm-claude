@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Card } from "@/components/ui/card";
-import { Users2, Wallet, Trophy, TrendingUp } from "lucide-react";
+import { Users2, Wallet, Trophy, TrendingUp, LineChart } from "lucide-react";
 import SalesBoard from "./sales-board";
 import SalesBriefingPanel, { type SalesBriefingItem } from "./sales-briefing-panel";
-import { formatDealValue, SOURCES, SOURCE_LABEL, type SalesLeadScoredRow } from "./sales-constants";
+import { formatDealValue, SOURCES, SOURCE_LABEL, STAGE_WIN_PROBABILITY, type SalesLeadScoredRow } from "./sales-constants";
 
 export default async function SalesPage() {
   const supabase = await createClient();
@@ -52,6 +52,16 @@ export default async function SalesPage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const newThisMonth = rows.filter((r) => new Date(r.created_at) >= monthStart).length;
 
+  // Same auditable stage-weighted-odds approach as fill-probability.ts and
+  // the Morning Briefing billing forecast -- sum each open lead's deal
+  // value times its stage's historical win probability. Not a prediction
+  // of which leads will close, just an expected-value read on the whole
+  // open pipeline that moves as leads advance stages.
+  const forecastNewClientValue = openLeads.reduce(
+    (sum, r) => sum + (r.deal_value ?? 0) * (STAGE_WIN_PROBABILITY[r.stage] ?? 0),
+    0
+  );
+
   // Per-source conversion -- lets a recruiter see, e.g., whether the new
   // "Website" channel (converted from Employer Inquiries) actually closes
   // at a different rate than LinkedIn or Referral leads, not just how many
@@ -86,11 +96,17 @@ export default async function SalesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
         <StatTile icon={<Users2 className="w-4 h-4" />} label="Total leads" value={totalLeads} />
         <StatTile icon={<Wallet className="w-4 h-4" />} label="Open pipeline value" value={formatDealValue(openPipelineValue, "INR") ?? "—"} accent />
         <StatTile icon={<Trophy className="w-4 h-4" />} label="Win rate (closed leads)" value={winRate !== null ? `${winRate}%` : "—"} />
         <StatTile icon={<TrendingUp className="w-4 h-4" />} label="New this month" value={newThisMonth} />
+        <StatTile
+          icon={<LineChart className="w-4 h-4" />}
+          label="Forecasted new-client value"
+          value={formatDealValue(Math.round(forecastNewClientValue), "INR") ?? "—"}
+          accent
+        />
       </div>
 
       {bySource.length > 1 && (

@@ -13,7 +13,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, full_name, outreach_sender_name, outreach_sender_bio")
+    .eq("id", user.id)
+    .single();
   if (!profile || !["admin", "recruiter", "partner"].includes(profile.role)) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
@@ -41,6 +45,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     source: lead.source,
     notes: lead.notes,
     stage: lead.stage,
+    // Per-user outreach persona (task: "per-user AI outreach persona") --
+    // falls back to the founder voice when a rep hasn't set their own.
+    sender_name: profile.outreach_sender_name || profile.full_name,
+    sender_bio: profile.outreach_sender_bio,
   });
 
   if (!result.ok) {

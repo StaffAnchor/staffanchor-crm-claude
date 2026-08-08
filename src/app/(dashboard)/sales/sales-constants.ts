@@ -4,6 +4,12 @@
 // mandates pipeline everywhere else in this app.
 
 export const STAGES = [
+  // Merged in from the former separate /targets (target_accounts) page --
+  // both modeled "a company we want as a client, not yet signed" with no
+  // link between them, so one pipeline replaces two. Researching = pure
+  // account research, no outreach sent yet; Prospecting = outreach sent
+  // but no reply/conversation yet.
+  { key: "researching", label: "Researching" },
   { key: "prospecting", label: "Prospecting" },
   { key: "contacted", label: "Contacted" },
   { key: "meeting_booked", label: "Meeting Booked" },
@@ -55,6 +61,22 @@ export type SalesLeadRow = {
   stage_updated_at: string;
   created_at: string;
   updated_at: string;
+  converted_client_id: string | null;
+};
+
+// Stage-weighted odds of a lead actually converting to a signed client --
+// same auditable-heuristic philosophy as fill-probability.ts and the
+// Morning Briefing billing forecast (get_my_morning_briefing()), not
+// learned/AI. Kept here so the Sales page's own forecast tile and the
+// Morning Briefing RPC agree on the same numbers conceptually.
+export const STAGE_WIN_PROBABILITY: Record<string, number> = {
+  researching: 0.03,
+  prospecting: 0.08,
+  contacted: 0.15,
+  meeting_booked: 0.35,
+  proposal_sent: 0.6,
+  won: 1,
+  lost: 0,
 };
 
 export type SalesActivityRow = {

@@ -1,4 +1,5 @@
-import { CalendarClock, Clock, Sparkles, MessageSquareWarning, IndianRupee, Target } from "lucide-react";
+import Link from "next/link";
+import { CalendarClock, Clock, Sparkles, MessageSquareWarning, IndianRupee, Target, PhoneCall } from "lucide-react";
 
 // The "operating center" view from the ROS product direction: instead of a
 // recruiter piecing together "what does my day look like" from three boxes
@@ -17,6 +18,8 @@ export default function MorningBriefing({
   clientsWaiting,
   predictedBillingLakhs,
   topMandate,
+  leadsNeedingFollowup,
+  predictedNewClientValueLakhs,
 }: {
   firstName: string;
   interviewsToday: number;
@@ -25,6 +28,8 @@ export default function MorningBriefing({
   clientsWaiting: number;
   predictedBillingLakhs: number;
   topMandate: string | null;
+  leadsNeedingFollowup: number;
+  predictedNewClientValueLakhs: number;
 }) {
   const tiles = [
     {
@@ -51,12 +56,19 @@ export default function MorningBriefing({
       label: clientsWaiting === 1 ? "client waiting" : "clients waiting",
       tint: clientsWaiting > 0 ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400",
     },
+    {
+      icon: PhoneCall,
+      value: leadsNeedingFollowup,
+      label: leadsNeedingFollowup === 1 ? "prospect gone quiet" : "prospects gone quiet",
+      tint: leadsNeedingFollowup > 0 ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400",
+      href: "/sales",
+    },
   ];
 
   return (
     <div className="rounded-xl border border-teal-200 dark:border-teal-900 bg-gradient-to-br from-teal-50 to-white dark:from-teal-950/30 dark:to-slate-900 p-5 mb-4">
       <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-3">Good morning, {firstName}.</p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
         {tiles.map((t, i) => {
           const Icon = t.icon;
           return (
@@ -83,6 +95,15 @@ export default function MorningBriefing({
             <Target className="w-3.5 h-3.5 text-teal-600" />
             Highest priority: <span className="font-semibold text-slate-900 dark:text-slate-100">{topMandate}</span>
           </span>
+        )}
+        {predictedNewClientValueLakhs > 0 && (
+          <Link href="/sales" className="flex items-center gap-1.5 hover:text-teal-700 dark:hover:text-teal-400 transition-colors">
+            <IndianRupee className="w-3.5 h-3.5 text-teal-600" />
+            Forecasted new-client pipeline:{" "}
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
+              ₹{predictedNewClientValueLakhs.toLocaleString("en-IN")}L
+            </span>
+          </Link>
         )}
       </div>
     </div>

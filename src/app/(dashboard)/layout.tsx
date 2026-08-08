@@ -41,11 +41,13 @@ export default async function DashboardLayout({
     { href: "/interviews", label: "Interviews", enabled: true },
     { href: "/reports", label: "Reports", enabled: true },
     { href: "/referrals", label: "Referrals", enabled: true },
-    // Business-model batch (Aug 2026): retention check-ins and target
-    // accounts are working tools for any recruiter; billing (real money,
-    // tranche status) stays admin-only like Team/Vendors below.
+    // Business-model batch (Aug 2026): retention check-ins are a working
+    // tool for any recruiter. The former separate "Targets" page was merged
+    // into Sales as its own "Researching" stage (see sales-constants.ts) --
+    // both modeled the same "not yet a client" concept, so one pipeline
+    // replaces two. Billing (real money, tranche status) stays admin-only
+    // like Team/Vendors below.
     { href: "/retention", label: "Retention", enabled: true },
-    { href: "/targets", label: "Targets", enabled: true },
     ...(profile?.role === "admin"
       ? [
           { href: "/team", label: "Team", enabled: true },

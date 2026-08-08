@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, Building2, Link2, CalendarClock, X, AlertTriangle, Sparkles, NotebookText } from "lucide-react";
+import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import QuickOutreachModal from "./quick-outreach-modal";
 import {
   STAGES,
@@ -84,8 +85,26 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
 
+  // Drag-and-drop between kanban columns -- same stage-change side effect
+  // (moveStage) as the dropdown below, just a second entry point into it.
+  // A short activation distance lets dnd-kit tell a click on the card
+  // (navigate to detail) apart from a real drag (change stage).
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: lead.id,
+    data: { lead },
+  });
+  const style = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 20 }
+    : undefined;
+
   return (
-    <div className="rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-ros-sm hover:shadow-ros-md hover:-translate-y-px transition-all duration-200 ease-ros">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-ros-sm hover:shadow-ros-md hover:-translate-y-px transition-all duration-200 ease-ros touch-none ${isDragging ? "opacity-50 cursor-grabbing" : "cursor-grab"}`}
+    >
       <Link href={`/sales/${lead.id}`} className="block group">
         <div className="flex items-start justify-between gap-2">
           <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
@@ -149,6 +168,40 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+function StageColumn({
+  stageKey,
+  label,
+  leads,
+  ownerNames,
+}: {
+  stageKey: string;
+  label: string;
+  leads: SalesLeadScoredRow[];
+  ownerNames: Record<string, string>;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stageKey });
+  const stageValue = leads.reduce((sum, l) => sum + (l.deal_value ?? 0), 0);
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-w-[200px] rounded-ros-lg transition-colors duration-150 ${isOver ? "bg-blue-50/60 dark:bg-blue-950/20 ring-1 ring-blue-300 dark:ring-blue-800" : ""}`}
+    >
+      <div className="flex items-center justify-between mb-2 px-1 pt-1">
+        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
+        <span className="text-[11px] font-semibold text-slate-400 tabular-nums">{leads.length}</span>
+      </div>
+      {stageValue > 0 && <p className="text-[10.5px] text-slate-400 px-1 mb-2 -mt-1">{formatDealValue(stageValue, "INR")}</p>}
+      <div className="space-y-2 px-1 pb-2 min-h-[40px]">
+        {leads.map((lead) => (
+          <LeadCard key={lead.id} lead={lead} ownerName={lead.owner_id ? ownerNames[lead.owner_id] : undefined} />
+        ))}
+        {leads.length === 0 && <p className="text-[11px] text-slate-300 dark:text-slate-700">—</p>}
+      </div>
     </div>
   );
 }
@@ -403,11 +456,27 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
   const [showAdd, setShowAdd] = useState(false);
   const [showOutreach, setShowOutreach] = useState(false);
   const [sortByPriority, setSortByPriority] = useState(false);
+  const supabaseForBoard = createClient();
 
   // URL-based, like Candidates/Mandates -- so the search survives clicking
   // into a lead and back, instead of silently resetting (gap #8, July 2026
   // audit: Sales was the one list page whose filter state didn't round-trip).
   const router = useRouter();
+
+  // 8px activation distance -- small enough that a real drag still feels
+  // immediate, large enough that a plain click on the card (to open the
+  // detail page via the inner Link) doesn't get mistaken for a drag.
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const lead = active.data.current?.lead as SalesLeadScoredRow | undefined;
+    const newStage = String(over.id);
+    if (!lead || lead.stage === newStage) return;
+    const ok = await moveStage(supabaseForBoard, lead, newStage);
+    if (ok) router.refresh();
+  }
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";
@@ -500,29 +569,13 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
           description="Add your first prospect — from LinkedIn, Apollo, Lusha, ZoomInfo, or a referral."
         />
       ) : (
-        <div className="grid grid-cols-6 gap-3 items-start overflow-x-auto">
-          {STAGES.map((s) => {
-            const stageLeads = byStage[s.key] ?? [];
-            const stageValue = stageLeads.reduce((sum, l) => sum + (l.deal_value ?? 0), 0);
-            return (
-              <div key={s.key} className="min-w-[200px]">
-                <div className="flex items-center justify-between mb-2 px-1">
-                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{s.label}</p>
-                  <span className="text-[11px] font-semibold text-slate-400 tabular-nums">{stageLeads.length}</span>
-                </div>
-                {stageValue > 0 && (
-                  <p className="text-[10.5px] text-slate-400 px-1 mb-2 -mt-1">{formatDealValue(stageValue, "INR")}</p>
-                )}
-                <div className="space-y-2">
-                  {stageLeads.map((lead) => (
-                    <LeadCard key={lead.id} lead={lead} ownerName={lead.owner_id ? ownerNames[lead.owner_id] : undefined} />
-                  ))}
-                  {stageLeads.length === 0 && <p className="text-[11px] text-slate-300 dark:text-slate-700 px-1">—</p>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-7 gap-3 items-start overflow-x-auto">
+            {STAGES.map((s) => (
+              <StageColumn key={s.key} stageKey={s.key} label={s.label} leads={byStage[s.key] ?? []} ownerNames={ownerNames} />
+            ))}
+          </div>
+        </DndContext>
       )}
 
       {showAdd && <AddLeadModal onClose={() => setShowAdd(false)} existingLeads={leads} />}

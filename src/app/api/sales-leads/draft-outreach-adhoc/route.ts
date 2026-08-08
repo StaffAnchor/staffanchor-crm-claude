@@ -17,7 +17,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, full_name, outreach_sender_name, outreach_sender_bio")
+    .eq("id", user.id)
+    .single();
   if (!profile || !["admin", "recruiter", "partner"].includes(profile.role)) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
@@ -38,6 +42,8 @@ export async function POST(req: NextRequest) {
     company_industry: typeof body?.company_industry === "string" ? body.company_industry.trim() || null : null,
     notes: typeof body?.notes === "string" ? body.notes.trim() || null : null,
     role_hint: typeof body?.role_hint === "string" ? body.role_hint.trim() || null : null,
+    sender_name: profile.outreach_sender_name || profile.full_name,
+    sender_bio: profile.outreach_sender_bio,
   });
 
   if (!result.ok) {

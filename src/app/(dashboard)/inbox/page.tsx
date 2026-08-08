@@ -45,6 +45,8 @@ export default async function InboxPage() {
     clients_waiting: number;
     predicted_billing_lakhs: number;
     top_mandate: string | null;
+    leads_needing_followup: number;
+    predicted_new_client_value_lakhs: number;
   };
   let briefing: MorningBriefingData | null = null;
   let firstName = "there";
@@ -90,6 +92,8 @@ export default async function InboxPage() {
               clientsWaiting={Number(briefing.clients_waiting ?? 0)}
               predictedBillingLakhs={Number(briefing.predicted_billing_lakhs ?? 0)}
               topMandate={briefing.top_mandate}
+              leadsNeedingFollowup={Number(briefing.leads_needing_followup ?? 0)}
+              predictedNewClientValueLakhs={Number(briefing.predicted_new_client_value_lakhs ?? 0)}
             />
           )}
           {scorecard ? (

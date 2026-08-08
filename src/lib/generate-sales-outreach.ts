@@ -37,6 +37,13 @@ export async function generateSalesOutreach(input: {
   // Overridable so an ad hoc draft (company spotted on LinkedIn, not yet a
   // sales_leads row) can still be signed correctly; defaults to the founder.
   sender_name?: string | null;
+  // Per-user outreach persona (profiles.outreach_sender_bio) -- lets a rep
+  // other than the founder draft in their own voice/credibility instead of
+  // every message claiming "16 years leading sales teams" regardless of who
+  // is actually sending it. One free-text sentence of background, e.g.
+  // "I run partnerships at StaffAnchor and spent 6 years in SaaS sales
+  // before this." Falls back to the original founder credibility line.
+  sender_bio?: string | null;
   // The specific open role spotted on LinkedIn (e.g. "Inside Sales
   // Specialist") -- lets the opener reference it directly ("I understand
   // you are hiring for X") instead of a generic "growing your sales team".
@@ -66,8 +73,10 @@ export async function generateSalesOutreach(input: {
       : "Write a cold email. Include a short, plain subject line on its own first line prefixed 'Subject: ', then the email body. Keep the body to 3-5 short sentences, and sign off with just a first name placeholder.";
 
   const senderName = input.sender_name?.trim() || "Gagan";
+  const senderBio = input.sender_bio?.trim() || null;
+  const senderRoleIntro = senderBio ? "at StaffAnchor" : "founder of StaffAnchor";
 
-  const prompt = `You are drafting a first-person outreach message for ${senderName}, founder of StaffAnchor -- a recruitment firm that focuses solely on Revenue/Sales roles hiring for B2B / Enterprise SaaS companies (Account Executives, SDRs/BDRs, Sales Leaders, Inside Sales Specialists, Customer Success/Revenue roles). ${senderName} sends this himself, as the founder -- write it in first person ("I"), not as a company/brand voice.
+  const prompt = `You are drafting a first-person outreach message for ${senderName}, ${senderRoleIntro} -- a recruitment firm that focuses solely on Revenue/Sales roles hiring for B2B / Enterprise SaaS companies (Account Executives, SDRs/BDRs, Sales Leaders, Inside Sales Specialists, Customer Success/Revenue roles). ${senderName} sends this himself/herself -- write it in first person ("I"), not as a company/brand voice.
 
 VOICE -- this is the single most important instruction. Match this register exactly: plain, direct, unpolished, zero marketing language. Short sentences. State facts flatly instead of dressing them up. No metaphors, no "I understand how challenging X is", no "the exact profile that drives results", no "hire with confidence", no "reduce ramp time", no "data-backed", no "passionate", no "synergy", no exclamation points. This is a busy founder messaging another busy founder -- respect their time and don't perform enthusiasm.
 
@@ -77,7 +86,11 @@ Here is the exact voice and structure to follow (a real message ${senderName} wr
 Structure to follow, adapted to the context below:
 1. Open by naming the specific reason for reaching out -- if a role they're hiring for is given in the context, name it directly ("I understand you are hiring for X"); if not, keep this opener general rather than inventing a role.
 2. One plain sentence stating what StaffAnchor does (Revenue/Sales roles hiring for B2B/Enterprise SaaS companies) -- not a pitch, just a fact.
-3. One sentence of credibility: before this, ${senderName} spent 16 years leading large B2B/Enterprise SaaS sales and revenue teams, so he knows firsthand what it takes to hire the right sales talent.
+3. One sentence of credibility: ${
+    senderBio
+      ? `use this background, adapted to flow naturally in first person -- "${senderBio}"`
+      : `before this, ${senderName} spent 16 years leading large B2B/Enterprise SaaS sales and revenue teams, so he knows firsthand what it takes to hire the right sales talent`
+  }.
 4. Close with a soft, low-pressure ask about being open to working with an external hiring partner -- not "let's hop on a call" or "I'd love to connect" (too eager), something closer to "if you're open to it, happy to connect."
 
 Do not invent facts about the company that aren't given below (funding, headcount, specific detail beyond a named role) -- if you don't have a detail, keep it general rather than inventing one.
