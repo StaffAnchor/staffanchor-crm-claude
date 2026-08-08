@@ -13,6 +13,22 @@ import { Button } from "@/components/ui/button";
 // a rep a real, current reason to reach out instead of every lead starting
 // from a cold search. Populated by a scheduled scan, not by app code; see
 // the migration comment on market_signals for the full picture.
+export type CompanyCategory =
+  | "b2b_saas"
+  | "b2c_d2c"
+  | "fintech"
+  | "marketplace"
+  | "retail_ecommerce"
+  | "healthtech"
+  | "manufacturing_industrial"
+  | "mobility_ev"
+  | "logistics_supply_chain"
+  | "edtech"
+  | "media_entertainment"
+  | "other";
+
+export type SalesLeadershipFit = "strong_fit" | "possible_fit" | "unlikely_fit";
+
 export type MarketSignalRow = {
   id: string;
   headline: string;
@@ -24,12 +40,42 @@ export type MarketSignalRow = {
   detected_at: string;
   status: "new" | "dismissed" | "added_as_lead";
   added_as_lead_id: string | null;
+  company_category: CompanyCategory | null;
+  sales_leadership_fit: SalesLeadershipFit | null;
+  fit_reason: string | null;
 };
 
 const SIGNAL_META: Record<MarketSignalRow["signal_type"], { icon: typeof Newspaper; label: string; tint: string }> = {
   funding: { icon: TrendingUp, label: "Funding raised", tint: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
   hiring: { icon: Users, label: "Hiring", tint: "bg-sky-50 text-sky-700 ring-sky-200" },
   sales_hiring: { icon: Briefcase, label: "Hiring sales roles", tint: "bg-blue-50 text-blue-700 ring-blue-200" },
+};
+
+const CATEGORY_LABEL: Record<CompanyCategory, string> = {
+  b2b_saas: "B2B SaaS",
+  b2c_d2c: "B2C / D2C",
+  fintech: "Fintech",
+  marketplace: "Marketplace",
+  retail_ecommerce: "Retail / Ecommerce",
+  healthtech: "Healthtech",
+  manufacturing_industrial: "Manufacturing / Industrial",
+  mobility_ev: "Mobility / EV",
+  logistics_supply_chain: "Logistics / Supply Chain",
+  edtech: "Edtech",
+  media_entertainment: "Media / Entertainment",
+  other: "Other",
+};
+
+// Whether this company would plausibly need to hire Enterprise/SaaS-style
+// sales leadership (VP Sales, Head of Sales, enterprise AEs) -- StaffAnchor's
+// actual specialty -- versus retail/consumer sales roles that aren't a fit
+// for this firm at all. Set by the daily scan alongside the category, so a
+// rep can skim past signals outside the niche instead of reading every
+// summary to judge fit themselves.
+const FIT_META: Record<SalesLeadershipFit, { label: string; tone: "success" | "warning" | "neutral" }> = {
+  strong_fit: { label: "Strong fit", tone: "success" },
+  possible_fit: { label: "Possible fit", tone: "warning" },
+  unlikely_fit: { label: "Unlikely fit", tone: "neutral" },
 };
 
 export default function MarketSignalsPanel({
@@ -45,7 +91,18 @@ export default function MarketSignalsPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
 
-  const open = items.filter((i) => i.status === "new");
+  // Strong fits float to the top -- that's the whole point of classifying
+  // by sales_leadership_fit: a rep should see "needs enterprise sales
+  // leadership" prospects before "probably not a fit" ones, not just
+  // whatever the scan found most recently.
+  const FIT_RANK: Record<string, number> = { strong_fit: 0, possible_fit: 1, unlikely_fit: 2 };
+  const open = items
+    .filter((i) => i.status === "new")
+    .sort((a, b) => {
+      const rankDiff = (FIT_RANK[a.sales_leadership_fit ?? ""] ?? 1.5) - (FIT_RANK[b.sales_leadership_fit ?? ""] ?? 1.5);
+      if (rankDiff !== 0) return rankDiff;
+      return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
+    });
 
   async function dismiss(id: string) {
     setBusyId(id);
@@ -63,7 +120,12 @@ export default function MarketSignalsPanel({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    const noteLines = [signal.summary, signal.source_url ? `Source: ${signal.source_url}` : null].filter(Boolean);
+    const noteLines = [
+      signal.summary,
+      signal.company_category ? `Category: ${CATEGORY_LABEL[signal.company_category]}` : null,
+      signal.fit_reason ? `Sales leadership fit: ${signal.fit_reason}` : null,
+      signal.source_url ? `Source: ${signal.source_url}` : null,
+    ].filter(Boolean);
     const { data: lead, error } = await supabase
       .from("sales_leads")
       .insert({
@@ -136,12 +198,25 @@ export default function MarketSignalsPanel({
                       <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
                         {meta.label}
                       </Badge>
+                      {signal.company_category && (
+                        <Badge tone="accent" size="sm" className="normal-case tracking-normal">
+                          {CATEGORY_LABEL[signal.company_category]}
+                        </Badge>
+                      )}
+                      {signal.sales_leadership_fit && (
+                        <Badge tone={FIT_META[signal.sales_leadership_fit].tone} size="sm" className="normal-case tracking-normal">
+                          {FIT_META[signal.sales_leadership_fit].label}
+                        </Badge>
+                      )}
                       {signal.founder_name && (
                         <span className="text-[11px] text-slate-400">Founder: {signal.founder_name}</span>
                       )}
                     </div>
                     <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{signal.headline}</p>
                     {signal.summary && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">{signal.summary}</p>}
+                    {signal.fit_reason && (
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 italic">{signal.fit_reason}</p>
+                    )}
                     {signal.source_url && (
                       <a
                         href={signal.source_url}
