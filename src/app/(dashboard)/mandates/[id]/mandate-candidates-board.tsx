@@ -53,7 +53,8 @@ function recommendationColor(rec: string | undefined) {
   return RECOMMENDATION_COLOR[rec.toLowerCase()] ?? "bg-slate-400";
 }
 
-function initials(name: string) {
+function initials(name: string | null | undefined) {
+  if (!name) return "?";
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
 }
@@ -64,9 +65,10 @@ const AVATAR_COLORS = [
   "bg-blue-500", "bg-violet-500", "bg-rose-500", "bg-amber-500",
   "bg-emerald-500", "bg-cyan-500", "bg-fuchsia-500", "bg-orange-500",
 ];
-function avatarColor(name: string) {
+function avatarColor(name: string | null | undefined) {
+  const key = name || "?";
   let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 

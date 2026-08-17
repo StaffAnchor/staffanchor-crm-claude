@@ -176,7 +176,8 @@ const RECOMMENDATION_TONE: Record<string, BadgeTone> = {
   "Not a Fit": "danger",
 };
 
-function initialsFor(name: string) {
+function initialsFor(name: string | null | undefined) {
+  if (!name) return "?";
   return name
     .split(" ")
     .map((p) => p[0])
