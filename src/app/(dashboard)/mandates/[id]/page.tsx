@@ -98,6 +98,30 @@ export default async function MandateDetailPage({
     .eq("mandate_id", id)
     .order("display_order");
 
+  // Per-candidate answers to this mandate's Application Questions, so the
+  // Board/Table views can show a quick-view popover on hover instead of
+  // requiring a click into the candidate's profile just to see them.
+  const { data: applicationAnswerRows } = await supabase
+    .from("mandate_application_answers")
+    .select("candidate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)")
+    .eq("mandate_id", id);
+
+  const applicationAnswersByCandidate: Record<
+    string,
+    { question_text: string; answer_type: string; answer_text: string | null; answer_number: number | null; answer_bool: boolean | null }[]
+  > = {};
+  for (const row of applicationAnswerRows ?? []) {
+    const q = row.mandate_screening_questions as unknown as { question_text: string; answer_type: string } | null;
+    if (!q) continue;
+    (applicationAnswersByCandidate[row.candidate_id] ??= []).push({
+      question_text: q.question_text,
+      answer_type: q.answer_type,
+      answer_text: row.answer_text,
+      answer_number: row.answer_number,
+      answer_bool: row.answer_bool,
+    });
+  }
+
   const { data: existingToken } = await supabase
     .from("shortlist_tokens")
     .select("token, first_opened_at, last_opened_at, open_count")
@@ -353,6 +377,7 @@ export default async function MandateDetailPage({
               };
             })
             .filter((r): r is MandateCandidateRow => r !== null)}
+          applicationAnswersByCandidate={applicationAnswersByCandidate}
           mandateContext={{
             mandateId: id,
             role_title: mandate.role_title,

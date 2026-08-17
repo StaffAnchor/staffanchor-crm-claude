@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { STAGES, applyStageChange, type Stage } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
+import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 
 // Kanban view of the same rows the table shows, grouped by pipeline stage --
 // inspired by the reference ATS screenshot the user shared ("Look how
@@ -83,6 +84,7 @@ export default function MandateCandidatesBoard({
   mandateContext,
   teamMembers = [],
   isAdmin = false,
+  applicationAnswersByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: { mandateId: string; role_title: string; client_name: string; [key: string]: unknown };
@@ -90,6 +92,7 @@ export default function MandateCandidatesBoard({
   // -- see mandate-candidates-view.tsx.
   teamMembers?: { id: string; full_name: string | null; email: string }[];
   isAdmin?: boolean;
+  applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -282,12 +285,14 @@ export default function MandateCandidatesBoard({
                           {initials(row.candidate.full_name)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <Link
-                            href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
-                            className="text-[12.5px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate block"
-                          >
-                            {row.candidate.full_name}
-                          </Link>
+                          <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[row.candidate.id]}>
+                            <Link
+                              href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
+                              className="text-[12.5px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate block"
+                            >
+                              {row.candidate.full_name}
+                            </Link>
+                          </ApplicationAnswersQuickView>
                           <p className="text-[10.5px] text-slate-400 truncate">
                             {row.candidate.sub_domain ?? "—"}
                             {row.candidate.current_employer ? ` · ${row.candidate.current_employer}` : ""}

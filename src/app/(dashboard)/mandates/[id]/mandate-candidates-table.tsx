@@ -9,6 +9,7 @@ import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-s
 import { STAGES, applyStageChange, type Stage, type StageSource } from "@/lib/mandate-stage";
 import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
+import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -64,6 +65,7 @@ export default function MandateCandidatesTable({
   mandateContext,
   teamMembers = [],
   isAdmin = false,
+  applicationAnswersByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
@@ -73,6 +75,7 @@ export default function MandateCandidatesTable({
   // recruiters from unknowingly working the same person on this mandate.
   teamMembers?: { id: string; full_name: string | null; email: string }[];
   isAdmin?: boolean;
+  applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
 }) {
   const ownerLabel = (id: string | null) => {
     if (!id) return "Unassigned";
@@ -279,9 +282,11 @@ export default function MandateCandidatesTable({
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
               <td className="px-4 py-3">
-                <Link href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
-                  {l.candidate.full_name}
-                </Link>
+                <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
+                  <Link href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
+                    {l.candidate.full_name}
+                  </Link>
+                </ApplicationAnswersQuickView>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
               </td>
               <td className="px-4 py-3">

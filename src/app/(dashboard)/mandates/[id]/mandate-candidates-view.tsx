@@ -5,6 +5,7 @@ import { LayoutGrid, Table2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesBoard from "./mandate-candidates-board";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
+import type { ApplicationAnswer } from "./application-answers-quick-view";
 
 // Thin toggle wrapper -- Board is the new default (matches the reference
 // ATS screenshot the user liked). Both views now share the same bulk
@@ -16,6 +17,7 @@ export default function MandateCandidatesView({
   mandateContext,
   teamMembers = [],
   isAdmin = false,
+  applicationAnswersByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
@@ -23,6 +25,9 @@ export default function MandateCandidatesView({
   // reassignment, threaded down to both Board and Table views.
   teamMembers?: { id: string; full_name: string | null; email: string }[];
   isAdmin?: boolean;
+  // Per-candidate Application Question answers for this mandate, so a
+  // hover on the candidate's name can quick-view them without navigating.
+  applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
 }) {
   const [view, setView] = useState<"board" | "table">("board");
 
@@ -50,9 +55,21 @@ export default function MandateCandidatesView({
       </div>
 
       {view === "board" ? (
-        <MandateCandidatesBoard rows={rows} mandateContext={mandateContext} teamMembers={teamMembers} isAdmin={isAdmin} />
+        <MandateCandidatesBoard
+          rows={rows}
+          mandateContext={mandateContext}
+          teamMembers={teamMembers}
+          isAdmin={isAdmin}
+          applicationAnswersByCandidate={applicationAnswersByCandidate}
+        />
       ) : (
-        <MandateCandidatesTable rows={rows} mandateContext={mandateContext} teamMembers={teamMembers} isAdmin={isAdmin} />
+        <MandateCandidatesTable
+          rows={rows}
+          mandateContext={mandateContext}
+          teamMembers={teamMembers}
+          isAdmin={isAdmin}
+          applicationAnswersByCandidate={applicationAnswersByCandidate}
+        />
       )}
     </div>
   );
