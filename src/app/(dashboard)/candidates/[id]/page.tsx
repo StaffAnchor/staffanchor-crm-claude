@@ -29,7 +29,8 @@ import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 // no per-category color-coding (see candidates-table.tsx for the reasoning:
 // color-coding a value that's already shown elsewhere on the page is noise,
 // not signal).
-function initialsFor(name: string) {
+function initialsFor(name: string | null | undefined) {
+  if (!name) return "?";
   return name
     .split(" ")
     .map((p) => p[0])
