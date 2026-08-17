@@ -329,6 +329,31 @@ export default async function CandidateDetailPage({
     .select("id, client_name, role_title")
     .eq("status", "open");
 
+  // This candidate's answers to any mandate's custom Application Questions
+  // (candidate-facing, answered on jobs.staffanchor.com Quick Apply -- see
+  // application-questions-panel.tsx on the mandate page). Grouped by mandate
+  // so MandateLinksPanel can show each link's answers inline instead of a
+  // recruiter having to go dig through the mandate's own tab.
+  const { data: applicationAnswerRows } = await supabase
+    .from("mandate_application_answers")
+    .select("mandate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)")
+    .eq("candidate_id", id);
+  const applicationAnswersByMandate: Record<
+    string,
+    { question_text: string; answer_type: string; answer_text: string | null; answer_number: number | null; answer_bool: boolean | null }[]
+  > = {};
+  (applicationAnswerRows ?? []).forEach((r) => {
+    const q = r.mandate_screening_questions as unknown as { question_text: string; answer_type: string } | null;
+    if (!q) return;
+    (applicationAnswersByMandate[r.mandate_id] ??= []).push({
+      question_text: q.question_text,
+      answer_type: q.answer_type,
+      answer_text: r.answer_text,
+      answer_number: r.answer_number,
+      answer_bool: r.answer_bool,
+    });
+  });
+
   const assessment = (candidate.recruiter_assessment ?? {}) as Record<string, unknown>;
   const segment = (candidate.segment_data ?? {}) as Record<string, unknown>;
   const selfAssessment = (candidate.self_assessment ?? {}) as Record<string, unknown>;
@@ -670,6 +695,7 @@ export default async function CandidateDetailPage({
                       candidateName={candidate.full_name}
                       links={(links ?? []) as never}
                       openMandates={openMandates ?? []}
+                      applicationAnswersByMandate={applicationAnswersByMandate}
                     />
                   ),
                 },

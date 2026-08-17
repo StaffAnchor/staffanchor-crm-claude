@@ -22,6 +22,7 @@ import DownloadJdButton from "./download-jd-button";
 import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
+import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
 import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +91,12 @@ export default async function MandateDetailPage({
     .select("candidate_id")
     .eq("mandate_id", id);
   const screenedCandidateIds = Array.from(new Set((screeningRows ?? []).map((r) => r.candidate_id)));
+
+  const { data: applicationQuestions } = await supabase
+    .from("mandate_screening_questions")
+    .select("id, question_text, answer_type, is_required, display_order")
+    .eq("mandate_id", id)
+    .order("display_order");
 
   const { data: existingToken } = await supabase
     .from("shortlist_tokens")
@@ -523,6 +530,10 @@ export default async function MandateDetailPage({
               content: (
                 <>
                   <QuickApplyFunnelPanel mandateId={id} />
+                  <ApplicationQuestionsPanel
+                    mandateId={id}
+                    initialQuestions={(applicationQuestions ?? []) as ApplicationQuestion[]}
+                  />
                   <PublicListingPanel
                     mandateId={id}
                     initialShowClientName={mandate.show_client_name ?? true}

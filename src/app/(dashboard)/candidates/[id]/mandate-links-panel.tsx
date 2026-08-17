@@ -22,6 +22,20 @@ type Link = {
 
 type Mandate = { id: string; client_name: string; role_title: string };
 
+type ApplicationAnswer = {
+  question_text: string;
+  answer_type: string;
+  answer_text: string | null;
+  answer_number: number | null;
+  answer_bool: boolean | null;
+};
+
+function formatAnswer(a: ApplicationAnswer): string {
+  if (a.answer_type === "yes_no") return a.answer_bool == null ? "—" : a.answer_bool ? "Yes" : "No";
+  if (a.answer_type === "numeric") return a.answer_number == null ? "—" : String(a.answer_number);
+  return a.answer_text ?? "—";
+}
+
 const SOURCE_BADGE: Record<StageSource, string> = {
   recruiter: "",
   client_relayed: "Client said (relayed) →",
@@ -34,11 +48,17 @@ export default function MandateLinksPanel({
   candidateName,
   links,
   openMandates,
+  applicationAnswersByMandate,
 }: {
   candidateId: string;
   candidateName: string;
   links: Link[];
   openMandates: Mandate[];
+  // This candidate's answers to that mandate's custom Application Questions
+  // (candidate-facing, answered on jobs.staffanchor.com Quick Apply) --
+  // keyed by mandate_id. Empty/missing for mandates with no such questions
+  // or a candidate who didn't come in through Quick Apply.
+  applicationAnswersByMandate?: Record<string, ApplicationAnswer[]>;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -206,6 +226,22 @@ export default function MandateLinksPanel({
                   Day {progress.day} of 90{progress.done ? " — guarantee period complete" : ""}
                 </p>
               )}
+
+              {applicationAnswersByMandate?.[l.mandate_id]?.length ? (
+                <div className="mt-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-2.5 py-2">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                    Application answers
+                  </p>
+                  <dl className="space-y-1">
+                    {applicationAnswersByMandate[l.mandate_id].map((a, i) => (
+                      <div key={i} className="text-[11.5px]">
+                        <dt className="text-slate-500 dark:text-slate-400">{a.question_text}</dt>
+                        <dd className="text-slate-800 dark:text-slate-200 font-medium">{formatAnswer(a)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ) : null}
 
               {l.date_of_joining && l.stage !== "placed" && (
                 <p className="mt-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
