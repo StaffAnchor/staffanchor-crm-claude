@@ -79,7 +79,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id)"
+      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url)"
     )
     .eq("mandate_id", id);
 
@@ -120,6 +120,34 @@ export default async function MandateDetailPage({
       answer_number: row.answer_number,
       answer_bool: row.answer_bool,
     });
+  }
+
+  // Batch-generate resume signed URLs in one Storage API call, same pattern
+  // as the main Candidates list page -- lets the mandate Table/Board show a
+  // "Preview resume" action per row without a recruiter having to open each
+  // candidate's profile just to see the CV, and without firing a separate
+  // signed-URL request per row.
+  const resumePaths = Array.from(
+    new Set(
+      (links ?? [])
+        .map((l) => (l.candidates as unknown as { resume_file_url: string | null } | null)?.resume_file_url)
+        .filter((p): p is string => Boolean(p))
+        .map((p) => p.replace(/^resumes\//, ""))
+    )
+  );
+  const resumeUrlByPath: Record<string, string> = {};
+  if (resumePaths.length > 0) {
+    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60);
+    (signedBatch ?? []).forEach((s) => {
+      if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
+    });
+  }
+  const resumeSignedUrlByCandidate: Record<string, string> = {};
+  for (const l of links ?? []) {
+    const cand = l.candidates as unknown as { id: string; resume_file_url: string | null } | null;
+    if (!cand?.resume_file_url) continue;
+    const signedUrl = resumeUrlByPath[cand.resume_file_url.replace(/^resumes\//, "")];
+    if (signedUrl) resumeSignedUrlByCandidate[cand.id] = signedUrl;
   }
 
   const { data: existingToken } = await supabase
@@ -378,6 +406,7 @@ export default async function MandateDetailPage({
             })
             .filter((r): r is MandateCandidateRow => r !== null)}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
+          resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
           mandateContext={{
             mandateId: id,
             role_title: mandate.role_title,

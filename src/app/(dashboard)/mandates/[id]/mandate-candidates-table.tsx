@@ -10,6 +10,7 @@ import { STAGES, applyStageChange, type Stage, type StageSource } from "@/lib/ma
 import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
+import ResumePreview from "../../candidates/[id]/resume-preview";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -57,6 +58,7 @@ export type MandateCandidateRow = {
     career_timeline_resume: unknown;
     career_timeline_profile: unknown;
     owner_id: string | null;
+    resume_file_url?: string | null;
   };
 };
 
@@ -66,6 +68,7 @@ export default function MandateCandidatesTable({
   teamMembers = [],
   isAdmin = false,
   applicationAnswersByCandidate = {},
+  resumeSignedUrlByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
@@ -76,6 +79,7 @@ export default function MandateCandidatesTable({
   teamMembers?: { id: string; full_name: string | null; email: string }[];
   isAdmin?: boolean;
   applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
+  resumeSignedUrlByCandidate?: Record<string, string>;
 }) {
   const ownerLabel = (id: string | null) => {
     if (!id) return "Unassigned";
@@ -267,6 +271,7 @@ export default function MandateCandidatesTable({
               />
             </th>
             <th className="text-left px-4 py-2.5">Candidate</th>
+            <th className="text-left px-4 py-2.5">Resume</th>
             <th className="text-left px-4 py-2.5">Owner</th>
             <th className="text-left px-4 py-2.5">Fixed CTC</th>
             <th className="text-left px-4 py-2.5">Recommendation</th>
@@ -288,6 +293,17 @@ export default function MandateCandidatesTable({
                   </Link>
                 </ApplicationAnswersQuickView>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
+              </td>
+              <td className="px-4 py-3">
+                {resumeSignedUrlByCandidate[l.candidate.id] ? (
+                  <ResumePreview
+                    signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
+                    fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
+                    label="Preview"
+                  />
+                ) : (
+                  <span className="text-[11px] text-slate-300">—</span>
+                )}
               </td>
               <td className="px-4 py-3">
                 {isAdmin ? (

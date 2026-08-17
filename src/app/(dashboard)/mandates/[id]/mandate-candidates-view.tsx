@@ -18,6 +18,7 @@ export default function MandateCandidatesView({
   teamMembers = [],
   isAdmin = false,
   applicationAnswersByCandidate = {},
+  resumeSignedUrlByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
@@ -28,6 +29,10 @@ export default function MandateCandidatesView({
   // Per-candidate Application Question answers for this mandate, so a
   // hover on the candidate's name can quick-view them without navigating.
   applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
+  // Per-candidate resume signed URL (1hr expiry, batch-generated server
+  // side), so a "Preview resume" action can open right from the row
+  // without navigating to the candidate's profile page.
+  resumeSignedUrlByCandidate?: Record<string, string>;
 }) {
   const [view, setView] = useState<"board" | "table">("board");
 
@@ -61,6 +66,7 @@ export default function MandateCandidatesView({
           teamMembers={teamMembers}
           isAdmin={isAdmin}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
+          resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
         />
       ) : (
         <MandateCandidatesTable
@@ -69,6 +75,7 @@ export default function MandateCandidatesView({
           teamMembers={teamMembers}
           isAdmin={isAdmin}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
+          resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
         />
       )}
     </div>

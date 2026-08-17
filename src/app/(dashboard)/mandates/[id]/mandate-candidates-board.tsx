@@ -9,6 +9,7 @@ import { STAGES, applyStageChange, type Stage } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
+import ResumePreview from "../../candidates/[id]/resume-preview";
 
 // Kanban view of the same rows the table shows, grouped by pipeline stage --
 // inspired by the reference ATS screenshot the user shared ("Look how
@@ -85,6 +86,7 @@ export default function MandateCandidatesBoard({
   teamMembers = [],
   isAdmin = false,
   applicationAnswersByCandidate = {},
+  resumeSignedUrlByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: { mandateId: string; role_title: string; client_name: string; [key: string]: unknown };
@@ -93,6 +95,7 @@ export default function MandateCandidatesBoard({
   teamMembers?: { id: string; full_name: string | null; email: string }[];
   isAdmin?: boolean;
   applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
+  resumeSignedUrlByCandidate?: Record<string, string>;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -340,6 +343,16 @@ export default function MandateCandidatesBoard({
                           <span className="text-[10.5px] text-slate-500 dark:text-slate-400 tabular-nums">₹{row.candidate.current_fixed_ctc}L</span>
                         )}
                       </div>
+
+                      {resumeSignedUrlByCandidate[row.candidate.id] && (
+                        <div className="mt-1.5" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                          <ResumePreview
+                            signedUrl={resumeSignedUrlByCandidate[row.candidate.id]}
+                            fileName={(row.candidate.resume_file_url ?? `${row.candidate.full_name}-resume`).replace(/^resumes\//, "")}
+                            label="Preview resume"
+                          />
+                        </div>
+                      )}
 
                       <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
                         <span title="Time in current stage">In stage: {timeAgo(row.stage_updated_at)}</span>
