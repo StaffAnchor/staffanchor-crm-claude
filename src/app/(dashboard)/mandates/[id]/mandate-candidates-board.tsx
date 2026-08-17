@@ -10,6 +10,7 @@ import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
+import { Zap } from "lucide-react";
 
 // Kanban view of the same rows the table shows, grouped by pipeline stage --
 // inspired by the reference ATS screenshot the user shared ("Look how
@@ -288,14 +289,24 @@ export default function MandateCandidatesBoard({
                           {initials(row.candidate.full_name)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[row.candidate.id]}>
-                            <Link
-                              href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
-                              className="text-[12.5px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate block"
-                            >
-                              {row.candidate.full_name}
-                            </Link>
-                          </ApplicationAnswersQuickView>
+                          <div className="flex items-center gap-1.5">
+                            <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[row.candidate.id]}>
+                              <Link
+                                href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
+                                className="text-[12.5px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate block"
+                              >
+                                {row.candidate.full_name}
+                              </Link>
+                            </ApplicationAnswersQuickView>
+                            {row.is_priority && (
+                              <span
+                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                                title="Candidate paid to flag this application as priority"
+                              >
+                                <Zap className="h-2 w-2" /> Priority
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10.5px] text-slate-400 truncate">
                             {row.candidate.sub_domain ?? "—"}
                             {row.candidate.current_employer ? ` · ${row.candidate.current_employer}` : ""}

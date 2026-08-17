@@ -472,9 +472,16 @@ export const dealSizeBandsB2C: Record<CurrencyValue, string[]> = {
 };
 
 export function dealSizeBandsFor(category: string | null, currency: CurrencyValue | ""): string[] {
+  // `currency` is typed as CurrencyValue but callers often pass through a raw
+  // DB value (mandates.deal_size_currency / candidates.largest_deal_currency)
+  // that isn't actually constrained to "INR" | "USD" at the schema level --
+  // a legacy or free-text value here indexed into these lookup records as
+  // `undefined`, and every caller immediately does `.map(...)` on the
+  // result, crashing the whole page with "Cannot read properties of null/
+  // undefined (reading 'length')". Guarding here once covers every caller.
   if (!currency) return [];
-  if (category === "b2c_sales") return dealSizeBandsB2C[currency];
-  return dealSizeBandsB2B[currency];
+  const table = category === "b2c_sales" ? dealSizeBandsB2C : dealSizeBandsB2B;
+  return table[currency] ?? [];
 }
 
 export const insideSalesSubDomains = ["Inside Sales (B2B)", "Inside Sales (B2C)"];

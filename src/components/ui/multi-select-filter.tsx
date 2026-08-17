@@ -67,7 +67,15 @@ export function MultiSelectFilter({
     setSelected((prev) => (prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]));
   }
 
-  const resolvedGroups: OptionGroup[] = groups ?? (options ? [{ group: "", options }] : []);
+  // Defensive: any caller building an OptionGroup from a lookup helper that
+  // can return null/undefined for an unrecognized value (e.g. dealSizeBandsFor
+  // with a free-text currency) would otherwise crash the whole page here --
+  // ?? [] once at the source, rather than trusting every downstream .map to
+  // have guarded it.
+  const resolvedGroups: OptionGroup[] = (groups ?? (options ? [{ group: "", options }] : [])).map((g) => ({
+    ...g,
+    options: g.options ?? [],
+  }));
   const totalOptionCount = resolvedGroups.reduce((n, g) => n + g.options.length, 0);
 
   // Only worth showing a search box once there's actually enough options to

@@ -11,6 +11,7 @@ import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
+import { Zap } from "lucide-react";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -41,6 +42,10 @@ export type MandateCandidateRow = {
   date_of_joining: string | null;
   created_at: string | null;
   screened: boolean;
+  // Set when the candidate spent a Priority Applicant credit on this
+  // specific application (jobs.staffanchor.com purchase flow) -- surfaced
+  // here so the recruiter sees it before opening the profile.
+  is_priority: boolean;
   candidate: {
     id: string;
     full_name: string;
@@ -287,11 +292,21 @@ export default function MandateCandidatesTable({
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
               <td className="px-4 py-3">
-                <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
-                  <Link href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
-                    {l.candidate.full_name}
-                  </Link>
-                </ApplicationAnswersQuickView>
+                <div className="flex items-center gap-1.5">
+                  <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
+                    <Link href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
+                      {l.candidate.full_name}
+                    </Link>
+                  </ApplicationAnswersQuickView>
+                  {l.is_priority && (
+                    <span
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                      title="Candidate paid to flag this application as priority"
+                    >
+                      <Zap className="h-2.5 w-2.5" /> Priority
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
               </td>
               <td className="px-4 py-3">

@@ -79,7 +79,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url)"
+      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, is_priority, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url)"
     )
     .eq("mandate_id", id);
 
@@ -400,11 +400,17 @@ export default async function MandateDetailPage({
                 rejected_from_stage: l.rejected_from_stage,
                 date_of_joining: l.date_of_joining,
                 created_at: l.created_at,
+                is_priority: l.is_priority ?? false,
                 candidate: cand,
                 screened: screenedCandidateIds.includes(cand.id),
               };
             })
-            .filter((r): r is MandateCandidateRow => r !== null)}
+            .filter((r): r is MandateCandidateRow => r !== null)
+            // Priority Applicant candidates surface first -- the whole point
+            // of the paid flag is to be seen ahead of the rest of the queue.
+            // Stable within each group (no secondary sort) so it doesn't
+            // fight with whatever the Table/Board's own ordering already does.
+            .sort((a, b) => Number(b.is_priority) - Number(a.is_priority))}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
           mandateContext={{
