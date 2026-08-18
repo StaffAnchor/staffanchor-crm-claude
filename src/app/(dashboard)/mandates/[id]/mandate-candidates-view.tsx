@@ -34,7 +34,7 @@ export default function MandateCandidatesView({
   // without navigating to the candidate's profile page.
   resumeSignedUrlByCandidate?: Record<string, string>;
 }) {
-  const [view, setView] = useState<"board" | "table">("board");
+  const [view, setView] = useState<"board" | "table">("table");
 
   return (
     <div>
