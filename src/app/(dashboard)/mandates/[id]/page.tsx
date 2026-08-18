@@ -409,9 +409,17 @@ export default async function MandateDetailPage({
             .filter((r): r is MandateCandidateRow => r !== null)
             // Priority Applicant candidates surface first -- the whole point
             // of the paid flag is to be seen ahead of the rest of the queue.
-            // Stable within each group (no secondary sort) so it doesn't
-            // fight with whatever the Table/Board's own ordering already does.
-            .sort((a, b) => Number(b.is_priority) - Number(a.is_priority))}
+            // Within each group (priority / non-priority), most recently
+            // added to this mandate first -- the underlying query has no
+            // ORDER BY, so without this candidates were showing up in
+            // whatever arbitrary order Postgres happened to return them in.
+            .sort((a, b) => {
+              const priorityDiff = Number(b.is_priority) - Number(a.is_priority);
+              if (priorityDiff !== 0) return priorityDiff;
+              const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return bTime - aTime;
+            })}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
           mandateContext={{
