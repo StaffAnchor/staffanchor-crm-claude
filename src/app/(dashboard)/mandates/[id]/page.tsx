@@ -20,6 +20,7 @@ import UnarchiveMandateButton from "./unarchive-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
 import DownloadJdButton from "./download-jd-button";
 import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
+import PriorityApplicantFunnelPanel from "./priority-applicant-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
 import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
@@ -590,6 +591,7 @@ export default async function MandateDetailPage({
               content: (
                 <>
                   <QuickApplyFunnelPanel mandateId={id} />
+                  <PriorityApplicantFunnelPanel mandateId={id} />
                   <ApplicationQuestionsPanel
                     mandateId={id}
                     initialQuestions={(applicationQuestions ?? []) as ApplicationQuestion[]}
