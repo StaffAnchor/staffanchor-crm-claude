@@ -13,15 +13,15 @@ import { withHeartbeat } from "@/lib/cron-heartbeat";
 // anyone left without a summary -- simpler, self-healing, and needs no new
 // auth plumbing between the two apps.
 //
-// IMPORTANT -- deliberately bounded to RECENT candidates only (see
-// RECENCY_WINDOW_DAYS below). Automation is meant to cover new profiles
-// as they're created/completed, not slowly chew through the entire
-// historical backlog of older candidates that never got a summary --
-// that backlog is deliberately left for a recruiter to trigger by opening
-// the profile and clicking "Regenerate" (an explicit, one-off Gemini
-// call) rather than an unattended sweep silently consuming the same
-// shared daily Gemini quota that new-profile automation and every
-// recruiter's manual regenerate click also draw from.
+// Also clears the historical backlog (candidates with no ai_summary at
+// all, regardless of age), newest-first -- previously this was deliberately
+// left for a recruiter to trigger manually, to protect the single shared
+// Gemini daily quota. Now that every generateContent call site falls back
+// through Groq/Mistral (ai-providers.ts) when Gemini's free tier is
+// exhausted, that constraint is gone, so the backlog drains on its own
+// instead of sitting at "216/896 have a summary" indefinitely. Newest
+// candidates first since they're the ones most likely to be actively
+// worked right now.
 //
 // Scheduled via vercel.json; Vercel automatically sends
 // `Authorization: Bearer <CRON_SECRET>` on cron-triggered invocations when
@@ -77,12 +77,12 @@ async function handler(req: NextRequest) {
     .from("candidates")
     .select("id, full_name")
     .or(
-      `and(ai_summary.is.null,created_at.gte.${recentCutoff}),` +
+      `ai_summary.is.null,` +
         `and(status.eq.registered,ai_summary_generated_status.is.null,updated_at.gte.${recentCutoff}),` +
         `and(status.eq.registered,ai_summary_generated_status.neq.registered,updated_at.gte.${recentCutoff})`
     )
-    .order("created_at", { ascending: true })
-    .limit(40); // bounded batch per run; the recency window above already keeps the pool small
+    .order("created_at", { ascending: false }) // newest first -- see comment above
+    .limit(25); // bounded batch per run -- each candidate is ~2-3 AI calls (career-timeline + summary + embedding)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

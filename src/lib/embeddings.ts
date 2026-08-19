@@ -202,7 +202,11 @@ export async function embedPendingCandidates(
     .select(
       "id, full_name, category, sub_domain, secondary_sub_domains, current_job_title, current_employer, current_industry, industries, total_experience_years, current_location, skills, segment_data, ai_summary, resume_text, updated_at, profile_embedding_updated_at"
     )
-    .order("created_at", { ascending: true })
+    // Newest-first: a freshly-registered candidate is far more likely to be
+    // actively worked (shortlisted, matched, viewed) than one from months
+    // ago, so the backlog drains in the order that actually matters instead
+    // of alphabetically-by-signup-date.
+    .order("created_at", { ascending: false })
     .limit(600);
 
   if (error) throw new Error(error.message);

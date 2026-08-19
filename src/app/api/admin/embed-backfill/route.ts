@@ -66,10 +66,15 @@ export async function GET() {
     .from("candidates")
     .select("id", { count: "exact", head: true })
     .is("ai_summary", null);
+  const { count: missingStability } = await supabase
+    .from("candidates")
+    .select("id", { count: "exact", head: true })
+    .is("stability_score", null);
 
   return NextResponse.json({
     total: total ?? 0,
     missingEmbedding: missingEmbedding ?? 0,
     missingSummary: missingSummary ?? 0,
+    missingStability: missingStability ?? 0,
   });
 }

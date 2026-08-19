@@ -42,7 +42,7 @@ async function handler(req: NextRequest) {
     .from("candidates")
     .select("id, resume_text, career_timeline_resume_source_hash")
     .not("resume_text", "is", null)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false }) // newest first -- see embeddings.ts comment
     .limit(200);
 
   if (error) {
