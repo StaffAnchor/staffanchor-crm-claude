@@ -110,6 +110,12 @@ export type MandateCandidateRow = {
       verified_quota_attainment_pct?: number;
       disqualifiers?: string[];
     } | null;
+    // Overall, candidate-level read -- generated once automatically when the
+    // candidate registers (see generateAiPassportForCandidate), NOT
+    // mandate-specific. Shown alongside the mandate-specific "AI Read"
+    // column so a recruiter can see "who is this person overall" next to
+    // "how do they fit THIS role" without leaving the pipeline.
+    ai_summary: string | null;
   };
 };
 
@@ -445,6 +451,7 @@ export default function MandateCandidatesTable({
             <th className="text-left px-4 py-2.5">Owner</th>
             <th className="text-left px-4 py-2.5">CTC / Notice</th>
             <th className="text-left px-4 py-2.5">Stability</th>
+            <th className="text-left px-4 py-2.5">AI Summary</th>
             <th className="text-left px-4 py-2.5">AI Read</th>
             <th className="text-left px-4 py-2.5">Recommendation</th>
             <th className="text-left px-4 py-2.5">Screening</th>
@@ -546,6 +553,18 @@ export default function MandateCandidatesTable({
                   >
                     {stabilityLabelForScore(l.candidate.stability_score)} · {l.candidate.stability_score}
                   </span>
+                )}
+              </td>
+              <td className="px-4 py-3 max-w-[220px]">
+                {l.candidate.ai_summary ? (
+                  <p
+                    title={l.candidate.ai_summary}
+                    className="text-[12px] text-slate-600 dark:text-slate-400 line-clamp-3 cursor-help"
+                  >
+                    {l.candidate.ai_summary}
+                  </p>
+                ) : (
+                  <span className="text-[11px] text-slate-400 italic">Generating…</span>
                 )}
               </td>
               <td className="px-4 py-3">

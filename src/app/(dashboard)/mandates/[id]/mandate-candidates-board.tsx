@@ -448,6 +448,14 @@ export default function MandateCandidatesBoard({
                               <span className="text-[9.5px] text-slate-400">Notice: {row.candidate.notice_period}</span>
                             )}
                           </div>
+                          {row.candidate.ai_summary && (
+                            <p
+                              title={row.candidate.ai_summary}
+                              className="mt-1 text-[9.5px] text-slate-500 dark:text-slate-400 line-clamp-2 cursor-help"
+                            >
+                              {row.candidate.ai_summary}
+                            </p>
+                          )}
                           <div className="mt-1" onClick={(e) => e.stopPropagation()}>
                             <MandateAssessmentPopover
                               assessment={row.match_assessment}
