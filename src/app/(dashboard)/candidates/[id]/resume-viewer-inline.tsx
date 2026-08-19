@@ -63,20 +63,14 @@ export default function ResumeViewerInline({
   }, [isDocx, signedUrl]);
 
   if (isPdf) {
-    // Some resume PDFs export their LinkedIn/portfolio links with a
-    // top-frame target, so clicking one inside the browser's built-in PDF
-    // viewer hijacked this whole CRM tab instead of just the preview.
-    // Sandboxing without allow-top-navigation blocks that outright, while
-    // allow-popups (+ allow-popups-to-escape-sandbox) still lets a normal
-    // link open in its own new tab as expected.
-    return (
-      <iframe
-        src={signedUrl}
-        className="w-full h-full"
-        title={`Resume — ${fileName}`}
-        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
-      />
-    );
+    // Reverted: sandboxing this iframe (to stop a same-tab link hijack)
+    // broke PDF rendering outright -- Chrome's built-in PDF viewer treats
+    // Supabase's signed URL as a download inside a sandboxed frame and
+    // refuses it entirely ("This page has been blocked by Chrome"), which
+    // is strictly worse than the link-target issue it was meant to fix.
+    // Left unsandboxed; the DOCX-side target="_blank" fix below still
+    // covers the common case.
+    return <iframe src={signedUrl} className="w-full h-full" title={`Resume — ${fileName}`} />;
   }
 
   if (isDocx) {
