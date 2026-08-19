@@ -187,7 +187,11 @@ export default function MandateCandidatesView({
         />
       ) : (
         <MandateCandidatesTable
-          key={stageFilter}
+          // Same remount-on-data-change reasoning as Board above -- Table
+          // is the default view, so this was the actual bug users hit
+          // ("scores didn't update after Score pipeline"): only Board's key
+          // included dataVersion, Table's didn't.
+          key={`${stageFilter}-${dataVersion}`}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}
