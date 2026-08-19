@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban } from "lucide-react";
+import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesTable from "./candidates-table";
 import {
@@ -651,6 +651,12 @@ export default async function CandidatesPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/candidates/search"
+            className="rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-indigo-700 dark:text-indigo-300 text-[13px] font-medium px-3.5 py-2 shadow-sm flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Prompt search
+          </Link>
           <TourTooltip
             tourKey="candidate_groups_v1"
             title="New: saved candidate groups"

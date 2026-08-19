@@ -618,3 +618,208 @@ Sort the array by score descending. ${
       : "AI candidate matching failed. Please try again.";
   return { ok: false, status: 500, error: message };
 }
+
+// ---------------------------------------------------------------------
+// Free-text global candidate search ("prompt window") -- distinct from
+// matchCandidatesForMandate above: there's no mandate/JD to prefilter or
+// score against, just a recruiter's own plain-English ask (e.g. "B2B SaaS
+// AEs in Bangalore, 4-7 years, currently hunting not farming"). Kept as a
+// separate, deliberately lighter function rather than bolting a "no
+// mandate" branch onto matchCandidatesForMandate -- there's no calibration
+// data, no must-have clause checklist, and no mandate embedding to recall
+// against, so most of that function's machinery doesn't apply here.
+// ---------------------------------------------------------------------
+
+export type PromptSearchMatch = {
+  candidate_id: string;
+  full_name: string;
+  score: number;
+  reason: string;
+  current_job_title: string | null;
+  current_employer: string | null;
+  current_location: string | null;
+  total_experience_years: number | null;
+  category: string | null;
+  sub_domain: string | null;
+};
+
+export type PromptSearchResult =
+  | { ok: true; matches: PromptSearchMatch[]; scanned: number }
+  | { ok: false; status: number; error: string };
+
+type PromptCandidateRow = {
+  id: string;
+  full_name: string;
+  current_job_title: string | null;
+  current_employer: string | null;
+  category: string | null;
+  sub_domain: string | null;
+  secondary_sub_domains: string[] | null;
+  total_experience_years: number | null;
+  current_location: string | null;
+  open_to_relocation: string | null;
+  notice_period: string | null;
+  expected_fixed_ctc: number | null;
+  skills: string | null;
+  current_industry: string | null;
+  industries: string[] | null;
+  talent_micro_index: Record<string, unknown> | null;
+  ai_summary: string | null;
+};
+
+const PROMPT_SELECT_COLUMNS =
+  "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, current_industry, industries, talent_micro_index, ai_summary";
+
+export async function matchCandidatesForPrompt(
+  prompt: string,
+  supabase: SupabaseClient,
+  options?: { maxResults?: number }
+): Promise<PromptSearchResult> {
+  const trimmed = prompt.trim();
+  if (!trimmed) return { ok: false, status: 400, error: "Prompt is required" };
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return { ok: false, status: 503, error: "AI search is not configured yet (missing GEMINI_API_KEY on the server)." };
+  }
+
+  // Recall pool: semantic recall via the prompt's own embedding (if the
+  // candidate table has embeddings populated -- see embed-candidates cron)
+  // unioned with a recency-bounded fallback pool, since embeddings are
+  // still being backfilled across the historical candidate base and a
+  // prompt should still return *something* useful in the meantime.
+  const poolById = new Map<string, PromptCandidateRow>();
+  const similarityById = new Map<string, number>();
+
+  try {
+    const { generateEmbedding } = await import("@/lib/embeddings");
+    const promptEmbedding = await generateEmbedding(trimmed);
+    if (promptEmbedding) {
+      const { data: semanticMatches } = await supabase.rpc("match_candidates", {
+        query_embedding: promptEmbedding,
+        match_count: 150,
+      });
+      const ids = ((semanticMatches ?? []) as { id: string; similarity: number }[])
+        .filter((m) => m.id)
+        .map((m) => {
+          similarityById.set(m.id, m.similarity);
+          return m.id;
+        });
+      if (ids.length > 0) {
+        const { data: rows } = await supabase.from("candidates").select(PROMPT_SELECT_COLUMNS).in("id", ids);
+        for (const r of (rows ?? []) as PromptCandidateRow[]) poolById.set(r.id, r);
+      }
+    }
+  } catch (err) {
+    console.error("Semantic recall failed for prompt search", err);
+  }
+
+  // Recency fallback / supplement -- bounded pool of the most recently
+  // active candidates so a query still returns results even before this
+  // candidate's embedding exists yet (fresh registrations, or while the
+  // historical backlog is still being backfilled).
+  const { data: recentPool, error: poolError } = await supabase
+    .from("candidates")
+    .select(PROMPT_SELECT_COLUMNS)
+    .neq("status", "awaiting_input")
+    .order("updated_at", { ascending: false })
+    .limit(250);
+  if (poolError) return { ok: false, status: 500, error: poolError.message };
+  for (const r of (recentPool ?? []) as PromptCandidateRow[]) {
+    if (!poolById.has(r.id)) poolById.set(r.id, r);
+  }
+
+  const candidates = Array.from(poolById.values());
+  if (candidates.length === 0) return { ok: true, matches: [], scanned: 0 };
+
+  // Trim to a sane token budget: semantically-recalled candidates first
+  // (already the most relevant), then most-recent as filler.
+  const shortlist = candidates
+    .sort((a, b) => (similarityById.get(b.id) ?? 0) - (similarityById.get(a.id) ?? 0))
+    .slice(0, 200);
+
+  const factSheets = shortlist.map((c) => ({
+    candidate_id: c.id,
+    name: c.full_name,
+    current_role: c.current_job_title,
+    current_employer: c.current_employer,
+    category: c.category,
+    primary_sub_domain: c.sub_domain,
+    secondary_sub_domains: c.secondary_sub_domains,
+    total_experience_years: c.total_experience_years,
+    location: c.current_location,
+    open_to_relocation: c.open_to_relocation,
+    notice_period: c.notice_period,
+    expected_fixed_ctc_lakhs: c.expected_fixed_ctc,
+    skills: c.skills,
+    current_industry: c.current_industry,
+    other_industries_worked_in: (c.industries as string[] | null)?.filter((i) => i !== c.current_industry),
+    talent_micro_index: c.talent_micro_index,
+    has_ai_summary: !!c.ai_summary,
+  }));
+
+  const genPrompt = `You are a sharp sales recruiter searching an existing candidate database using a free-text request typed by a recruiter -- there is no job requisition attached, just their own words. Score and rank ONLY the candidates given below -- never invent a candidate, employer, skill, or fact not present in their data.
+
+Recruiter's request (verbatim): ${JSON.stringify(trimmed)}
+
+Candidates to evaluate (JSON array):
+${JSON.stringify(factSheets, null, 2)}
+
+For EACH candidate, decide if they are a genuine, defensible match for the request. Only include candidates worth surfacing -- omit weak/irrelevant candidates entirely rather than padding the list. If the request implies a hard constraint (e.g. a specific city, an experience range, "must currently be doing X"), treat a clear violation of that constraint as disqualifying unless the candidate is otherwise an exceptionally strong fit, in which case include them but say so plainly in "reason".
+
+Return ONLY a JSON array (no markdown fence, no commentary), one object per included candidate, each with exactly these keys:
+- "candidate_id": copy exactly from the input.
+- "score": integer 0-100, how well this candidate matches the request.
+- "reason": one tight sentence a recruiter would say explaining why this candidate matches (or a caveat), grounded in specific facts from their data, not generic praise.
+
+Sort the array by score descending. Include at most ${options?.maxResults ?? 25} candidates.`;
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
+
+  let lastError: unknown = null;
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(genPrompt);
+      const raw = result.response.text().trim();
+      const parsed = parseJsonArray(raw) as unknown as { candidate_id: string; score?: number; reason?: string }[] | null;
+      if (!parsed) {
+        lastError = new Error("Could not parse AI response as JSON");
+        continue;
+      }
+
+      const rowById = new Map(shortlist.map((c) => [c.id, c]));
+      const matches: PromptSearchMatch[] = parsed
+        .filter((row) => rowById.has(row.candidate_id))
+        .filter((row, i, arr) => arr.findIndex((r) => r.candidate_id === row.candidate_id) === i)
+        .map((row) => {
+          const c = rowById.get(row.candidate_id)!;
+          return {
+            candidate_id: row.candidate_id,
+            full_name: c.full_name,
+            score: typeof row.score === "number" ? row.score : 0,
+            reason: row.reason ?? "",
+            current_job_title: c.current_job_title,
+            current_employer: c.current_employer,
+            current_location: c.current_location,
+            total_experience_years: c.total_experience_years,
+            category: c.category,
+            sub_domain: c.sub_domain,
+          };
+        })
+        .sort((a, b) => b.score - a.score);
+
+      return { ok: true, matches, scanned: candidates.length };
+    } catch (err) {
+      lastError = err;
+      console.error(`Gemini prompt search failed with model ${modelName}`, err);
+    }
+  }
+
+  const message =
+    lastError instanceof Error && lastError.message.includes("429")
+      ? "This Gemini API key has hit its free-tier quota. Try again later or use a paid-tier key."
+      : "AI candidate search failed. Please try again.";
+  return { ok: false, status: 500, error: message };
+}
