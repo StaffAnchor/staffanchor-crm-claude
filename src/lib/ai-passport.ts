@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 import { extractResumeText } from "@/lib/resume-text";
 import {
   mergeTimelines,
@@ -173,12 +173,11 @@ export async function generateAiPassportForCandidate(
     return { ok: false, status: 404, error: "Candidate not found" };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
       ok: false,
       status: 503,
-      error: "AI summary is not configured yet (missing GEMINI_API_KEY on the server).",
+      error: "AI summary is not configured yet (set GEMINI_API_KEY, GROQ_API_KEY, or MISTRAL_API_KEY on the server).",
     };
   }
 
@@ -308,18 +307,13 @@ ${JSON.stringify(factSheet, null, 2)}
 Resume excerpt (raw extracted text, may include formatting artifacts -- ignore those):
 ${resumeExcerpt ?? "(no resume text available)"}`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // gemini-1.5-* models have been retired (404 on this API version), so only
-  // try current models. Quota availability still varies by Google
-  // account/project even within the free tier.
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
+  // Multi-provider fallback (Gemini -> Groq -> Mistral, see ai-providers.ts)
+  // so a Gemini free-tier quota exhaustion no longer stalls summary
+  // generation entirely -- this is what left 76% of candidates without an
+  // ai_summary before GROQ_API_KEY/MISTRAL_API_KEY were added as fallbacks.
+  try {
+    {
+      const { text: raw, provider: usedProvider, model: usedModel } = await generateTextWithFallback(prompt);
       const rawOutput = parsePassportJson(raw);
       const { passport, decisionFlags, skillInventory, talentMicroIndex } = rawOutput
         ? splitRawOutput(rawOutput)
@@ -358,7 +352,7 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         action: "ai_summary_generated",
         entity: "candidate",
         entity_id: candidateId,
-        detail: { model: modelName, used_resume_text: !!resumeExcerpt, note: auditActor.note },
+        detail: { model: usedModel, provider: usedProvider, used_resume_text: !!resumeExcerpt, note: auditActor.note },
       });
 
       // Memorize this candidate for fast mandate matching -- every full
@@ -428,15 +422,13 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         talentMicroIndex,
         stabilityScore: (candidate.stability_score as number | null) ?? stability?.score ?? null,
       };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini summary generation failed with model ${modelName}`, err);
     }
+  } catch (err) {
+    console.error("AI summary generation failed on every configured provider", candidateId, err);
+    const message =
+      err instanceof Error
+        ? `AI summary generation failed on every configured provider. ${err.message}`
+        : "AI summary generation failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota on Google's side (not a retry-in-a-minute rate limit -- the daily limit itself is 0). This usually means the key wasn't generated at aistudio.google.com/apikey, or the linked Google Cloud project has the free tier disabled for this region/account. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing on the project for standard paid-tier limits."
-      : "AI summary generation failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }

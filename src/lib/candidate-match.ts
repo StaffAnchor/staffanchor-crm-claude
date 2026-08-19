@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 import { ensureMandateEmbedding } from "@/lib/embeddings";
 import { getLatestOutcomeWeights, outcomeAdjustedScore } from "@/lib/outcome-weights";
 
@@ -180,12 +180,11 @@ export async function matchCandidatesForMandate(
   }
   const m = mandate;
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
       ok: false,
       status: 503,
-      error: "AI matching is not configured yet (missing GEMINI_API_KEY on the server).",
+      error: "AI matching is not configured yet (set GEMINI_API_KEY, GROQ_API_KEY, or MISTRAL_API_KEY on the server).",
     };
   }
 
@@ -495,19 +494,16 @@ Sort the array by score descending. ${
       : `Include at most ${options?.maxResults ?? 20} candidates.`
   }`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
+  // Multi-provider fallback (Gemini -> Groq -> Mistral, see ai-providers.ts)
+  // instead of only retrying different Gemini model names -- a Gemini
+  // free-tier quota exhaustion no longer stalls matching entirely as long
+  // as GROQ_API_KEY/MISTRAL_API_KEY are configured.
+  try {
+    {
+      const { text: raw } = await generateTextWithFallback(prompt);
       const parsed = parseJsonArray(raw);
       if (!parsed) {
-        lastError = new Error("Could not parse AI response as JSON");
-        continue;
+        throw new Error("Could not parse AI response as JSON");
       }
 
       const nameById = new Map(shortlist.map((c) => [c.id, c.full_name]));
@@ -606,17 +602,15 @@ Sort the array by score descending. ${
       ];
 
       return { ok: true, matches, scanned: candidates.length, calibration, requirementsChecked };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini candidate matching failed with model ${modelName}`, err);
     }
+  } catch (err) {
+    console.error("Candidate matching failed on every configured AI provider", err);
+    const message =
+      err instanceof Error
+        ? `AI candidate matching failed on every configured provider. ${err.message}`
+        : "AI candidate matching failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has hit its free-tier quota. Try again later or use a paid-tier key."
-      : "AI candidate matching failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }
 
 // ---------------------------------------------------------------------
@@ -678,9 +672,8 @@ export async function matchCandidatesForPrompt(
   const trimmed = prompt.trim();
   if (!trimmed) return { ok: false, status: 400, error: "Prompt is required" };
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { ok: false, status: 503, error: "AI search is not configured yet (missing GEMINI_API_KEY on the server)." };
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
+    return { ok: false, status: 503, error: "AI search is not configured yet (set GEMINI_API_KEY, GROQ_API_KEY, or MISTRAL_API_KEY on the server)." };
   }
 
   // Recall pool: semantic recall via the prompt's own embedding (if the
@@ -774,52 +767,41 @@ Return ONLY a JSON array (no markdown fence, no commentary), one object per incl
 
 Sort the array by score descending. Include at most ${options?.maxResults ?? 25} candidates.`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(genPrompt);
-      const raw = result.response.text().trim();
-      const parsed = parseJsonArray(raw) as unknown as { candidate_id: string; score?: number; reason?: string }[] | null;
-      if (!parsed) {
-        lastError = new Error("Could not parse AI response as JSON");
-        continue;
-      }
-
-      const rowById = new Map(shortlist.map((c) => [c.id, c]));
-      const matches: PromptSearchMatch[] = parsed
-        .filter((row) => rowById.has(row.candidate_id))
-        .filter((row, i, arr) => arr.findIndex((r) => r.candidate_id === row.candidate_id) === i)
-        .map((row) => {
-          const c = rowById.get(row.candidate_id)!;
-          return {
-            candidate_id: row.candidate_id,
-            full_name: c.full_name,
-            score: typeof row.score === "number" ? row.score : 0,
-            reason: row.reason ?? "",
-            current_job_title: c.current_job_title,
-            current_employer: c.current_employer,
-            current_location: c.current_location,
-            total_experience_years: c.total_experience_years,
-            category: c.category,
-            sub_domain: c.sub_domain,
-          };
-        })
-        .sort((a, b) => b.score - a.score);
-
-      return { ok: true, matches, scanned: candidates.length };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini prompt search failed with model ${modelName}`, err);
+  try {
+    const { text: raw } = await generateTextWithFallback(genPrompt);
+    const parsed = parseJsonArray(raw) as unknown as { candidate_id: string; score?: number; reason?: string }[] | null;
+    if (!parsed) {
+      throw new Error("Could not parse AI response as JSON");
     }
-  }
 
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has hit its free-tier quota. Try again later or use a paid-tier key."
-      : "AI candidate search failed. Please try again.";
-  return { ok: false, status: 500, error: message };
+    const rowById = new Map(shortlist.map((c) => [c.id, c]));
+    const matches: PromptSearchMatch[] = parsed
+      .filter((row) => rowById.has(row.candidate_id))
+      .filter((row, i, arr) => arr.findIndex((r) => r.candidate_id === row.candidate_id) === i)
+      .map((row) => {
+        const c = rowById.get(row.candidate_id)!;
+        return {
+          candidate_id: row.candidate_id,
+          full_name: c.full_name,
+          score: typeof row.score === "number" ? row.score : 0,
+          reason: row.reason ?? "",
+          current_job_title: c.current_job_title,
+          current_employer: c.current_employer,
+          current_location: c.current_location,
+          total_experience_years: c.total_experience_years,
+          category: c.category,
+          sub_domain: c.sub_domain,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    return { ok: true, matches, scanned: candidates.length };
+  } catch (err) {
+    console.error("Prompt search failed on every configured AI provider", err);
+    const message =
+      err instanceof Error
+        ? `AI candidate search failed on every configured provider. ${err.message}`
+        : "AI candidate search failed. Please try again.";
+    return { ok: false, status: 500, error: message };
+  }
 }
