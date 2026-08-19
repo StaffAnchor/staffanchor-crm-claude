@@ -1,15 +1,34 @@
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Cheap, cost-optimized embedding generation for the Semantic Search
-// Copilot (Phase 2, Task 3). Uses Gemini's text-embedding-004 (768 dims,
-// free-tier eligible, same GEMINI_API_KEY already used for AI summaries /
-// JD generation / candidate matching -- no new credential needed) rather
-// than a paid embeddings API.
-
-const EMBEDDING_MODEL = "text-embedding-004";
+// Copilot (Phase 2, Task 3). Uses Gemini's gemini-embedding-001 (free-tier
+// eligible, same GEMINI_API_KEY already used for AI summaries / JD
+// generation / candidate matching -- no new credential needed) rather than
+// a paid embeddings API.
+//
+// text-embedding-004 (the model this used until Aug 2026) was shut down by
+// Google on Jan 14, 2026 in favor of gemini-embedding-001 -- every call
+// since then 404'd, which is how 0/896 candidates went unembedded for
+// months with the failure reason sitting right there in the error message
+// the whole time (see the Aug 2026 pipeline-health investigation). Calling
+// the REST endpoint directly rather than through @google/generative-ai's
+// embedContent() because the installed SDK version's TypeScript types
+// predate gemini-embedding-001's outputDimensionality parameter.
+//
+// gemini-embedding-001 defaults to 3072 dims; outputDimensionality below
+// pins it to 768 to match the existing pgvector column. Per Google's docs,
+// only the default (3072) output is pre-normalized to unit length -- any
+// other outputDimensionality must be L2-normalized client-side, which
+// normalizeVector() below does before every write.
+const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMS = 768;
+
+function normalizeVector(values: number[]): number[] {
+  const norm = Math.sqrt(values.reduce((sum, v) => sum + v * v, 0));
+  if (!norm || !Number.isFinite(norm)) return values;
+  return values.map((v) => v / norm);
+}
 
 export { EMBEDDING_DIMS };
 
@@ -40,16 +59,31 @@ export async function generateEmbeddingVerbose(
   if (!text.trim()) return { embedding: null, error: "empty text" };
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
-    const result = await model.embedContent(text.slice(0, 8000)); // keep well under token limits, cheap
-    const values = result?.embedding?.values;
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: { parts: [{ text: text.slice(0, 8000) }] }, // keep well under token limits, cheap
+          outputDimensionality: EMBEDDING_DIMS,
+        }),
+      }
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const msg = `Gemini embedContent ${res.status}: ${body.slice(0, 300)}`;
+      console.error("[embeddings] generateEmbedding failed:", msg);
+      return { embedding: null, error: msg };
+    }
+    const data = await res.json();
+    const values = data?.embedding?.values;
     if (!Array.isArray(values) || values.length !== EMBEDDING_DIMS) {
       const msg = `unexpected embedding shape: ${Array.isArray(values) ? `${values.length} dims` : typeof values}`;
       console.error("[embeddings] generateEmbedding:", msg);
       return { embedding: null, error: msg };
     }
-    return { embedding: values, error: null };
+    return { embedding: normalizeVector(values), error: null };
   } catch (err) {
     const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
     console.error("[embeddings] generateEmbedding failed:", msg);
