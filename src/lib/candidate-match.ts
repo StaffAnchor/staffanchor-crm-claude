@@ -69,6 +69,43 @@ export type CandidateMatch = {
   notice_period: string | null;
 };
 
+// Mandate-specific decision-support read -- distinct from
+// candidates.ai_decision_flags (a generic, once-per-candidate assessment
+// that never changes across mandates and was confusing recruiters exactly
+// for that reason: the same "red flags" showed up no matter which mandate
+// they were looking at, and a simply-unstated field like CTC got lumped in
+// with genuine red flags). This is derived deterministically from the
+// per-requirement met/not_met/unclear verdicts this module already
+// computes for THIS mandate -- met -> positive, not_met -> red flag
+// (evidence actively contradicts the requirement), unclear -> missing
+// (simply never addressed, not a strike against the candidate). No extra
+// AI call: same Gemini response, just recategorized.
+export type MandateAssessment = {
+  recommendation: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
+  positives: string[];
+  red_flags: string[];
+  missing: string[];
+};
+
+function recommendationForScore(score: number): MandateAssessment["recommendation"] {
+  // Same 75/50 thresholds as matchScoreTone() in mandate-candidates-table.tsx
+  // -- keeps the AI Read badge and the Match-score badge color-coded
+  // consistently instead of two competing scales.
+  if (score >= 75) return "Strong Fit";
+  if (score >= 50) return "Fit with Reservations";
+  return "Not a Fit";
+}
+
+export function buildMatchAssessment(m: Pick<CandidateMatch, "score" | "must_haves" | "good_to_haves">): MandateAssessment {
+  const all = [...(m.must_haves ?? []), ...(m.good_to_haves ?? [])];
+  return {
+    recommendation: recommendationForScore(m.score),
+    positives: all.filter((r) => r.status === "met").map((r) => `${r.requirement}: ${r.evidence}`),
+    red_flags: all.filter((r) => r.status === "not_met").map((r) => `${r.requirement}: ${r.evidence}`),
+    missing: all.filter((r) => r.status === "unclear").map((r) => r.requirement),
+  };
+}
+
 export type MatchMandateResult =
   | { ok: true; matches: CandidateMatch[]; scanned: number; calibration: { positive: number; negative: number }; requirementsChecked: string[] }
   | { ok: false; status: number; error: string };

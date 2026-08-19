@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { matchCandidatesForMandate } from "@/lib/candidate-match";
+import { matchCandidatesForMandate, buildMatchAssessment } from "@/lib/candidate-match";
 
 export const runtime = "nodejs";
 
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
         match_embedding_similarity: m.embedding_similarity,
         match_source: "auto_on_link",
         matched_at: new Date().toISOString(),
+        match_assessment: buildMatchAssessment(m),
       })
       .eq("mandate_id", mandateId)
       .eq("candidate_id", candidateId);

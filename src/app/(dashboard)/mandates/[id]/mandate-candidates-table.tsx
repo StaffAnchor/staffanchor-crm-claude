@@ -11,7 +11,8 @@ import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
-import { Zap, Sparkles, Loader2, Flag } from "lucide-react";
+import { Zap, Sparkles, Loader2 } from "lucide-react";
+import MandateAssessmentPopover from "./mandate-assessment-popover";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -62,6 +63,18 @@ export type MandateCandidateRow = {
   // glance how strong a fit the system originally thought this candidate
   // was, without leaving the Table/Board for the matching workspace.
   match_score: number | null;
+  // Mandate-specific AI read -- see buildMatchAssessment in
+  // candidate-match.ts. Lives on the LINK (not the candidate) precisely
+  // because the whole point is that it changes per mandate: the same
+  // candidate can be a Strong Fit for one role and Not a Fit for another,
+  // and a field left blank (e.g. CTC not disclosed) should read as
+  // "missing", never as a red flag.
+  match_assessment: {
+    recommendation: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
+    positives: string[];
+    red_flags: string[];
+    missing: string[];
+  } | null;
   candidate: {
     id: string;
     full_name: string;
@@ -86,16 +99,6 @@ export type MandateCandidateRow = {
     // deciding who to submit for THIS mandate shouldn't have to leave the
     // pipeline to go check it on the profile page.
     stability_score: number | null;
-    // Internal-only AI read on the candidate (never shown to clients/
-    // candidates) -- separate from recruiter_assessment, which is the
-    // recruiter's own manual call. red_flags/watch_areas are exactly the
-    // "help a recruiter decide faster" signal this view is short on.
-    ai_decision_flags: {
-      green_flags?: string[];
-      red_flags?: string[];
-      watch_areas?: string[];
-      recommendation?: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
-    } | null;
     // Sales-specific quick facts (quota attainment, buyer personas sold to,
     // disqualifiers) -- tiny by design, cheap to render inline.
     talent_micro_index: {
@@ -121,13 +124,6 @@ function stabilityTone(label: string) {
   if (label === "Stable") return "bg-emerald-50 text-emerald-700";
   if (label === "Some Movement") return "bg-amber-50 text-amber-700";
   return "bg-rose-50 text-rose-700";
-}
-
-function aiRecommendationTone(rec: string | undefined) {
-  if (rec === "Strong Fit") return "bg-emerald-50 text-emerald-700";
-  if (rec === "Fit with Reservations") return "bg-amber-50 text-amber-700";
-  if (rec === "Not a Fit") return "bg-rose-50 text-rose-700";
-  return "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
 }
 
 export default function MandateCandidatesTable({
@@ -171,6 +167,37 @@ export default function MandateCandidatesTable({
 
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
+  const [reassessingIds, setReassessingIds] = useState<Set<string>>(new Set());
+
+  // Scoped to a single candidate via the mandate-match-pipeline route's
+  // optional candidateId param -- same scoring call "Score pipeline" makes
+  // in bulk, just for one row: used both for a candidate that's never been
+  // scored against this mandate, and for a manual "Re-assess" after their
+  // profile changed.
+  async function reassessCandidate(candidateId: string) {
+    setReassessingIds((prev) => new Set(prev).add(candidateId));
+    try {
+      const res = await fetch("/api/mandate-match-pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mandateId: mandateContext.mandateId, candidateId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error ?? "Couldn't assess this candidate." });
+        return;
+      }
+      router.refresh();
+    } catch {
+      setMessage({ type: "error", text: "Couldn't assess this candidate." });
+    } finally {
+      setReassessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(candidateId);
+        return next;
+      });
+    }
+  }
 
   // Same single call the main Candidates table's inline "Generate" button
   // uses (runs the full career-timeline extraction -> stability_score ->
@@ -477,30 +504,11 @@ export default function MandateCandidatesTable({
                 )}
               </td>
               <td className="px-4 py-3">
-                {(() => {
-                  const flags = l.candidate.ai_decision_flags;
-                  const disqualifiers = l.candidate.talent_micro_index?.disqualifiers ?? [];
-                  if (!flags && disqualifiers.length === 0) {
-                    return <span className="text-[11px] text-slate-300">—</span>;
-                  }
-                  const tooltipLines = [
-                    ...(flags?.red_flags ?? []).map((f) => `Red flag: ${f}`),
-                    ...disqualifiers.map((f) => `Disqualifier: ${f}`),
-                    ...(flags?.watch_areas ?? []).map((f) => `Watch: ${f}`),
-                    ...(flags?.green_flags ?? []).map((f) => `Green flag: ${f}`),
-                  ];
-                  const hasWarning = (flags?.red_flags?.length ?? 0) > 0 || disqualifiers.length > 0;
-                  return (
-                    <div className="flex items-center gap-1" title={tooltipLines.join("\n") || undefined}>
-                      {flags?.recommendation && (
-                        <span className={`inline-block rounded px-1.5 py-0.5 text-[10.5px] font-semibold whitespace-nowrap ${aiRecommendationTone(flags.recommendation)}`}>
-                          {flags.recommendation}
-                        </span>
-                      )}
-                      {hasWarning && <Flag className="w-3 h-3 text-rose-500 shrink-0" />}
-                    </div>
-                  );
-                })()}
+                <MandateAssessmentPopover
+                  assessment={l.match_assessment}
+                  onReassess={() => reassessCandidate(l.candidate.id)}
+                  reassessing={reassessingIds.has(l.candidate.id)}
+                />
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}

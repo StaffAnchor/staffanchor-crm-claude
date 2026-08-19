@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { matchCandidatesForMandate } from "@/lib/candidate-match";
+import { matchCandidatesForMandate, buildMatchAssessment } from "@/lib/candidate-match";
 
 // "Score pipeline" -- the sibling of /api/mandate-match, but scores the
 // candidates a recruiter has ALREADY added to this mandate (via bulk
@@ -25,24 +25,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 
-  const { mandateId } = await req.json();
+  const { mandateId, candidateId: singleCandidateId } = await req.json();
   if (!mandateId) {
     return NextResponse.json({ error: "mandateId is required" }, { status: 400 });
   }
 
-  const { data: links, error: linksError } = await supabase
-    .from("candidate_mandate_links")
-    .select("candidate_id")
-    .eq("mandate_id", mandateId);
-  if (linksError) {
-    return NextResponse.json({ error: linksError.message }, { status: 500 });
+  // A recruiter can also trigger this scoped to just one candidate (the
+  // per-row "Assess" trigger on the mandate pipeline table/board, used
+  // when a candidate has no match_assessment yet, or to refresh a stale
+  // one) -- same code path as the bulk "Score pipeline" button, just a
+  // pool of one instead of the whole pipeline.
+  let allIds: string[];
+  if (singleCandidateId) {
+    allIds = [singleCandidateId as string];
+  } else {
+    const { data: links, error: linksError } = await supabase
+      .from("candidate_mandate_links")
+      .select("candidate_id")
+      .eq("mandate_id", mandateId);
+    if (linksError) {
+      return NextResponse.json({ error: linksError.message }, { status: 500 });
+    }
+    allIds = (links ?? []).map((l) => l.candidate_id as string);
   }
 
   // Bounded the same way the standard SQL-prefilter pool is (150) -- keeps
   // the Gemini call's token budget sane even on a mandate with a very large
   // pipeline. Most recently linked first, so a capped run still covers the
   // candidates a recruiter is most likely actively working right now.
-  const allIds = (links ?? []).map((l) => l.candidate_id as string);
   const candidateIds = allIds.slice(0, 150);
   if (candidateIds.length === 0) {
     return NextResponse.json({ error: "No candidates in this mandate's pipeline yet." }, { status: 400 });
@@ -93,6 +103,7 @@ export async function POST(req: NextRequest) {
         match_embedding_similarity: m.embedding_similarity,
         match_source: "pipeline_backfill",
         matched_at: nowIso,
+        match_assessment: buildMatchAssessment(m),
       })
       .eq("mandate_id", mandateId)
       .eq("candidate_id", m.candidate_id);

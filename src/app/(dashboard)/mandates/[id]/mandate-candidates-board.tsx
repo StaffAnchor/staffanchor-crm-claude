@@ -10,7 +10,8 @@ import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
-import { Zap, Sparkles, Flag } from "lucide-react";
+import { Zap, Sparkles } from "lucide-react";
+import MandateAssessmentPopover from "./mandate-assessment-popover";
 
 // Kanban view of the same rows the table shows, grouped by pipeline stage --
 // inspired by the reference ATS screenshot the user shared ("Look how
@@ -119,6 +120,32 @@ export default function MandateCandidatesBoard({
   const [rows, setRows] = useState(initialRows);
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
+  const [reassessingIds, setReassessingIds] = useState<Set<string>>(new Set());
+
+  async function reassessCandidate(candidateId: string) {
+    setReassessingIds((prev) => new Set(prev).add(candidateId));
+    try {
+      const res = await fetch("/api/mandate-match-pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mandateId: mandateContext.mandateId, candidateId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error ?? "Couldn't assess this candidate." });
+        return;
+      }
+      router.refresh();
+    } catch {
+      setMessage({ type: "error", text: "Couldn't assess this candidate." });
+    } finally {
+      setReassessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(candidateId);
+        return next;
+      });
+    }
+  }
 
   async function generateStabilityScore(candidateId: string) {
     setGeneratingStability((prev) => new Set(prev).add(candidateId));
@@ -394,17 +421,13 @@ export default function MandateCandidatesBoard({
                             {row.candidate.notice_period && (
                               <span className="text-[9.5px] text-slate-400">Notice: {row.candidate.notice_period}</span>
                             )}
-                            {((row.candidate.ai_decision_flags?.red_flags?.length ?? 0) > 0 ||
-                              (row.candidate.talent_micro_index?.disqualifiers?.length ?? 0) > 0) && (
-                              <span
-                                title={[
-                                  ...(row.candidate.ai_decision_flags?.red_flags ?? []).map((f) => `Red flag: ${f}`),
-                                  ...(row.candidate.talent_micro_index?.disqualifiers ?? []).map((f) => `Disqualifier: ${f}`),
-                                ].join("\n")}
-                              >
-                                <Flag className="w-2.5 h-2.5 text-rose-500 shrink-0" />
-                              </span>
-                            )}
+                          </div>
+                          <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                            <MandateAssessmentPopover
+                              assessment={row.match_assessment}
+                              onReassess={() => reassessCandidate(row.candidate.id)}
+                              reassessing={reassessingIds.has(row.candidate.id)}
+                            />
                           </div>
                         </div>
                         {isMoving && <Loader2 className="w-3 h-3 animate-spin text-slate-400 shrink-0" />}
