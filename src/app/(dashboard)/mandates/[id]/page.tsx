@@ -80,7 +80,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, date_of_joining, created_at, is_priority, match_score, match_assessment, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index)"
+      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, created_at, is_priority, match_score, match_assessment, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index)"
     )
     .eq("mandate_id", id);
 
@@ -399,6 +399,8 @@ export default async function MandateDetailPage({
                 stage_updated_at: l.stage_updated_at,
                 client_decision_at: l.client_decision_at,
                 rejected_from_stage: l.rejected_from_stage,
+                rejection_reason: l.rejection_reason ?? null,
+                rejection_category: l.rejection_category ?? null,
                 date_of_joining: l.date_of_joining,
                 created_at: l.created_at,
                 is_priority: l.is_priority ?? false,

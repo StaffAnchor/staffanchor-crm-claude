@@ -21,6 +21,7 @@ import {
   Radar,
   Clock,
   Zap,
+  XCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ReportBarList, { type BarItem } from "./report-bar-list";
@@ -34,6 +35,7 @@ import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Tabs } from "@/components/ui/tabs";
 import { STAGE_ORDER, STAGE_LABELS, computeFunnel, pct as pctRate } from "../clients/funnel-utils";
+import { RECRUITER_REJECTION_REASONS, CLIENT_REJECTION_REASONS } from "@/lib/mandate-stage";
 import { computeFillProbability } from "@/lib/fill-probability";
 import { ACTION_LABELS, type TimeSavedActionType } from "@/lib/time-saved";
 
@@ -178,7 +180,7 @@ export default async function ReportsPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "candidate_id, added_by, stage, mandate_id, in_shortlist, confirmed_interview_at, stage_updated_at, date_of_joining"
+      "candidate_id, added_by, stage, mandate_id, in_shortlist, confirmed_interview_at, stage_updated_at, date_of_joining, stage_source, rejection_category"
     );
   const allLinks = links ?? [];
 
@@ -586,6 +588,48 @@ export default async function ReportsPage({
     })),
     movementTotal
   );
+
+  // ---- Rejection reasons in range -- split by who actually made the call
+  // (stage_source, not a guess). Answers "why are candidates actually
+  // falling out of pipelines" instead of just "how many were rejected",
+  // and is the coaching signal that was missing entirely before
+  // rejection_category existed: a recruiter/manager can now see whether
+  // it's mostly our own screening calls or mostly client feedback, and
+  // which specific reason shows up most.
+  const REJECTION_LABEL_LOOKUP: Record<string, string> = Object.fromEntries(
+    [...RECRUITER_REJECTION_REASONS, ...CLIENT_REJECTION_REASONS].map((r) => [r.value, r.label])
+  );
+  const recruiterRejectionCounts: Record<string, number> = {};
+  const clientRejectionCounts: Record<string, number> = {};
+  let recruiterRejectionTotal = 0;
+  let clientRejectionTotal = 0;
+  allLinks.forEach((l) => {
+    if (l.stage !== "rejected" || !l.stage_updated_at) return;
+    const d = new Date(l.stage_updated_at);
+    if (d < rangeFrom || d > new Date(rangeTo.getTime() + 24 * 60 * 60 * 1000 - 1)) return;
+    const category = l.rejection_category ?? "uncategorized";
+    if ((l.stage_source ?? "recruiter") === "recruiter") {
+      recruiterRejectionCounts[category] = (recruiterRejectionCounts[category] ?? 0) + 1;
+      recruiterRejectionTotal += 1;
+    } else {
+      clientRejectionCounts[category] = (clientRejectionCounts[category] ?? 0) + 1;
+      clientRejectionTotal += 1;
+    }
+  });
+  const toRejectionItems = (counts: Record<string, number>, total: number): BarItem[] =>
+    withPct(
+      Object.entries(counts)
+        .sort(([, a], [, b]) => b - a)
+        .map(([key, count]) => ({
+          key,
+          label: key === "uncategorized" ? "No reason recorded (pre-dates this feature)" : REJECTION_LABEL_LOOKUP[key] ?? key,
+          count,
+          href: "/mandates",
+        })),
+      total
+    );
+  const recruiterRejectionItems = toRejectionItems(recruiterRejectionCounts, recruiterRejectionTotal);
+  const clientRejectionItems = toRejectionItems(clientRejectionCounts, clientRejectionTotal);
 
   // ---- Placements in range (organic signal of revenue-generating events)
   const placementsInRange = allLinks.filter((l) => {
@@ -1108,6 +1152,32 @@ export default async function ReportsPage({
                     </span>
                   </div>
                   <ReportBarList items={movementItems} colorClass="bg-teal-500/80" emptyLabel="No stage changes recorded in this window." />
+                </Card>
+
+                <Card className="mb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <XCircle className="w-4 h-4 text-rose-500" />
+                    <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Rejection reasons</h2>
+                    <span className="text-[10.5px] text-slate-400 ml-auto">{currentRangeLabel}</span>
+                  </div>
+                  <p className="text-[11.5px] text-slate-400 mb-4">
+                    Split by who actually made the call -- &quot;We&apos;re passing&quot; (our own screening) vs &quot;Client passed&quot; (their
+                    feedback, relayed or via portal) -- so a pattern here is a real coaching or JD signal, not a guess.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500 mb-2">
+                        We passed ({recruiterRejectionTotal})
+                      </p>
+                      <ReportBarList items={recruiterRejectionItems} colorClass="bg-indigo-500/80" emptyLabel="No internal rejections in this window." highlightTop />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 mb-2">
+                        Client passed ({clientRejectionTotal})
+                      </p>
+                      <ReportBarList items={clientRejectionItems} colorClass="bg-amber-500/80" emptyLabel="No client rejections in this window." highlightTop />
+                    </div>
+                  </div>
                 </Card>
 
                 <Card className="flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">

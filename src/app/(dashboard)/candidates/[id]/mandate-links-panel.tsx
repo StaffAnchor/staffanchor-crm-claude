@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { STAGES, applyStageChange, joiningProgress, type Stage, type StageSource } from "@/lib/mandate-stage";
+import { STAGES, applyStageChange, joiningProgress, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
+import MandateRejectModal from "../../mandates/[id]/mandate-reject-modal";
 
 type Link = {
   id: string;
@@ -13,6 +14,7 @@ type Link = {
   stage: string;
   in_shortlist: boolean;
   rejection_reason: string | null;
+  rejection_category: string | null;
   stage_source: StageSource | null;
   client_decision_at: string | null;
   rejected_from_stage: string | null;
@@ -70,6 +72,36 @@ export default function MandateLinksPanel({
     Record<string, { stage: Stage; clientRelayed: boolean; rejectionReason: string; dateOfJoining: string }>
   >({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [rejectModalLink, setRejectModalLink] = useState<Link | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+
+  // Same modal (and the same mandatory-reason enforcement in
+  // applyStageChange) as the mandate pipeline Table/Board -- rejecting a
+  // candidate now looks and behaves identically no matter which page you
+  // do it from.
+  async function confirmReject(result: { source: "recruiter" | "client_relayed"; category: string; note: string }) {
+    if (!rejectModalLink) return;
+    const l = rejectModalLink;
+    setRejecting(true);
+    try {
+      await applyStageChange(supabase, {
+        linkId: l.id,
+        candidateId,
+        mandateId: l.mandate_id,
+        candidateName,
+        mandateLabel: `${l.mandates?.role_title ?? "Role"} — ${l.mandates?.client_name ?? "Client"}`,
+        previousStage: l.stage,
+        newStage: "rejected",
+        source: result.source,
+        rejectionCategory: result.category,
+        rejectionReason: result.note || undefined,
+      });
+      setRejectModalLink(null);
+      router.refresh();
+    } finally {
+      setRejecting(false);
+    }
+  }
 
   const linkedMandateIds = new Set(links.map((l) => l.mandate_id));
   const availableMandates = openMandates.filter((m) => !linkedMandateIds.has(m.id));
@@ -218,7 +250,17 @@ export default function MandateLinksPanel({
               )}
 
               {l.stage === "rejected" && l.rejected_from_stage && (
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Rejected from: {l.rejected_from_stage.replace(/_/g, " ")}</p>
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  Rejected from: {l.rejected_from_stage.replace(/_/g, " ")}
+                  {l.rejection_category && l.stage_source && (
+                    <>
+                      {" "}
+                      · <span className={l.stage_source === "recruiter" ? "text-indigo-600" : "text-amber-600"}>
+                        {l.stage_source === "recruiter" ? "We passed" : "Client passed"} — {rejectionReasonLabel(l.stage_source, l.rejection_category)}
+                      </span>
+                    </>
+                  )}
+                </p>
               )}
 
               {progress && (
@@ -252,7 +294,14 @@ export default function MandateLinksPanel({
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <select
                   value={p.stage}
-                  onChange={(e) => setPendingFor(l.id, { stage: e.target.value as Stage })}
+                  onChange={(e) => {
+                    const next = e.target.value as Stage;
+                    if (next === "rejected") {
+                      setRejectModalLink(l);
+                      return;
+                    }
+                    setPendingFor(l.id, { stage: next });
+                  }}
                   className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                 >
                   {STAGES.map((s) => (
@@ -271,16 +320,6 @@ export default function MandateLinksPanel({
                     />
                     Client told us this
                   </label>
-                )}
-
-                {dirty && p.stage === "rejected" && (
-                  <input
-                    type="text"
-                    placeholder="Rejection reason (optional)"
-                    value={p.rejectionReason}
-                    onChange={(e) => setPendingFor(l.id, { rejectionReason: e.target.value })}
-                    className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1 flex-1 min-w-[160px]"
-                  />
                 )}
 
                 {/* Visible whenever the pending/current stage is Offer or
@@ -333,6 +372,15 @@ export default function MandateLinksPanel({
           Link
         </Button>
       </div>
+
+      {rejectModalLink && (
+        <MandateRejectModal
+          candidateName={candidateName}
+          submitting={rejecting}
+          onCancel={() => setRejectModalLink(null)}
+          onConfirm={confirmReject}
+        />
+      )}
     </div>
   );
 }

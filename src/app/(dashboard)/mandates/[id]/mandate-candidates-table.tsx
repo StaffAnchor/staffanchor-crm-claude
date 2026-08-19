@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MessageCircleQuestion } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
-import { STAGES, applyStageChange, type Stage, type StageSource } from "@/lib/mandate-stage";
+import { STAGES, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
+import MandateRejectModal from "./mandate-reject-modal";
 import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
@@ -49,6 +50,8 @@ export type MandateCandidateRow = {
   stage_updated_at: string | null;
   client_decision_at: string | null;
   rejected_from_stage: string | null;
+  rejection_reason: string | null;
+  rejection_category: string | null;
   date_of_joining: string | null;
   created_at: string | null;
   screened: boolean;
@@ -161,9 +164,10 @@ export default function MandateCandidatesTable({
   // separate from `rows` state since most rows are never being edited.
   const [editingStageId, setEditingStageId] = useState<string | null>(null);
   const [clientRelayed, setClientRelayed] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
   const [dateOfJoining, setDateOfJoining] = useState("");
   const [savingStage, setSavingStage] = useState(false);
+  const [rejectModalRow, setRejectModalRow] = useState<MandateCandidateRow | null>(null);
+  const [rejecting, setRejecting] = useState(false);
 
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
@@ -255,6 +259,11 @@ export default function MandateCandidatesTable({
     setSelected((prev) => (prev.size === rows.length ? new Set() : new Set(rows.map((r) => r.id))));
   }
 
+  // "rejected" is deliberately NOT reachable from here -- picking it in the
+  // stage <select> below opens MandateRejectModal instead (see
+  // handleStageSelect), since a rejection now requires an explicit
+  // who's-rejecting choice and a mandatory reason that this generic
+  // save path has no UI for.
   async function saveStage(row: MandateCandidateRow, newStage: Stage) {
     setSavingStage(true);
     setMessage(null);
@@ -269,7 +278,6 @@ export default function MandateCandidatesTable({
         previousStage: row.stage,
         newStage,
         source,
-        rejectionReason: newStage === "rejected" ? rejectionReason : undefined,
         // Save whenever a date is entered, not just when advancing to
         // "placed" -- a client often confirms joining well before the
         // recruiter formally marks the candidate Placed (e.g. right at
@@ -281,13 +289,50 @@ export default function MandateCandidatesTable({
       );
       setEditingStageId(null);
       setClientRelayed(false);
-      setRejectionReason("");
       setDateOfJoining("");
       router.refresh();
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to update stage." });
     } finally {
       setSavingStage(false);
+    }
+  }
+
+  // The actual rejection write path -- source/category come from the
+  // modal, never from the removed checkbox+free-text combo, so a
+  // rejection can no longer be saved without both being explicit.
+  async function confirmReject(result: { source: Extract<StageSource, "recruiter" | "client_relayed">; category: string; note: string }) {
+    if (!rejectModalRow) return;
+    const row = rejectModalRow;
+    setRejecting(true);
+    setMessage(null);
+    try {
+      await applyStageChange(supabase, {
+        linkId: row.id,
+        candidateId: row.candidate.id,
+        mandateId: mandateContext.mandateId as string,
+        candidateName: row.candidate.full_name,
+        mandateLabel: `${mandateContext.role_title as string} — ${mandateContext.client_name as string}`,
+        previousStage: row.stage,
+        newStage: "rejected",
+        source: result.source,
+        rejectionCategory: result.category,
+        rejectionReason: result.note || undefined,
+      });
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === row.id
+            ? { ...r, stage: "rejected", stage_source: result.source, rejection_category: result.category, rejection_reason: result.note || null, rejected_from_stage: r.stage }
+            : r
+        )
+      );
+      setRejectModalRow(null);
+      setEditingStageId(null);
+      router.refresh();
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to reject candidate." });
+    } finally {
+      setRejecting(false);
     }
   }
 
@@ -532,7 +577,17 @@ export default function MandateCandidatesTable({
                     <select
                       defaultValue={l.stage}
                       autoFocus
-                      onChange={(e) => saveStage(l, e.target.value as Stage)}
+                      onChange={(e) => {
+                        const next = e.target.value as Stage;
+                        // Rejecting has its own dedicated modal (who's
+                        // rejecting + mandatory reason) instead of this
+                        // generic save path -- see MandateRejectModal.
+                        if (next === "rejected") {
+                          setRejectModalRow(l);
+                          return;
+                        }
+                        saveStage(l, next);
+                      }}
                       disabled={savingStage}
                       className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
                     >
@@ -546,13 +601,6 @@ export default function MandateCandidatesTable({
                       <input type="checkbox" checked={clientRelayed} onChange={(e) => setClientRelayed(e.target.checked)} />
                       Client told us this
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Rejection reason (if rejected)"
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
-                    />
                     <label className="text-[10px] text-slate-400">
                       Joining date (expected or confirmed -- can be set at any stage)
                     </label>
@@ -575,7 +623,6 @@ export default function MandateCandidatesTable({
                       onClick={() => {
                         setEditingStageId(null);
                         setClientRelayed(false);
-                        setRejectionReason("");
                         setDateOfJoining("");
                       }}
                       className="text-[11px] text-slate-400 hover:text-slate-600 text-left"
@@ -602,6 +649,18 @@ export default function MandateCandidatesTable({
                     {l.date_of_joining && (
                       <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                         Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </span>
+                    )}
+                    {/* "Where do the answers reflect" -- right here, without
+                        opening anything, so a recruiter scanning the pipeline
+                        can see at a glance whether a rejection was ours or
+                        the client's and why, not just a bare "rejected" badge. */}
+                    {l.stage === "rejected" && l.rejection_category && (
+                      <span
+                        className={`text-[10.5px] font-medium whitespace-nowrap ${l.stage_source === "recruiter" ? "text-indigo-500" : "text-amber-600"}`}
+                        title={l.rejection_reason ?? undefined}
+                      >
+                        {l.stage_source === "recruiter" ? "We passed" : "Client passed"} · {rejectionReasonLabel(l.stage_source as "recruiter" | "client_relayed", l.rejection_category)}
                       </span>
                     )}
                   </div>
@@ -643,6 +702,15 @@ export default function MandateCandidatesTable({
           />
         );
       })()}
+
+      {rejectModalRow && (
+        <MandateRejectModal
+          candidateName={rejectModalRow.candidate.full_name}
+          submitting={rejecting}
+          onCancel={() => setRejectModalRow(null)}
+          onConfirm={confirmReject}
+        />
+      )}
     </div>
   );
 }

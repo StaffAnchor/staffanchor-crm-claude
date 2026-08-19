@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
-import { STAGES, applyStageChange, type Stage } from "@/lib/mandate-stage";
+import { STAGES, applyStageChange, rejectionReasonLabel, type Stage } from "@/lib/mandate-stage";
+import MandateRejectModal from "./mandate-reject-modal";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
@@ -195,6 +196,16 @@ export default function MandateCandidatesBoard({
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [rejectModalRow, setRejectModalRow] = useState<MandateCandidateRow | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+
+  async function confirmReject(result: { source: "recruiter" | "client_relayed"; category: string; note: string }) {
+    if (!rejectModalRow) return;
+    setRejecting(true);
+    await moveCard(rejectModalRow, "rejected", result);
+    setRejecting(false);
+    setRejectModalRow(null);
+  }
   // Same selection + bulk-actions capability the Table view has (shortlist,
   // email JD, email to client, add to group, reject/remove) -- lets a
   // recruiter select cards here too instead of switching to Table just to
@@ -230,7 +241,11 @@ export default function MandateCandidatesBoard({
     return grouped;
   }, [rows]);
 
-  async function moveCard(row: MandateCandidateRow, newStage: Stage) {
+  async function moveCard(
+    row: MandateCandidateRow,
+    newStage: Stage,
+    rejection?: { source: "recruiter" | "client_relayed"; category: string; note: string }
+  ) {
     if (row.stage === newStage) return;
     setMovingId(row.id);
     setMessage(null);
@@ -245,7 +260,9 @@ export default function MandateCandidatesBoard({
         mandateLabel: `${mandateContext.role_title} — ${mandateContext.client_name}`,
         previousStage: prevStage,
         newStage,
-        source: "recruiter",
+        source: rejection?.source ?? "recruiter",
+        rejectionCategory: rejection?.category,
+        rejectionReason: rejection?.note || undefined,
       });
       router.refresh();
     } catch (e) {
@@ -256,6 +273,12 @@ export default function MandateCandidatesBoard({
     }
   }
 
+  // Dropping a card into "Dropped" no longer silently rejects with zero
+  // reason recorded (the old hardcoded `newStage: "rejected"` call passed
+  // no rejectionReason at all) -- it now opens the same reject modal the
+  // Table view uses, and the actual stage change only happens once a
+  // reason is confirmed. Dropping into any other column still moves
+  // immediately, unchanged.
   function handleDrop(e: React.DragEvent, columnKey: string) {
     e.preventDefault();
     setDragOverStage(null);
@@ -264,8 +287,11 @@ export default function MandateCandidatesBoard({
     if (!linkId) return;
     const row = rows.find((r) => r.id === linkId);
     if (!row) return;
-    const newStage: Stage = columnKey === "dropped" ? "rejected" : (columnKey as Stage);
-    moveCard(row, newStage);
+    if (columnKey === "dropped") {
+      setRejectModalRow(row);
+      return;
+    }
+    moveCard(row, columnKey as Stage);
   }
 
   const allColumns: { key: string; label: string }[] = [
@@ -494,6 +520,15 @@ export default function MandateCandidatesBoard({
                           Joining {new Date(row.date_of_joining).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </p>
                       )}
+                      {row.stage === "rejected" && row.rejection_category && (
+                        <p
+                          className={`mt-1 text-[10px] font-medium ${row.stage_source === "recruiter" ? "text-indigo-500" : "text-amber-600"}`}
+                          title={row.rejection_reason ?? undefined}
+                        >
+                          {row.stage_source === "recruiter" ? "We passed" : "Client passed"} ·{" "}
+                          {rejectionReasonLabel(row.stage_source as "recruiter" | "client_relayed", row.rejection_category)}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
@@ -503,6 +538,15 @@ export default function MandateCandidatesBoard({
           );
         })}
       </div>
+
+      {rejectModalRow && (
+        <MandateRejectModal
+          candidateName={rejectModalRow.candidate.full_name}
+          submitting={rejecting}
+          onCancel={() => setRejectModalRow(null)}
+          onConfirm={confirmReject}
+        />
+      )}
     </div>
   );
 }

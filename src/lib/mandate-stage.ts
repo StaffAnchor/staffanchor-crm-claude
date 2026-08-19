@@ -30,6 +30,39 @@ const SOURCE_LABEL: Record<StageSource, string> = {
   client_shortlist_link: "Client (via shortlist link)",
 };
 
+// Two deliberately separate, short lists -- the whole point of splitting
+// "Rejected" into "We're passing" vs "Client passed" is that these should
+// never be confusable, and a recruiter picking a reason should only ever
+// see the list that's actually true for who made the call. Codes are
+// snake_case so they're stable to group by even if the label text changes.
+export const RECRUITER_REJECTION_REASONS: { value: string; label: string }[] = [
+  { value: "skills_mismatch", label: "Skills/experience mismatch" },
+  { value: "salary_mismatch", label: "Salary expectation mismatch" },
+  { value: "location_mismatch", label: "Location/work-mode mismatch" },
+  { value: "culture_fit", label: "Culture/team fit concern" },
+  { value: "better_candidate_found", label: "Better candidate found for this mandate" },
+  { value: "unresponsive", label: "Unresponsive / withdrew" },
+  { value: "duplicate_or_ineligible", label: "Duplicate profile or ineligible" },
+  { value: "other_internal", label: "Other" },
+];
+
+export const CLIENT_REJECTION_REASONS: { value: string; label: string }[] = [
+  { value: "client_skills_gap", label: "Client cited a skills gap" },
+  { value: "client_salary", label: "Client cited salary/budget" },
+  { value: "client_culture_fit", label: "Client cited culture/team fit" },
+  { value: "role_paused_or_closed", label: "Role paused or closed" },
+  { value: "lost_to_other_candidate", label: "Client chose another candidate" },
+  { value: "lost_to_other_agency", label: "Lost to another agency/source" },
+  { value: "no_client_feedback", label: "Client passed, no reason given" },
+  { value: "other_client", label: "Other" },
+];
+
+export function rejectionReasonLabel(source: StageSource, category: string | null): string | null {
+  if (!category) return null;
+  const list = source === "recruiter" ? RECRUITER_REJECTION_REASONS : CLIENT_REJECTION_REASONS;
+  return list.find((r) => r.value === category)?.label ?? category;
+}
+
 // Applies a stage change to one candidate_mandate_links row, and -- this is
 // the actual fix for the bug where changing a candidate's status told
 // nobody which mandate it was for and nothing downstream noticed -- when
@@ -51,11 +84,29 @@ export async function applyStageChange(
     newStage: Stage;
     source: StageSource;
     rejectionReason?: string | null;
+    // Short reason code (e.g. "skills_mismatch", "client_budget_cut") --
+    // see RECRUITER_REJECTION_REASONS/CLIENT_REJECTION_REASONS below for
+    // the two scoped lists a caller should be choosing from depending on
+    // `source`. Kept separate from the free-text rejectionReason so
+    // rejections can actually be grouped/reported on (see Reports'
+    // "Rejection reasons" card) instead of only ever read one at a time.
+    rejectionCategory?: string | null;
     dateOfJoining?: string | null;
   }
 ) {
   const isClientAttributed = params.source !== "recruiter";
   const nowIso = new Date().toISOString();
+
+  // A rejection with no reason at all is exactly the gap that made it
+  // impossible to tell "we passed on skills" from "client passed on
+  // budget" after the fact, or to build any reporting on why candidates
+  // are actually falling out of pipelines -- enforced here, at the single
+  // shared write path, rather than per-UI, so every caller (table, board,
+  // candidate profile, bulk actions, anything added later) gets the same
+  // guarantee instead of relying on each surface remembering to ask.
+  if (params.newStage === "rejected" && !params.rejectionCategory) {
+    throw new Error("A reason is required to reject a candidate.");
+  }
 
   const update: Record<string, unknown> = {
     stage: params.newStage,
@@ -65,6 +116,7 @@ export async function applyStageChange(
   if (isClientAttributed) update.client_decision_at = nowIso;
   if (params.newStage === "rejected") {
     update.rejected_from_stage = params.previousStage;
+    update.rejection_category = params.rejectionCategory;
     if (params.rejectionReason) update.rejection_reason = params.rejectionReason;
   }
   // Previously only saved when advancing to "placed" -- but a client often
