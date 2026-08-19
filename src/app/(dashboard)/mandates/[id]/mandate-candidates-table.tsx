@@ -31,6 +31,15 @@ const STAGE_COLOR: Record<string, string> = {
 // further along (e.g. already at client_interview) back to "submitted".
 const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {});
 
+// Same thresholds as the Matching Workspace's scoreColor() -- keeps "what
+// counts as a strong match" consistent whether a recruiter is looking at
+// the match list or the pipeline table/board.
+function matchScoreTone(score: number) {
+  if (score >= 75) return "bg-emerald-50 text-emerald-700";
+  if (score >= 50) return "bg-amber-50 text-amber-700";
+  return "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
+}
+
 export type MandateCandidateRow = {
   id: string;
   stage: string;
@@ -46,6 +55,13 @@ export type MandateCandidateRow = {
   // specific application (jobs.staffanchor.com purchase flow) -- surfaced
   // here so the recruiter sees it before opening the profile.
   is_priority: boolean;
+  // Snapshotted from the Matching Workspace at the moment this candidate was
+  // added to the pipeline via "Add to pipeline" (see matches-workspace.tsx
+  // addToPipeline) -- null for candidates added any other way (manual add,
+  // quick-apply, LinkedIn sourcing promotion). Lets a recruiter see at a
+  // glance how strong a fit the system originally thought this candidate
+  // was, without leaving the Table/Board for the matching workspace.
+  match_score: number | null;
   candidate: {
     id: string;
     full_name: string;
@@ -304,6 +320,14 @@ export default function MandateCandidatesTable({
                       title="Candidate paid to flag this application as priority"
                     >
                       <Zap className="h-2.5 w-2.5" /> Priority
+                    </span>
+                  )}
+                  {l.match_score != null && (
+                    <span
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${matchScoreTone(l.match_score)}`}
+                      title="Match score at the time this candidate was added to the pipeline"
+                    >
+                      Match {l.match_score}
                     </span>
                   )}
                 </div>

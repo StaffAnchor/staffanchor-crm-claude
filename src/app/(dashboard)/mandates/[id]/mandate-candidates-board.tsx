@@ -308,6 +308,20 @@ export default function MandateCandidatesBoard({
                                 <Zap className="h-2 w-2" /> Priority
                               </span>
                             )}
+                            {row.match_score != null && (
+                              <span
+                                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${
+                                  row.match_score >= 75
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : row.match_score >= 50
+                                      ? "bg-amber-50 text-amber-700"
+                                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                }`}
+                                title="Match score at the time this candidate was added to the pipeline"
+                              >
+                                Match {row.match_score}
+                              </span>
+                            )}
                           </div>
                           <p className="text-[10.5px] text-slate-400 truncate">
                             {row.candidate.sub_domain ?? "—"}

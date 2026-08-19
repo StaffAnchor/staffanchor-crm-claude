@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -97,6 +97,21 @@ function matchCountColor(met: number, total: number) {
   return "text-amber-700 bg-amber-50";
 }
 
+// A quick "is this candidate new or have we had them for a while" signal --
+// requested so a recruiter scanning matches doesn't have to open each
+// profile just to tell a fresh registrant from someone who's been sitting
+// in the pool for months.
+function registeredLabel(iso: string): { text: string; isNew: boolean } {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+  const dateStr = new Date(iso).toLocaleDateString();
+  const relative = days <= 0 ? "today" : days === 1 ? "1 day ago" : days < 30 ? `${days} days ago` : dateStr;
+  return { text: `Registered ${relative}`, isNew: days <= 14 };
+}
+
+function registerLabelClass(iso: string): string {
+  return registeredLabel(iso).isNew ? "font-medium text-emerald-600" : "";
+}
+
 function stabilityLabel(score: number): { label: string; tone: string } {
   if (score >= 71) return { label: "Stable", tone: "text-emerald-700 bg-emerald-50" };
   if (score >= 36) return { label: "Some Movement", tone: "text-amber-700 bg-amber-50" };
@@ -158,6 +173,7 @@ export default function MatchesWorkspace({
   initialMatches,
   initialComputedAt,
   proactiveMatches: initialProactiveMatches,
+  linkedCandidateIds: initialLinkedCandidateIds,
 }: {
   mandateId: string;
   mustHaves: string[];
@@ -165,6 +181,10 @@ export default function MatchesWorkspace({
   initialMatches?: unknown;
   initialComputedAt?: string | null;
   proactiveMatches?: ProactiveMatchRow[];
+  // Candidates already linked to this mandate's pipeline -- lets the
+  // "linked to this mandate only" filter work without a round trip, and
+  // powers the "In pipeline" badge on every match card.
+  linkedCandidateIds?: string[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -183,6 +203,9 @@ export default function MatchesWorkspace({
   const [extraCriteria, setExtraCriteria] = useState("");
   const [lastRunUsedExtraCriteria, setLastRunUsedExtraCriteria] = useState(false);
   const [fullMatchesOnly, setFullMatchesOnly] = useState(false);
+  const [linkedOnly, setLinkedOnly] = useState(false);
+  const linkedIdSet = useMemo(() => new Set(initialLinkedCandidateIds ?? []), [initialLinkedCandidateIds]);
+  const [registeredAt, setRegisteredAt] = useState<Record<string, string>>({});
 
   async function runMatch(useExtraCriteria: boolean) {
     setLoading(true);
@@ -270,6 +293,29 @@ export default function MatchesWorkspace({
   );
   const [dismissingProactiveId, setDismissingProactiveId] = useState<string | null>(null);
 
+  // Registration date per candidate -- fetched separately since neither the
+  // cached auto_match_results nor mandate_proactive_matches rows carry it.
+  // Batched by whatever candidate_ids are currently showing (main matches +
+  // "new since you last looked"), and only re-fetched for ids not already
+  // in hand, so re-running the match doesn't re-query candidates already seen.
+  useEffect(() => {
+    const ids = new Set<string>();
+    for (const m of matches ?? []) ids.add(m.candidate_id);
+    for (const { parsed } of proactiveMatches) ids.add(parsed.candidate_id);
+    const missing = Array.from(ids).filter((id) => !(id in registeredAt));
+    if (missing.length === 0) return;
+    (async () => {
+      const { data } = await supabase.from("candidates").select("id, created_at").in("id", missing);
+      if (!data) return;
+      setRegisteredAt((prev) => {
+        const next = { ...prev };
+        for (const row of data) next[row.id] = row.created_at;
+        return next;
+      });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matches, proactiveMatches]);
+
   async function dismissProactiveMatch(rowId: string) {
     setDismissingProactiveId(rowId);
     const { error } = await supabase.from("mandate_proactive_matches").delete().eq("id", rowId);
@@ -287,9 +333,11 @@ export default function MatchesWorkspace({
       if (metB !== metA) return metB - metA;
       return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
     });
-    if (!fullMatchesOnly) return sorted;
-    return sorted.filter((m) => m.must_haves.length > 0 && m.must_haves.every((c) => c.status === "met"));
-  }, [matches, fullMatchesOnly]);
+    const fullOnly = fullMatchesOnly
+      ? sorted.filter((m) => m.must_haves.length > 0 && m.must_haves.every((c) => c.status === "met"))
+      : sorted;
+    return linkedOnly ? fullOnly.filter((m) => linkedIdSet.has(m.candidate_id)) : fullOnly;
+  }, [matches, fullMatchesOnly, linkedOnly, linkedIdSet]);
 
   return (
     <div className="mt-4">
@@ -319,8 +367,18 @@ export default function MatchesWorkspace({
                     <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${scoreColor(m.score)}`}>
                       {m.score}
                     </span>
+                    {linkedIdSet.has(m.candidate_id) && (
+                      <span className="inline-flex items-center text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                        In pipeline
+                      </span>
+                    )}
                   </div>
                   <p className="text-[12px] text-slate-600 dark:text-slate-400 truncate">{m.reason}</p>
+                  {registeredAt[m.candidate_id] && (
+                    <p className={`text-[11px] mt-0.5 ${registerLabelClass(registeredAt[m.candidate_id]) || "text-slate-400"}`}>
+                      {registeredLabel(registeredAt[m.candidate_id]).text}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
@@ -426,6 +484,17 @@ export default function MatchesWorkspace({
                   Full must-have matches only
                 </label>
               )}
+              {matches && matches.length > 0 && linkedIdSet.size > 0 && (
+                <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={linkedOnly}
+                    onChange={(e) => setLinkedOnly(e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  Linked to this mandate only
+                </label>
+              )}
               <button
                 onClick={() => runMatch(false)}
                 disabled={loading}
@@ -466,9 +535,11 @@ export default function MatchesWorkspace({
 
           {sortedMatches && sortedMatches.length === 0 && (
             <p className="text-[12px] text-slate-400 py-6 text-center">
-              {fullMatchesOnly
-                ? "No candidates fully satisfy every must-have. Uncheck the filter to see partial matches."
-                : "No strong matches found in the current candidate pool for this mandate."}
+              {linkedOnly
+                ? "None of the candidates already linked to this mandate are in the current match list. Uncheck the filter to see the full pool."
+                : fullMatchesOnly
+                  ? "No candidates fully satisfy every must-have. Uncheck the filter to see partial matches."
+                  : "No strong matches found in the current candidate pool for this mandate."}
             </p>
           )}
 
@@ -526,9 +597,22 @@ export default function MatchesWorkspace({
                             <AlertTriangle className="w-2.5 h-2.5" /> Summary not generated yet
                           </Link>
                         )}
+                        {linkedIdSet.has(m.candidate_id) && (
+                          <span className="inline-flex items-center text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                            In pipeline
+                          </span>
+                        )}
                       </div>
-                      {facts.length > 0 && (
-                        <p className="text-[11px] text-slate-400 mt-0.5">{facts.join(" · ")}</p>
+                      {(facts.length > 0 || registeredAt[m.candidate_id]) && (
+                        <p className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1">
+                          {facts.length > 0 && <span>{facts.join(" · ")}</span>}
+                          {facts.length > 0 && registeredAt[m.candidate_id] && <span>·</span>}
+                          {registeredAt[m.candidate_id] && (
+                            <span className={registerLabelClass(registeredAt[m.candidate_id])}>
+                              {registeredLabel(registeredAt[m.candidate_id]).text}
+                            </span>
+                          )}
+                        </p>
                       )}
                       <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{m.reason}</p>
 

@@ -40,6 +40,16 @@ export default async function MandateMatchesPage({
     .eq("mandate_id", id)
     .order("created_at", { ascending: false });
 
+  // Candidates already in this mandate's pipeline -- lets the workspace
+  // offer a "linked to this mandate only" filter/badge on matches, since a
+  // recruiter often wants to know how the candidates they've already
+  // sourced/added stack up rather than scanning the whole candidate pool.
+  const { data: linkedRows } = await supabase
+    .from("candidate_mandate_links")
+    .select("candidate_id")
+    .eq("mandate_id", id);
+  const linkedCandidateIds = Array.from(new Set((linkedRows ?? []).map((r) => r.candidate_id)));
+
   return (
     <div>
       <Link
@@ -80,6 +90,7 @@ export default async function MandateMatchesPage({
         initialMatches={mandate.auto_match_results ?? null}
         initialComputedAt={mandate.auto_match_computed_at ?? null}
         proactiveMatches={proactiveMatches ?? []}
+        linkedCandidateIds={linkedCandidateIds}
       />
     </div>
   );
