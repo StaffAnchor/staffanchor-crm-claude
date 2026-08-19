@@ -43,6 +43,14 @@ export async function updateSession(request: NextRequest) {
     // never a staff cookie -- same class of bug as public-ai-summary above,
     // caught this time before it shipped rather than after a user hit it.
     request.nextUrl.pathname.startsWith("/api/cron/") ||
+    // Postgres (via pg_net, see fn_notify_new_candidate_mandate_link) calls
+    // this server-to-server with a shared secret header, never a staff
+    // cookie -- same class of bug as the two routes above. Missing this
+    // exemption meant every one of these calls got redirected to /login
+    // and came back as a 405 (POST followed onto a GET-only page), so the
+    // auto-score-on-link trigger silently never worked despite being fully
+    // wired -- confirmed via net._http_response showing 405 on every row.
+    request.nextUrl.pathname.startsWith("/api/internal/") ||
     // Meta calls this directly (verification handshake + delivery/inbound
     // webhooks) with no staff cookie -- authorizes itself via
     // WHATSAPP_VERIFY_TOKEN on the GET handshake; same class of bug as

@@ -132,7 +132,17 @@ function splitRawOutput(raw: RawAiOutput): {
 }
 
 function passportToSummary(p: AiPassport): string {
-  return [p.headline, p.compensation_line, p.targets_line, p.stability_line].filter(Boolean).join(" ");
+  const lines = [p.headline, p.compensation_line, p.targets_line, p.stability_line].filter(
+    (l): l is string => Boolean(l)
+  );
+  // resume_highlights was already being generated (concrete, resume-sourced
+  // facts not covered by the four lines above) but never made it into the
+  // flattened ai_summary string shown across the app -- silently dropped,
+  // so every summary read thinner than what the model actually produced.
+  if (p.resume_highlights && p.resume_highlights.length > 0) {
+    lines.push(`Resume highlights: ${p.resume_highlights.join("; ")}.`);
+  }
+  return lines.join(" ");
 }
 
 /**
