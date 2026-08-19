@@ -38,7 +38,9 @@ export async function generateCareerTimelineForCandidate(
 ): Promise<GenerateCareerTimelineResult> {
   const { data: candidate, error } = await supabase
     .from("candidates")
-    .select("resume_text, resume_file_url, career_timeline_resume_source_hash, career_timeline_profile")
+    .select(
+      "resume_text, resume_file_url, career_timeline_resume_source_hash, career_timeline_profile, career_timeline_resume, stability_score"
+    )
     .eq("id", candidateId)
     .single();
   if (error || !candidate) return { ok: false, status: 404, error: "Candidate not found" };
@@ -65,7 +67,33 @@ export async function generateCareerTimelineForCandidate(
   if (!resumeText?.trim()) return { ok: true, skipped: true };
 
   const hash = crypto.createHash("md5").update(resumeText).digest("hex");
-  if (hash === candidate.career_timeline_resume_source_hash) return { ok: true, skipped: true };
+  if (hash === candidate.career_timeline_resume_source_hash) {
+    // Resume hasn't changed since the timeline was last extracted -- no need
+    // to spend another AI call. BUT: if stability_score is still null despite
+    // a timeline already being on file, an earlier run's score-write silently
+    // didn't happen (e.g. the update() call below failed without throwing,
+    // or an older code path saved the timeline without ever computing a
+    // score). That candidate would otherwise be stuck forever -- the hash
+    // always matches, so this function always takes the early-skip branch
+    // and a recruiter clicking "Generate" repeatedly sees no change. Recover
+    // deterministically here (no AI call needed, the timeline is already on
+    // the row) rather than silently no-op-ing again.
+    if (candidate.stability_score !== null && candidate.stability_score !== undefined) {
+      return { ok: true, skipped: true };
+    }
+    const storedResumeEntries = (candidate.career_timeline_resume ?? []) as ResumeTimelineEntry[];
+    if (storedResumeEntries.length === 0) return { ok: true, skipped: true };
+    const scores = computeScores(storedResumeEntries, (candidate.career_timeline_profile as ProfileTimelineEntry[]) ?? []);
+    const { error: recoverError } = await supabase
+      .from("candidates")
+      .update({ stability_score: scores.stability, domain_consistency_score: scores.domainConsistency })
+      .eq("id", candidateId);
+    if (recoverError) {
+      console.error("Recovering missing stability_score from stored timeline failed", candidateId, recoverError);
+      return { ok: false, status: 500, error: "Could not save stability score." };
+    }
+    return { ok: true, entries: storedResumeEntries };
+  }
 
   if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return { ok: false, status: 503, error: "No AI provider API key configured" };
@@ -103,7 +131,7 @@ ${resumeText.slice(0, 12000)}`;
         }));
 
       const scores = computeScores(entries, (candidate.career_timeline_profile as ProfileTimelineEntry[]) ?? []);
-      await supabase
+      const { error: saveError } = await supabase
         .from("candidates")
         .update({
           career_timeline_resume: entries,
@@ -113,6 +141,16 @@ ${resumeText.slice(0, 12000)}`;
           domain_consistency_score: scores.domainConsistency,
         })
         .eq("id", candidateId);
+      // Supabase-js doesn't throw on a failed update -- it just returns
+      // { error }. This call used to ignore that entirely, so a failed
+      // write (RLS, transient DB issue, etc.) looked identical to success:
+      // the hash still got persisted in the caller's next read in some
+      // flows, permanently short-circuiting future regeneration attempts
+      // via the hash-match skip above. Surface it instead.
+      if (saveError) {
+        console.error("Saving extracted career timeline failed", candidateId, saveError);
+        return { ok: false, status: 500, error: "Could not save the extracted career timeline." };
+      }
 
       return { ok: true, entries };
     }
