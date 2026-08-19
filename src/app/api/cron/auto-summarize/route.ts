@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { generateAiPassportForCandidate } from "@/lib/ai-passport";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Auto-generates AI summaries for candidates as they finish registering,
 // so a recruiter never has to remember to click "Generate" -- this is the
@@ -33,7 +34,7 @@ export const maxDuration = 60;
 
 const RECENCY_WINDOW_DAYS = 3;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -101,3 +102,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, processed: results.length, results });
 }
+
+export const GET = withHeartbeat("auto-summarize", 4320, handler);

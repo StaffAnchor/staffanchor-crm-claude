@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Weekly digest: gap #5 from the July 2026 audit. An invited client who
 // never logs into the portal (or stopped logging in) was previously
@@ -13,7 +14,7 @@ export const maxDuration = 60;
 const NEVER_LOGGED_IN_AFTER_DAYS = 7;
 const STALE_LOGIN_AFTER_DAYS = 14;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -121,3 +122,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, inactiveClients: byClient.size, results });
 }
+
+export const GET = withHeartbeat("client-portal-inactivity", 10080, handler);

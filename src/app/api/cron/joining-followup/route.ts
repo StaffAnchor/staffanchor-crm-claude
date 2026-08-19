@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Daily digest: a joining date was captured (at Offer or Placed), but
 // nothing ever followed up on whether the candidate actually joined --
@@ -11,7 +12,7 @@ import { sendEmail, renderEmailShell } from "@/lib/mail";
 // happened), plus a lighter heads-up for joins landing in the next 3 days.
 export const maxDuration = 60;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -121,3 +122,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, mandatesWithJoiners: byMandate.size, results });
 }
+
+export const GET = withHeartbeat("joining-followup", 1440, handler);

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 
 export type GeneratedJd = {
   overview: string;
@@ -72,12 +72,11 @@ export async function generateJdFromNotes(input: {
   raw_notes: string;
   client_name?: string;
 }): Promise<GenerateJdResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
       ok: false,
       status: 503,
-      error: "AI JD generation is not configured yet (missing GEMINI_API_KEY on the server).",
+      error: "AI JD generation is not configured yet (no AI provider API key set on the server).",
     };
   }
   if (!input.raw_notes?.trim()) {
@@ -120,38 +119,27 @@ Return ONLY a JSON object (no markdown fence, no commentary) with this exact sha
 }
 Each array should have 3-8 concise bullets (no leading dashes or bullet characters -- just the sentence). If the notes don't mention compensation/benefits beyond what's in "Known facts", it's fine to synthesize a couple of generic-but-plausible bullets from the budget figure given, but do not fabricate specific perks that weren't mentioned.`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const jd = parseJdJson(raw);
-      if (!jd) {
-        lastError = new Error("Model response was not valid JSON.");
-        continue;
-      }
-      const scrubbed: GeneratedJd = {
-        overview: scrubClientName(jd.overview, input.client_name),
-        responsibilities: scrubClientName(jd.responsibilities, input.client_name),
-        candidate_profile: scrubClientName(jd.candidate_profile, input.client_name),
-        compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name),
-      };
-      return { ok: true, jd: scrubbed };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini JD generation failed with model ${modelName}`, err);
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const jd = parseJdJson(raw);
+    if (!jd) {
+      return { ok: false, status: 500, error: "AI JD generation failed. Please try again." };
     }
+    const scrubbed: GeneratedJd = {
+      overview: scrubClientName(jd.overview, input.client_name),
+      responsibilities: scrubClientName(jd.responsibilities, input.client_name),
+      candidate_profile: scrubClientName(jd.candidate_profile, input.client_name),
+      compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name),
+    };
+    return { ok: true, jd: scrubbed };
+  } catch (err) {
+    console.error("JD generation failed on every configured AI provider", err);
+    const message =
+      err instanceof Error && err.message.includes("429")
+        ? "All configured AI providers hit their free-tier quota. Try again later."
+        : "AI JD generation failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota on Google's side. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing for standard paid-tier limits."
-      : "AI JD generation failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }
 
 // Applies a single, targeted change to an already-written JD -- e.g. "make
@@ -169,12 +157,11 @@ export async function refineJd(input: {
   instruction: string;
   client_name?: string;
 }): Promise<GenerateJdResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
       ok: false,
       status: 503,
-      error: "AI JD editing is not configured yet (missing GEMINI_API_KEY on the server).",
+      error: "AI JD editing is not configured yet (no AI provider API key set on the server).",
     };
   }
   if (!input.instruction?.trim()) {
@@ -210,36 +197,25 @@ Return ONLY a JSON object (no markdown fence, no commentary) with this exact sha
   "compensation_benefits": ["bullet 1", "bullet 2", ...]
 }`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const jd = parseJdJson(raw);
-      if (!jd) {
-        lastError = new Error("Model response was not valid JSON.");
-        continue;
-      }
-      const scrubbed: GeneratedJd = {
-        overview: scrubClientName(jd.overview, input.client_name),
-        responsibilities: scrubClientName(jd.responsibilities, input.client_name),
-        candidate_profile: scrubClientName(jd.candidate_profile, input.client_name),
-        compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name),
-      };
-      return { ok: true, jd: scrubbed };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini JD edit failed with model ${modelName}`, err);
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const jd = parseJdJson(raw);
+    if (!jd) {
+      return { ok: false, status: 500, error: "AI JD edit failed. Please try again." };
     }
+    const scrubbed: GeneratedJd = {
+      overview: scrubClientName(jd.overview, input.client_name),
+      responsibilities: scrubClientName(jd.responsibilities, input.client_name),
+      candidate_profile: scrubClientName(jd.candidate_profile, input.client_name),
+      compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name),
+    };
+    return { ok: true, jd: scrubbed };
+  } catch (err) {
+    console.error("JD edit failed on every configured AI provider", err);
+    const message =
+      err instanceof Error && err.message.includes("429")
+        ? "All configured AI providers hit their free-tier quota. Try again later."
+        : "AI JD edit failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota on Google's side. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing for standard paid-tier limits."
-      : "AI JD edit failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }

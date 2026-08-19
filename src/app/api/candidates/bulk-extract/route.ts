@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 import { extractResumeText } from "@/lib/resume-text";
 import { logTimeSaved } from "@/lib/time-saved";
 
@@ -73,12 +73,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Upload at most ${MAX_FILES} resumes at a time.` }, { status: 400 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+  const aiConfigured = !!(process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY || process.env.MISTRAL_API_KEY);
 
   const results: BulkExtractResult[] = [];
   for (const file of files) {
-    results.push(await processOne(file, admin, genAI, user.id));
+    results.push(await processOne(file, admin, aiConfigured, user.id));
   }
 
   return NextResponse.json({ results });
@@ -87,7 +86,7 @@ export async function POST(req: NextRequest) {
 async function processOne(
   file: File,
   admin: SupabaseClient,
-  genAI: GoogleGenerativeAI | null,
+  aiConfigured: boolean,
   recruiterId: string
 ): Promise<BulkExtractResult> {
   const fileName = file.name;
@@ -129,7 +128,7 @@ async function processOne(
     // failure instead, same as the "couldn't read text" case above, so the
     // UI shows an error banner and the recruiter knows to fill the row in
     // manually rather than assuming the tool just found nothing.
-    const extracted = await extractFieldsWithGemini(resumeText, genAI);
+    const extracted = await extractFieldsWithGemini(resumeText, aiConfigured);
     if (!extracted) {
       return {
         fileName,
@@ -182,8 +181,8 @@ function normalizePhone(raw: string): string {
   return digits;
 }
 
-async function extractFieldsWithGemini(resumeText: string, genAI: GoogleGenerativeAI | null) {
-  if (!genAI) return null;
+async function extractFieldsWithGemini(resumeText: string, aiConfigured: boolean) {
+  if (!aiConfigured) return null;
 
   const prompt = `Extract this candidate's identity/contact details from the resume text below. Return ONLY a JSON object (no markdown fence, no commentary), shaped exactly like:
 {"full_name": "..." | null, "email": "..." | null, "phone": "..." | null, "current_location": "..." | null, "current_employer": "..." | null, "current_job_title": "..." | null, "total_experience_years": number | null, "languages_known": ["..."]}
@@ -198,30 +197,24 @@ Rules:
 Resume text:
 ${resumeText.slice(0, 12000)}`;
 
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-      const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-      return {
-        full_name: typeof parsed.full_name === "string" ? parsed.full_name.trim() : null,
-        email: typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : null,
-        phone: typeof parsed.phone === "string" ? normalizePhone(parsed.phone) : null,
-        current_location: typeof parsed.current_location === "string" ? parsed.current_location.trim() : null,
-        current_employer: typeof parsed.current_employer === "string" ? parsed.current_employer.trim() : null,
-        current_job_title: typeof parsed.current_job_title === "string" ? parsed.current_job_title.trim() : null,
-        total_experience_years: typeof parsed.total_experience_years === "number" ? parsed.total_experience_years : null,
-        languages_known: Array.isArray(parsed.languages_known)
-          ? parsed.languages_known.filter((l): l is string => typeof l === "string")
-          : [],
-      };
-    } catch (err) {
-      console.error(`Gemini bulk-extract failed with model ${modelName}`, err);
-      continue;
-    }
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    const parsed = JSON.parse(cleaned) as Record<string, unknown>;
+    return {
+      full_name: typeof parsed.full_name === "string" ? parsed.full_name.trim() : null,
+      email: typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : null,
+      phone: typeof parsed.phone === "string" ? normalizePhone(parsed.phone) : null,
+      current_location: typeof parsed.current_location === "string" ? parsed.current_location.trim() : null,
+      current_employer: typeof parsed.current_employer === "string" ? parsed.current_employer.trim() : null,
+      current_job_title: typeof parsed.current_job_title === "string" ? parsed.current_job_title.trim() : null,
+      total_experience_years: typeof parsed.total_experience_years === "number" ? parsed.total_experience_years : null,
+      languages_known: Array.isArray(parsed.languages_known)
+        ? parsed.languages_known.filter((l): l is string => typeof l === "string")
+        : [],
+    };
+  } catch (err) {
+    console.error("bulk-extract failed on every configured AI provider", err);
+    return null;
   }
-  return null;
 }

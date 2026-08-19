@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 
 export type ScreeningQuestion = {
   id: string;
@@ -79,12 +79,11 @@ export async function generateScreeningQuestions(input: {
   work_mode?: string;
   cities?: string[];
 }): Promise<GenerateScreeningQuestionsResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
       ok: false,
       status: 503,
-      error: "AI screening-question generation is not configured yet (missing GEMINI_API_KEY on the server).",
+      error: "AI screening-question generation is not configured yet (no AI provider API key set on the server).",
     };
   }
   if (!input.role_title?.trim()) {
@@ -125,47 +124,36 @@ Rules:
 - Every question must probe something specific to this exact role's domain (deal size handled, sales-cycle experience, customer-segment familiarity, team size managed, location fit) -- not generic soft-skill filler.
 - options must be omitted or an empty array for free_text questions.`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const list = parseQuestionsJson(raw);
-      if (!list) {
-        lastError = new Error("Model response was not valid JSON.");
-        continue;
-      }
-      const questions: ScreeningQuestion[] = list
-        .filter((q) => q.text && q.text.trim())
-        .map((q) => {
-          const answerType: "dropdown" | "multi_select" | "free_text" =
-            q.answer_type === "dropdown" || q.answer_type === "multi_select" ? q.answer_type : "free_text";
-          const options = Array.isArray(q.options) ? q.options.map(String).filter(Boolean) : [];
-          return {
-            id: crypto.randomUUID(),
-            text: q.text!.trim(),
-            source: "ai" as const,
-            answer_type: answerType,
-            // A dropdown/multi_select with no usable options is worse than
-            // free text -- fall back rather than render an empty select.
-            options: answerType === "free_text" ? [] : options.length ? options : undefined,
-          };
-        })
-        .map((q) => (q.answer_type !== "free_text" && !q.options?.length ? { ...q, answer_type: "free_text" as const } : q));
-      return { ok: true, questions };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini screening-question generation failed with model ${modelName}`, err);
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const list = parseQuestionsJson(raw);
+    if (!list) {
+      return { ok: false, status: 500, error: "AI screening-question generation failed. Please try again." };
     }
+    const questions: ScreeningQuestion[] = list
+      .filter((q) => q.text && q.text.trim())
+      .map((q) => {
+        const answerType: "dropdown" | "multi_select" | "free_text" =
+          q.answer_type === "dropdown" || q.answer_type === "multi_select" ? q.answer_type : "free_text";
+        const options = Array.isArray(q.options) ? q.options.map(String).filter(Boolean) : [];
+        return {
+          id: crypto.randomUUID(),
+          text: q.text!.trim(),
+          source: "ai" as const,
+          answer_type: answerType,
+          // A dropdown/multi_select with no usable options is worse than
+          // free text -- fall back rather than render an empty select.
+          options: answerType === "free_text" ? [] : options.length ? options : undefined,
+        };
+      })
+      .map((q) => (q.answer_type !== "free_text" && !q.options?.length ? { ...q, answer_type: "free_text" as const } : q));
+    return { ok: true, questions };
+  } catch (err) {
+    console.error("screening-question generation failed on every configured AI provider", err);
+    const message =
+      err instanceof Error && err.message.includes("429")
+        ? "All configured AI providers hit their free-tier quota. Try again later."
+        : "AI screening-question generation failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota on Google's side. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing for standard paid-tier limits."
-      : "AI screening-question generation failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }

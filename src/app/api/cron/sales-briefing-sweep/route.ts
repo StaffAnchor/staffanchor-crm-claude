@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Daily sweep for the Sales module's "Today's Briefing" -- the client-
 // acquisition equivalent of the Priority Actions Inbox sweep. Covers
@@ -11,7 +12,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 // trigger, mirroring inbox-sweep/route.ts.
 export const maxDuration = 60;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -35,3 +36,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, ...data });
 }
+
+export const GET = withHeartbeat("sales-briefing-sweep", 1440, handler);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { signUnsubscribeToken } from "@/lib/nudge-auth";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Automated escalating incomplete-profile nudge, requested because the only
 // existing mechanism (candidates-table.tsx's "Send profile completion
@@ -66,7 +67,7 @@ function subjectAndBodyFor(stage: 1 | 2 | 3, fullName: string, registerUrl: stri
   };
 }
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -172,3 +173,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, checked: candidates?.length ?? 0, results });
 }
+
+export const GET = withHeartbeat("profile-nudge-sweep", 1440, handler);

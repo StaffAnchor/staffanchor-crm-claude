@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Self-healing catch-all for Career Timeline resume extraction -- mirrors
 // api/cron/auto-summarize's philosophy exactly: rather than wiring a
@@ -13,7 +14,7 @@ import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeli
 // would miss entirely.
 export const maxDuration = 60;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -70,3 +71,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, processed: results.length, results });
 }
+
+export const GET = withHeartbeat("career-timeline-sweep", 4320, handler);

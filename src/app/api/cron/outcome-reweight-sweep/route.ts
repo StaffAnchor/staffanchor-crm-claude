@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { DEFAULT_OUTCOME_WEIGHTS } from "@/lib/outcome-weights";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Closes the loop the rest of the matching engine has never had: every
 // candidate_mandate_links row now carries a snapshot of the match score
@@ -34,7 +35,7 @@ const MIN_SAMPLE_SIZE = 20;
 // formula, not a replacement for it.
 const MIN_FEATURE_WEIGHT = 0.05;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -106,3 +107,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, wroteNewWeights: true, sampleSize, weights, rawCorrelations: raw });
 }
+
+export const GET = withHeartbeat("outcome-reweight-sweep", 1440, handler);

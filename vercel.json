@@ -47,6 +47,10 @@
     {
       "path": "/api/cron/outcome-reweight-sweep",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/pipeline-health-check",
+      "schedule": "0 14 * * *"
     }
   ]
 }

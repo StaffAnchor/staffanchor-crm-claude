@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 import { extractResumeText } from "@/lib/resume-text";
 import type { ResumeTimelineEntry, ProfileTimelineEntry } from "@/lib/career-timeline";
 import { mergeTimelines, computeStabilityScore, computeDomainConsistencyScore } from "@/lib/career-timeline";
@@ -67,8 +67,9 @@ export async function generateCareerTimelineForCandidate(
   const hash = crypto.createHash("md5").update(resumeText).digest("hex");
   if (hash === candidate.career_timeline_resume_source_hash) return { ok: true, skipped: true };
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return { ok: false, status: 503, error: "GEMINI_API_KEY not configured" };
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
+    return { ok: false, status: 503, error: "No AI provider API key configured" };
+  }
 
   const prompt = `Extract this candidate's employment history from the resume text below. Return ONLY a JSON array (no markdown fence, no commentary), one object per job, most recent first, shaped exactly like:
 {"company": "...", "title": "...", "start_month": "YYYY-MM" | null, "end_month": "YYYY-MM" | null, "description": "one short sentence describing what was sold/done in this role, or empty string -- phrase it without pronouns (e.g. 'Managed enterprise accounts across BFSI' not 'They managed...')"}
@@ -82,20 +83,13 @@ Rules:
 Resume text:
 ${resumeText.slice(0, 12000)}`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
   let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const list = parseEntriesJson(raw);
-      if (!list) {
-        lastError = new Error("Model response was not valid JSON.");
-        continue;
-      }
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const list = parseEntriesJson(raw.trim());
+    if (!list) {
+      lastError = new Error("Model response was not valid JSON.");
+    } else {
       const entries: ResumeTimelineEntry[] = list
         .filter((e): e is Record<string, unknown> => !!e && typeof e === "object")
         .filter((e) => typeof e.company === "string" && e.company.trim())
@@ -121,15 +115,15 @@ ${resumeText.slice(0, 12000)}`;
         .eq("id", candidateId);
 
       return { ok: true, entries };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini career-timeline extraction failed with model ${modelName}`, err);
     }
+  } catch (err) {
+    lastError = err;
+    console.error("Career-timeline extraction failed on every configured provider", err);
   }
 
   const message =
     lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota. Generate a fresh key at aistudio.google.com/apikey or enable billing."
+      ? "AI providers hit free-tier quota. Try again shortly, or configure GROQ_API_KEY / MISTRAL_API_KEY for extra headroom."
       : "Career timeline extraction failed.";
   return { ok: false, status: 500, error: message };
 }

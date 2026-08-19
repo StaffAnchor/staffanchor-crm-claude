@@ -25,6 +25,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import ReportBarList, { type BarItem } from "./report-bar-list";
 import AiHealthCard from "./ai-health-card";
+import SystemHealthCard from "./system-health-card";
 import InflowTrend, { type InflowPoint } from "./inflow-trend";
 import FunnelChart from "./funnel-chart";
 import DonutChart from "./donut-chart";
@@ -818,6 +819,7 @@ export default async function ReportsPage({
         </div>
       </div>
 
+      {isAdminViewer && <SystemHealthCard />}
       {isAdminViewer && <AiHealthCard />}
 
       {/* Headline KPI strip -- every tile here is NEW information, not a

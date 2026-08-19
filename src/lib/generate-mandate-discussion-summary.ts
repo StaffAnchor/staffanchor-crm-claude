@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 
 export type MandateDiscussionSummary = {
   mandate_id: string;
@@ -38,9 +38,8 @@ export async function generateMandateDiscussionSummary(input: {
   candidate_name: string;
   qa_pairs: { question: string; answer: string }[];
 }): Promise<GenerateMandateDiscussionSummaryResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { ok: false, status: 503, error: "AI summary generation is not configured (missing GEMINI_API_KEY)." };
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
+    return { ok: false, status: 503, error: "AI summary generation is not configured (no AI provider API key set)." };
   }
   if (!input.qa_pairs.length) {
     return { ok: false, status: 400, error: "No answers to summarize." };
@@ -56,31 +55,20 @@ ${transcript}
 Return ONLY JSON, no markdown fence:
 {"summary": "2-4 sentence factual summary", "tags": ["short tag 1", "short tag 2", ...]}`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const parsed = parseSummaryJson(raw);
-      if (!parsed?.summary) {
-        lastError = new Error("Model response was not valid JSON.");
-        continue;
-      }
-      const tags = Array.isArray(parsed.tags) ? parsed.tags.map(String).filter(Boolean).slice(0, 8) : [];
-      return { ok: true, summary: parsed.summary, tags };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini mandate-discussion-summary generation failed with model ${modelName}`, err);
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const parsed = parseSummaryJson(raw);
+    if (!parsed?.summary) {
+      return { ok: false, status: 500, error: "AI summary generation failed. Please try again." };
     }
+    const tags = Array.isArray(parsed.tags) ? parsed.tags.map(String).filter(Boolean).slice(0, 8) : [];
+    return { ok: true, summary: parsed.summary, tags };
+  } catch (err) {
+    console.error("mandate-discussion-summary generation failed on every configured AI provider", err);
+    const message =
+      err instanceof Error && err.message.includes("429")
+        ? "All configured AI providers hit their free-tier quota. Try again later."
+        : "AI summary generation failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota on Google's side. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing for standard paid-tier limits."
-      : "AI summary generation failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { matchCandidatesForMandate } from "@/lib/candidate-match";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Daily sweep: re-runs the AI candidate matcher for every open mandate so
 // the "Top match" badge on the Mandates list (and the ranked shortlist on
@@ -22,7 +23,7 @@ export const maxDuration = 60;
 // runs instead of the same handful winning every time.
 const BATCH_SIZE = 8;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -84,3 +85,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, mandatesProcessed: openMandates.length, results });
 }
+
+export const GET = withHeartbeat("mandate-auto-rematch", 4320, handler);

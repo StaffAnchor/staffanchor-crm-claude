@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 
 export type ReplyDraftResult =
   | { ok: true; draft: string }
@@ -27,9 +27,8 @@ export async function generateReplyDraft(input: {
   client_name?: string | null;
   history: { direction: "inbound" | "outbound"; body: string; at: string }[];
 }): Promise<ReplyDraftResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { ok: false, status: 503, error: "AI reply drafting is not configured (missing GEMINI_API_KEY)." };
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
+    return { ok: false, status: 503, error: "AI reply drafting is not configured (no AI provider API key set)." };
   }
   if (!input.history.length) {
     return { ok: false, status: 400, error: "No conversation history to draft a reply from." };
@@ -53,30 +52,19 @@ ${transcript}
 Return ONLY JSON, no markdown fence:
 {"draft": "the reply text"}`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const parsed = parseDraftJson(raw);
-      if (!parsed?.draft) {
-        lastError = new Error("Model response was not valid JSON.");
-        continue;
-      }
-      return { ok: true, draft: parsed.draft };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini reply-draft generation failed with model ${modelName}`, err);
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const parsed = parseDraftJson(raw);
+    if (!parsed?.draft) {
+      return { ok: false, status: 500, error: "AI reply drafting failed. Please try again." };
     }
+    return { ok: true, draft: parsed.draft };
+  } catch (err) {
+    console.error("reply-draft generation failed on every configured AI provider", err);
+    const message =
+      err instanceof Error && err.message.includes("429")
+        ? "All configured AI providers hit their free-tier quota. Try again later."
+        : "AI reply drafting failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota on Google's side. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing for standard paid-tier limits."
-      : "AI reply drafting failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }

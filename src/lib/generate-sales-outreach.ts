@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 
 export type OutreachChannel = "linkedin" | "email";
 
@@ -49,9 +49,8 @@ export async function generateSalesOutreach(input: {
   // you are hiring for X") instead of a generic "growing your sales team".
   role_hint?: string | null;
 }): Promise<OutreachDraftResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { ok: false, status: 503, error: "AI outreach drafting is not configured (missing GEMINI_API_KEY)." };
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
+    return { ok: false, status: 503, error: "AI outreach drafting is not configured (no AI provider API key set)." };
   }
 
   const contextLines = [
@@ -101,30 +100,19 @@ ${contextLines || "(no further context provided)"}
 Return ONLY JSON, no markdown fence:
 {"draft": "the message text${input.channel === "email" ? " including the Subject: line" : ""}"}`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const parsed = parseDraftJson(raw);
-      if (!parsed?.draft) {
-        lastError = new Error("Model response was not valid JSON.");
-        continue;
-      }
-      return { ok: true, draft: parsed.draft };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini sales-outreach generation failed with model ${modelName}`, err);
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const parsed = parseDraftJson(raw);
+    if (!parsed?.draft) {
+      return { ok: false, status: 500, error: "AI outreach drafting failed. Please try again." };
     }
+    return { ok: true, draft: parsed.draft };
+  } catch (err) {
+    console.error("sales-outreach generation failed on every configured AI provider", err);
+    const message =
+      err instanceof Error && err.message.includes("429")
+        ? "All configured AI providers hit their free-tier quota. Try again later."
+        : "AI outreach drafting failed. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has 0 free-tier quota on Google's side. Generate a fresh key at aistudio.google.com/apikey and swap GEMINI_API_KEY in Vercel, or enable billing for standard paid-tier limits."
-      : "AI outreach drafting failed. Please try again.";
-  return { ok: false, status: 500, error: message };
 }

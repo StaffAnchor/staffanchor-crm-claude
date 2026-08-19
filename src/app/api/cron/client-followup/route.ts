@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Escalating schedule, same shape as the candidate-facing profile-nudge
 // sweep: a link sitting in stage="submitted" gets nudged once it crosses
@@ -19,7 +20,7 @@ const FOLLOWUP_DAY_THRESHOLDS = [3, 5, 7, 10, 15];
 // assigned recruiter(s) plus all admins.
 export const maxDuration = 60;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -211,3 +212,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ ok: true, staleMandates: byMandate.size, results });
 }
+
+export const GET = withHeartbeat("client-followup", 1440, handler);

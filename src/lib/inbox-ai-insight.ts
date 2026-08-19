@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateTextWithFallback } from "@/lib/ai-providers";
 
 export type InboxInsightInput = {
   taskType: string;
@@ -22,12 +22,11 @@ export type InboxInsightResult =
  * adds a written summary on top of structured candidate fields.
  */
 export async function generateInboxInsight(input: InboxInsightInput): Promise<InboxInsightResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
       ok: false,
       status: 503,
-      error: "AI insight is not configured yet (missing GEMINI_API_KEY on the server).",
+      error: "AI insight is not configured yet (no AI provider API key set on the server).",
     };
   }
 
@@ -44,26 +43,17 @@ Mandate: ${
       : "(none)"
   }`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-
-  let lastError: unknown = null;
-  for (const modelName of modelsToTry) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim();
-      const insight = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-      if (insight) return { ok: true, insight };
-    } catch (err) {
-      lastError = err;
-      console.error(`Gemini inbox insight failed with model ${modelName}`, err);
-    }
+  try {
+    const { text: raw } = await generateTextWithFallback(prompt);
+    const insight = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    if (insight) return { ok: true, insight };
+    return { ok: false, status: 500, error: "Couldn't generate an AI insight. Please try again." };
+  } catch (err) {
+    console.error("Inbox insight failed on every configured AI provider", err);
+    const message =
+      err instanceof Error && err.message.includes("429")
+        ? "All configured AI providers hit their free-tier quota. Try again later."
+        : "Couldn't generate an AI insight. Please try again.";
+    return { ok: false, status: 500, error: message };
   }
-
-  const message =
-    lastError instanceof Error && lastError.message.includes("429")
-      ? "This Gemini API key has hit its free-tier quota. Try again later."
-      : "Couldn't generate an AI insight. Please try again.";
-  return { ok: false, status: 500, error: message };
 }

@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { ensureMandateEmbedding } from "@/lib/embeddings";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 import { matchCandidatesForMandate } from "@/lib/candidate-match";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Gated proactive matcher, build directive 3 of the V2 matching upgrade.
 // Two jobs, both bounded to protect the shared ~20/day Gemini generateContent
@@ -38,7 +39,7 @@ const RESCAN_BATCH_SIZE = 200; // candidates checked per run (cheap, no Gemini)
 const MANDATE_EMBED_BATCH_SIZE = 20; // open mandates topped up with an embedding per run (cheap)
 const EVALUATE_MANDATE_GROUPS_PER_RUN = 3; // Gemini calls this run spends -- keep tiny
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -171,3 +172,5 @@ export async function GET(req: NextRequest) {
     results,
   });
 }
+
+export const GET = withHeartbeat("proactive-match-sweep", 10080, handler);

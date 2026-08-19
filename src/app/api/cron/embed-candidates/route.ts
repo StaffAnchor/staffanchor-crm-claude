@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { embedPendingCandidates } from "@/lib/embeddings";
+import { withHeartbeat } from "@/lib/cron-heartbeat";
 
 // Backfill sweep: embeds any candidate missing a profile_embedding (new
 // registrations, recruiter edits, resume updates) so both the Cmd+K
@@ -19,7 +20,7 @@ import { embedPendingCandidates } from "@/lib/embeddings";
 // error samples instead of just a processed count.
 export const maxDuration = 60;
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -57,3 +58,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export const GET = withHeartbeat("embed-candidates", 1440, handler);
