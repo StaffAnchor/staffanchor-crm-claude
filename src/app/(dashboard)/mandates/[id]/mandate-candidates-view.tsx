@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutGrid, Table2, Sparkles, Loader2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
@@ -40,6 +40,22 @@ export default function MandateCandidatesView({
   const [view, setView] = useState<"board" | "table">("table");
   const [scoring, setScoring] = useState(false);
   const [scoreMessage, setScoreMessage] = useState<string | null>(null);
+  // Board/Table both seed local state from `rows` on mount only (see the
+  // stageFilter key comment below) -- router.refresh() alone re-fetches the
+  // rows prop but does NOT force either child to pick it up, since neither
+  // remounts on its own. Bumping this whenever `rows` actually changes (a
+  // new array reference lands from the server) and folding it into `key`
+  // forces a clean remount so any server-side data change -- Score
+  // pipeline, a stage edit elsewhere, another tab -- actually shows up here.
+  const [dataVersion, setDataVersion] = useState(0);
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    setDataVersion((v) => v + 1);
+  }, [rows]);
 
   // Backfills match_score for candidates already on this pipeline who never
   // went through the Matching Workspace's "Add to pipeline" (bulk sourcing,
@@ -63,6 +79,8 @@ export default function MandateCandidatesView({
         setScoreMessage(
           `Scored ${json.scored} of ${json.consideredCount} candidate${json.consideredCount === 1 ? "" : "s"}${json.truncated ? " (pipeline is larger than the scoring cap)" : ""}.`
         );
+        // The rows-changed effect above bumps dataVersion once the
+        // refreshed rows prop actually lands from the server.
         router.refresh();
       }
     } catch {
@@ -155,10 +173,11 @@ export default function MandateCandidatesView({
         <MandateCandidatesBoard
           // Both Board and Table seed their own local state from `rows` on
           // mount (for optimistic stage-drag/edit updates) and never resync
-          // to a changed prop -- keying on the filter forces a clean
-          // remount with the newly filtered rows instead of silently
-          // ignoring the filter after the first render.
-          key={stageFilter}
+          // to a changed prop -- keying on the filter AND dataVersion forces
+          // a clean remount both when the filter changes and whenever the
+          // underlying rows actually change server-side (e.g. Score
+          // pipeline writing new match_score values).
+          key={`${stageFilter}-${dataVersion}`}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}

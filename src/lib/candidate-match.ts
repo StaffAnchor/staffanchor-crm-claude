@@ -538,6 +538,13 @@ Sort the array by score descending. Include at most ${options?.maxResults ?? 20}
         }[]
       )
         .filter((row) => nameById.has(row.candidate_id))
+        // The prompt's "include at most N" is an instruction, not an
+        // enforced limit -- Gemini has been observed listing the same
+        // candidate_id more than once. Dedupe here, at the source, so
+        // every caller (Matching Workspace, Score pipeline, etc.) gets a
+        // clean one-row-per-candidate result without each having to
+        // defend against it separately.
+        .filter((row, i, arr) => arr.findIndex((r) => r.candidate_id === row.candidate_id) === i)
         .map((row) => {
           const candidateRow = rowById.get(row.candidate_id);
           const breakdown = normalizeBreakdown(row.score_breakdown);

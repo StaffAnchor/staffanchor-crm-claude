@@ -60,6 +60,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
+  // Gemini's "include at most N" is a prompt instruction, not an enforced
+  // limit -- it has been observed returning more entries than asked for,
+  // including the same candidate_id more than once. Dedupe (keeping the
+  // first/highest-scored occurrence, since matches are already sorted
+  // desc) before writing anything, so the "scored X of Y" count reported
+  // back can never exceed the actual pipeline size.
+  const seen = new Set<string>();
+  const dedupedMatches = result.matches.filter((m) => {
+    if (seen.has(m.candidate_id)) return false;
+    seen.add(m.candidate_id);
+    return true;
+  });
+
   // Snapshot each returned score onto the candidate's existing
   // candidate_mandate_links row -- same fields addToPipeline() writes on a
   // fresh add, so this candidate now looks identical (for scoring purposes)
@@ -67,7 +80,7 @@ export async function POST(req: NextRequest) {
   // outcome-reweight-sweep training signal.
   const nowIso = new Date().toISOString();
   let scored = 0;
-  for (const m of result.matches) {
+  for (const m of dedupedMatches) {
     const { error } = await supabase
       .from("candidate_mandate_links")
       .update({
