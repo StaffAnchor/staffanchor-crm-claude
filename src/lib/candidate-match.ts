@@ -148,6 +148,16 @@ export async function matchCandidatesForMandate(
     // strong prospects for this mandate, so there's no need to re-derive
     // a pool; just run the same clause-level Gemini evaluation on them.
     candidateIdsOverride?: string[];
+    // "Score pipeline" flow (mandate-candidates-view.tsx "Score pipeline"
+    // button): scoring already-linked candidates is the whole point there,
+    // so the normal "don't re-suggest candidates already on this mandate"
+    // exclusion below must NOT apply when this is set. Only meaningful
+    // together with candidateIdsOverride.
+    includeAlreadyLinked?: boolean;
+    // "Score pipeline" wants a score for as many of the (already bounded,
+    // pre-qualified) linked candidates as reasonably possible, not just the
+    // usual top-20-worth-surfacing-as-new-suggestions cap.
+    maxResults?: number;
   }
 ): Promise<MatchMandateResult> {
   const { data: mandate, error: mandateError } = await supabase
@@ -235,7 +245,9 @@ export async function matchCandidatesForMandate(
     if (overrideError) {
       return { ok: false, status: 500, error: overrideError.message };
     }
-    candidates = ((overridePool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+    candidates = options?.includeAlreadyLinked
+      ? ((overridePool ?? []) as CandidateRow[])
+      : ((overridePool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
   } else {
     // Stage 1: cheap SQL pre-filter. Same category is required (a B2C hunter
     // profile isn't useful for a B2B enterprise mandate); sub-domain, location,
@@ -466,7 +478,7 @@ Return ONLY a JSON array (no markdown fence, no commentary), one object per incl
 - "must_haves": array of objects, one per must-have clause (mandate's own must_haves, in order, followed by any ad hoc clauses you split out of the extra criteria text) -- each object is exactly {"requirement": "<the clause text>", "status": "met" | "not_met" | "unclear", "evidence": "<short grounding note, or 'Not mentioned in profile or resume -- confirm on call' for unclear>"}.
 - "good_to_haves": array of objects in the same {"requirement", "status", "evidence"} shape, one per good-to-have clause.
 
-Sort the array by score descending. Include at most 20 candidates.`;
+Sort the array by score descending. Include at most ${options?.maxResults ?? 20} candidates.`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];

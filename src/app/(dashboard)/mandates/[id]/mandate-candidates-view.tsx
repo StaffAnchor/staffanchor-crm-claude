@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LayoutGrid, Table2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LayoutGrid, Table2, Sparkles, Loader2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesBoard from "./mandate-candidates-board";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
@@ -35,7 +36,42 @@ export default function MandateCandidatesView({
   // without navigating to the candidate's profile page.
   resumeSignedUrlByCandidate?: Record<string, string>;
 }) {
+  const router = useRouter();
   const [view, setView] = useState<"board" | "table">("table");
+  const [scoring, setScoring] = useState(false);
+  const [scoreMessage, setScoreMessage] = useState<string | null>(null);
+
+  // Backfills match_score for candidates already on this pipeline who never
+  // went through the Matching Workspace's "Add to pipeline" (bulk sourcing,
+  // quick-apply, manual add, LinkedIn sourcing promotion, etc. never got a
+  // score snapshotted). New candidates linked going forward get scored
+  // automatically (see the candidate_mandate_links DB trigger) -- this is
+  // just for everyone already here before that existed.
+  async function scorePipeline() {
+    setScoring(true);
+    setScoreMessage(null);
+    try {
+      const res = await fetch("/api/mandate-match-pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mandateId: mandateContext.mandateId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setScoreMessage(json.error ?? "Scoring failed.");
+      } else {
+        setScoreMessage(
+          `Scored ${json.scored} of ${json.consideredCount} candidate${json.consideredCount === 1 ? "" : "s"}${json.truncated ? " (pipeline is larger than the scoring cap)" : ""}.`
+        );
+        router.refresh();
+      }
+    } catch {
+      setScoreMessage("Scoring failed. Please try again.");
+    } finally {
+      setScoring(false);
+    }
+  }
+
   // "all" plus every pipeline stage -- lets a recruiter narrow either view
   // down to, say, just "client_interview" instead of scrolling/scanning the
   // full pipeline. Board already visually groups by stage as columns, but
@@ -81,6 +117,18 @@ export default function MandateCandidatesView({
             </button>
           ))}
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {rows.length > 0 && (
+            <button
+              onClick={scorePipeline}
+              disabled={scoring}
+              title="Score every candidate already on this pipeline against this mandate"
+              className="flex items-center gap-1.5 text-[12px] text-purple-600 hover:underline disabled:opacity-50"
+            >
+              {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {scoring ? "Scoring..." : "Score pipeline"}
+            </button>
+          )}
         <div className="inline-flex rounded-ros-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900 shrink-0">
           <button
             onClick={() => setView("board")}
@@ -99,7 +147,9 @@ export default function MandateCandidatesView({
             <Table2 className="w-3 h-3" /> Table
           </button>
         </div>
+        </div>
       </div>
+      {scoreMessage && <p className="text-[11px] text-slate-500 dark:text-slate-400 -mt-1 mb-2">{scoreMessage}</p>}
 
       {view === "board" ? (
         <MandateCandidatesBoard
