@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ReportBarList, { type BarItem } from "./report-bar-list";
+import AiHealthCard from "./ai-health-card";
 import InflowTrend, { type InflowPoint } from "./inflow-trend";
 import FunnelChart from "./funnel-chart";
 import DonutChart from "./donut-chart";
@@ -149,6 +150,7 @@ export default async function ReportsPage({
     ? await supabase.from("profiles").select("role").eq("id", viewerUser.id).single()
     : { data: null };
   const isPartnerViewer = viewerProfile?.role === "partner";
+  const isAdminViewer = viewerProfile?.role === "admin";
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -815,6 +817,8 @@ export default async function ReportsPage({
           ))}
         </div>
       </div>
+
+      {isAdminViewer && <AiHealthCard />}
 
       {/* Headline KPI strip -- every tile here is NEW information, not a
           restatement of a chart below (the prior version showed "leading

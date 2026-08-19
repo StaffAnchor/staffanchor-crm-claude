@@ -17,21 +17,43 @@ export { EMBEDDING_DIMS };
  * Generates a single embedding vector for a chunk of text. Returns null
  * (rather than throwing) if GEMINI_API_KEY isn't configured or the API
  * call fails -- callers should treat that as "skip for now, try again on
- * the next sweep" rather than a hard error.
+ * the next sweep" rather than a hard error. The failure reason (if any) is
+ * always logged via console.error -- this used to swallow the error
+ * completely, which is how 0/896 candidates went unembedded for weeks
+ * without a single trace of *why* in the logs.
  */
 export async function generateEmbedding(text: string): Promise<number[] | null> {
+  return (await generateEmbeddingVerbose(text)).embedding;
+}
+
+/**
+ * Same as generateEmbedding, but also returns the failure reason instead of
+ * swallowing it -- used by the admin backfill route and the cron sweep so a
+ * bad API key, wrong model name, or quota exhaustion shows up in the
+ * response/logs instead of just silently producing zero embeddings forever.
+ */
+export async function generateEmbeddingVerbose(
+  text: string
+): Promise<{ embedding: number[] | null; error: string | null }> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || !text.trim()) return null;
+  if (!apiKey) return { embedding: null, error: "GEMINI_API_KEY not configured" };
+  if (!text.trim()) return { embedding: null, error: "empty text" };
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
     const result = await model.embedContent(text.slice(0, 8000)); // keep well under token limits, cheap
     const values = result?.embedding?.values;
-    if (!Array.isArray(values) || values.length !== EMBEDDING_DIMS) return null;
-    return values;
-  } catch {
-    return null;
+    if (!Array.isArray(values) || values.length !== EMBEDDING_DIMS) {
+      const msg = `unexpected embedding shape: ${Array.isArray(values) ? `${values.length} dims` : typeof values}`;
+      console.error("[embeddings] generateEmbedding:", msg);
+      return { embedding: null, error: msg };
+    }
+    return { embedding: values, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    console.error("[embeddings] generateEmbedding failed:", msg);
+    return { embedding: null, error: msg };
   }
 }
 
@@ -100,9 +122,17 @@ export async function embedCandidate(
   candidate: CandidateForEmbedding,
   supabase: SupabaseClient
 ): Promise<boolean> {
+  const { ok } = await embedCandidateVerbose(candidate, supabase);
+  return ok;
+}
+
+export async function embedCandidateVerbose(
+  candidate: CandidateForEmbedding,
+  supabase: SupabaseClient
+): Promise<{ ok: boolean; error: string | null }> {
   const text = buildCandidateEmbeddingText(candidate);
-  const embedding = await generateEmbedding(text);
-  if (!embedding) return false;
+  const { embedding, error: genError } = await generateEmbeddingVerbose(text);
+  if (!embedding) return { ok: false, error: genError };
 
   const { error } = await supabase
     .from("candidates")
@@ -112,7 +142,56 @@ export async function embedCandidate(
     })
     .eq("id", candidate.id);
 
-  return !error;
+  if (error) return { ok: false, error: `db write failed: ${error.message}` };
+  return { ok: true, error: null };
+}
+
+const INTER_CALL_DELAY_MS = 150;
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Shared backfill sweep: embeds any candidate missing a profile_embedding
+ * (or whose profile changed since their last embedding). Used by both the
+ * daily cron (src/app/api/cron/embed-candidates) and the admin "Run backfill
+ * now" route (src/app/api/admin/embed-backfill) so there's exactly one place
+ * that defines "pending" and does the write, and both surfaces report the
+ * same real error reasons instead of a bare processed count.
+ */
+export async function embedPendingCandidates(
+  supabase: SupabaseClient,
+  batchSize = 50
+): Promise<{ processed: number; candidatesConsidered: number; errors: string[] }> {
+  const { data: pending, error } = await supabase
+    .from("candidates")
+    .select(
+      "id, full_name, category, sub_domain, secondary_sub_domains, current_job_title, current_employer, current_industry, industries, total_experience_years, current_location, skills, segment_data, ai_summary, resume_text, updated_at, profile_embedding_updated_at"
+    )
+    .order("created_at", { ascending: true })
+    .limit(600);
+
+  if (error) throw new Error(error.message);
+
+  const toEmbed = (pending ?? []).filter((c) => {
+    if (!c.profile_embedding_updated_at) return true;
+    if (!c.updated_at) return false;
+    return new Date(c.updated_at).getTime() > new Date(c.profile_embedding_updated_at).getTime();
+  });
+
+  let processed = 0;
+  const errors: string[] = [];
+  for (const candidate of toEmbed.slice(0, batchSize)) {
+    const { ok, error: embedError } = await embedCandidateVerbose(candidate, supabase);
+    if (ok) {
+      processed++;
+    } else if (embedError && errors.length < 5) {
+      errors.push(embedError);
+    }
+    await sleep(INTER_CALL_DELAY_MS);
+  }
+
+  return { processed, candidatesConsidered: toEmbed.length, errors };
 }
 
 type MandateForEmbedding = {
