@@ -493,6 +493,7 @@ export default async function MandateDetailPage({
                       work_mode: mandate.work_mode,
                       working_days: mandate.working_days,
                       shift_timing: mandate.shift_timing,
+                      requires_own_device: mandate.requires_own_device ?? false,
                       reporting_manager_title: mandate.reporting_manager_title,
                       company_size_band: mandate.company_size_band,
                       company_highlight_links: mandate.company_highlight_links ?? [],
@@ -566,6 +567,8 @@ export default async function MandateDetailPage({
                       team_size_band: mandate.team_size_band,
                       work_mode: mandate.work_mode,
                       cities: mandate.cities ?? (mandate.city ? [mandate.city] : []),
+                      shift_timing: mandate.shift_timing,
+                      requires_own_device: mandate.requires_own_device ?? false,
                     }}
                   />
                   <FindMatchesPanel

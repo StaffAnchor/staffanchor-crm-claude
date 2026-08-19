@@ -3,13 +3,72 @@ import { generateTextWithFallback } from "@/lib/ai-providers";
 export type ScreeningQuestion = {
   id: string;
   text: string;
-  source: "ai" | "recruiter";
+  // "system" = deterministically generated from mandate fields (work mode,
+  // shift timing, device requirement) rather than an AI guess -- these are
+  // guaranteed to be asked whenever the underlying fact is true, instead of
+  // depending on the AI remembering to include them.
+  source: "ai" | "recruiter" | "system";
   // Optional so questions generated before this upgrade (or added manually
   // by a recruiter) still render fine -- the panel treats a missing
   // answer_type as free_text.
   answer_type?: "dropdown" | "multi_select" | "free_text";
   options?: string[];
 };
+
+/**
+ * Deterministic, rule-based screening questions derived straight from the
+ * mandate's own fields -- no AI call, so they can never be skipped by a
+ * model that forgot to ask. These are prepended to the AI-generated list.
+ */
+export function computeStandardScreeningQuestions(input: {
+  work_mode?: string;
+  shift_timing?: string;
+  requires_own_device?: boolean;
+  cities?: string[];
+}): ScreeningQuestion[] {
+  const questions: ScreeningQuestion[] = [];
+
+  if (input.work_mode === "Remote" || input.work_mode === "Hybrid") {
+    questions.push({
+      id: crypto.randomUUID(),
+      text:
+        input.work_mode === "Remote"
+          ? "Do you have a reliable home workspace and internet connection to work remotely full-time?"
+          : "Are you able to work in a hybrid arrangement, splitting time between home and the office?",
+      source: "system",
+      answer_type: "dropdown",
+      options: ["Yes", "No", "Need to confirm"],
+    });
+  }
+
+  if (input.shift_timing === "Night shift (US)" || input.shift_timing === "UK shift" || input.shift_timing === "Rotational shift") {
+    const label =
+      input.shift_timing === "Night shift (US)"
+        ? "a US night shift"
+        : input.shift_timing === "UK shift"
+          ? "a UK shift"
+          : "rotational shifts";
+    questions.push({
+      id: crypto.randomUUID(),
+      text: `This role requires working ${label}. Are you willing and able to commit to this shift timing?`,
+      source: "system",
+      answer_type: "dropdown",
+      options: ["Yes", "No", "Need to confirm"],
+    });
+  }
+
+  if (input.requires_own_device) {
+    questions.push({
+      id: crypto.randomUUID(),
+      text: "This role requires you to use your own laptop/device. Do you have one available?",
+      source: "system",
+      answer_type: "dropdown",
+      options: ["Yes", "No", "Need to confirm"],
+    });
+  }
+
+  return questions;
+}
 
 export type GenerateScreeningQuestionsResult =
   | { ok: true; questions: ScreeningQuestion[] }
@@ -78,6 +137,10 @@ export async function generateScreeningQuestions(input: {
   team_size_band?: string;
   work_mode?: string;
   cities?: string[];
+  // Feed the deterministic (system-source) question set and to steer the
+  // AI away from re-asking the same ground on its own.
+  shift_timing?: string;
+  requires_own_device?: boolean;
 }): Promise<GenerateScreeningQuestionsResult> {
   if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
@@ -106,6 +169,13 @@ export async function generateScreeningQuestions(input: {
       : `This role is an individual contributor -- do not ask team-management questions.`,
     input.cities?.length && `Work location(s): ${input.cities.join(", ")} -- include one question probing genuine willingness/logistics for this location if it's not remote.`,
     input.work_mode && input.work_mode !== "Remote" && `Work arrangement: ${input.work_mode}.`,
+    (input.work_mode === "Remote" || input.work_mode === "Hybrid") &&
+      "A separate fixed question about remote/hybrid work-from-home readiness is already asked -- do NOT generate another question about home workspace/internet.",
+    input.shift_timing &&
+      ["Night shift (US)", "UK shift", "Rotational shift"].includes(input.shift_timing) &&
+      "A separate fixed question about shift-timing willingness is already asked -- do NOT generate another question about shift timing.",
+    input.requires_own_device &&
+      "A separate fixed question about owning a personal laptop/device is already asked -- do NOT generate another question about equipment.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -147,7 +217,13 @@ Rules:
         };
       })
       .map((q) => (q.answer_type !== "free_text" && !q.options?.length ? { ...q, answer_type: "free_text" as const } : q));
-    return { ok: true, questions };
+    const standardQuestions = computeStandardScreeningQuestions({
+      work_mode: input.work_mode,
+      shift_timing: input.shift_timing,
+      requires_own_device: input.requires_own_device,
+      cities: input.cities,
+    });
+    return { ok: true, questions: [...standardQuestions, ...questions] };
   } catch (err) {
     console.error("screening-question generation failed on every configured AI provider", err);
     const message =

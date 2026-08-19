@@ -28,7 +28,7 @@ export type MandateScreeningQuestion = {
   // questions from the AI bank never carry this, since they're mandate
   // framing, not a reusable profile fact.
   maps_to_field: string | null;
-  source: "gap_fill" | "ai" | "recruiter";
+  source: "gap_fill" | "ai" | "recruiter" | "system";
 };
 
 type CandidateForGaps = {

@@ -85,6 +85,7 @@ export default function CreateMandateForm({
     work_mode: "",
     working_days: "",
     shift_timing: "",
+    requires_own_device: false,
     reporting_manager_title: "",
     company_size_band: "",
     company_highlight_links: "",
@@ -260,6 +261,7 @@ export default function CreateMandateForm({
         work_mode: form.work_mode || null,
         working_days: form.working_days || null,
         shift_timing: form.shift_timing || null,
+        requires_own_device: form.requires_own_device,
         reporting_manager_title: form.reporting_manager_title || null,
         company_size_band: form.company_size_band || null,
         company_highlight_links: form.company_highlight_links
@@ -346,6 +348,7 @@ export default function CreateMandateForm({
       work_mode: "",
       working_days: "",
       shift_timing: "",
+      requires_own_device: false,
       reporting_manager_title: "",
       company_size_band: "",
       company_highlight_links: "",
@@ -860,6 +863,16 @@ export default function CreateMandateForm({
                 ))}
               </select>
             </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={form.requires_own_device}
+                onChange={(e) => setForm((f) => ({ ...f, requires_own_device: e.target.checked }))}
+                className="rounded border-slate-300"
+              />
+              Candidate must bring their own laptop/device
+            </label>
 
             <WeekOffPicker value={form.weekOff} onChange={(next) => setForm((f) => ({ ...f, weekOff: next }))} />
 

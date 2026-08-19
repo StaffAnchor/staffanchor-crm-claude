@@ -8,7 +8,7 @@ import { MessageCircleQuestion, Sparkles, X, Plus, Check } from "lucide-react";
 export type ScreeningQuestion = {
   id: string;
   text: string;
-  source: "ai" | "recruiter";
+  source: "ai" | "recruiter" | "system";
   answer_type?: "dropdown" | "multi_select" | "free_text";
   options?: string[];
 };
@@ -33,6 +33,8 @@ export default function ScreeningQuestionsPanel({
     team_size_band: string | null;
     work_mode: string | null;
     cities: string[];
+    shift_timing: string | null;
+    requires_own_device: boolean;
   };
 }) {
   const router = useRouter();
@@ -86,6 +88,8 @@ export default function ScreeningQuestionsPanel({
           team_size_band: context.team_size_band,
           work_mode: context.work_mode,
           cities: context.cities,
+          shift_timing: context.shift_timing,
+          requires_own_device: context.requires_own_device,
         }),
       });
       const data = await res.json();
@@ -137,6 +141,14 @@ export default function ScreeningQuestionsPanel({
             <span className="flex-1 text-[13px] text-slate-700 dark:text-slate-300">{q.text}</span>
             {q.source === "ai" && (
               <span className="shrink-0 rounded-full bg-blue-50 text-blue-600 text-[10px] font-medium px-1.5 py-0.5">AI</span>
+            )}
+            {q.source === "system" && (
+              <span
+                className="shrink-0 rounded-full bg-violet-50 text-violet-600 text-[10px] font-medium px-1.5 py-0.5"
+                title="Always asked automatically because it's true for this mandate -- not an AI guess."
+              >
+                Auto
+              </span>
             )}
             <button onClick={() => remove(q.id)} className="text-slate-400 hover:text-red-600 shrink-0">
               <X className="w-3.5 h-3.5" />

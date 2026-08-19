@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
     team_size_band: body.team_size_band ?? "",
     work_mode: body.work_mode ?? "",
     cities: Array.isArray(body.cities) ? body.cities : [],
+    shift_timing: body.shift_timing ?? "",
+    requires_own_device: Boolean(body.requires_own_device),
   });
 
   if (!result.ok) {

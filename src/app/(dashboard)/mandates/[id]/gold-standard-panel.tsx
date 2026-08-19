@@ -35,6 +35,7 @@ export type GoldStandardDetails = {
   work_mode: string | null;
   working_days: string | null;
   shift_timing: string | null;
+  requires_own_device: boolean | null;
   reporting_manager_title: string | null;
   company_size_band: string | null;
   company_highlight_links: string[] | null;
@@ -81,6 +82,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
     work_mode: initial.work_mode ?? "",
     working_days: initial.working_days ?? "",
     shift_timing: initial.shift_timing ?? "",
+    requires_own_device: initial.requires_own_device ?? false,
     reporting_manager_title: initial.reporting_manager_title ?? "",
     company_size_band: initial.company_size_band ?? "",
     company_highlight_links: (initial.company_highlight_links ?? []).join(", "),
@@ -120,6 +122,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         work_mode: form.work_mode || null,
         working_days: form.working_days || null,
         shift_timing: form.shift_timing || null,
+        requires_own_device: form.requires_own_device,
         reporting_manager_title: form.reporting_manager_title || null,
         company_size_band: form.company_size_band || null,
         company_highlight_links: form.company_highlight_links
@@ -427,6 +430,16 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
           ))}
         </select>
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <input
+          type="checkbox"
+          checked={form.requires_own_device}
+          onChange={(e) => setForm((f) => ({ ...f, requires_own_device: e.target.checked }))}
+          className="rounded border-slate-300"
+        />
+        Candidate must bring their own laptop/device
+      </label>
 
       <WeekOffPicker value={form.weekOff} onChange={(next) => setForm((f) => ({ ...f, weekOff: next }))} />
 
