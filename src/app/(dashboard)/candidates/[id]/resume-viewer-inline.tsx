@@ -10,6 +10,20 @@ import { FileText, Download, Loader2 } from "lucide-react";
 // -- so a recruiter can have the CV open on one side while editing the
 // profile on the other during a live call, instead of the CV preview
 // blocking/disabling the rest of the page.
+// Mammoth carries a DOCX's own hyperlinks (LinkedIn URL, portfolio links,
+// etc.) straight into the converted HTML with no target attribute, so
+// clicking one inside this preview navigated the whole CRM tab away
+// instead of opening alongside it -- add target="_blank" (and the usual
+// noopener/noreferrer safety) to every link that doesn't already specify
+// a target, without otherwise touching the resume's own formatting.
+function addBlankTargetToLinks(html: string): string {
+  return html.replace(/<a\s+([^>]*?)>/gi, (match, attrs: string) => {
+    if (!/href\s*=/.test(attrs)) return match;
+    if (/target\s*=/.test(attrs)) return match;
+    return `<a ${attrs} target="_blank" rel="noopener noreferrer">`;
+  });
+}
+
 export default function ResumeViewerInline({
   signedUrl,
   fileName,
@@ -35,7 +49,7 @@ export default function ResumeViewerInline({
         const res = await fetch(signedUrl);
         const arrayBuffer = await res.arrayBuffer();
         const result = await mammoth.convertToHtml({ arrayBuffer });
-        if (!cancelled) setHtml(result.value);
+        if (!cancelled) setHtml(addBlankTargetToLinks(result.value));
       } catch {
         if (!cancelled) setDocxError(true);
       } finally {
@@ -49,7 +63,20 @@ export default function ResumeViewerInline({
   }, [isDocx, signedUrl]);
 
   if (isPdf) {
-    return <iframe src={signedUrl} className="w-full h-full" title={`Resume — ${fileName}`} />;
+    // Some resume PDFs export their LinkedIn/portfolio links with a
+    // top-frame target, so clicking one inside the browser's built-in PDF
+    // viewer hijacked this whole CRM tab instead of just the preview.
+    // Sandboxing without allow-top-navigation blocks that outright, while
+    // allow-popups (+ allow-popups-to-escape-sandbox) still lets a normal
+    // link open in its own new tab as expected.
+    return (
+      <iframe
+        src={signedUrl}
+        className="w-full h-full"
+        title={`Resume — ${fileName}`}
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
+      />
+    );
   }
 
   if (isDocx) {
