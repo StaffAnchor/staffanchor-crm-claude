@@ -103,6 +103,12 @@ export default function MandateCandidatesView({
 
       {view === "board" ? (
         <MandateCandidatesBoard
+          // Both Board and Table seed their own local state from `rows` on
+          // mount (for optimistic stage-drag/edit updates) and never resync
+          // to a changed prop -- keying on the filter forces a clean
+          // remount with the newly filtered rows instead of silently
+          // ignoring the filter after the first render.
+          key={stageFilter}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}
@@ -112,6 +118,7 @@ export default function MandateCandidatesView({
         />
       ) : (
         <MandateCandidatesTable
+          key={stageFilter}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}
