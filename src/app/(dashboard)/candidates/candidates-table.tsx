@@ -32,6 +32,7 @@ import {
   Link2,
   Send as SendIcon,
   Loader2,
+  Sparkles,
   FolderPlus,
   Download,
 } from "lucide-react";
@@ -442,6 +443,14 @@ type RenderHelpers = {
   updateSegmentField: (id: string, current: Record<string, unknown> | null, key: string, value: unknown) => Promise<void>;
   updateVerification: (id: string, level: number) => Promise<void>;
   teamMembers: TeamMember[];
+  // Lets the Stability Score column offer a one-click "Generate" action
+  // right where the gap is visible, instead of a dead-end "Not yet
+  // generated" label that sends a recruiter hunting for the button on the
+  // candidate's own profile page. generatingStability tracks in-flight
+  // candidate IDs so the button can show a spinner and disable itself
+  // rather than let a recruiter fire the same generation twice.
+  generateStabilityScore: (id: string) => Promise<void>;
+  generatingStability: Set<string>;
 };
 
 // Recruiter/admin display name, first-name-first, falling back to email --
@@ -823,10 +832,27 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "stability_score",
     label: "Stability Score (AI)",
-    render: (c) => {
+    render: (c, { generateStabilityScore, generatingStability }) => {
       const score = c.stability_score;
       if (score === null || score === undefined) {
-        return <span className="text-[11px] text-slate-400">Not yet generated</span>;
+        const generating = generatingStability.has(c.id);
+        return (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              generateStabilityScore(c.id);
+            }}
+            disabled={generating}
+            className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
+          >
+            {generating ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
+            {generating ? "Generating…" : "Generate"}
+          </button>
+        );
       }
       const label = stabilityLabelForScore(score);
       const tone = label === "Stable" ? "success" : label === "Some Movement" ? "warning" : "danger";
@@ -969,6 +995,7 @@ export default function CandidatesTable({
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
+  const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
   const [summaryTooltip, setSummaryTooltip] = useState<{
     text: string;
     left: number;
@@ -1248,6 +1275,37 @@ export default function CandidatesTable({
   // badge shown here (and later on the client shortlist / public passport)
   // is a dated claim rather than an undated "verified" toggle that quietly
   // goes stale -- the whole point of tiered verification per the audit.
+  // Runs the same full-passport generation (career-timeline -> stability
+  // score, AI summary, embedding refresh) as the candidate profile page's
+  // "Generate" button and the auto-summarize cron -- see api/ai-summary,
+  // which wraps generateAiPassportForCandidate. Exposed here so a
+  // recruiter scanning the table can clear a "Not yet generated" cell on
+  // the spot instead of opening the profile first.
+  async function generateStabilityScore(id: string) {
+    setGeneratingStability((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch("/api/ai-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        window.alert(`Couldn't generate: ${data.error ?? "unknown error"}`);
+        return;
+      }
+      router.refresh();
+    } catch {
+      window.alert("Couldn't generate: request failed");
+    } finally {
+      setGeneratingStability((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
   async function updateVerification(id: string, level: number) {
     const {
       data: { user },
@@ -1701,7 +1759,16 @@ export default function CandidatesTable({
                 </td>
                 {visibleColumns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
-                    {col.render(c, { updateField, reassignOwner, isAdmin, updateSegmentField, updateVerification, teamMembers })}
+                    {col.render(c, {
+                      updateField,
+                      reassignOwner,
+                      isAdmin,
+                      updateSegmentField,
+                      updateVerification,
+                      teamMembers,
+                      generateStabilityScore,
+                      generatingStability,
+                    })}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-right">
