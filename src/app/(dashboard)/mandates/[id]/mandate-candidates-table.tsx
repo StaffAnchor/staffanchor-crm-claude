@@ -11,7 +11,7 @@ import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
-import { Zap } from "lucide-react";
+import { Zap, Sparkles, Loader2, Flag } from "lucide-react";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -80,8 +80,55 @@ export type MandateCandidateRow = {
     career_timeline_profile: unknown;
     owner_id: string | null;
     resume_file_url?: string | null;
+    // Auto-computed from the resume's career timeline (see
+    // computeStabilityScore) -- same field/scale as the main Candidates
+    // table's Stability Score column, surfaced here too since a recruiter
+    // deciding who to submit for THIS mandate shouldn't have to leave the
+    // pipeline to go check it on the profile page.
+    stability_score: number | null;
+    // Internal-only AI read on the candidate (never shown to clients/
+    // candidates) -- separate from recruiter_assessment, which is the
+    // recruiter's own manual call. red_flags/watch_areas are exactly the
+    // "help a recruiter decide faster" signal this view is short on.
+    ai_decision_flags: {
+      green_flags?: string[];
+      red_flags?: string[];
+      watch_areas?: string[];
+      recommendation?: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
+    } | null;
+    // Sales-specific quick facts (quota attainment, buyer personas sold to,
+    // disqualifiers) -- tiny by design, cheap to render inline.
+    talent_micro_index: {
+      normalized_acv_band?: string;
+      buyer_personas_sold_to?: string[];
+      verified_quota_attainment_pct?: number;
+      disqualifiers?: string[];
+    } | null;
   };
 };
+
+// Mirrors computeStabilityScore's thresholds -- see the identical helper in
+// candidates-table.tsx for the full rationale; duplicated here rather than
+// shared since it's a 4-line pure function and this component already
+// doesn't import from that page.
+function stabilityLabelForScore(score: number): "Stable" | "Some Movement" | "Frequent Job-Hopper" {
+  if (score >= 71) return "Stable";
+  if (score >= 36) return "Some Movement";
+  return "Frequent Job-Hopper";
+}
+
+function stabilityTone(label: string) {
+  if (label === "Stable") return "bg-emerald-50 text-emerald-700";
+  if (label === "Some Movement") return "bg-amber-50 text-amber-700";
+  return "bg-rose-50 text-rose-700";
+}
+
+function aiRecommendationTone(rec: string | undefined) {
+  if (rec === "Strong Fit") return "bg-emerald-50 text-emerald-700";
+  if (rec === "Fit with Reservations") return "bg-amber-50 text-amber-700";
+  if (rec === "Not a Fit") return "bg-rose-50 text-rose-700";
+  return "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
+}
 
 export default function MandateCandidatesTable({
   rows: initialRows,
@@ -123,6 +170,36 @@ export default function MandateCandidatesTable({
   const [savingStage, setSavingStage] = useState(false);
 
   const [reassigningId, setReassigningId] = useState<string | null>(null);
+  const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
+
+  // Same single call the main Candidates table's inline "Generate" button
+  // uses (runs the full career-timeline extraction -> stability_score ->
+  // AI summary pipeline for this one candidate) -- a recruiter deciding
+  // who to submit shouldn't have to leave this pipeline view to trigger it.
+  async function generateStabilityScore(candidateId: string) {
+    setGeneratingStability((prev) => new Set(prev).add(candidateId));
+    try {
+      const res = await fetch("/api/ai-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: `Couldn't generate: ${data.error ?? "unknown error"}` });
+        return;
+      }
+      router.refresh();
+    } catch {
+      setMessage({ type: "error", text: "Couldn't generate: request failed" });
+    } finally {
+      setGeneratingStability((prev) => {
+        const next = new Set(prev);
+        next.delete(candidateId);
+        return next;
+      });
+    }
+  }
 
   async function reassignOwner(candidateId: string, newOwnerId: string) {
     setReassigningId(candidateId);
@@ -294,7 +371,9 @@ export default function MandateCandidatesTable({
             <th className="text-left px-4 py-2.5">Candidate</th>
             <th className="text-left px-4 py-2.5">Resume</th>
             <th className="text-left px-4 py-2.5">Owner</th>
-            <th className="text-left px-4 py-2.5">Fixed CTC</th>
+            <th className="text-left px-4 py-2.5">CTC / Notice</th>
+            <th className="text-left px-4 py-2.5">Stability</th>
+            <th className="text-left px-4 py-2.5">AI Read</th>
             <th className="text-left px-4 py-2.5">Recommendation</th>
             <th className="text-left px-4 py-2.5">Screening</th>
             <th className="text-left px-4 py-2.5">Stage</th>
@@ -367,7 +446,61 @@ export default function MandateCandidatesTable({
                 )}
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                {l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}
+                <div>{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</div>
+                {l.candidate.notice_period && (
+                  <div className="text-[10.5px] text-slate-400">Notice: {l.candidate.notice_period}</div>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                {l.candidate.stability_score === null || l.candidate.stability_score === undefined ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      generateStabilityScore(l.candidate.id);
+                    }}
+                    disabled={generatingStability.has(l.candidate.id)}
+                    className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
+                  >
+                    {generatingStability.has(l.candidate.id) ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    {generatingStability.has(l.candidate.id) ? "Generating…" : "Generate"}
+                  </button>
+                ) : (
+                  <span
+                    className={`inline-block rounded px-1.5 py-0.5 text-[10.5px] font-semibold whitespace-nowrap ${stabilityTone(stabilityLabelForScore(l.candidate.stability_score))}`}
+                  >
+                    {stabilityLabelForScore(l.candidate.stability_score)} · {l.candidate.stability_score}
+                  </span>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                {(() => {
+                  const flags = l.candidate.ai_decision_flags;
+                  const disqualifiers = l.candidate.talent_micro_index?.disqualifiers ?? [];
+                  if (!flags && disqualifiers.length === 0) {
+                    return <span className="text-[11px] text-slate-300">—</span>;
+                  }
+                  const tooltipLines = [
+                    ...(flags?.red_flags ?? []).map((f) => `Red flag: ${f}`),
+                    ...disqualifiers.map((f) => `Disqualifier: ${f}`),
+                    ...(flags?.watch_areas ?? []).map((f) => `Watch: ${f}`),
+                    ...(flags?.green_flags ?? []).map((f) => `Green flag: ${f}`),
+                  ];
+                  const hasWarning = (flags?.red_flags?.length ?? 0) > 0 || disqualifiers.length > 0;
+                  return (
+                    <div className="flex items-center gap-1" title={tooltipLines.join("\n") || undefined}>
+                      {flags?.recommendation && (
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-[10.5px] font-semibold whitespace-nowrap ${aiRecommendationTone(flags.recommendation)}`}>
+                          {flags.recommendation}
+                        </span>
+                      )}
+                      {hasWarning && <Flag className="w-3 h-3 text-rose-500 shrink-0" />}
+                    </div>
+                  );
+                })()}
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}

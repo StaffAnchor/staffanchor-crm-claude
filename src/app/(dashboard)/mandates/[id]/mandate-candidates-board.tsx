@@ -10,7 +10,7 @@ import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
-import { Zap } from "lucide-react";
+import { Zap, Sparkles, Flag } from "lucide-react";
 
 // Kanban view of the same rows the table shows, grouped by pipeline stage --
 // inspired by the reference ATS screenshot the user shared ("Look how
@@ -51,6 +51,20 @@ const RECOMMENDATION_COLOR: Record<string, string> = {
 function recommendationColor(rec: string | undefined) {
   if (!rec) return "bg-slate-300 dark:bg-slate-600";
   return RECOMMENDATION_COLOR[rec.toLowerCase()] ?? "bg-slate-400";
+}
+
+// Same thresholds/tones as mandate-candidates-table.tsx's helpers of the
+// same name -- duplicated rather than shared, see that file's comment.
+function stabilityLabelForScore(score: number): "Stable" | "Some Movement" | "Frequent Job-Hopper" {
+  if (score >= 71) return "Stable";
+  if (score >= 36) return "Some Movement";
+  return "Frequent Job-Hopper";
+}
+
+function stabilityTone(label: string) {
+  if (label === "Stable") return "bg-emerald-50 text-emerald-700";
+  if (label === "Some Movement") return "bg-amber-50 text-amber-700";
+  return "bg-rose-50 text-rose-700";
 }
 
 function initials(name: string | null | undefined) {
@@ -104,6 +118,32 @@ export default function MandateCandidatesBoard({
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
   const [reassigningId, setReassigningId] = useState<string | null>(null);
+  const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
+
+  async function generateStabilityScore(candidateId: string) {
+    setGeneratingStability((prev) => new Set(prev).add(candidateId));
+    try {
+      const res = await fetch("/api/ai-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: `Couldn't generate: ${data.error ?? "unknown error"}` });
+        return;
+      }
+      router.refresh();
+    } catch {
+      setMessage({ type: "error", text: "Couldn't generate: request failed" });
+    } finally {
+      setGeneratingStability((prev) => {
+        const next = new Set(prev);
+        next.delete(candidateId);
+        return next;
+      });
+    }
+  }
 
   function ownerLabel(id: string | null) {
     if (!id) return "Unassigned";
@@ -327,6 +367,45 @@ export default function MandateCandidatesBoard({
                             {row.candidate.sub_domain ?? "—"}
                             {row.candidate.current_employer ? ` · ${row.candidate.current_employer}` : ""}
                           </p>
+                          {/* Decision-support chips -- stability score (auto-computed
+                              from the resume timeline) plus a compact AI red-flag
+                              indicator, so a recruiter scanning the board doesn't have
+                              to open every card to see who's worth prioritizing. */}
+                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            {row.candidate.stability_score === null || row.candidate.stability_score === undefined ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  generateStabilityScore(row.candidate.id);
+                                }}
+                                disabled={generatingStability.has(row.candidate.id)}
+                                className="flex items-center gap-0.5 text-[9.5px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60"
+                              >
+                                <Sparkles className="w-2.5 h-2.5" />
+                                {generatingStability.has(row.candidate.id) ? "Generating…" : "Generate score"}
+                              </button>
+                            ) : (
+                              <span
+                                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${stabilityTone(stabilityLabelForScore(row.candidate.stability_score))}`}
+                              >
+                                {stabilityLabelForScore(row.candidate.stability_score)} · {row.candidate.stability_score}
+                              </span>
+                            )}
+                            {row.candidate.notice_period && (
+                              <span className="text-[9.5px] text-slate-400">Notice: {row.candidate.notice_period}</span>
+                            )}
+                            {((row.candidate.ai_decision_flags?.red_flags?.length ?? 0) > 0 ||
+                              (row.candidate.talent_micro_index?.disqualifiers?.length ?? 0) > 0) && (
+                              <span
+                                title={[
+                                  ...(row.candidate.ai_decision_flags?.red_flags ?? []).map((f) => `Red flag: ${f}`),
+                                  ...(row.candidate.talent_micro_index?.disqualifiers ?? []).map((f) => `Disqualifier: ${f}`),
+                                ].join("\n")}
+                              >
+                                <Flag className="w-2.5 h-2.5 text-rose-500 shrink-0" />
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {isMoving && <Loader2 className="w-3 h-3 animate-spin text-slate-400 shrink-0" />}
                       </div>
