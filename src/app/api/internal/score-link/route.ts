@@ -50,6 +50,11 @@ export async function POST(req: NextRequest) {
       candidateIdsOverride: [candidateId],
       includeAlreadyLinked: true,
       maxResults: 1,
+      // Without this, the model can silently decide this one candidate
+      // isn't "worth surfacing" and return an empty array -- leaving a
+      // real pipeline candidate (an actual applicant) with no score at
+      // all instead of an honest low one.
+      scoreAllProvided: true,
     });
     if (!result.ok || result.matches.length === 0) {
       return NextResponse.json({ ok: true, scored: false });

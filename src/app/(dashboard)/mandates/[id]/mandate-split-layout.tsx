@@ -17,22 +17,29 @@ export default function MandateSplitLayout({ left, right }: { left: ReactNode; r
 
   return (
     <div className="mt-6 relative">
-      <div className={collapsed ? "" : "grid grid-cols-3 gap-6"}>
-        <div className={collapsed ? "" : "col-span-2"}>
+      <div className={collapsed ? "grid grid-cols-[1fr_auto] gap-3 items-start" : "grid grid-cols-3 gap-6"}>
+        <div className={collapsed ? "" : "col-span-2"}>{left}</div>
+
+        {/* Toggle now lives directly above the panel it controls (was
+            floating over the left/candidates column, right under the stat
+            tiles, which read as unrelated to "mandate details" and got
+            visually lost). Kept in its own always-rendered column so it's
+            still reachable to re-open the panel once collapsed. Given a
+            visible accent instead of plain slate so it reads as a control
+            for the panel below it, not just another muted utility button. */}
+        <div>
           <div className="flex justify-end mb-1.5">
             <button
               onClick={() => setCollapsed((c) => !c)}
-              className="flex items-center gap-1.5 rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-[11.5px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 transition-all duration-200 ease-ros"
+              className="flex items-center gap-1.5 rounded-ros-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-2.5 py-1 text-[11.5px] font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-300 transition-all duration-200 ease-ros"
               title={collapsed ? "Show mandate details panel" : "Hide mandate details panel for more room"}
             >
               {collapsed ? <PanelRightOpen className="w-3.5 h-3.5" /> : <PanelRightClose className="w-3.5 h-3.5" />}
               {collapsed ? "Show details panel" : "Hide details panel"}
             </button>
           </div>
-          {left}
+          {!collapsed && right}
         </div>
-
-        {!collapsed && <div>{right}</div>}
       </div>
     </div>
   );

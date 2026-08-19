@@ -158,6 +158,13 @@ export async function matchCandidatesForMandate(
     // pre-qualified) linked candidates as reasonably possible, not just the
     // usual top-20-worth-surfacing-as-new-suggestions cap.
     maxResults?: number;
+    // The default prompt tells the model to omit weak/irrelevant
+    // candidates rather than pad the list -- exactly right when
+    // suggesting NEW candidates from the wide pool, but wrong for "Score
+    // pipeline": every candidate here is already on the mandate, so the
+    // recruiter wants a score for literally all of them (including low
+    // ones), not a filtered subset of "worth suggesting" ones.
+    scoreAllProvided?: boolean;
   }
 ): Promise<MatchMandateResult> {
   const { data: mandate, error: mandateError } = await supabase
@@ -461,7 +468,11 @@ CRITICAL -- how to evaluate each must-have / good-to-have / ad hoc requirement, 
 - "unclear": the requirement is simply never addressed ANYWHERE in the candidate's data -- there is no language section at all, no explicit B2B/B2C label, etc. This is NOT the same as "not_met". Never guess or assume failure just because something wasn't mentioned -- mark it "unclear" and say so plainly in the evidence (e.g. "Not mentioned in profile or resume -- confirm on call"), so the recruiter knows to ask rather than being told the candidate lacks something that was simply never asked about.
 Getting this three-way split right (met vs. not_met vs. unclear) matters more than the numeric score -- it's what lets a recruiter trust the tool enough to call a borderline candidate instead of skipping them.
 
-For EACH candidate, decide if they are worth surfacing to the recruiter at all. Only include candidates with a genuine, defensible case for fit -- omit weak/irrelevant candidates entirely rather than padding the list. A candidate with one or more "not_met" hard must-haves can still be included if otherwise strong, but their score must reflect the real gap.
+${
+  options?.scoreAllProvided
+    ? `Every single candidate listed above is already on this mandate's pipeline -- the recruiter added them and wants to know how each one actually scores, not a filtered "worth suggesting" subset. Return one object for EVERY candidate_id given, with no exceptions, even a weak or clearly irrelevant fit: give it an honest low score and say why in "reason" rather than omitting it.`
+    : `For EACH candidate, decide if they are worth surfacing to the recruiter at all. Only include candidates with a genuine, defensible case for fit -- omit weak/irrelevant candidates entirely rather than padding the list. A candidate with one or more "not_met" hard must-haves can still be included if otherwise strong, but their score must reflect the real gap.`
+}
 
 SCORE FORMULA -- the overall score must be explainable, not a vibe. Compute it from four named components, each 0-100, so a recruiter can see exactly why a candidate landed where they did:
 - must_haves_fit (weight ~50%): 100 if every must-have is "met"; each "not_met" should drag this down hard (a single not_met should put this component below 40); each "unclear" should drag it down moderately (below 75), since it's a real unknown even if not a proven fail.
@@ -478,7 +489,11 @@ Return ONLY a JSON array (no markdown fence, no commentary), one object per incl
 - "must_haves": array of objects, one per must-have clause (mandate's own must_haves, in order, followed by any ad hoc clauses you split out of the extra criteria text) -- each object is exactly {"requirement": "<the clause text>", "status": "met" | "not_met" | "unclear", "evidence": "<short grounding note, or 'Not mentioned in profile or resume -- confirm on call' for unclear>"}.
 - "good_to_haves": array of objects in the same {"requirement", "status", "evidence"} shape, one per good-to-have clause.
 
-Sort the array by score descending. Include at most ${options?.maxResults ?? 20} candidates.`;
+Sort the array by score descending. ${
+    options?.scoreAllProvided
+      ? `Include every candidate given above -- do not cap or omit any.`
+      : `Include at most ${options?.maxResults ?? 20} candidates.`
+  }`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const modelsToTry = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];

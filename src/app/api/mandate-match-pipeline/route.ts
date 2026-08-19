@@ -54,7 +54,11 @@ export async function POST(req: NextRequest) {
     // Pipeline scoring wants coverage across the whole (already bounded,
     // already-qualified-by-being-in-the-pipeline) set, not just the usual
     // top-20-worth-suggesting-as-new cap.
-    maxResults: Math.min(candidateIds.length, 100),
+    maxResults: candidateIds.length,
+    // These candidates are already on the pipeline, not suggestions --
+    // every one gets a score, including weak fits, instead of the model
+    // quietly omitting anyone it doesn't think is "worth surfacing".
+    scoreAllProvided: true,
   });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
