@@ -180,6 +180,31 @@ export function mergeTimelines(
 
 export type StabilityResult = { score: number; label: "Stable" | "Some Movement" | "Frequent Job-Hopper" };
 
+// Some resumes roll several employers up into one summary bullet -- e.g.
+// "Adda24x7 | OYO | Castrol | Mphasis | Sales & Growth Roles | Jun 2011 -
+// Jun 2018" -- which the extractor (correctly, per its own "don't invent
+// dates" rule) stores as ONE timeline entry spanning the whole combined
+// range, since the resume never states where one job ended and the next
+// began. Left in the stability average as-is, a single artificial 7-year
+// "tenure" for what was actually 4 separate, likely much shorter jobs
+// massively inflates the score (observed: a candidate with three sub-
+// 18-month stints in the last 3 years still coming back "Stable" because
+// this one merged block dominated the average). Detected here by the same
+// " | " joiner the extractor uses for these rollup lines, and excluded
+// from the tenure math entirely -- still shown in the timeline UI for
+// context, just not trusted as a single real tenure figure.
+function isCombinedRollupEntry(company: string): boolean {
+  // Threshold is 3+ names, not 2 -- a two-name company field is genuinely
+  // ambiguous (could be a parent/brand relationship like "PrepLadder Pvt
+  // Ltd | Unacademy", or two client engagements within one consulting
+  // role) and excluding it would just as easily under-count a real, short
+  // tenure and nudge the score the WRONG way. Three or more distinct names
+  // in one field (e.g. "Adda24x7 | OYO | Castrol | Mphasis") is a much
+  // stronger, low-false-positive signal that this is a resume's own
+  // summary rollup of several separate employers, not one company's name.
+  return company.split("|").map((s) => s.trim()).filter(Boolean).length >= 3;
+}
+
 /**
  * Tenure-weighted stability, on a 0-100 meter plus the same three labels the
  * recruiter-assessment scorecard already uses for its manual "Job stability"
@@ -188,7 +213,7 @@ export type StabilityResult = { score: number; label: "Stable" | "Some Movement"
  * vocabularies.
  */
 export function computeStabilityScore(merged: MergedTimelineEntry[]): StabilityResult | null {
-  const withTenure = merged.filter((e) => e.tenureMonths > 0);
+  const withTenure = merged.filter((e) => e.tenureMonths > 0 && !isCombinedRollupEntry(e.company));
   if (withTenure.length === 0) return null;
   const avgMonths = withTenure.reduce((sum, e) => sum + e.tenureMonths, 0) / withTenure.length;
   const score = Math.round(Math.max(0, Math.min(100, (avgMonths / 42) * 100)));

@@ -107,6 +107,7 @@ Rules:
 - If you can't confidently determine a month, use "01" for that month rather than omitting the date entirely -- an approximate date is more useful than none for tenure calculations.
 - Skip education entries, certifications, and anything that isn't an employer.
 - If no employment history is identifiable, return [].
+- Some resumes summarize several early-career employers into one line (e.g. "Company A | Company B | Company C | Sales Roles | 2011-2018") instead of listing each with its own dates. When you see this, extract it as ONE entry with "company" set to all the names joined by " | " exactly as in the resume -- do not invent separate date ranges for each name, since the resume doesn't state where one job ended and the next began. This " | " joiner is used ONLY for genuine multi-company rollup lines like this, never as a stylistic separator within a single employer's name.
 
 Resume text:
 ${resumeText.slice(0, 12000)}`;
