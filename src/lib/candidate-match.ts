@@ -143,6 +143,15 @@ type CandidateRow = {
 
 function parseJsonArray(raw: string): CandidateMatch[] | null {
   const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  // The fence-strip above only helps when the WHOLE response is the fenced
+  // block with nothing else. Models (Groq/Mistral especially, but Gemini
+  // too under some prompts) sometimes wrap the JSON in a sentence or two
+  // ("Here are the matching candidates:\n```json\n[...]\n```\nLet me know if...")
+  // which left the leading/trailing prose in `cleaned` and broke JSON.parse
+  // outright -- observed in production as "Could not parse AI response as
+  // JSON" on prompt search even though a provider had responded fine.
+  // Fallback: if a direct parse fails, extract the substring between the
+  // first '[' or '{' and its matching last ']' or '}' and retry once.
   try {
     const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed)) return parsed as CandidateMatch[];
@@ -150,7 +159,23 @@ function parseJsonArray(raw: string): CandidateMatch[] | null {
       return (parsed as { matches: CandidateMatch[] }).matches;
     }
   } catch {
-    // fall through
+    // fall through to the extraction retry below
+  }
+
+  const firstBracket = cleaned.search(/[[{]/);
+  const lastArrayClose = cleaned.lastIndexOf("]");
+  const lastObjectClose = cleaned.lastIndexOf("}");
+  const lastBracket = Math.max(lastArrayClose, lastObjectClose);
+  if (firstBracket === -1 || lastBracket === -1 || lastBracket <= firstBracket) return null;
+  const extracted = cleaned.slice(firstBracket, lastBracket + 1);
+  try {
+    const parsed = JSON.parse(extracted);
+    if (Array.isArray(parsed)) return parsed as CandidateMatch[];
+    if (parsed && Array.isArray((parsed as { matches?: unknown }).matches)) {
+      return (parsed as { matches: CandidateMatch[] }).matches;
+    }
+  } catch {
+    // genuinely malformed (e.g. truncated mid-array) -- give up.
   }
   return null;
 }
@@ -540,6 +565,7 @@ Sort the array by score descending. ${
       const { text: raw } = await generateTextWithFallback(prompt);
       const parsed = parseJsonArray(raw);
       if (!parsed) {
+        console.error("Mandate match: unparseable AI response (first 500 chars):", raw.slice(0, 500));
         throw new Error("Could not parse AI response as JSON");
       }
 
@@ -808,6 +834,7 @@ Sort the array by score descending. Include at most ${options?.maxResults ?? 25}
     const { text: raw } = await generateTextWithFallback(genPrompt);
     const parsed = parseJsonArray(raw) as unknown as { candidate_id: string; score?: number; reason?: string }[] | null;
     if (!parsed) {
+      console.error("Prompt search: unparseable AI response (first 500 chars):", raw.slice(0, 500));
       throw new Error("Could not parse AI response as JSON");
     }
 
