@@ -293,7 +293,7 @@ export default async function MandatesPage({
   const hasAnyFilter = Boolean(status || showArchived || category || city || client || recruiter);
 
   return (
-    <div className="flex gap-6">
+    <div className="max-w-[1500px] mx-auto px-5 py-8 flex gap-6">
       {/* Left filter rail -- mirrors Zoho's "FILTER JOB OPENINGS BY" panel:
           every distinct value across all mandates for a handful of core
           fields, click to narrow, click again to clear that one facet. */}
@@ -339,10 +339,10 @@ export default async function MandatesPage({
       </aside>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline justify-between mb-3">
+        <div className="flex items-baseline justify-between mb-5">
           <div>
-            <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Mandates</h1>
-            <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Mandates</h1>
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
               {(mandates ?? []).length} client role{(mandates ?? []).length === 1 ? "" : "s"}
               {hasAnyFilter ? " matching current filters" : ""}
             </p>
