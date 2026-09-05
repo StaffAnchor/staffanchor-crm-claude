@@ -8,6 +8,7 @@ import MandateCandidatesBoard from "./mandate-candidates-board";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
 import { STAGES } from "@/lib/mandate-stage";
+import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 
 // Thin toggle wrapper -- Board is the new default (matches the reference
 // ATS screenshot the user liked). Both views now share the same bulk
@@ -102,9 +103,57 @@ export default function MandateCandidatesView({
     return counts;
   }, [rows]);
 
-  const filteredRows = useMemo(
+  // Same Source -> "Added by (recruiter)" drill-down as the main Candidates
+  // page filter panel (see candidate-source-label.ts). Options are scoped
+  // to whichever stage tab is active, same as the stage pills' own counts,
+  // so a recruiter looking at just "Rejected" only sees sources that
+  // actually appear there. All client-side, no server round trip needed --
+  // a single mandate's pipeline is small enough that `rows` already has
+  // everything.
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [recruiterFilter, setRecruiterFilter] = useState<string>("all");
+
+  const stageFilteredRows = useMemo(
     () => (stageFilter === "all" ? rows : rows.filter((r) => r.stage === stageFilter)),
     [rows, stageFilter]
+  );
+
+  const sourceOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of stageFilteredRows) {
+      const cb = r.candidate.created_by;
+      if (!cb || map.has(cb)) continue;
+      map.set(cb, sourceChannelLabel(cb, r.candidate.source ?? null));
+    }
+    return Array.from(map.entries());
+  }, [stageFilteredRows]);
+
+  const sourceFilteredRows = useMemo(
+    () => (sourceFilter === "all" ? stageFilteredRows : stageFilteredRows.filter((r) => r.candidate.created_by === sourceFilter)),
+    [stageFilteredRows, sourceFilter]
+  );
+
+  // Only recruiter-driven candidates (manual add / bulk upload / LinkedIn
+  // extension / LinkedIn sourcing) have a meaningful created_by_user --
+  // self-service candidates simply have none, so this naturally stays
+  // empty (and the control hides) unless at least one such candidate is
+  // in view.
+  const recruiterOptions = useMemo(() => {
+    const ids = new Set<string>();
+    for (const r of sourceFilteredRows) {
+      if (isRecruiterDrivenSource(r.candidate.created_by) && r.candidate.created_by_user) {
+        ids.add(r.candidate.created_by_user);
+      }
+    }
+    return Array.from(ids).map((id) => {
+      const m = teamMembers.find((tm) => tm.id === id);
+      return { id, label: m?.full_name?.trim() || m?.email || "Unknown" };
+    });
+  }, [sourceFilteredRows, teamMembers]);
+
+  const filteredRows = useMemo(
+    () => (recruiterFilter === "all" ? sourceFilteredRows : sourceFilteredRows.filter((r) => r.candidate.created_by_user === recruiterFilter)),
+    [sourceFilteredRows, recruiterFilter]
   );
 
   return (
@@ -134,6 +183,42 @@ export default function MandateCandidatesView({
               {s.replace(/_/g, " ")} ({stageCounts[s]})
             </button>
           ))}
+          {sourceOptions.length > 0 && (
+            <>
+              <span className="text-slate-300 dark:text-slate-600 text-xs px-0.5">|</span>
+              <select
+                value={sourceFilter}
+                onChange={(e) => {
+                  setSourceFilter(e.target.value);
+                  setRecruiterFilter("all");
+                }}
+                title="Filter by how these candidates entered the system"
+                className="text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-slate-600 dark:text-slate-400"
+              >
+                <option value="all">All sources</option>
+                {sourceOptions.map(([cb, label]) => (
+                  <option key={cb} value={cb}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              {recruiterOptions.length > 0 && (
+                <select
+                  value={recruiterFilter}
+                  onChange={(e) => setRecruiterFilter(e.target.value)}
+                  title="Drill down to which recruiter added these candidates"
+                  className="text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-slate-600 dark:text-slate-400"
+                >
+                  <option value="all">Added by: anyone</option>
+                  {recruiterOptions.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {rows.length > 0 && (
@@ -177,7 +262,7 @@ export default function MandateCandidatesView({
           // a clean remount both when the filter changes and whenever the
           // underlying rows actually change server-side (e.g. Score
           // pipeline writing new match_score values).
-          key={`${stageFilter}-${dataVersion}`}
+          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}-${dataVersion}`}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}
@@ -191,7 +276,7 @@ export default function MandateCandidatesView({
           // is the default view, so this was the actual bug users hit
           // ("scores didn't update after Score pipeline"): only Board's key
           // included dataVersion, Table's didn't.
-          key={`${stageFilter}-${dataVersion}`}
+          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}-${dataVersion}`}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}
