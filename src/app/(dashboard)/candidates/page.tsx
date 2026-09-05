@@ -201,6 +201,11 @@ type SearchParams = {
   b2b_motion?: string;
   b2c_motion?: string;
   source_channel?: string;
+  // Drill-down under Source -- which recruiter/staff member actually
+  // created the record, for the recruiter-driven origin values
+  // (recruiter_created / bulk_resume_upload / browser_extension /
+  // linkedin_sourced). Filters on candidates.created_by_user.
+  source_recruiter?: string;
   owner?: string;
 };
 
@@ -332,6 +337,7 @@ export default async function CandidatesPage({
       if (vals.length === 1) qq = qq.neq("current_industry", vals[0]);
     }
     if (params.origin) qq = qq.in("created_by", params.origin.split(","));
+    if (params.source_recruiter) qq = qq.in("created_by_user", params.source_recruiter.split(","));
     if (params.incomplete) qq = qq.in("status", ["awaiting_input", "lead"]);
     if (params.ids) {
       const idList = params.ids.split(",").map((s) => s.trim()).filter(Boolean);
@@ -464,6 +470,13 @@ export default async function CandidatesPage({
     .select("id, full_name, email")
     .in("role", ["recruiter", "admin"])
     .order("full_name");
+
+  // id -> display name, for the "Added by" Source drill-down filter's
+  // options/labels and its active-filter chip -- built once here since
+  // it's the same recruiter list already fetched above for Owner.
+  const teamMemberLabelById: Record<string, string> = Object.fromEntries(
+    (teamMembers ?? []).map((m) => [m.id, m.full_name?.trim() || m.email])
+  );
 
   // Single unfiltered scan of the candidates table covering both the
   // sub-domain filter dropdown and the status/origin stat tiles -- these
@@ -870,8 +883,9 @@ export default async function CandidatesPage({
           {multiValueChips("secondary_domain", "Secondary domain")}
           {multiValueChips("current_industry", "Current industry", { tone: "success" })}
           {multiValueChips("previous_industry", "Previous industry")}
-          {multiValueChips("origin", "Origin", { tone: "warning", labels: ORIGIN_LABEL })}
-          {multiValueChips("source_channel", "Source", { tone: "warning" })}
+          {multiValueChips("origin", "Source", { tone: "warning", labels: ORIGIN_LABEL })}
+          {multiValueChips("source_recruiter", "Added by", { tone: "warning", labels: teamMemberLabelById })}
+          {multiValueChips("source_channel", "Source Channel", { tone: "warning" })}
           {multiValueChips("language", "Language")}
           {multiValueChips("b2b_motion", "B2B Motion")}
           {multiValueChips("b2c_motion", "B2C Motion")}
@@ -1078,13 +1092,33 @@ export default async function CandidatesPage({
                       labels={STAGE_LABEL}
                     />
                   </FilterField>
-                  <FilterField label="Origin">
+                  <FilterField label="Source">
                     <MultiSelectFilter
                       name="origin"
-                      label="Origin"
+                      label="Source"
                       defaultValue={params.origin}
                       options={Object.keys(ORIGIN_LABEL)}
                       labels={ORIGIN_LABEL}
+                    />
+                  </FilterField>
+                  {/* Drill-down under Source -- which recruiter/staff member
+                      actually created the record (candidates.created_by_user).
+                      Only meaningful for the recruiter-driven Source values
+                      (Recruiter Created / Bulk CV Upload / LinkedIn Chrome
+                      Extension / LinkedIn Manual Sourcing) -- self-service
+                      candidates simply have no created_by_user, so picking a
+                      recruiter here naturally excludes them without needing
+                      to force Source to be selected first. Kept as its own
+                      independent filter (combines with Source via AND) rather
+                      than a JS-conditional nested control, matching every
+                      other filter on this page. */}
+                  <FilterField label="Added by (recruiter)">
+                    <MultiSelectFilter
+                      name="source_recruiter"
+                      label="Added by (recruiter)"
+                      defaultValue={params.source_recruiter}
+                      options={(teamMembers ?? []).map((m) => m.id)}
+                      labels={teamMemberLabelById}
                     />
                   </FilterField>
                   <FilterField label="Source channel">
