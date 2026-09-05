@@ -31,7 +31,7 @@ export default function MyPerformanceCard({
   const conversion = linked > 0 ? Math.round((placed / linked) * 100) : 0;
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-5 mb-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">My performance</p>
         <Link href="/reports" className="text-[12px] text-blue-600 hover:underline whitespace-nowrap">

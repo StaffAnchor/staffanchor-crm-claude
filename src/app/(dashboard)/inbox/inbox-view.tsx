@@ -504,15 +504,15 @@ export default function InboxView({
   }, [filterCounts]);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 py-6">
+    <div className="max-w-[1400px] mx-auto px-5 py-8">
       {performanceCard}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-500" />
+          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+            <Flame className="w-6 h-6 text-orange-500" />
             My Desk
           </h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             {recruiterScopedItems.length === 0
               ? "You're all caught up."
               : `${recruiterScopedItems.length} open item${recruiterScopedItems.length === 1 ? "" : "s"} across the three boxes below`}
@@ -536,7 +536,7 @@ export default function InboxView({
       </div>
 
       {fetchError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <div className="mb-4 rounded-ros-lg border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700 shadow-sm">
           Couldn&apos;t load your inbox: {fetchError}
         </div>
       )}
@@ -554,8 +554,8 @@ export default function InboxView({
             <button
               key={box}
               onClick={() => setActiveBox(box)}
-              className={`text-left rounded-xl border p-4 transition-all ${
-                active ? `${meta.tint} ring-2 ring-offset-1 ring-current` : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              className={`text-left rounded-ros-xl border p-4 transition-all duration-200 ease-ros hover:-translate-y-0.5 ${
+                active ? `${meta.tint} ring-2 ring-offset-1 ring-current shadow-ros-sm` : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-ros-md hover:border-slate-200 dark:hover:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">

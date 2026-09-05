@@ -66,13 +66,13 @@ export default function MorningBriefing({
   ];
 
   return (
-    <div className="rounded-xl border border-teal-200 dark:border-teal-900 bg-gradient-to-br from-teal-50 to-white dark:from-teal-950/30 dark:to-slate-900 p-5 mb-4">
-      <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-3">Good morning, {firstName}.</p>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
+    <div className="rounded-ros-xl border border-teal-200 dark:border-teal-900 bg-gradient-to-br from-teal-50 to-white dark:from-teal-950/30 dark:to-slate-900 p-6 mb-5 shadow-sm">
+      <p className="text-[16px] font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-4">Good morning, {firstName}.</p>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
         {tiles.map((t, i) => {
           const Icon = t.icon;
           return (
-            <div key={i} className={`rounded-lg px-3 py-2.5 ${t.tint}`}>
+            <div key={i} className={`rounded-ros-lg px-3.5 py-3 transition-transform duration-200 ease-ros hover:-translate-y-0.5 ${t.tint}`}>
               <div className="flex items-center gap-1.5">
                 <Icon className="w-3.5 h-3.5" />
                 <span className="text-[20px] font-bold tabular-nums leading-none">{t.value}</span>
