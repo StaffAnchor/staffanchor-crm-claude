@@ -48,7 +48,7 @@ export function StatTile({
         <p
           className={cn(
             "text-[17px] font-semibold tabular-nums",
-            accent ? "text-blue-700 dark:text-blue-300" : "text-slate-900 dark:text-slate-100 dark:text-slate-100"
+            accent ? "text-blue-700 dark:text-blue-300" : "text-slate-900 dark:text-slate-100"
           )}
         >
           {value}

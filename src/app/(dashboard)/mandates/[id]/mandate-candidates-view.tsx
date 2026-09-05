@@ -9,6 +9,8 @@ import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
 import { STAGES } from "@/lib/mandate-stage";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
+import { Select } from "@/components/ui/input";
+import { Alert } from "@/components/ui/alert";
 
 // Thin toggle wrapper -- Board is the new default (matches the reference
 // ATS screenshot the user liked). Both views now share the same bulk
@@ -40,7 +42,7 @@ export default function MandateCandidatesView({
   const router = useRouter();
   const [view, setView] = useState<"board" | "table">("table");
   const [scoring, setScoring] = useState(false);
-  const [scoreMessage, setScoreMessage] = useState<string | null>(null);
+  const [scoreMessage, setScoreMessage] = useState<{ text: string; messageTone: "success" | "error" } | null>(null);
   // Board/Table both seed local state from `rows` on mount only (see the
   // stageFilter key comment below) -- router.refresh() alone re-fetches the
   // rows prop but does NOT force either child to pick it up, since neither
@@ -75,17 +77,18 @@ export default function MandateCandidatesView({
       });
       const json = await res.json();
       if (!res.ok) {
-        setScoreMessage(json.error ?? "Scoring failed.");
+        setScoreMessage({ text: json.error ?? "Scoring failed.", messageTone: "error" });
       } else {
-        setScoreMessage(
-          `Scored ${json.scored} of ${json.consideredCount} candidate${json.consideredCount === 1 ? "" : "s"}${json.truncated ? " (pipeline is larger than the scoring cap)" : ""}.`
-        );
+        setScoreMessage({
+          text: `Scored ${json.scored} of ${json.consideredCount} candidate${json.consideredCount === 1 ? "" : "s"}${json.truncated ? " (pipeline is larger than the scoring cap)" : ""}.`,
+          messageTone: "success",
+        });
         // The rows-changed effect above bumps dataVersion once the
         // refreshed rows prop actually lands from the server.
         router.refresh();
       }
     } catch {
-      setScoreMessage("Scoring failed. Please try again.");
+      setScoreMessage({ text: "Scoring failed. Please try again.", messageTone: "error" });
     } finally {
       setScoring(false);
     }
@@ -186,14 +189,14 @@ export default function MandateCandidatesView({
           {sourceOptions.length > 0 && (
             <>
               <span className="text-slate-300 dark:text-slate-600 text-xs px-0.5">|</span>
-              <select
+              <Select
                 value={sourceFilter}
                 onChange={(e) => {
                   setSourceFilter(e.target.value);
                   setRecruiterFilter("all");
                 }}
                 title="Filter by how these candidates entered the system"
-                className="text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-slate-600 dark:text-slate-400"
+                className="w-auto rounded-full px-2.5 py-1 text-xs text-slate-600 dark:text-slate-400"
               >
                 <option value="all">All sources</option>
                 {sourceOptions.map(([cb, label]) => (
@@ -201,13 +204,13 @@ export default function MandateCandidatesView({
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
               {recruiterOptions.length > 0 && (
-                <select
+                <Select
                   value={recruiterFilter}
                   onChange={(e) => setRecruiterFilter(e.target.value)}
                   title="Drill down to which recruiter added these candidates"
-                  className="text-xs rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-slate-600 dark:text-slate-400"
+                  className="w-auto rounded-full px-2.5 py-1 text-xs text-slate-600 dark:text-slate-400"
                 >
                   <option value="all">Added by: anyone</option>
                   {recruiterOptions.map((o) => (
@@ -215,7 +218,7 @@ export default function MandateCandidatesView({
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </>
           )}
@@ -252,7 +255,11 @@ export default function MandateCandidatesView({
         </div>
         </div>
       </div>
-      {scoreMessage && <p className="text-[11px] text-slate-500 dark:text-slate-400 -mt-1 mb-2">{scoreMessage}</p>}
+      {scoreMessage && (
+        <Alert tone={scoreMessage.messageTone} className="-mt-1 mb-2 w-fit">
+          {scoreMessage.text}
+        </Alert>
+      )}
 
       {view === "board" ? (
         <MandateCandidatesBoard

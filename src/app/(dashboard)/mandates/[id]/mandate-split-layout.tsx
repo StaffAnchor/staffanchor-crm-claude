@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Wraps the mandate detail page's two-column layout (candidates on the
 // left, Intake/Screening/Sourcing/Sharing tabs on the right) so the right
@@ -31,14 +32,15 @@ export default function MandateSplitLayout({ left, right }: { left: ReactNode; r
             to tell, at a glance, that clicking this slides the entire
             details panel away, not just some minor utility action. */}
         <div>
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setCollapsed((c) => !c)}
-            className="w-full flex items-center justify-center gap-2 rounded-ros-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-2.5 mb-2 text-[13px] font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-300 transition-all duration-200 ease-ros"
+            className="w-full justify-center mb-2 border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-300"
             title={collapsed ? "Show mandate details panel" : "Hide mandate details panel for more room"}
+            icon={collapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
           >
-            {collapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
             {collapsed ? "Show mandate details panel" : "Hide mandate details panel"}
-          </button>
+          </Button>
           {!collapsed && right}
         </div>
       </div>

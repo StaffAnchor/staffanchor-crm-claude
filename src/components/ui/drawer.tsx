@@ -53,11 +53,11 @@ export function Drawer({
         )}
       >
         <div className="flex items-center justify-between px-5 h-14 border-b border-slate-100 dark:border-slate-800 dark:border-slate-700 shrink-0">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 dark:text-slate-100">{title}</h2>
+          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
           <button
             onClick={onClose}
             aria-label="Close panel"
-            className="ros-focusable text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:hover:text-slate-200 rounded-ros-sm p-1"
+            className="ros-focusable text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-ros-sm p-1"
           >
             <X className="w-4 h-4" />
           </button>
