@@ -93,11 +93,11 @@ export default async function SalesPage() {
   }).filter((s) => s.total > 0);
 
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-4">
+    <div className="max-w-[1500px] mx-auto px-5 py-8">
+      <div className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Sales</h1>
-          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Sales</h1>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             {isPartnerView
               ? "Leads you brought in — target companies to sell recruiting services to."
               : "StaffAnchor’s own client-acquisition pipeline — target companies to sell recruiting services to. Separate from candidates and mandates."}

@@ -110,7 +110,7 @@ export default async function ClientDetailPage({
   }));
 
   return (
-    <div className="grid grid-cols-3 gap-6">
+    <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
       <div className="col-span-2 space-y-6">
         <div>
           <Link href="/clients" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
@@ -119,7 +119,7 @@ export default async function ClientDetailPage({
           <Card className="mt-2">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{clientRow.name}</h1>
+                <h1 className="text-ros-heading font-semibold tracking-tight text-slate-900 dark:text-slate-100">{clientRow.name}</h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {clientRow.industry ?? "Industry not set"} {clientRow.hq_city ? `· ${clientRow.hq_city}` : ""}
                 </p>

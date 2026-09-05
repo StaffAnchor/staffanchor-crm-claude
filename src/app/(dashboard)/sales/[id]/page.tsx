@@ -49,7 +49,7 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
   const row = lead as SalesLeadRow;
 
   return (
-    <div>
+    <div className="max-w-[1100px] mx-auto px-5 py-8">
       <Link href="/sales" className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 mb-3">
         <ArrowLeft className="w-3.5 h-3.5" /> All leads
       </Link>
@@ -61,7 +61,7 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
               <Building2 className="w-5 h-5 text-slate-500" />
             </div>
             <div>
-              <h1 className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{row.company_name}</h1>
+              <h1 className="text-ros-heading font-semibold tracking-tight text-slate-900 dark:text-slate-100">{row.company_name}</h1>
               <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                 {row.contact_name}
                 {row.contact_name && row.contact_title ? " · " : ""}
