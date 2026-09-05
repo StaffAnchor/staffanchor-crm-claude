@@ -215,17 +215,17 @@ export default function CopilotPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-[1px] flex items-start justify-center pt-[12vh] px-4"
+      className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-start justify-center pt-[12vh] px-4"
       onClick={closePalette}
     >
       <div
-        className="w-full max-w-xl rounded-2xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden"
+        className="ros-glass w-full max-w-xl rounded-ros-xl border shadow-ros-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
       >
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 dark:border-slate-700">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
           <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
           <input
             ref={inputRef}
@@ -234,7 +234,7 @@ export default function CopilotPalette() {
             onKeyDown={onInputKeyDown}
             placeholder="Jump to a page, or search candidates by meaning -- e.g. 'senior SaaS sales rep in Bangalore'"
             aria-label="Search candidates or jump to a page"
-            className="flex-1 text-[14px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-transparent text-slate-900 dark:text-slate-100 dark:text-slate-100"
+            className="flex-1 text-[14px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-transparent text-slate-900 dark:text-slate-100"
           />
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 shrink-0" />}
           <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-slate-400 shrink-0">

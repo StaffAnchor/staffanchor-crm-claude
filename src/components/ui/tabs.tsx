@@ -23,7 +23,7 @@ export function Tabs({ items, defaultKey, className }: { items: TabItem[]; defau
 
   return (
     <div className={className}>
-      <div className="flex flex-wrap gap-1 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 p-1">
+      <div className="flex flex-wrap gap-1 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-1 backdrop-blur-sm">
         {items.map((item) => (
           <button
             key={item.key}

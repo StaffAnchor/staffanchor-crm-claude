@@ -55,8 +55,8 @@ export default function TopNav({
   }, []);
 
   return (
-    <header className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-      <div className="max-w-[1500px] mx-auto px-5 h-14 flex items-center gap-4">
+    <header className="ros-glass border-b sticky top-0 z-30">
+      <div className="max-w-[1500px] mx-auto px-5 h-16 flex items-center gap-4">
         <Link href="/inbox" className="flex items-center shrink-0">
           <Image
             src="/Staffanchor_Logo.svg"
@@ -86,10 +86,10 @@ export default function TopNav({
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3.5 py-1.5 rounded-full whitespace-nowrap font-medium tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`px-4 py-2 rounded-full whitespace-nowrap font-medium tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   active
-                    ? "bg-teal-600 text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-teal-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-white"
+                    ? "bg-teal-600 text-white shadow-ros-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-teal-50/80 dark:hover:bg-slate-800/80 hover:text-teal-700 dark:hover:text-white"
                 }`}
               >
                 {link.label}
@@ -115,7 +115,7 @@ export default function TopNav({
             {createOpen && (
               <div
                 role="menu"
-                className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 animate-fade-in"
+                className="ros-glass absolute right-0 mt-1.5 w-44 rounded-ros-lg shadow-ros-xl border py-1 animate-fade-in"
               >
                 <Link
                   href="/candidates/new"
@@ -154,7 +154,7 @@ export default function TopNav({
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in z-40"
+                className="ros-glass absolute right-0 mt-2 w-56 rounded-ros-lg shadow-ros-xl border py-1.5 animate-fade-in z-40"
               >
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100">{fullName ?? email}</p>

@@ -34,18 +34,18 @@ export function Dialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/30 animate-fade-in" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative w-full bg-white dark:bg-slate-900 rounded-ros-lg shadow-ros-lg animate-fade-in",
+          "ros-glass relative w-full border rounded-ros-xl shadow-ros-xl animate-fade-in",
           widthClassName
         )}
       >
         {title && (
-          <div className="flex items-center justify-between px-5 h-12 border-b border-slate-100 dark:border-slate-800 dark:border-slate-700">
+          <div className="flex items-center justify-between px-5 h-12 border-b border-slate-100 dark:border-slate-800">
             <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
             <button
               onClick={onClose}

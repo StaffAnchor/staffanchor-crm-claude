@@ -39,7 +39,7 @@ export function Drawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div
-        className="absolute inset-0 bg-slate-900/30 animate-fade-in"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -48,11 +48,11 @@ export function Drawer({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative w-full bg-white dark:bg-slate-900 h-full shadow-ros-lg flex flex-col animate-fade-in",
+          "ros-glass relative w-full border-l h-full shadow-ros-xl flex flex-col animate-fade-in",
           widthClassName
         )}
       >
-        <div className="flex items-center justify-between px-5 h-14 border-b border-slate-100 dark:border-slate-800 dark:border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-5 h-14 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
           <button
             onClick={onClose}

@@ -26,19 +26,19 @@ export function StatTile({
         // one soft canvas rather than ten separately-boxed panels, plus a
         // tiny lift-on-hover / press-on-click so the tiles feel tactile
         // instead of static, matching the row/button physics elsewhere.
-        "flex items-center gap-2.5 rounded-ros-lg border bg-white dark:bg-slate-900 px-3 py-2.5 transition-all duration-200 ease-ros",
+        "flex items-center gap-2.5 rounded-ros-xl border bg-white dark:bg-slate-900 px-3.5 py-3 transition-all duration-200 ease-ros",
         "hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
         accent
           ? "border-blue-100 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/30"
-          : "border-slate-100 dark:border-slate-800 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-ros-sm",
+          : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-ros-md",
         className
       )}
     >
       {icon && (
         <div
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-ros-md",
-            accent ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-400"
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-ros-lg",
+            accent ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
           )}
         >
           {icon}

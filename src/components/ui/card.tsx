@@ -14,10 +14,10 @@ export function Card({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-slate-900 rounded-ros-lg border border-slate-200 dark:border-slate-700 shadow-ros-sm",
-        padded && "p-5",
+        "bg-white dark:bg-slate-900 rounded-ros-xl border border-slate-100 dark:border-slate-800 shadow-ros-sm",
+        padded && "p-6",
         interactive &&
-          "transition-all duration-200 ease-ros hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-ros-md hover:-translate-y-px active:translate-y-0 active:scale-[0.98] cursor-pointer",
+          "transition-all duration-200 ease-ros hover:border-blue-200 dark:hover:border-blue-600 hover:shadow-ros-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] cursor-pointer",
         className
       )}
       {...rest}

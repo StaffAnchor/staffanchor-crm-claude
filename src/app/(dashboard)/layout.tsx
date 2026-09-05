@@ -58,7 +58,7 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-200">
+    <div className="ros-canvas min-h-screen transition-colors duration-200">
       {/* Accessibility: lets keyboard-only users jump past the nav straight
           to the page content instead of tabbing through every nav link
           and toolbar button first. Visually hidden until focused. */}

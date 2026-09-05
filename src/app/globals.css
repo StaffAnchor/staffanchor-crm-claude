@@ -85,6 +85,32 @@
   --ros-text-heading--line-height: 26px;
   --ros-text-title: 24px;
   --ros-text-title--line-height: 30px;
+
+  /* Phase 12 (Apple-glass reset) -- layered on top of Phase 0-11 rather
+     than replacing it: existing rounded-ros and shadow-ros and text-ros
+     utilities keep working, these add the pieces needed for a softer,
+     more spacious, translucent "glass" surface language (frosted nav,
+     modals, deeper but softer elevation, a larger display size for page
+     titles) closer to Apple's HIG than the original flat-card look. */
+  --ros-radius-xl: 20px;
+
+  /* Frosted-glass surface -- light mode: near-white, translucent, blurred.
+     Used for the sticky nav, dialogs/drawers, and any surface that should
+     feel like it's floating over content rather than sitting flush on it. */
+  --ros-glass-bg: rgb(255 255 255 / 0.72);
+  --ros-glass-border: rgb(226 232 240 / 0.7);
+  --ros-glass-blur: 20px;
+
+  /* Deeper, softer elevation for glass surfaces -- still low-opacity/
+     multi-layer like ros-shadow-lg, but with more spread so a floating
+     panel reads as genuinely lifted off the canvas. */
+  --ros-shadow-xl: 0 16px 40px -8px rgb(15 23 42 / 0.12), 0 4px 12px -4px rgb(15 23 42 / 0.06);
+
+  /* Large page-title size, tighter tracking -- Apple's "large title"
+     convention. Existing --ros-text-title (24px) stays for section
+     headers; this is for the one H1 per page. */
+  --ros-text-display: 30px;
+  --ros-text-display--line-height: 36px;
 }
 
 /* Phase 11: dark palette override for the same --background/--foreground
@@ -94,6 +120,12 @@
 .dark {
   --background: #0b1120;
   --foreground: #e2e8f0;
+
+  /* Phase 12: dark-mode glass tint -- slate, not black, so frosted
+     surfaces still read as "glass over the same canvas" rather than a
+     flat opaque panel. */
+  --ros-glass-bg: rgb(15 23 42 / 0.68);
+  --ros-glass-border: rgb(51 65 85 / 0.6);
 }
 
 @theme inline {
@@ -129,6 +161,12 @@
   --text-ros-heading--line-height: var(--ros-text-heading--line-height);
   --text-ros-title: var(--ros-text-title);
   --text-ros-title--line-height: var(--ros-text-title--line-height);
+
+  /* Phase 12 (Apple-glass) */
+  --radius-ros-xl: var(--ros-radius-xl);
+  --shadow-ros-xl: var(--ros-shadow-xl);
+  --text-ros-display: var(--ros-text-display);
+  --text-ros-display--line-height: var(--ros-text-display--line-height);
 }
 
 body {
@@ -175,4 +213,34 @@ body {
 .ros-focusable:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
+}
+
+/* Phase 12 (Apple-glass reset): frosted-surface utility. Applied to the
+   sticky TopNav, Dialog/Drawer panels, and the command palette -- any
+   chrome that should feel like it's floating above scrolling content
+   rather than a flush, opaque bar. Falls back gracefully (solid
+   --ros-glass-bg) wherever backdrop-filter isn't supported. */
+.ros-glass {
+  background: var(--ros-glass-bg);
+  border-color: var(--ros-glass-border);
+  -webkit-backdrop-filter: blur(var(--ros-glass-blur)) saturate(1.6);
+  backdrop-filter: blur(var(--ros-glass-blur)) saturate(1.6);
+}
+
+/* Soft radial canvas wash behind dashboard pages -- replaces the flat
+   single-tone background with a very subtle depth cue (barely visible,
+   never competing with content), the way macOS/iOS surfaces sit on a
+   softly-lit backdrop rather than a flat fill. */
+.ros-canvas {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgb(20 184 166 / 0.05), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgb(59 130 246 / 0.04), transparent 55%),
+    var(--background);
+}
+
+.dark .ros-canvas {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgb(20 184 166 / 0.06), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgb(59 130 246 / 0.05), transparent 55%),
+    var(--background);
 }
