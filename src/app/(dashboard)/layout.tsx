@@ -48,6 +48,7 @@ export default async function DashboardLayout({
     // replaces two. Billing (real money, tranche status) stays admin-only
     // like Team/Vendors below.
     { href: "/retention", label: "Retention", enabled: true },
+    { href: "/practice-pool", label: "My Practice Pool", enabled: true },
     ...(profile?.role === "admin"
       ? [
           { href: "/team", label: "Team", enabled: true },
