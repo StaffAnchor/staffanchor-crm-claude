@@ -121,11 +121,11 @@ export default async function InterviewsPage() {
   ];
 
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-3">
+    <div className="max-w-[1400px] mx-auto px-5 py-8">
+      <div className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Interviews</h1>
-          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Interviews</h1>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             Every candidate currently at the client-interview stage, across all mandates.
           </p>
         </div>

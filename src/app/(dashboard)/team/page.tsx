@@ -28,10 +28,10 @@ export default async function TeamPage() {
     .order("created_at", { ascending: true });
 
   return (
-    <div className="grid grid-cols-3 gap-6">
+    <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
       <div className="col-span-2">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Team</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Team</h1>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
           Recruiters, admins, and freelancers who can access this CRM.
         </p>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">

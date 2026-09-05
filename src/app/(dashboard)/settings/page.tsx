@@ -22,9 +22,9 @@ export default async function SettingsPage() {
     .single();
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight mb-1">Settings</h1>
-      <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mb-4">
+    <div className="max-w-xl mx-auto px-5 py-8">
+      <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Settings</h1>
+      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
         {profile?.full_name ?? profile?.email ?? "Your account"}
       </p>
 
