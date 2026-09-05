@@ -6,6 +6,7 @@ import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AssessmentForm from "./assessment-form";
 import VettingScorePanel from "./vetting-score-panel";
+import PracticeTagsPanel from "./practice-tags-panel";
 import MandateDiscussions from "./mandate-discussions";
 import CareerTimelinePanel from "./career-timeline-panel";
 import NotesPanel from "./notes-panel";
@@ -77,6 +78,15 @@ export default async function CandidateDetailPage({
     .single();
 
   if (!candidate) notFound();
+
+  const { data: allPracticesRows } = await supabase
+    .from("practices")
+    .select("id, slug, name, group_name")
+    .order("sort_order", { ascending: true });
+  const { data: candidatePracticeRows } = await supabase
+    .from("candidate_practices")
+    .select("practice_id, seniority_band, is_primary")
+    .eq("candidate_id", id);
 
   // Attributed to whoever actually saves the vetting score (vetting-score-panel.tsx),
   // same "who did this, not who owns the record" principle as profile_completed_by.
@@ -776,6 +786,26 @@ export default async function CandidateDetailPage({
               candidateId={candidate.id}
               initial={(candidate.vetting_score ?? {}) as never}
               scorerName={scorerName}
+            />
+          </Card>
+
+          {/* Which recruiting practice(s) this candidate belongs to, each
+              with its own seniority band -- replaces the old single
+              category/sub_domain dropdown. Feeds the practice-pool matching
+              (recruiter_practices <-> candidate_practices <-> mandate
+              practice_id) so a recruiter can pitch the same candidate to
+              every open mandate in their practice, not just the one they
+              first came in on. */}
+          <Card className="mt-4">
+            <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practices</h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+              A candidate can belong to more than one practice (e.g. SaaS Sales + BFSI) if they&apos;ve genuinely worked
+              both -- each practice carries its own seniority band.
+            </p>
+            <PracticeTagsPanel
+              candidateId={candidate.id}
+              allPractices={(allPracticesRows ?? []) as never}
+              initial={(candidatePracticeRows ?? []) as never}
             />
           </Card>
         </div>

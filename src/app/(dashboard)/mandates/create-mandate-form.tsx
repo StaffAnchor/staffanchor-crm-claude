@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sparkles, X, ChevronDown, ChevronUp } from "lucide-react";
@@ -51,6 +51,23 @@ export default function CreateMandateForm({
 }) {
   const router = useRouter();
   const supabase = createClient();
+  const [allPractices, setAllPractices] = useState<
+    { id: string; name: string; group_name: "enterprise_sales" | "b2c_sales" | "functional" }[]
+  >([]);
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("practices")
+      .select("id, name, group_name")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (!cancelled && data) setAllPractices(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [form, setForm] = useState({
     client_name: prefillClientName ?? "",
     role_title: "",
@@ -70,6 +87,8 @@ export default function CreateMandateForm({
     // manage, not how many of this role we're filling). Defaults to 1;
     // placed-count is tracked separately, derived from candidate_mandate_links.
     headcount: "1",
+    practice_id: "",
+    seniority_band: "",
     hide_client: false,
     public_client_label: "",
     jd_raw_notes: "",
@@ -249,6 +268,8 @@ export default function CreateMandateForm({
         experience_min: form.experience_min ? Number(form.experience_min) : null,
         experience_max: form.experience_max ? Number(form.experience_max) : null,
         headcount: form.headcount ? Number(form.headcount) : 1,
+        practice_id: form.practice_id || null,
+        seniority_band: form.seniority_band || null,
         show_client_name: !form.hide_client,
         public_client_label: form.hide_client ? form.public_client_label || null : null,
         jd_overview: form.jd_overview || null,
@@ -335,6 +356,8 @@ export default function CreateMandateForm({
       experience_min: "",
       experience_max: "",
       headcount: "1",
+      practice_id: "",
+      seniority_band: "",
       hide_client: false,
       public_client_label: "",
       jd_raw_notes: "",
@@ -566,6 +589,42 @@ export default function CreateMandateForm({
         <p className="text-[11px] text-slate-400 mt-1">
           How many hires this mandate needs -- e.g. 3 if the client wants 3 BDRs. Defaults to 1.
         </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Practice</label>
+          <select
+            value={form.practice_id}
+            onChange={(e) => setForm((f) => ({ ...f, practice_id: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Not tagged</option>
+            {allPractices.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Matches this mandate against recruiters/candidates in the same practice pool.
+          </p>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Seniority band</label>
+          <select
+            value={form.seniority_band}
+            onChange={(e) => setForm((f) => ({ ...f, seniority_band: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Not set</option>
+            <option value="ic">IC / Individual Contributor</option>
+            <option value="team_lead">Team Lead</option>
+            <option value="manager">Manager</option>
+            <option value="director">Director</option>
+            <option value="vp_plus">VP & above</option>
+          </select>
+        </div>
       </div>
 
       <div>

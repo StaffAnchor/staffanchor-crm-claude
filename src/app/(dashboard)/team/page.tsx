@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import CreateUserForm from "./create-user-form";
 import RoleControl from "./role-control";
 import SpecialtiesControl from "./specialties-control";
+import PracticesControl from "./practices-control";
 import ResetPasswordButton from "./reset-password-button";
 
 export default async function TeamPage() {
@@ -27,6 +28,20 @@ export default async function TeamPage() {
     .select("id, full_name, email, role, created_at, specialties")
     .order("created_at", { ascending: true });
 
+  const { data: allPracticesRows } = await supabase
+    .from("practices")
+    .select("id, slug, name, group_name")
+    .order("sort_order", { ascending: true });
+  const { data: recruiterPracticeRows } = await supabase
+    .from("recruiter_practices")
+    .select("user_id, practice_id");
+  const practicesByUser = new Map<string, string[]>();
+  for (const row of recruiterPracticeRows ?? []) {
+    const list = practicesByUser.get(row.user_id) ?? [];
+    list.push(row.practice_id);
+    practicesByUser.set(row.user_id, list);
+  }
+
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
       <div className="col-span-2">
@@ -42,6 +57,7 @@ export default async function TeamPage() {
                 <th className="text-left px-4 py-2.5">Email</th>
                 <th className="text-left px-4 py-2.5">Role</th>
                 <th className="text-left px-4 py-2.5">Specialty</th>
+                <th className="text-left px-4 py-2.5">Practices</th>
                 <th className="text-left px-4 py-2.5">Password</th>
               </tr>
             </thead>
@@ -55,6 +71,13 @@ export default async function TeamPage() {
                   </td>
                   <td className="px-4 py-3">
                     <SpecialtiesControl userId={p.id} currentSpecialties={p.specialties ?? []} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <PracticesControl
+                      userId={p.id}
+                      allPractices={(allPracticesRows ?? []) as never}
+                      currentPracticeIds={practicesByUser.get(p.id) ?? []}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <ResetPasswordButton userId={p.id} name={p.full_name ?? p.email} />

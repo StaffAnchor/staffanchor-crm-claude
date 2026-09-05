@@ -480,6 +480,8 @@ export default async function MandateDetailPage({
                       experience_max: mandate.experience_max,
                       status: mandate.status,
                       headcount: mandate.headcount,
+                      practice_id: mandate.practice_id ?? null,
+                      seniority_band: mandate.seniority_band ?? null,
                     }}
                     placedCount={placedCount}
                   />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pencil, X, Check, Briefcase, ChevronDown } from "lucide-react";
@@ -20,6 +20,10 @@ export type MandateBasicDetails = {
   // Number of hires this mandate needs -- see create-mandate-form.tsx.
   // Distinct from team_size_band (the size of the team the HIRE manages).
   headcount: number;
+  // Practice + seniority tag, for matching against recruiter_practices /
+  // candidate_practices pools (see create-mandate-form.tsx / practices-control.tsx).
+  practice_id: string | null;
+  seniority_band: string | null;
 };
 
 // "archived" is deliberately not a status value -- it's a separate
@@ -70,7 +74,24 @@ export default function BasicDetailsPanel({
     experience_max: initial.experience_max?.toString() ?? "",
     status: initial.status,
     headcount: initial.headcount?.toString() ?? "1",
+    practice_id: initial.practice_id ?? "",
+    seniority_band: initial.seniority_band ?? "",
   });
+  const [allPractices, setAllPractices] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("practices")
+      .select("id, name")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (!cancelled && data) setAllPractices(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const subDomainOptions = subDomainsForCategory(form.category || null);
   const isMultiSubDomain = form.category === "b2b_sales" || form.category === "b2c_sales";
@@ -113,6 +134,8 @@ export default function BasicDetailsPanel({
         experience_max: form.experience_max ? Number(form.experience_max) : null,
         status: form.status,
         headcount: form.headcount ? Number(form.headcount) : 1,
+        practice_id: form.practice_id || null,
+        seniority_band: form.seniority_band || null,
       })
       .eq("id", mandateId);
     setSaving(false);
@@ -338,6 +361,39 @@ export default function BasicDetailsPanel({
         {Number(form.headcount) > 1 && (
           <p className="text-[11px] text-slate-400 pt-4">{placedCount} filled so far</p>
         )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Practice</label>
+          <select
+            value={form.practice_id}
+            onChange={(e) => setForm((f) => ({ ...f, practice_id: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Not tagged</option>
+            {allPractices.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Seniority band</label>
+          <select
+            value={form.seniority_band}
+            onChange={(e) => setForm((f) => ({ ...f, seniority_band: e.target.value }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">Not set</option>
+            <option value="ic">IC / Individual Contributor</option>
+            <option value="team_lead">Team Lead</option>
+            <option value="manager">Manager</option>
+            <option value="director">Director</option>
+            <option value="vp_plus">VP & above</option>
+          </select>
+        </div>
       </div>
 
       <select
