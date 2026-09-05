@@ -379,7 +379,7 @@ export default async function CandidatesPage({
   const baseQuery = supabase
     .from("candidates")
     .select(
-      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
+      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
     )
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);

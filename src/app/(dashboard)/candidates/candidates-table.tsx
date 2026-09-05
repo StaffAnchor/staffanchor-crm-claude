@@ -18,6 +18,7 @@ import {
 } from "@/lib/candidate-options";
 import ResumePreview from "./[id]/resume-preview";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -76,6 +77,11 @@ export type CandidateRow = {
   current_industry: string | null;
   industries: string[] | null;
   created_by: string | null;
+  // Who actually created this record -- set once at insert, never
+  // touched by owner reassignment (admin_reassign_candidate_owner only
+  // updates owner_id) -- so this is the true "who uploaded this CV" for
+  // recruiter-driven created_by values. See candidate-source-label.ts.
+  created_by_user: string | null;
   recruiter_assessment: Record<string, unknown> | null;
   segment_data: Record<string, unknown> | null;
   owner_id: string | null;
@@ -151,18 +157,15 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 // not this field -- but still render correctly via STATUS_LABEL above.
 const LIFECYCLE_STATUSES = ["awaiting_input", "lead", "registered", "under_review", "alumni", "inactive"];
 
-const CREATED_BY_LABEL: Record<string, string> = {
-  quick_apply: "Quick Apply",
-  self_registration: "Build Your Profile",
-  recruiter_created: "Recruiter Added",
-  bulk_resume_upload: "Bulk CV Upload",
-};
-
 const CREATED_BY_TONE: Record<string, BadgeTone> = {
   quick_apply: "accent",
   self_registration: "info",
+  candidate_self_signup: "info",
   recruiter_created: "neutral",
   bulk_resume_upload: "warning",
+  bulk_import: "neutral",
+  browser_extension: "warning",
+  linkedin_sourced: "warning",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -657,12 +660,27 @@ const COLUMN_DEFS: ColumnDef[] = [
   },
   {
     key: "origin",
-    label: "Origin",
-    render: (c) => {
+    label: "Source",
+    render: (c, { teamMembers }) => {
       if (!c.created_by) return <span className="text-[11px] text-slate-300">—</span>;
+      const channel = sourceChannelLabel(c.created_by, null);
+      if (isRecruiterDrivenSource(c.created_by)) {
+        const m = teamMembers.find((tm) => tm.id === c.created_by_user);
+        const recruiterName = m ? teamMemberLabel(m) : c.created_by_user ? "Unknown" : "Unassigned";
+        return (
+          <span className="inline-flex flex-col gap-0.5">
+            <Badge tone={CREATED_BY_TONE[c.created_by] ?? "neutral"} size="sm" className="normal-case tracking-normal w-fit">
+              {channel}
+            </Badge>
+            <span className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate max-w-[130px]" title={recruiterName}>
+              {recruiterName}
+            </span>
+          </span>
+        );
+      }
       return (
         <Badge tone={CREATED_BY_TONE[c.created_by] ?? "neutral"} size="sm" className="normal-case tracking-normal">
-          {CREATED_BY_LABEL[c.created_by] ?? c.created_by}
+          {channel}
         </Badge>
       );
     },

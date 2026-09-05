@@ -21,11 +21,20 @@ const RECRUITER_DRIVEN_CREATED_BY = new Set([
   "linkedin_sourced",
 ]);
 
+// Matches the wording already used for the created_by filter/stats on the
+// main Candidates page (candidates/page.tsx's ORIGIN_LABEL) -- kept as one
+// canonical set so a recruiter sees the same words for the same value
+// everywhere in the app, whether looking at a mandate's pipeline or the
+// whole candidate database.
 const CREATED_BY_LABELS: Record<string, string> = {
-  recruiter_created: "Recruiter Added",
-  bulk_resume_upload: "Bulk Upload",
-  browser_extension: "LinkedIn Extension",
-  linkedin_sourced: "LinkedIn Sourced",
+  quick_apply: "Job Quick Apply",
+  self_registration: "Build Your Profile",
+  candidate_self_signup: "Build Your Profile",
+  recruiter_created: "Recruiter Created",
+  bulk_resume_upload: "Bulk CV Upload",
+  bulk_import: "One-Time Upload (Zoho)",
+  browser_extension: "LinkedIn (Chrome Extension)",
+  linkedin_sourced: "LinkedIn (Manual Sourcing)",
 };
 
 const SELF_SERVICE_SOURCE_LABELS: Record<string, string> = {
