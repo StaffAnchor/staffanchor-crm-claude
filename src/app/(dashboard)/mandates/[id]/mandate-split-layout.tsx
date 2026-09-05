@@ -24,20 +24,21 @@ export default function MandateSplitLayout({ left, right }: { left: ReactNode; r
             floating over the left/candidates column, right under the stat
             tiles, which read as unrelated to "mandate details" and got
             visually lost). Kept in its own always-rendered column so it's
-            still reachable to re-open the panel once collapsed. Given a
-            visible accent instead of plain slate so it reads as a control
-            for the panel below it, not just another muted utility button. */}
+            still reachable to re-open the panel once collapsed.
+            Deliberately full-width and bar-shaped (not a small corner pill)
+            so it reads as a header/handle for the whole panel below it --
+            the point being that anyone landing on this page should be able
+            to tell, at a glance, that clicking this slides the entire
+            details panel away, not just some minor utility action. */}
         <div>
-          <div className="flex justify-end mb-1.5">
-            <button
-              onClick={() => setCollapsed((c) => !c)}
-              className="flex items-center gap-1.5 rounded-ros-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-2.5 py-1 text-[11.5px] font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-300 transition-all duration-200 ease-ros"
-              title={collapsed ? "Show mandate details panel" : "Hide mandate details panel for more room"}
-            >
-              {collapsed ? <PanelRightOpen className="w-3.5 h-3.5" /> : <PanelRightClose className="w-3.5 h-3.5" />}
-              {collapsed ? "Show details panel" : "Hide details panel"}
-            </button>
-          </div>
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="w-full flex items-center justify-center gap-2 rounded-ros-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-3 py-2.5 mb-2 text-[13px] font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-300 transition-all duration-200 ease-ros"
+            title={collapsed ? "Show mandate details panel" : "Hide mandate details panel for more room"}
+          >
+            {collapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
+            {collapsed ? "Show mandate details panel" : "Hide mandate details panel"}
+          </button>
           {!collapsed && right}
         </div>
       </div>
