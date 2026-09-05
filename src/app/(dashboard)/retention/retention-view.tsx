@@ -62,7 +62,13 @@ export default function RetentionView({
   }
 
   return (
-    <div>
+    <div className="max-w-[1400px] mx-auto px-5 py-8">
+      <div className="mb-5">
+        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Retention</h1>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+          Post-placement check-ins, auto-scheduled at 30/90/180 days after a candidate&apos;s join date.
+        </p>
+      </div>
       <div className="flex items-center gap-1.5 mb-4">
         {(["open", "overdue", "completed", "all"] as const).map((f) => (
           <button

@@ -839,11 +839,11 @@ export default async function ReportsPage({
   );
 
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-4">
+    <div className="max-w-[1500px] mx-auto px-5 py-8">
+      <div className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Reports</h1>
-          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Reports</h1>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             Portfolio risk, pipeline conversion, and recruiter productivity — the numbers that change a decision, not
             just describe the database. Click any bar or tile to see the matching records.
           </p>
