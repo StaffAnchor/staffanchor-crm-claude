@@ -408,7 +408,7 @@ export default async function CandidateDetailPage({
   }
 
   return (
-    <div>
+    <div className="max-w-[1400px] mx-auto px-5 py-8">
       <div className="flex items-center justify-between">
         <Link
           href={backHref}
