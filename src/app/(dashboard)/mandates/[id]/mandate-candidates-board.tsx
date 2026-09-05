@@ -13,6 +13,7 @@ import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./applicati
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import { Zap, Sparkles } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
+import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 
 // Kanban view of the same rows the table shows, grouped by pipeline stage --
 // inspired by the reference ATS screenshot the user shared ("Look how
@@ -177,6 +178,16 @@ export default function MandateCandidatesBoard({
     if (!id) return "Unassigned";
     const m = teamMembers.find((tm) => tm.id === id);
     return m?.full_name?.trim() || m?.email || "Unknown";
+  }
+
+  // Same channel-attribution logic as the Table view -- see
+  // candidate-source-label.ts.
+  function sourceCellLabel(c: MandateCandidateRow["candidate"]) {
+    const channel = sourceChannelLabel(c.created_by, c.source);
+    if (isRecruiterDrivenSource(c.created_by)) {
+      return `${channel} \u2014 ${ownerLabel(c.created_by_user)}`;
+    }
+    return channel;
   }
 
   async function reassignOwner(candidateId: string, newOwnerId: string) {
@@ -471,6 +482,10 @@ export default function MandateCandidatesBoard({
                           recruiters never unknowingly work the same person
                           on this mandate. Admin can move it (e.g. covering
                           for someone on leave); everyone else sees it read-only. */}
+                      <div className="mt-1 text-[10px] text-slate-400 truncate" title={sourceCellLabel(row.candidate)}>
+                        {sourceCellLabel(row.candidate)}
+                      </div>
+
                       <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
                         {isAdmin ? (
                           <select

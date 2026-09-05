@@ -14,6 +14,7 @@ import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./applicati
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import { Zap, Sparkles, Loader2 } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
+import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 
 const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
@@ -116,6 +117,13 @@ export type MandateCandidateRow = {
     // column so a recruiter can see "who is this person overall" next to
     // "how do they fit THIS role" without leaving the pipeline.
     ai_summary: string | null;
+    // How this candidate entered the system + who added them, if
+    // recruiter-driven -- see candidate-source-label.ts for the full
+    // mapping. created_by_user is set once at insert and never touched
+    // by owner reassignment, so it's the true "who uploaded this CV".
+    created_by: string | null;
+    created_by_user: string | null;
+    source: string | null;
   };
 };
 
@@ -158,6 +166,17 @@ export default function MandateCandidatesTable({
     if (!id) return "Unassigned";
     const m = teamMembers.find((tm) => tm.id === id);
     return m?.full_name?.trim() || m?.email || "Unknown";
+  };
+  // "Recruiter Added -- Ananta Trivedi" for recruiter/staff-driven entry
+  // points (manual add, bulk upload, LinkedIn extension/sourcing); a plain
+  // channel label ("Job Application", "Zoho Import", ...) for self-service
+  // candidates, where there's no recruiter to attribute the CV to.
+  const sourceCellLabel = (c: MandateCandidateRow["candidate"]) => {
+    const channel = sourceChannelLabel(c.created_by, c.source);
+    if (isRecruiterDrivenSource(c.created_by)) {
+      return `${channel} \u2014 ${ownerLabel(c.created_by_user)}`;
+    }
+    return channel;
   };
   const router = useRouter();
   const supabase = createClient();
@@ -449,6 +468,7 @@ export default function MandateCandidatesTable({
             <th className="text-left px-4 py-2.5">Candidate</th>
             <th className="text-left px-4 py-2.5">Resume</th>
             <th className="text-left px-4 py-2.5">Owner</th>
+            <th className="text-left px-4 py-2.5">Source</th>
             <th className="text-left px-4 py-2.5">CTC / Notice</th>
             <th className="text-left px-4 py-2.5">Stability</th>
             <th className="text-left px-4 py-2.5">AI Summary</th>
@@ -523,6 +543,14 @@ export default function MandateCandidatesTable({
                     {ownerLabel(l.candidate.owner_id)}
                   </span>
                 )}
+              </td>
+              <td className="px-4 py-3">
+                <span
+                  className="text-xs text-slate-600 dark:text-slate-400 truncate block max-w-[150px]"
+                  title={sourceCellLabel(l.candidate)}
+                >
+                  {sourceCellLabel(l.candidate)}
+                </span>
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 <div>{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</div>
