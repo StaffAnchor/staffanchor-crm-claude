@@ -60,6 +60,14 @@ const RECOMMENDATION_TONE: Record<string, BadgeTone> = {
   "Not a Fit": "danger",
 };
 
+const SENIORITY_LABEL: Record<string, string> = {
+  ic: "IC",
+  team_lead: "Team Lead",
+  manager: "Manager",
+  director: "Director",
+  vp_plus: "VP & above",
+};
+
 export default async function CandidateDetailPage({
   params,
   searchParams,
@@ -517,6 +525,25 @@ export default async function CandidateDetailPage({
                     </div>
                   );
                 })()}
+                {/* Practice badges -- surfaced right in the header (not just
+                    buried in the sidebar Practices panel) so a recruiter
+                    scanning this profile immediately sees which practice
+                    pool(s) this candidate is discoverable under, and at
+                    what seniority band. */}
+                {candidatePracticeRows && candidatePracticeRows.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                    <span className="text-[11px] text-slate-400 mr-0.5">Practices:</span>
+                    {candidatePracticeRows.map((cp) => {
+                      const practice = (allPracticesRows ?? []).find((p) => p.id === cp.practice_id);
+                      if (!practice) return null;
+                      return (
+                        <Badge key={cp.practice_id} tone={cp.is_primary ? "accent" : "neutral"} size="sm" className="normal-case tracking-normal">
+                          {practice.name} · {SENIORITY_LABEL[cp.seniority_band] ?? cp.seniority_band}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center gap-3 mt-2 text-[12px] text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1">
                     <Mail className="w-3 h-3" /> {candidate.email}

@@ -147,6 +147,12 @@ const ORIGIN_LABEL: Record<string, string> = {
 };
 
 
+const PRACTICE_GROUP_LABEL_ORDER: { value: "enterprise_sales" | "b2c_sales" | "functional"; label: string }[] = [
+  { value: "enterprise_sales", label: "Enterprise Sales & GTM" },
+  { value: "b2c_sales", label: "B2C Sales & Consumer Sales" },
+  { value: "functional", label: "Functional Practices" },
+];
+
 const CATEGORIES = [
   { value: "", label: "All" },
   { value: "b2b_sales", label: "B2B Sales" },
@@ -207,6 +213,7 @@ type SearchParams = {
   // linkedin_sourced). Filters on candidates.created_by_user.
   source_recruiter?: string;
   owner?: string;
+  practice?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -268,6 +275,26 @@ export default async function CandidatesPage({
       .select("candidate_id")
       .in("stage", params.mandate_stage.split(","));
     mandateStageCandidateIds = Array.from(new Set((stageLinks ?? []).map((l) => l.candidate_id)));
+  }
+
+  // Practice taxonomy (17-practice list) -- fetched unconditionally since
+  // both the filter dropdown and the Practice table column need the full
+  // id->name/group lookup regardless of whether a practice filter is active.
+  const { data: allPracticesForFilter } = await supabase
+    .from("practices")
+    .select("id, name, group_name")
+    .order("sort_order", { ascending: true });
+
+  // Same resolve-then-.in("id", ...) pattern as recruiter/mandate above --
+  // candidate_practices is a join table, so "filter by practice" means
+  // resolving matching candidate ids first, not a direct .eq() on candidates.
+  let practiceCandidateIds: string[] | null = null;
+  if (params.practice) {
+    const { data: practiceLinks } = await supabase
+      .from("candidate_practices")
+      .select("candidate_id")
+      .in("practice_id", params.practice.split(","));
+    practiceCandidateIds = Array.from(new Set((practiceLinks ?? []).map((l) => l.candidate_id)));
   }
 
   // Applies every filter to a given query builder. Shared by the data query
@@ -354,6 +381,9 @@ export default async function CandidatesPage({
     if (mandateStageCandidateIds) {
       qq = qq.in("id", mandateStageCandidateIds.length ? mandateStageCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
     }
+    if (practiceCandidateIds) {
+      qq = qq.in("id", practiceCandidateIds.length ? practiceCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
+    }
     if (params.notice_period) qq = qq.in("notice_period", params.notice_period.split(","));
     if (params.employment_status) qq = qq.in("current_employment_status", params.employment_status.split(","));
     if (params.highest_qualification) qq = qq.in("highest_qualification", params.highest_qualification.split(","));
@@ -425,12 +455,32 @@ export default async function CandidatesPage({
       if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
     });
   }
+  const candidateIds = (candidates ?? []).map((c) => c.id);
+
+  // Practice tags for every visible row, batched in one query (same
+  // "resolve once, attach per-row" pattern as the resume-signed-url batch
+  // above) rather than each row fetching its own candidate_practices.
+  const practicesByCandidateId: Record<string, { name: string; seniority_band: string; is_primary: boolean }[]> = {};
+  if (candidateIds.length > 0) {
+    const { data: candidatePracticeRowsForList } = await supabase
+      .from("candidate_practices")
+      .select("candidate_id, practice_id, seniority_band, is_primary")
+      .in("candidate_id", candidateIds);
+    const practiceNameById = new Map((allPracticesForFilter ?? []).map((p) => [p.id, p.name]));
+    (candidatePracticeRowsForList ?? []).forEach((row) => {
+      const name = practiceNameById.get(row.practice_id);
+      if (!name) return;
+      const list = practicesByCandidateId[row.candidate_id] ?? [];
+      list.push({ name, seniority_band: row.seniority_band, is_primary: row.is_primary });
+      practicesByCandidateId[row.candidate_id] = list;
+    });
+  }
+
   const candidatesWithResumeUrls = (candidates ?? []).map((c) => ({
     ...c,
     resume_signed_url: c.resume_file_url ? resumeUrlByPath[c.resume_file_url.replace(/^resumes\//, "")] ?? null : null,
+    practices: practicesByCandidateId[c.id] ?? [],
   }));
-
-  const candidateIds = (candidates ?? []).map((c) => c.id);
   const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
   if (candidateIds.length > 0) {
     const { data: linkRows } = await supabase
@@ -474,6 +524,10 @@ export default async function CandidatesPage({
   // id -> display name, for the "Added by" Source drill-down filter's
   // options/labels and its active-filter chip -- built once here since
   // it's the same recruiter list already fetched above for Owner.
+  const practiceLabelById: Record<string, string> = Object.fromEntries(
+    (allPracticesForFilter ?? []).map((p) => [p.id, p.name])
+  );
+
   const teamMemberLabelById: Record<string, string> = Object.fromEntries(
     (teamMembers ?? []).map((m) => [m.id, m.full_name?.trim() || m.email])
   );
@@ -881,6 +935,7 @@ export default async function CandidatesPage({
             ))}
           {multiValueChips("location", "Current location")}
           {multiValueChips("secondary_domain", "Secondary domain")}
+          {multiValueChips("practice", "Practice", { tone: "accent", labels: practiceLabelById })}
           {multiValueChips("current_industry", "Current industry", { tone: "success" })}
           {multiValueChips("previous_industry", "Previous industry")}
           {multiValueChips("origin", "Source", { tone: "warning", labels: ORIGIN_LABEL })}
@@ -950,6 +1005,18 @@ export default async function CandidatesPage({
                       label="Secondary specialization"
                       defaultValue={params.secondary_domain}
                       groups={secondarySpecializationGroups()}
+                    />
+                  </FilterField>
+                  <FilterField label="Practice">
+                    <MultiSelectFilter
+                      name="practice"
+                      label="Practice"
+                      defaultValue={params.practice}
+                      groups={PRACTICE_GROUP_LABEL_ORDER.map((g) => ({
+                        group: g.label,
+                        options: (allPracticesForFilter ?? []).filter((p) => p.group_name === g.value).map((p) => p.id),
+                      })).filter((g) => g.options.length > 0)}
+                      labels={practiceLabelById}
                     />
                   </FilterField>
                   <FilterField label="Current industry">

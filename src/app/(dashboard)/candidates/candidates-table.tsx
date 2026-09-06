@@ -100,6 +100,10 @@ export type CandidateRow = {
   // generateCareerTimelineForCandidate, now fired on every new candidate).
   stability_score: number | null;
   created_at: string;
+  // Practice + seniority tags (see candidate_practices / practices tables) --
+  // pre-joined server-side (candidates/page.tsx) rather than fetched per-row,
+  // same batching approach as resume_signed_url above.
+  practices?: { name: string; seniority_band: string; is_primary: boolean }[];
 };
 
 // Mirrors the score thresholds inside computeStabilityScore (avgMonths >= 30
@@ -469,6 +473,14 @@ type ColumnDef = {
   headerClassName?: string;
 };
 
+const PRACTICE_SENIORITY_LABEL: Record<string, string> = {
+  ic: "IC",
+  team_lead: "Team Lead",
+  manager: "Manager",
+  director: "Director",
+  vp_plus: "VP+",
+};
+
 const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "created_at",
@@ -594,6 +606,24 @@ const COLUMN_DEFS: ColumnDef[] = [
         {c.sub_domain && <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{c.sub_domain}</div>}
       </div>
     ),
+  },
+  {
+    key: "practices",
+    label: "Practice",
+    render: (c) => {
+      if (!c.practices || c.practices.length === 0) {
+        return <span className="text-[11px] text-slate-300">Not tagged</span>;
+      }
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[180px]">
+          {c.practices.map((p) => (
+            <Badge key={p.name} tone={p.is_primary ? "accent" : "neutral"} size="sm" className="normal-case tracking-normal">
+              {p.name} · {PRACTICE_SENIORITY_LABEL[p.seniority_band] ?? p.seniority_band}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
   },
   {
     key: "current_location",
