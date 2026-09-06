@@ -232,7 +232,7 @@ export async function matchCandidatesForMandate(
   const { data: mandate, error: mandateError } = await supabase
     .from("mandates")
     .select(
-      "id, role_title, client_name, category, sub_domain, sub_domains, city, budget_min, budget_max, experience_min, experience_max, job_description, jd_overview, jd_responsibilities, jd_candidate_profile, must_haves, good_to_haves, embedding, embedding_source_hash"
+      "id, role_title, client_name, category, sub_domain, sub_domains, city, budget_min, budget_max, experience_min, experience_max, job_description, jd_overview, jd_responsibilities, jd_candidate_profile, must_haves, good_to_haves, embedding, embedding_source_hash, practice_id, seniority_band"
     )
     .eq("id", mandateId)
     .single();
@@ -301,6 +301,9 @@ export async function matchCandidatesForMandate(
   const override = options?.candidateIdsOverride;
   let candidates: CandidateRow[];
   const similarityById = new Map<string, number>();
+  // Populated only on the normal (non-override) path below -- see the
+  // practice-pool recall comment there for why.
+  const practiceSeniorityByCandidate = new Map<string, string>();
 
   if (override && override.length > 0) {
     // Proactive-matcher path: the pool is already known (a pgvector
@@ -331,6 +334,39 @@ export async function matchCandidatesForMandate(
     }
 
     candidates = ((pool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+
+    // Practice-pool recall: when this mandate is tagged to a practice (see
+    // mandates.practice_id / recruiter_practices / candidate_practices),
+    // make sure every candidate in that practice's pool is actually
+    // evaluated -- not just whichever ones happened to land in the
+    // category-filtered top-400 above. This is what makes the mandate's
+    // practice tag actually affect who gets suggested, rather than being
+    // purely cosmetic metadata. Kept as a pool-inclusion + scoring boost
+    // (not a hard filter) since practice tagging is still sparse across
+    // the historical candidate base -- a hard filter would return nothing
+    // for most mandates today.
+    if (mandate.practice_id) {
+      const { data: practiceLinks } = await supabase
+        .from("candidate_practices")
+        .select("candidate_id, seniority_band")
+        .eq("practice_id", mandate.practice_id);
+      const existingIds = new Set(candidates.map((c) => c.id));
+      const missingIds: string[] = [];
+      for (const link of practiceLinks ?? []) {
+        practiceSeniorityByCandidate.set(link.candidate_id as string, link.seniority_band as string);
+        if (!linkedIds.has(link.candidate_id as string) && !existingIds.has(link.candidate_id as string)) {
+          missingIds.push(link.candidate_id as string);
+        }
+      }
+      if (missingIds.length > 0) {
+        const { data: extraPracticeCandidates } = await supabase
+          .from("candidates")
+          .select(SELECT_COLUMNS)
+          .in("id", missingIds)
+          .neq("status", "awaiting_input");
+        for (const c of (extraPracticeCandidates ?? []) as CandidateRow[]) candidates.push(c);
+      }
+    }
 
     // Semantic recall: a fast, "does the system already remember someone
     // like this" pass over every candidate's stored embedding (computed by
@@ -398,6 +434,12 @@ export async function matchCandidatesForMandate(
   // has a real shot at making the shortlist.
   function heuristicScore(c: CandidateRow): number {
     let s = (similarityById.get(c.id) ?? 0) * 3;
+    if (practiceSeniorityByCandidate.has(c.id)) {
+      s += 3;
+      if ((m as { seniority_band?: string | null }).seniority_band && practiceSeniorityByCandidate.get(c.id) === (m as { seniority_band?: string | null }).seniority_band) {
+        s += 1.5;
+      }
+    }
     if (m.sub_domain && c.sub_domain === m.sub_domain) s += 3;
     if (m.sub_domain && c.secondary_sub_domains?.includes(m.sub_domain)) s += 1.5;
     if (m.city && c.current_location?.toLowerCase().includes(String(m.city).toLowerCase())) s += 1.5;
@@ -473,6 +515,14 @@ export async function matchCandidatesForMandate(
     category: c.category,
     primary_sub_domain: c.sub_domain,
     secondary_sub_domains: c.secondary_sub_domains,
+    // Whether this candidate is tagged into the SAME practice this mandate
+    // belongs to (mandates.practice_id), and whether their seniority band
+    // in that practice matches the mandate's target band -- explicit
+    // signal for the model to weigh positively, since this is exactly the
+    // "warm, prequalified practice pool" reuse the practice taxonomy exists
+    // to support.
+    in_mandate_practice_pool: practiceSeniorityByCandidate.has(c.id),
+    seniority_band_in_practice: practiceSeniorityByCandidate.get(c.id) ?? null,
     total_experience_years: c.total_experience_years,
     location: c.current_location,
     open_to_relocation: c.open_to_relocation,
@@ -512,6 +562,7 @@ Use these examples to calibrate what "good fit" actually means for this specific
 Mandate:
 - Role: ${m.role_title} at ${m.client_name}
 - Category / sub-domain: ${m.category} / ${m.sub_domain}
+- Target seniority band (if tagged): ${(m as { seniority_band?: string | null }).seniority_band ?? "not specified"}
 - Location: ${m.city ?? "not specified"}
 - Experience range: ${m.experience_min ?? "?"}-${m.experience_max ?? "?"} years
 - Budget (fixed CTC, lakhs): up to ${m.budget_max ?? "not specified"}
@@ -539,7 +590,7 @@ SCORE FORMULA -- the overall score must be explainable, not a vibe. Compute it f
 - must_haves_fit (weight ~50%): 100 if every must-have is "met"; each "not_met" should drag this down hard (a single not_met should put this component below 40); each "unclear" should drag it down moderately (below 75), since it's a real unknown even if not a proven fail.
 - good_to_haves_fit (weight ~10%): proportion of good-to-haves met.
 - experience_fit (weight ~20%): how well total_experience_years sits inside the mandate's experience range (100 if comfortably inside; lower the further outside).
-- domain_relevance (weight ~20%): how well category/sub-domain/industry/skill_inventory align with the mandate's category/sub-domain, independent of the must-have checklist.
+- domain_relevance (weight ~20%): how well category/sub-domain/industry/skill_inventory align with the mandate's category/sub-domain, independent of the must-have checklist. If "in_mandate_practice_pool" is true, this candidate has been explicitly tagged by a recruiter into the SAME practice this mandate belongs to -- treat that as a strong positive signal for domain_relevance; if "seniority_band_in_practice" also matches the mandate's target seniority band, that's an even stronger signal this candidate is exactly the kind of profile this mandate is looking for.
 Compute "score" as approximately the weighted sum of these four (round to nearest integer), then nudge it slightly using the recruiter calibration signal if provided above. Report the four components themselves so the math is auditable, not just the final number.
 
 Return ONLY a JSON array (no markdown fence, no commentary), one object per included candidate, each with exactly these keys:
