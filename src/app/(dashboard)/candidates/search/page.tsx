@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Search, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -25,6 +26,15 @@ type Match = {
   total_experience_years: number | null;
   category: string | null;
   sub_domain: string | null;
+  practices: { name: string; seniority_band: string }[];
+};
+
+const SENIORITY_LABEL: Record<string, string> = {
+  ic: "IC",
+  team_lead: "Team Lead",
+  manager: "Manager",
+  director: "Director",
+  vp_plus: "VP & above",
 };
 
 const EXAMPLE_PROMPTS = [
@@ -45,6 +55,24 @@ export default function CandidatePromptSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [scanned, setScanned] = useState<number | null>(null);
+  const [practiceId, setPracticeId] = useState("");
+  const [allPractices, setAllPractices] = useState<{ id: string; name: string; group_name: string }[]>([]);
+
+  // Deterministic practice pre-filter: distinct from typing "SaaS Sales" in
+  // the free-text prompt (which only ever gets AI-inferred as a soft
+  // signal) -- picking a practice here hard-scopes the entire evaluated
+  // pool to candidate_practices membership before the AI ever runs. See
+  // matchCandidatesForPrompt's practiceId option.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("practices")
+      .select("id, name, group_name")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (data) setAllPractices(data);
+      });
+  }, []);
 
   async function runSearch(text: string) {
     const trimmed = text.trim();
@@ -56,7 +84,7 @@ export default function CandidatePromptSearchPage() {
       const res = await fetch("/api/candidate-prompt-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: trimmed }),
+        body: JSON.stringify({ prompt: trimmed, practiceId: practiceId || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -101,6 +129,21 @@ export default function CandidatePromptSearchPage() {
           rows={3}
           className="w-full text-[13.5px] text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-ros-md px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800"
         />
+        <div className="flex items-center gap-2 mt-2.5 mb-2">
+          <label className="text-[11.5px] text-slate-500 dark:text-slate-400 shrink-0">Restrict to practice:</label>
+          <select
+            value={practiceId}
+            onChange={(e) => setPracticeId(e.target.value)}
+            className="text-[12px] rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1"
+          >
+            <option value="">All practices</option>
+            {allPractices.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="flex items-center justify-between mt-2.5">
           <div className="flex items-center gap-1.5 flex-wrap">
             {EXAMPLE_PROMPTS.map((ex) => (
@@ -155,6 +198,15 @@ export default function CandidatePromptSearchPage() {
                           {m.current_location ? ` · ${m.current_location}` : ""}
                           {m.total_experience_years != null ? ` · ${m.total_experience_years} yrs` : ""}
                         </p>
+                        {m.practices && m.practices.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {m.practices.map((p) => (
+                              <Badge key={p.name} tone="neutral" size="sm" className="normal-case tracking-normal">
+                                {p.name} · {SENIORITY_LABEL[p.seniority_band] ?? p.seniority_band}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                         <p className="text-[12.5px] text-slate-600 dark:text-slate-300 mt-1.5">{m.reason}</p>
                       </div>
                     </div>

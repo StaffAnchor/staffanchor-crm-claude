@@ -698,6 +698,7 @@ export type PromptSearchMatch = {
   total_experience_years: number | null;
   category: string | null;
   sub_domain: string | null;
+  practices: { name: string; seniority_band: string }[];
 };
 
 export type PromptSearchResult =
@@ -730,7 +731,15 @@ const PROMPT_SELECT_COLUMNS =
 export async function matchCandidatesForPrompt(
   prompt: string,
   supabase: SupabaseClient,
-  options?: { maxResults?: number }
+  // practiceId: when set, deterministically scopes the ENTIRE evaluated pool
+  // to candidates tagged into that practice (via candidate_practices) --
+  // bypassing the semantic/recency recall pools below entirely, since a
+  // recruiter picking a practice from the dropdown wants a hard, complete
+  // filter, not "whichever practice-tagged candidates happened to also be
+  // in the top-250-most-recent or the semantic recall". This is what makes
+  // the prompt search actually practice-aware/discoverable, rather than
+  // relying on the AI to infer practice membership from prose it never sees.
+  options?: { maxResults?: number; practiceId?: string }
 ): Promise<PromptSearchResult> {
   const trimmed = prompt.trim();
   if (!trimmed) return { ok: false, status: 400, error: "Prompt is required" };
@@ -747,6 +756,25 @@ export async function matchCandidatesForPrompt(
   const poolById = new Map<string, PromptCandidateRow>();
   const similarityById = new Map<string, number>();
 
+  // Practice filter: deterministically restrict to exactly this practice's
+  // candidate_practices membership. Short-circuits the semantic/recency
+  // recall below entirely -- see the option's doc comment above.
+  let practiceRestrictedIds: string[] | null = null;
+  if (options?.practiceId) {
+    const { data: practiceLinks } = await supabase
+      .from("candidate_practices")
+      .select("candidate_id")
+      .eq("practice_id", options.practiceId);
+    practiceRestrictedIds = Array.from(new Set((practiceLinks ?? []).map((l) => l.candidate_id as string)));
+    if (practiceRestrictedIds.length === 0) return { ok: true, matches: [], scanned: 0 };
+    const { data: rows, error: practicePoolError } = await supabase
+      .from("candidates")
+      .select(PROMPT_SELECT_COLUMNS)
+      .in("id", practiceRestrictedIds)
+      .neq("status", "awaiting_input");
+    if (practicePoolError) return { ok: false, status: 500, error: practicePoolError.message };
+    for (const r of (rows ?? []) as PromptCandidateRow[]) poolById.set(r.id, r);
+  } else {
   try {
     const { generateEmbedding } = await import("@/lib/embeddings");
     const promptEmbedding = await generateEmbedding(trimmed);
@@ -784,6 +812,7 @@ export async function matchCandidatesForPrompt(
   for (const r of (recentPool ?? []) as PromptCandidateRow[]) {
     if (!poolById.has(r.id)) poolById.set(r.id, r);
   }
+  }
 
   const candidates = Array.from(poolById.values());
   if (candidates.length === 0) return { ok: true, matches: [], scanned: 0 };
@@ -794,6 +823,26 @@ export async function matchCandidatesForPrompt(
     .sort((a, b) => (similarityById.get(b.id) ?? 0) - (similarityById.get(a.id) ?? 0))
     .slice(0, 200);
 
+  // Practice tags for the whole shortlist, batched in one join -- gives the
+  // AI explicit "this candidate is tagged SaaS Sales / Director" signal
+  // instead of it having to infer practice membership from category/
+  // sub_domain prose, and lets the reason text reference practice fit.
+  const shortlistIds = shortlist.map((c) => c.id);
+  const practicesByCandidateId = new Map<string, { name: string; seniority_band: string }[]>();
+  if (shortlistIds.length > 0) {
+    const { data: practiceRows } = await supabase
+      .from("candidate_practices")
+      .select("candidate_id, seniority_band, practices(name)")
+      .in("candidate_id", shortlistIds);
+    for (const row of practiceRows ?? []) {
+      const practiceName = (row.practices as unknown as { name: string } | null)?.name;
+      if (!practiceName) continue;
+      const list = practicesByCandidateId.get(row.candidate_id as string) ?? [];
+      list.push({ name: practiceName, seniority_band: row.seniority_band as string });
+      practicesByCandidateId.set(row.candidate_id as string, list);
+    }
+  }
+
   const factSheets = shortlist.map((c) => ({
     candidate_id: c.id,
     name: c.full_name,
@@ -802,6 +851,7 @@ export async function matchCandidatesForPrompt(
     category: c.category,
     primary_sub_domain: c.sub_domain,
     secondary_sub_domains: c.secondary_sub_domains,
+    practices: practicesByCandidateId.get(c.id) ?? [],
     total_experience_years: c.total_experience_years,
     location: c.current_location,
     open_to_relocation: c.open_to_relocation,
@@ -855,6 +905,7 @@ Sort the array by score descending. Include at most ${options?.maxResults ?? 25}
           total_experience_years: c.total_experience_years,
           category: c.category,
           sub_domain: c.sub_domain,
+          practices: practicesByCandidateId.get(c.id) ?? [],
         };
       })
       .sort((a, b) => b.score - a.score);

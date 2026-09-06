@@ -21,12 +21,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 
-  const { prompt } = await req.json();
+  const { prompt, practiceId } = await req.json();
   if (!prompt || typeof prompt !== "string") {
     return NextResponse.json({ error: "prompt is required" }, { status: 400 });
   }
 
-  const result = await matchCandidatesForPrompt(prompt, supabase);
+  const result = await matchCandidatesForPrompt(prompt, supabase, {
+    practiceId: typeof practiceId === "string" && practiceId ? practiceId : undefined,
+  });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
