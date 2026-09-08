@@ -4,14 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-
-const SENIORITY_LABEL: Record<string, string> = {
-  ic: "IC",
-  team_lead: "Team Lead",
-  manager: "Manager",
-  director: "Director",
-  vp_plus: "VP & above",
-};
+import { PracticeMatchChip } from "@/components/practice-match-chip";
+import { matchMandatesForPractice, SENIORITY_LABEL, type PracticeMandate } from "@/lib/practice-pool";
+import CandidatesSubNav from "../candidates/candidates-sub-nav";
 
 // The point of the practice structure (see candidate_practices /
 // recruiter_practices / mandates.practice_id): a recruiter should be able to
@@ -50,6 +45,7 @@ export default async function PracticePoolPage({
   if (visiblePracticeIds.length === 0) {
     return (
       <div className="max-w-[1500px] mx-auto px-5 py-8">
+        <CandidatesSubNav />
         <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">
           My Practice Pool
         </h1>
@@ -86,10 +82,23 @@ export default async function PracticePoolPage({
     is_primary: boolean;
     candidates: { id: string; full_name: string; current_job_title: string | null; current_location: string | null; status: string; owner_id: string | null } | null;
   };
-  type MandateRow = { id: string; role_title: string; client_name: string; practice_id: string; seniority_band: string | null };
 
   const rows = (candidatePracticeRows ?? []) as unknown as CandidateRow[];
-  const mandates = (openMandates ?? []) as unknown as MandateRow[];
+  const mandates = (openMandates ?? []) as unknown as PracticeMandate[];
+
+  // Which mandates each candidate here is already linked to (any stage) --
+  // excluded from their matches below so an already-actioned pairing
+  // doesn't keep resurfacing as a "new opportunity" every time this page
+  // loads. See matchMandatesForPractice in src/lib/practice-pool.ts.
+  const poolCandidateIds = Array.from(new Set(rows.map((r) => r.candidate_id)));
+  const { data: existingLinkRows } = poolCandidateIds.length
+    ? await supabase.from("candidate_mandate_links").select("candidate_id, mandate_id").in("candidate_id", poolCandidateIds)
+    : { data: [] as { candidate_id: string; mandate_id: string }[] };
+  const linkedMandateIdsByCandidate = new Map<string, Set<string>>();
+  (existingLinkRows ?? []).forEach((l) => {
+    if (!linkedMandateIdsByCandidate.has(l.candidate_id)) linkedMandateIdsByCandidate.set(l.candidate_id, new Set());
+    linkedMandateIdsByCandidate.get(l.candidate_id)!.add(l.mandate_id);
+  });
 
   const filteredRows = rows.filter((r) => {
     if (band && r.seniority_band !== band) return false;
@@ -97,15 +106,12 @@ export default async function PracticePoolPage({
     return true;
   });
 
-  function matchingMandates(practiceId: string, seniorityBand: string) {
-    return mandates.filter((m) => m.practice_id === practiceId && (m.seniority_band === seniorityBand || !m.seniority_band));
-  }
-
   const bandOptions = Object.entries(SENIORITY_LABEL);
   const visiblePractices = (allPractices ?? []).filter((p) => visiblePracticeIds.includes(p.id));
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
+      <CandidatesSubNav />
       <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">
         My Practice Pool
       </h1>
@@ -169,7 +175,8 @@ export default async function PracticePoolPage({
                 const cand = r.candidates;
                 if (!cand) return null;
                 const practice = practiceMap.get(r.practice_id);
-                const matches = matchingMandates(r.practice_id, r.seniority_band);
+                const alreadyLinked = linkedMandateIdsByCandidate.get(r.candidate_id) ?? new Set<string>();
+                const { exact, near } = matchMandatesForPractice(mandates, r.practice_id, r.seniority_band, alreadyLinked);
                 return (
                   <tr key={`${r.candidate_id}-${r.practice_id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="px-3 py-2.5">
@@ -184,19 +191,38 @@ export default async function PracticePoolPage({
                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{SENIORITY_LABEL[r.seniority_band] ?? r.seniority_band}</td>
                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{cand.current_job_title ?? "—"}</td>
                     <td className="px-3 py-2.5">
-                      {matches.length === 0 ? (
+                      {exact.length === 0 && near.length === 0 ? (
                         <span className="text-slate-400">No open mandates right now</span>
                       ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {matches.map((m) => (
-                            <Link
-                              key={m.id}
-                              href={`/mandates/${m.id}?tab=candidates`}
-                              className="text-[11px] px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
-                            >
-                              {m.role_title} — {m.client_name}
-                            </Link>
-                          ))}
+                        <div className="space-y-1">
+                          {exact.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {exact.map((m) => (
+                                <PracticeMatchChip
+                                  key={m.id}
+                                  candidateId={cand.id}
+                                  mandateId={m.id}
+                                  roleTitle={m.role_title}
+                                  clientName={m.client_name}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {near.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span className="text-[10.5px] text-slate-400 mr-0.5">Adjacent band:</span>
+                              {near.map((m) => (
+                                <PracticeMatchChip
+                                  key={m.id}
+                                  candidateId={cand.id}
+                                  mandateId={m.id}
+                                  roleTitle={m.role_title}
+                                  clientName={m.client_name}
+                                  dim
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </td>

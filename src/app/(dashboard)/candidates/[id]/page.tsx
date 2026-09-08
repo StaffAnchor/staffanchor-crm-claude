@@ -13,6 +13,7 @@ import NotesPanel from "./notes-panel";
 import VerifiedFactsPanel from "./verified-facts-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
+import PracticeMatchesPanel from "./practice-matches-panel";
 import Tabs from "./tabs";
 import Timeline from "./timeline";
 import AiSummaryPanel from "./ai-summary-panel";
@@ -345,8 +346,14 @@ export default async function CandidateDetailPage({
 
   const { data: openMandates } = await supabase
     .from("mandates")
-    .select("id, client_name, role_title")
-    .eq("status", "open");
+    .select("id, client_name, role_title, practice_id, seniority_band")
+    .eq("status", "open")
+    .eq("is_archived", false);
+
+  // Same "already linked, don't resurface" exclusion the pool-wide
+  // /practice-pool page uses -- this candidate's own `links` (fetched
+  // above) already covers it, just needs to be a Set for the matcher.
+  const alreadyLinkedMandateIds = new Set((links ?? []).map((l) => l.mandate_id));
 
   // This candidate's answers to any mandate's custom Application Questions
   // (candidate-facing, answered on jobs.staffanchor.com Quick Apply -- see
@@ -833,6 +840,24 @@ export default async function CandidateDetailPage({
               candidateId={candidate.id}
               allPractices={(allPracticesRows ?? []) as never}
               initial={(candidatePracticeRows ?? []) as never}
+            />
+          </Card>
+
+          {/* Every open mandate this candidate's practice tag(s) above
+              actually match -- the per-candidate slice of /practice-pool,
+              right here so a recruiter doesn't have to leave the profile
+              to see who else this person could be pitched to. */}
+          <Card className="mt-4">
+            <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practice Pool matches</h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+              Other open mandates in this candidate&apos;s practice(s), based on the tags above.
+            </p>
+            <PracticeMatchesPanel
+              candidateId={candidate.id}
+              candidatePractices={(candidatePracticeRows ?? []) as never}
+              allPractices={(allPracticesRows ?? []) as never}
+              mandates={(openMandates ?? []) as never}
+              alreadyLinkedMandateIds={alreadyLinkedMandateIds}
             />
           </Card>
         </div>

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/candidates", label: "Candidates" },
   { href: "/candidates/referrals", label: "Referrals" },
+  { href: "/practice-pool", label: "Practice Pool" },
 ];
 
 // Referrals used to be its own top-level nav item; folded in here (Sep
@@ -14,6 +15,12 @@ const TABS = [
 // (main list + Referrals), not the detail/new/groups/bulk-upload/search
 // sub-routes, so it's rendered inline by those two pages rather than in
 // the shared candidates/layout.tsx.
+//
+// Practice Pool (still at its own /practice-pool route, not nested under
+// /candidates -- it has its own nav-independent history and a URL
+// recruiters already have bookmarked) joined this tab strip the same way:
+// same underlying candidates, cross-referenced against open mandates by
+// practice instead of listed flat.
 export default function CandidatesSubNav() {
   const pathname = usePathname();
 
