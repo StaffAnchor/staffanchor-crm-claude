@@ -53,7 +53,9 @@ export default async function DashboardLayout({
     // check-ins to disappear from the same place its DOJ/confirmation
     // live, not a separate page that never got told.
     { href: "/placements", label: "Placements", enabled: true },
-    { href: "/practice-pool", label: "My Practice Pool", enabled: true },
+    // Practice Pool folded into the Candidates page as a tab (Sep 2026) --
+    // see (dashboard)/candidates/candidates-sub-nav.tsx. Still lives at its
+    // own /practice-pool URL, just no longer a separate top-nav item.
     // Decluttering pass (Sep 2026): Reports, Billing, and FY Targets were
     // three separate nav items showing firm-wide decision-making data with
     // no working use for a recruiter's daily tasks. Folded into a single
