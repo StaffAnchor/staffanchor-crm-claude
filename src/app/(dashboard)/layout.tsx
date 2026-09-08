@@ -54,6 +54,7 @@ export default async function DashboardLayout({
           { href: "/team", label: "Team", enabled: true },
           { href: "/vendors", label: "Vendors", enabled: true },
           { href: "/billing", label: "Billing", enabled: true },
+          { href: "/targets", label: "FY Targets", enabled: true },
         ]
       : []),
   ];
