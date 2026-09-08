@@ -40,15 +40,16 @@ export default async function DashboardLayout({
     { href: "/employer-inquiries", label: "Employer Inquiries", enabled: true },
     { href: "/interviews", label: "Interviews", enabled: true },
     { href: "/referrals", label: "Referrals", enabled: true },
-    // Business-model batch (Aug 2026): retention check-ins are a working
-    // tool for any recruiter. The former separate "Targets" page was merged
-    // into Sales as its own "Researching" stage (see sales-constants.ts) --
-    // both modeled the same "not yet a client" concept, so one pipeline
-    // replaces two.
-    { href: "/retention", label: "Retention", enabled: true },
-    // Source-of-truth placement tracker (DOJ + join confirmation + billing)
-    // -- visible to every recruiter, unlike the rest of Analytics, since
+    // Source-of-truth placement tracker (DOJ + join confirmation + billing
+    // + the 30/90/180-day retention check-ins those placements drive) --
+    // visible to every recruiter, unlike the rest of Analytics, since
     // confirming a joining date is a working task, not a reporting view.
+    // Retention used to be its own nav item/page; folded in here (Sep
+    // 2026) since check-ins are keyed off the exact same placed link this
+    // page already tracks, and a candidate falling out of "placed" (e.g.
+    // pulled_back after turning out not to have joined) needs its
+    // check-ins to disappear from the same place its DOJ/confirmation
+    // live, not a separate page that never got told.
     { href: "/placements", label: "Placements", enabled: true },
     { href: "/practice-pool", label: "My Practice Pool", enabled: true },
     // Decluttering pass (Sep 2026): Reports, Billing, and FY Targets were
