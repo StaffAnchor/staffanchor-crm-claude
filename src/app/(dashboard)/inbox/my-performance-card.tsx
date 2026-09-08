@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 // Execution-audit fix: recruiter conversion/placement numbers previously
 // only lived inside Reports -> "Recruiter Performance", a tab a recruiter
 // had to remember to click. Front-and-center now, right where they land
@@ -7,6 +5,11 @@ import Link from "next/link";
 // day to day -- work mandates, and build/maintain pipeline -- rather than
 // only ever showing mandate conversion, which used to make "no mandate"
 // days look like zero output even when a recruiter spent the day sourcing.
+//
+// Decluttering pass (Sep 2026): the "Full team report" link used to point
+// at Reports, which is now folded into the admin-only Analytics tab (see
+// (dashboard)/analytics/). This card already shows a recruiter's own
+// numbers inline -- it never needs a follow-up link to see everyone else's.
 export default function MyPerformanceCard({
   linked,
   submitted,
@@ -34,9 +37,6 @@ export default function MyPerformanceCard({
     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-5 mb-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">My performance</p>
-        <Link href="/reports" className="text-[12px] text-blue-600 hover:underline whitespace-nowrap">
-          Full team report →
-        </Link>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
         <div>

@@ -37,6 +37,7 @@ type Command = {
   hint: string;
   icon: typeof Flame;
   href: string;
+  adminOnly?: boolean;
 };
 
 // ROS Phase 1: quick-nav commands shown when the palette is opened with an
@@ -49,7 +50,7 @@ const COMMANDS: Command[] = [
   { id: "mandates", label: "Mandates", hint: "G then M", icon: Briefcase, href: "/mandates" },
   { id: "clients", label: "Clients", hint: "", icon: Building2, href: "/clients" },
   { id: "interviews", label: "Interviews", hint: "", icon: CalendarClock, href: "/interviews" },
-  { id: "reports", label: "Reports", hint: "", icon: BarChart3, href: "/reports" },
+  { id: "analytics", label: "Analytics", hint: "", icon: BarChart3, href: "/analytics", adminOnly: true },
   { id: "new-candidate", label: "New candidate", hint: "N then C", icon: UserRoundPlus, href: "/candidates/new" },
   { id: "new-mandate", label: "New mandate", hint: "N then M", icon: UserPlus2, href: "/mandates" },
 ];
@@ -63,7 +64,7 @@ const COMMANDS: Command[] = [
 // palette at all, mirrored from Linear's chorded-shortcut convention so a
 // single stray keypress while reading a page never fires a navigation by
 // accident.
-export default function CopilotPalette() {
+export default function CopilotPalette({ role }: { role: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -86,7 +87,11 @@ export default function CopilotPalette() {
   }, []);
 
   const showingCommands = !query.trim();
-  const activeList: Array<Command | CopilotResult> = showingCommands ? COMMANDS : results;
+  // Analytics command is admin-only (see (dashboard)/analytics/) -- same
+  // gate as the nav link, so the palette doesn't offer a shortcut into a
+  // page a recruiter would just get redirected away from.
+  const commands = role === "admin" ? COMMANDS : COMMANDS.filter((c) => !c.adminOnly);
+  const activeList: Array<Command | CopilotResult> = showingCommands ? commands : results;
 
   function go(href: string) {
     router.push(href);
@@ -252,7 +257,7 @@ export default function CopilotPalette() {
           )}
 
           {showingCommands &&
-            COMMANDS.map((cmd, idx) => {
+            commands.map((cmd, idx) => {
               const Icon = cmd.icon;
               const isCurrent = pathname === cmd.href || (cmd.href !== "/mandates" && pathname?.startsWith(cmd.href));
               return (

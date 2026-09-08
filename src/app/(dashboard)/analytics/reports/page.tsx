@@ -34,7 +34,7 @@ import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Tabs } from "@/components/ui/tabs";
-import { STAGE_ORDER, STAGE_LABELS, computeFunnel, pct as pctRate } from "../clients/funnel-utils";
+import { STAGE_ORDER, STAGE_LABELS, computeFunnel, pct as pctRate } from "../../clients/funnel-utils";
 import { RECRUITER_REJECTION_REASONS, CLIENT_REJECTION_REASONS } from "@/lib/mandate-stage";
 import { computeFillProbability } from "@/lib/fill-probability";
 import { ACTION_LABELS, type TimeSavedActionType } from "@/lib/time-saved";
@@ -123,7 +123,7 @@ function tallyToBarItems(values: (string | null | undefined)[]): BarItem[] {
     counts.set(v, (counts.get(v) ?? 0) + 1);
   }
   return Array.from(counts.entries())
-    .map(([label, count]) => ({ key: label, label, count, href: "/reports" }))
+    .map(([label, count]) => ({ key: label, label, count, href: "/analytics/reports" }))
     .sort((a, b) => b.count - a.count);
 }
 
@@ -742,7 +742,7 @@ export default async function ReportsPage({
       key,
       label: ACTION_LABELS[key as TimeSavedActionType] ?? key,
       count: minutes,
-      href: "/reports?range=" + range,
+      href: "/analytics/reports?range=" + range,
     }));
 
   const minutesByRecruiter: Record<string, number> = {};
@@ -757,7 +757,7 @@ export default async function ReportsPage({
       key: id,
       label: profileNames[id] ?? "Unknown",
       count: minutes,
-      href: "/reports?range=" + range,
+      href: "/analytics/reports?range=" + range,
     }));
 
   // Daily trend of minutes saved over the selected range -- reuses the exact
@@ -770,7 +770,7 @@ export default async function ReportsPage({
     const minutes = tsRows
       .filter((r) => r.created_at.slice(0, 10) === ds)
       .reduce((sum, r) => sum + Number(r.estimated_minutes_saved ?? 0), 0);
-    return { key: ds, label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), count: minutes, href: "/reports?range=" + range };
+    return { key: ds, label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), count: minutes, href: "/analytics/reports?range=" + range };
   });
 
   // Priority Applicant funnel -- how many candidates even see a Priority
@@ -852,7 +852,7 @@ export default async function ReportsPage({
           {RANGES.map((r) => (
             <Link
               key={r.key}
-              href={`/reports?range=${r.key}`}
+              href={`/analytics/reports?range=${r.key}`}
               className={`text-[11.5px] font-medium px-2.5 py-1 rounded-ros-full transition-colors duration-200 ease-ros ${
                 range === r.key ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}

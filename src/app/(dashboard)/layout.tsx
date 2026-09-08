@@ -39,22 +39,28 @@ export default async function DashboardLayout({
     { href: "/sales", label: "Sales", enabled: true },
     { href: "/employer-inquiries", label: "Employer Inquiries", enabled: true },
     { href: "/interviews", label: "Interviews", enabled: true },
-    { href: "/reports", label: "Reports", enabled: true },
     { href: "/referrals", label: "Referrals", enabled: true },
     // Business-model batch (Aug 2026): retention check-ins are a working
     // tool for any recruiter. The former separate "Targets" page was merged
     // into Sales as its own "Researching" stage (see sales-constants.ts) --
     // both modeled the same "not yet a client" concept, so one pipeline
-    // replaces two. Billing (real money, tranche status) stays admin-only
-    // like Team/Vendors below.
+    // replaces two.
     { href: "/retention", label: "Retention", enabled: true },
     { href: "/practice-pool", label: "My Practice Pool", enabled: true },
+    // Decluttering pass (Sep 2026): Reports, Billing, and FY Targets were
+    // three separate nav items showing firm-wide decision-making data with
+    // no working use for a recruiter's daily tasks. Folded into a single
+    // admin-only "Analytics" tab (see (dashboard)/analytics/) -- Reports
+    // used to be visible to every recruiter (including per-person
+    // productivity numbers and company revenue), which is exactly the kind
+    // of thing that belongs behind the same admin-only gate as Billing/
+    // Targets, not the general nav. Team/Vendors stay separate -- those are
+    // admin CRUD tools (managing people/vendor accounts), not metrics.
     ...(profile?.role === "admin"
       ? [
           { href: "/team", label: "Team", enabled: true },
           { href: "/vendors", label: "Vendors", enabled: true },
-          { href: "/billing", label: "Billing", enabled: true },
-          { href: "/targets", label: "FY Targets", enabled: true },
+          { href: "/analytics", label: "Analytics", enabled: true },
         ]
       : []),
   ];
@@ -77,7 +83,7 @@ export default async function DashboardLayout({
         role={profile?.role ?? "recruiter"}
         initials={initials}
       />
-      <CopilotPalette />
+      <CopilotPalette role={profile?.role ?? "recruiter"} />
       <main id="main-content">{children}</main>
     </div>
   );
