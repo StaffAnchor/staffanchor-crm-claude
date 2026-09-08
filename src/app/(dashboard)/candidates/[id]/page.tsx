@@ -94,7 +94,7 @@ export default async function CandidateDetailPage({
     .order("sort_order", { ascending: true });
   const { data: candidatePracticeRows } = await supabase
     .from("candidate_practices")
-    .select("practice_id, seniority_band, is_primary")
+    .select("practice_id, seniority_band, is_primary, tagged_by")
     .eq("candidate_id", id);
 
   // Attributed to whoever actually saves the vetting score (vetting-score-panel.tsx),
@@ -544,8 +544,15 @@ export default async function CandidateDetailPage({
                       const practice = (allPracticesRows ?? []).find((p) => p.id === cp.practice_id);
                       if (!practice) return null;
                       return (
-                        <Badge key={cp.practice_id} tone={cp.is_primary ? "accent" : "neutral"} size="sm" className="normal-case tracking-normal">
+                        <Badge
+                          key={cp.practice_id}
+                          tone={cp.is_primary ? "accent" : "neutral"}
+                          size="sm"
+                          className="normal-case tracking-normal"
+                          title={cp.tagged_by === "ai" ? "Assigned by AI from the resume, not yet recruiter-confirmed" : undefined}
+                        >
                           {practice.name} · {SENIORITY_LABEL[cp.seniority_band] ?? cp.seniority_band}
+                          {cp.tagged_by === "ai" ? " · AI" : ""}
                         </Badge>
                       );
                     })}

@@ -51,6 +51,10 @@
     {
       "path": "/api/cron/pipeline-health-check",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/practice-tag-sweep",
+      "schedule": "0 15 * * *"
     }
   ]
 }

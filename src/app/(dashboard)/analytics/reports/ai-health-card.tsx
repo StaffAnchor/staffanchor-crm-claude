@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BrainCircuit, Loader2, RefreshCw, ScanSearch } from "lucide-react";
+import { BrainCircuit, Loader2, RefreshCw, ScanSearch, Tags } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 // Admin-only visibility into whether the system is actually "reading" and
@@ -23,6 +23,15 @@ import { Card } from "@/components/ui/card";
 type Stats = { total: number; missingEmbedding: number; missingSummary: number; missingStability: number };
 type EmbedRunResult = { processed: number; candidatesConsidered: number; errorSamples: string[] };
 type SummaryRunResult = { processed: number; errorSamples: string[] };
+type PracticeTagStats = {
+  totalCandidates: number;
+  taggedCandidates: number;
+  untaggedCandidates: number;
+  totalOpenMandates: number;
+  taggedOpenMandates: number;
+  untaggedOpenMandates: number;
+};
+type PracticeTagRunResult = { candidatesTagged: number; mandatesTagged: number; errorSamples: string[] };
 
 export default function AiHealthCard() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -35,6 +44,55 @@ export default function AiHealthCard() {
   const [runningSummary, setRunningSummary] = useState(false);
   const [summaryResult, setSummaryResult] = useState<SummaryRunResult | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const [practiceStats, setPracticeStats] = useState<PracticeTagStats | null>(null);
+  const [runningPracticeTags, setRunningPracticeTags] = useState(false);
+  const [practiceTagResult, setPracticeTagResult] = useState<PracticeTagRunResult | null>(null);
+  const [practiceTagError, setPracticeTagError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/practice-tag-backfill");
+        const data = await res.json();
+        if (res.ok) setPracticeStats(data);
+      } catch {
+        // stats are supplementary -- a failed fetch here shouldn't block the rest of the card
+      }
+    })();
+  }, []);
+
+  async function loadPracticeStats() {
+    try {
+      const res = await fetch("/api/admin/practice-tag-backfill");
+      const data = await res.json();
+      if (res.ok) setPracticeStats(data);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function runPracticeTagBackfill() {
+    setRunningPracticeTags(true);
+    setPracticeTagResult(null);
+    setPracticeTagError(null);
+    try {
+      const res = await fetch("/api/admin/practice-tag-backfill", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setPracticeTagError(data.error ?? data.note ?? "Backfill failed");
+      } else if (data.note) {
+        setPracticeTagError(data.note);
+      } else {
+        setPracticeTagResult(data);
+      }
+      await loadPracticeStats();
+    } catch {
+      setPracticeTagError("Request failed");
+    } finally {
+      setRunningPracticeTags(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -178,6 +236,46 @@ export default function AiHealthCard() {
             {runningEmbed ? "Running…" : "Run now"}
           </button>
         </div>
+      </div>
+
+      {/* Practice tagging -- separate pipeline again (candidate_practices /
+          mandates.practice_id, not the ai_summary/stability_score/embedding
+          trio above), added when Practice Pool matching turned out to only
+          cover the ~15% of candidates a recruiter had gotten around to
+          hand-tagging. Same Run now / self-healing-sweep pattern. */}
+      <div className="mt-2 flex items-center justify-between gap-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">Practice tagging (candidates + mandates)</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            {practiceStats ? (
+              <>
+                {practiceStats.untaggedCandidates} of {practiceStats.totalCandidates} candidates untagged ·{" "}
+                {practiceStats.untaggedOpenMandates} of {practiceStats.totalOpenMandates} open mandates untagged
+              </>
+            ) : (
+              "Couldn't load stats"
+            )}
+          </p>
+          {practiceTagResult && (
+            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+              Tagged {practiceTagResult.candidatesTagged} candidates, {practiceTagResult.mandatesTagged} mandates this run.
+            </p>
+          )}
+          {practiceTagResult && practiceTagResult.errorSamples.length > 0 && (
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+              Some failed: {practiceTagResult.errorSamples.join(" · ")}
+            </p>
+          )}
+          {practiceTagError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{practiceTagError}</p>}
+        </div>
+        <button
+          onClick={runPracticeTagBackfill}
+          disabled={runningPracticeTags}
+          className="flex items-center gap-1.5 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+        >
+          {runningPracticeTags ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Tags className="w-3.5 h-3.5" />}
+          {runningPracticeTags ? "Running…" : "Run now"}
+        </button>
       </div>
     </Card>
   );

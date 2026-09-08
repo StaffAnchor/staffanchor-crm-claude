@@ -16,6 +16,7 @@ export type CandidatePracticeRow = {
   practice_id: string;
   seniority_band: string;
   is_primary: boolean;
+  tagged_by?: string;
 };
 
 const SENIORITY_BANDS: { value: string; label: string }[] = [
@@ -63,6 +64,13 @@ export default function PracticeTagsPanel({
   }
   function bandFor(practiceId: string) {
     return rows.find((r) => r.practice_id === practiceId)?.seniority_band ?? "";
+  }
+  // AI-assigned tags haven't been reviewed by a human yet -- flagged here so
+  // a recruiter knows which ones to sanity-check. Any edit + Save through
+  // this panel stamps every row 'recruiter' regardless (admin_update_candidate_practices),
+  // so this indicator naturally disappears the moment someone actually looks.
+  function isAiTagged(practiceId: string) {
+    return rows.find((r) => r.practice_id === practiceId)?.tagged_by === "ai";
   }
 
   function toggle(practiceId: string) {
@@ -118,6 +126,14 @@ export default function PracticeTagsPanel({
                       className={`text-[12.5px] text-left flex-1 ${active ? "text-blue-700 dark:text-blue-300 font-medium" : "text-slate-600 dark:text-slate-400"}`}
                     >
                       {p.name}
+                      {active && isAiTagged(p.id) && (
+                        <span
+                          className="ml-1.5 text-[9.5px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400"
+                          title="Assigned by AI from the resume -- verify and Save to confirm"
+                        >
+                          AI
+                        </span>
+                      )}
                     </button>
                     {active && (
                       <div className="flex items-center gap-1.5">

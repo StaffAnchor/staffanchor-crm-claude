@@ -67,7 +67,7 @@ export default async function PracticePoolPage({
   const { data: candidatePracticeRows } = await supabase
     .from("candidate_practices")
     .select(
-      "candidate_id, practice_id, seniority_band, is_primary, candidates(id, full_name, current_job_title, current_location, status, owner_id, resume_file_url)"
+      "candidate_id, practice_id, seniority_band, is_primary, tagged_by, candidates(id, full_name, current_job_title, current_location, status, owner_id, resume_file_url)"
     )
     .in("practice_id", visiblePracticeIds);
 
@@ -83,6 +83,7 @@ export default async function PracticePoolPage({
     practice_id: string;
     seniority_band: string;
     is_primary: boolean;
+    tagged_by: string;
     candidates: {
       id: string;
       full_name: string;
@@ -224,6 +225,11 @@ export default async function PracticePoolPage({
                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                       {practice?.name ?? "—"}
                       {r.is_primary && <Badge tone="accent" size="sm" className="ml-1.5">Primary</Badge>}
+                      {r.tagged_by === "ai" && (
+                        <Badge tone="neutral" size="sm" className="ml-1.5" title="Assigned by AI from the resume, not yet recruiter-confirmed">
+                          AI-tagged
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{SENIORITY_LABEL[r.seniority_band] ?? r.seniority_band}</td>
                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{cand.current_job_title ?? "—"}</td>
