@@ -61,7 +61,7 @@ export default function MorningBriefing({
       value: leadsNeedingFollowup,
       label: leadsNeedingFollowup === 1 ? "prospect gone quiet" : "prospects gone quiet",
       tint: leadsNeedingFollowup > 0 ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400",
-      href: "/sales",
+      href: "/client-acquisition/sales",
     },
   ];
 
@@ -97,7 +97,7 @@ export default function MorningBriefing({
           </span>
         )}
         {predictedNewClientValueLakhs > 0 && (
-          <Link href="/sales" className="flex items-center gap-1.5 hover:text-teal-700 dark:hover:text-teal-400 transition-colors">
+          <Link href="/client-acquisition/sales" className="flex items-center gap-1.5 hover:text-teal-700 dark:hover:text-teal-400 transition-colors">
             <IndianRupee className="w-3.5 h-3.5 text-teal-600" />
             Forecasted new-client pipeline:{" "}
             <span className="font-semibold text-slate-900 dark:text-slate-100">

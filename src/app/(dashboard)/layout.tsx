@@ -36,10 +36,12 @@ export default async function DashboardLayout({
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
-    { href: "/sales", label: "Sales", enabled: true },
-    { href: "/employer-inquiries", label: "Employer Inquiries", enabled: true },
+    // Sales + Employer Inquiries consolidated under one section (Sep
+    // 2026) -- see (dashboard)/client-acquisition/layout.tsx.
+    { href: "/client-acquisition", label: "Client Acquisition", enabled: true },
     { href: "/interviews", label: "Interviews", enabled: true },
-    { href: "/referrals", label: "Referrals", enabled: true },
+    // Referrals folded into the Candidates page as a tab (Sep 2026) -- see
+    // (dashboard)/candidates/candidates-sub-nav.tsx.
     // Source-of-truth placement tracker (DOJ + join confirmation + billing
     // + the 30/90/180-day retention check-ins those placements drive) --
     // visible to every recruiter, unlike the rest of Analytics, since

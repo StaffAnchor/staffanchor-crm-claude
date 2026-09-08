@@ -50,7 +50,7 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
 
   return (
     <div className="max-w-[1100px] mx-auto px-5 py-8">
-      <Link href="/sales" className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 mb-3">
+      <Link href="/client-acquisition/sales" className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 mb-3">
         <ArrowLeft className="w-3.5 h-3.5" /> All leads
       </Link>
 

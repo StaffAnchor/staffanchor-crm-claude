@@ -162,7 +162,7 @@ export default function SalesBriefingPanel({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200">
                         {item.lead_id ? (
-                          <Link href={`/sales/${item.lead_id}`} className="hover:text-blue-600 transition-colors duration-200 ease-ros">
+                          <Link href={`/client-acquisition/sales/${item.lead_id}`} className="hover:text-blue-600 transition-colors duration-200 ease-ros">
                             {item.title}
                           </Link>
                         ) : (

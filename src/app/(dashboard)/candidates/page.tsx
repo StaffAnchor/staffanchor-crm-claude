@@ -18,6 +18,7 @@ import {
 } from "@/lib/candidate-options";
 import { STAGES as MANDATE_STAGES } from "@/lib/mandate-stage";
 import { TourTooltip } from "@/components/ui/tour-tooltip";
+import CandidatesSubNav from "./candidates-sub-nav";
 
 // Primary Specialization filter must show the *actual* taxonomy recruiters
 // pick from on the intake form (grouped by Current Profile Type), not just
@@ -838,6 +839,7 @@ export default async function CandidatesPage({
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
+      <CandidatesSubNav />
       <div className="flex items-baseline justify-between mb-5">
         <div>
           <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Candidates</h1>

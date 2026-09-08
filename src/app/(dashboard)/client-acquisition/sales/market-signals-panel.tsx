@@ -152,7 +152,7 @@ export default function MarketSignalsPanel({
       window.alert(`Lead was created, but couldn't update the signal: ${updateError.message}`);
     }
     setItems((prev) => prev.filter((i) => i.id !== signal.id));
-    router.push(`/sales/${lead.id}`);
+    router.push(`/client-acquisition/sales/${lead.id}`);
   }
 
   return (

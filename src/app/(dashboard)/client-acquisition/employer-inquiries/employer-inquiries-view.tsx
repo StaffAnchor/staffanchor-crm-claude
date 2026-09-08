@@ -379,7 +379,7 @@ export default function EmployerInquiriesView({
   // not manual entry or a paid sourcing tool.
   async function convertToSalesLead(row: EmployerInquiryRow) {
     if (row.converted_lead_id) {
-      router.push(`/sales/${row.converted_lead_id}`);
+      router.push(`/client-acquisition/sales/${row.converted_lead_id}`);
       return;
     }
     if (!row.company_name) return;
@@ -425,7 +425,7 @@ export default function EmployerInquiriesView({
       setRows((cur) =>
         cur.map((r) => (r.id === row.id ? { ...r, status: "converted", converted_lead_id: lead.id } : r))
       );
-      router.push(`/sales/${lead.id}`);
+      router.push(`/client-acquisition/sales/${lead.id}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create sales lead");

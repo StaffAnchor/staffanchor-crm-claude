@@ -204,7 +204,7 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
     }
     await supabase.from("outreach_log").update({ converted_lead_id: lead.id, status: "interested" }).eq("id", row.id);
     setBusyId(null);
-    router.push(`/sales/${lead.id}`);
+    router.push(`/client-acquisition/sales/${lead.id}`);
   }
 
   async function deleteRow(id: string) {
@@ -324,7 +324,7 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 justify-end">
                         {r.converted_lead_id ? (
-                          <a href={`/sales/${r.converted_lead_id}`} className="text-blue-500 hover:text-blue-700 transition-colors duration-200 ease-ros" title="View sales lead">
+                          <a href={`/client-acquisition/sales/${r.converted_lead_id}`} className="text-blue-500 hover:text-blue-700 transition-colors duration-200 ease-ros" title="View sales lead">
                             <Link2 className="w-3.5 h-3.5" />
                           </a>
                         ) : (

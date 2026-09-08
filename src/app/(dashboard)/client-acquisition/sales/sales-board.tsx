@@ -106,7 +106,7 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
       {...listeners}
       className={`rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-ros-sm hover:shadow-ros-md hover:-translate-y-px transition-all duration-200 ease-ros touch-none ${isDragging ? "opacity-50 cursor-grabbing" : "cursor-grab"}`}
     >
-      <Link href={`/sales/${lead.id}`} className="block group">
+      <Link href={`/client-acquisition/sales/${lead.id}`} className="block group">
         <div className="flex items-start justify-between gap-2">
           <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -354,7 +354,7 @@ function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existin
                 {duplicates.map((d) => (
                   <li key={`${d.kind}-${d.id}`} className="text-[11.5px] text-amber-700 dark:text-amber-400">
                     <Link
-                      href={d.kind === "lead" ? `/sales/${d.id}` : `/clients/${d.id}`}
+                      href={d.kind === "lead" ? `/client-acquisition/sales/${d.id}` : `/clients/${d.id}`}
                       target="_blank"
                       className="underline hover:text-amber-900 dark:hover:text-amber-200"
                     >
@@ -554,7 +554,7 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
         <Button variant="secondary" icon={<Sparkles className="w-3.5 h-3.5" />} onClick={() => setShowOutreach(true)}>
           Generate outreach
         </Button>
-        <Link href="/sales/outreach-log">
+        <Link href="/client-acquisition/sales/outreach-log">
           <Button variant="secondary" icon={<NotebookText className="w-3.5 h-3.5" />}>
             Outreach log
           </Button>
