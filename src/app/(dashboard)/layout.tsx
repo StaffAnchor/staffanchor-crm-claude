@@ -46,6 +46,10 @@ export default async function DashboardLayout({
     // both modeled the same "not yet a client" concept, so one pipeline
     // replaces two.
     { href: "/retention", label: "Retention", enabled: true },
+    // Source-of-truth placement tracker (DOJ + join confirmation + billing)
+    // -- visible to every recruiter, unlike the rest of Analytics, since
+    // confirming a joining date is a working task, not a reporting view.
+    { href: "/placements", label: "Placements", enabled: true },
     { href: "/practice-pool", label: "My Practice Pool", enabled: true },
     // Decluttering pass (Sep 2026): Reports, Billing, and FY Targets were
     // three separate nav items showing firm-wide decision-making data with

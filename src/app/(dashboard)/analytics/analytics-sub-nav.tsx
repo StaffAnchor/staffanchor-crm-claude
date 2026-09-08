@@ -2,12 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Wallet, Target } from "lucide-react";
+import { BarChart3, Wallet, Target, Users } from "lucide-react";
 
 const TABS = [
   { href: "/analytics/reports", label: "Reports", icon: BarChart3 },
   { href: "/analytics/billing", label: "Billing", icon: Wallet },
   { href: "/analytics/targets", label: "FY Targets", icon: Target },
+  // Placements itself lives outside /analytics (it's recruiter-visible,
+  // not admin-only -- see (dashboard)/placements/page.tsx), but it's
+  // exactly the kind of decision-making view an admin expects to find
+  // from here too, so it's linked in as a tab even though the active-tab
+  // highlight below will never match it.
+  { href: "/placements", label: "Placements", icon: Users },
 ];
 
 // Simple pathname-prefix match (not exact) so query params on Reports
@@ -18,7 +24,7 @@ export default function AnalyticsSubNav() {
   return (
     <div className="flex items-center gap-1 -mb-px">
       {TABS.map((t) => {
-        const active = pathname?.startsWith(t.href);
+        const active = t.href !== "/placements" && pathname?.startsWith(t.href);
         const Icon = t.icon;
         return (
           <Link

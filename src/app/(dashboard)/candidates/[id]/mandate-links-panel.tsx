@@ -73,6 +73,11 @@ export default function MandateLinksPanel({
   >({});
   const [saving, setSaving] = useState<string | null>(null);
   const [rejectModalLink, setRejectModalLink] = useState<Link | null>(null);
+  // applyStageChange throws on validation failures (missing rejection
+  // reason, and now missing joining date for Placed) -- previously nothing
+  // in this panel caught or surfaced that, so a blocked save just failed
+  // silently with the button re-enabling and no explanation.
+  const [stageError, setStageError] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState(false);
 
   // Same modal (and the same mandatory-reason enforcement in
@@ -151,6 +156,7 @@ export default function MandateLinksPanel({
     const p = getPending(l);
     if (p.stage === l.stage && p.stage !== "rejected" && p.stage !== "placed") return;
     setSaving(l.id);
+    setStageError(null);
     try {
       const source: StageSource = p.clientRelayed ? "client_relayed" : "recruiter";
       await applyStageChange(supabase, {
@@ -167,6 +173,7 @@ export default function MandateLinksPanel({
         // "placed" -- a client often confirms joining well before the
         // recruiter formally marks the candidate Placed.
         dateOfJoining: p.dateOfJoining || undefined,
+        existingDateOfJoining: l.date_of_joining,
       });
       setPending((prev) => {
         const next = { ...prev };
@@ -174,6 +181,8 @@ export default function MandateLinksPanel({
         return next;
       });
       router.refresh();
+    } catch (e) {
+      setStageError(e instanceof Error ? e.message : "Failed to update stage.");
     } finally {
       setSaving(null);
     }
@@ -188,6 +197,7 @@ export default function MandateLinksPanel({
     const p = getPending(l);
     if (!p.dateOfJoining) return;
     setSaving(l.id);
+    setStageError(null);
     try {
       await applyStageChange(supabase, {
         linkId: l.id,
@@ -199,6 +209,7 @@ export default function MandateLinksPanel({
         newStage: l.stage as Stage,
         source: "recruiter",
         dateOfJoining: p.dateOfJoining,
+        existingDateOfJoining: l.date_of_joining,
       });
       setPending((prev) => {
         const next = { ...prev };
@@ -206,6 +217,8 @@ export default function MandateLinksPanel({
         return next;
       });
       router.refresh();
+    } catch (e) {
+      setStageError(e instanceof Error ? e.message : "Failed to save joining date.");
     } finally {
       setSaving(null);
     }
@@ -218,6 +231,11 @@ export default function MandateLinksPanel({
 
   return (
     <div>
+      {stageError && (
+        <div className="mb-3 px-3 py-2 rounded-ros-md text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400">
+          {stageError}
+        </div>
+      )}
       <div className="space-y-3 mb-4">
         {links.length === 0 && <p className="text-sm text-slate-400">Not linked to any mandate yet.</p>}
         {links.map((l) => {

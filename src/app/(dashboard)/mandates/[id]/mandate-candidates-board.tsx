@@ -209,6 +209,15 @@ export default function MandateCandidatesBoard({
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [rejectModalRow, setRejectModalRow] = useState<MandateCandidateRow | null>(null);
   const [rejecting, setRejecting] = useState(false);
+  // Dragging a card into "Placed" used to call moveCard directly with no
+  // way to supply a joining date at all -- now that DOJ is mandatory at
+  // the DB level for stage=placed, that drop would just fail with an
+  // opaque error. This small modal is the board's equivalent of the
+  // reject modal above: pause the drop, ask for the one required field,
+  // then complete the same moveCard write path.
+  const [placeModalRow, setPlaceModalRow] = useState<MandateCandidateRow | null>(null);
+  const [placeDoj, setPlaceDoj] = useState("");
+  const [placing, setPlacing] = useState(false);
 
   async function confirmReject(result: { source: "recruiter" | "client_relayed"; category: string; note: string }) {
     if (!rejectModalRow) return;
@@ -216,6 +225,15 @@ export default function MandateCandidatesBoard({
     await moveCard(rejectModalRow, "rejected", result);
     setRejecting(false);
     setRejectModalRow(null);
+  }
+
+  async function confirmPlace() {
+    if (!placeModalRow || !placeDoj) return;
+    setPlacing(true);
+    await moveCard(placeModalRow, "placed", undefined, placeDoj);
+    setPlacing(false);
+    setPlaceModalRow(null);
+    setPlaceDoj("");
   }
   // Same selection + bulk-actions capability the Table view has (shortlist,
   // email JD, email to client, add to group, reject/remove) -- lets a
@@ -255,13 +273,14 @@ export default function MandateCandidatesBoard({
   async function moveCard(
     row: MandateCandidateRow,
     newStage: Stage,
-    rejection?: { source: "recruiter" | "client_relayed"; category: string; note: string }
+    rejection?: { source: "recruiter" | "client_relayed"; category: string; note: string },
+    dateOfJoining?: string
   ) {
     if (row.stage === newStage) return;
     setMovingId(row.id);
     setMessage(null);
     const prevStage = row.stage;
-    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stage: newStage } : r)));
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stage: newStage, date_of_joining: dateOfJoining || r.date_of_joining } : r)));
     try {
       await applyStageChange(supabase, {
         linkId: row.id,
@@ -274,6 +293,8 @@ export default function MandateCandidatesBoard({
         source: rejection?.source ?? "recruiter",
         rejectionCategory: rejection?.category,
         rejectionReason: rejection?.note || undefined,
+        dateOfJoining,
+        existingDateOfJoining: row.date_of_joining,
       });
       router.refresh();
     } catch (e) {
@@ -300,6 +321,11 @@ export default function MandateCandidatesBoard({
     if (!row) return;
     if (columnKey === "dropped") {
       setRejectModalRow(row);
+      return;
+    }
+    if (columnKey === "placed" && !row.date_of_joining) {
+      setPlaceDoj("");
+      setPlaceModalRow(row);
       return;
     }
     moveCard(row, columnKey as Stage);
@@ -569,6 +595,45 @@ export default function MandateCandidatesBoard({
           onCancel={() => setRejectModalRow(null)}
           onConfirm={confirmReject}
         />
+      )}
+
+      {placeModalRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm rounded-ros-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-5">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              Mark {placeModalRow.candidate.full_name} as Placed
+            </h3>
+            <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
+              A joining date is required to mark a candidate as Placed -- this is what drives the Placements tracker and billing.
+            </p>
+            <input
+              type="date"
+              value={placeDoj}
+              onChange={(e) => setPlaceDoj(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2.5 py-1.5 text-[13px] mb-4"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setPlaceModalRow(null);
+                  setPlaceDoj("");
+                }}
+                disabled={placing}
+                className="px-3 py-1.5 text-[12.5px] font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmPlace}
+                disabled={placing || !placeDoj}
+                className="px-3 py-1.5 text-[12.5px] font-medium rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white"
+              >
+                {placing ? "Saving..." : "Confirm placed"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

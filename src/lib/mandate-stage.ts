@@ -92,6 +92,13 @@ export async function applyStageChange(
     // "Rejection reasons" card) instead of only ever read one at a time.
     rejectionCategory?: string | null;
     dateOfJoining?: string | null;
+    // The link's current date_of_joining, if any, from before this call --
+    // needed because dateOfJoining above is only the NEW value a caller is
+    // trying to set this time (often blank, e.g. a stage change that isn't
+    // touching the date). Without this, the mandatory-DOJ check below would
+    // wrongly block re-saving an already-placed candidate whose date was
+    // set on a previous save.
+    existingDateOfJoining?: string | null;
   }
 ) {
   const isClientAttributed = params.source !== "recruiter";
@@ -106,6 +113,15 @@ export async function applyStageChange(
   // guarantee instead of relying on each surface remembering to ask.
   if (params.newStage === "rejected" && !params.rejectionCategory) {
     throw new Error("A reason is required to reject a candidate.");
+  }
+
+  // Placements table (the "source of truth" for who's placed, joining
+  // dates, and downstream billing) is only as good as the joining date
+  // being on file -- a DB-level CHECK constraint backs this up too, but
+  // that raises an opaque Postgres error, so this catches it early with a
+  // message a recruiter can actually act on.
+  if (params.newStage === "placed" && !(params.dateOfJoining || params.existingDateOfJoining)) {
+    throw new Error("A joining date is required to mark a candidate as Placed.");
   }
 
   const update: Record<string, unknown> = {

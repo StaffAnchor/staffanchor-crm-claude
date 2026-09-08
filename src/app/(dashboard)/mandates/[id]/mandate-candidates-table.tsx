@@ -308,6 +308,7 @@ export default function MandateCandidatesTable({
         // recruiter formally marks the candidate Placed (e.g. right at
         // Offer), and that's exactly when it's worth capturing.
         dateOfJoining: dateOfJoining || undefined,
+        existingDateOfJoining: row.date_of_joining,
       });
       setRows((prev) =>
         prev.map((r) => (r.id === row.id ? { ...r, stage: newStage, stage_source: source, date_of_joining: dateOfJoining || r.date_of_joining } : r))
