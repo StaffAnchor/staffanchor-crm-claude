@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PracticeMatchChip } from "@/components/practice-match-chip";
 import { matchMandatesForPractice, SENIORITY_LABEL, type PracticeMandate } from "@/lib/practice-pool";
 import CandidatesSubNav from "../candidates/candidates-sub-nav";
+import ResumePreview from "../candidates/[id]/resume-preview";
 
 // The point of the practice structure (see candidate_practices /
 // recruiter_practices / mandates.practice_id): a recruiter should be able to
@@ -65,7 +66,9 @@ export default async function PracticePoolPage({
 
   const { data: candidatePracticeRows } = await supabase
     .from("candidate_practices")
-    .select("candidate_id, practice_id, seniority_band, is_primary, candidates(id, full_name, current_job_title, current_location, status, owner_id)")
+    .select(
+      "candidate_id, practice_id, seniority_band, is_primary, candidates(id, full_name, current_job_title, current_location, status, owner_id, resume_file_url)"
+    )
     .in("practice_id", visiblePracticeIds);
 
   const { data: openMandates } = await supabase
@@ -80,7 +83,15 @@ export default async function PracticePoolPage({
     practice_id: string;
     seniority_band: string;
     is_primary: boolean;
-    candidates: { id: string; full_name: string; current_job_title: string | null; current_location: string | null; status: string; owner_id: string | null } | null;
+    candidates: {
+      id: string;
+      full_name: string;
+      current_job_title: string | null;
+      current_location: string | null;
+      status: string;
+      owner_id: string | null;
+      resume_file_url: string | null;
+    } | null;
   };
 
   const rows = (candidatePracticeRows ?? []) as unknown as CandidateRow[];
@@ -104,6 +115,27 @@ export default async function PracticePoolPage({
     if (band && r.seniority_band !== band) return false;
     if (practiceFilter && r.practice_id !== practiceFilter) return false;
     return true;
+  });
+
+  // Batch-generate resume signed URLs in one Storage API call rather than
+  // one per row -- same pattern as the main Candidates table
+  // (candidates/page.tsx) so a "Preview resume" button can sit right in
+  // this table without each row firing its own request on load.
+  const resumePaths = Array.from(
+    new Set(
+      filteredRows
+        .map((r) => r.candidates?.resume_file_url)
+        .filter((p): p is string => Boolean(p))
+        .map((p) => p.replace(/^resumes\//, ""))
+    )
+  );
+  const { data: signedBatch } =
+    resumePaths.length > 0
+      ? await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60)
+      : { data: null as { signedUrl?: string | null; error?: unknown; path?: string | null }[] | null };
+  const resumeUrlByPath: Record<string, string> = {};
+  (signedBatch ?? []).forEach((s) => {
+    if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
   });
 
   const bandOptions = Object.entries(SENIORITY_LABEL);
@@ -163,22 +195,27 @@ export default async function PracticePoolPage({
           <table className="w-full text-sm">
             <thead className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
               <tr>
+                <th className="text-right px-3 py-2.5 w-10">S.No</th>
                 <th className="text-left px-3 py-2.5">Candidate</th>
                 <th className="text-left px-3 py-2.5">Practice</th>
                 <th className="text-left px-3 py-2.5">Seniority</th>
                 <th className="text-left px-3 py-2.5">Current role</th>
+                <th className="text-left px-3 py-2.5">CV</th>
                 <th className="text-left px-3 py-2.5">Open mandates in this practice+band</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredRows.map((r) => {
+              {filteredRows.map((r, idx) => {
                 const cand = r.candidates;
                 if (!cand) return null;
                 const practice = practiceMap.get(r.practice_id);
                 const alreadyLinked = linkedMandateIdsByCandidate.get(r.candidate_id) ?? new Set<string>();
                 const { exact, near } = matchMandatesForPractice(mandates, r.practice_id, r.seniority_band, alreadyLinked);
+                const resumePath = cand.resume_file_url?.replace(/^resumes\//, "") ?? null;
+                const resumeSignedUrl = resumePath ? resumeUrlByPath[resumePath] ?? null : null;
                 return (
                   <tr key={`${r.candidate_id}-${r.practice_id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="px-3 py-2.5 text-right text-slate-400 tabular-nums">{idx + 1}</td>
                     <td className="px-3 py-2.5">
                       <Link href={`/candidates/${cand.id}`} className="font-medium text-slate-900 dark:text-slate-100 hover:underline">
                         {cand.full_name}
@@ -190,6 +227,13 @@ export default async function PracticePoolPage({
                     </td>
                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{SENIORITY_LABEL[r.seniority_band] ?? r.seniority_band}</td>
                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{cand.current_job_title ?? "—"}</td>
+                    <td className="px-3 py-2.5">
+                      {resumeSignedUrl ? (
+                        <ResumePreview signedUrl={resumeSignedUrl} fileName={resumePath ?? `${cand.full_name}.pdf`} label="Preview" />
+                      ) : (
+                        <span className="text-[11px] text-slate-400">No CV</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5">
                       {exact.length === 0 && near.length === 0 ? (
                         <span className="text-slate-400">No open mandates right now</span>
