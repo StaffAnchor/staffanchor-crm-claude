@@ -22,7 +22,7 @@
     },
     {
       "path": "/api/cron/career-timeline-sweep",
-      "schedule": "0 7 * * 2,5"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/joining-followup",

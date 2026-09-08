@@ -641,6 +641,19 @@ export default async function CandidatesPage({
       if (l.date_of_joining) joinedCandidates.add(l.candidate_id);
       else offeredNotJoinedCandidates.add(l.candidate_id);
     }
+    // A candidate can also be moved off "placed" straight to "pulled_back"
+    // once it's confirmed they aren't actually joining (see mandate-stage.ts)
+    // -- still "offered/placed, then didn't join" in substance, just no
+    // longer literally at the "placed" stage. There's no stored
+    // "pulled_back_from_stage" (only rejected tracks that), so a
+    // date_of_joining already on file is the signal that this pull-back
+    // happened after an offer/placement was in motion, not an early
+    // shortlist pull -- without this, a corrected record (like Yash Anand,
+    // Finance Manager @ Kiwi) silently vanishes from this KPI instead of
+    // being counted as exactly what it is.
+    if (l.stage === "pulled_back" && l.date_of_joining) {
+      offeredNotJoinedCandidates.add(l.candidate_id);
+    }
     const reachedStage = l.stage === "rejected" ? l.rejected_from_stage : l.stage;
     const idx = PIPELINE_ORDER.indexOf(reachedStage as (typeof PIPELINE_ORDER)[number]);
     if (idx >= 0) {
