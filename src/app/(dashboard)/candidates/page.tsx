@@ -44,6 +44,7 @@ const ROLE_TYPE_FILTER_OPTIONS = [
   { value: "Team Lead", label: "Leading a Team" },
 ];
 import { MiniStat, StatSection } from "@/components/ui/mini-stat";
+import OfferJoiningDrilldown from "./offer-joining-drilldown";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 
 // "More filters" panel is grouped into named sections (rather than one long
@@ -229,73 +230,157 @@ export default async function CandidatesPage({
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
-  const { data: currentProfile } = currentUser
-    ? await supabase.from("profiles").select("role").eq("id", currentUser.id).single()
-    : { data: null };
-  const isAdmin = currentProfile?.role === "admin";
 
   const pageNum = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const rangeFrom = (pageNum - 1) * PAGE_SIZE;
   const rangeTo = rangeFrom + PAGE_SIZE - 1;
 
-  // Resolved once, up front, since it requires its own async lookup and is
-  // then reused identically by both the page-of-rows query and the
-  // filtered-count query below (so pagination and the "N candidates" total
-  // always agree on exactly the same underlying candidate ID set).
-  let recruiterCandidateIds: string[] | null = null;
-  if (params.recruiter) {
-    let linkQuery = supabase.from("candidate_mandate_links").select("candidate_id").eq("added_by", params.recruiter);
-    if (params.placed_only) linkQuery = linkQuery.eq("stage", "placed");
-    const { data: recruiterLinks } = await linkQuery;
-    recruiterCandidateIds = Array.from(new Set((recruiterLinks ?? []).map((l) => l.candidate_id)));
-  }
-
-  // Same resolve-then-reuse pattern as recruiterCandidateIds above, for the
-  // Mandates table's "Applications" column -- clicking the count needs to
-  // land here already filtered to just that mandate's linked candidates.
-  let mandateCandidateIds: string[] | null = null;
-  if (params.mandate) {
-    const { data: mandateLinks } = await supabase
+  // Performance fix: this page used to fire off around a dozen Supabase
+  // round trips one after another -- profile lookup, four filter-id
+  // resolutions, the practices list, recruiter name, open mandates, team
+  // members, and two full-table scans for the KPI header -- each one a
+  // real network round trip (this app runs on Vercel iad1, the Supabase
+  // project is ap-northeast-1), so the fixed per-hop latency alone stacked
+  // into multiple seconds even when every individual query was fast. None
+  // of these depend on each other's *results* (only on `currentUser` and
+  // the raw `params`, both already available), so they all fire together
+  // instead of one after another. This is exactly what made switching
+  // filters (e.g. clearing "Placed") feel slow -- every navigation reran
+  // this entire waterfall from scratch.
+  const [
+    currentProfileRes,
+    recruiterLinksRes,
+    mandateLinksRes,
+    stageLinksRes,
+    allPracticesRes,
+    practiceLinksRes,
+    recruiterProfileRes,
+    openMandatesRes,
+    teamMembersRes,
+    allRowsRes,
+    allStageLinksRes,
+    offerJoiningDetailRes,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ]: any[] = await Promise.all([
+    currentUser
+      ? supabase.from("profiles").select("role").eq("id", currentUser.id).single()
+      : Promise.resolve({ data: null }),
+    // Resolved once, up front, so it can be reused identically by both the
+    // page-of-rows query and the filtered-count query below (so pagination
+    // and the "N candidates" total always agree on exactly the same
+    // underlying candidate ID set).
+    params.recruiter
+      ? params.placed_only
+        ? supabase
+            .from("candidate_mandate_links")
+            .select("candidate_id")
+            .eq("added_by", params.recruiter)
+            .eq("stage", "placed")
+        : supabase.from("candidate_mandate_links").select("candidate_id").eq("added_by", params.recruiter)
+      : Promise.resolve({ data: null }),
+    // Same resolve-then-reuse pattern, for the Mandates table's
+    // "Applications" column -- clicking the count needs to land here
+    // already filtered to just that mandate's linked candidates.
+    params.mandate
+      ? supabase.from("candidate_mandate_links").select("candidate_id").eq("mandate_id", params.mandate)
+      : Promise.resolve({ data: null }),
+    // "Client Shortlisted" / "Submitted" / etc. on the KPI tiles and Hiring
+    // pipeline strip live on candidate_mandate_links.stage rather than
+    // candidates.status (see Phase 1 of the pipeline-stage split) -- so
+    // filtering by one of those stages means resolving which candidates
+    // have at least one mandate link at that stage first, same
+    // resolve-then-.in("id", ...) pattern as recruiter/mandate above.
+    params.mandate_stage
+      ? supabase.from("candidate_mandate_links").select("candidate_id").in("stage", params.mandate_stage.split(","))
+      : Promise.resolve({ data: null }),
+    // Practice taxonomy (17-practice list) -- needed unconditionally since
+    // both the filter dropdown and the Practice table column need the full
+    // id->name/group lookup regardless of whether a practice filter is active.
+    supabase.from("practices").select("id, name, group_name").order("sort_order", { ascending: true }),
+    // Same resolve-then-.in("id", ...) pattern as recruiter/mandate above --
+    // candidate_practices is a join table, so "filter by practice" means
+    // resolving matching candidate ids first, not a direct .eq() on candidates.
+    params.practice
+      ? supabase.from("candidate_practices").select("candidate_id").in("practice_id", params.practice.split(","))
+      : Promise.resolve({ data: null }),
+    params.recruiter
+      ? supabase.from("profiles").select("full_name, email").eq("id", params.recruiter).single()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("mandates")
+      .select("id, role_title, client_name")
+      .eq("status", "open")
+      .order("created_at", { ascending: false }),
+    // Every recruiter/admin, for the Owner column's reassign dropdown and
+    // the "My Candidates" pill -- one shared fetch instead of each
+    // row/filter hitting profiles separately.
+    supabase.from("profiles").select("id, full_name, email").in("role", ["recruiter", "admin"]).order("full_name"),
+    // Single unfiltered scan of the candidates table covering both the
+    // sub-domain filter dropdown and the status/origin stat tiles -- these
+    // used to be two separate full-table round trips even though they're
+    // reading the same rows; combining the column list halves the
+    // redundant traffic without changing any of the derived numbers.
+    supabase
+      .from("candidates")
+      .select("sub_domain, status, created_at, created_by, current_location, recruiter_assessment"),
+    // Pipeline progress (Submitted / Client Interview / Client Shortlisted /
+    // Offer / Placed) lives on candidate_mandate_links.stage, per mandate --
+    // not candidates.status. Counting "distinct candidates with at least
+    // one mandate at this stage" here, same as the KPI tiles below read.
+    supabase
       .from("candidate_mandate_links")
-      .select("candidate_id")
-      .eq("mandate_id", params.mandate);
-    mandateCandidateIds = Array.from(new Set((mandateLinks ?? []).map((l) => l.candidate_id)));
-  }
-
-  // "Client Shortlisted" / "Submitted" / etc. on the KPI tiles and Hiring
-  // pipeline strip now live on candidate_mandate_links.stage rather than
-  // candidates.status (see Phase 1 of the pipeline-stage split) -- so
-  // filtering the main table by one of those stages means resolving which
-  // candidates have at least one mandate link at that stage first, same
-  // resolve-then-.in("id", ...) pattern as recruiterCandidateIds above.
-  let mandateStageCandidateIds: string[] | null = null;
-  if (params.mandate_stage) {
-    const { data: stageLinks } = await supabase
+      .select("candidate_id, stage, date_of_joining, rejected_from_stage")
+      .limit(20000),
+    // Enriched (name + client + role) rows for just the three "Offer &
+    // Joining" buckets -- the KPI counts above only need bare candidate
+    // ids, but the click-through drilldown (see OfferJoiningDrilldown)
+    // needs enough to render a readable table without a second round trip
+    // when a tile is clicked. Small result set (current offer/placed/
+    // pulled-back rows only), so this is cheap even though it duplicates
+    // some of the ids already in allStageLinksRes.
+    supabase
       .from("candidate_mandate_links")
-      .select("candidate_id")
-      .in("stage", params.mandate_stage.split(","));
-    mandateStageCandidateIds = Array.from(new Set((stageLinks ?? []).map((l) => l.candidate_id)));
-  }
+      .select(
+        "candidate_id, mandate_id, stage, date_of_joining, candidates(full_name), mandates(role_title, client_name)"
+      )
+      .in("stage", ["offer", "placed", "pulled_back"]),
+  ]);
 
-  // Practice taxonomy (17-practice list) -- fetched unconditionally since
-  // both the filter dropdown and the Practice table column need the full
-  // id->name/group lookup regardless of whether a practice filter is active.
-  const { data: allPracticesForFilter } = await supabase
-    .from("practices")
-    .select("id, name, group_name")
-    .order("sort_order", { ascending: true });
-
-  // Same resolve-then-.in("id", ...) pattern as recruiter/mandate above --
-  // candidate_practices is a join table, so "filter by practice" means
-  // resolving matching candidate ids first, not a direct .eq() on candidates.
-  let practiceCandidateIds: string[] | null = null;
-  if (params.practice) {
-    const { data: practiceLinks } = await supabase
-      .from("candidate_practices")
-      .select("candidate_id")
-      .in("practice_id", params.practice.split(","));
-    practiceCandidateIds = Array.from(new Set((practiceLinks ?? []).map((l) => l.candidate_id)));
-  }
+  const currentProfile = currentProfileRes.data as { role: string } | null;
+  const isAdmin = currentProfile?.role === "admin";
+  const recruiterCandidateIds: string[] | null = params.recruiter
+    ? Array.from(new Set(((recruiterLinksRes.data ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id)))
+    : null;
+  const mandateCandidateIds: string[] | null = params.mandate
+    ? Array.from(new Set(((mandateLinksRes.data ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id)))
+    : null;
+  const mandateStageCandidateIds: string[] | null = params.mandate_stage
+    ? Array.from(new Set(((stageLinksRes.data ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id)))
+    : null;
+  const allPracticesForFilter = allPracticesRes.data as { id: string; name: string; group_name: string }[] | null;
+  const practiceCandidateIds: string[] | null = params.practice
+    ? Array.from(new Set(((practiceLinksRes.data ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id)))
+    : null;
+  const recruiterName: string | null = params.recruiter
+    ? ((recruiterProfileRes.data as { full_name: string | null; email: string } | null)?.full_name ??
+      (recruiterProfileRes.data as { full_name: string | null; email: string } | null)?.email ??
+      null)
+    : null;
+  const openMandates = openMandatesRes.data as { id: string; role_title: string; client_name: string }[] | null;
+  const teamMembers = teamMembersRes.data as { id: string; full_name: string | null; email: string }[] | null;
+  const allRows = allRowsRes.data as
+    | {
+        sub_domain: string | null;
+        status: string;
+        created_at: string;
+        created_by: string | null;
+        current_location: string | null;
+        recruiter_assessment: Record<string, unknown> | null;
+      }[]
+    | null;
+  const allStageLinks = allStageLinksRes.data as
+    | { candidate_id: string; stage: string; date_of_joining: string | null; rejected_from_stage: string | null }[]
+    | null;
 
   // Applies every filter to a given query builder. Shared by the data query
   // (below) and the count query so page-of-rows and total-matching-count
@@ -420,16 +505,20 @@ export default async function CandidatesPage({
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);
   const query = applyFilters(baseQuery);
-
-  const { data: candidates, error } = (await query) as {
-    data: Array<Record<string, unknown> & { id: string; resume_file_url: string | null }> | null;
-    error: { message: string } | null;
-  };
-
   const countQuery = applyFilters(
     supabase.from("candidates").select("id", { count: "exact", head: true })
   );
-  const { count: filteredCount } = (await countQuery) as { count: number | null };
+
+  const [
+    { data: candidates, error },
+    { count: filteredCount },
+  ] = (await Promise.all([query, countQuery])) as [
+    {
+      data: Array<Record<string, unknown> & { id: string; resume_file_url: string | null }> | null;
+      error: { message: string } | null;
+    },
+    { count: number | null },
+  ];
   const totalFiltered = filteredCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
   const rangeStart = totalFiltered === 0 ? 0 : rangeFrom + 1;
@@ -448,33 +537,58 @@ export default async function CandidatesPage({
         .map((p) => p.replace(/^resumes\//, ""))
     )
   );
-  const resumeUrlByPath: Record<string, string> = {};
-  if (resumePaths.length > 0) {
-    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60);
-    (signedBatch ?? []).forEach((s) => {
-      if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
-    });
-  }
   const candidateIds = (candidates ?? []).map((c) => c.id);
+
+  // These three depend on `candidates` (just fetched above) but not on each
+  // other, so they run together rather than one after another -- same
+  // reasoning as the initial lookup wave.
+  const [signedBatchRes, candidatePracticeRowsRes, linkRowsRes] = await Promise.all([
+    resumePaths.length > 0
+      ? supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60)
+      : Promise.resolve({ data: null }),
+    candidateIds.length > 0
+      ? supabase
+          .from("candidate_practices")
+          .select("candidate_id, practice_id, seniority_band, is_primary")
+          .in("candidate_id", candidateIds)
+      : Promise.resolve({ data: null }),
+    candidateIds.length > 0
+      ? supabase
+          .from("candidate_mandate_links")
+          .select("candidate_id, mandate_id, mandates(role_title, client_name)")
+          .in("candidate_id", candidateIds)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  // Batch-generate resume signed URLs in one Storage API call instead of
+  // leaving each table row to fire its own createSignedUrl request on
+  // mount -- with the Resume column visible (the default), that used to
+  // mean up to 100 separate client-side round trips per page load. One
+  // batched createSignedUrls call above covers every row's resume at once.
+  const resumeUrlByPath: Record<string, string> = {};
+  (signedBatchRes.data ?? []).forEach((s: { signedUrl?: string | null; error?: unknown; path?: string | null }) => {
+    if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
+  });
 
   // Practice tags for every visible row, batched in one query (same
   // "resolve once, attach per-row" pattern as the resume-signed-url batch
   // above) rather than each row fetching its own candidate_practices.
   const practicesByCandidateId: Record<string, { name: string; seniority_band: string; is_primary: boolean }[]> = {};
-  if (candidateIds.length > 0) {
-    const { data: candidatePracticeRowsForList } = await supabase
-      .from("candidate_practices")
-      .select("candidate_id, practice_id, seniority_band, is_primary")
-      .in("candidate_id", candidateIds);
-    const practiceNameById = new Map((allPracticesForFilter ?? []).map((p) => [p.id, p.name]));
-    (candidatePracticeRowsForList ?? []).forEach((row) => {
-      const name = practiceNameById.get(row.practice_id);
-      if (!name) return;
-      const list = practicesByCandidateId[row.candidate_id] ?? [];
-      list.push({ name, seniority_band: row.seniority_band, is_primary: row.is_primary });
-      practicesByCandidateId[row.candidate_id] = list;
-    });
-  }
+  const practiceNameById = new Map((allPracticesForFilter ?? []).map((p) => [p.id, p.name]));
+  (
+    (candidatePracticeRowsRes.data ?? []) as {
+      candidate_id: string;
+      practice_id: string;
+      seniority_band: string;
+      is_primary: boolean;
+    }[]
+  ).forEach((row) => {
+    const name = practiceNameById.get(row.practice_id);
+    if (!name) return;
+    const list = practicesByCandidateId[row.candidate_id] ?? [];
+    list.push({ name, seniority_band: row.seniority_band, is_primary: row.is_primary });
+    practicesByCandidateId[row.candidate_id] = list;
+  });
 
   const candidatesWithResumeUrls = (candidates ?? []).map((c) => ({
     ...c,
@@ -482,44 +596,16 @@ export default async function CandidatesPage({
     practices: practicesByCandidateId[c.id] ?? [],
   }));
   const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
-  if (candidateIds.length > 0) {
-    const { data: linkRows } = await supabase
-      .from("candidate_mandate_links")
-      .select("candidate_id, mandate_id, mandates(role_title, client_name)")
-      .in("candidate_id", candidateIds);
-    (linkRows ?? []).forEach((row) => {
-      const mandate = row.mandates as unknown as { role_title: string; client_name: string } | null;
-      if (!mandate) return;
-      const list = mandateLinksByCandidate[row.candidate_id] ?? [];
-      list.push({ mandate_id: row.mandate_id, role_title: mandate.role_title, client_name: mandate.client_name });
-      mandateLinksByCandidate[row.candidate_id] = list;
-    });
-  }
+  ((linkRowsRes.data ?? []) as { candidate_id: string; mandate_id: string; mandates: unknown }[]).forEach((row) => {
+    const mandate = row.mandates as unknown as { role_title: string; client_name: string } | null;
+    if (!mandate) return;
+    const list = mandateLinksByCandidate[row.candidate_id] ?? [];
+    list.push({ mandate_id: row.mandate_id, role_title: mandate.role_title, client_name: mandate.client_name });
+    mandateLinksByCandidate[row.candidate_id] = list;
+  });
 
-  let recruiterName: string | null = null;
-  if (params.recruiter) {
-    const { data: recruiterProfile } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", params.recruiter)
-      .single();
-    recruiterName = recruiterProfile?.full_name ?? recruiterProfile?.email ?? null;
-  }
-
-  const { data: openMandates } = await supabase
-    .from("mandates")
-    .select("id, role_title, client_name")
-    .eq("status", "open")
-    .order("created_at", { ascending: false });
-
-  // Every recruiter/admin, for the Owner column's reassign dropdown and the
-  // "My Candidates" pill -- one shared fetch instead of each row/filter
-  // hitting profiles separately.
-  const { data: teamMembers } = await supabase
-    .from("profiles")
-    .select("id, full_name, email")
-    .in("role", ["recruiter", "admin"])
-    .order("full_name");
+  // recruiterName, openMandates, and teamMembers were all already resolved
+  // in the initial parallel wave above (see currentProfileRes etc.).
 
   // id -> display name, for the "Added by" Source drill-down filter's
   // options/labels and its active-filter chip -- built once here since
@@ -538,9 +624,7 @@ export default async function CandidatesPage({
   // alone, one for status/created_at/created_by) even though they're
   // reading the same rows; combining the column list into one query halves
   // the redundant traffic without changing any of the derived numbers.
-  const { data: allRows } = await supabase
-    .from("candidates")
-    .select("sub_domain, status, created_at, created_by, current_location, recruiter_assessment");
+  // allRows was already resolved in the initial parallel wave above.
   // Anything actually on a candidate record that ISN'T in the current
   // canonical taxonomy (pre-taxonomy-unification legacy values like "SaaS
   // Sales") still needs to stay filterable -- surfaced as a separate group
@@ -614,10 +698,7 @@ export default async function CandidatesPage({
   // -- not candidates.status, which Phase 1 narrowed to profile-lifecycle
   // values only. Counting "distinct candidates with at least one mandate at
   // this stage" here, same as the funnel/KPI tiles below read from it.
-  const { data: allStageLinks } = await supabase
-    .from("candidate_mandate_links")
-    .select("candidate_id, stage, date_of_joining, rejected_from_stage")
-    .limit(20000);
+  // allStageLinks was already resolved in the initial parallel wave above.
   const stageCandidateSets: Record<string, Set<string>> = {};
   // "Placed" splits into Joined vs Offered-but-not-joined by whether a join
   // date has actually landed -- both are still stage="placed", so tracked
@@ -668,8 +749,42 @@ export default async function CandidatesPage({
   MANDATE_STAGES.forEach((s) => {
     stageCounts[s] = stageCandidateSets[s]?.size ?? 0;
   });
-  const joinedCount = joinedCandidates.size;
-  const offeredNotJoinedCount = offeredNotJoinedCandidates.size;
+  // Enriched rows for the "Offer & Joining" drilldown -- each tile used to
+  // be a plain Link into the full Candidates list (filtered, but still a
+  // full page navigation + reload of everything on this page). For a tile
+  // that's usually 1-5 people, that's a lot of round trip for "who are
+  // they" -- this feeds a same-page modal with name/client/role instead,
+  // with the candidate name still linking through to the full profile for
+  // anyone who wants more detail.
+  type OfferJoiningRow = { candidateId: string; candidateName: string; roleTitle: string; clientName: string };
+  const offerRows: OfferJoiningRow[] = [];
+  const joinedRows: OfferJoiningRow[] = [];
+  const offeredNotJoinedRows: OfferJoiningRow[] = [];
+  (
+    (offerJoiningDetailRes.data ?? []) as {
+      candidate_id: string;
+      mandate_id: string;
+      stage: string;
+      date_of_joining: string | null;
+      candidates: { full_name: string } | null;
+      mandates: { role_title: string; client_name: string } | null;
+    }[]
+  ).forEach((row) => {
+    const candidateName = row.candidates?.full_name ?? "Unknown";
+    const roleTitle = row.mandates?.role_title ?? "—";
+    const clientName = row.mandates?.client_name ?? "—";
+    const entry: OfferJoiningRow = { candidateId: row.candidate_id, candidateName, roleTitle, clientName };
+    if (row.stage === "offer") {
+      offerRows.push(entry);
+    } else if (row.stage === "placed") {
+      if (row.date_of_joining) joinedRows.push(entry);
+      else offeredNotJoinedRows.push(entry);
+    } else if (row.stage === "pulled_back" && row.date_of_joining) {
+      // Mirrors offeredNotJoinedCandidates above -- pulled back after an
+      // offer/placement was already in motion still belongs in this bucket.
+      offeredNotJoinedRows.push(entry);
+    }
+  });
 
   function qs(overrides: Record<string, string | undefined>) {
     // Any filter change resets back to page 1 unless the override is
@@ -836,9 +951,7 @@ export default async function CandidatesPage({
 
           <div className="sm:col-span-1 xl:col-span-2">
             <StatSection title="Offer & Joining" tone="warning">
-              <MiniStat value={stageCounts["offer"] ?? 0} label="Client Offers" tone="warning" href={qs({ mandate_stage: "offer" })} />
-              <MiniStat value={joinedCount} label="Joined" tone="success" href={qs({ mandate_stage: "placed" })} />
-              <MiniStat value={offeredNotJoinedCount} label="Offered, Not Joined" tone="warning" title="Placed stage without a join date on file yet" />
+              <OfferJoiningDrilldown offerRows={offerRows} joinedRows={joinedRows} offeredNotJoinedRows={offeredNotJoinedRows} />
             </StatSection>
           </div>
         </div>
