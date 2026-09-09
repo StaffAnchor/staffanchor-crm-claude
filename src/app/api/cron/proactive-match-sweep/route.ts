@@ -4,6 +4,7 @@ import { ensureMandateEmbedding } from "@/lib/embeddings";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 import { matchCandidatesForMandate } from "@/lib/candidate-match";
 import { withHeartbeat } from "@/lib/cron-heartbeat";
+import { pickMandatesToResurface, resurfaceMandate, type ResurfaceMandateResult } from "@/lib/talent-resurface";
 
 // Gated proactive matcher, build directive 3 of the V2 matching upgrade.
 // Two jobs, both bounded to protect the shared ~20/day Gemini generateContent
@@ -26,6 +27,19 @@ import { withHeartbeat } from "@/lib/cron-heartbeat";
 //      full candidate pool. Strong hits are persisted to
 //      mandate_proactive_matches for the matching workspace page to
 //      surface as "new since you last looked".
+//   3. RESURFACE (expensive, one Gemini call per mandate): talent
+//      resurfacing -- steps 1-2 above only ever look at candidates whose
+//      embedding recently changed, so a mandate opened *before* a strong
+//      match's profile existed (or one nobody has edited lately) never
+//      gets checked against them. This step runs a genuine full-candidate-
+//      pool matchCandidatesForMandate() (no candidateIdsOverride) for a
+//      couple of open mandates per run -- prioritizing ones that have never
+//      been scanned, then ones stale 30+ days -- so every open mandate
+//      eventually gets a real look at the whole pool, not just whoever
+//      recently touched their profile. Hits are upserted into the same
+//      mandate_proactive_matches table the workspace already renders, and a
+//      RESURFACED_MATCHES inbox card is created so the assigned recruiter
+//      actually notices without having to think to reopen the mandate.
 //
 // Deliberately scheduled just once a week (Sundays -- the one day none of
 // the other three Gemini-backed crons run) rather than daily, and capped at
@@ -38,6 +52,7 @@ const RESCAN_WINDOW_DAYS = 8; // covers the week since this cron's last run
 const RESCAN_BATCH_SIZE = 200; // candidates checked per run (cheap, no Gemini)
 const MANDATE_EMBED_BATCH_SIZE = 20; // open mandates topped up with an embedding per run (cheap)
 const EVALUATE_MANDATE_GROUPS_PER_RUN = 3; // Gemini calls this run spends -- keep tiny
+const RESURFACE_MANDATES_PER_RUN = 2; // full-pool scans this run spends -- keep tiny, on top of step 2's 3
 
 async function handler(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -164,12 +179,26 @@ async function handler(req: NextRequest) {
     }
   }
 
+  // Step 3: talent resurfacing -- a couple of genuine full-candidate-pool
+  // scans per run, prioritizing mandates that have never had one, then the
+  // stalest ones. This is the only step that can find a strong match the
+  // event-driven steps above would never surface (mandate opened before the
+  // candidate existed / neither side has touched their profile recently).
+  // Shared with the admin "Run now" trigger via lib/talent-resurface.ts.
+  const resurfaceMandateIds = await pickMandatesToResurface(admin, RESURFACE_MANDATES_PER_RUN);
+  const resurfaceResults: ResurfaceMandateResult[] = [];
+  for (const mandateId of resurfaceMandateIds) {
+    resurfaceResults.push(await resurfaceMandate(admin, mandateId));
+  }
+
   return NextResponse.json({
     ok: true,
     rescanned,
     pendingQueueDepth: (pending ?? []).length,
     mandateGroupsEvaluated: mandateGroups.length,
     results,
+    mandatesResurfaced: resurfaceMandateIds.length,
+    resurfaceResults,
   });
 }
 

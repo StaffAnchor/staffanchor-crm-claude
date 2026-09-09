@@ -131,6 +131,16 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
     label: "Incomplete profile",
     tint: "bg-cyan-50 text-cyan-700 ring-cyan-200",
   },
+  // Talent resurfacing (api/lib/talent-resurface.ts): a full-candidate-pool
+  // scan found strong "silver medalist" matches already in the database
+  // that were never in this mandate's pipeline. Reuses the sourcing group /
+  // mandate box like STALE_MANDATE -- it's the same "this mandate needs
+  // attention" family, just a positive nudge instead of a warning.
+  RESURFACED_MATCHES: {
+    icon: Sparkles,
+    label: "New matches found",
+    tint: "bg-violet-50 text-violet-700 ring-violet-200",
+  },
 };
 
 function metaFor(taskType: string) {
@@ -169,6 +179,7 @@ const TASK_TYPE_GROUP: Record<string, keyof typeof GROUP_META> = {
   FOLLOW_UP_ON_OFFER: "offers",
   POST_PLACEMENT_CHECKIN: "offers",
   INCOMPLETE_PROFILE: "candidates",
+  RESURFACED_MATCHES: "sourcing",
 };
 
 const GROUP_ORDER: (keyof typeof GROUP_META)[] = ["interviews", "sourcing", "clients", "candidates", "offers", "other"];
@@ -224,6 +235,7 @@ const TASK_TYPE_BOX: Record<string, BoxKey> = {
   POST_PLACEMENT_CHECKIN: "mandate",
   NEW_REFERRAL: "pipeline",
   INCOMPLETE_PROFILE: "profiles",
+  RESURFACED_MATCHES: "mandate",
 };
 
 function boxFor(taskType: string): BoxKey {
@@ -1079,7 +1091,15 @@ function ContextDrawer({
         )}
         {item.mandate_id && (
           <Link
-            href={`/mandates/${item.mandate_id}?back=inbox&box=${box}`}
+            href={
+              // RESURFACED_MATCHES exists specifically to point a recruiter at
+              // the new matches themselves, not the general mandate page --
+              // land directly on the Matching Workspace's "New since you last
+              // looked" section instead of making them find their own way.
+              item.task_type === "RESURFACED_MATCHES"
+                ? `/mandates/${item.mandate_id}/matches?back=inbox&box=${box}`
+                : `/mandates/${item.mandate_id}?back=inbox&box=${box}`
+            }
             className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
           >
             <span>

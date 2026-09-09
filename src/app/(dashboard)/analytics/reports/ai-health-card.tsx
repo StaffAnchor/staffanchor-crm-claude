@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BrainCircuit, Loader2, RefreshCw, ScanSearch, Tags } from "lucide-react";
+import { BrainCircuit, Loader2, RefreshCw, ScanSearch, Sparkles, Tags } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 // Admin-only visibility into whether the system is actually "reading" and
@@ -32,6 +32,8 @@ type PracticeTagStats = {
   untaggedOpenMandates: number;
 };
 type PracticeTagRunResult = { candidatesTagged: number; mandatesTagged: number; errorSamples: string[] };
+type ResurfaceStats = { totalOpenMandates: number; scannedOpenMandates: number; unscannedOpenMandates: number };
+type ResurfaceRunResult = { mandatesScanned: number; strongHitsTotal: number };
 
 export default function AiHealthCard() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -49,6 +51,11 @@ export default function AiHealthCard() {
   const [runningPracticeTags, setRunningPracticeTags] = useState(false);
   const [practiceTagResult, setPracticeTagResult] = useState<PracticeTagRunResult | null>(null);
   const [practiceTagError, setPracticeTagError] = useState<string | null>(null);
+
+  const [resurfaceStats, setResurfaceStats] = useState<ResurfaceStats | null>(null);
+  const [runningResurface, setRunningResurface] = useState(false);
+  const [resurfaceResult, setResurfaceResult] = useState<ResurfaceRunResult | null>(null);
+  const [resurfaceError, setResurfaceError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -91,6 +98,50 @@ export default function AiHealthCard() {
       setPracticeTagError("Request failed");
     } finally {
       setRunningPracticeTags(false);
+    }
+  }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/resurface-backfill");
+        const data = await res.json();
+        if (res.ok) setResurfaceStats(data);
+      } catch {
+        // stats are supplementary
+      }
+    })();
+  }, []);
+
+  async function loadResurfaceStats() {
+    try {
+      const res = await fetch("/api/admin/resurface-backfill");
+      const data = await res.json();
+      if (res.ok) setResurfaceStats(data);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function runResurfaceBackfill() {
+    setRunningResurface(true);
+    setResurfaceResult(null);
+    setResurfaceError(null);
+    try {
+      const res = await fetch("/api/admin/resurface-backfill", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setResurfaceError(data.error ?? data.note ?? "Resurfacing scan failed");
+      } else if (data.note) {
+        setResurfaceError(data.note);
+      } else {
+        setResurfaceResult(data);
+      }
+      await loadResurfaceStats();
+    } catch {
+      setResurfaceError("Request failed");
+    } finally {
+      setRunningResurface(false);
     }
   }
 
@@ -275,6 +326,46 @@ export default function AiHealthCard() {
         >
           {runningPracticeTags ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Tags className="w-3.5 h-3.5" />}
           {runningPracticeTags ? "Running…" : "Run now"}
+        </button>
+      </div>
+
+      {/* Talent resurfacing -- reuses the same matchCandidatesForMandate
+          engine and mandate_proactive_matches table as the event-driven
+          proactive matcher, but does a genuine full-candidate-pool scan
+          instead of only re-checking candidates whose embedding just
+          changed. Strong hits create a RESURFACED_MATCHES inbox card and
+          show up in each mandate's Matching Workspace under "New since you
+          last looked". */}
+      <div className="mt-2 flex items-center justify-between gap-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">
+            Talent resurfacing (full-pool mandate scans)
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            {resurfaceStats ? (
+              <>
+                {resurfaceStats.unscannedOpenMandates} of {resurfaceStats.totalOpenMandates} open mandates never had a
+                full-pool scan
+              </>
+            ) : (
+              "Couldn't load stats"
+            )}
+          </p>
+          {resurfaceResult && (
+            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+              Scanned {resurfaceResult.mandatesScanned} mandates, found {resurfaceResult.strongHitsTotal} strong new
+              match{resurfaceResult.strongHitsTotal === 1 ? "" : "es"} this run.
+            </p>
+          )}
+          {resurfaceError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{resurfaceError}</p>}
+        </div>
+        <button
+          onClick={runResurfaceBackfill}
+          disabled={runningResurface}
+          className="flex items-center gap-1.5 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+        >
+          {runningResurface ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {runningResurface ? "Running…" : "Run now"}
         </button>
       </div>
     </Card>
