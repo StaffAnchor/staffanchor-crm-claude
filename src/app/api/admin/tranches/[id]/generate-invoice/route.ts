@@ -70,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id, name, gstin, billing_address, state_code")
+    .select("id, name")
     .eq("id", mandate.client_id)
     .single();
 
@@ -82,6 +82,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, error: "Tranche has no billing amount set" }, { status: 400 });
   }
 
+  // A client can have more than one GST registration (e.g. People
+  // Interactive bills separately from its Ahmedabad and Delhi offices) --
+  // prefer whichever registration's label/address mentions the mandate's
+  // city, then whichever is marked default, then just the first on file.
+  // No registration at all blocks generation outright: this is a tax
+  // document, so silently guessing CGST/SGST vs IGST would be worse than
+  // making the admin add GST details first.
+  const { data: registrations } = await supabase
+    .from("client_gst_registrations")
+    .select("label, gstin, state_code, billing_address, is_default")
+    .eq("client_id", mandate.client_id);
+
+  if (!registrations || registrations.length === 0) {
+    return NextResponse.json(
+      { ok: false, error: `No GST registration on file for ${client.name}. Add one from the client's page before generating an invoice.` },
+      { status: 400 }
+    );
+  }
+
+  const cityLower = mandate.city?.trim().toLowerCase();
+  const registration =
+    (cityLower &&
+      registrations.find(
+        (r) => r.label.toLowerCase().includes(cityLower) || (r.billing_address ?? "").toLowerCase().includes(cityLower)
+      )) ||
+    registrations.find((r) => r.is_default) ||
+    registrations[0];
+
   const invoiceNumber = await nextInvoiceNumber(supabase, kind);
   const invoiceDate = new Date();
 
@@ -91,9 +119,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     invoiceDate,
     client: {
       name: client.name,
-      gstin: client.gstin,
-      billingAddress: client.billing_address,
-      stateCode: client.state_code,
+      gstin: registration.gstin,
+      billingAddress: registration.billing_address,
+      stateCode: registration.state_code,
     },
     item: {
       candidateName: link?.candidates?.full_name ?? "—",

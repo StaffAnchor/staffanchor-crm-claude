@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ClientInfoPanel from "./client-info-panel";
+import ClientGstPanel, { type GstRegistration } from "./client-gst-panel";
 import ClientContactsPanel, { type ClientContact } from "./client-contacts-panel";
 import ClientResourcesPanel, { type ClientResource } from "./client-resources-panel";
 import ClientPortalAccessPanel from "./client-portal-access-panel";
@@ -109,6 +110,13 @@ export default async function ClientDetailPage({
     label: p.full_name ?? p.email ?? "Unknown",
   }));
 
+  const { data: gstRegistrations } = await supabase
+    .from("client_gst_registrations")
+    .select("id, label, gstin, state_code, state_name, billing_address, contact_phone, is_default")
+    .eq("client_id", id)
+    .order("is_default", { ascending: false })
+    .order("label");
+
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
       <div className="col-span-2 space-y-6">
@@ -155,6 +163,7 @@ export default async function ClientDetailPage({
           initialFeePercentage={clientRow.fee_percentage}
           ownerOptions={ownerOptions}
         />
+        <ClientGstPanel clientId={id} initial={(gstRegistrations ?? []) as GstRegistration[]} />
         <ClientContactsPanel clientId={id} initialContacts={(contacts ?? []) as ClientContact[]} />
         <ClientResourcesPanel clientId={id} initial={(resources ?? []) as ClientResource[]} />
         <MandateRequestLinkPanel clientNamePrefill={clientRow.name} />

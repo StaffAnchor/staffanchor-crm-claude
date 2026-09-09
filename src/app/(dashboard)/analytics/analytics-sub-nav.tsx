@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Wallet, Target, Users } from "lucide-react";
+import { BarChart3, Wallet, Target, Users, TrendingUp } from "lucide-react";
 
 const TABS = [
   { href: "/analytics/reports", label: "Reports", icon: BarChart3 },
   { href: "/analytics/billing", label: "Billing", icon: Wallet },
+  { href: "/analytics/performance", label: "Performance", icon: TrendingUp },
   { href: "/analytics/targets", label: "FY Targets", icon: Target },
   // Placements itself lives outside /analytics (it's recruiter-visible,
   // not admin-only -- see (dashboard)/placements/page.tsx), but it's
