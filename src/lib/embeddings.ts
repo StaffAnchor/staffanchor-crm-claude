@@ -51,13 +51,23 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
  * bad API key, wrong model name, or quota exhaustion shows up in the
  * response/logs instead of just silently producing zero embeddings forever.
  */
-export async function generateEmbeddingVerbose(
-  text: string
-): Promise<{ embedding: number[] | null; error: string | null }> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return { embedding: null, error: "GEMINI_API_KEY not configured" };
-  if (!text.trim()) return { embedding: null, error: "empty text" };
-
+// NOTE on why this stays Gemini-only rather than falling back to
+// Groq/Mistral like every other AI call in this codebase
+// (generateTextWithFallback): embedding vectors from different providers
+///models live in different, mutually-incompatible vector spaces -- a
+// Mistral-embed vector isn't just "the same idea in different dimensions"
+// from a gemini-embedding-001 vector, cosine similarity between the two is
+// meaningless. Silently blending providers into the same pgvector column
+// wouldn't degrade gracefully, it would quietly corrupt every similarity
+// score in the system with no visible error. So there's no cross-provider
+// fallback here -- instead: (1) a single retry-with-backoff below, since
+// embedding quota often has a smaller per-minute bucket than
+// generateContent's daily one and a transient 429 frequently clears in a
+// few seconds; (2) every caller (ensureMandateEmbedding, the deterministic
+// matcher's semantic-recall step, embedPendingCandidates) already treats a
+// null return as "degrade gracefully, don't block" rather than a hard
+// failure -- see matchCandidatesDeterministic's try/catch around this call.
+async function callGeminiEmbed(apiKey: string, text: string): Promise<{ embedding: number[] | null; error: string | null; status: number | null }> {
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${apiKey}`,
@@ -73,22 +83,44 @@ export async function generateEmbeddingVerbose(
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       const msg = `Gemini embedContent ${res.status}: ${body.slice(0, 300)}`;
-      console.error("[embeddings] generateEmbedding failed:", msg);
-      return { embedding: null, error: msg };
+      return { embedding: null, error: msg, status: res.status };
     }
     const data = await res.json();
     const values = data?.embedding?.values;
     if (!Array.isArray(values) || values.length !== EMBEDDING_DIMS) {
       const msg = `unexpected embedding shape: ${Array.isArray(values) ? `${values.length} dims` : typeof values}`;
-      console.error("[embeddings] generateEmbedding:", msg);
-      return { embedding: null, error: msg };
+      return { embedding: null, error: msg, status: res.status };
     }
-    return { embedding: normalizeVector(values), error: null };
+    return { embedding: normalizeVector(values), error: null, status: res.status };
   } catch (err) {
     const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-    console.error("[embeddings] generateEmbedding failed:", msg);
-    return { embedding: null, error: msg };
+    return { embedding: null, error: msg, status: null };
   }
+}
+
+export async function generateEmbeddingVerbose(
+  text: string
+): Promise<{ embedding: number[] | null; error: string | null }> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return { embedding: null, error: "GEMINI_API_KEY not configured" };
+  if (!text.trim()) return { embedding: null, error: "empty text" };
+
+  const first = await callGeminiEmbed(apiKey, text);
+  if (first.embedding) return { embedding: first.embedding, error: null };
+
+  // One retry on rate-limit-shaped failures only (429, or a fetch-level
+  // error that might be a transient network blip) -- not on a genuine
+  // config/shape error, which retrying can't fix.
+  if (first.status === 429 || first.status === null) {
+    await sleep(2000);
+    const retry = await callGeminiEmbed(apiKey, text);
+    if (retry.embedding) return { embedding: retry.embedding, error: null };
+    console.error("[embeddings] generateEmbedding failed after retry:", retry.error);
+    return { embedding: null, error: retry.error };
+  }
+
+  console.error("[embeddings] generateEmbedding failed:", first.error);
+  return { embedding: null, error: first.error };
 }
 
 type CandidateForEmbedding = {

@@ -115,6 +115,13 @@ export type MatchMandateResult =
 // signal (below), not just "in the pipeline".
 const POSITIVE_STAGES = new Set(["shortlisted", "submitted", "client_interview", "offer", "placed"]);
 
+// Hoisted to module scope so both the AI-scored matcher and the
+// zero-AI deterministic matcher (below) select an identical candidate
+// shape from the same shortlist-building logic -- one column list, two
+// scoring strategies.
+const SELECT_COLUMNS =
+  "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, skill_inventory, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary, stability_score, talent_micro_index";
+
 type CandidateRow = {
   id: string;
   full_name: string;
@@ -295,9 +302,6 @@ export async function matchCandidatesForMandate(
   // and experience/CTC are soft signals folded into scoring below rather than
   // hard filters, since a strong adjacent-domain candidate is still worth
   // surfacing to the recruiter with a lower score.
-  const SELECT_COLUMNS =
-    "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, skill_inventory, current_industry, industries, segment_data, self_assessment, recruiter_assessment, resume_text, ai_summary, stability_score, talent_micro_index";
-
   const override = options?.candidateIdsOverride;
   let candidates: CandidateRow[];
   const similarityById = new Map<string, number>();
@@ -725,6 +729,340 @@ Sort the array by score descending. ${
         : "AI candidate matching failed. Please try again.";
     return { ok: false, status: 500, error: message };
   }
+}
+
+// ---------------------------------------------------------------------
+// Deterministic matcher -- zero AI calls. This is what closes the loop on
+// the "candidate memory" the AI passport/skill-inventory/talent-micro-index
+// pipeline already builds once per candidate (see ai-passport.ts): instead
+// of re-asking Gemini to judge fit against a mandate from scratch on every
+// single page view/click (the actual source of the app's Gemini-quota
+// pressure -- candidate profiling is cached and hash-gated, but matching
+// never was), this scores directly off that already-durable, already-cached
+// data using rules, not a live model call. It's the DEFAULT path for the
+// Matching Workspace; matchCandidatesForMandate (AI-scored, above) becomes
+// an opt-in "Get AI Read" pass a recruiter can run on a short, already-
+// filtered list of finalists when a clause genuinely needs judgment a rule
+// can't make (free-text ad hoc criteria, subtle resume-vs-checklist calls).
+//
+// Deliberately conservative on the met/not_met/unclear split: a clause is
+// only ever marked "not_met" when there's a confident, structured
+// contradiction (a parsed number outside a parsed range, an explicit
+// B2B/B2C mismatch against the candidate's own category). Everything a
+// keyword search can't confidently resolve is "unclear", never "not_met"
+// -- a wrongly-skipped candidate is a worse failure mode here than a
+// recruiter having to eyeball one extra "unclear" line, and that's the same
+// philosophy the AI prompt above already encodes.
+// ---------------------------------------------------------------------
+
+const STOPWORDS = new Set([
+  "the","a","an","and","or","of","in","on","to","for","with","is","are","must","should","preferred",
+  "need","needs","needed","required","requirement","have","has","having","at","least","more","than",
+  "years","year","yrs","experience","candidate","candidates","role","this","that","who","can","will",
+  "mandatory","should","ideally","strong","good","excellent","working","knowledge","skills","skill",
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9+#.]+/i)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 2 && !STOPWORDS.has(t));
+}
+
+function buildSearchableText(c: CandidateRow): string {
+  return [
+    c.current_job_title,
+    c.current_employer,
+    c.category,
+    c.sub_domain,
+    (c.secondary_sub_domains ?? []).join(" "),
+    c.skills,
+    c.skill_inventory ? JSON.stringify(c.skill_inventory) : "",
+    c.talent_micro_index ? JSON.stringify(c.talent_micro_index) : "",
+    c.current_industry,
+    (c.industries ?? []).join(" "),
+    c.segment_data ? JSON.stringify(c.segment_data) : "",
+    c.self_assessment ? JSON.stringify(c.self_assessment) : "",
+    // Bounded slice, not the full resume -- this is a keyword pass, not a
+    // re-read of the whole document.
+    c.resume_text ? c.resume_text.slice(0, 4000) : "",
+  ]
+    .filter(Boolean)
+    .join(" \n ")
+    .toLowerCase();
+}
+
+// Best-effort structured reads for the two clause types worth parsing
+// numerically (years-of-experience and CTC/lakhs) -- everything else falls
+// through to the keyword-overlap check below.
+function parseYearsRange(clause: string): { min: number; max: number } | null {
+  const rangeMatch = clause.match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)/i);
+  if (rangeMatch) return { min: Number(rangeMatch[1]), max: Number(rangeMatch[2]) };
+  const plusMatch = clause.match(/(\d+(?:\.\d+)?)\s*\+\s*(?:years?|yrs?)/i);
+  if (plusMatch) return { min: Number(plusMatch[1]), max: Infinity };
+  const minMatch = clause.match(/(?:minimum|at least|min\.?)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)/i);
+  if (minMatch) return { min: Number(minMatch[1]), max: Infinity };
+  const bareMatch = clause.match(/(\d+(?:\.\d+)?)\s*(?:years?|yrs?)/i);
+  if (bareMatch) return { min: Number(bareMatch[1]), max: Number(bareMatch[1]) };
+  return null;
+}
+
+function evaluateClauseDeterministically(
+  clause: string,
+  candidate: CandidateRow,
+  searchableText: string
+): RequirementCheck {
+  const trimmed = clause.trim();
+  if (!trimmed) return { requirement: clause, status: "unclear", evidence: "Empty requirement." };
+
+  // Numeric years-of-experience clause -- confident enough to call
+  // not_met on a genuine out-of-range number.
+  const yearsRange = parseYearsRange(trimmed);
+  if (yearsRange && candidate.total_experience_years != null) {
+    const y = candidate.total_experience_years;
+    if (y >= yearsRange.min && y <= yearsRange.max) {
+      return { requirement: clause, status: "met", evidence: `Candidate has ${y} years experience, within the required range.` };
+    }
+    return { requirement: clause, status: "not_met", evidence: `Candidate has ${y} years experience, outside the required range (${yearsRange.min}${yearsRange.max === Infinity ? "+" : `-${yearsRange.max}`}).` };
+  }
+
+  // Explicit B2B/B2C clause -- checked against the candidate's own
+  // category/sub_domain/searchable text, which reliably encodes this.
+  const wantsB2B = /\bb2b\b/i.test(trimmed);
+  const wantsB2C = /\bb2c\b/i.test(trimmed);
+  if (wantsB2B || wantsB2C) {
+    const hasB2B = /\bb2b\b/i.test(searchableText);
+    const hasB2C = /\bb2c\b/i.test(searchableText);
+    if (wantsB2B && hasB2B && !hasB2C) return { requirement: clause, status: "met", evidence: "Candidate's category/domain data is B2B." };
+    if (wantsB2C && hasB2C && !hasB2B) return { requirement: clause, status: "met", evidence: "Candidate's category/domain data is B2C." };
+    if (wantsB2B && hasB2C && !hasB2B) return { requirement: clause, status: "not_met", evidence: "Candidate's category/domain data is B2C, not B2B." };
+    if (wantsB2C && hasB2B && !hasB2C) return { requirement: clause, status: "not_met", evidence: "Candidate's category/domain data is B2B, not B2C." };
+    // Both, neither, or ambiguous -- don't guess.
+  }
+
+  // Generic keyword-overlap fallback -- "met" only on strong overlap,
+  // otherwise "unclear" (never a guessed "not_met" for free-text clauses
+  // a keyword search can't confidently rule out).
+  const clauseTokens = Array.from(new Set(tokenize(trimmed)));
+  if (clauseTokens.length === 0) return { requirement: clause, status: "unclear", evidence: "Requirement has no checkable keywords -- confirm on call." };
+  const hitCount = clauseTokens.filter((t) => searchableText.includes(t)).length;
+  const overlap = hitCount / clauseTokens.length;
+  if (overlap >= 0.6) {
+    return { requirement: clause, status: "met", evidence: `Matched on profile/skill data (${hitCount}/${clauseTokens.length} key terms found).` };
+  }
+  return { requirement: clause, status: "unclear", evidence: "Not confidently found in profile/skill data -- confirm on call." };
+}
+
+function clauseFitScore(checks: RequirementCheck[]): number {
+  if (checks.length === 0) return 100;
+  const met = checks.filter((c) => c.status === "met").length;
+  const notMet = checks.filter((c) => c.status === "not_met").length;
+  let score = Math.round((met / checks.length) * 100);
+  if (notMet > 0) score = Math.min(score, 39);
+  else if (met < checks.length) score = Math.min(score, 74);
+  return Math.max(0, score);
+}
+
+export async function matchCandidatesDeterministic(
+  mandateId: string,
+  supabase: SupabaseClient,
+  options?: {
+    extraCriteria?: string;
+    candidateIdsOverride?: string[];
+    includeAlreadyLinked?: boolean;
+    maxResults?: number;
+    scoreAllProvided?: boolean;
+  }
+): Promise<MatchMandateResult> {
+  const { data: mandate, error: mandateError } = await supabase
+    .from("mandates")
+    .select(
+      "id, role_title, client_name, category, sub_domain, sub_domains, city, budget_min, budget_max, experience_min, experience_max, job_description, jd_overview, jd_responsibilities, jd_candidate_profile, must_haves, good_to_haves, embedding, embedding_source_hash, practice_id, seniority_band"
+    )
+    .eq("id", mandateId)
+    .single();
+
+  if (mandateError || !mandate) {
+    return { ok: false, status: 404, error: "Mandate not found" };
+  }
+  const m = mandate;
+
+  const { data: existingLinks } = await supabase.from("candidate_mandate_links").select("candidate_id").eq("mandate_id", mandateId);
+  const linkedIds = new Set((existingLinks ?? []).map((l) => l.candidate_id as string));
+
+  const override = options?.candidateIdsOverride;
+  let candidates: CandidateRow[];
+  const similarityById = new Map<string, number>();
+  const practiceSeniorityByCandidate = new Map<string, string>();
+
+  if (override && override.length > 0) {
+    const { data: overridePool, error: overrideError } = await supabase.from("candidates").select(SELECT_COLUMNS).in("id", override);
+    if (overrideError) return { ok: false, status: 500, error: overrideError.message };
+    candidates = options?.includeAlreadyLinked
+      ? ((overridePool ?? []) as CandidateRow[])
+      : ((overridePool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+  } else {
+    let query = supabase.from("candidates").select(SELECT_COLUMNS).neq("status", "awaiting_input").limit(400);
+    if (mandate.category) query = query.eq("category", mandate.category);
+    const { data: pool, error: poolError } = await query;
+    if (poolError) return { ok: false, status: 500, error: poolError.message };
+    candidates = ((pool ?? []) as CandidateRow[]).filter((c) => !linkedIds.has(c.id));
+
+    if (mandate.practice_id) {
+      const { data: practiceLinks } = await supabase.from("candidate_practices").select("candidate_id, seniority_band").eq("practice_id", mandate.practice_id);
+      const existingIds = new Set(candidates.map((c) => c.id));
+      const missingIds: string[] = [];
+      for (const link of practiceLinks ?? []) {
+        practiceSeniorityByCandidate.set(link.candidate_id as string, link.seniority_band as string);
+        if (!linkedIds.has(link.candidate_id as string) && !existingIds.has(link.candidate_id as string)) missingIds.push(link.candidate_id as string);
+      }
+      if (missingIds.length > 0) {
+        const { data: extraPracticeCandidates } = await supabase.from("candidates").select(SELECT_COLUMNS).in("id", missingIds).neq("status", "awaiting_input");
+        for (const c of (extraPracticeCandidates ?? []) as CandidateRow[]) candidates.push(c);
+      }
+    }
+
+    // Embedding similarity is already computed and cached per candidate
+    // (embed-candidates cron) and per mandate (lazily, once, hash-gated) --
+    // reusing it here for domain_relevance/recall costs nothing extra.
+    try {
+      const mandateEmbedding = await ensureMandateEmbedding(
+        {
+          id: mandate.id,
+          role_title: mandate.role_title,
+          category: mandate.category,
+          sub_domain: mandate.sub_domain,
+          sub_domains: (mandate as { sub_domains?: string[] | null }).sub_domains ?? null,
+          job_description: mandate.job_description,
+          jd_overview: (mandate as { jd_overview?: string | null }).jd_overview ?? null,
+          jd_responsibilities: (mandate as { jd_responsibilities?: string | null }).jd_responsibilities ?? null,
+          jd_candidate_profile: (mandate as { jd_candidate_profile?: string | null }).jd_candidate_profile ?? null,
+          must_haves: mandate.must_haves as string[] | null,
+          good_to_haves: mandate.good_to_haves as string[] | null,
+          embedding_source_hash: (mandate as { embedding_source_hash?: string | null }).embedding_source_hash ?? null,
+        },
+        supabase
+      );
+      if (mandateEmbedding) {
+        const { data: semanticMatches } = await supabase.rpc("match_candidates", { query_embedding: mandateEmbedding, match_count: 150 });
+        const existingIds = new Set(candidates.map((c) => c.id));
+        const newIds: string[] = [];
+        for (const sm of (semanticMatches ?? []) as { id: string; status: string; similarity: number }[]) {
+          if (linkedIds.has(sm.id) || sm.status === "awaiting_input") continue;
+          similarityById.set(sm.id, sm.similarity);
+          if (!existingIds.has(sm.id)) newIds.push(sm.id);
+        }
+        if (newIds.length > 0) {
+          const { data: extra } = await supabase.from("candidates").select(SELECT_COLUMNS).in("id", newIds);
+          for (const c of (extra ?? []) as CandidateRow[]) candidates.push(c);
+        }
+      }
+    } catch (err) {
+      // Best-effort recall -- embedding lookup failing (e.g. Gemini embed
+      // quota, see embeddings.ts) should degrade to category/practice-only
+      // recall, never block the deterministic path entirely.
+      console.error("Embedding-based recall failed for deterministic mandate match", mandateId, err);
+    }
+  }
+
+  if (candidates.length === 0) {
+    return { ok: true, matches: [], scanned: 0, calibration: { positive: 0, negative: 0 }, requirementsChecked: (m.must_haves as string[] | null) ?? [] };
+  }
+
+  const extraClauses = (options?.extraCriteria ?? "")
+    .split(/[\n;]|(?:,(?=\s*[A-Z]))/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const mustHaveClauses = [...((m.must_haves as string[] | null) ?? []), ...extraClauses];
+  const goodToHaveClauses = (m.good_to_haves as string[] | null) ?? [];
+
+  const { weights: outcomeWeights } = await getLatestOutcomeWeights(supabase);
+
+  const matches: CandidateMatch[] = candidates.map((c) => {
+    const searchableText = buildSearchableText(c);
+    const mustHaveChecks = mustHaveClauses.map((clause) => evaluateClauseDeterministically(clause, c, searchableText));
+    const goodToHaveChecks = goodToHaveClauses.map((clause) => evaluateClauseDeterministically(clause, c, searchableText));
+
+    const must_haves_fit = clauseFitScore(mustHaveChecks);
+    const good_to_haves_fit = clauseFitScore(goodToHaveChecks);
+
+    let experience_fit = 60; // neutral default when either side lacks data
+    if (m.experience_min != null && m.experience_max != null && c.total_experience_years != null) {
+      if (c.total_experience_years >= m.experience_min && c.total_experience_years <= m.experience_max) {
+        experience_fit = 100;
+      } else {
+        const gap = c.total_experience_years < m.experience_min ? m.experience_min - c.total_experience_years : c.total_experience_years - m.experience_max;
+        experience_fit = Math.max(0, 100 - gap * 20);
+      }
+    }
+
+    let domain_relevance = 40; // neutral default
+    const similarity = similarityById.get(c.id) ?? null;
+    if (similarity != null) domain_relevance = Math.round(similarity * 100);
+    if (m.sub_domain && c.sub_domain === m.sub_domain) domain_relevance = Math.max(domain_relevance, 85);
+    if (m.sub_domain && c.secondary_sub_domains?.includes(m.sub_domain)) domain_relevance = Math.max(domain_relevance, 65);
+    const inPracticePool = practiceSeniorityByCandidate.has(c.id);
+    if (inPracticePool) {
+      domain_relevance = Math.max(domain_relevance, 80);
+      if ((m as { seniority_band?: string | null }).seniority_band && practiceSeniorityByCandidate.get(c.id) === (m as { seniority_band?: string | null }).seniority_band) {
+        domain_relevance = Math.max(domain_relevance, 92);
+      }
+    }
+    domain_relevance = Math.min(100, domain_relevance);
+
+    const score = Math.round(must_haves_fit * 0.5 + good_to_haves_fit * 0.1 + experience_fit * 0.2 + domain_relevance * 0.2);
+
+    const metCount = mustHaveChecks.filter((r) => r.status === "met").length;
+    const notMetCount = mustHaveChecks.filter((r) => r.status === "not_met").length;
+    const unclearCount = mustHaveChecks.filter((r) => r.status === "unclear").length;
+    const reasonParts: string[] = [];
+    if (mustHaveClauses.length > 0) reasonParts.push(`${metCount}/${mustHaveClauses.length} must-haves confirmed${notMetCount ? `, ${notMetCount} not met` : ""}${unclearCount ? `, ${unclearCount} unclear` : ""}`);
+    if (inPracticePool) reasonParts.push("tagged into this mandate's practice pool");
+    if (similarity != null) reasonParts.push(`${Math.round(similarity * 100)}% profile similarity to this mandate`);
+    const reason = (reasonParts.join("; ") || "Deterministic domain/experience match") + " -- rule-based, not AI-judged.";
+
+    const breakdown: ScoreBreakdown = {
+      must_haves_fit,
+      good_to_haves_fit,
+      experience_fit: Math.round(experience_fit),
+      domain_relevance,
+      notes: "Computed deterministically from skill inventory, talent micro-index, practice tags, and embedding similarity -- no AI call. Use \"Get AI Read\" for nuanced judgment on ambiguous clauses.",
+    };
+
+    return {
+      candidate_id: c.id,
+      full_name: c.full_name,
+      score,
+      score_breakdown: breakdown,
+      outcome_adjusted_score: outcomeAdjustedScore(breakdown, outcomeWeights),
+      embedding_similarity: similarity,
+      reason,
+      must_haves: mustHaveChecks,
+      good_to_haves: goodToHaveChecks,
+      stability_score: c.stability_score ?? null,
+      has_ai_summary: !!c.ai_summary,
+      current_job_title: c.current_job_title ?? null,
+      current_employer: c.current_employer ?? null,
+      current_location: c.current_location ?? null,
+      total_experience_years: c.total_experience_years ?? null,
+      expected_fixed_ctc: c.expected_fixed_ctc ?? null,
+      notice_period: c.notice_period ?? null,
+    };
+  });
+
+  const filtered = options?.scoreAllProvided ? matches : matches.filter((r) => r.score >= 35 || practiceSeniorityByCandidate.has(r.candidate_id));
+
+  const sorted = filtered.sort((a, b) => {
+    const metA = a.must_haves.filter((c) => c.status === "met").length;
+    const metB = b.must_haves.filter((c) => c.status === "met").length;
+    if (metB !== metA) return metB - metA;
+    return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
+  });
+
+  const capped = options?.scoreAllProvided ? sorted : sorted.slice(0, options?.maxResults ?? 30);
+
+  return { ok: true, matches: capped, scanned: candidates.length, calibration: { positive: 0, negative: 0 }, requirementsChecked: mustHaveClauses };
 }
 
 // ---------------------------------------------------------------------

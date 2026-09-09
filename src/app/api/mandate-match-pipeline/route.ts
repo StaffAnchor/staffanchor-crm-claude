@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { matchCandidatesForMandate, buildMatchAssessment } from "@/lib/candidate-match";
+import { matchCandidatesForMandate, matchCandidatesDeterministic, buildMatchAssessment } from "@/lib/candidate-match";
 
 // "Score pipeline" -- the sibling of /api/mandate-match, but scores the
 // candidates a recruiter has ALREADY added to this mandate (via bulk
@@ -25,10 +25,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 
-  const { mandateId, candidateId: singleCandidateId } = await req.json();
+  const { mandateId, candidateId: singleCandidateId, mode } = await req.json();
   if (!mandateId) {
     return NextResponse.json({ error: "mandateId is required" }, { status: 400 });
   }
+  // Defaults to the zero-AI deterministic scorer -- this route fires on
+  // every "Score pipeline" bulk click and every per-row "Re-assess", which
+  // used to mean a Gemini call every time regardless of whether anything
+  // about the candidate had actually changed. mode: "ai" stays available
+  // for a future explicit "AI Read" affordance on this surface, same as the
+  // Matching Workspace, but nothing calls it yet.
+  const useAi = mode === "ai";
 
   // A recruiter can also trigger this scoped to just one candidate (the
   // per-row "Assess" trigger on the mandate pipeline table/board, used
@@ -58,7 +65,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No candidates in this mandate's pipeline yet." }, { status: 400 });
   }
 
-  const result = await matchCandidatesForMandate(mandateId, supabase, {
+  const matchFn = useAi ? matchCandidatesForMandate : matchCandidatesDeterministic;
+  const result = await matchFn(mandateId, supabase, {
     candidateIdsOverride: candidateIds,
     includeAlreadyLinked: true,
     // Pipeline scoring wants coverage across the whole (already bounded,

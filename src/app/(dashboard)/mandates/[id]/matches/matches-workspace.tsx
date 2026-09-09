@@ -206,6 +206,28 @@ export default function MatchesWorkspace({
   const [linkedOnly, setLinkedOnly] = useState(false);
   const linkedIdSet = useMemo(() => new Set(initialLinkedCandidateIds ?? []), [initialLinkedCandidateIds]);
   const [registeredAt, setRegisteredAt] = useState<Record<string, string>>({});
+  // "deterministic" (default, zero AI cost -- computed from each
+  // candidate's already-cached skill inventory/talent micro-index/practice
+  // tags/embedding similarity) vs "ai" (Gemini/Groq/Mistral judgment call,
+  // only ever run on-demand via "Get AI Read", scoped to the finalists
+  // already shown so it stays a small, cheap call instead of re-scanning
+  // the whole pool). Unset until the first run completes.
+  const [matchMethod, setMatchMethod] = useState<"deterministic" | "ai" | null>(null);
+  const [aiReadLoading, setAiReadLoading] = useState(false);
+
+  const sortedMatches = useMemo(() => {
+    if (!matches) return null;
+    const sorted = [...matches].sort((a, b) => {
+      const metA = a.must_haves.filter((c) => c.status === "met").length;
+      const metB = b.must_haves.filter((c) => c.status === "met").length;
+      if (metB !== metA) return metB - metA;
+      return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
+    });
+    const fullOnly = fullMatchesOnly
+      ? sorted.filter((m) => m.must_haves.length > 0 && m.must_haves.every((c) => c.status === "met"))
+      : sorted;
+    return linkedOnly ? fullOnly.filter((m) => linkedIdSet.has(m.candidate_id)) : fullOnly;
+  }, [matches, fullMatchesOnly, linkedOnly, linkedIdSet]);
 
   async function runMatch(useExtraCriteria: boolean) {
     setLoading(true);
@@ -228,11 +250,53 @@ export default function MatchesWorkspace({
         setComputedAt(new Date().toISOString());
         setCalibration(json.calibration ?? null);
         setLastRunUsedExtraCriteria(useExtraCriteria && extraCriteria.trim().length > 0);
+        setMatchMethod(json.matchMethod === "ai" ? "ai" : "deterministic");
       }
     } catch {
       setError("Matching failed. Please try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // On-demand AI judgment pass -- deliberately scoped to exactly the
+  // candidates already showing (the instant deterministic pass already did
+  // the pool-narrowing for free), so this is one bounded Gemini call for a
+  // handful of finalists, not a full-pool re-scan. Replaces the displayed
+  // scores/reasons/must-have verdicts with the AI's nuanced read; never
+  // overwrites the mandate's shared cached auto_match_results (the route
+  // only caches full-pool, no-override runs).
+  async function runAiRead() {
+    if (!sortedMatches || sortedMatches.length === 0) return;
+    setAiReadLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/mandate-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mandateId,
+          mode: "ai",
+          candidateIdsOverride: sortedMatches.map((m) => m.candidate_id),
+          includeAlreadyLinked: true,
+          scoreAllProvided: true,
+          maxResults: sortedMatches.length,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "AI Read failed.");
+      } else {
+        setMatches(json.matches ?? []);
+        setScanned(json.scanned ?? 0);
+        setComputedAt(new Date().toISOString());
+        setCalibration(json.calibration ?? null);
+        setMatchMethod("ai");
+      }
+    } catch {
+      setError("AI Read failed. Please try again.");
+    } finally {
+      setAiReadLoading(false);
     }
   }
 
@@ -324,20 +388,6 @@ export default function MatchesWorkspace({
       setProactiveMatches((prev) => prev.filter((r) => r.id !== rowId));
     }
   }
-
-  const sortedMatches = useMemo(() => {
-    if (!matches) return null;
-    const sorted = [...matches].sort((a, b) => {
-      const metA = a.must_haves.filter((c) => c.status === "met").length;
-      const metB = b.must_haves.filter((c) => c.status === "met").length;
-      if (metB !== metA) return metB - metA;
-      return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
-    });
-    const fullOnly = fullMatchesOnly
-      ? sorted.filter((m) => m.must_haves.length > 0 && m.must_haves.every((c) => c.status === "met"))
-      : sorted;
-    return linkedOnly ? fullOnly.filter((m) => linkedIdSet.has(m.candidate_id)) : fullOnly;
-  }, [matches, fullMatchesOnly, linkedOnly, linkedIdSet]);
 
   return (
     <div className="mt-4">
@@ -500,8 +550,26 @@ export default function MatchesWorkspace({
                 disabled={loading}
                 className="text-[12px] text-purple-600 hover:underline disabled:opacity-50"
               >
-                {loading ? "Scanning..." : "Re-run standard match"}
+                {loading ? "Scanning..." : "Re-run instant match"}
               </button>
+              {sortedMatches && sortedMatches.length > 0 && (
+                <button
+                  onClick={runAiRead}
+                  disabled={aiReadLoading || loading}
+                  title="Ask AI to re-judge exactly these candidates against the mandate's must-haves -- for nuanced/ad-hoc calls the instant match can't confidently make"
+                  className="flex items-center gap-1 text-[12px] font-medium text-purple-700 hover:underline disabled:opacity-50"
+                >
+                  {aiReadLoading ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" /> Reading...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3" /> Get AI Read
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
@@ -510,6 +578,11 @@ export default function MatchesWorkspace({
               {scanned > 0
                 ? `${sortedMatches.length} suggested of ${scanned} candidates scanned`
                 : `${sortedMatches.length} suggested${computedAt ? ` — computed ${new Date(computedAt).toLocaleDateString()}` : ""}`}
+              {matchMethod && (
+                <span className={`ml-1.5 ${matchMethod === "ai" ? "text-purple-500" : "text-slate-400"}`}>
+                  · {matchMethod === "ai" ? "AI-judged" : "instant match, no AI call"}
+                </span>
+              )}
               {lastRunUsedExtraCriteria && (
                 <span className="ml-1.5 text-purple-500">· includes your ad hoc criteria (not saved to the mandate)</span>
               )}
