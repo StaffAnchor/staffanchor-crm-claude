@@ -16,6 +16,11 @@ export default async function BillingPage() {
     .select(
       "id, label, split_pct, amount_lakhs, due_date, status, invoiced_at, paid_at, mandates(role_title, client_name), candidate_mandate_links(candidates(full_name))"
     )
+    // Cancelled tranches are placements that fell through after the tranche
+    // was generated (did_not_join / stage moved off placed, see
+    // fn_create_fee_tranches) -- kept in the table for audit history but
+    // never meant to appear as a real billing obligation here.
+    .neq("status", "cancelled")
     .order("due_date", { ascending: true });
 
   const rows: TrancheRow[] = (error ? [] : data ?? []).map((r) => {
