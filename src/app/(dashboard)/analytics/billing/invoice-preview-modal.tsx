@@ -75,21 +75,29 @@ export default function InvoicePreviewModal({
     });
     const json = await res.json();
     setLoading(false);
+    setPdfBase64(json.ok ? json.pdfBase64 : null);
+    setRegistrations(json.registrations ?? []);
+    if (json.client) setClientName(json.client.name);
+    // Populate the form from whatever came back even on failure -- e.g. a
+    // client missing GST registration still has a candidate name,
+    // designation, location and DOJ we can resolve; only the one blocking
+    // field (GST registration, in that case) is actually missing. Without
+    // this, the form stayed null on any error and every field was
+    // permanently uneditable (onChange no-ops when form is null).
+    if (json.item) {
+      setForm({
+        candidateName: json.item.candidateName === "—" ? "" : json.item.candidateName,
+        designation: json.item.designation ?? "",
+        location: json.item.location ?? "",
+        dateOfJoining: json.item.dateOfJoining ?? "",
+        billingAmount: json.item.billingAmount ? String(json.item.billingAmount) : "",
+        registrationId: json.selectedRegistrationId ?? "",
+      });
+    }
     if (!json.ok) {
       setError(json.error ?? "Failed to build preview");
       return;
     }
-    setPdfBase64(json.pdfBase64);
-    setRegistrations(json.registrations);
-    setClientName(json.client.name);
-    setForm({
-      candidateName: json.item.candidateName === "—" ? "" : json.item.candidateName,
-      designation: json.item.designation ?? "",
-      location: json.item.location ?? "",
-      dateOfJoining: json.item.dateOfJoining ?? "",
-      billingAmount: String(json.item.billingAmount ?? ""),
-      registrationId: json.selectedRegistrationId,
-    });
   }
 
   useEffect(() => {

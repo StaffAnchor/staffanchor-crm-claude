@@ -26,20 +26,34 @@ export type ResolvedGstRegistration = {
   is_default: boolean;
 };
 
+export type InvoiceItem = {
+  candidateName: string;
+  designation: string;
+  location: string | null;
+  dateOfJoining: string | null;
+  billingAmount: number;
+};
+
 export type ResolveResult =
-  | { ok: false; error: string; status: number }
+  // `client`/`item`/`registrations` are attached even on failure whenever
+  // they were resolvable (e.g. missing GST registration, missing billing
+  // amount) -- so the preview modal can still populate and let the admin
+  // edit every other field instead of the form staying permanently blank
+  // just because one specific thing is missing.
+  | {
+      ok: false;
+      error: string;
+      status: number;
+      client?: { id: string; name: string };
+      item?: InvoiceItem;
+      registrations?: ResolvedGstRegistration[];
+    }
   | {
       ok: true;
       client: { id: string; name: string };
       registrations: ResolvedGstRegistration[];
       registration: ResolvedGstRegistration;
-      item: {
-        candidateName: string;
-        designation: string;
-        location: string | null;
-        dateOfJoining: string | null;
-        billingAmount: number;
-      };
+      item: InvoiceItem;
     };
 
 export async function resolveTrancheInvoiceData(
@@ -71,9 +85,22 @@ export async function resolveTrancheInvoiceData(
     return { ok: false, error: clientError?.message ?? "Client not found", status: 404 };
   }
 
-  const billingAmount = overrides.billingAmount ?? (tranche.amount_lakhs == null ? null : Number(tranche.amount_lakhs));
-  if (billingAmount == null || !Number.isFinite(billingAmount)) {
-    return { ok: false, error: "No billing amount set for this tranche -- enter one before generating.", status: 400 };
+  // Item fields are resolvable from the tranche/mandate/link alone --
+  // compute them before anything that can block (billing amount, GST
+  // registration) so a preview always has candidate name/designation/
+  // location/DOJ filled in and editable, even when generation itself
+  // can't proceed yet.
+  const billingAmountRaw = overrides.billingAmount ?? (tranche.amount_lakhs == null ? null : Number(tranche.amount_lakhs));
+  const item: InvoiceItem = {
+    candidateName: overrides.candidateName ?? link?.candidates?.full_name ?? "—",
+    designation: overrides.designation ?? mandate.role_title,
+    location: overrides.location ?? mandate.city,
+    dateOfJoining: overrides.dateOfJoining !== undefined ? overrides.dateOfJoining : (link?.date_of_joining ?? null),
+    billingAmount: billingAmountRaw ?? 0,
+  };
+
+  if (billingAmountRaw == null || !Number.isFinite(billingAmountRaw)) {
+    return { ok: false, error: "No billing amount set for this tranche -- enter one before generating.", status: 400, client, item };
   }
 
   const { data: registrations } = await supabase
@@ -86,6 +113,9 @@ export async function resolveTrancheInvoiceData(
       ok: false,
       error: `No GST registration on file for ${client.name}. Add one from the client's page before generating an invoice.`,
       status: 400,
+      client,
+      item,
+      registrations: [],
     };
   }
 
@@ -99,17 +129,5 @@ export async function resolveTrancheInvoiceData(
     registrations.find((r) => r.is_default) ||
     registrations[0];
 
-  return {
-    ok: true,
-    client,
-    registrations,
-    registration,
-    item: {
-      candidateName: overrides.candidateName ?? link?.candidates?.full_name ?? "—",
-      designation: overrides.designation ?? mandate.role_title,
-      location: overrides.location ?? mandate.city,
-      dateOfJoining: overrides.dateOfJoining !== undefined ? overrides.dateOfJoining : (link?.date_of_joining ?? null),
-      billingAmount,
-    },
-  };
+  return { ok: true, client, registrations, registration, item };
 }

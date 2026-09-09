@@ -35,7 +35,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const resolved = await resolveTrancheInvoiceData(supabase, id, overrides);
   if (!resolved.ok) {
-    return NextResponse.json({ ok: false, error: resolved.error }, { status: resolved.status });
+    // Still ship back whatever was resolvable (candidate name, designation,
+    // location, DOJ, client) so the preview modal can populate its form and
+    // let the admin edit/fill in the rest, instead of the whole form
+    // staying blank just because e.g. GST registration is missing.
+    return NextResponse.json(
+      {
+        ok: false,
+        error: resolved.error,
+        client: resolved.client ?? null,
+        item: resolved.item ?? null,
+        registrations: resolved.registrations ?? [],
+      },
+      { status: resolved.status }
+    );
   }
   const { client, registration, registrations, item } = resolved;
 
