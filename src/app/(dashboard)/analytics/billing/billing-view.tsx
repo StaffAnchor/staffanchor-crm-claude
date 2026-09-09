@@ -12,44 +12,120 @@ export type TrancheRow = {
   amount_lakhs: number | null;
   due_date: string | null;
   status: string;
-  invoiced_at: string | null;
-  paid_at: string | null;
+  proforma_sent_at: string | null;
+  payment_received_at: string | null;
+  final_invoiced_at: string | null;
   role_title: string;
   client_name: string;
   candidate_name: string;
 };
 
-const STATUS_TONE: Record<string, BadgeTone> = { pending: "neutral", invoiced: "info", paid: "success" };
+// Same 18% assumption the Placements page uses for its "Final Billing
+// Value (incl. GST)" column -- kept as one constant so both pages always
+// show the same revenue number for the same placement, per the "Billing
+// and Placements should match" ask. amount_lakhs (misleadingly named --
+// holds a plain rupee amount, not lakhs) is the pre-GST tranche value;
+// everything shown here is now GST-inclusive to match.
+const GST_RATE = 0.18;
+
+function inr(n: number | null): string {
+  if (n == null || Number.isNaN(n)) return "—";
+  return `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+}
+
+function withGst(amount: number | null): number | null {
+  return amount == null ? null : Math.round(amount * (1 + GST_RATE));
+}
+
+// Placement -> Joining (tranche auto-generated) -> Proforma Invoice ->
+// Payment -> Final Invoice, per how this firm's clients actually pay --
+// most require a proforma before releasing payment, with the tax invoice
+// only cut once payment is confirmed. Old pending/invoiced/paid states had
+// no slot for the proforma step or a "paid but final invoice not cut yet"
+// state.
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  proforma_sent: "Proforma sent",
+  payment_received: "Payment received",
+  final_invoiced: "Final invoice issued",
+  cancelled: "Cancelled",
+};
+const STATUS_TONE: Record<string, BadgeTone> = {
+  pending: "neutral",
+  proforma_sent: "info",
+  payment_received: "warning",
+  final_invoiced: "success",
+  cancelled: "danger",
+};
+const NEXT_STATUS: Record<string, string | null> = {
+  pending: "proforma_sent",
+  proforma_sent: "payment_received",
+  payment_received: "final_invoiced",
+  final_invoiced: null,
+  cancelled: null,
+};
+const ADVANCE_LABEL: Record<string, string> = {
+  pending: "Mark proforma sent",
+  proforma_sent: "Mark payment received",
+  payment_received: "Mark final invoice issued",
+};
 
 export default function BillingView({ initialRows, fetchError }: { initialRows: TrancheRow[]; fetchError: string | null }) {
-  const [filter, setFilter] = useState<"all" | "pending" | "invoiced" | "paid">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "proforma_sent" | "payment_received" | "final_invoiced">("all");
 
   const filtered = useMemo(
     () => (filter === "all" ? initialRows : initialRows.filter((r) => r.status === filter)),
     [initialRows, filter]
   );
 
+  const totals = useMemo(() => {
+    const live = initialRows.filter((r) => r.status !== "cancelled");
+    const sum = (rows: TrancheRow[]) => rows.reduce((acc, r) => acc + (withGst(r.amount_lakhs) ?? 0), 0);
+    return {
+      total: sum(live),
+      pending: sum(live.filter((r) => r.status === "pending")),
+      inProgress: sum(live.filter((r) => r.status === "proforma_sent" || r.status === "payment_received")),
+      invoiced: sum(live.filter((r) => r.status === "final_invoiced")),
+    };
+  }, [initialRows]);
+
   if (fetchError) return <p className="text-sm text-red-600">{fetchError}</p>;
 
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-4">
-        {(["all", "pending", "invoiced", "paid"] as const).map((f) => (
+      <p className="text-[11px] text-slate-400 mb-3">
+        Amounts below include 18% GST, matching the Final Billing Value shown on Placements.
+      </p>
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        {[
+          { label: "Total (incl. GST)", value: totals.total },
+          { label: "Pending", value: totals.pending },
+          { label: "Proforma / Payment", value: totals.inProgress },
+          { label: "Final invoiced", value: totals.invoiced },
+        ].map((t) => (
+          <div key={t.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
+            <p className="text-[11px] text-slate-400 uppercase tracking-wide">{t.label}</p>
+            <p className="text-[16px] font-bold text-slate-900 dark:text-slate-100 mt-0.5 tabular-nums">{inr(t.value)}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+        {(["all", "pending", "proforma_sent", "payment_received", "final_invoiced"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium capitalize transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
               filter === f
                 ? "bg-teal-600 text-white"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
-            {f}
+            {f === "all" ? "All" : STATUS_LABEL[f]}
           </button>
         ))}
       </div>
       {filtered.length === 0 ? (
-        <p className="text-sm text-slate-400 py-8 text-center">No tranches here yet -- they're generated automatically once a candidate is marked placed.</p>
+        <p className="text-sm text-slate-400 py-8 text-center">No tranches here yet -- they&apos;re generated automatically once a candidate is marked placed.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
@@ -58,7 +134,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
                 <th className="py-2 pr-3">Candidate</th>
                 <th className="py-2 pr-3">Mandate</th>
                 <th className="py-2 pr-3">Tranche</th>
-                <th className="py-2 pr-3">Amount</th>
+                <th className="py-2 pr-3">Amount (incl. GST)</th>
                 <th className="py-2 pr-3">Due</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2 pr-3"></th>
@@ -82,16 +158,19 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   const [saving, setSaving] = useState(false);
 
   async function advance() {
-    const next = row.status === "pending" ? "invoiced" : row.status === "invoiced" ? "paid" : null;
+    const next = NEXT_STATUS[row.status];
     if (!next) return;
     setSaving(true);
     const patch: Record<string, string> = { status: next };
-    if (next === "invoiced") patch.invoiced_at = new Date().toISOString();
-    if (next === "paid") patch.paid_at = new Date().toISOString();
+    if (next === "proforma_sent") patch.proforma_sent_at = new Date().toISOString();
+    if (next === "payment_received") patch.payment_received_at = new Date().toISOString();
+    if (next === "final_invoiced") patch.final_invoiced_at = new Date().toISOString();
     await supabase.from("placement_fee_tranches").update(patch).eq("id", row.id);
     setSaving(false);
     router.refresh();
   }
+
+  const gross = withGst(row.amount_lakhs);
 
   return (
     <tr className="border-b border-slate-100 dark:border-slate-800">
@@ -102,25 +181,23 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
       <td className="py-2 pr-3 text-slate-600 dark:text-slate-400">
         {row.label} ({row.split_pct}%)
       </td>
-      <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-200 tabular-nums">
-        {row.amount_lakhs !== null ? `₹${row.amount_lakhs}L` : "—"}
-      </td>
+      <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-200 tabular-nums">{inr(gross)}</td>
       <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">
         {row.due_date ? new Date(row.due_date).toLocaleDateString() : "—"}
       </td>
       <td className="py-2 pr-3">
         <Badge tone={STATUS_TONE[row.status] ?? "neutral"} size="sm">
-          {row.status}
+          {STATUS_LABEL[row.status] ?? row.status}
         </Badge>
       </td>
       <td className="py-2 pr-3">
-        {row.status !== "paid" && (
+        {NEXT_STATUS[row.status] && (
           <button
             onClick={advance}
             disabled={saving}
             className="text-[12px] text-blue-600 hover:underline disabled:opacity-40"
           >
-            {saving ? "..." : row.status === "pending" ? "Mark invoiced" : "Mark paid"}
+            {saving ? "..." : ADVANCE_LABEL[row.status]}
           </button>
         )}
       </td>
