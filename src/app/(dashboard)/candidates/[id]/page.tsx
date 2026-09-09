@@ -11,6 +11,7 @@ import MandateDiscussions from "./mandate-discussions";
 import CareerTimelinePanel from "./career-timeline-panel";
 import NotesPanel from "./notes-panel";
 import VerifiedFactsPanel from "./verified-facts-panel";
+import ResumeMismatchesPanel from "./resume-mismatches-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
 import PracticeMatchesPanel from "./practice-matches-panel";
@@ -131,6 +132,7 @@ export default async function CandidateDetailPage({
       candidate.ai_decision_flags = result.decisionFlags;
       candidate.skill_inventory = result.skillInventory;
       candidate.stability_score = result.stabilityScore;
+      candidate.resume_mismatches = result.resumeMismatches;
     }
   }
 
@@ -659,6 +661,16 @@ export default async function CandidateDetailPage({
           initialStabilityScore={candidate.stability_score}
         />
       </Card>
+
+      {/* Resume-truth reconciliation: the AI passport call already compares
+          self-reported form fields against the resume it just read -- only
+          rendered when it actually found something material, so this adds
+          no visual noise for the common case of a clean profile. */}
+      {candidate.resume_mismatches && candidate.resume_mismatches.length > 0 && (
+        <Card className="mt-4">
+          <ResumeMismatchesPanel candidateId={candidate.id} mismatches={candidate.resume_mismatches} />
+        </Card>
+      )}
 
       {/* Durable, recruiter-confirmed facts about this candidate as a
           person (not tied to any one mandate) -- fed into future mandate

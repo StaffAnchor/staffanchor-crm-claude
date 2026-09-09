@@ -62,6 +62,19 @@ export type TalentMicroIndex = {
   disqualifiers?: string[]; // short, factual gaps (e.g. "No team management exp")
 };
 
+// Resume-truth reconciliation: a genuine, material conflict the model
+// noticed between what the candidate self-reported in a structured field and
+// what their own resume actually says -- e.g. self-reported "5 years
+// experience" vs a resume showing 7, or a different current employer/title.
+// Internal-only (recruiter decision-support), same reasoning as
+// AiDecisionFlags -- never selected by client/candidate-facing queries.
+export type ResumeMismatch = {
+  field: string; // human-readable field name, e.g. "Current employer", "Total experience"
+  self_reported: string; // what the candidate's form data says
+  resume_says: string; // what the resume excerpt actually says
+  note?: string; // short context, e.g. "Resume shows a title change in the last 6 months not reflected in the profile"
+};
+
 export type GenerateAiPassportResult =
   | {
       ok: true;
@@ -71,6 +84,7 @@ export type GenerateAiPassportResult =
       skillInventory: SkillInventory | null;
       talentMicroIndex: TalentMicroIndex | null;
       stabilityScore: number | null;
+      resumeMismatches: ResumeMismatch[] | null;
     }
   | { ok: false; status: number; error: string };
 
@@ -78,7 +92,10 @@ export type GenerateAiPassportResult =
 // second Gemini call) -- immediately split into the client-safe AiPassport
 // subset and the internal-only AiDecisionFlags/SkillInventory/TalentMicroIndex
 // subsets before anything is persisted or returned up the call stack.
-type RawAiOutput = AiPassport & AiDecisionFlags & SkillInventory & TalentMicroIndex;
+type RawAiOutput = AiPassport &
+  AiDecisionFlags &
+  SkillInventory &
+  TalentMicroIndex & { resume_mismatches?: ResumeMismatch[] };
 
 function parsePassportJson(raw: string): RawAiOutput | null {
   // Gemini sometimes wraps JSON in a ```json fence despite instructions not to.
@@ -100,8 +117,10 @@ function splitRawOutput(raw: RawAiOutput): {
   decisionFlags: AiDecisionFlags;
   skillInventory: SkillInventory;
   talentMicroIndex: TalentMicroIndex;
+  resumeMismatches: ResumeMismatch[];
 } {
   return {
+    resumeMismatches: Array.isArray(raw.resume_mismatches) ? raw.resume_mismatches : [],
     passport: {
       headline: raw.headline,
       compensation_line: raw.compensation_line,
@@ -270,7 +289,7 @@ export async function generateAiPassportForCandidate(
 
   const prompt = `You are helping a recruiter write a concise, natural-sounding candidate passport for a sales-hiring CRM. This is shown to both recruiters and clients deciding whether to interview someone. It must read like a person wrote it, not like a data dump.
 
-Use ONLY facts given below (structured data + resume excerpt) -- never invent employers, numbers, skills, or achievements that are not present. If the structured data and resume excerpt conflict, trust the structured data. If a field is missing, omit it rather than guessing.
+Use ONLY facts given below (structured data + resume excerpt) -- never invent employers, numbers, skills, or achievements that are not present. For the purpose of WRITING the passport lines below, if the structured data and resume excerpt conflict, use the structured data (it's what the candidate/recruiter most recently confirmed). But separately, also identify those conflicts explicitly in "resume_mismatches" (see its own instructions below) -- don't just silently pick a side and drop the discrepancy. If a field is missing, omit it rather than guessing.
 
 Education/certification accuracy -- this has caused real errors, be careful:
 - Resume headers commonly cram multiple DIFFERENT credentials into one pipe- or comma-separated line, e.g. "MBA (Marketing) | IIM Ahmedabad Leadership Program | Six Sigma Green Belt Certified". Each segment is its OWN separate credential from its OWN institution -- never merge adjacent segments into one claim (e.g. that line does NOT mean "MBA from IIM Ahmedabad"; it means an MBA from wherever the resume's Education/Academic Credentials section says, PLUS a separate, shorter leadership program at IIM Ahmedabad, PLUS a separate Six Sigma certification).
@@ -311,6 +330,14 @@ The following five keys build a compact "Talent Micro-Index" -- also internal on
 - "verified_quota_attainment_pct": their most recent or most typical quota attainment as a single integer percent, if genuinely stated -- omit entirely if no attainment data exists (never estimate one).
 - "disqualifiers": array of 0-3 short, factual capability gaps a recruiter would want flagged fast when skimming (e.g. "No team management experience", "No enterprise deal experience", "No experience carrying an individual quota") -- empty array if none apparent.
 
+One more key -- also internal only. This is the platform trusting the resume as ground truth rather than blindly trusting whatever the candidate typed into a form:
+- "resume_mismatches": array of 0-4 objects, each with keys "field", "self_reported", "resume_says", and an optional "note" (all strings), for MATERIAL, CONCRETE conflicts between a self-reported structured field below and what the resume excerpt actually states. Only these fields are worth checking: current employer, current job title, total years of experience, notice period, current fixed CTC, expected fixed CTC, current industry. Rules:
+  - Only flag a conflict if the resume excerpt actually states something specific and different -- never flag a field just because the resume is silent on it (that's a missing-data problem, not a mismatch, and is already handled elsewhere).
+  - "Material" means a reasonable recruiter would want to double-check it before presenting this candidate -- e.g. self-reported total experience of "3 years" when the resume's own dated work history adds up to 6+ years, or self-reported current employer "Acme Corp" when the resume's most recent listed role is at a different company. Do NOT flag trivial wording differences (e.g. "Salesforce Inc." vs "Salesforce") or rounding (e.g. "4.5 years" vs "roughly 4-5 years").
+  - CTC/notice-period fields are numbers the candidate reports about themselves that resumes rarely state explicitly -- only flag these if the resume excerpt happens to state a number directly (e.g. an explicit "Current CTC: X" line some resumes include), never infer or estimate a CTC/notice period from job title or seniority.
+  - Each "note" (if included) should be one short, factual sentence explaining the specific evidence, e.g. "Resume's most recent role at Zenith Sales ended 8 months ago per its own dates; profile still lists Zenith Sales as current employer."
+  - Empty array if nothing genuinely material stands out -- do not invent a mismatch to fill the array. This is expected to be empty for most candidates.
+
 Structured candidate data (JSON):
 ${JSON.stringify(factSheet, null, 2)}
 
@@ -325,9 +352,9 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
     {
       const { text: raw, provider: usedProvider, model: usedModel } = await generateTextWithFallback(prompt);
       const rawOutput = parsePassportJson(raw);
-      const { passport, decisionFlags, skillInventory, talentMicroIndex } = rawOutput
+      const { passport, decisionFlags, skillInventory, talentMicroIndex, resumeMismatches } = rawOutput
         ? splitRawOutput(rawOutput)
-        : { passport: null, decisionFlags: null, skillInventory: null, talentMicroIndex: null };
+        : { passport: null, decisionFlags: null, skillInventory: null, talentMicroIndex: null, resumeMismatches: [] };
 
       // Fall back to treating the raw response as plain prose if JSON parsing
       // fails for some reason -- better a slightly-off summary than none.
@@ -352,6 +379,7 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
           ai_decision_flags: decisionFlags,
           skill_inventory: skillInventory,
           talent_micro_index: talentMicroIndex,
+          resume_mismatches: resumeMismatches.length > 0 ? resumeMismatches : null,
           ai_summary_generated_status: candidateStatus,
           ai_summary_generated_at: new Date().toISOString(),
         })
@@ -431,6 +459,7 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         skillInventory,
         talentMicroIndex,
         stabilityScore: (candidate.stability_score as number | null) ?? stability?.score ?? null,
+        resumeMismatches: resumeMismatches.length > 0 ? resumeMismatches : null,
       };
     }
   } catch (err) {
