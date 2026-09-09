@@ -31,6 +31,23 @@ async function extractPdfTextViaUnpdf(buffer: ArrayBuffer): Promise<string | nul
   return text?.trim() || null;
 }
 
+// Exported standalone so other PDF-ingesting features (invoice import) can
+// reuse the same pdf-parse -> unpdf fallback chain without needing a
+// resume filename to gate on.
+export async function extractPdfText(buffer: ArrayBuffer): Promise<string | null> {
+  try {
+    return await extractPdfTextViaPdfParse(buffer);
+  } catch (err) {
+    console.error("pdf-parse failed, falling back to unpdf", err);
+    try {
+      return await extractPdfTextViaUnpdf(buffer);
+    } catch (fallbackErr) {
+      console.error("unpdf fallback also failed", fallbackErr);
+      return null;
+    }
+  }
+}
+
 // Extracts plain text from a resume file buffer so it can be fed into the AI
 // summary prompt. Supports the two formats candidates actually upload (PDF,
 // DOCX). Returns null (rather than throwing) on anything unexpected -- a

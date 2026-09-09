@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import BillingView, { type TrancheRow } from "./billing-view";
+import BillingTabs from "./billing-tabs";
 
 // Fee-tranche billing ops view -- placement_fee_tranches rows are generated
 // automatically (fn_create_fee_tranches(), see migration) the moment a
@@ -72,7 +73,7 @@ export default async function BillingPage() {
           </div>
         ))}
       </div>
-      <BillingView initialRows={rows} fetchError={error?.message ?? null} />
+      <BillingTabs liveTranches={<BillingView initialRows={rows} fetchError={error?.message ?? null} />} />
     </div>
   );
 }
