@@ -15,8 +15,11 @@ export type TrancheRow = {
   proforma_sent_at: string | null;
   payment_received_at: string | null;
   final_invoiced_at: string | null;
+  proforma_invoice_number: string | null;
+  final_invoice_number: string | null;
   role_title: string;
   client_name: string;
+  has_client_link: boolean;
   candidate_name: string;
 };
 
@@ -152,25 +155,60 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
   );
 }
 
+// Steps that actually mint a PDF (via /api/admin/tranches/[id]/generate-invoice)
+// rather than just flipping a status flag -- "pending" generates the
+// Proforma Invoice, "payment_received" generates the Tax (final) Invoice.
+// "proforma_sent" -> "payment_received" is just confirming money landed, no
+// document to produce for that step.
+const GENERATES_DOC: Record<string, "proforma" | "final" | null> = {
+  pending: "proforma",
+  proforma_sent: null,
+  payment_received: "final",
+  final_invoiced: null,
+};
+
 function TrancheRowLine({ row }: { row: TrancheRow }) {
   const router = useRouter();
   const supabase = createClient();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function advance() {
     const next = NEXT_STATUS[row.status];
     if (!next) return;
+    setError(null);
     setSaving(true);
-    const patch: Record<string, string> = { status: next };
-    if (next === "proforma_sent") patch.proforma_sent_at = new Date().toISOString();
-    if (next === "payment_received") patch.payment_received_at = new Date().toISOString();
-    if (next === "final_invoiced") patch.final_invoiced_at = new Date().toISOString();
-    await supabase.from("placement_fee_tranches").update(patch).eq("id", row.id);
+    const docKind = GENERATES_DOC[row.status];
+    if (docKind) {
+      const res = await fetch(`/api/admin/tranches/${row.id}/generate-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: docKind }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setError(json.error ?? "Failed to generate invoice");
+        setSaving(false);
+        return;
+      }
+    } else {
+      const patch: Record<string, string> = { status: next };
+      if (next === "payment_received") patch.payment_received_at = new Date().toISOString();
+      await supabase.from("placement_fee_tranches").update(patch).eq("id", row.id);
+    }
     setSaving(false);
     router.refresh();
   }
 
+  async function download(kind: "proforma" | "final") {
+    const res = await fetch(`/api/admin/tranches/${row.id}/invoice-url?kind=${kind}`);
+    const json = await res.json();
+    if (json.ok && json.url) window.open(json.url, "_blank");
+  }
+
   const gross = withGst(row.amount_lakhs);
+  const docKind = GENERATES_DOC[row.status];
+  const buttonLabel = docKind === "proforma" ? "Generate Proforma Invoice" : docKind === "final" ? "Generate Tax Invoice" : ADVANCE_LABEL[row.status];
 
   return (
     <tr className="border-b border-slate-100 dark:border-slate-800">
@@ -191,15 +229,32 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
         </Badge>
       </td>
       <td className="py-2 pr-3">
-        {NEXT_STATUS[row.status] && (
-          <button
-            onClick={advance}
-            disabled={saving}
-            className="text-[12px] text-blue-600 hover:underline disabled:opacity-40"
-          >
-            {saving ? "..." : ADVANCE_LABEL[row.status]}
-          </button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {row.proforma_invoice_number && (
+            <button onClick={() => download("proforma")} className="text-[11.5px] text-slate-500 hover:underline">
+              {row.proforma_invoice_number}
+            </button>
+          )}
+          {row.final_invoice_number && (
+            <button onClick={() => download("final")} className="text-[11.5px] text-slate-500 hover:underline">
+              {row.final_invoice_number}
+            </button>
+          )}
+          {NEXT_STATUS[row.status] && !row.has_client_link && docKind ? (
+            <span className="text-[11.5px] text-amber-600">Link mandate to a client first</span>
+          ) : (
+            NEXT_STATUS[row.status] && (
+              <button
+                onClick={advance}
+                disabled={saving}
+                className="text-[12px] text-blue-600 hover:underline disabled:opacity-40"
+              >
+                {saving ? "..." : buttonLabel}
+              </button>
+            )
+          )}
+        </div>
+        {error && <p className="text-[11px] text-red-600 mt-1">{error}</p>}
       </td>
     </tr>
   );

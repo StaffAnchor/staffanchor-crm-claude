@@ -18,7 +18,7 @@ export default async function BillingPage() {
   const { data, error } = await supabase
     .from("placement_fee_tranches")
     .select(
-      "id, label, split_pct, amount_lakhs, due_date, status, proforma_sent_at, payment_received_at, final_invoiced_at, mandates(role_title, client_name), candidate_mandate_links(candidates(full_name))"
+      "id, label, split_pct, amount_lakhs, due_date, status, proforma_sent_at, payment_received_at, final_invoiced_at, proforma_invoice_number, final_invoice_number, mandates(role_title, client_name, client_id), candidate_mandate_links(candidates(full_name))"
     )
     // Cancelled tranches are placements that fell through after the tranche
     // was generated (did_not_join / stage moved off placed, see
@@ -28,7 +28,7 @@ export default async function BillingPage() {
     .order("due_date", { ascending: true });
 
   const rows: TrancheRow[] = (error ? [] : data ?? []).map((r) => {
-    const mandate = r.mandates as unknown as { role_title: string; client_name: string } | null;
+    const mandate = r.mandates as unknown as { role_title: string; client_name: string; client_id: string | null } | null;
     const link = r.candidate_mandate_links as unknown as { candidates: { full_name: string } | null } | null;
     return {
       id: r.id,
@@ -40,8 +40,11 @@ export default async function BillingPage() {
       proforma_sent_at: r.proforma_sent_at,
       payment_received_at: r.payment_received_at,
       final_invoiced_at: r.final_invoiced_at,
+      proforma_invoice_number: r.proforma_invoice_number,
+      final_invoice_number: r.final_invoice_number,
       role_title: mandate?.role_title ?? "—",
       client_name: mandate?.client_name ?? "—",
+      has_client_link: Boolean(mandate?.client_id),
       candidate_name: link?.candidates?.full_name ?? "—",
     };
   });
