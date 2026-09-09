@@ -18,8 +18,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export type GenerationResult = { text: string; provider: string; model: string };
 
-const GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+// gemini-2.0-flash was shut down (404) -- replaced with gemini-3.6-flash,
+// Google's suggested migration target. gemini-2.5-flash-lite/-flash remain
+// stable as of Sept 2026, kept as the first two (cheaper/faster) attempts.
+const GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.6-flash"];
+// llama-3.3-70b-versatile moved to Groq's Enterprise tier (ContactSales,
+// not available on a normal developer API key) -- switched to
+// openai/gpt-oss-120b, a Production model on Groq's standard developer plan.
+const GROQ_MODEL = "openai/gpt-oss-120b";
 const MISTRAL_MODEL = "mistral-small-latest";
 
 async function tryGemini(prompt: string): Promise<GenerationResult | null> {
