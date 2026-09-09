@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { renderInvoicePdf, invoicePrefix } from "@/lib/invoice-pdf";
+import { resolveTrancheInvoiceData, type InvoiceOverrides } from "@/lib/invoice-generation";
 
 // Generates the system's own Proforma or Tax (final) Invoice PDF for a
 // placement_fee_tranche and advances its lifecycle in one step -- "Mark
@@ -11,6 +12,12 @@ import { renderInvoicePdf, invoicePrefix } from "@/lib/invoice-pdf";
 // numbers with the current FY's prefix and incrementing the max -- fine at
 // this firm's volume (a handful of tranches a month), no separate counter
 // table needed.
+//
+// `overrides` (candidate name, designation, location, DOJ, billing amount,
+// registrationId) come from the preview/confirm modal -- see
+// preview-invoice/route.ts, which renders the exact same document with the
+// same resolver but mints nothing, so what the admin approved is what gets
+// generated here.
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -48,67 +55,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const body = await req.json().catch(() => ({}));
   const kind: "proforma" | "final" = body.kind === "final" ? "final" : "proforma";
+  const overrides: InvoiceOverrides = body.overrides ?? {};
 
-  const { data: tranche, error: trancheError } = await supabase
-    .from("placement_fee_tranches")
-    .select(
-      "id, label, amount_lakhs, mandate_id, link_id, mandates(role_title, client_name, city, client_id), candidate_mandate_links(candidates(full_name), date_of_joining)"
-    )
-    .eq("id", id)
-    .single();
-
-  if (trancheError || !tranche) {
-    return NextResponse.json({ ok: false, error: trancheError?.message ?? "Tranche not found" }, { status: 404 });
+  const resolved = await resolveTrancheInvoiceData(supabase, id, overrides);
+  if (!resolved.ok) {
+    return NextResponse.json({ ok: false, error: resolved.error }, { status: resolved.status });
   }
-
-  const mandate = tranche.mandates as unknown as { role_title: string; client_name: string; city: string | null; client_id: string | null } | null;
-  const link = tranche.candidate_mandate_links as unknown as { candidates: { full_name: string } | null; date_of_joining: string | null } | null;
-
-  if (!mandate?.client_id) {
-    return NextResponse.json({ ok: false, error: "This tranche's mandate has no linked client record -- link it before generating an invoice." }, { status: 400 });
-  }
-
-  const { data: client, error: clientError } = await supabase
-    .from("clients")
-    .select("id, name")
-    .eq("id", mandate.client_id)
-    .single();
-
-  if (clientError || !client) {
-    return NextResponse.json({ ok: false, error: clientError?.message ?? "Client not found" }, { status: 404 });
-  }
-
-  if (tranche.amount_lakhs == null) {
-    return NextResponse.json({ ok: false, error: "Tranche has no billing amount set" }, { status: 400 });
-  }
-
-  // A client can have more than one GST registration (e.g. People
-  // Interactive bills separately from its Ahmedabad and Delhi offices) --
-  // prefer whichever registration's label/address mentions the mandate's
-  // city, then whichever is marked default, then just the first on file.
-  // No registration at all blocks generation outright: this is a tax
-  // document, so silently guessing CGST/SGST vs IGST would be worse than
-  // making the admin add GST details first.
-  const { data: registrations } = await supabase
-    .from("client_gst_registrations")
-    .select("label, gstin, state_code, billing_address, is_default")
-    .eq("client_id", mandate.client_id);
-
-  if (!registrations || registrations.length === 0) {
-    return NextResponse.json(
-      { ok: false, error: `No GST registration on file for ${client.name}. Add one from the client's page before generating an invoice.` },
-      { status: 400 }
-    );
-  }
-
-  const cityLower = mandate.city?.trim().toLowerCase();
-  const registration =
-    (cityLower &&
-      registrations.find(
-        (r) => r.label.toLowerCase().includes(cityLower) || (r.billing_address ?? "").toLowerCase().includes(cityLower)
-      )) ||
-    registrations.find((r) => r.is_default) ||
-    registrations[0];
+  const { client, registration, item } = resolved;
 
   const invoiceNumber = await nextInvoiceNumber(supabase, kind);
   const invoiceDate = new Date();
@@ -123,13 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       billingAddress: registration.billing_address,
       stateCode: registration.state_code,
     },
-    item: {
-      candidateName: link?.candidates?.full_name ?? "—",
-      designation: mandate.role_title,
-      location: mandate.city,
-      dateOfJoining: link?.date_of_joining ?? null,
-      billingAmount: Number(tranche.amount_lakhs),
-    },
+    item,
   });
 
   const safeNumber = invoiceNumber.replace(/\//g, "-");
@@ -145,6 +92,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     kind === "proforma"
       ? { status: "proforma_sent", proforma_sent_at: new Date().toISOString(), proforma_invoice_number: invoiceNumber, proforma_file_path: storagePath }
       : { status: "final_invoiced", final_invoiced_at: new Date().toISOString(), final_invoice_number: invoiceNumber, final_invoice_file_path: storagePath };
+
+  // Billing-amount corrections made in the preview modal should stick on
+  // the tranche itself too, not just this one document -- otherwise the
+  // Billing table keeps showing the old (wrong) figure after the invoice
+  // that corrected it.
+  if (overrides.billingAmount != null) {
+    patch.amount_lakhs = String(overrides.billingAmount);
+  }
 
   const { error: updateError } = await supabase.from("placement_fee_tranches").update(patch).eq("id", id);
   if (updateError) {

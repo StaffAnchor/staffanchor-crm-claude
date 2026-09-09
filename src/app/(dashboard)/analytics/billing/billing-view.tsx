@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import InvoicePreviewModal from "./invoice-preview-modal";
 
 export type TrancheRow = {
   id: string;
@@ -172,30 +173,25 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   const supabase = createClient();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function advance() {
     const next = NEXT_STATUS[row.status];
     if (!next) return;
-    setError(null);
-    setSaving(true);
     const docKind = GENERATES_DOC[row.status];
     if (docKind) {
-      const res = await fetch(`/api/admin/tranches/${row.id}/generate-invoice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: docKind }),
-      });
-      const json = await res.json();
-      if (!json.ok) {
-        setError(json.error ?? "Failed to generate invoice");
-        setSaving(false);
-        return;
-      }
-    } else {
-      const patch: Record<string, string> = { status: next };
-      if (next === "payment_received") patch.payment_received_at = new Date().toISOString();
-      await supabase.from("placement_fee_tranches").update(patch).eq("id", row.id);
+      // Document-producing steps go through the preview modal instead of
+      // firing straight off -- lets the admin fill in anything missing
+      // (DOJ, location, a corrected amount) or pick a different GST office
+      // before a numbered invoice actually gets minted.
+      setPreviewOpen(true);
+      return;
     }
+    setError(null);
+    setSaving(true);
+    const patch: Record<string, string> = { status: next };
+    if (next === "payment_received") patch.payment_received_at = new Date().toISOString();
+    await supabase.from("placement_fee_tranches").update(patch).eq("id", row.id);
     setSaving(false);
     router.refresh();
   }
@@ -208,9 +204,10 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
 
   const gross = withGst(row.amount_lakhs);
   const docKind = GENERATES_DOC[row.status];
-  const buttonLabel = docKind === "proforma" ? "Generate Proforma Invoice" : docKind === "final" ? "Generate Tax Invoice" : ADVANCE_LABEL[row.status];
+  const buttonLabel = docKind === "proforma" ? "Preview & generate Proforma" : docKind === "final" ? "Preview & generate Tax Invoice" : ADVANCE_LABEL[row.status];
 
   return (
+    <>
     <tr className="border-b border-slate-100 dark:border-slate-800">
       <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-200">{row.candidate_name}</td>
       <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">
@@ -257,5 +254,17 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
         {error && <p className="text-[11px] text-red-600 mt-1">{error}</p>}
       </td>
     </tr>
+    {previewOpen && docKind && (
+      <InvoicePreviewModal
+        trancheId={row.id}
+        kind={docKind}
+        onClose={() => setPreviewOpen(false)}
+        onGenerated={() => {
+          setPreviewOpen(false);
+          router.refresh();
+        }}
+      />
+    )}
+    </>
   );
 }
