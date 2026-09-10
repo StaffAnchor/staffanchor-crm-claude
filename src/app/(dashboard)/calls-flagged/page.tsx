@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CallsFlaggedTable, { type FlaggedCallRow } from "./calls-flagged-table";
 
@@ -19,12 +20,23 @@ import CallsFlaggedTable, { type FlaggedCallRow } from "./calls-flagged-table";
 // "View full list" link) without seeing everyone's mixed together. Absent
 // (or supplied by a non-admin, which is ignored), this is always "my
 // flagged calls" -- the same scope the header bell shows.
+//
+// `?status=all` is the analysis view -- "what did I assign this person,
+// and what happened to each one" (an admin checking on a teammate's whole
+// history, not just what's still outstanding). The default ("open") stays
+// exactly the working-queue behavior above: only pending flags, disposed
+// candidates dropped. "all" instead shows every flag ever raised for the
+// target recruiter regardless of open/done, and stops hiding
+// rejected/pulled_back candidates -- those rejections (often via
+// call_disposition itself) are precisely the outcomes this view exists to
+// show.
 export default async function CallsFlaggedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ recruiter?: string }>;
+  searchParams: Promise<{ recruiter?: string; status?: string }>;
 }) {
-  const { recruiter: recruiterParam } = await searchParams;
+  const { recruiter: recruiterParam, status: statusParam } = await searchParams;
+  const showAll = statusParam === "all";
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,20 +56,25 @@ export default async function CallsFlaggedPage({
   const heading = isSelf ? "Calls flagged for me" : `Calls flagged for ${targetProfile?.full_name?.trim() || targetProfile?.email || "teammate"}`;
 
   const nowIso = new Date().toISOString();
-  const { data: flaggedCallRows } = await supabase
+  let query = supabase
     .from("recruiter_inbox")
     .select(
-      "id, candidate_id, mandate_id, call_round, detail, created_at, candidates(id, full_name, category, sub_domain, current_fixed_ctc, notice_period, resume_file_url), mandates(id, role_title, client_name)"
+      "id, candidate_id, mandate_id, call_round, detail, status, resolved_at, created_at, candidates(id, full_name, category, sub_domain, current_fixed_ctc, notice_period, resume_file_url), mandates(id, role_title, client_name)"
     )
     .eq("task_type", "CANDIDATE_CALL_REQUEST")
-    .eq("recruiter_id", targetRecruiterId)
-    .or(`status.eq.open,and(status.eq.snoozed,snoozed_until.lte.${nowIso})`);
+    .eq("recruiter_id", targetRecruiterId);
+  if (!showAll) {
+    query = query.or(`status.eq.open,and(status.eq.snoozed,snoozed_until.lte.${nowIso})`);
+  }
+  const { data: flaggedCallRows } = await query;
 
   // Same "pending only" rule as everywhere else this data shows up (see
   // get_my_inbox() / team/page.tsx) -- a call flagged before the candidate
   // was rejected or pulled back off this mandate is stale the moment that
   // happens, and this also doubles as where the disposition + link id each
-  // row's CallDispositionControl needs come from.
+  // row's CallDispositionControl needs come from. Skipped entirely in the
+  // "all" analysis view, since a rejected/pulled-back stage is often
+  // exactly the outcome being reviewed.
   const mandateIds = Array.from(new Set((flaggedCallRows ?? []).map((r) => r.mandate_id).filter(Boolean)));
   const candidateIds = Array.from(new Set((flaggedCallRows ?? []).map((r) => r.candidate_id).filter(Boolean)));
   const { data: linkRows } = mandateIds.length
@@ -98,12 +115,14 @@ export default async function CallsFlaggedPage({
         call_round: r.call_round as string | null,
         detail: r.detail as string | null,
         created_at: r.created_at,
+        flag_status: r.status as string,
+        resolved_at: r.resolved_at as string | null,
         stage: link?.stage ?? null,
         call_disposition: link?.call_disposition ?? null,
       };
     })
-    .filter((r) => r.stage !== "rejected" && r.stage !== "pulled_back")
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    .filter((r) => showAll || (r.stage !== "rejected" && r.stage !== "pulled_back"))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // Same batch-signed-URL pattern as the mandate Table/Board (see
   // mandates/[id]/page.tsx) -- one Storage call for every resume on this
@@ -126,13 +145,56 @@ export default async function CallsFlaggedPage({
     if (signedUrl) resumeSignedUrlByCandidate[r.candidate_id] = signedUrl;
   }
 
+  const { count: allTimeCount } = await supabase
+    .from("recruiter_inbox")
+    .select("id", { count: "exact", head: true })
+    .eq("task_type", "CANDIDATE_CALL_REQUEST")
+    .eq("recruiter_id", targetRecruiterId);
+
+  const tabHref = (status: "open" | "all") => {
+    const params = new URLSearchParams();
+    if (recruiterParam) params.set("recruiter", recruiterParam);
+    if (status === "all") params.set("status", "all");
+    const qs = params.toString();
+    return qs ? `/calls-flagged?${qs}` : "/calls-flagged";
+  };
+
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-8">
       <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">{heading}</h1>
       <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
-        Open call flags across every mandate -- record the outcome right here, same as the mandate pipeline.
+        {showAll
+          ? "Every call ever flagged here -- open and closed, with the outcome recorded on each -- for reviewing how they were handled."
+          : "Open call flags across every mandate -- record the outcome right here, same as the mandate pipeline."}
       </p>
-      <CallsFlaggedTable rows={rows} recruiterId={isSelf ? undefined : targetRecruiterId} resumeSignedUrlByCandidate={resumeSignedUrlByCandidate} />
+      <div className="flex items-center gap-1 mb-4">
+        <Link
+          href={tabHref("open")}
+          className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
+            !showAll
+              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+              : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+          }`}
+        >
+          Open
+        </Link>
+        <Link
+          href={tabHref("all")}
+          className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
+            showAll
+              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+              : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+          }`}
+        >
+          All time ({allTimeCount ?? 0})
+        </Link>
+      </div>
+      <CallsFlaggedTable
+        rows={rows}
+        recruiterId={isSelf ? undefined : targetRecruiterId}
+        resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
+        showAll={showAll}
+      />
     </div>
   );
 }

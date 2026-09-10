@@ -26,12 +26,20 @@ export type FlaggedCallRow = {
   created_at: string;
   stage: string | null;
   call_disposition: string | null;
+  flag_status?: string;
+  resolved_at?: string | null;
 };
 
 function roundLabel(round: string | null) {
   if (round === "2nd") return "2nd Round";
   if (round === "final") return "Final Round";
   return "1st Round";
+}
+
+function flagStatusBadge(status?: string) {
+  if (status === "done") return { label: "Done", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
+  if (status === "snoozed") return { label: "Snoozed", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
+  return { label: "Open", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" };
 }
 
 function timeAgo(iso: string) {
@@ -57,10 +65,12 @@ export default function CallsFlaggedTable({
   rows: initialRows,
   recruiterId,
   resumeSignedUrlByCandidate = {},
+  showAll = false,
 }: {
   rows: FlaggedCallRow[];
   recruiterId?: string;
   resumeSignedUrlByCandidate?: Record<string, string>;
+  showAll?: boolean;
 }) {
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
@@ -75,8 +85,13 @@ export default function CallsFlaggedTable({
   };
 
   async function markDone(id: string) {
-    setRows((cur) => cur.filter((r) => r.id !== id));
-    await supabase.from("recruiter_inbox").update({ status: "done", resolved_at: new Date().toISOString() }).eq("id", id);
+    const resolvedAt = new Date().toISOString();
+    if (showAll) {
+      setRows((cur) => cur.map((r) => (r.id === id ? { ...r, flag_status: "done", resolved_at: resolvedAt } : r)));
+    } else {
+      setRows((cur) => cur.filter((r) => r.id !== id));
+    }
+    await supabase.from("recruiter_inbox").update({ status: "done", resolved_at: resolvedAt }).eq("id", id);
   }
 
   if (rows.length === 0) {
@@ -99,6 +114,7 @@ export default function CallsFlaggedTable({
             <th className="text-left px-4 py-2.5">Round</th>
             <th className="text-left px-4 py-2.5">Flag note</th>
             <th className="text-left px-4 py-2.5">Call outcome</th>
+            <th className="text-left px-4 py-2.5">Flag status</th>
             <th className="text-left px-4 py-2.5 w-10"></th>
           </tr>
         </thead>
@@ -173,9 +189,22 @@ export default function CallsFlaggedTable({
                       // recruiter_inbox status itself when it's not
                       // not_picked_up (see its recruiterInboxId handling)
                       // -- this just keeps local state in sync without a
-                      // second write.
-                      if (d !== "not_picked_up") setRows((cur) => cur.filter((row) => row.id !== r.id));
-                      else setRows((cur) => cur.map((row) => (row.id === r.id ? { ...row, call_disposition: d } : row)));
+                      // second write. In the "all time" analysis view we
+                      // never drop a row on disposition -- the whole point
+                      // is to keep seeing it with its outcome attached.
+                      if (showAll) {
+                        setRows((cur) =>
+                          cur.map((row) =>
+                            row.id === r.id
+                              ? { ...row, call_disposition: d, flag_status: d !== "not_picked_up" ? "done" : row.flag_status }
+                              : row
+                          )
+                        );
+                      } else if (d !== "not_picked_up") {
+                        setRows((cur) => cur.filter((row) => row.id !== r.id));
+                      } else {
+                        setRows((cur) => cur.map((row) => (row.id === r.id ? { ...row, call_disposition: d } : row)));
+                      }
                     }}
                   />
                 ) : (
@@ -183,13 +212,26 @@ export default function CallsFlaggedTable({
                 )}
               </td>
               <td className="px-4 py-3">
-                <button
-                  onClick={() => markDone(r.id)}
-                  title="Mark done"
-                  className="flex items-center justify-center w-6 h-6 rounded-full text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
+                {(() => {
+                  const badge = flagStatusBadge(r.flag_status);
+                  return (
+                    <div>
+                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}>{badge.label}</span>
+                      {r.resolved_at && <div className="text-[10px] text-slate-400 mt-1">{timeAgo(r.resolved_at)}</div>}
+                    </div>
+                  );
+                })()}
+              </td>
+              <td className="px-4 py-3">
+                {r.flag_status !== "done" && (
+                  <button
+                    onClick={() => markDone(r.id)}
+                    title="Mark done"
+                    className="flex items-center justify-center w-6 h-6 rounded-full text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </td>
             </tr>
           ))}
