@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { PhoneCall, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STAGE_COLOR, stageLabel } from "@/lib/mandate-stage";
@@ -209,13 +208,17 @@ export default function CallsFlaggedBell() {
               </button>
             ))
           )}
-          <Link
-            href="/calls-flagged"
-            onClick={() => setOpen(false)}
-            className="block text-center px-3 py-2 text-[11.5px] font-medium text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800"
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setOpen(false);
+              router.push("/calls-flagged");
+            }}
+            className="block w-full text-center px-3 py-2 text-[11.5px] font-medium text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800"
           >
             View all as a table
-          </Link>
+          </button>
         </div>
       )}
     </div>
