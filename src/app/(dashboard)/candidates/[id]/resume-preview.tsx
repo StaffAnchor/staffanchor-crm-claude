@@ -8,17 +8,28 @@ export default function ResumePreview({
   signedUrl,
   fileName,
   label,
+  onOpen,
 }: {
   signedUrl: string;
   fileName: string;
   label?: string;
+  // Optional hook for callers that need to know a preview was opened --
+  // e.g. the mandate pipeline table/board mark the candidate as "read" for
+  // this mandate the moment their resume is previewed inline, without
+  // requiring a full profile navigation. This component itself stays
+  // context-agnostic (also used on the shortlist token page and candidate
+  // detail page, which have no mandate to mark).
+  onOpen?: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          onOpen?.();
+        }}
         className="flex items-center gap-1.5 text-[12px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         <FileText className="w-3 h-3" /> {label ?? "Preview resume"}

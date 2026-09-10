@@ -124,6 +124,20 @@ export default function MandateCandidatesBoard({
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
   const [reassessingIds, setReassessingIds] = useState<Set<string>>(new Set());
 
+  // Same team-wide "opened" marker as the Table view -- see the identical
+  // function's comment in mandate-candidates-table.tsx.
+  async function markViewed(linkId: string) {
+    setRows((prev) => prev.map((r) => (r.id === linkId && !r.viewed_at ? { ...r, viewed_at: new Date().toISOString() } : r)));
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await supabase
+      .from("candidate_mandate_links")
+      .update({ viewed_at: new Date().toISOString(), viewed_by: user?.id ?? null })
+      .eq("id", linkId)
+      .is("viewed_at", null);
+  }
+
   async function reassessCandidate(candidateId: string) {
     setReassessingIds((prev) => new Set(prev).add(candidateId));
     try {
@@ -425,11 +439,20 @@ export default function MandateCandidatesBoard({
                             <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[row.candidate.id]}>
                               <Link
                                 href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
-                                className="text-[12.5px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate block"
+                                onClick={() => markViewed(row.id)}
+                                className={`text-[12.5px] hover:text-blue-600 truncate block ${row.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
                               >
                                 {row.candidate.full_name}
                               </Link>
                             </ApplicationAnswersQuickView>
+                            {!row.viewed_at && (
+                              <span
+                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                                title="Nobody on the team has opened this candidate for this mandate yet"
+                              >
+                                New
+                              </span>
+                            )}
                             {row.is_priority && (
                               <span
                                 className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
@@ -554,6 +577,7 @@ export default function MandateCandidatesBoard({
                             signedUrl={resumeSignedUrlByCandidate[row.candidate.id]}
                             fileName={(row.candidate.resume_file_url ?? `${row.candidate.full_name}-resume`).replace(/^resumes\//, "")}
                             label="Preview resume"
+                            onOpen={() => markViewed(row.id)}
                           />
                         </div>
                       )}

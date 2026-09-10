@@ -79,6 +79,12 @@ export type MandateCandidateRow = {
     red_flags: string[];
     missing: string[];
   } | null;
+  // Null = nobody on the team has opened this candidate's profile or resume
+  // for THIS mandate yet -- shown as an unread/"New" marker. Set once, by
+  // whoever opens it first, and never cleared -- a shared team inbox (two
+  // recruiters working the same mandate both see the same read state), not
+  // a per-user read receipt.
+  viewed_at: string | null;
   candidate: {
     id: string;
     full_name: string;
@@ -197,6 +203,26 @@ export default function MandateCandidatesTable({
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
   const [reassessingIds, setReassessingIds] = useState<Set<string>>(new Set());
+
+  // Marks a candidate's application to this mandate as "opened" -- fired the
+  // moment a recruiter previews their resume inline, without waiting for a
+  // full profile navigation (opening the profile page marks it too, see
+  // candidates/[id]/page.tsx). Team-wide, not per-user: once anyone opens
+  // it, it's read for everyone working this mandate. .is("viewed_at", null)
+  // makes this a no-op (and avoids an extra write) for rows already read,
+  // and local state updates immediately so the "New" badge disappears
+  // without waiting on a full row refetch.
+  async function markViewed(linkId: string) {
+    setRows((prev) => prev.map((r) => (r.id === linkId && !r.viewed_at ? { ...r, viewed_at: new Date().toISOString() } : r)));
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await supabase
+      .from("candidate_mandate_links")
+      .update({ viewed_at: new Date().toISOString(), viewed_by: user?.id ?? null })
+      .eq("id", linkId)
+      .is("viewed_at", null);
+  }
 
   // Scoped to a single candidate via the mandate-match-pipeline route's
   // optional candidateId param -- same scoring call "Score pipeline" makes
@@ -489,10 +515,22 @@ export default function MandateCandidatesTable({
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
-                    <Link href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
+                    <Link
+                      href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`}
+                      onClick={() => markViewed(l.id)}
+                      className={`hover:text-blue-600 ${l.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
+                    >
                       {l.candidate.full_name}
                     </Link>
                   </ApplicationAnswersQuickView>
+                  {!l.viewed_at && (
+                    <span
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                      title="Nobody on the team has opened this candidate for this mandate yet"
+                    >
+                      New
+                    </span>
+                  )}
                   {l.is_priority && (
                     <span
                       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
@@ -518,6 +556,7 @@ export default function MandateCandidatesTable({
                     signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
                     fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
                     label="Preview"
+                    onOpen={() => markViewed(l.id)}
                   />
                 ) : (
                   <span className="text-[11px] text-slate-300">—</span>
