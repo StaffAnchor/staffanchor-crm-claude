@@ -12,6 +12,7 @@ import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
+import FlagForCallButton from "./flag-for-call-button";
 import { Zap, Sparkles, Loader2 } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
@@ -551,16 +552,25 @@ export default function MandateCandidatesTable({
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
               </td>
               <td className="px-4 py-3">
-                {resumeSignedUrlByCandidate[l.candidate.id] ? (
-                  <ResumePreview
-                    signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
-                    fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
-                    label="Preview"
-                    onOpen={() => markViewed(l.id)}
+                <div className="flex flex-col items-start gap-1">
+                  {resumeSignedUrlByCandidate[l.candidate.id] ? (
+                    <ResumePreview
+                      signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
+                      fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
+                      label="Preview"
+                      onOpen={() => markViewed(l.id)}
+                    />
+                  ) : (
+                    <span className="text-[11px] text-slate-300">—</span>
+                  )}
+                  <FlagForCallButton
+                    candidateId={l.candidate.id}
+                    candidateName={l.candidate.full_name}
+                    mandateId={mandateContext.mandateId}
+                    mandateRoleTitle={mandateContext.role_title ?? null}
+                    teamMembers={teamMembers}
                   />
-                ) : (
-                  <span className="text-[11px] text-slate-300">—</span>
-                )}
+                </div>
               </td>
               <td className="px-4 py-3">
                 {isAdmin ? (

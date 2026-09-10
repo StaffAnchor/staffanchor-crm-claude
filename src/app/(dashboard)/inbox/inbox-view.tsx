@@ -25,6 +25,7 @@ import {
   Briefcase,
   UploadCloud,
   UserPlus,
+  PhoneCall,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -141,6 +142,17 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
     label: "New matches found",
     tint: "bg-violet-50 text-violet-700 ring-violet-200",
   },
+  // A teammate (often an admin who opened the profile but wasn't sure about
+  // fit) explicitly asked this recruiter to call a specific candidate --
+  // see mandates/[id]/flag-for-call-button.tsx. Deliberately its own type
+  // rather than reusing STALE_CANDIDATE/MISSING_ASSESSMENT: this is a direct
+  // ask from a person, not a system-detected gap, so it needs its own
+  // identity in the list.
+  CANDIDATE_CALL_REQUEST: {
+    icon: PhoneCall,
+    label: "Call requested",
+    tint: "bg-blue-50 text-blue-700 ring-blue-200",
+  },
 };
 
 function metaFor(taskType: string) {
@@ -180,6 +192,7 @@ const TASK_TYPE_GROUP: Record<string, keyof typeof GROUP_META> = {
   POST_PLACEMENT_CHECKIN: "offers",
   INCOMPLETE_PROFILE: "candidates",
   RESURFACED_MATCHES: "sourcing",
+  CANDIDATE_CALL_REQUEST: "candidates",
 };
 
 const GROUP_ORDER: (keyof typeof GROUP_META)[] = ["interviews", "sourcing", "clients", "candidates", "offers", "other"];
@@ -236,6 +249,7 @@ const TASK_TYPE_BOX: Record<string, BoxKey> = {
   NEW_REFERRAL: "pipeline",
   INCOMPLETE_PROFILE: "profiles",
   RESURFACED_MATCHES: "mandate",
+  CANDIDATE_CALL_REQUEST: "mandate",
 };
 
 function boxFor(taskType: string): BoxKey {

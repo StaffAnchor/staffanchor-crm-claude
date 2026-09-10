@@ -11,6 +11,7 @@ import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
+import FlagForCallButton from "./flag-for-call-button";
 import { Zap, Sparkles } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
@@ -581,6 +582,16 @@ export default function MandateCandidatesBoard({
                           />
                         </div>
                       )}
+
+                      <div className="mt-1" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                        <FlagForCallButton
+                          candidateId={row.candidate.id}
+                          candidateName={row.candidate.full_name}
+                          mandateId={mandateContext.mandateId}
+                          mandateRoleTitle={mandateContext.role_title ?? null}
+                          teamMembers={teamMembers}
+                        />
+                      </div>
 
                       <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
                         <span title="Time in current stage">In stage: {timeAgo(row.stage_updated_at)}</span>
