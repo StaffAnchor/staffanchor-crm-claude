@@ -231,12 +231,22 @@ export default function CallsFlaggedTable({
                       {showAll && r.candidate_id && (
                         <div className="mt-1">
                           <ReassignCallControl
-                            candidateId={r.candidate_id}
+                            flagId={r.id}
                             candidateName={r.candidate_name ?? "Candidate"}
-                            mandateId={r.mandate_id ?? ""}
                             mandateRoleTitle={r.mandate_role_title}
                             teamMembers={teamMembers}
                             defaultRecruiterId={defaultRecruiterId}
+                            onReassigned={() => {
+                              // The control just flipped this same row's
+                              // status back to open server-side -- mirror
+                              // that here so the badge updates without a
+                              // full reload.
+                              setRows((cur) =>
+                                cur.map((row) =>
+                                  row.id === r.id ? { ...row, flag_status: "open", resolved_at: null } : row
+                                )
+                              );
+                            }}
                           />
                         </div>
                       )}

@@ -7,28 +7,26 @@ import { createClient } from "@/lib/supabase/client";
 // Lives only in the "all time" analysis view (calls-flagged-table.tsx) --
 // the direct answer to "someone hit the tick mark by mistake, or this
 // call genuinely needs to go to someone else now": pick a teammate (which
-// can be the same person the flag was already for) and a fresh, open
-// CANDIDATE_CALL_REQUEST is raised for them. Deliberately additive rather
-// than an "undo" on the closed row itself -- recruiter_inbox rows are a
-// point-in-time record of what was asked and when, so re-opening isn't a
-// mutation of history, it's a new ask, exactly like the mandate page's
-// FlagForCallButton this mirrors.
+// can be the same person the flag was already for) and this row itself
+// is reopened -- status back to open, resolved_at cleared, recruiter_id
+// switched to whoever was picked -- rather than inserting a second row
+// for the same candidate/mandate. That's the point: "reassigned" should
+// mean the flag is open again, full stop, not "there are now two rows,
+// one closed and one open" for the same ask.
 export default function ReassignCallControl({
-  candidateId,
+  flagId,
   candidateName,
-  mandateId,
   mandateRoleTitle,
   teamMembers,
   defaultRecruiterId,
   onReassigned,
 }: {
-  candidateId: string;
+  flagId: string;
   candidateName: string;
-  mandateId: string;
   mandateRoleTitle: string | null;
   teamMembers: { id: string; full_name: string | null; email: string }[];
   defaultRecruiterId?: string | null;
-  onReassigned?: () => void;
+  onReassigned?: (recruiterId: string) => void;
 }) {
   const supabase = createClient();
   const [open, setOpen] = useState(false);
@@ -47,23 +45,24 @@ export default function ReassignCallControl({
     const actor = teamMembers.find((m) => m.id === user?.id);
     const actorLabel = actor?.full_name?.trim() || actor?.email || "A teammate";
 
-    const { error: err } = await supabase.from("recruiter_inbox").insert({
-      task_type: "CANDIDATE_CALL_REQUEST",
-      candidate_id: candidateId,
-      mandate_id: mandateId,
-      recruiter_id: recruiterId,
-      priority: "high",
-      call_round: "1st",
-      title: `Call ${candidateName}${mandateRoleTitle ? ` — ${mandateRoleTitle}` : ""}`,
-      detail: `${actorLabel} reassigned this call -- please call and confirm.`,
-    });
+    const { error: err } = await supabase
+      .from("recruiter_inbox")
+      .update({
+        recruiter_id: recruiterId,
+        status: "open",
+        resolved_at: null,
+        snoozed_until: null,
+        title: `Call ${candidateName}${mandateRoleTitle ? ` — ${mandateRoleTitle}` : ""}`,
+        detail: `${actorLabel} reassigned this call -- please call and confirm.`,
+      })
+      .eq("id", flagId);
     setSending(false);
     if (err) {
       setError(err.message);
       return;
     }
     setSent(true);
-    onReassigned?.();
+    onReassigned?.(recruiterId);
     setTimeout(() => {
       setOpen(false);
       setSent(false);
