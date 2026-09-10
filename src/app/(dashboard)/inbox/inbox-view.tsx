@@ -221,7 +221,7 @@ function groupFor(taskType: string): keyof typeof GROUP_META {
 // future pipeline (the answer to "what do I do with no mandate"), or
 // completing candidate profiles already in the system. Clicking a box is
 // the only navigation required; nothing here needs to be remembered.
-type BoxKey = "mandate" | "pipeline" | "profiles";
+type BoxKey = "mandate" | "pipeline" | "profiles" | "feedback";
 
 const BOX_META: Record<BoxKey, { label: string; description: string; icon: typeof Flame; tint: string }> = {
   mandate: {
@@ -242,9 +242,24 @@ const BOX_META: Record<BoxKey, { label: string; description: string; icon: typeo
     icon: UserCog,
     tint: "border-amber-200 bg-amber-50/60 text-amber-900",
   },
+  // Deliberately NOT one of the three always-visible boxes above -- most
+  // recruiters never flag anyone for a 2nd round, so a permanent 4th box
+  // would just be empty real estate most days. Instead it's folded into
+  // effectiveBoxOrder below and only appears at all once there's actually
+  // something in it, so whoever it's for (e.g. "what happened to the
+  // candidates I sent up for a 2nd round?") finds it front and center
+  // instead of having to dig through Mandate Tasks for it.
+  feedback: {
+    label: "2nd Round Feedback",
+    description: "What happened to the candidates you flagged for a 2nd/final round call.",
+    icon: CheckCircle2,
+    tint: "border-emerald-200 bg-emerald-50/60 text-emerald-900",
+  },
 };
 
 const BOX_ORDER: BoxKey[] = ["mandate", "pipeline", "profiles"];
+// "feedback" is appended conditionally (see effectiveBoxOrder) rather than
+// listed here, since it should only ever appear once it has something in it.
 
 // Every task type maps to exactly one box; anything unmapped (future task
 // types) defaults to "mandate" -- the safest catch-all, since that's the
@@ -262,7 +277,7 @@ const TASK_TYPE_BOX: Record<string, BoxKey> = {
   INCOMPLETE_PROFILE: "profiles",
   RESURFACED_MATCHES: "mandate",
   CANDIDATE_CALL_REQUEST: "mandate",
-  SECOND_ROUND_OUTCOME: "mandate",
+  SECOND_ROUND_OUTCOME: "feedback",
 };
 
 function boxFor(taskType: string): BoxKey {
@@ -387,6 +402,13 @@ export default function InboxView({
     for (const i of recruiterScopedItems) m.set(boxFor(i.task_type), (m.get(boxFor(i.task_type)) ?? 0) + 1);
     return m;
   }, [recruiterScopedItems]);
+
+  // The three fixed boxes, plus "feedback" tacked on at the end but only
+  // when it's actually non-empty -- see the comment on BOX_META.feedback.
+  const effectiveBoxOrder = useMemo(
+    () => (((boxCounts.get("feedback") ?? 0) > 0) ? [...BOX_ORDER, "feedback" as BoxKey] : BOX_ORDER),
+    [boxCounts]
+  );
 
   const visibleItems = useMemo(
     () =>
@@ -582,9 +604,11 @@ export default function InboxView({
 
       {/* The three fixed boxes -- always visible, always in this order, so
           "what do I work on" never requires remembering where a filter was
-          left. Each is its own click target, not a chip buried in a row. */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        {BOX_ORDER.map((box) => {
+          left. Each is its own click target, not a chip buried in a row.
+          A 4th "2nd Round Feedback" box (effectiveBoxOrder) tacks on at the
+          end, but only while it actually has something in it. */}
+      <div className={`grid grid-cols-1 sm:grid-cols-3 ${effectiveBoxOrder.length === 4 ? "lg:grid-cols-4" : ""} gap-3 mb-4`}>
+        {effectiveBoxOrder.map((box) => {
           const meta = BOX_META[box];
           const Icon = meta.icon;
           const count = boxCounts.get(box) ?? 0;
