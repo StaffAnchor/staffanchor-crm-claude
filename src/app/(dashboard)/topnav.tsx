@@ -8,6 +8,7 @@ import { Plus, ChevronDown } from "lucide-react";
 import SignOutButton from "./sign-out-button";
 import ThemeToggle from "@/components/theme-toggle";
 import NotificationBell from "./notification-bell";
+import CallsFlaggedBell from "./calls-flagged-bell";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
@@ -136,6 +137,8 @@ export default function TopNav({
           </div>
 
           <ThemeToggle />
+
+          <CallsFlaggedBell />
 
           <NotificationBell />
 
