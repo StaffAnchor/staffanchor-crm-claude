@@ -3,6 +3,18 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CallsFlaggedTable, { type FlaggedCallRow } from "./calls-flagged-table";
 
+// Open vs All-time are the *same* route path with only the search params
+// differing (?status=all). Next.js's client Router Cache doesn't reliably
+// bust on a search-param-only change for a dynamic page with no
+// loading.tsx boundary -- clicking the "All time" tab was sometimes
+// re-using the already-rendered "Open" segment instead of re-fetching,
+// so the table silently stayed on the open-only rows. Forcing this page
+// fully dynamic/no-store (below) plus disabling prefetch on the tab links
+// guarantees every tab click actually hits the server for fresh data.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
+
 // The full-page counterpart to the header bell / Team Calls panel: those
 // are deliberately compact (a dropdown, an expandable card list), but a
 // recruiter or admin actually working through a stack of flagged calls
@@ -170,6 +182,7 @@ export default async function CallsFlaggedPage({
       <div className="flex items-center gap-1 mb-4">
         <Link
           href={tabHref("open")}
+          prefetch={false}
           className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
             !showAll
               ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
@@ -180,6 +193,7 @@ export default async function CallsFlaggedPage({
         </Link>
         <Link
           href={tabHref("all")}
+          prefetch={false}
           className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
             showAll
               ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
