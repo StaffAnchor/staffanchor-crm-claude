@@ -14,7 +14,14 @@ type FlaggedCall = {
   mandate_client_name: string | null;
   detail: string | null;
   created_at: string;
+  call_round: string | null;
 };
+
+function roundLabel(round: string | null) {
+  if (round === "2nd") return "2nd Round";
+  if (round === "final") return "Final Round";
+  return null;
+}
 
 function timeAgo(iso: string) {
   const ms = Date.now() - new Date(iso).getTime();
@@ -125,7 +132,14 @@ export default function CallsFlaggedBell() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{c.candidate_name ?? "Candidate"}</p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{c.candidate_name ?? "Candidate"}</p>
+                      {roundLabel(c.call_round) && (
+                        <span className="shrink-0 text-[9.5px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
+                          {roundLabel(c.call_round)}
+                        </span>
+                      )}
+                    </div>
                     {(c.mandate_role_title || c.mandate_client_name) && (
                       <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 truncate mt-0.5">
                         {c.mandate_role_title}

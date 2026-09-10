@@ -5,6 +5,7 @@ import RoleControl from "./role-control";
 import SpecialtiesControl from "./specialties-control";
 import PracticesControl from "./practices-control";
 import ResetPasswordButton from "./reset-password-button";
+import TeamCallsPanel, { type FlaggedCallRow } from "./team-calls-panel";
 
 export default async function TeamPage() {
   const supabase = await createClient();
@@ -41,6 +42,39 @@ export default async function TeamPage() {
     list.push(row.practice_id);
     practicesByUser.set(row.user_id, list);
   }
+
+  // Same open/snoozed-due filter as get_my_inbox() -- admins query
+  // recruiter_inbox directly here (is_staff() RLS covers full-table SELECT)
+  // rather than through the RPC, since this needs every recruiter's rows at
+  // once, not just the signed-in user's.
+  const nowIso = new Date().toISOString();
+  const { data: flaggedCallRows } = await supabase
+    .from("recruiter_inbox")
+    .select(
+      "id, recruiter_id, call_round, created_at, candidates(id, full_name), mandates(id, role_title, client_name)"
+    )
+    .eq("task_type", "CANDIDATE_CALL_REQUEST")
+    .not("recruiter_id", "is", null)
+    .or(`status.eq.open,and(status.eq.snoozed,snoozed_until.lte.${nowIso})`);
+
+  const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
+  const flaggedCalls: FlaggedCallRow[] = (flaggedCallRows ?? []).map((r) => {
+    const candidate = r.candidates as unknown as { id: string; full_name: string | null } | null;
+    const mandate = r.mandates as unknown as { id: string; role_title: string | null; client_name: string | null } | null;
+    const recruiter = profileById.get(r.recruiter_id as string);
+    return {
+      id: r.id,
+      recruiter_id: r.recruiter_id as string,
+      recruiter_name: recruiter?.full_name?.trim() || recruiter?.email || "Unknown",
+      candidate_id: candidate?.id ?? null,
+      candidate_name: candidate?.full_name ?? null,
+      mandate_id: mandate?.id ?? null,
+      mandate_role_title: mandate?.role_title ?? null,
+      mandate_client_name: mandate?.client_name ?? null,
+      call_round: r.call_round as string | null,
+      created_at: r.created_at,
+    };
+  });
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
@@ -92,6 +126,9 @@ export default async function TeamPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Add team member</h2>
           <CreateUserForm />
+        </div>
+        <div className="mt-6">
+          <TeamCallsPanel rows={flaggedCalls} />
         </div>
       </div>
     </div>

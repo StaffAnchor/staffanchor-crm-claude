@@ -4,6 +4,12 @@ import { useState } from "react";
 import { PhoneCall, Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+const ROUNDS: { value: "1st" | "2nd" | "final"; label: string }[] = [
+  { value: "1st", label: "1st round (screen)" },
+  { value: "2nd", label: "2nd round" },
+  { value: "final", label: "Final round" },
+];
+
 // Solves a gap the unread/read feature left open: "read" only tells you
 // someone looked, not what should happen next. An admin (or any teammate)
 // who opens a candidate but isn't sure about fit needs a way to say "I saw
@@ -17,6 +23,14 @@ import { createClient } from "@/lib/supabase/client";
 // already look every day. recruiter_inbox's RLS lets any staff member
 // INSERT directly (recruiter_inbox_insert: is_staff()), same pattern as
 // addToPipeline/toggleShortlist -- no server route needed.
+//
+// call_round exists because "flag for call" started as purely a first-screen
+// nudge, but the same mechanism is exactly what an admin/manager needs when
+// they want to personally take a 2nd or final round -- they just need that
+// distinguished from a routine first call so it doesn't get lost in the
+// noise. Stored on the same row (not a separate task_type) since everything
+// else about the flow -- My Desk card, the header bell, mark-done -- stays
+// identical regardless of round.
 export default function FlagForCallButton({
   candidateId,
   candidateName,
@@ -33,6 +47,7 @@ export default function FlagForCallButton({
   const supabase = createClient();
   const [open, setOpen] = useState(false);
   const [recruiterId, setRecruiterId] = useState("");
+  const [round, setRound] = useState<"1st" | "2nd" | "final">("1st");
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -47,6 +62,8 @@ export default function FlagForCallButton({
     } = await supabase.auth.getUser();
     const actor = teamMembers.find((m) => m.id === user?.id);
     const actorLabel = actor?.full_name?.trim() || actor?.email || "A teammate";
+    const roundLabel = round === "1st" ? null : round === "2nd" ? "2nd Round" : "Final Round";
+    const roundAsk = round === "1st" ? "call and confirm" : `set up the ${round === "2nd" ? "2nd" : "final"} round call`;
 
     const { error: err } = await supabase.from("recruiter_inbox").insert({
       task_type: "CANDIDATE_CALL_REQUEST",
@@ -54,8 +71,9 @@ export default function FlagForCallButton({
       mandate_id: mandateId,
       recruiter_id: recruiterId,
       priority: "high",
-      title: `Call ${candidateName}${mandateRoleTitle ? ` — ${mandateRoleTitle}` : ""}`,
-      detail: note.trim() || `${actorLabel} looked at this candidate and wants your read before going further -- please call and confirm.`,
+      call_round: round,
+      title: `Call ${candidateName}${mandateRoleTitle ? ` — ${mandateRoleTitle}` : ""}${roundLabel ? ` (${roundLabel})` : ""}`,
+      detail: note.trim() || `${actorLabel} wants you to ${roundAsk}.`,
     });
     setSending(false);
     if (err) {
@@ -67,6 +85,7 @@ export default function FlagForCallButton({
       setOpen(false);
       setSent(false);
       setRecruiterId("");
+      setRound("1st");
       setNote("");
     }, 1200);
   }
@@ -107,6 +126,17 @@ export default function FlagForCallButton({
                 {teamMembers.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.full_name?.trim() || m.email}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={round}
+                onChange={(e) => setRound(e.target.value as "1st" | "2nd" | "final")}
+                className="w-full text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1.5 bg-white dark:bg-slate-900 mb-2"
+              >
+                {ROUNDS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
                   </option>
                 ))}
               </select>
