@@ -47,7 +47,7 @@ export default async function CallsFlaggedPage({
   const { data: flaggedCallRows } = await supabase
     .from("recruiter_inbox")
     .select(
-      "id, candidate_id, mandate_id, call_round, detail, created_at, candidates(id, full_name, category, sub_domain, current_fixed_ctc, notice_period), mandates(id, role_title, client_name)"
+      "id, candidate_id, mandate_id, call_round, detail, created_at, candidates(id, full_name, category, sub_domain, current_fixed_ctc, notice_period, resume_file_url), mandates(id, role_title, client_name)"
     )
     .eq("task_type", "CANDIDATE_CALL_REQUEST")
     .eq("recruiter_id", targetRecruiterId)
@@ -79,6 +79,7 @@ export default async function CallsFlaggedPage({
         sub_domain: string | null;
         current_fixed_ctc: number | null;
         notice_period: string | null;
+        resume_file_url: string | null;
       } | null;
       const mandate = r.mandates as unknown as { id: string; role_title: string | null; client_name: string | null } | null;
       return {
@@ -90,6 +91,7 @@ export default async function CallsFlaggedPage({
         candidate_sub_domain: candidate?.sub_domain ?? null,
         candidate_current_fixed_ctc: candidate?.current_fixed_ctc ?? null,
         candidate_notice_period: candidate?.notice_period ?? null,
+        candidate_resume_file_url: candidate?.resume_file_url ?? null,
         mandate_id: mandate?.id ?? null,
         mandate_role_title: mandate?.role_title ?? null,
         mandate_client_name: mandate?.client_name ?? null,
@@ -103,13 +105,34 @@ export default async function CallsFlaggedPage({
     .filter((r) => r.stage !== "rejected" && r.stage !== "pulled_back")
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
+  // Same batch-signed-URL pattern as the mandate Table/Board (see
+  // mandates/[id]/page.tsx) -- one Storage call for every resume on this
+  // page rather than one per row, so "Preview" works here without a
+  // recruiter having to open each candidate's profile just to see the CV.
+  const resumePaths = Array.from(
+    new Set(rows.map((r) => r.candidate_resume_file_url).filter((p): p is string => Boolean(p)).map((p) => p.replace(/^resumes\//, "")))
+  );
+  const resumeUrlByPath: Record<string, string> = {};
+  if (resumePaths.length > 0) {
+    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60);
+    (signedBatch ?? []).forEach((s) => {
+      if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
+    });
+  }
+  const resumeSignedUrlByCandidate: Record<string, string> = {};
+  for (const r of rows) {
+    if (!r.candidate_id || !r.candidate_resume_file_url) continue;
+    const signedUrl = resumeUrlByPath[r.candidate_resume_file_url.replace(/^resumes\//, "")];
+    if (signedUrl) resumeSignedUrlByCandidate[r.candidate_id] = signedUrl;
+  }
+
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-8">
       <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">{heading}</h1>
       <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
         Open call flags across every mandate -- record the outcome right here, same as the mandate pipeline.
       </p>
-      <CallsFlaggedTable rows={rows} recruiterId={isSelf ? undefined : targetRecruiterId} />
+      <CallsFlaggedTable rows={rows} recruiterId={isSelf ? undefined : targetRecruiterId} resumeSignedUrlByCandidate={resumeSignedUrlByCandidate} />
     </div>
   );
 }

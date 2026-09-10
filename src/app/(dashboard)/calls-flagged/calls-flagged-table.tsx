@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STAGE_COLOR, stageLabel } from "@/lib/mandate-stage";
 import CallDispositionControl from "../mandates/[id]/call-disposition-control";
+import ResumePreview from "../candidates/[id]/resume-preview";
 
 export type FlaggedCallRow = {
   id: string;
@@ -16,6 +17,7 @@ export type FlaggedCallRow = {
   candidate_sub_domain: string | null;
   candidate_current_fixed_ctc: number | null;
   candidate_notice_period: string | null;
+  candidate_resume_file_url: string | null;
   mandate_id: string | null;
   mandate_role_title: string | null;
   mandate_client_name: string | null;
@@ -51,7 +53,15 @@ function timeAgo(iso: string) {
 // queue as admin) on the candidate link is what makes the profile page's
 // "back" return here instead of to the mandate -- see candidates/[id]
 // page.tsx's back handling.
-export default function CallsFlaggedTable({ rows: initialRows, recruiterId }: { rows: FlaggedCallRow[]; recruiterId?: string }) {
+export default function CallsFlaggedTable({
+  rows: initialRows,
+  recruiterId,
+  resumeSignedUrlByCandidate = {},
+}: {
+  rows: FlaggedCallRow[];
+  recruiterId?: string;
+  resumeSignedUrlByCandidate?: Record<string, string>;
+}) {
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
 
@@ -83,6 +93,7 @@ export default function CallsFlaggedTable({ rows: initialRows, recruiterId }: { 
         <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
           <tr>
             <th className="text-left px-4 py-2.5">Candidate</th>
+            <th className="text-left px-4 py-2.5">Resume</th>
             <th className="text-left px-4 py-2.5">Mandate</th>
             <th className="text-left px-4 py-2.5">CTC / Notice</th>
             <th className="text-left px-4 py-2.5">Round</th>
@@ -106,6 +117,17 @@ export default function CallsFlaggedTable({ rows: initialRows, recruiterId }: { 
                   )}
                   <span className="text-[11px] text-slate-400">{r.candidate_sub_domain}</span>
                 </div>
+              </td>
+              <td className="px-4 py-3">
+                {r.candidate_id && resumeSignedUrlByCandidate[r.candidate_id] ? (
+                  <ResumePreview
+                    signedUrl={resumeSignedUrlByCandidate[r.candidate_id]}
+                    fileName={(r.candidate_resume_file_url ?? `${r.candidate_name ?? "candidate"}-resume`).replace(/^resumes\//, "")}
+                    label="Preview"
+                  />
+                ) : (
+                  <span className="text-[11px] text-slate-300">—</span>
+                )}
               </td>
               <td className="px-4 py-3">
                 {r.mandate_id ? (
