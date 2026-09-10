@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { matchCandidatesForMandate, buildMatchAssessment } from "@/lib/candidate-match";
+import { matchCandidatesDeterministic, buildMatchAssessment } from "@/lib/candidate-match";
 
 export const runtime = "nodejs";
 
@@ -46,14 +46,24 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await matchCandidatesForMandate(mandateId, admin, {
+    // Deterministic, not the AI-scored matchCandidatesForMandate -- this
+    // trigger fires on EVERY new pipeline link (self-applies, vendor
+    // submissions, manual/bulk adds), same reasoning as why Matching
+    // Workspace/Score pipeline/Re-assess all default to deterministic now:
+    // zero AI-quota dependency, and it always produces real must_haves/
+    // good_to_haves clause evidence instead of occasionally landing on an
+    // AI response with a score but no breakdown (which is what was leaving
+    // some candidates with a bare "Not a Fit" and an empty reasoning
+    // popover -- this route was the one call site missed when deterministic
+    // became the default everywhere else).
+    const result = await matchCandidatesDeterministic(mandateId, admin, {
       candidateIdsOverride: [candidateId],
       includeAlreadyLinked: true,
       maxResults: 1,
-      // Without this, the model can silently decide this one candidate
-      // isn't "worth surfacing" and return an empty array -- leaving a
-      // real pipeline candidate (an actual applicant) with no score at
-      // all instead of an honest low one.
+      // Without this, a candidate scoring below the normal surfacing
+      // threshold would silently get no score at all -- leaving a real
+      // pipeline candidate (an actual applicant) with nothing instead of
+      // an honest low one.
       scoreAllProvided: true,
     });
     if (!result.ok || result.matches.length === 0) {
