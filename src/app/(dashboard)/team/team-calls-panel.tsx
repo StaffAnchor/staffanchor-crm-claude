@@ -89,20 +89,23 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
               {expanded === t.id && (
                 <div className="pb-2.5 space-y-1.5">
                   <div className="flex items-center gap-3 px-0.5">
-                    <Link
+                    {/* Plain <a>, not <Link> -- see the comment on the
+                        equivalent tabs in calls-flagged/page.tsx: these
+                        two hrefs are the same route differing only by
+                        search params, which the client Router Cache can
+                        serve stale for. */}
+                    <a
                       href={`/calls-flagged?recruiter=${t.id}`}
-                      prefetch={false}
                       className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       View full list as a table →
-                    </Link>
-                    <Link
+                    </a>
+                    <a
                       href={`/calls-flagged?recruiter=${t.id}&status=all`}
-                      prefetch={false}
                       className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:underline"
                     >
                       All-time history + outcomes
-                    </Link>
+                    </a>
                   </div>
                   {t.calls
                     .slice()

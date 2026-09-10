@@ -113,6 +113,7 @@ export default function CallsFlaggedBell() {
 
   async function markDone(e: React.MouseEvent, callId: string) {
     e.stopPropagation();
+    if (!window.confirm("Mark this call as done? This closes the flag.")) return;
     setCalls((cur) => cur.filter((c) => c.id !== callId));
     await supabase.from("recruiter_inbox").update({ status: "done", resolved_at: new Date().toISOString() }).eq("id", callId);
   }

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { STAGE_COLOR, stageLabel } from "@/lib/mandate-stage";
 import CallDispositionControl from "../mandates/[id]/call-disposition-control";
 import ResumePreview from "../candidates/[id]/resume-preview";
+import ReassignCallControl from "./reassign-call-control";
 
 export type FlaggedCallRow = {
   id: string;
@@ -66,11 +67,15 @@ export default function CallsFlaggedTable({
   recruiterId,
   resumeSignedUrlByCandidate = {},
   showAll = false,
+  teamMembers = [],
+  defaultRecruiterId,
 }: {
   rows: FlaggedCallRow[];
   recruiterId?: string;
   resumeSignedUrlByCandidate?: Record<string, string>;
   showAll?: boolean;
+  teamMembers?: { id: string; full_name: string | null; email: string }[];
+  defaultRecruiterId?: string;
 }) {
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
@@ -85,6 +90,11 @@ export default function CallsFlaggedTable({
   };
 
   async function markDone(id: string) {
+    // The tick mark is a single click with no undo on this row itself --
+    // easy to fat-finger next to the disposition dropdown in the same
+    // row. A confirm is cheap insurance; ReassignCallControl (all-time
+    // view only) is the actual recovery path if it does happen.
+    if (!window.confirm("Mark this call as done? This closes the flag.")) return;
     const resolvedAt = new Date().toISOString();
     if (showAll) {
       setRows((cur) => cur.map((r) => (r.id === id ? { ...r, flag_status: "done", resolved_at: resolvedAt } : r)));
@@ -218,6 +228,18 @@ export default function CallsFlaggedTable({
                     <div>
                       <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}>{badge.label}</span>
                       {r.resolved_at && <div className="text-[10px] text-slate-400 mt-1">{timeAgo(r.resolved_at)}</div>}
+                      {showAll && r.candidate_id && (
+                        <div className="mt-1">
+                          <ReassignCallControl
+                            candidateId={r.candidate_id}
+                            candidateName={r.candidate_name ?? "Candidate"}
+                            mandateId={r.mandate_id ?? ""}
+                            mandateRoleTitle={r.mandate_role_title}
+                            teamMembers={teamMembers}
+                            defaultRecruiterId={defaultRecruiterId}
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })()}

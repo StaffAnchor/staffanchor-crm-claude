@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CallsFlaggedTable, { type FlaggedCallRow } from "./calls-flagged-table";
 
@@ -157,6 +156,11 @@ export default async function CallsFlaggedPage({
     if (signedUrl) resumeSignedUrlByCandidate[r.candidate_id] = signedUrl;
   }
 
+  const { data: teamMembers } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .order("full_name");
+
   const { count: allTimeCount } = await supabase
     .from("recruiter_inbox")
     .select("id", { count: "exact", head: true })
@@ -180,9 +184,16 @@ export default async function CallsFlaggedPage({
           : "Open call flags across every mandate -- record the outcome right here, same as the mandate pipeline."}
       </p>
       <div className="flex items-center gap-1 mb-4">
-        <Link
+        {/* Plain <a> tags, deliberately not next/link's <Link>: Open and
+            All-time are the same route differing only by search params,
+            and a client-side soft navigation between them was observed
+            (live) to reuse the previously-rendered segment's rows instead
+            of refetching -- even with this page forced fully dynamic/
+            no-store and prefetch disabled. A full page load per tab click
+            is a non-issue for an occasional admin lookup like this, and
+            it guarantees the row set actually matches the tab shown. */}
+        <a
           href={tabHref("open")}
-          prefetch={false}
           className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
             !showAll
               ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
@@ -190,10 +201,9 @@ export default async function CallsFlaggedPage({
           }`}
         >
           Open
-        </Link>
-        <Link
+        </a>
+        <a
           href={tabHref("all")}
-          prefetch={false}
           className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
             showAll
               ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
@@ -201,13 +211,15 @@ export default async function CallsFlaggedPage({
           }`}
         >
           All time ({allTimeCount ?? 0})
-        </Link>
+        </a>
       </div>
       <CallsFlaggedTable
         rows={rows}
         recruiterId={isSelf ? undefined : targetRecruiterId}
         resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
         showAll={showAll}
+        teamMembers={teamMembers ?? []}
+        defaultRecruiterId={targetRecruiterId}
       />
     </div>
   );
