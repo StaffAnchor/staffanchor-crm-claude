@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneCall, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { STAGE_COLOR, stageLabel } from "@/lib/mandate-stage";
 
 type FlaggedCall = {
   id: string;
@@ -15,6 +16,13 @@ type FlaggedCall = {
   detail: string | null;
   created_at: string;
   call_round: string | null;
+  link_stage: string | null;
+  candidate_category: string | null;
+  candidate_sub_domain: string | null;
+  candidate_current_job_title: string | null;
+  candidate_current_employer: string | null;
+  candidate_current_fixed_ctc: number | null;
+  candidate_notice_period: string | null;
 };
 
 function roundLabel(round: string | null) {
@@ -49,7 +57,17 @@ function timeAgo(iso: string) {
 // Reuses get_my_inbox() (same RPC My Desk itself calls) rather than
 // querying recruiter_inbox directly, so this always matches what My Desk
 // shows -- no separate query to keep in sync, no risk of drifting from the
-// task list's own open/snoozed filtering logic.
+// task list's own open/snoozed filtering logic. That RPC also does the
+// "pending only" filtering server-side: a call flagged before the
+// candidate got rejected/pulled back off THIS mandate quietly drops out,
+// so nobody's ever asked to call someone already disposed of.
+//
+// Each entry is deliberately rendered like a mini mandate-pipeline row
+// (stage badge, category, CTC/notice, current role) -- same shared
+// STAGE_COLOR/stageLabel the mandate Table view uses -- rather than the
+// old bare name+note, so an admin/recruiter gets enough context to decide
+// whether to make the call right from the header, without opening the
+// mandate first.
 export default function CallsFlaggedBell() {
   const router = useRouter();
   const supabase = createClient();
@@ -83,7 +101,11 @@ export default function CallsFlaggedBell() {
 
   function handleClick(call: FlaggedCall) {
     setOpen(false);
-    if (call.mandate_id) router.push(`/mandates/${call.mandate_id}`);
+    if (call.candidate_id && call.mandate_id) {
+      router.push(`/candidates/${call.candidate_id}?mandateId=${call.mandate_id}`);
+    } else if (call.mandate_id) {
+      router.push(`/mandates/${call.mandate_id}`);
+    }
   }
 
   async function markDone(e: React.MouseEvent, callId: string) {
@@ -113,7 +135,7 @@ export default function CallsFlaggedBell() {
       {open && (
         <div
           role="menu"
-          className="ros-glass absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-ros-lg shadow-ros-xl border py-1 animate-fade-in z-40"
+          className="ros-glass absolute right-0 mt-2 w-96 max-h-[28rem] overflow-y-auto rounded-ros-lg shadow-ros-xl border py-1 animate-fade-in z-40"
         >
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
             <p className="text-[12px] font-semibold text-slate-900 dark:text-slate-100">Calls flagged for me</p>
@@ -132,21 +154,43 @@ export default function CallsFlaggedBell() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                       <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{c.candidate_name ?? "Candidate"}</p>
+                      {c.link_stage && (
+                        <span
+                          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9.5px] font-medium ${STAGE_COLOR[c.link_stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
+                        >
+                          {stageLabel(c.link_stage)}
+                        </span>
+                      )}
                       {roundLabel(c.call_round) && (
                         <span className="shrink-0 text-[9.5px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
                           {roundLabel(c.call_round)}
                         </span>
                       )}
                     </div>
+                    {c.candidate_sub_domain && <p className="text-[10.5px] text-slate-400 mt-0.5">{c.candidate_sub_domain}</p>}
                     {(c.mandate_role_title || c.mandate_client_name) && (
                       <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 truncate mt-0.5">
                         {c.mandate_role_title}
                         {c.mandate_client_name ? ` — ${c.mandate_client_name}` : ""}
                       </p>
                     )}
-                    {c.detail && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">{c.detail}</p>}
+                    {(c.candidate_current_job_title || c.candidate_current_employer) && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        {c.candidate_current_job_title}
+                        {c.candidate_current_job_title && c.candidate_current_employer ? " · " : ""}
+                        {c.candidate_current_employer}
+                      </p>
+                    )}
+                    {(c.candidate_current_fixed_ctc || c.candidate_notice_period) && (
+                      <p className="text-[10.5px] text-slate-400 mt-0.5">
+                        {c.candidate_current_fixed_ctc ? `₹${c.candidate_current_fixed_ctc}L` : null}
+                        {c.candidate_current_fixed_ctc && c.candidate_notice_period ? " · " : ""}
+                        {c.candidate_notice_period ? `Notice: ${c.candidate_notice_period}` : null}
+                      </p>
+                    )}
+                    {c.detail && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{c.detail}</p>}
                     <p className="text-[10px] text-slate-400 mt-1">{timeAgo(c.created_at)}</p>
                   </div>
                   <button

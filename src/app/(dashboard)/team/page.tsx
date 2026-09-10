@@ -51,30 +51,65 @@ export default async function TeamPage() {
   const { data: flaggedCallRows } = await supabase
     .from("recruiter_inbox")
     .select(
-      "id, recruiter_id, call_round, created_at, candidates(id, full_name), mandates(id, role_title, client_name)"
+      "id, recruiter_id, candidate_id, mandate_id, call_round, created_at, candidates(id, full_name, category, sub_domain, current_fixed_ctc, notice_period), mandates(id, role_title, client_name)"
     )
     .eq("task_type", "CANDIDATE_CALL_REQUEST")
     .not("recruiter_id", "is", null)
     .or(`status.eq.open,and(status.eq.snoozed,snoozed_until.lte.${nowIso})`);
 
+  // Same "pending only" rule as get_my_inbox() / the header bell: a flag
+  // raised before the candidate was rejected or pulled back off THIS
+  // mandate is stale the moment that happens, so it's dropped here rather
+  // than left inflating an admin's view of a recruiter's workload. One
+  // extra query (rather than a join in the .select() above) because
+  // PostgREST can't filter recruiter_inbox rows on a column that lives on
+  // a *different* link row than the one it embeds.
+  const flaggedMandateIds = Array.from(new Set((flaggedCallRows ?? []).map((r) => r.mandate_id).filter(Boolean)));
+  const flaggedCandidateIds = Array.from(new Set((flaggedCallRows ?? []).map((r) => r.candidate_id).filter(Boolean)));
+  const { data: linkStageRows } = flaggedMandateIds.length
+    ? await supabase
+        .from("candidate_mandate_links")
+        .select("candidate_id, mandate_id, stage")
+        .in("mandate_id", flaggedMandateIds)
+        .in("candidate_id", flaggedCandidateIds)
+    : { data: [] as { candidate_id: string; mandate_id: string; stage: string }[] };
+  const stageByLink = new Map((linkStageRows ?? []).map((l) => [`${l.candidate_id}:${l.mandate_id}`, l.stage]));
+
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
-  const flaggedCalls: FlaggedCallRow[] = (flaggedCallRows ?? []).map((r) => {
-    const candidate = r.candidates as unknown as { id: string; full_name: string | null } | null;
-    const mandate = r.mandates as unknown as { id: string; role_title: string | null; client_name: string | null } | null;
-    const recruiter = profileById.get(r.recruiter_id as string);
-    return {
-      id: r.id,
-      recruiter_id: r.recruiter_id as string,
-      recruiter_name: recruiter?.full_name?.trim() || recruiter?.email || "Unknown",
-      candidate_id: candidate?.id ?? null,
-      candidate_name: candidate?.full_name ?? null,
-      mandate_id: mandate?.id ?? null,
-      mandate_role_title: mandate?.role_title ?? null,
-      mandate_client_name: mandate?.client_name ?? null,
-      call_round: r.call_round as string | null,
-      created_at: r.created_at,
-    };
-  });
+  const flaggedCalls: FlaggedCallRow[] = (flaggedCallRows ?? [])
+    .filter((r) => {
+      const stage = stageByLink.get(`${r.candidate_id}:${r.mandate_id}`);
+      return stage !== "rejected" && stage !== "pulled_back";
+    })
+    .map((r) => {
+      const candidate = r.candidates as unknown as {
+        id: string;
+        full_name: string | null;
+        category: string | null;
+        sub_domain: string | null;
+        current_fixed_ctc: number | null;
+        notice_period: string | null;
+      } | null;
+      const mandate = r.mandates as unknown as { id: string; role_title: string | null; client_name: string | null } | null;
+      const recruiter = profileById.get(r.recruiter_id as string);
+      return {
+        id: r.id,
+        recruiter_id: r.recruiter_id as string,
+        recruiter_name: recruiter?.full_name?.trim() || recruiter?.email || "Unknown",
+        candidate_id: candidate?.id ?? null,
+        candidate_name: candidate?.full_name ?? null,
+        candidate_category: candidate?.category ?? null,
+        candidate_sub_domain: candidate?.sub_domain ?? null,
+        candidate_current_fixed_ctc: candidate?.current_fixed_ctc ?? null,
+        candidate_notice_period: candidate?.notice_period ?? null,
+        mandate_id: mandate?.id ?? null,
+        mandate_role_title: mandate?.role_title ?? null,
+        mandate_client_name: mandate?.client_name ?? null,
+        call_round: r.call_round as string | null,
+        link_stage: stageByLink.get(`${r.candidate_id}:${r.mandate_id}`) ?? null,
+        created_at: r.created_at,
+      };
+    });
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">

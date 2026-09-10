@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PhoneCall, ChevronDown, ChevronUp } from "lucide-react";
+import { STAGE_COLOR, stageLabel } from "@/lib/mandate-stage";
 
 export type FlaggedCallRow = {
   id: string;
@@ -10,10 +11,15 @@ export type FlaggedCallRow = {
   recruiter_name: string;
   candidate_id: string | null;
   candidate_name: string | null;
+  candidate_category: string | null;
+  candidate_sub_domain: string | null;
+  candidate_current_fixed_ctc: number | null;
+  candidate_notice_period: string | null;
   mandate_id: string | null;
   mandate_role_title: string | null;
   mandate_client_name: string | null;
   call_round: string | null;
+  link_stage: string | null;
   created_at: string;
 };
 
@@ -88,21 +94,44 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                     .map((c) => (
                       <Link
                         key={c.id}
-                        href={c.mandate_id ? `/mandates/${c.mandate_id}` : "#"}
+                        href={
+                          c.candidate_id && c.mandate_id
+                            ? `/candidates/${c.candidate_id}?mandateId=${c.mandate_id}`
+                            : c.mandate_id
+                              ? `/mandates/${c.mandate_id}`
+                              : "#"
+                        }
                         className="block rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300 truncate">
-                            {c.candidate_name ?? "Candidate"}
-                          </p>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                            <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300 truncate">
+                              {c.candidate_name ?? "Candidate"}
+                            </p>
+                            {c.link_stage && (
+                              <span
+                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${STAGE_COLOR[c.link_stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
+                              >
+                                {stageLabel(c.link_stage)}
+                              </span>
+                            )}
+                          </div>
                           <span className="shrink-0 text-[9.5px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
                             {roundLabel(c.call_round)}
                           </span>
                         </div>
+                        {c.candidate_sub_domain && <p className="text-[10.5px] text-slate-400 mt-0.5">{c.candidate_sub_domain}</p>}
                         {(c.mandate_role_title || c.mandate_client_name) && (
                           <p className="text-[11px] text-blue-600 dark:text-blue-400 truncate mt-0.5">
                             {c.mandate_role_title}
                             {c.mandate_client_name ? ` — ${c.mandate_client_name}` : ""}
+                          </p>
+                        )}
+                        {(c.candidate_current_fixed_ctc || c.candidate_notice_period) && (
+                          <p className="text-[10.5px] text-slate-400 mt-0.5">
+                            {c.candidate_current_fixed_ctc ? `₹${c.candidate_current_fixed_ctc}L` : null}
+                            {c.candidate_current_fixed_ctc && c.candidate_notice_period ? " · " : ""}
+                            {c.candidate_notice_period ? `Notice: ${c.candidate_notice_period}` : null}
                           </p>
                         )}
                         <p className="text-[10px] text-slate-400 mt-0.5">{daysOpen(c.created_at)}</p>

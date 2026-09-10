@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MessageCircleQuestion } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
-import { STAGES, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
+import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import MandateRejectModal from "./mandate-reject-modal";
 import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
@@ -16,19 +16,6 @@ import FlagForCallButton from "./flag-for-call-button";
 import { Zap, Sparkles, Loader2 } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
-
-const STAGE_COLOR: Record<string, string> = {
-  sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
-  screened: "bg-blue-100 text-blue-800",
-  shortlisted: "bg-teal-100 text-teal-800",
-  submitted: "bg-indigo-100 text-indigo-800",
-  client_interview: "bg-cyan-100 text-cyan-800",
-  client_shortlisted: "bg-purple-100 text-purple-800",
-  offer: "bg-lime-100 text-lime-800",
-  placed: "bg-green-100 text-green-800",
-  pulled_back: "bg-orange-100 text-orange-800",
-  rejected: "bg-red-100 text-red-700",
-};
 
 // Stage index used only to decide whether adding to the client shortlist
 // should auto-advance stage -- never downgrades a candidate who's already

@@ -21,6 +21,35 @@ export const STAGES = [
 ] as const;
 export type Stage = (typeof STAGES)[number];
 
+// Shared stage-badge color map -- single source of truth for how a stage
+// renders as a pill, so the mandate pipeline table, the "Calls flagged"
+// header bell, and the admin Team Calls panel all show the exact same
+// color for e.g. "client_interview" instead of each guessing their own.
+export const STAGE_COLOR: Record<string, string> = {
+  sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
+  screened: "bg-blue-100 text-blue-800",
+  shortlisted: "bg-teal-100 text-teal-800",
+  submitted: "bg-indigo-100 text-indigo-800",
+  client_interview: "bg-cyan-100 text-cyan-800",
+  client_shortlisted: "bg-purple-100 text-purple-800",
+  offer: "bg-lime-100 text-lime-800",
+  placed: "bg-green-100 text-green-800",
+  pulled_back: "bg-orange-100 text-orange-800",
+  rejected: "bg-red-100 text-red-700",
+};
+
+// The two terminal outcomes that mean a candidate is no longer an active
+// consideration for a mandate -- see the STAGES comment above for why
+// these are distinct from each other, but for "is this still pending"
+// purposes (header bell, Team Calls panel) they're treated the same way.
+export function isDisposedStage(stage: string | null | undefined): boolean {
+  return stage === "rejected" || stage === "pulled_back";
+}
+
+export function stageLabel(stage: string): string {
+  return stage.replace(/_/g, " ");
+}
+
 export type StageSource = "recruiter" | "client_relayed" | "client_portal" | "client_shortlist_link";
 
 const SOURCE_LABEL: Record<StageSource, string> = {
