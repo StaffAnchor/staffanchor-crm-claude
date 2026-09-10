@@ -11,6 +11,7 @@ type FlaggedCall = {
   candidate_name: string | null;
   mandate_id: string | null;
   mandate_role_title: string | null;
+  mandate_client_name: string | null;
   detail: string | null;
   created_at: string;
 };
@@ -124,10 +125,13 @@ export default function CallsFlaggedBell() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">
-                      {c.candidate_name ?? "Candidate"}
-                      {c.mandate_role_title ? ` — ${c.mandate_role_title}` : ""}
-                    </p>
+                    <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{c.candidate_name ?? "Candidate"}</p>
+                    {(c.mandate_role_title || c.mandate_client_name) && (
+                      <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 truncate mt-0.5">
+                        {c.mandate_role_title}
+                        {c.mandate_client_name ? ` — ${c.mandate_client_name}` : ""}
+                      </p>
+                    )}
                     {c.detail && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">{c.detail}</p>}
                     <p className="text-[10px] text-slate-400 mt-1">{timeAgo(c.created_at)}</p>
                   </div>
