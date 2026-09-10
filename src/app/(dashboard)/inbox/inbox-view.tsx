@@ -153,6 +153,17 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
     label: "Call requested",
     tint: "bg-blue-50 text-blue-700 ring-blue-200",
   },
+  // The other half of CANDIDATE_CALL_REQUEST's round=2nd/final flow (see
+  // applySecondRoundOutcome in mandate-stage.ts): once whoever took that
+  // 2nd/final round call closes it out, the recruiter who originally
+  // flagged the candidate for it gets this -- proceed further / rejected /
+  // still couldn't reach them, so nothing they submitted for a 2nd round
+  // goes quiet on them.
+  SECOND_ROUND_OUTCOME: {
+    icon: CheckCircle2,
+    label: "2nd round outcome",
+    tint: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  },
 };
 
 function metaFor(taskType: string) {
@@ -193,6 +204,7 @@ const TASK_TYPE_GROUP: Record<string, keyof typeof GROUP_META> = {
   INCOMPLETE_PROFILE: "candidates",
   RESURFACED_MATCHES: "sourcing",
   CANDIDATE_CALL_REQUEST: "candidates",
+  SECOND_ROUND_OUTCOME: "candidates",
 };
 
 const GROUP_ORDER: (keyof typeof GROUP_META)[] = ["interviews", "sourcing", "clients", "candidates", "offers", "other"];
@@ -250,6 +262,7 @@ const TASK_TYPE_BOX: Record<string, BoxKey> = {
   INCOMPLETE_PROFILE: "profiles",
   RESURFACED_MATCHES: "mandate",
   CANDIDATE_CALL_REQUEST: "mandate",
+  SECOND_ROUND_OUTCOME: "mandate",
 };
 
 function boxFor(taskType: string): BoxKey {

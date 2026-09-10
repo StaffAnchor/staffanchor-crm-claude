@@ -91,10 +91,19 @@ export default async function CallsFlaggedPage({
   const { data: linkRows } = mandateIds.length
     ? await supabase
         .from("candidate_mandate_links")
-        .select("id, candidate_id, mandate_id, stage, call_disposition")
+        .select("id, candidate_id, mandate_id, stage, call_disposition, second_round_outcome")
         .in("mandate_id", mandateIds)
         .in("candidate_id", candidateIds)
-    : { data: [] as { id: string; candidate_id: string; mandate_id: string; stage: string; call_disposition: string | null }[] };
+    : {
+        data: [] as {
+          id: string;
+          candidate_id: string;
+          mandate_id: string;
+          stage: string;
+          call_disposition: string | null;
+          second_round_outcome: string | null;
+        }[],
+      };
   const linkByKey = new Map((linkRows ?? []).map((l) => [`${l.candidate_id}:${l.mandate_id}`, l]));
 
   const rows: FlaggedCallRow[] = (flaggedCallRows ?? [])
@@ -130,6 +139,7 @@ export default async function CallsFlaggedPage({
         resolved_at: r.resolved_at as string | null,
         stage: link?.stage ?? null,
         call_disposition: link?.call_disposition ?? null,
+        second_round_outcome: link?.second_round_outcome ?? null,
       };
     })
     .filter((r) => showAll || (r.stage !== "rejected" && r.stage !== "pulled_back"))

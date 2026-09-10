@@ -79,6 +79,7 @@ export const RECRUITER_REJECTION_REASONS: { value: string; label: string }[] = [
   // alongside every other recruiter-attributed reason, not off to the side.
   { value: "call_not_recommended", label: "Not recommended after call" },
   { value: "candidate_declined_after_call", label: "Candidate declined after call" },
+  { value: "not_selected_after_2nd_round", label: "Not selected after 2nd round call" },
   { value: "other_internal", label: "Other" },
 ];
 
@@ -260,6 +261,134 @@ export const CALL_DISPOSITION_COLOR: Record<CallDisposition, string> = {
 
 export function callDispositionLabel(d: string | null | undefined): string | null {
   return CALL_DISPOSITIONS.find((c) => c.value === d)?.label ?? null;
+}
+
+// A 2nd/final round call is a genuinely different decision from the
+// recruiter's original call_disposition above -- "recommended for 2nd
+// round" is meaningless once someone's already IN round 2. Kept as a
+// fully separate column/type/write-path (applySecondRoundOutcome below)
+// rather than overloading call_disposition, which is also DB
+// CHECK-constrained to the original 4 values and would reject these.
+export type SecondRoundOutcome = "proceed_further" | "rejected_by_us" | "not_picked_up";
+
+export const SECOND_ROUND_OUTCOMES: { value: SecondRoundOutcome; label: string }[] = [
+  { value: "proceed_further", label: "Proceed further" },
+  { value: "rejected_by_us", label: "Reject" },
+  { value: "not_picked_up", label: "Not picked up / unreachable" },
+];
+
+export const SECOND_ROUND_OUTCOME_COLOR: Record<SecondRoundOutcome, string> = {
+  proceed_further: "bg-emerald-100 text-emerald-800",
+  rejected_by_us: "bg-rose-100 text-rose-700",
+  not_picked_up: "bg-amber-100 text-amber-800",
+};
+
+export function secondRoundOutcomeLabel(o: string | null | undefined): string | null {
+  return SECOND_ROUND_OUTCOMES.find((c) => c.value === o)?.label ?? null;
+}
+
+// The write path for closing out a 2nd/final round call. Per the agreed
+// mapping:
+// - proceed_further: the candidate is genuinely moving forward on our own
+//   judgment (not the client's -- source stays "recruiter" so this never
+//   fires a client-facing notification), so stage advances forward-only to
+//   "shortlisted" -- literally defined in STAGES above as "recruiter's own
+//   internal pre-submission judgment call", which is exactly what this is.
+//   The original recruiter (below) picks it up from there.
+// - rejected_by_us: rejects via the same applyStageChange every other
+//   rejection uses, source="recruiter" so Reports/the candidate profile
+//   correctly show this as an internal call, never a client one, with its
+//   own rejection_category so it's distinguishable from every other
+//   recruiter-attributed reason.
+// - not_picked_up: no stage change -- same "not an outcome yet" logic as
+//   the original call_disposition.
+//
+// Every branch (including not_picked_up -- the recruiter should hear "still
+// haven't reached them" too, not just the two terminal outcomes) notifies
+// whoever originally flagged this candidate for a 2nd round, i.e. the
+// recruiter recorded in call_disposition_by when they set
+// recommended_2nd_round (see createSecondRoundFlags below) -- read fresh
+// from the row here rather than threaded through as a prop, so this stays
+// correct even if the UI never had that value loaded.
+export async function applySecondRoundOutcome(
+  supabase: SupabaseClient,
+  params: {
+    linkId: string;
+    candidateId: string;
+    mandateId: string;
+    candidateName: string;
+    mandateLabel: string;
+    currentStage: string;
+    outcome: SecondRoundOutcome;
+    actorId: string;
+  }
+) {
+  const nowIso = new Date().toISOString();
+
+  const { data: link } = await supabase
+    .from("candidate_mandate_links")
+    .select("call_disposition_by")
+    .eq("id", params.linkId)
+    .single();
+  const originalRecruiterId = link?.call_disposition_by as string | null | undefined;
+
+  const { error: outcomeError } = await supabase
+    .from("candidate_mandate_links")
+    .update({
+      second_round_outcome: params.outcome,
+      second_round_outcome_at: nowIso,
+      second_round_outcome_by: params.actorId,
+    })
+    .eq("id", params.linkId);
+  if (outcomeError) throw outcomeError;
+
+  if (params.outcome === "proceed_further") {
+    if (STAGE_ORDER[params.currentStage] < STAGE_ORDER["shortlisted"]) {
+      await applyStageChange(supabase, {
+        linkId: params.linkId,
+        candidateId: params.candidateId,
+        mandateId: params.mandateId,
+        candidateName: params.candidateName,
+        mandateLabel: params.mandateLabel,
+        previousStage: params.currentStage,
+        newStage: "shortlisted",
+        source: "recruiter",
+      });
+    }
+  } else if (params.outcome === "rejected_by_us") {
+    await applyStageChange(supabase, {
+      linkId: params.linkId,
+      candidateId: params.candidateId,
+      mandateId: params.mandateId,
+      candidateName: params.candidateName,
+      mandateLabel: params.mandateLabel,
+      previousStage: params.currentStage,
+      newStage: "rejected",
+      source: "recruiter",
+      rejectionCategory: "not_selected_after_2nd_round",
+    });
+  }
+  // not_picked_up: outcome recorded above, no stage change.
+
+  if (originalRecruiterId && originalRecruiterId !== params.actorId) {
+    const outcomeLabel = secondRoundOutcomeLabel(params.outcome) ?? params.outcome;
+    const title = `2nd round outcome: ${params.candidateName} → ${outcomeLabel} — ${params.mandateLabel}`;
+    await supabase.from("recruiter_inbox").insert({
+      recruiter_id: originalRecruiterId,
+      candidate_id: params.candidateId,
+      mandate_id: params.mandateId,
+      task_type: "SECOND_ROUND_OUTCOME",
+      title,
+      priority: "normal",
+    });
+    await supabase.rpc("_create_notification", {
+      p_user_id: originalRecruiterId,
+      p_type: "second_round_outcome",
+      p_title: title,
+      p_body: null,
+      p_link: `/candidates/${params.candidateId}`,
+    });
+  }
 }
 
 // The single write path for closing out a flagged call with an outcome --

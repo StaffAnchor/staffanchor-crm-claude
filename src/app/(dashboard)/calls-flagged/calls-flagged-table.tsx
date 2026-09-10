@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STAGE_COLOR, stageLabel } from "@/lib/mandate-stage";
 import CallDispositionControl from "../mandates/[id]/call-disposition-control";
+import SecondRoundOutcomeControl from "./second-round-outcome-control";
 import ResumePreview from "../candidates/[id]/resume-preview";
 import ReassignCallControl from "./reassign-call-control";
 
@@ -27,6 +28,7 @@ export type FlaggedCallRow = {
   created_at: string;
   stage: string | null;
   call_disposition: string | null;
+  second_round_outcome?: string | null;
   flag_status?: string;
   resolved_at?: string | null;
 };
@@ -184,39 +186,75 @@ export default function CallsFlaggedTable({
               </td>
               <td className="px-4 py-3">
                 {r.linkId && r.mandate_id && r.candidate_id ? (
-                  <CallDispositionControl
-                    linkId={r.linkId}
-                    candidateId={r.candidate_id}
-                    candidateName={r.candidate_name ?? "Candidate"}
-                    mandateId={r.mandate_id}
-                    mandateRoleTitle={r.mandate_role_title}
-                    clientName={r.mandate_client_name}
-                    currentStage={r.stage ?? "sourced"}
-                    currentDisposition={r.call_disposition}
-                    recruiterInboxId={r.id}
-                    onApplied={(d) => {
-                      // CallDispositionControl already wrote the
-                      // recruiter_inbox status itself when it's not
-                      // not_picked_up (see its recruiterInboxId handling)
-                      // -- this just keeps local state in sync without a
-                      // second write. In the "all time" analysis view we
-                      // never drop a row on disposition -- the whole point
-                      // is to keep seeing it with its outcome attached.
-                      if (showAll) {
-                        setRows((cur) =>
-                          cur.map((row) =>
-                            row.id === r.id
-                              ? { ...row, call_disposition: d, flag_status: d !== "not_picked_up" ? "done" : row.flag_status }
-                              : row
-                          )
-                        );
-                      } else if (d !== "not_picked_up") {
-                        setRows((cur) => cur.filter((row) => row.id !== r.id));
-                      } else {
-                        setRows((cur) => cur.map((row) => (row.id === r.id ? { ...row, call_disposition: d } : row)));
-                      }
-                    }}
-                  />
+                  r.call_round === "2nd" || r.call_round === "final" ? (
+                    // A 2nd/final round call is being closed out by whoever
+                    // took it (typically an admin/manager via
+                    // call_second_round_routing), not the recruiter who
+                    // originally screened -- a different outcome set applies
+                    // (see second-round-outcome-control.tsx / STAGE_ORDER
+                    // note in mandate-stage.ts): "recommended for 2nd round"
+                    // makes no sense once someone's already in round 2.
+                    <SecondRoundOutcomeControl
+                      linkId={r.linkId}
+                      candidateId={r.candidate_id}
+                      candidateName={r.candidate_name ?? "Candidate"}
+                      mandateId={r.mandate_id}
+                      mandateRoleTitle={r.mandate_role_title}
+                      clientName={r.mandate_client_name}
+                      currentStage={r.stage ?? "sourced"}
+                      currentOutcome={r.second_round_outcome ?? null}
+                      recruiterInboxId={r.id}
+                      onApplied={(o) => {
+                        if (showAll) {
+                          setRows((cur) =>
+                            cur.map((row) =>
+                              row.id === r.id
+                                ? { ...row, second_round_outcome: o, flag_status: o !== "not_picked_up" ? "done" : row.flag_status }
+                                : row
+                            )
+                          );
+                        } else if (o !== "not_picked_up") {
+                          setRows((cur) => cur.filter((row) => row.id !== r.id));
+                        } else {
+                          setRows((cur) => cur.map((row) => (row.id === r.id ? { ...row, second_round_outcome: o } : row)));
+                        }
+                      }}
+                    />
+                  ) : (
+                    <CallDispositionControl
+                      linkId={r.linkId}
+                      candidateId={r.candidate_id}
+                      candidateName={r.candidate_name ?? "Candidate"}
+                      mandateId={r.mandate_id}
+                      mandateRoleTitle={r.mandate_role_title}
+                      clientName={r.mandate_client_name}
+                      currentStage={r.stage ?? "sourced"}
+                      currentDisposition={r.call_disposition}
+                      recruiterInboxId={r.id}
+                      onApplied={(d) => {
+                        // CallDispositionControl already wrote the
+                        // recruiter_inbox status itself when it's not
+                        // not_picked_up (see its recruiterInboxId handling)
+                        // -- this just keeps local state in sync without a
+                        // second write. In the "all time" analysis view we
+                        // never drop a row on disposition -- the whole point
+                        // is to keep seeing it with its outcome attached.
+                        if (showAll) {
+                          setRows((cur) =>
+                            cur.map((row) =>
+                              row.id === r.id
+                                ? { ...row, call_disposition: d, flag_status: d !== "not_picked_up" ? "done" : row.flag_status }
+                                : row
+                            )
+                          );
+                        } else if (d !== "not_picked_up") {
+                          setRows((cur) => cur.filter((row) => row.id !== r.id));
+                        } else {
+                          setRows((cur) => cur.map((row) => (row.id === r.id ? { ...row, call_disposition: d } : row)));
+                        }
+                      }}
+                    />
+                  )
                 ) : (
                   <span className="text-[11px] text-slate-300">—</span>
                 )}
