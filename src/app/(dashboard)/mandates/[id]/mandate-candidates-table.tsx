@@ -13,6 +13,7 @@ import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import FlagForCallButton from "./flag-for-call-button";
+import CallDispositionControl from "./call-disposition-control";
 import { Zap, Sparkles, Loader2 } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
@@ -42,6 +43,7 @@ export type MandateCandidateRow = {
   rejection_reason: string | null;
   rejection_category: string | null;
   date_of_joining: string | null;
+  call_disposition: string | null;
   created_at: string | null;
   screened: boolean;
   // Set when the candidate spent a Priority Applicant credit on this
@@ -556,6 +558,17 @@ export default function MandateCandidatesTable({
                     mandateId={mandateContext.mandateId}
                     mandateRoleTitle={mandateContext.role_title ?? null}
                     teamMembers={teamMembers}
+                  />
+                  <CallDispositionControl
+                    linkId={l.id}
+                    candidateId={l.candidate.id}
+                    candidateName={l.candidate.full_name}
+                    mandateId={mandateContext.mandateId}
+                    mandateRoleTitle={mandateContext.role_title ?? null}
+                    clientName={(mandateContext.client_name as string | undefined) ?? null}
+                    currentStage={l.stage}
+                    currentDisposition={l.call_disposition}
+                    onApplied={() => router.refresh()}
                   />
                 </div>
               </td>

@@ -88,6 +88,12 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
               </button>
               {expanded === t.id && (
                 <div className="pb-2.5 space-y-1.5">
+                  <Link
+                    href={`/calls-flagged?recruiter=${t.id}`}
+                    className="block text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline px-0.5"
+                  >
+                    View full list as a table →
+                  </Link>
                   {t.calls
                     .slice()
                     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
@@ -96,7 +102,7 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                         key={c.id}
                         href={
                           c.candidate_id && c.mandate_id
-                            ? `/candidates/${c.candidate_id}?mandateId=${c.mandate_id}`
+                            ? `/candidates/${c.candidate_id}?mandateId=${c.mandate_id}&back=calls&calls_recruiter=${t.id}`
                             : c.mandate_id
                               ? `/mandates/${c.mandate_id}`
                               : "#"

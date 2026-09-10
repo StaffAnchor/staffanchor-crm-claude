@@ -72,6 +72,13 @@ export const RECRUITER_REJECTION_REASONS: { value: string; label: string }[] = [
   { value: "better_candidate_found", label: "Better candidate found for this mandate" },
   { value: "unresponsive", label: "Unresponsive / withdrew" },
   { value: "duplicate_or_ineligible", label: "Duplicate profile or ineligible" },
+  // The two auto-filled when a flagged call is closed out as
+  // not_recommended_2nd_round / not_interested (see applyCallDisposition
+  // below) -- kept in this same list rather than a separate one so
+  // rejection reporting (Reports' "Rejection reasons" card) sees them
+  // alongside every other recruiter-attributed reason, not off to the side.
+  { value: "call_not_recommended", label: "Not recommended after call" },
+  { value: "candidate_declined_after_call", label: "Candidate declined after call" },
   { value: "other_internal", label: "Other" },
 ];
 
@@ -226,4 +233,105 @@ export function joiningProgress(dateOfJoining: string | null | undefined): { day
   const start = new Date(dateOfJoining).getTime();
   const day = Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24));
   return { day: Math.max(0, day), done: day >= 90 };
+}
+
+// Shared stage ordering -- used only to decide whether an automatic
+// advance (e.g. a "Recommended for 2nd round" call disposition) should
+// actually move a candidate forward, or leave them alone because they're
+// already further along than the disposition would put them. Never used
+// to *downgrade* a candidate.
+export const STAGE_ORDER: Record<string, number> = STAGES.reduce((acc, s, i) => ({ ...acc, [s]: i }), {});
+
+export type CallDisposition = "recommended_2nd_round" | "not_recommended_2nd_round" | "not_picked_up" | "not_interested";
+
+export const CALL_DISPOSITIONS: { value: CallDisposition; label: string }[] = [
+  { value: "recommended_2nd_round", label: "Recommended for 2nd round" },
+  { value: "not_recommended_2nd_round", label: "Not recommended for 2nd round" },
+  { value: "not_picked_up", label: "Not picked up / unreachable" },
+  { value: "not_interested", label: "Not interested / declined" },
+];
+
+export const CALL_DISPOSITION_COLOR: Record<CallDisposition, string> = {
+  recommended_2nd_round: "bg-emerald-100 text-emerald-800",
+  not_recommended_2nd_round: "bg-rose-100 text-rose-700",
+  not_picked_up: "bg-amber-100 text-amber-800",
+  not_interested: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400",
+};
+
+export function callDispositionLabel(d: string | null | undefined): string | null {
+  return CALL_DISPOSITIONS.find((c) => c.value === d)?.label ?? null;
+}
+
+// The single write path for closing out a flagged call with an outcome --
+// used identically from the mandate Table/Board (CallDispositionControl
+// next to FlagForCallButton) and from the cross-mandate /calls-flagged
+// page, so a disposition means the same thing and has the same side
+// effect no matter where it's set from (the "symmetry" the two surfaces
+// are meant to have).
+//
+// Stage side effects, per the agreed mapping:
+// - recommended_2nd_round: advances stage to "client_interview" -- but
+//   only forward (STAGE_ORDER guard), so a candidate already at Offer or
+//   Placed is never pulled backward by a stray disposition.
+// - not_recommended_2nd_round / not_interested: rejects the candidate on
+//   this mandate via the same applyStageChange() every other rejection
+//   path uses (client notifications, rejected_from_stage, etc. all still
+//   fire), with a disposition-specific rejection_category so Reports'
+//   rejection-reason breakdown can tell these apart from a manual reject.
+// - not_picked_up: no stage change at all -- it isn't a real outcome yet,
+//   just "try again."
+export async function applyCallDisposition(
+  supabase: SupabaseClient,
+  params: {
+    linkId: string;
+    candidateId: string;
+    mandateId: string;
+    candidateName: string;
+    mandateLabel: string;
+    currentStage: string;
+    disposition: CallDisposition;
+    actorId: string;
+  }
+) {
+  const nowIso = new Date().toISOString();
+  const { error: dispositionError } = await supabase
+    .from("candidate_mandate_links")
+    .update({
+      call_disposition: params.disposition,
+      call_disposition_at: nowIso,
+      call_disposition_by: params.actorId,
+    })
+    .eq("id", params.linkId);
+  if (dispositionError) throw dispositionError;
+
+  if (params.disposition === "recommended_2nd_round") {
+    if (STAGE_ORDER[params.currentStage] < STAGE_ORDER["client_interview"]) {
+      await applyStageChange(supabase, {
+        linkId: params.linkId,
+        candidateId: params.candidateId,
+        mandateId: params.mandateId,
+        candidateName: params.candidateName,
+        mandateLabel: params.mandateLabel,
+        previousStage: params.currentStage,
+        newStage: "client_interview",
+        source: "recruiter",
+      });
+    }
+    return;
+  }
+
+  if (params.disposition === "not_recommended_2nd_round" || params.disposition === "not_interested") {
+    await applyStageChange(supabase, {
+      linkId: params.linkId,
+      candidateId: params.candidateId,
+      mandateId: params.mandateId,
+      candidateName: params.candidateName,
+      mandateLabel: params.mandateLabel,
+      previousStage: params.currentStage,
+      newStage: "rejected",
+      source: "recruiter",
+      rejectionCategory: params.disposition === "not_interested" ? "candidate_declined_after_call" : "call_not_recommended",
+    });
+  }
+  // not_picked_up: disposition recorded above, no stage change.
 }

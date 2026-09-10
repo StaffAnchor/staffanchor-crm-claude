@@ -75,10 +75,10 @@ export default async function CandidateDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string; mandateId?: string; groupId?: string; back?: string; box?: string }>;
+  searchParams: Promise<{ from?: string; mandateId?: string; groupId?: string; back?: string; box?: string; calls_recruiter?: string }>;
 }) {
   const { id } = await params;
-  const { from, mandateId, groupId, back, box } = await searchParams;
+  const { from, mandateId, groupId, back, box, calls_recruiter } = await searchParams;
   const supabase = await createClient();
 
   const { data: candidate } = await supabase
@@ -269,6 +269,20 @@ export default async function CandidateDetailPage({
     const boxKey = box && INBOX_BOX_LABEL[box] ? box : "mandate";
     backHref = `/inbox?box=${boxKey}`;
     backLabel = `← My Desk — ${INBOX_BOX_LABEL[boxKey]}`;
+  }
+
+  // Opened from the header bell, the admin Team Calls panel, or the
+  // /calls-flagged table itself -- "back" should return to that table
+  // (same scope: self, or a specific teammate's queue via
+  // calls_recruiter when an admin opened it from Team Calls), not to the
+  // mandate the call happens to be on. Deliberately checked after the
+  // mandateId branch above so it always wins when both are present --
+  // every one of these links also carries mandateId (prev/next still
+  // needs it), but back=calls is the more specific signal of where the
+  // click actually came from.
+  if (back === "calls") {
+    backHref = calls_recruiter ? `/calls-flagged?recruiter=${calls_recruiter}` : "/calls-flagged";
+    backLabel = "← Calls flagged";
   }
 
   let resumeSignedUrl: string | null = null;

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { PhoneCall, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STAGE_COLOR, stageLabel } from "@/lib/mandate-stage";
@@ -102,7 +103,10 @@ export default function CallsFlaggedBell() {
   function handleClick(call: FlaggedCall) {
     setOpen(false);
     if (call.candidate_id && call.mandate_id) {
-      router.push(`/candidates/${call.candidate_id}?mandateId=${call.mandate_id}`);
+      // back=calls sends the candidate profile's "back" link to
+      // /calls-flagged (this same list, full-page) instead of the
+      // mandate -- see candidates/[id]/page.tsx.
+      router.push(`/candidates/${call.candidate_id}?mandateId=${call.mandate_id}&back=calls`);
     } else if (call.mandate_id) {
       router.push(`/mandates/${call.mandate_id}`);
     }
@@ -205,6 +209,13 @@ export default function CallsFlaggedBell() {
               </button>
             ))
           )}
+          <Link
+            href="/calls-flagged"
+            onClick={() => setOpen(false)}
+            className="block text-center px-3 py-2 text-[11.5px] font-medium text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800"
+          >
+            View all as a table
+          </Link>
         </div>
       )}
     </div>
