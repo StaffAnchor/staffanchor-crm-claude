@@ -270,9 +270,17 @@ export function callDispositionLabel(d: string | null | undefined): string | nul
 // are meant to have).
 //
 // Stage side effects, per the agreed mapping:
-// - recommended_2nd_round: advances stage to "client_interview" -- but
-//   only forward (STAGE_ORDER guard), so a candidate already at Offer or
-//   Placed is never pulled backward by a stray disposition.
+// - recommended_2nd_round: advances stage to "screened" -- deliberately
+//   NOT "client_interview": the 2nd round this triggers is an internal
+//   round (an admin/manager, not the client), so the stage should only
+//   reflect that the recruiter's own screen is done, not that the client
+//   is involved yet. Forward-only (STAGE_ORDER guard), so a candidate
+//   already past Screened is never pulled backward by a stray
+//   disposition -- for most candidates by this point that makes this a
+//   no-op on stage, which is fine, the real effect is the routing below.
+//   Also creates a fresh CANDIDATE_CALL_REQUEST (call_round=2nd) for
+//   every user in call_second_round_routing (see createSecondRoundFlags
+//   below) -- the actual "lands on an admin/manager's desk" part.
 // - not_recommended_2nd_round / not_interested: rejects the candidate on
 //   this mandate via the same applyStageChange() every other rejection
 //   path uses (client notifications, rejected_from_stage, etc. all still
@@ -305,7 +313,7 @@ export async function applyCallDisposition(
   if (dispositionError) throw dispositionError;
 
   if (params.disposition === "recommended_2nd_round") {
-    if (STAGE_ORDER[params.currentStage] < STAGE_ORDER["client_interview"]) {
+    if (STAGE_ORDER[params.currentStage] < STAGE_ORDER["screened"]) {
       await applyStageChange(supabase, {
         linkId: params.linkId,
         candidateId: params.candidateId,
@@ -313,10 +321,11 @@ export async function applyCallDisposition(
         candidateName: params.candidateName,
         mandateLabel: params.mandateLabel,
         previousStage: params.currentStage,
-        newStage: "client_interview",
+        newStage: "screened",
         source: "recruiter",
       });
     }
+    await createSecondRoundFlags(supabase, params);
     return;
   }
 
@@ -334,4 +343,45 @@ export async function applyCallDisposition(
     });
   }
   // not_picked_up: disposition recorded above, no stage change.
+}
+
+// The actual "lands on an admin/manager's desk" half of recommended_2nd_
+// round -- creates a normal CANDIDATE_CALL_REQUEST (same table/shape
+// FlagForCallButton inserts, see flag-for-call-button.tsx) for every user
+// in call_second_round_routing, so each of them sees it exactly where
+// they already look for flagged calls: the header bell, /calls-flagged,
+// My Desk. Skips anyone who already has an open flag for this same
+// candidate+mandate rather than piling up duplicates if a recruiter
+// somehow re-runs the disposition.
+async function createSecondRoundFlags(
+  supabase: SupabaseClient,
+  params: { candidateId: string; mandateId: string; candidateName: string; mandateLabel: string }
+) {
+  const { data: recipients } = await supabase.from("call_second_round_routing").select("user_id");
+  if (!recipients || recipients.length === 0) return;
+
+  const { data: existingOpen } = await supabase
+    .from("recruiter_inbox")
+    .select("recruiter_id")
+    .eq("candidate_id", params.candidateId)
+    .eq("mandate_id", params.mandateId)
+    .eq("task_type", "CANDIDATE_CALL_REQUEST")
+    .eq("status", "open");
+  const alreadyFlagged = new Set((existingOpen ?? []).map((r) => r.recruiter_id));
+
+  const toInsert = recipients
+    .filter((r) => !alreadyFlagged.has(r.user_id))
+    .map((r) => ({
+      task_type: "CANDIDATE_CALL_REQUEST",
+      candidate_id: params.candidateId,
+      mandate_id: params.mandateId,
+      recruiter_id: r.user_id,
+      priority: "high",
+      call_round: "2nd",
+      title: `Call ${params.candidateName} — ${params.mandateLabel} (2nd Round)`,
+      detail: `Recommended for a 2nd round after the first call -- please set up the 2nd round call.`,
+    }));
+  if (toInsert.length > 0) {
+    await supabase.from("recruiter_inbox").insert(toInsert);
+  }
 }

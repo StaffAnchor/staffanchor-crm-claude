@@ -6,6 +6,7 @@ import SpecialtiesControl from "./specialties-control";
 import PracticesControl from "./practices-control";
 import ResetPasswordButton from "./reset-password-button";
 import TeamCallsPanel, { type FlaggedCallRow } from "./team-calls-panel";
+import SecondRoundRoutingToggle from "./second-round-routing-toggle";
 
 export default async function TeamPage() {
   const supabase = await createClient();
@@ -36,6 +37,8 @@ export default async function TeamPage() {
   const { data: recruiterPracticeRows } = await supabase
     .from("recruiter_practices")
     .select("user_id, practice_id");
+  const { data: secondRoundRoutingRows } = await supabase.from("call_second_round_routing").select("user_id");
+  const secondRoundRoutingIds = new Set((secondRoundRoutingRows ?? []).map((r) => r.user_id));
   const practicesByUser = new Map<string, string[]>();
   for (const row of recruiterPracticeRows ?? []) {
     const list = practicesByUser.get(row.user_id) ?? [];
@@ -127,6 +130,7 @@ export default async function TeamPage() {
                 <th className="text-left px-4 py-2.5">Role</th>
                 <th className="text-left px-4 py-2.5">Specialty</th>
                 <th className="text-left px-4 py-2.5">Practices</th>
+                <th className="text-left px-4 py-2.5">2nd Round Calls</th>
                 <th className="text-left px-4 py-2.5">Password</th>
               </tr>
             </thead>
@@ -147,6 +151,9 @@ export default async function TeamPage() {
                       allPractices={(allPracticesRows ?? []) as never}
                       currentPracticeIds={practicesByUser.get(p.id) ?? []}
                     />
+                  </td>
+                  <td className="px-4 py-3">
+                    <SecondRoundRoutingToggle userId={p.id} initialChecked={secondRoundRoutingIds.has(p.id)} />
                   </td>
                   <td className="px-4 py-3">
                     <ResetPasswordButton userId={p.id} name={p.full_name ?? p.email} />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ClipboardCheck, Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CALL_DISPOSITIONS, CALL_DISPOSITION_COLOR, callDispositionLabel, applyCallDisposition, type CallDisposition } from "@/lib/mandate-stage";
@@ -12,6 +13,15 @@ import { CALL_DISPOSITIONS, CALL_DISPOSITION_COLOR, callDispositionLabel, applyC
 // -- one control, one write path (applyCallDisposition), so a disposition
 // set from either place means the same thing and has the same stage side
 // effect (see the doc comment on applyCallDisposition in mandate-stage.ts).
+//
+// The dropdown is portalled to document.body with position:fixed computed
+// from the trigger's own bounding rect, NOT absolutely positioned inside
+// the table -- both the mandate Table and /calls-flagged wrap their table
+// in a rounded-corners `overflow-hidden` container, which was silently
+// clipping an in-flow absolute popover for any row near the table's
+// bottom edge (reported: dropdown barely visible, "not interested"/
+// "declined" not showing at all). A portal renders outside that
+// container entirely, so it can never be clipped by it.
 //
 // recruiterInboxId is optional: it's only present when this candidate has
 // an actual open call flag (the /calls-flagged page always has one; the
@@ -44,9 +54,47 @@ export default function CallDispositionControl({
   onApplied?: (disposition: CallDisposition) => void;
 }) {
   const supabase = createClient();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  function openPopover() {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect) {
+      // Flips to open upward when there isn't ~260px below (the popover's
+      // rough height with all 4 options + error room) so it doesn't run
+      // off the bottom of the viewport either.
+      const opensUp = window.innerHeight - rect.bottom < 260;
+      setCoords({
+        top: opensUp ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+      });
+    }
+    setOpen(true);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      if (popoverRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function handleReposition() {
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [open]);
 
   async function choose(disposition: CallDisposition) {
     setSaving(true);
@@ -82,10 +130,11 @@ export default function CallDispositionControl({
   }
 
   return (
-    <span className="relative inline-block">
+    <>
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (open ? setOpen(false) : openPopover())}
         className={`flex items-center gap-1 text-[11.5px] font-medium rounded-ros-md px-2 py-1 transition-colors ${
           currentDisposition
             ? CALL_DISPOSITION_COLOR[currentDisposition as CallDisposition] ?? "bg-slate-100 text-slate-600"
@@ -96,34 +145,38 @@ export default function CallDispositionControl({
         <ClipboardCheck className="w-3 h-3" /> {currentDisposition ? callDispositionLabel(currentDisposition) : "Call outcome"}
       </button>
 
-      {open && (
-        <div
-          className="absolute z-40 top-full left-0 mt-1 w-60 rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-ros-md p-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between mb-1 px-1">
-            <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300">How did the call go?</p>
-            <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="flex flex-col gap-1">
-            {CALL_DISPOSITIONS.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                disabled={saving}
-                onClick={() => choose(d.value)}
-                className={`text-left text-[11.5px] rounded-ros-md px-2 py-1.5 hover:opacity-80 disabled:opacity-50 ${CALL_DISPOSITION_COLOR[d.value]}`}
-              >
-                {saving ? <Loader2 className="w-3 h-3 inline animate-spin mr-1" /> : null}
-                {d.label}
+      {open &&
+        coords &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            style={{ position: "absolute", top: coords.top, left: coords.left }}
+            className="z-50 w-60 rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-ros-xl p-2"
+          >
+            <div className="flex items-center justify-between mb-1 px-1">
+              <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300">How did the call go?</p>
+              <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
-          </div>
-          {error && <p className="text-[11px] text-red-600 mt-1 px-1">{error}</p>}
-        </div>
-      )}
-    </span>
+            </div>
+            <div className="flex flex-col gap-1">
+              {CALL_DISPOSITIONS.map((d) => (
+                <button
+                  key={d.value}
+                  type="button"
+                  disabled={saving}
+                  onClick={() => choose(d.value)}
+                  className={`text-left text-[11.5px] rounded-ros-md px-2 py-1.5 hover:opacity-80 disabled:opacity-50 ${CALL_DISPOSITION_COLOR[d.value]}`}
+                >
+                  {saving ? <Loader2 className="w-3 h-3 inline animate-spin mr-1" /> : null}
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            {error && <p className="text-[11px] text-red-600 mt-1 px-1">{error}</p>}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
