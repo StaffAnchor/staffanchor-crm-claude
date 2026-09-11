@@ -216,9 +216,9 @@ export default function CallsFlaggedBell() {
               setOpen(false);
               router.push("/calls-flagged");
             }}
-            className="block w-full text-center px-3 py-2 text-[11.5px] font-medium text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800"
+            className="block w-full text-center px-3 py-2.5 text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-500 border-t border-slate-100 dark:border-slate-800"
           >
-            View all as a table
+            View full list as a table →
           </button>
         </div>
       )}

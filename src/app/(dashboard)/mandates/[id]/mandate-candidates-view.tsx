@@ -24,6 +24,7 @@ export default function MandateCandidatesView({
   isAdmin = false,
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
+  flaggedCallByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
@@ -38,6 +39,10 @@ export default function MandateCandidatesView({
   // side), so a "Preview resume" action can open right from the row
   // without navigating to the candidate's profile page.
   resumeSignedUrlByCandidate?: Record<string, string>;
+  // Per-candidate open "Flag for call" request (if any), so the flag button
+  // can render a persistent "Flagged to X" state instead of always
+  // reverting to the static "Flag for call" label.
+  flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
   const router = useRouter();
   const [view, setView] = useState<"board" | "table">("table");
@@ -276,6 +281,7 @@ export default function MandateCandidatesView({
           isAdmin={isAdmin}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
+          flaggedCallByCandidate={flaggedCallByCandidate}
         />
       ) : (
         <MandateCandidatesTable
@@ -290,6 +296,7 @@ export default function MandateCandidatesView({
           isAdmin={isAdmin}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
+          flaggedCallByCandidate={flaggedCallByCandidate}
         />
       )}
     </div>

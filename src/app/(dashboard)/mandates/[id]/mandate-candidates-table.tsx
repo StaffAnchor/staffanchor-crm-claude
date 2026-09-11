@@ -12,7 +12,7 @@ import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
-import FlagForCallButton from "./flag-for-call-button";
+import FlagForCallButton, { type ExistingCallFlag } from "./flag-for-call-button";
 import CallDispositionControl from "./call-disposition-control";
 import { Zap, Sparkles, Loader2 } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
@@ -146,6 +146,7 @@ export default function MandateCandidatesTable({
   isAdmin = false,
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
+  flaggedCallByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
@@ -157,6 +158,7 @@ export default function MandateCandidatesTable({
   isAdmin?: boolean;
   applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
   resumeSignedUrlByCandidate?: Record<string, string>;
+  flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
   const ownerLabel = (id: string | null) => {
     if (!id) return "Unassigned";
@@ -177,6 +179,7 @@ export default function MandateCandidatesTable({
   const router = useRouter();
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
+  const [flagMap, setFlagMap] = useState<Record<string, ExistingCallFlag>>(flaggedCallByCandidate);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [screeningRowId, setScreeningRowId] = useState<string | null>(null);
@@ -558,6 +561,8 @@ export default function MandateCandidatesTable({
                     mandateId={mandateContext.mandateId}
                     mandateRoleTitle={mandateContext.role_title ?? null}
                     teamMembers={teamMembers}
+                    existingFlag={flagMap[l.candidate.id] ?? null}
+                    onFlagged={(flag) => setFlagMap((prev) => ({ ...prev, [l.candidate.id]: flag }))}
                   />
                   <CallDispositionControl
                     linkId={l.id}

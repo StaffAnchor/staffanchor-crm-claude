@@ -151,6 +151,31 @@ export default async function MandateDetailPage({
     if (signedUrl) resumeSignedUrlByCandidate[cand.id] = signedUrl;
   }
 
+  // Open "Flag for call" requests for this mandate, so the flag button can
+  // show a persistent "Flagged to <name>" state instead of reverting to the
+  // static label after the toast disappears -- was confusing recruiters
+  // into re-flagging the same candidate because nothing on screen showed
+  // it had already been sent.
+  const { data: openCallFlags } = await supabase
+    .from("recruiter_inbox")
+    .select("id, candidate_id, recruiter_id, call_round, profiles(full_name, email)")
+    .eq("mandate_id", id)
+    .eq("task_type", "CANDIDATE_CALL_REQUEST")
+    .eq("status", "open");
+  const flaggedCallByCandidate: Record<
+    string,
+    { flagId: string; recruiterId: string; recruiterName: string; round: string | null }
+  > = {};
+  for (const f of openCallFlags ?? []) {
+    const p = f.profiles as unknown as { full_name: string | null; email: string } | null;
+    flaggedCallByCandidate[f.candidate_id] = {
+      flagId: f.id,
+      recruiterId: f.recruiter_id,
+      recruiterName: p?.full_name?.trim() || p?.email || "teammate",
+      round: f.call_round ?? null,
+    };
+  }
+
   const { data: existingToken } = await supabase
     .from("shortlist_tokens")
     .select("token, first_opened_at, last_opened_at, open_count")
@@ -428,6 +453,7 @@ export default async function MandateDetailPage({
             })}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
+          flaggedCallByCandidate={flaggedCallByCandidate}
           mandateContext={{
             mandateId: id,
             role_title: mandate.role_title,

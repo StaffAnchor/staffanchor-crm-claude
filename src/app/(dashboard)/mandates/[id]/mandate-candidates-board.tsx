@@ -11,7 +11,7 @@ import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
-import FlagForCallButton from "./flag-for-call-button";
+import FlagForCallButton, { type ExistingCallFlag } from "./flag-for-call-button";
 import { Zap, Sparkles } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
@@ -108,6 +108,7 @@ export default function MandateCandidatesBoard({
   isAdmin = false,
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
+  flaggedCallByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: { mandateId: string; role_title: string; client_name: string; [key: string]: unknown };
@@ -117,10 +118,12 @@ export default function MandateCandidatesBoard({
   isAdmin?: boolean;
   applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
   resumeSignedUrlByCandidate?: Record<string, string>;
+  flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
+  const [flagMap, setFlagMap] = useState<Record<string, ExistingCallFlag>>(flaggedCallByCandidate);
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
   const [reassessingIds, setReassessingIds] = useState<Set<string>>(new Set());
@@ -590,6 +593,8 @@ export default function MandateCandidatesBoard({
                           mandateId={mandateContext.mandateId}
                           mandateRoleTitle={mandateContext.role_title ?? null}
                           teamMembers={teamMembers}
+                          existingFlag={flagMap[row.candidate.id] ?? null}
+                          onFlagged={(flag) => setFlagMap((prev) => ({ ...prev, [row.candidate.id]: flag }))}
                         />
                       </div>
 

@@ -88,7 +88,7 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
               </button>
               {expanded === t.id && (
                 <div className="pb-2.5 space-y-1.5">
-                  <div className="flex items-center gap-3 px-0.5">
+                  <div className="flex items-center gap-2 px-0.5 flex-wrap">
                     {/* Plain <a>, not <Link> -- see the comment on the
                         equivalent tabs in calls-flagged/page.tsx: these
                         two hrefs are the same route differing only by
@@ -96,13 +96,13 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                         serve stale for. */}
                     <a
                       href={`/calls-flagged?recruiter=${t.id}`}
-                      className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                      className="inline-flex items-center gap-1 rounded-ros-md bg-blue-600 hover:bg-blue-500 text-white text-[11.5px] font-semibold px-2.5 py-1.5 transition-colors"
                     >
                       View full list as a table →
                     </a>
                     <a
                       href={`/calls-flagged?recruiter=${t.id}&status=all`}
-                      className="text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:underline"
+                      className="inline-flex items-center gap-1 rounded-ros-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11.5px] font-medium px-2.5 py-1.5 transition-colors"
                     >
                       All-time history + outcomes
                     </a>
