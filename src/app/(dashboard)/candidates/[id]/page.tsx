@@ -26,6 +26,7 @@ import QuickContactActions from "./quick-contact-actions";
 import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
 import { formatExperience } from "@/lib/format-experience";
+import { formatDateIST } from "@/lib/format-datetime";
 import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 
 // ROS design language: one neutral avatar treatment for every candidate --
@@ -604,13 +605,17 @@ export default async function CandidateDetailPage({
               expected CTC), pulled out of the denser 8-field grid below and
               given their own prominent row right under the header, the way
               a portal candidate card leads with these before anything else. */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
             <StatChip label="Current location" value={candidate.current_location} />
             <StatChip label="Experience" value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
             <StatChip label="Days to join" value={candidate.notice_period} />
             <StatChip
               label="Expected fixed CTC"
               value={candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : null}
+            />
+            <StatChip
+              label="Registered on"
+              value={candidate.created_at ? formatDateIST(candidate.created_at) : null}
             />
           </div>
 
