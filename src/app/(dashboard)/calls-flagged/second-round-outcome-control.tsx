@@ -33,6 +33,7 @@ export default function SecondRoundOutcomeControl({
   clientName,
   currentStage,
   currentOutcome,
+  currentNote,
   recruiterInboxId,
   onApplied,
 }: {
@@ -44,8 +45,11 @@ export default function SecondRoundOutcomeControl({
   clientName: string | null;
   currentStage: string;
   currentOutcome: string | null;
+  // Whatever reason was recorded last time this was set (if any) -- shown
+  // pre-filled so reopening to change the outcome doesn't lose it.
+  currentNote?: string | null;
   recruiterInboxId?: string | null;
-  onApplied?: (outcome: SecondRoundOutcome) => void;
+  onApplied?: (outcome: SecondRoundOutcome, note: string) => void;
 }) {
   const supabase = createClient();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -54,8 +58,10 @@ export default function SecondRoundOutcomeControl({
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [note, setNote] = useState(currentNote ?? "");
 
   function openPopover() {
+    setNote(currentNote ?? "");
     const rect = buttonRef.current?.getBoundingClientRect();
     if (rect) {
       const opensUp = window.innerHeight - rect.bottom < 220;
@@ -104,6 +110,7 @@ export default function SecondRoundOutcomeControl({
         currentStage,
         outcome,
         actorId: user.id,
+        note,
       });
       if (recruiterInboxId && outcome !== "not_picked_up") {
         await supabase
@@ -111,7 +118,7 @@ export default function SecondRoundOutcomeControl({
           .update({ status: "done", resolved_at: new Date().toISOString() })
           .eq("id", recruiterInboxId);
       }
-      onApplied?.(outcome);
+      onApplied?.(outcome, note);
       setOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save");
@@ -150,6 +157,13 @@ export default function SecondRoundOutcomeControl({
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Optional note -- e.g. why, so whoever flagged this can see the reason"
+              rows={2}
+              className="w-full text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1.5 bg-white dark:bg-slate-900 mb-1.5 resize-none"
+            />
             <div className="flex flex-col gap-1">
               {SECOND_ROUND_OUTCOMES.map((o) => (
                 <button

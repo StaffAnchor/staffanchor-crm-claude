@@ -91,7 +91,7 @@ export default async function CallsFlaggedPage({
   const { data: linkRows } = mandateIds.length
     ? await supabase
         .from("candidate_mandate_links")
-        .select("id, candidate_id, mandate_id, stage, call_disposition, second_round_outcome")
+        .select("id, candidate_id, mandate_id, stage, call_disposition, call_disposition_note, second_round_outcome, second_round_outcome_note")
         .in("mandate_id", mandateIds)
         .in("candidate_id", candidateIds)
     : {
@@ -101,7 +101,9 @@ export default async function CallsFlaggedPage({
           mandate_id: string;
           stage: string;
           call_disposition: string | null;
+          call_disposition_note: string | null;
           second_round_outcome: string | null;
+          second_round_outcome_note: string | null;
         }[],
       };
   const linkByKey = new Map((linkRows ?? []).map((l) => [`${l.candidate_id}:${l.mandate_id}`, l]));
@@ -139,7 +141,9 @@ export default async function CallsFlaggedPage({
         resolved_at: r.resolved_at as string | null,
         stage: link?.stage ?? null,
         call_disposition: link?.call_disposition ?? null,
+        call_disposition_note: link?.call_disposition_note ?? null,
         second_round_outcome: link?.second_round_outcome ?? null,
+        second_round_outcome_note: link?.second_round_outcome_note ?? null,
       };
     })
     .filter((r) => showAll || (r.stage !== "rejected" && r.stage !== "pulled_back"))
@@ -154,7 +158,7 @@ export default async function CallsFlaggedPage({
   );
   const resumeUrlByPath: Record<string, string> = {};
   if (resumePaths.length > 0) {
-    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60);
+    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60 * 12);
     (signedBatch ?? []).forEach((s) => {
       if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
     });

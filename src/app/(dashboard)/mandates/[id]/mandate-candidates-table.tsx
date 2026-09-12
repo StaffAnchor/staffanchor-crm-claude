@@ -44,6 +44,7 @@ export type MandateCandidateRow = {
   rejection_category: string | null;
   date_of_joining: string | null;
   call_disposition: string | null;
+  call_disposition_note: string | null;
   created_at: string | null;
   screened: boolean;
   // Set when the candidate spent a Priority Applicant credit on this
@@ -573,6 +574,7 @@ export default function MandateCandidatesTable({
                     clientName={(mandateContext.client_name as string | undefined) ?? null}
                     currentStage={l.stage}
                     currentDisposition={l.call_disposition}
+                    currentNote={l.call_disposition_note ?? null}
                     onApplied={() => router.refresh()}
                   />
                 </div>

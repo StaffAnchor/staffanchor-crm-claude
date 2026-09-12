@@ -295,7 +295,7 @@ export default async function CandidateDetailPage({
     const cleanPath = rawPath.replace(/^resumes\//, "");
     const { data: signed, error: signError } = await supabase.storage
       .from("resumes")
-      .createSignedUrl(cleanPath, 60 * 60);
+      .createSignedUrl(cleanPath, 60 * 60 * 12);
     if (!signError && signed) {
       resumeSignedUrl = signed.signedUrl;
       resumeFileName = cleanPath.split("/").pop() ?? cleanPath;

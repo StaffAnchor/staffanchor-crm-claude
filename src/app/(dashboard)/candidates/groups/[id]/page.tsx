@@ -60,7 +60,7 @@ export default async function CandidateGroupDetailPage({ params }: { params: Pro
   );
   const resumeUrlByPath: Record<string, string> = {};
   if (resumePaths.length > 0) {
-    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60);
+    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60 * 12);
     (signedBatch ?? []).forEach((s) => {
       if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
     });

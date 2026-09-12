@@ -39,6 +39,7 @@ export default function CallDispositionControl({
   clientName,
   currentStage,
   currentDisposition,
+  currentNote,
   recruiterInboxId,
   onApplied,
 }: {
@@ -50,8 +51,11 @@ export default function CallDispositionControl({
   clientName: string | null;
   currentStage: string;
   currentDisposition: string | null;
+  // Whatever reason was recorded last time this was set (if any) -- shown
+  // pre-filled so reopening to change the disposition doesn't lose it.
+  currentNote?: string | null;
   recruiterInboxId?: string | null;
-  onApplied?: (disposition: CallDisposition) => void;
+  onApplied?: (disposition: CallDisposition, note: string) => void;
 }) {
   const supabase = createClient();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -60,8 +64,10 @@ export default function CallDispositionControl({
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [note, setNote] = useState(currentNote ?? "");
 
   function openPopover() {
+    setNote(currentNote ?? "");
     const rect = buttonRef.current?.getBoundingClientRect();
     if (rect) {
       // Flips to open upward when there isn't ~260px below (the popover's
@@ -113,6 +119,7 @@ export default function CallDispositionControl({
         currentStage,
         disposition,
         actorId: user.id,
+        note,
       });
       if (recruiterInboxId && disposition !== "not_picked_up") {
         await supabase
@@ -120,7 +127,7 @@ export default function CallDispositionControl({
           .update({ status: "done", resolved_at: new Date().toISOString() })
           .eq("id", recruiterInboxId);
       }
-      onApplied?.(disposition);
+      onApplied?.(disposition, note);
       setOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save");
@@ -159,6 +166,13 @@ export default function CallDispositionControl({
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Optional note -- e.g. why, so whoever flagged this can see the reason"
+              rows={2}
+              className="w-full text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1.5 bg-white dark:bg-slate-900 mb-1.5 resize-none"
+            />
             <div className="flex flex-col gap-1">
               {CALL_DISPOSITIONS.map((d) => (
                 <button

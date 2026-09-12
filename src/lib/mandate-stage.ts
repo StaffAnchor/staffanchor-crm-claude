@@ -321,6 +321,11 @@ export async function applySecondRoundOutcome(
     currentStage: string;
     outcome: SecondRoundOutcome;
     actorId: string;
+    // Optional free-text reason -- e.g. "spoke to him, comp expectation is
+    // way above budget" -- so the recruiter who gets notified of the
+    // outcome (and any admin reviewing /calls-flagged later) sees *why*,
+    // not just the outcome label.
+    note?: string;
   }
 ) {
   const nowIso = new Date().toISOString();
@@ -338,6 +343,7 @@ export async function applySecondRoundOutcome(
       second_round_outcome: params.outcome,
       second_round_outcome_at: nowIso,
       second_round_outcome_by: params.actorId,
+      second_round_outcome_note: params.note?.trim() || null,
     })
     .eq("id", params.linkId);
   if (outcomeError) throw outcomeError;
@@ -379,6 +385,7 @@ export async function applySecondRoundOutcome(
       mandate_id: params.mandateId,
       task_type: "SECOND_ROUND_OUTCOME",
       title,
+      detail: params.note?.trim() || null,
       priority: "normal",
     });
     await supabase.rpc("_create_notification", {
@@ -428,6 +435,11 @@ export async function applyCallDisposition(
     currentStage: string;
     disposition: CallDisposition;
     actorId: string;
+    // Optional free-text reason, same purpose as applySecondRoundOutcome's
+    // note above -- lets whoever set this disposition record *why*, e.g.
+    // "not picked up after 3 attempts" or "asked for time, will follow up
+    // Friday", visible to whoever reviews the flag later.
+    note?: string;
   }
 ) {
   const nowIso = new Date().toISOString();
@@ -437,6 +449,7 @@ export async function applyCallDisposition(
       call_disposition: params.disposition,
       call_disposition_at: nowIso,
       call_disposition_by: params.actorId,
+      call_disposition_note: params.note?.trim() || null,
     })
     .eq("id", params.linkId);
   if (dispositionError) throw dispositionError;

@@ -132,7 +132,7 @@ export default async function PracticePoolPage({
   );
   const { data: signedBatch } =
     resumePaths.length > 0
-      ? await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60)
+      ? await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60 * 12)
       : { data: null as { signedUrl?: string | null; error?: unknown; path?: string | null }[] | null };
   const resumeUrlByPath: Record<string, string> = {};
   (signedBatch ?? []).forEach((s) => {

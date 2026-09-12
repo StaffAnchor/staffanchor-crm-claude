@@ -545,7 +545,7 @@ export default async function CandidatesPage({
   // reasoning as the initial lookup wave.
   const [signedBatchRes, candidatePracticeRowsRes, linkRowsRes] = await Promise.all([
     resumePaths.length > 0
-      ? supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60)
+      ? supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60 * 12)
       : Promise.resolve({ data: null }),
     candidateIds.length > 0
       ? supabase
