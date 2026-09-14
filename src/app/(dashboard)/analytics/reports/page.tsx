@@ -24,6 +24,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/fetch-all-rows";
 import ReportBarList, { type BarItem } from "./report-bar-list";
 import AiHealthCard from "./ai-health-card";
 import SystemHealthCard from "./system-health-card";
@@ -160,11 +161,29 @@ export default async function ReportsPage({
   const { from: rangeFrom, to: rangeTo } = rangeBoundsFor(range, today);
   const currentRangeLabel = RANGES.find((r) => r.key === range)?.label ?? "Last 30 days";
 
-  const { data: candidates } = await supabase
-    .from("candidates")
-    .select(
-      "id, category, sub_domain, secondary_sub_domains, current_fixed_ctc, current_location, created_at, status, created_by, created_by_user, profile_completed_by"
-    );
+  // Full unfiltered scan feeding every KPI/chart on this page (totals,
+  // inflow trend, category/location breakdowns, invite-conversion) -- a
+  // plain .select() here silently truncates at 1000 rows once the table
+  // crosses that mark (same bug already fixed for the Candidates page
+  // "Total Candidates" tile in 6e8720a; this table is at 1071 rows live
+  // right now, so this specific query was already silently truncating).
+  const { data: candidates } = await fetchAllRows<{
+    id: string;
+    category: string | null;
+    sub_domain: string | null;
+    secondary_sub_domains: string[] | null;
+    current_fixed_ctc: number | null;
+    current_location: string | null;
+    created_at: string;
+    status: string | null;
+    created_by: string | null;
+    created_by_user: string | null;
+    profile_completed_by: string | null;
+  }>(
+    supabase,
+    "candidates",
+    "id, category, sub_domain, secondary_sub_domains, current_fixed_ctc, current_location, created_at, status, created_by, created_by_user, profile_completed_by"
+  );
 
   const rows = candidates ?? [];
   const totalCandidates = rows.length;
@@ -177,11 +196,22 @@ export default async function ReportsPage({
   // migration timestamp happened to fall relative to the selected range.
   const organicRows = rows.filter((c) => c.created_by !== "bulk_import");
 
-  const { data: links } = await supabase
-    .from("candidate_mandate_links")
-    .select(
-      "candidate_id, added_by, stage, mandate_id, in_shortlist, confirmed_interview_at, stage_updated_at, date_of_joining, stage_source, rejection_category"
-    );
+  const { data: links } = await fetchAllRows<{
+    candidate_id: string;
+    added_by: string | null;
+    stage: string;
+    mandate_id: string;
+    in_shortlist: boolean | null;
+    confirmed_interview_at: string | null;
+    stage_updated_at: string | null;
+    date_of_joining: string | null;
+    stage_source: string | null;
+    rejection_category: string | null;
+  }>(
+    supabase,
+    "candidate_mandate_links",
+    "candidate_id, added_by, stage, mandate_id, in_shortlist, confirmed_interview_at, stage_updated_at, date_of_joining, stage_source, rejection_category"
+  );
   const allLinks = links ?? [];
 
   const { data: profiles } = await supabase.from("profiles").select("id, full_name, email, role");
@@ -192,18 +222,29 @@ export default async function ReportsPage({
     profileIsVendor[p.id] = p.role === "freelancer";
   });
 
-  const { data: allMandates } = await supabase
-    .from("mandates")
-    .select("id, status, created_at, auto_match_results");
+  const { data: allMandates } = await fetchAllRows<{
+    id: string;
+    status: string;
+    created_at: string;
+    auto_match_results: unknown;
+  }>(supabase, "mandates", "id, status, created_at, auto_match_results");
   const mandateRows = allMandates ?? [];
 
-  const { data: allAssignments } = await supabase.from("mandate_assignments").select("mandate_id, freelancer_id");
+  const { data: allAssignments } = await fetchAllRows<{ mandate_id: string; freelancer_id: string }>(
+    supabase,
+    "mandate_assignments",
+    "mandate_id, freelancer_id"
+  );
   const staffCountByMandate: Record<string, number> = {};
   (allAssignments ?? []).forEach((a) => {
     staffCountByMandate[a.mandate_id] = (staffCountByMandate[a.mandate_id] ?? 0) + 1;
   });
 
-  const { data: allScreeningRows } = await supabase.from("mandate_screening_answers").select("mandate_id, candidate_id");
+  const { data: allScreeningRows } = await fetchAllRows<{ mandate_id: string; candidate_id: string }>(
+    supabase,
+    "mandate_screening_answers",
+    "mandate_id, candidate_id"
+  );
   const screenedByMandate: Record<string, Set<string>> = {};
   (allScreeningRows ?? []).forEach((r) => {
     (screenedByMandate[r.mandate_id] ??= new Set()).add(r.candidate_id);
@@ -322,13 +363,36 @@ export default async function ReportsPage({
   // action = 'completion_invite_sent'. We treat "completed" as: invited at
   // least once, and current status has since moved off awaiting_input/lead
   // (i.e. graduated to registered or further along the pipeline).
-  const { data: inviteLog } = await supabase
+  // Both the row data (to build invitedIds, the actual candidate-level
+  // set) and the total count were previously read off one plain .select()
+  // -- .length silently undercounted once completion_invite_sent rows
+  // crossed 1000 (same truncation bug as the unbounded .select()s above,
+  // just quieter since nothing errored). fetchAllRows has no filter
+  // support (it's built for plain full-table scans), so this filtered
+  // query pages itself directly with the same .range() loop rather than
+  // downloading the whole audit_log table and filtering client-side.
+  // totalInvitesSent uses a separate count:"exact", head:true request,
+  // which asks PostgREST for the real total directly instead of trusting
+  // how many rows happened to come back in the (also capped) data page.
+  const inviteLog: { entity_id: string; at: string }[] = [];
+  for (let offset = 0; offset < 50000; offset += 1000) {
+    const { data: page, error } = await supabase
+      .from("audit_log")
+      .select("entity_id, at")
+      .eq("entity", "candidate")
+      .eq("action", "completion_invite_sent")
+      .range(offset, offset + 999);
+    if (error || !page) break;
+    inviteLog.push(...page);
+    if (page.length < 1000) break;
+  }
+  const invitedIds = new Set(inviteLog.map((r) => r.entity_id));
+  const { count: totalInvitesSentExact } = await supabase
     .from("audit_log")
-    .select("entity_id, at")
+    .select("id", { count: "exact", head: true })
     .eq("entity", "candidate")
     .eq("action", "completion_invite_sent");
-  const invitedIds = new Set((inviteLog ?? []).map((r) => r.entity_id));
-  const totalInvitesSent = (inviteLog ?? []).length;
+  const totalInvitesSent = totalInvitesSentExact ?? 0;
   const totalCandidatesInvited = invitedIds.size;
   const invitedCandidates = rows.filter((c) => invitedIds.has(c.id));
   const invitedCompletedIds = invitedCandidates
