@@ -120,7 +120,14 @@ export async function updateSession(request: NextRequest) {
   // routes. Public routes (login, password reset, cron/webhook callbacks,
   // shortlist links) are exempt since they're not role-specific.
   if (user && !isPublicRoute) {
-    const isVendorRoute = request.nextUrl.pathname.startsWith("/vendor");
+    // "/vendor/" (trailing slash) -- NOT a bare startsWith("/vendor"),
+    // which also matches "/vendors", the admin-only CRM page listing
+    // vendor agencies (src/app/(dashboard)/vendors/page.tsx). With the
+    // broader match, every admin hitting /vendors got bounced straight
+    // to /inbox by the block below (profile.role !== "freelancer" &&
+    // isVendorRoute), since "/vendors".startsWith("/vendor") is true --
+    // which is exactly why the Vendors nav link silently did nothing.
+    const isVendorRoute = request.nextUrl.pathname.startsWith("/vendor/");
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
