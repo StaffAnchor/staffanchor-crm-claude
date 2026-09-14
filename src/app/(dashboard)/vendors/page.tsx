@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import InviteAgencyForm from "./invite-agency-form";
 import AssignAgencyControl from "./assign-agency-control";
+import VendorApplicationsPanel from "./vendor-applications-panel";
 
 // The vendor directory: turns "vendor" from an implicit profiles.role value
 // into a real, manageable company-level relationship. Admin-only, same gate
@@ -23,6 +24,32 @@ export default async function VendorsPage() {
     .from("vendor_agencies")
     .select("id, name, contact_name, contact_email, status, invited_at, activated_at")
     .order("created_at", { ascending: false });
+
+  // Pending self-serve applications from vendors.staffanchor.com -- reviewed
+  // here, approving creates the actual vendor_agencies row above (see
+  // api/admin/vendor-applications/[id]/approve). Only "applied" (pending)
+  // rows show up as an action queue; approved/rejected ones already have
+  // their outcome reflected via the agencies table / simply drop off.
+  const { data: pendingApplications } = await supabase
+    .from("vendor_applications")
+    .select(
+      "id, full_name, email, phone, linkedin_url, current_location, total_experience_years, b2b_sales_hiring_experience_years, enterprise_sales_hiring_experience_years, roles_hired_for, industries_hired_for, linkedin_connections_band, has_linkedin_recruiter_or_navigator, has_job_portal_access, interested_in_paid_job_portal_access, expected_hours_per_week, languages_known, available_to_start, additional_notes, resume_file_path, created_at"
+    )
+    .eq("status", "applied")
+    .order("created_at", { ascending: false });
+
+  const applicationsWithResume = await Promise.all(
+    (pendingApplications ?? []).map(async (a) => {
+      let resumeSignedUrl: string | null = null;
+      if (a.resume_file_path) {
+        const { data: signed } = await supabase.storage.from("resumes").createSignedUrl(a.resume_file_path, 60 * 60 * 12);
+        resumeSignedUrl = signed?.signedUrl ?? null;
+      }
+      const rest: Omit<typeof a, "resume_file_path"> & { resume_file_path?: never } = { ...a };
+      delete (rest as { resume_file_path?: string | null }).resume_file_path;
+      return { ...rest, resumeSignedUrl };
+    })
+  );
 
   const { data: freelancerProfiles } = await supabase
     .from("profiles")
@@ -141,7 +168,17 @@ export default async function VendorsPage() {
         )}
       </div>
 
-      <div>
+      <div className="space-y-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            Applications ({applicationsWithResume.length})
+          </h2>
+          <p className="text-[12px] text-slate-400 mb-3">
+            Self-applied via vendors.staffanchor.com. Approving emails them a signup link, same as an invite.
+          </p>
+          <VendorApplicationsPanel applications={applicationsWithResume} />
+        </div>
+
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Invite a vendor agency</h2>
           <p className="text-[12px] text-slate-400 mb-3">

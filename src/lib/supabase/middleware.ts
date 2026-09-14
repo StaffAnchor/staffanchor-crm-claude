@@ -2,6 +2,23 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  // vendors.staffanchor.com is a second custom domain pointed at this same
+  // Vercel project (see vercel.json/dashboard domain config) -- it's the
+  // fully public vendor-application landing site, not the staff CRM, so it
+  // never goes through the auth check below at all. Root path on that host
+  // is rewritten straight to the application form so the link vendors are
+  // given is just "vendors.staffanchor.com", not a deeper path they have to
+  // be told about.
+  const host = request.headers.get("host") ?? "";
+  if (host === "vendors.staffanchor.com" || host.startsWith("vendors.staffanchor.com:")) {
+    if (request.nextUrl.pathname === "/") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/vendor-apply";
+      return NextResponse.rewrite(url);
+    }
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -75,7 +92,13 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/schedule") ||
     // Same class again: a would-be vendor has no account yet, so there's no
     // session to check -- the invite token itself is the credential.
-    request.nextUrl.pathname.startsWith("/vendor-signup");
+    request.nextUrl.pathname.startsWith("/vendor-signup") ||
+    // Public vendor application form + its submission API -- same
+    // no-account-yet class as vendor-signup above, reachable both at
+    // vendors.staffanchor.com (rewritten to this path above) and directly
+    // at /vendor-apply on the main CRM domain.
+    request.nextUrl.pathname.startsWith("/vendor-apply") ||
+    request.nextUrl.pathname.startsWith("/api/vendor-apply");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
