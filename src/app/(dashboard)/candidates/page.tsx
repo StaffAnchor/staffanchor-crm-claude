@@ -458,7 +458,16 @@ export default async function CandidatesPage({
     if (params.max_ctc) qq = qq.lte("current_fixed_ctc", Number(params.max_ctc));
     if (params.min_exp) qq = qq.gte("total_experience_years", Number(params.min_exp));
     if (params.sub_domain) qq = qq.in("sub_domain", params.sub_domain.split(","));
-    if (params.location) qq = qq.in("current_location", params.location.split(","));
+    // Prefix match (not exact .in()) -- see locationOptions above for why:
+    // stored values are sometimes bare city ("Hyderabad") and sometimes
+    // "City, State" ("Hyderabad, Telangana"), and options here are always
+    // just the city, so ilike("City%") is what actually catches both.
+    if (params.location) {
+      const cities = params.location.split(",").map((c) => c.trim()).filter(Boolean);
+      if (cities.length > 0) {
+        qq = qq.or(cities.map((c) => `current_location.ilike.${c}%`).join(","));
+      }
+    }
     if (params.secondary_domain) qq = qq.overlaps("secondary_sub_domains", params.secondary_domain.split(","));
     // segment_data.languages_known / .b2b_sales_motion_type are jsonb arrays
     // nested inside the segment_data column (not their own top-level array
@@ -686,12 +695,32 @@ export default async function CandidatesPage({
   // current_location is free text typed by the candidate (no fixed taxonomy
   // like industry/language), so the filter options have to come from what's
   // actually on file rather than a hardcoded list -- same reasoning as
-  // legacySubDomains above. Exact-match .in() rather than the old .ilike()
-  // substring match, matching every other multi-select filter on this page.
+  // legacySubDomains above.
+  //
+  // The data has two coexisting formats for the same place -- "Hyderabad"
+  // and "Hyderabad, Telangana" both appear, city always first -- so an
+  // exact-match filter on the full string missed whichever variant wasn't
+  // selected, and picking the "Hyderabad, Telangana" option specifically
+  // silently broke the filter altogether: this page's multi-select filters
+  // all encode selections as a comma-joined URL param (see
+  // multi-select-filter.tsx), so a value that itself contains a comma gets
+  // split back into two bogus tokens ("Hyderabad" and " Telangana") the
+  // moment it round-trips through the URL, matching neither the "Hyderabad"
+  // nor the "Hyderabad, Telangana" rows. Reported live: filtering to
+  // Hyderabad + B2C Sales returned 2 candidates while a free-text prompt
+  // search over the same data found 24, including "Hyderabad, Telangana"
+  // profiles the location filter silently dropped.
+  //
+  // Fixed by reducing every option down to just the city (text before the
+  // first comma, if any) so "Hyderabad" and "Hyderabad, Telangana" collapse
+  // into one comma-free "Hyderabad" option -- no longer able to break the
+  // comma-delimited URL encoding -- and matching it as a prefix (see the
+  // .ilike("city%") filter below) so selecting "Hyderabad" still catches
+  // both stored variants instead of only whichever one is an exact match.
   const locationOptions = Array.from(
     new Set(
       (allRows ?? [])
-        .map((r) => (r.current_location ?? "").trim())
+        .map((r) => (r.current_location ?? "").split(",")[0].trim())
         .filter((v): v is string => Boolean(v))
     )
   ).sort();
