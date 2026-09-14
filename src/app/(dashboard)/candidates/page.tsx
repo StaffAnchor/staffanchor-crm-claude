@@ -220,6 +220,42 @@ type SearchParams = {
 
 const PAGE_SIZE = 100;
 
+// PostgREST caps a single .select() response at 1000 rows regardless of
+// table size, with no error or indication it happened -- see the call site
+// in the KPI/filter-options query below for the full story on why this
+// exists. Pages through in chunks of KPI_SCAN_PAGE_SIZE via .range() until
+// a page comes back short of that size, capped at KPI_SCAN_MAX_ROWS as a
+// sanity ceiling (mirrors the .limit(20000) already used for
+// candidate_mandate_links's full-table scan elsewhere on this page) so a
+// runaway loop can't hammer the DB if something upstream is ever wrong.
+const KPI_SCAN_PAGE_SIZE = 1000;
+const KPI_SCAN_MAX_ROWS = 20000;
+
+type CandidateKpiRow = {
+  sub_domain: string | null;
+  status: string;
+  created_at: string;
+  created_by: string | null;
+  current_location: string | null;
+  recruiter_assessment: unknown;
+};
+
+async function fetchAllCandidateRows(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<{ data: CandidateKpiRow[]; error: null } | { data: null; error: unknown }> {
+  const rows: CandidateKpiRow[] = [];
+  for (let offset = 0; offset < KPI_SCAN_MAX_ROWS; offset += KPI_SCAN_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("candidates")
+      .select("sub_domain, status, created_at, created_by, current_location, recruiter_assessment")
+      .range(offset, offset + KPI_SCAN_PAGE_SIZE - 1);
+    if (error) return { data: null, error };
+    rows.push(...((data ?? []) as CandidateKpiRow[]));
+    if (!data || data.length < KPI_SCAN_PAGE_SIZE) break;
+  }
+  return { data: rows, error: null };
+}
+
 export default async function CandidatesPage({
   searchParams,
 }: {
@@ -321,9 +357,19 @@ export default async function CandidatesPage({
     // used to be two separate full-table round trips even though they're
     // reading the same rows; combining the column list halves the
     // redundant traffic without changing any of the derived numbers.
-    supabase
-      .from("candidates")
-      .select("sub_domain, status, created_at, created_by, current_location, recruiter_assessment"),
+    //
+    // PostgREST caps any single .select() response at 1000 rows by default,
+    // silently -- no error, no warning, just a truncated array. The
+    // candidates table crossed that line this week (1069 rows) and every
+    // KPI tile derived from this query (Total Candidates, New Additions,
+    // Job Apply/Profile Registrations/Bulk Uploads/Zoho counts, incomplete-
+    // profile count) quietly went stale at whatever the first 1000 rows
+    // happened to total, instead of erroring -- reported live as "Total
+    // Candidates stuck at 1000 despite new signups today." fetchAllRows
+    // pages through with .range() until a page comes back short, so this
+    // keeps working correctly as the table keeps growing past 1000, 2000,
+    // etc., not just today's fix for today's row count.
+    fetchAllCandidateRows(supabase),
     // Pipeline progress (Submitted / Client Interview / Client Shortlisted /
     // Offer / Placed) lives on candidate_mandate_links.stage, per mandate --
     // not candidates.status. Counting "distinct candidates with at least
