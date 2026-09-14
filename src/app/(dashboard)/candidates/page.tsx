@@ -457,7 +457,17 @@ export default async function CandidatesPage({
     if (params.min_ctc) qq = qq.gte("current_fixed_ctc", Number(params.min_ctc));
     if (params.max_ctc) qq = qq.lte("current_fixed_ctc", Number(params.max_ctc));
     if (params.min_exp) qq = qq.gte("total_experience_years", Number(params.min_exp));
-    if (params.sub_domain) qq = qq.in("sub_domain", params.sub_domain.split(","));
+    // sub_domain filter values are URI-component-encoded before they ever
+    // reach the URL (see legacySubDomains/legacySubDomainOptions below) --
+    // canonical taxonomy values never contain a comma so encoding is a
+    // no-op for them, but pre-taxonomy legacy values on file can (e.g.
+    // "Inside Sales (B2C), EdTech, BFSI ..."), and a raw comma there would
+    // collide with this filter's own comma-joined URL encoding (same class
+    // of bug fixed for current_location -- see locationOptions above).
+    // decodeURIComponent reverses that safely for every token whether or
+    // not it was actually encoded.
+    if (params.sub_domain)
+      qq = qq.in("sub_domain", params.sub_domain.split(",").map((v) => decodeURIComponent(v)));
     // Prefix match (not exact .in()) -- see locationOptions above for why:
     // stored values are sometimes bare city ("Hyderabad") and sometimes
     // "City, State" ("Hyderabad, Telangana"), and options here are always
@@ -692,6 +702,22 @@ export default async function CandidatesPage({
         .filter((d): d is string => Boolean(d) && !CANONICAL_PRIMARY_SPECIALIZATIONS.has(d as string))
     )
   ).sort();
+  // Some legacy sub_domain values on file are themselves comma-containing
+  // strings (e.g. "Inside Sales (B2C), EdTech, BFSI (Fintech / Finance /
+  // Loan / Insurance), Real Estate" -- an old free-text/multi-tag entry
+  // that predates the canonical taxonomy). Passed straight through as a
+  // MultiSelectFilter option, a value like that collides with the filter's
+  // own comma-joined URL encoding the instant it's selected: the same bug
+  // class fixed for current_location above, just with no clean "take the
+  // part before the first comma" fallback here since these aren't
+  // hierarchical. Instead, each legacy option is URI-component-encoded
+  // (commas -> %2C) before being handed to the filter as its "value", with
+  // a value->original-string label map so the checkbox and chip UI still
+  // show the real text -- decoded back on the query side above.
+  const legacySubDomainOptions = legacySubDomains.map((d) => encodeURIComponent(d));
+  const legacySubDomainLabelByEncoded: Record<string, string> = Object.fromEntries(
+    legacySubDomains.map((d) => [encodeURIComponent(d), d])
+  );
   // current_location is free text typed by the candidate (no fixed taxonomy
   // like industry/language), so the filter options have to come from what's
   // actually on file rather than a hardcoded list -- same reasoning as
@@ -1121,7 +1147,10 @@ export default async function CandidatesPage({
                     params.sub_domain!.split(",").filter((x) => x !== v).join(",") || undefined,
                 })}
               >
-                Specialization: {v} ✕
+                {/* v may be a URI-component-encoded legacy value (see
+                    legacySubDomainOptions above) -- decode for display,
+                    canonical values pass through unchanged. */}
+                Specialization: {legacySubDomainLabelByEncoded[v] ?? v} ✕
               </ActiveFilterChip>
             ))}
           {params.role_level &&
@@ -1196,10 +1225,11 @@ export default async function CandidatesPage({
                       defaultValue={params.sub_domain}
                       groups={[
                         ...PRIMARY_SPECIALIZATION_GROUPS,
-                        ...(legacySubDomains.length > 0
-                          ? [{ group: "Other / legacy values", options: legacySubDomains }]
+                        ...(legacySubDomainOptions.length > 0
+                          ? [{ group: "Other / legacy values", options: legacySubDomainOptions }]
                           : []),
                       ]}
+                      labels={legacySubDomainLabelByEncoded}
                     />
                   </FilterField>
                   <FilterField label="Secondary specialization">
