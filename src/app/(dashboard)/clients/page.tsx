@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Building2, MapPin, Briefcase, Users, Trophy, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/fetch-all-rows";
 import CreateClientForm from "./create-client-form";
 import ClientLeaderboard, { type ClientLeaderRow } from "./client-leaderboard";
 import { computeFunnel, pct } from "./funnel-utils";
@@ -41,9 +42,22 @@ export default async function ClientsPage({
   // before starting the next. Running them concurrently cuts this page's
   // database wait time to roughly the slowest single query instead of the
   // sum of all three, which is the main reason this page felt slow to load.
+  // mandates previously had no .range()/.limit()/count-head at all, unlike
+  // its candidate_mandate_links neighbor below (which at least has a
+  // .limit(20000) safety net) -- meaning it silently truncated at
+  // PostgREST's default 1000-row cap the moment the firm crossed 1000
+  // mandates, corrupting statsByClient (per-client open/total/shortlisted
+  // counts) and the oldest-open-mandate KPI with no error. Only 12 rows
+  // live today, but this is the same truncation bug class already fixed
+  // on Candidates (6e8720a) and Reports -- fixing it properly here too
+  // rather than leaving a bomb for whenever mandate volume grows.
   const [{ data: clients }, { data: mandates }, { data: links }, { data: profiles }] = await Promise.all([
     query,
-    supabase.from("mandates").select("id, client_id, status, created_at"),
+    fetchAllRows<{ id: string; client_id: string; status: string; created_at: string }>(
+      supabase,
+      "mandates",
+      "id, client_id, status, created_at"
+    ).then((r) => ({ data: r.data })),
     supabase.from("candidate_mandate_links").select("mandate_id, stage").limit(20000),
     supabase.from("profiles").select("id, full_name, email"),
   ]);
