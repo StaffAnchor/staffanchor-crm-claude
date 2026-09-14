@@ -53,7 +53,77 @@ const INDUSTRY_OPTIONS = [
 
 const CONNECTIONS_BANDS = ["Under 500", "500 - 1,000", "1,000 - 2,500", "2,500 - 5,000", "5,000+"];
 const HOURS_OPTIONS = ["Under 10 hrs/week", "10 - 20 hrs/week", "20 - 30 hrs/week", "30+ hrs/week"];
-const START_OPTIONS = ["Immediately", "Within 1 week", "Within 2 weeks", "Flexible"];
+
+// Dropdown bands rather than a free-typed number -- easier to fill in on
+// mobile, and keeps self-reported experience in consistent buckets instead
+// of "3" vs "3.0" vs "three". Values map to a representative number of
+// years that still lands in the numeric total_experience_years /
+// b2b_sales_hiring_experience_years / enterprise_sales_hiring_experience_years
+// columns unchanged -- no API/schema change needed.
+const EXPERIENCE_OPTIONS = [
+  { label: "<1 year", value: "0.5" },
+  { label: "1 year", value: "1" },
+  { label: "2 years", value: "2" },
+  { label: "3 years", value: "3" },
+  { label: "4 years", value: "4" },
+  { label: "5 years", value: "5" },
+  { label: "6 years", value: "6" },
+  { label: "7 years", value: "7" },
+  { label: "8 years", value: "8" },
+  { label: "9 years", value: "9" },
+  { label: "10 years", value: "10" },
+  { label: "10+ years", value: "12" },
+];
+
+// India-only major-city + state dropdown for "current location" -- covers
+// the vast majority of applicants at a glance while still letting anyone
+// outside this list fall through to a free-text "Other" field, so no one's
+// blocked from applying just because their city isn't in the preset list.
+const MAJOR_CITIES = [
+  "Mumbai",
+  "Delhi NCR",
+  "Bengaluru",
+  "Hyderabad",
+  "Chennai",
+  "Kolkata",
+  "Pune",
+  "Ahmedabad",
+  "Jaipur",
+  "Chandigarh",
+  "Lucknow",
+  "Kochi",
+  "Indore",
+  "Surat",
+  "Nagpur",
+  "Coimbatore",
+  "Gurugram",
+  "Noida",
+];
+
+const INDIAN_STATES = [
+  "Andhra Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Tamil Nadu",
+  "Telangana",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+];
 
 function toggle(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -98,9 +168,14 @@ export default function VendorApplyPage() {
   const [industriesHiredFor, setIndustriesHiredFor] = useState<string[]>([]);
   const [languagesKnown, setLanguagesKnown] = useState<string[]>([]);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [phoneDigits, setPhoneDigits] = useState("");
+  const [locationOption, setLocationOption] = useState("");
+  const [customLocation, setCustomLocation] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  const todayISO = new Date().toISOString().slice(0, 10);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -108,6 +183,16 @@ export default function VendorApplyPage() {
 
     const form = e.currentTarget;
     const fd = new FormData(form);
+
+    if (phoneDigits.length !== 10) {
+      setError("Please enter a valid 10-digit phone number.");
+      return;
+    }
+    const locationValue = locationOption === "Other" ? customLocation.trim() : locationOption;
+    if (!locationValue) {
+      setError("Please select your current location.");
+      return;
+    }
     if (!resumeFile) {
       setError("Please attach your resume as a PDF.");
       return;
@@ -118,6 +203,8 @@ export default function VendorApplyPage() {
     }
     fd.set("consent", "true");
     fd.set("resume", resumeFile);
+    fd.set("phone", `+91 ${phoneDigits}`);
+    fd.set("currentLocation", locationValue);
     rolesHiredFor.forEach((v) => fd.append("rolesHiredFor", v));
     industriesHiredFor.forEach((v) => fd.append("industriesHiredFor", v));
     languagesKnown.forEach((v) => fd.append("languagesKnown", v));
@@ -225,13 +312,53 @@ export default function VendorApplyPage() {
               </div>
               <div>
                 <FieldLabel>Phone / WhatsApp number</FieldLabel>
-                <input name="phone" required placeholder="+91 98765 43210" className={inputClass} />
+                <div className="flex items-center rounded-xl border border-slate-200 bg-white shadow-sm transition duration-150 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
+                  <span className="pl-3.5 pr-2.5 py-2.5 text-sm font-medium text-slate-500 border-r border-slate-200 shrink-0">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    required
+                    placeholder="98765 43210"
+                    value={phoneDigits}
+                    onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    className="w-full min-w-0 bg-transparent px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                  />
+                </div>
               </div>
               <div>
                 <FieldLabel>Current location</FieldLabel>
-                <input name="currentLocation" required placeholder="City, state" className={inputClass} />
+                <select
+                  required
+                  value={locationOption}
+                  onChange={(e) => setLocationOption(e.target.value)}
+                  className={`${inputClass} appearance-none bg-white`}
+                >
+                  <option value="">Select city or state</option>
+                  <optgroup label="Major cities">
+                    {MAJOR_CITIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="States">
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </optgroup>
+                  <option value="Other">Other</option>
+                </select>
+                {locationOption === "Other" && (
+                  <input
+                    required
+                    placeholder="Enter your city, state"
+                    value={customLocation}
+                    onChange={(e) => setCustomLocation(e.target.value)}
+                    className={`${inputClass} mt-2`}
+                  />
+                )}
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <FieldLabel>LinkedIn profile URL</FieldLabel>
                 <input name="linkedinUrl" required placeholder="linkedin.com/in/..." className={inputClass} />
               </div>
@@ -242,16 +369,31 @@ export default function VendorApplyPage() {
             <SectionHeader icon={Briefcase} title="Recruiting experience" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
               <div>
-                <FieldLabel>Total experience (yrs)</FieldLabel>
-                <input name="totalExperienceYears" type="number" min={0} step={0.5} required className={inputClass} />
+                <FieldLabel>Total experience</FieldLabel>
+                <select name="totalExperienceYears" required defaultValue="" className={`${inputClass} appearance-none bg-white`}>
+                  <option value="" disabled>Select</option>
+                  {EXPERIENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <FieldLabel>B2B sales hiring exp (yrs)</FieldLabel>
-                <input name="b2bSalesHiringExperienceYears" type="number" min={0} step={0.5} required className={inputClass} />
+                <FieldLabel>B2B sales hiring exp</FieldLabel>
+                <select name="b2bSalesHiringExperienceYears" required defaultValue="" className={`${inputClass} appearance-none bg-white`}>
+                  <option value="" disabled>Select</option>
+                  {EXPERIENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <FieldLabel>Enterprise sales hiring exp (yrs)</FieldLabel>
-                <input name="enterpriseSalesHiringExperienceYears" type="number" min={0} step={0.5} className={inputClass} />
+                <FieldLabel>Enterprise sales hiring exp</FieldLabel>
+                <select name="enterpriseSalesHiringExperienceYears" defaultValue="" className={`${inputClass} appearance-none bg-white`}>
+                  <option value="">None / not applicable</option>
+                  {EXPERIENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -319,12 +461,14 @@ export default function VendorApplyPage() {
               </div>
               <div>
                 <FieldLabel>Available to start</FieldLabel>
-                <select name="availableToStart" required className={`${inputClass} appearance-none bg-white`}>
-                  <option value="">Select</option>
-                  {START_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                <input
+                  type="date"
+                  name="availableToStart"
+                  required
+                  min={todayISO}
+                  defaultValue={todayISO}
+                  className={inputClass}
+                />
               </div>
             </div>
             <p className="text-xs font-medium text-slate-500 mb-2.5 flex items-center gap-1.5">
