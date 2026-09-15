@@ -86,105 +86,114 @@ export default async function VendorsPage() {
   };
 
   return (
-    <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
-      <div className="col-span-2 space-y-4">
-        <div>
-          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Vendor agencies</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400">
-            External staffing partners who submit candidates through the vendor portal, managed as companies rather
-            than loose individual accounts.
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left px-4 py-2.5">Agency</th>
-                <th className="text-left px-4 py-2.5">Contact</th>
-                <th className="text-left px-4 py-2.5">Status</th>
-                <th className="text-left px-4 py-2.5">Recruiters</th>
-                <th className="text-left px-4 py-2.5">Submitted / Placed / Rejected</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {(agencies ?? []).map((a) => {
-                const sc = scorecardByAgency.get(a.id);
-                return (
-                  <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{a.name}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {a.contact_name ? `${a.contact_name} · ` : ""}
-                      {a.contact_email}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTone[a.status] ?? ""}`}>
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {(recruitersByAgency.get(a.id) ?? []).map((r) => r.full_name).join(", ") || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">
-                      {sc ? `${sc.total_submitted} / ${sc.placed} / ${sc.rejected}` : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-              {(agencies ?? []).length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
-                    No vendor agencies invited yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {unassigned.length > 0 && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
-              Legacy vendor accounts without an agency
-            </h2>
-            <p className="text-[12px] text-slate-400 mb-3">
-              Created before agency tracking existed — assign each to the agency they actually belong to.
-            </p>
-            <div className="space-y-2">
-              {unassigned.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between gap-2 border border-slate-100 dark:border-slate-800 rounded-lg px-3 py-2"
-                >
-                  <div className="text-[13px]">
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{p.full_name}</span>
-                    <span className="text-slate-400 ml-1.5">{p.email}</span>
-                  </div>
-                  <AssignAgencyControl profileId={p.id} agencies={agencies ?? []} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+    <div className="max-w-[1500px] mx-auto px-5 py-8 space-y-6">
+      <div>
+        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Vendor agencies</h1>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">
+          External staffing partners who submit candidates through the vendor portal, managed as companies rather
+          than loose individual accounts.
+        </p>
       </div>
 
-      <div className="space-y-4">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+      {/* Applications queue -- promoted to a full-width table (was a narrow
+          accordion crammed into the sidebar) since this is the most
+          time-sensitive, actionable thing on the page: a queue of leads
+          waiting on an Approve/Reject decision, not a passive reference
+          list like the agency directory below it. */}
+      <div>
+        <div className="flex items-baseline justify-between gap-4 mb-2">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Applications ({applicationsWithResume.length})
           </h2>
-          <p className="text-[12px] text-slate-400 mb-3">
+          <p className="text-[12px] text-slate-400">
             Self-applied via vendors.staffanchor.com. Approving emails them a signup link, same as an invite.
           </p>
-          <VendorApplicationsPanel applications={applicationsWithResume} />
+        </div>
+        <VendorApplicationsPanel applications={applicationsWithResume} />
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
+                <tr>
+                  <th className="text-left px-4 py-2.5">Agency</th>
+                  <th className="text-left px-4 py-2.5">Contact</th>
+                  <th className="text-left px-4 py-2.5">Status</th>
+                  <th className="text-left px-4 py-2.5">Recruiters</th>
+                  <th className="text-left px-4 py-2.5">Submitted / Placed / Rejected</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {(agencies ?? []).map((a) => {
+                  const sc = scorecardByAgency.get(a.id);
+                  return (
+                    <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{a.name}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        {a.contact_name ? `${a.contact_name} · ` : ""}
+                        {a.contact_email}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTone[a.status] ?? ""}`}>
+                          {a.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        {(recruitersByAgency.get(a.id) ?? []).map((r) => r.full_name).join(", ") || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">
+                        {sc ? `${sc.total_submitted} / ${sc.placed} / ${sc.rejected}` : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {(agencies ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                      No vendor agencies invited yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {unassigned.length > 0 && (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                Legacy vendor accounts without an agency
+              </h2>
+              <p className="text-[12px] text-slate-400 mb-3">
+                Created before agency tracking existed — assign each to the agency they actually belong to.
+              </p>
+              <div className="space-y-2">
+                {unassigned.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between gap-2 border border-slate-100 dark:border-slate-800 rounded-lg px-3 py-2"
+                  >
+                    <div className="text-[13px]">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{p.full_name}</span>
+                      <span className="text-slate-400 ml-1.5">{p.email}</span>
+                    </div>
+                    <AssignAgencyControl profileId={p.id} agencies={agencies ?? []} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Invite a vendor agency</h2>
-          <p className="text-[12px] text-slate-400 mb-3">
-            Sends a self-serve signup link — no more manually generating and handing off a password.
-          </p>
-          <InviteAgencyForm />
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Invite a vendor agency</h2>
+            <p className="text-[12px] text-slate-400 mb-3">
+              Sends a self-serve signup link — no more manually generating and handing off a password.
+            </p>
+            <InviteAgencyForm />
+          </div>
         </div>
       </div>
     </div>

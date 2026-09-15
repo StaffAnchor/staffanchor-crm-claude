@@ -443,7 +443,7 @@ export default function VendorApplyPage() {
               </div>
               <YesNoRow name="hasLinkedinRecruiterOrNavigator" label="Access to LinkedIn Recruiter or Sales Navigator?" />
               <YesNoRow name="hasJobPortalAccess" label="Access to job portals (Naukri, Monster, IIMJobs etc)?" />
-              <YesNoRow name="interestedInPaidJobPortalAccess" label="Interested in paid job portal access through StaffAnchor?" />
+              <YesNoRow name="interestedInPaidJobPortalAccess" label="Want StaffAnchor to set you up with paid job portal access (Naukri/Monster/IIMJobs)? You cover the subscription cost -- we just facilitate the account." />
             </div>
           </section>
 
@@ -560,9 +560,9 @@ export default function VendorApplyPage() {
 
 function YesNoRow({ name, label }: { name: string; label: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50/70 px-3.5 py-2.5">
-      <span className="text-xs font-medium text-slate-600">{label}</span>
-      <div className="flex gap-1 shrink-0">
+    <div className="flex items-start justify-between gap-3 rounded-xl bg-slate-50/70 px-3.5 py-2.5">
+      <span className="text-xs font-medium text-slate-600 leading-relaxed">{label}</span>
+      <div className="flex gap-1 shrink-0 pt-0.5">
         <label className="text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 bg-white has-[:checked]:bg-gradient-to-b has-[:checked]:from-blue-600 has-[:checked]:to-blue-700 has-[:checked]:text-white has-[:checked]:border-blue-700 has-[:checked]:shadow-sm cursor-pointer transition-all duration-150">
           <input type="radio" name={name} value="true" required className="sr-only" />
           Yes
