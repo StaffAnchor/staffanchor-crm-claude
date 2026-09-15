@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { withHeartbeat } from "@/lib/cron-heartbeat";
+import { isDisposedStage } from "@/lib/mandate-stage";
 
 // Daily digest: a joining date was captured (at Offer or Placed), but
 // nothing ever followed up on whether the candidate actually joined --
@@ -34,12 +35,15 @@ async function handler(req: NextRequest) {
 
   // Everything with a joining date set, that isn't already at "placed" (a
   // recruiter confirming Placed is itself the confirmation the join
-  // happened -- this digest only chases what's still open).
+  // happened -- this digest only chases what's still open). Stage filtering
+  // beyond "placed" happens in JS below via isDisposedStage -- a candidate
+  // who backed out (pulled_back) or was rejected after a joining date was
+  // captured kept generating "overdue" follow-ups forever, since neither
+  // stage is "placed" and date_of_joining is never cleared on disposal.
   const { data: links, error } = await admin
     .from("candidate_mandate_links")
     .select("id, date_of_joining, stage, mandate_id, candidates(full_name), mandates(id, role_title, client_name)")
     .not("date_of_joining", "is", null)
-    .neq("stage", "placed")
     .lte("date_of_joining", upcomingCutoff);
 
   if (error) {
@@ -53,7 +57,9 @@ async function handler(req: NextRequest) {
     const mandate = link.mandates as unknown as { id: string; role_title: string; client_name: string } | null;
     const candidate = link.candidates as unknown as { full_name: string } | null;
     const dateOfJoining = link.date_of_joining as string | null;
+    const stage = link.stage as string | null;
     if (!mandate || !candidate || !dateOfJoining) continue;
+    if (stage === "placed" || isDisposedStage(stage)) continue;
     const item: Item = { name: candidate.full_name, date: dateOfJoining, overdue: dateOfJoining <= todayStr };
     const existing = byMandate.get(mandate.id);
     if (existing) existing.items.push(item);
