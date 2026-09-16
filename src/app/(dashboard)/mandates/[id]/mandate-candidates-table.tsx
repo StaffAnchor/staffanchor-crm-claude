@@ -14,6 +14,7 @@ import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./applicati
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import FlagForCallButton, { type ExistingCallFlag } from "./flag-for-call-button";
 import CallDispositionControl from "./call-disposition-control";
+import VendorNoteControl from "./vendor-note-control";
 import { Zap, Sparkles, Loader2 } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
@@ -45,6 +46,8 @@ export type MandateCandidateRow = {
   date_of_joining: string | null;
   call_disposition: string | null;
   call_disposition_note: string | null;
+  vendor_update_note: string | null;
+  vendor_update_note_at: string | null;
   created_at: string | null;
   screened: boolean;
   // Set when the candidate spent a Priority Applicant credit on this
@@ -608,6 +611,11 @@ export default function MandateCandidatesTable({
                 >
                   {sourceCellLabel(l.candidate)}
                 </span>
+                {l.candidate.created_by === "vendor_submitted" && (
+                  <div className="mt-1">
+                    <VendorNoteControl linkId={l.id} currentNote={l.vendor_update_note ?? null} />
+                  </div>
+                )}
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 <div>{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</div>

@@ -25,6 +25,8 @@ type VendorSubmission = {
   confirmed_interview_at: string | null;
   submitted_at: string;
   rejection_reason: string | null;
+  vendor_update_note: string | null;
+  vendor_update_note_at: string | null;
 };
 
 export default async function VendorSubmissionsPage() {
@@ -86,6 +88,11 @@ export default async function VendorSubmissionsPage() {
                       differently next time for this client. */}
                   {s.stage === "rejected" && s.rejection_reason && (
                     <span className="text-[11px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
+                  )}
+                  {s.vendor_update_note && (
+                    <span className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 max-w-[220px] text-right">
+                      Note from StaffAnchor: {s.vendor_update_note}
+                    </span>
                   )}
                 </div>
               </div>

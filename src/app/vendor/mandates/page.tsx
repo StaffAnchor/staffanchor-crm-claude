@@ -15,6 +15,7 @@ export type VendorMandate = {
   experience_max: number | null;
   my_submission_count: number;
   assigned_at: string;
+  commission_percentage: number | null;
 };
 
 export default async function VendorMandatesPage() {
@@ -80,6 +81,11 @@ export default async function VendorMandatesPage() {
                 </span>
                 <span className="text-[12px] font-medium text-teal-600">View & submit</span>
               </div>
+              {m.commission_percentage !== null && (
+                <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-full px-2.5 py-1">
+                  You earn {m.commission_percentage}% commission if this closes
+                </div>
+              )}
             </Link>
           ))}
         </div>

@@ -29,6 +29,8 @@ type VendorSubmission = {
   confirmed_interview_at: string | null;
   submitted_at: string;
   rejection_reason: string | null;
+  vendor_update_note: string | null;
+  vendor_update_note_at: string | null;
 };
 
 export default async function VendorMandateDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -83,6 +85,12 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
             {mandate.sub_domain && <span>{mandate.sub_domain}</span>}
           </div>
 
+          {mandate.commission_percentage !== null && (
+            <div className="mb-6 inline-flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-full px-3 py-1.5">
+              You earn {mandate.commission_percentage}% commission if a candidate you submit here gets placed
+            </div>
+          )}
+
           <div className="mb-6">
             <SubmitCandidateForm mandateId={mandate.mandate_id} />
           </div>
@@ -120,6 +128,11 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
                   )}
                   {s.stage === "rejected" && s.rejection_reason && (
                     <span className="text-[11px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
+                  )}
+                  {s.vendor_update_note && (
+                    <span className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 max-w-[220px] text-right">
+                      Note from StaffAnchor: {s.vendor_update_note}
+                    </span>
                   )}
                 </div>
               </div>

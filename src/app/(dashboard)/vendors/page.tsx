@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import InviteAgencyForm from "./invite-agency-form";
 import AssignAgencyControl from "./assign-agency-control";
 import VendorApplicationsPanel from "./vendor-applications-panel";
+import EditCommissionControl from "./edit-commission-control";
 
 // The vendor directory: turns "vendor" from an implicit profiles.role value
 // into a real, manageable company-level relationship. Admin-only, same gate
@@ -22,7 +23,7 @@ export default async function VendorsPage() {
 
   const { data: agencies } = await supabase
     .from("vendor_agencies")
-    .select("id, name, contact_name, contact_email, status, invited_at, activated_at")
+    .select("id, name, contact_name, contact_email, status, invited_at, activated_at, commission_percentage")
     .order("created_at", { ascending: false });
 
   // Pending self-serve applications from vendors.staffanchor.com -- reviewed
@@ -123,6 +124,7 @@ export default async function VendorsPage() {
                   <th className="text-left px-4 py-2.5">Status</th>
                   <th className="text-left px-4 py-2.5">Recruiters</th>
                   <th className="text-left px-4 py-2.5">Submitted / Placed / Rejected</th>
+                  <th className="text-left px-4 py-2.5">Commission</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -146,12 +148,15 @@ export default async function VendorsPage() {
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">
                         {sc ? `${sc.total_submitted} / ${sc.placed} / ${sc.rejected}` : "—"}
                       </td>
+                      <td className="px-4 py-3">
+                        <EditCommissionControl agencyId={a.id} currentValue={a.commission_percentage} />
+                      </td>
                     </tr>
                   );
                 })}
                 {(agencies ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                    <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
                       No vendor agencies invited yet.
                     </td>
                   </tr>

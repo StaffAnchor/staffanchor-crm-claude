@@ -127,7 +127,12 @@ export async function updateSession(request: NextRequest) {
     // to /inbox by the block below (profile.role !== "freelancer" &&
     // isVendorRoute), since "/vendors".startsWith("/vendor") is true --
     // which is exactly why the Vendors nav link silently did nothing.
-    const isVendorRoute = request.nextUrl.pathname.startsWith("/vendor/");
+    // Also covers /api/vendor/* (e.g. the vendor bulk-CV-upload extraction
+    // route) -- without this, a freelancer's fetch() to that API gets
+    // silently redirected to /vendor/mandates instead of returning JSON,
+    // the same class of bug fixed previously for /api/internal/*.
+    const isVendorRoute =
+      request.nextUrl.pathname.startsWith("/vendor/") || request.nextUrl.pathname.startsWith("/api/vendor/");
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")

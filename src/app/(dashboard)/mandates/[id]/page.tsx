@@ -80,7 +80,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, created_at, is_priority, match_score, match_assessment, viewed_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
     )
     .eq("mandate_id", id);
 
@@ -434,6 +434,8 @@ export default async function MandateDetailPage({
                 date_of_joining: l.date_of_joining,
                 call_disposition: l.call_disposition ?? null,
                 call_disposition_note: l.call_disposition_note ?? null,
+                vendor_update_note: l.vendor_update_note ?? null,
+                vendor_update_note_at: l.vendor_update_note_at ?? null,
                 created_at: l.created_at,
                 is_priority: l.is_priority ?? false,
                 match_score: l.match_score ?? null,
