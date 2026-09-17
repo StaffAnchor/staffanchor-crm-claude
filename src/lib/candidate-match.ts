@@ -1173,11 +1173,22 @@ export async function matchCandidatesForPrompt(
     return { ok: false, status: 503, error: "AI search is not configured yet (set GEMINI_API_KEY, GROQ_API_KEY, or MISTRAL_API_KEY on the server)." };
   }
 
-  // Recall pool: semantic recall via the prompt's own embedding (if the
-  // candidate table has embeddings populated -- see embed-candidates cron)
-  // unioned with a recency-bounded fallback pool, since embeddings are
-  // still being backfilled across the historical candidate base and a
-  // prompt should still return *something* useful in the meantime.
+  // Recall pool: semantic recall via the prompt's own embedding, unioned
+  // with a fallback pool of candidates that don't have an embedding yet
+  // (embeddings are still being backfilled across the historical candidate
+  // base -- see embed-candidates cron). This used to be semantic top-150
+  // union'd with the 250 MOST RECENTLY UPDATED candidates regardless of
+  // embedding status, which silently capped "scanned" around 250-400 no
+  // matter how many candidates actually exist or how specific the prompt
+  // was -- reported live as "again scanned 264 candidates only" despite
+  // the database having ~1000 active candidates and 832 of them already
+  // embedded. Fixed by: (1) raising match_count well above the current
+  // embedded-candidate count so semantic recall can surface any embedded
+  // candidate, not just the top 150 by cosine distance, and (2) scoping
+  // the fallback pool specifically to profile_embedding IS NULL (a real
+  // supplement for the embedding gap) instead of a blanket recency
+  // ordering that mostly just re-covered the same candidates semantic
+  // recall would have found anyway.
   const poolById = new Map<string, PromptCandidateRow>();
   const similarityById = new Map<string, number>();
 
@@ -1206,7 +1217,11 @@ export async function matchCandidatesForPrompt(
     if (promptEmbedding) {
       const { data: semanticMatches } = await supabase.rpc("match_candidates", {
         query_embedding: promptEmbedding,
-        match_count: 150,
+        // Comfortably above the total embedded-candidate count so this
+        // reaches every candidate with an embedding, ranked by relevance,
+        // rather than an arbitrary top-150 cutoff that made "scanned"
+        // plateau well below the real candidate count.
+        match_count: 1000,
       });
       const ids = ((semanticMatches ?? []) as { id: string; similarity: number }[])
         .filter((m) => m.id)
@@ -1223,16 +1238,19 @@ export async function matchCandidatesForPrompt(
     console.error("Semantic recall failed for prompt search", err);
   }
 
-  // Recency fallback / supplement -- bounded pool of the most recently
-  // active candidates so a query still returns results even before this
-  // candidate's embedding exists yet (fresh registrations, or while the
-  // historical backlog is still being backfilled).
+  // No-embedding-yet fallback -- catches candidates semantic recall
+  // structurally cannot reach (profile_embedding IS NULL), so a query
+  // still surfaces them even before the backfill cron gets to them.
+  // Bounded well above the current not-yet-embedded count as a sanity
+  // ceiling, not as a de facto scan cap the way the old recency-based
+  // pool was.
   const { data: recentPool, error: poolError } = await supabase
     .from("candidates")
     .select(PROMPT_SELECT_COLUMNS)
     .neq("status", "awaiting_input")
+    .is("profile_embedding", null)
     .order("updated_at", { ascending: false })
-    .limit(250);
+    .limit(500);
   if (poolError) return { ok: false, status: 500, error: poolError.message };
   for (const r of (recentPool ?? []) as PromptCandidateRow[]) {
     if (!poolById.has(r.id)) poolById.set(r.id, r);
