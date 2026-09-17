@@ -354,8 +354,27 @@ export default async function MandateDetailPage({
       )}
 
       {mandate.status === "draft" && (
-        <PublishMandateButton mandateId={id} staffCount={assignedStaff.length} viewerRole={viewerRole} />
+        <PublishMandateButton
+          mandateId={id}
+          staffCount={assignedStaff.length}
+          viewerRole={viewerRole}
+          mustHavesCount={(mandate.must_haves ?? []).length}
+          goodToHavesCount={(mandate.good_to_haves ?? []).length}
+        />
       )}
+
+      {mandate.status === "open" &&
+        ((mandate.must_haves ?? []).length === 0 || (mandate.good_to_haves ?? []).length === 0) && (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-[13px] font-medium text-amber-900">
+              This mandate went live before must-have / good-to-have criteria were required
+            </p>
+            <p className="text-[12px] text-amber-800 mt-0.5">
+              Add both below (under &quot;Must haves / Good to haves&quot;) so candidate matching on this
+              mandate can actually filter and score against something.
+            </p>
+          </div>
+        )}
 
       {/* Health strip -- everything a recruiter needs to answer "is this
           mandate in trouble" without opening a single panel below. */}

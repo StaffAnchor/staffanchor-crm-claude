@@ -55,6 +55,14 @@ export type CandidateMatch = {
   reason: string;
   must_haves: RequirementCheck[];
   good_to_haves: RequirementCheck[];
+  // Hard-filter flag: true iff every must-have clause is "met" (or there
+  // are no must-haves at all). A missing/unclear must-have means this
+  // candidate does NOT qualify as a match, full stop -- good-to-haves never
+  // affect this, they're bonus-only. Downstream UI uses this to split
+  // "matched" vs "not matched" rather than relying on the numeric score
+  // alone, which can look deceptively close even when a hard requirement
+  // failed.
+  meets_all_must_haves: boolean;
   // Attached directly from the candidate's own row data (never from the
   // LLM) so it's exact, not a paraphrase -- lets the match list itself flag
   // "no AI summary yet" and stability score without a second round trip to
@@ -87,19 +95,27 @@ export type MandateAssessment = {
   missing: string[];
 };
 
-function recommendationForScore(score: number): MandateAssessment["recommendation"] {
+function recommendationForScore(score: number, meetsAllMustHaves: boolean): MandateAssessment["recommendation"] {
   // Same 75/50 thresholds as matchScoreTone() in mandate-candidates-table.tsx
   // -- keeps the AI Read badge and the Match-score badge color-coded
-  // consistently instead of two competing scales.
+  // consistently instead of two competing scales. Must-haves are a hard
+  // filter now (see CandidateMatch.meets_all_must_haves): missing even one
+  // caps the recommendation at "Not a Fit" regardless of how strong the
+  // rest of the profile is -- a high score from good-to-haves/experience/
+  // domain alone should never read as "Strong Fit" when a hard requirement
+  // failed.
+  if (!meetsAllMustHaves) return "Not a Fit";
   if (score >= 75) return "Strong Fit";
   if (score >= 50) return "Fit with Reservations";
   return "Not a Fit";
 }
 
-export function buildMatchAssessment(m: Pick<CandidateMatch, "score" | "must_haves" | "good_to_haves">): MandateAssessment {
+export function buildMatchAssessment(
+  m: Pick<CandidateMatch, "score" | "must_haves" | "good_to_haves" | "meets_all_must_haves">
+): MandateAssessment {
   const all = [...(m.must_haves ?? []), ...(m.good_to_haves ?? [])];
   return {
-    recommendation: recommendationForScore(m.score),
+    recommendation: recommendationForScore(m.score, m.meets_all_must_haves),
     positives: all.filter((r) => r.status === "met").map((r) => `${r.requirement}: ${r.evidence}`),
     red_flags: all.filter((r) => r.status === "not_met").map((r) => `${r.requirement}: ${r.evidence}`),
     missing: all.filter((r) => r.status === "unclear").map((r) => r.requirement),
@@ -579,20 +595,24 @@ Candidates to evaluate (JSON array). Each candidate includes their core profile 
 ${JSON.stringify(factSheets, null, 2)}
 
 CRITICAL -- how to evaluate each must-have / good-to-have / ad hoc requirement, one clause at a time. This is the single most important instruction: for EVERY requirement, decide one of exactly three verdicts, and do not conflate them:
-- "met": the candidate's data (any of profile fields, self-assessment, recruiter scorecard, resume text) POSITIVELY confirms this requirement. Give the specific fact as evidence.
+- "met": the candidate's data (any of profile fields, self-assessment, recruiter scorecard, resume text) POSITIVELY confirms this requirement. This includes confident INDIRECT inference, not just explicit statements -- e.g. if the mandate needs "enterprise SaaS sales experience" and the candidate's current_employer is a well-known enterprise SaaS company (Salesforce, Freshworks, Zoho, etc.) with a matching job title, that's a legitimate basis for "met" even if the resume never uses the phrase "enterprise SaaS" verbatim. When you do this, say so plainly in the evidence (e.g. "Inferred from employer (Salesforce) and title (Enterprise AE), not explicitly stated") so the recruiter can see it's an inference, not a direct quote.
 - "not_met": the candidate's data ACTIVELY CONTRADICTS or fails this requirement -- e.g. the mandate needs 5-9 years and this candidate has 2 or 14; the mandate needs a specific language and the candidate lists several languages spoken but not that one; the mandate needs B2C and the candidate's whole background is explicitly B2B with no B2C mentioned as a list item where it would have appeared. Give the specific contradicting fact as evidence.
-- "unclear": the requirement is simply never addressed ANYWHERE in the candidate's data -- there is no language section at all, no explicit B2B/B2C label, etc. This is NOT the same as "not_met". Never guess or assume failure just because something wasn't mentioned -- mark it "unclear" and say so plainly in the evidence (e.g. "Not mentioned in profile or resume -- confirm on call"), so the recruiter knows to ask rather than being told the candidate lacks something that was simply never asked about.
+- "unclear": after genuinely trying to infer from employer name, job title, and overall profile shape (not just a literal keyword search), there is still no reasonable basis to call it either way. This is the fallback when guessing would be unfounded, not the default when a literal keyword is absent. Say so plainly in the evidence (e.g. "Not mentioned or inferable from profile/resume -- confirm on call").
 Getting this three-way split right (met vs. not_met vs. unclear) matters more than the numeric score -- it's what lets a recruiter trust the tool enough to call a borderline candidate instead of skipping them.
+
+MUST-HAVES ARE A HARD FILTER, GOOD-TO-HAVES ARE BONUS-ONLY -- this is the second most important instruction:
+- A must-have that is "not_met" OR "unclear" means this candidate DOES NOT QUALIFY as a match for this mandate. There is no partial credit -- every must-have needs a "met" verdict, grounded in something actually in the candidate's data (directly stated or confidently inferred as above), or the candidate fails the hard filter. Still score and return these candidates (the recruiter should see near-misses, not have them silently disappear), but do not describe them as a fit in "reason", and do not let a strong good-to-haves/experience/domain profile talk you into treating a missing must-have as a minor gap.
+- A good-to-have that is "not_met" or "unclear" must NEVER count against the candidate -- it simply contributes nothing. Only a "met" good-to-have adds anything. Do not lower a candidate's score, reasoning, or recommendation because a good-to-have wasn't found; that's not what it's for.
 
 ${
   options?.scoreAllProvided
     ? `Every single candidate listed above is already on this mandate's pipeline -- the recruiter added them and wants to know how each one actually scores, not a filtered "worth suggesting" subset. Return one object for EVERY candidate_id given, with no exceptions, even a weak or clearly irrelevant fit: give it an honest low score and say why in "reason" rather than omitting it.`
-    : `For EACH candidate, decide if they are worth surfacing to the recruiter at all. Only include candidates with a genuine, defensible case for fit -- omit weak/irrelevant candidates entirely rather than padding the list. A candidate with one or more "not_met" hard must-haves can still be included if otherwise strong, but their score must reflect the real gap.`
+    : `For EACH candidate, decide if they are worth surfacing to the recruiter at all. Include both full matches (every must-have "met") and close near-misses (strong otherwise, but failing one must-have) so the recruiter can see who's actually qualified versus who's worth a second look -- omit only genuinely weak/irrelevant candidates.`
 }
 
 SCORE FORMULA -- the overall score must be explainable, not a vibe. Compute it from four named components, each 0-100, so a recruiter can see exactly why a candidate landed where they did:
-- must_haves_fit (weight ~50%): 100 if every must-have is "met"; each "not_met" should drag this down hard (a single not_met should put this component below 40); each "unclear" should drag it down moderately (below 75), since it's a real unknown even if not a proven fail.
-- good_to_haves_fit (weight ~10%): proportion of good-to-haves met.
+- must_haves_fit (weight ~50%): 100 if EVERY must-have is "met". If even one is "not_met" or "unclear", this component must be 0 -- it's a hard filter, not a sliding scale, so there is no partial credit for "most of them."
+- good_to_haves_fit (weight ~10%): proportion of good-to-haves that are "met" (0 if none are -- never negative, never penalized, purely a bonus for what's confirmed present).
 - experience_fit (weight ~20%): how well total_experience_years sits inside the mandate's experience range (100 if comfortably inside; lower the further outside).
 - domain_relevance (weight ~20%): how well category/sub-domain/industry/skill_inventory align with the mandate's category/sub-domain, independent of the must-have checklist. If "in_mandate_practice_pool" is true, this candidate has been explicitly tagged by a recruiter into the SAME practice this mandate belongs to -- treat that as a strong positive signal for domain_relevance; if "seniority_band_in_practice" also matches the mandate's target seniority band, that's an even stronger signal this candidate is exactly the kind of profile this mandate is looking for.
 Compute "score" as approximately the weighted sum of these four (round to nearest integer), then nudge it slightly using the recruiter calibration signal if provided above. Report the four components themselves so the math is auditable, not just the final number.
@@ -677,6 +697,7 @@ Sort the array by score descending. ${
         .map((row) => {
           const candidateRow = rowById.get(row.candidate_id);
           const breakdown = normalizeBreakdown(row.score_breakdown);
+          const mustHavesChecked = normalizeChecks(row.must_haves);
           return {
             candidate_id: row.candidate_id,
             full_name: nameById.get(row.candidate_id) ?? "Unknown",
@@ -685,8 +706,9 @@ Sort the array by score descending. ${
             outcome_adjusted_score: outcomeAdjustedScore(breakdown, outcomeWeights),
             embedding_similarity: similarityById.get(row.candidate_id) ?? null,
             reason: row.reason ?? "",
-            must_haves: normalizeChecks(row.must_haves),
+            must_haves: mustHavesChecked,
             good_to_haves: normalizeChecks(row.good_to_haves),
+            meets_all_must_haves: mustHavesChecked.length === 0 || mustHavesChecked.every((c) => c.status === "met"),
             // Sourced directly from the candidate's own row, never the LLM --
             // exact and lets the match card itself flag "no AI summary yet"
             // or show stability without a click into the profile.
@@ -708,6 +730,7 @@ Sort the array by score descending. ${
         // resolved pipeline outcomes exist to move the weights away from the
         // fixed 50/10/20/20 default (see lib/outcome-weights.ts).
         .sort((a, b) => {
+          if (a.meets_all_must_haves !== b.meets_all_must_haves) return a.meets_all_must_haves ? -1 : 1;
           const metA = a.must_haves.filter((c) => c.status === "met").length;
           const metB = b.must_haves.filter((c) => c.status === "met").length;
           if (metB !== metA) return metB - metA;
@@ -854,14 +877,24 @@ function evaluateClauseDeterministically(
   return { requirement: clause, status: "unclear", evidence: "Not confidently found in profile/skill data -- confirm on call." };
 }
 
-function clauseFitScore(checks: RequirementCheck[]): number {
+// Must-haves are a hard filter: 100 only when every single clause is
+// "met" (or there are none), otherwise 0 -- no partial credit for "most
+// of them," since the whole point is that a missing must-have disqualifies
+// the candidate rather than just dinging the score. See
+// CandidateMatch.meets_all_must_haves, computed identically.
+function mustHaveFitScore(checks: RequirementCheck[]): number {
+  if (checks.length === 0) return 100;
+  return checks.every((c) => c.status === "met") ? 100 : 0;
+}
+
+// Good-to-haves are bonus-only: a "not_met"/"unclear" clause simply
+// contributes nothing, it never drags the score down below the plain
+// proportion of clauses actually confirmed "met". No cap, no floor beyond
+// zero -- presence only ever helps, absence is neutral.
+function goodToHaveFitScore(checks: RequirementCheck[]): number {
   if (checks.length === 0) return 100;
   const met = checks.filter((c) => c.status === "met").length;
-  const notMet = checks.filter((c) => c.status === "not_met").length;
-  let score = Math.round((met / checks.length) * 100);
-  if (notMet > 0) score = Math.min(score, 39);
-  else if (met < checks.length) score = Math.min(score, 74);
-  return Math.max(0, score);
+  return Math.round((met / checks.length) * 100);
 }
 
 export async function matchCandidatesDeterministic(
@@ -984,8 +1017,9 @@ export async function matchCandidatesDeterministic(
     const mustHaveChecks = mustHaveClauses.map((clause) => evaluateClauseDeterministically(clause, c, searchableText));
     const goodToHaveChecks = goodToHaveClauses.map((clause) => evaluateClauseDeterministically(clause, c, searchableText));
 
-    const must_haves_fit = clauseFitScore(mustHaveChecks);
-    const good_to_haves_fit = clauseFitScore(goodToHaveChecks);
+    const must_haves_fit = mustHaveFitScore(mustHaveChecks);
+    const good_to_haves_fit = goodToHaveFitScore(goodToHaveChecks);
+    const meets_all_must_haves = mustHaveChecks.length === 0 || mustHaveChecks.every((c) => c.status === "met");
 
     let experience_fit = 60; // neutral default when either side lacks data
     if (m.experience_min != null && m.experience_max != null && c.total_experience_years != null) {
@@ -1040,6 +1074,7 @@ export async function matchCandidatesDeterministic(
       reason,
       must_haves: mustHaveChecks,
       good_to_haves: goodToHaveChecks,
+      meets_all_must_haves,
       stability_score: c.stability_score ?? null,
       has_ai_summary: !!c.ai_summary,
       current_job_title: c.current_job_title ?? null,
@@ -1054,6 +1089,7 @@ export async function matchCandidatesDeterministic(
   const filtered = options?.scoreAllProvided ? matches : matches.filter((r) => r.score >= 35 || practiceSeniorityByCandidate.has(r.candidate_id));
 
   const sorted = filtered.sort((a, b) => {
+    if (a.meets_all_must_haves !== b.meets_all_must_haves) return a.meets_all_must_haves ? -1 : 1;
     const metA = a.must_haves.filter((c) => c.status === "met").length;
     const metB = b.must_haves.filter((c) => c.status === "met").length;
     if (metB !== metA) return metB - metA;

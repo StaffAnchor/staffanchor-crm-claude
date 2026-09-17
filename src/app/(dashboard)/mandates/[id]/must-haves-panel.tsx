@@ -115,13 +115,20 @@ export default function MustHavesPanel({
       {!collapsed && (
       <>
       <p className="text-[12px] text-slate-400 mb-3">
-        Used by AI candidate matching below to score and explain fit against this mandate.
+        Used by AI candidate matching below to score and explain fit against this mandate. Both fields are
+        required before this mandate can be published -- a candidate missing a must-have is excluded from
+        matches; a candidate missing a good-to-have is never penalized for it, only scored higher if they have it.
       </p>
 
       {editing ? (
         <>
-          <TagEditor label="Must haves" items={mustHaves} onChange={setMustHaves} />
-          <TagEditor label="Good to haves" items={goodToHaves} onChange={setGoodToHaves} />
+          <TagEditor label="Must haves *" items={mustHaves} onChange={setMustHaves} />
+          <TagEditor label="Good to haves *" items={goodToHaves} onChange={setGoodToHaves} />
+          {(mustHaves.length === 0 || goodToHaves.length === 0) && (
+            <p className="text-[11px] text-amber-700 mb-2">
+              At least one entry in each list is required before this mandate can be published.
+            </p>
+          )}
           <button
             onClick={handleSave}
             disabled={saving}

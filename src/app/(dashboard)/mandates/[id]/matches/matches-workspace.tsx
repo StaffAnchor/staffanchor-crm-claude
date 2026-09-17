@@ -38,6 +38,7 @@ type CandidateMatch = {
   reason: string;
   must_haves: RequirementCheck[];
   good_to_haves: RequirementCheck[];
+  meets_all_must_haves: boolean;
   stability_score: number | null;
   has_ai_summary: boolean;
   current_job_title: string | null;
@@ -72,6 +73,15 @@ function normalizeCachedMatches(raw: unknown): CandidateMatch[] {
       reason: String(row.reason ?? ""),
       must_haves: isChecks(row.must_haves) ? row.must_haves : [],
       good_to_haves: isChecks(row.good_to_haves) ? row.good_to_haves : [],
+      // Older cached auto_match_results predate this field -- derive it
+      // from the must_haves checks themselves rather than defaulting to
+      // true/false blindly, so a stale cache still filters correctly.
+      meets_all_must_haves:
+        typeof row.meets_all_must_haves === "boolean"
+          ? row.meets_all_must_haves
+          : isChecks(row.must_haves)
+            ? row.must_haves.length === 0 || row.must_haves.every((c) => c.status === "met")
+            : true,
       stability_score: typeof row.stability_score === "number" ? row.stability_score : null,
       has_ai_summary: !!row.has_ai_summary,
       current_job_title: typeof row.current_job_title === "string" ? row.current_job_title : null,
@@ -218,14 +228,13 @@ export default function MatchesWorkspace({
   const sortedMatches = useMemo(() => {
     if (!matches) return null;
     const sorted = [...matches].sort((a, b) => {
+      if (a.meets_all_must_haves !== b.meets_all_must_haves) return a.meets_all_must_haves ? -1 : 1;
       const metA = a.must_haves.filter((c) => c.status === "met").length;
       const metB = b.must_haves.filter((c) => c.status === "met").length;
       if (metB !== metA) return metB - metA;
       return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
     });
-    const fullOnly = fullMatchesOnly
-      ? sorted.filter((m) => m.must_haves.length > 0 && m.must_haves.every((c) => c.status === "met"))
-      : sorted;
+    const fullOnly = fullMatchesOnly ? sorted.filter((m) => m.meets_all_must_haves) : sorted;
     return linkedOnly ? fullOnly.filter((m) => linkedIdSet.has(m.candidate_id)) : fullOnly;
   }, [matches, fullMatchesOnly, linkedOnly, linkedIdSet]);
 

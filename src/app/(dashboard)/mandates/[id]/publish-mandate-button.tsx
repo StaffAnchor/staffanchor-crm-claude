@@ -24,6 +24,8 @@ export default function PublishMandateButton({
   mandateId,
   staffCount,
   viewerRole,
+  mustHavesCount,
+  goodToHavesCount,
 }: {
   mandateId: string;
   // Internal recruiter/vendor staffing count (mandate_assignments). Required
@@ -31,12 +33,21 @@ export default function PublishMandateButton({
   // became mandatory at creation time -- new mandates always have one already.
   staffCount: number;
   viewerRole: string | null;
+  // Match-criteria gate: a mandate can't go live without at least one
+  // must-have (hard filter for matching) and one good-to-have (bonus-only
+  // scoring signal) captured -- see MustHavesPanel above. Also enforced at
+  // the DB level (trg_require_match_criteria_before_open) as a backstop,
+  // but checking here up front avoids a round-trip failure and gives a
+  // clear inline reason instead of a raw Postgres error.
+  mustHavesCount: number;
+  goodToHavesCount: number;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const missingOwner = staffCount === 0;
+  const missingCriteria = mustHavesCount === 0 || goodToHavesCount === 0;
   const canPublish = viewerRole !== null && CAN_PUBLISH_ROLES.has(viewerRole);
 
   // Sample-candidates preview -- reuses the same matching engine as the
@@ -75,7 +86,7 @@ export default function PublishMandateButton({
   }
 
   async function handlePublish() {
-    if (missingOwner || !canPublish) return;
+    if (missingOwner || missingCriteria || !canPublish) return;
     const confirmed = window.confirm(
       "Publish this mandate? It will immediately become visible as a live job listing on jobs.staffanchor.com."
     );
@@ -105,6 +116,11 @@ export default function PublishMandateButton({
               Assign a recruiter or vendor (above) before publishing -- required for internal tracking.
             </p>
           )}
+          {missingCriteria && (
+            <p className="text-[12px] text-amber-900 font-medium mt-1">
+              Add at least one must-have and one good-to-have (below) before publishing -- required for candidate matching.
+            </p>
+          )}
           {!canPublish && (
             <p className="text-[12px] text-amber-900 font-medium mt-1">
               Only Admins and Recruiters can publish a mandate live.
@@ -116,8 +132,8 @@ export default function PublishMandateButton({
           {canPublish && (
             <button
               onClick={handlePublish}
-              disabled={publishing || missingOwner}
-              title={missingOwner ? "Assign a recruiter first" : undefined}
+              disabled={publishing || missingOwner || missingCriteria}
+              title={missingOwner ? "Assign a recruiter first" : missingCriteria ? "Add must-haves and good-to-haves first" : undefined}
               className="flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[12px] font-medium px-3 py-2 transition-colors"
             >
               {publishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
