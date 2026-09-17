@@ -58,8 +58,8 @@ async function handler(req: NextRequest) {
 
   const recentCutoff = new Date(Date.now() - RECENCY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  // Two groups need a (re)generation pass -- both bounded to recent
-  // activity (see RECENCY_WINDOW_DAYS comment above), NOT the full
+  // Three groups need a (re)generation pass -- the first two bounded to
+  // recent activity (see RECENCY_WINDOW_DAYS comment above), NOT the full
   // historical backlog:
   //  1. Anyone with no summary at all yet AND created recently -- this
   //     includes thin quick_apply stubs and recruiter-seeded records still
@@ -73,16 +73,24 @@ async function handler(req: NextRequest) {
   //     summary is stale and worth regenerating properly. A candidate who
   //     completes their profile years after creation still lands here via
   //     the updated_at bound, even though created_at is old.
+  //  3. Anyone with skill_inventory still null, regardless of age or
+  //     ai_summary status -- skill_inventory was added to the passport
+  //     prompt after a large batch of candidates had already been
+  //     summarized, so clause 1 (ai_summary.is.null) never catches them:
+  //     they have a summary, just not the newer field. This clause is
+  //     deliberately unbounded by recency for the same reason clause 1 is
+  //     -- it's a one-time historical gap that needs to drain on its own.
   const { data: pending, error } = await admin
     .from("candidates")
     .select("id, full_name")
     .or(
       `ai_summary.is.null,` +
+        `skill_inventory.is.null,` +
         `and(status.eq.registered,ai_summary_generated_status.is.null,updated_at.gte.${recentCutoff}),` +
         `and(status.eq.registered,ai_summary_generated_status.neq.registered,updated_at.gte.${recentCutoff})`
     )
     .order("created_at", { ascending: false }) // newest first -- see comment above
-    .limit(25); // bounded batch per run -- each candidate is ~2-3 AI calls (career-timeline + summary + embedding)
+    .limit(30); // bounded batch per run -- each candidate is ~2-3 AI calls (career-timeline + summary + embedding)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

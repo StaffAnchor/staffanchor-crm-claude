@@ -9,6 +9,19 @@ import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 // summary/passport/skill-inventory, and a refreshed embedding
 // (generateAiPassportForCandidate does all three in sequence). Newest
 // candidates first, same reasoning as the cron.
+//
+// FIX (Sept 2026 skill-matching audit): this used to only pick up
+// ai_summary IS NULL. But skill_inventory was added to the passport
+// generation prompt after a batch of candidates already had an ai_summary
+// generated -- those ~160 candidates had a summary but no skill_inventory
+// and were never picked up by either this route or the cron, because
+// neither checked for that case. Broadened to catch both gaps, and given
+// this can now run multiple full passes back to back to drain a large
+// backlog (812 candidates were missing skill_inventory when this was
+// found), maxDuration is set explicitly rather than relying on the
+// platform default, same reasoning as the cron.
+export const maxDuration = 60;
+
 export async function POST() {
   const supabase = await createClient();
 
@@ -30,9 +43,9 @@ export async function POST() {
   const { data: pending, error } = await supabase
     .from("candidates")
     .select("id, full_name")
-    .is("ai_summary", null)
+    .or("ai_summary.is.null,skill_inventory.is.null")
     .order("created_at", { ascending: false }) // newest first
-    .limit(15); // bounded -- each candidate is 2-3 AI calls (career-timeline + summary + embedding)
+    .limit(20); // bounded -- each candidate is 2-3 AI calls (career-timeline + summary + embedding)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
