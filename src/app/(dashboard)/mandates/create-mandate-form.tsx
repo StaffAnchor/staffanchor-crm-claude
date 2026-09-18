@@ -306,6 +306,10 @@ export default function CreateMandateForm({
         mandatory_working_days: form.weekOff.week_off_type === "rotational" ? form.weekOff.mandatory_working_days : [],
         b2c_customer_types: isB2C ? form.b2c_customer_types : [],
         client_profile: isB2B ? form.client_profile : [],
+        // New mandates always start as drafts -- must-haves/good-to-haves
+        // are captured after creation, and the mandatory-criteria gate
+        // requires them before a mandate can flip to 'open' (live).
+        status: "draft",
       })
       .select("id")
       .single();
