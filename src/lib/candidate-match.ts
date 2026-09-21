@@ -1124,6 +1124,7 @@ export type PromptSearchMatch = {
   category: string | null;
   sub_domain: string | null;
   practices: { name: string; seniority_band: string }[];
+  resume_file_url: string | null;
 };
 
 export type PromptSearchResult =
@@ -1148,10 +1149,11 @@ type PromptCandidateRow = {
   industries: string[] | null;
   talent_micro_index: Record<string, unknown> | null;
   ai_summary: string | null;
+  resume_file_url: string | null;
 };
 
 const PROMPT_SELECT_COLUMNS =
-  "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, current_industry, industries, talent_micro_index, ai_summary";
+  "id, full_name, current_job_title, current_employer, category, sub_domain, secondary_sub_domains, total_experience_years, current_location, open_to_relocation, notice_period, expected_fixed_ctc, skills, current_industry, industries, talent_micro_index, ai_summary, resume_file_url";
 
 export async function matchCandidatesForPrompt(
   prompt: string,
@@ -1349,6 +1351,7 @@ Sort the array by score descending. Include at most ${options?.maxResults ?? 25}
           category: c.category,
           sub_domain: c.sub_domain,
           practices: practicesByCandidateId.get(c.id) ?? [],
+          resume_file_url: c.resume_file_url,
         };
       })
       .sort((a, b) => b.score - a.score);

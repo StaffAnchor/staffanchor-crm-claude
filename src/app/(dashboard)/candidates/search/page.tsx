@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, Search, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ResumePreview from "../[id]/resume-preview";
 
 // Global free-text candidate search ("prompt window") -- distinct from the
 // per-mandate Matching Workspace: no mandate/JD attached, just whatever a
@@ -27,6 +28,8 @@ type Match = {
   category: string | null;
   sub_domain: string | null;
   practices: { name: string; seniority_band: string }[];
+  resume_file_url: string | null;
+  resume_signed_url: string | null;
 };
 
 const SENIORITY_LABEL: Record<string, string> = {
@@ -114,7 +117,7 @@ export default function CandidatePromptSearchPage() {
           <Sparkles className="w-5 h-5 text-indigo-600" /> Prompt search
         </h1>
         <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-          Describe who you're looking for in plain English — searches the whole candidate database, not just one mandate.
+          Describe who you&apos;re looking for in plain English — searches the whole candidate database, not just one mandate.
         </p>
       </div>
 
@@ -185,33 +188,40 @@ export default function CandidatePromptSearchPage() {
           ) : (
             <div className="space-y-2">
               {matches.map((m) => (
-                <Link key={m.candidate_id} href={`/candidates/${m.candidate_id}`}>
-                  <Card className="p-3.5 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors duration-200 ease-ros cursor-pointer">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{m.full_name}</p>
-                          <Badge tone={scoreTone(m.score)}>{m.score}</Badge>
-                        </div>
-                        <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                          {[m.current_job_title, m.current_employer].filter(Boolean).join(" at ")}
-                          {m.current_location ? ` · ${m.current_location}` : ""}
-                          {m.total_experience_years != null ? ` · ${m.total_experience_years} yrs` : ""}
-                        </p>
-                        {m.practices && m.practices.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {m.practices.map((p) => (
-                              <Badge key={p.name} tone="neutral" size="sm" className="normal-case tracking-normal">
-                                {p.name} · {SENIORITY_LABEL[p.seniority_band] ?? p.seniority_band}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-[12.5px] text-slate-600 dark:text-slate-300 mt-1.5">{m.reason}</p>
+                <Card key={m.candidate_id} className="p-3.5 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors duration-200 ease-ros">
+                  <div className="flex items-start justify-between gap-3">
+                    <Link href={`/candidates/${m.candidate_id}`} className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{m.full_name}</p>
+                        <Badge tone={scoreTone(m.score)}>{m.score}</Badge>
                       </div>
-                    </div>
-                  </Card>
-                </Link>
+                      <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                        {[m.current_job_title, m.current_employer].filter(Boolean).join(" at ")}
+                        {m.current_location ? ` · ${m.current_location}` : ""}
+                        {m.total_experience_years != null ? ` · ${m.total_experience_years} yrs` : ""}
+                      </p>
+                      {m.practices && m.practices.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {m.practices.map((p) => (
+                            <Badge key={p.name} tone="neutral" size="sm" className="normal-case tracking-normal">
+                              {p.name} · {SENIORITY_LABEL[p.seniority_band] ?? p.seniority_band}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[12.5px] text-slate-600 dark:text-slate-300 mt-1.5">{m.reason}</p>
+                    </Link>
+                    {m.resume_signed_url && (
+                      <div className="shrink-0">
+                        <ResumePreview
+                          signedUrl={m.resume_signed_url}
+                          fileName={(m.resume_file_url ?? `${m.full_name}-resume`).replace(/^resumes\//, "")}
+                          label="CV"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </Card>
               ))}
             </div>
           )}

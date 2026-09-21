@@ -32,5 +32,32 @@ export async function POST(req: NextRequest) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
-  return NextResponse.json({ matches: result.matches, scanned: result.scanned });
+
+  // Batch-generate resume signed URLs for the returned matches in one
+  // Storage API call (same pattern as the mandate detail page and Practice
+  // Pool) so results can show an inline "Preview CV" action without a
+  // per-row request -- a recruiter scanning prompt-search results
+  // shouldn't have to open each candidate's profile just to glance at
+  // their CV.
+  const resumePaths = Array.from(
+    new Set(
+      result.matches
+        .map((m) => m.resume_file_url)
+        .filter((p): p is string => Boolean(p))
+        .map((p) => p.replace(/^resumes\//, ""))
+    )
+  );
+  const resumeUrlByPath: Record<string, string> = {};
+  if (resumePaths.length > 0) {
+    const { data: signedBatch } = await supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60 * 12);
+    (signedBatch ?? []).forEach((s) => {
+      if (s.signedUrl && !s.error && s.path) resumeUrlByPath[s.path] = s.signedUrl;
+    });
+  }
+  const matches = result.matches.map((m) => ({
+    ...m,
+    resume_signed_url: m.resume_file_url ? resumeUrlByPath[m.resume_file_url.replace(/^resumes\//, "")] ?? null : null,
+  }));
+
+  return NextResponse.json({ matches, scanned: result.scanned });
 }
