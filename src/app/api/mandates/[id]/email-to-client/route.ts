@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, candidates(id, full_name, category, sub_domain, total_experience_years, current_fixed_ctc, current_employer, resume_file_url)"
+      "id, stage, candidates(id, full_name, phone, category, sub_domain, total_experience_years, current_fixed_ctc, current_employer, current_employment_status, resume_file_url)"
     )
     .eq("mandate_id", mandateId)
     .in("candidate_id", candidateIds);
@@ -108,11 +108,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   type Cand = {
     id: string;
     full_name: string;
+    phone: string | null;
     category: string | null;
     sub_domain: string | null;
     total_experience_years: number | null;
     current_fixed_ctc: number | null;
     current_employer: string | null;
+    current_employment_status: string | null;
     resume_file_url: string | null;
   };
   const candidates = targetLinks.map((l) => l.candidates as unknown as Cand);
@@ -147,30 +149,77 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     resumeless.push(...candidates.map((c) => c.full_name));
   }
 
+  // Candidates' `current_employment_status` is free text (Employed, Serving
+  // Notice, Between Jobs, Career Break / Sabbatical, Freelancing /
+  // Consulting, Entrepreneur / Founder, First Job Seeker, etc) rather than a
+  // clean boolean, so we bucket it down to the simple "currently
+  // working / not working" read the client actually wants in the table.
+  function workingStatus(status: string | null): string {
+    if (!status) return "—";
+    const s = status.toLowerCase();
+    if (
+      s.includes("between") ||
+      s.includes("break") ||
+      s.includes("sabbatical") ||
+      s.includes("first job seeker") ||
+      s.includes("not employed") ||
+      s.includes("unemployed")
+    ) {
+      return "Not working";
+    }
+    return "Currently working";
+  }
+
   const greeting = validContacts.length === 1 ? `Hi ${validContacts[0].full_name.split(" ")[0]}` : "Hi Team";
 
-  const candidateLines = candidates
-    .map((c) => {
-      const bits = [
-        c.sub_domain ?? c.category?.replace(/_/g, " "),
-        c.total_experience_years != null ? `${c.total_experience_years} yrs exp` : null,
-        c.current_employer ? `currently at ${c.current_employer}` : null,
-        c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L fixed CTC` : null,
-      ].filter(Boolean);
-      return `${c.full_name}${bits.length ? ` — ${bits.join(", ")}` : ""}`;
-    })
-    .join("\n");
-  const candidateListHtml = candidates
-    .map((c) => {
-      const bits = [
-        c.sub_domain ?? c.category?.replace(/_/g, " "),
-        c.total_experience_years != null ? `${c.total_experience_years} yrs exp` : null,
-        c.current_employer ? `currently at ${c.current_employer}` : null,
-        c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L fixed CTC` : null,
-      ].filter(Boolean);
-      return `<li style="margin-bottom:6px;"><strong>${c.full_name}</strong>${bits.length ? ` — ${bits.join(", ")}` : ""}</li>`;
+  // Plain-text alternative: tables don't render in a text-only client, so
+  // this is laid out as fixed-width, pipe-separated columns mirroring the
+  // HTML table below (Name, Mobile, Exp, Current CTC, Working status).
+  const textColWidths = [24, 15, 8, 14, 16];
+  const textHeaderRow = ["Name", "Mobile", "Exp", "Current CTC", "Status"]
+    .map((h, i) => h.padEnd(textColWidths[i]))
+    .join(" | ");
+  const candidateLines = [
+    textHeaderRow,
+    textColWidths.map((w) => "-".repeat(w)).join("-|-"),
+    ...candidates.map((c) =>
+      [
+        c.full_name,
+        c.phone ?? "—",
+        c.total_experience_years != null ? `${c.total_experience_years} yrs` : "—",
+        c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L` : "—",
+        workingStatus(c.current_employment_status),
+      ]
+        .map((v, i) => String(v).padEnd(textColWidths[i]))
+        .join(" | ")
+    ),
+  ].join("\n");
+
+  const candidateTableRows = candidates
+    .map((c, i) => {
+      const bg = i % 2 === 0 ? "#ffffff" : "#f8fafc";
+      const td = `padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;`;
+      return `<tr style="background:${bg};">
+        <td style="${td}"><strong>${c.full_name}</strong>${c.current_employer ? `<br/><span style="color:#94a3b8;font-size:12px;">${c.sub_domain ?? c.category?.replace(/_/g, " ") ?? ""}${c.sub_domain || c.category ? " · " : ""}${c.current_employer}</span>` : ""}</td>
+        <td style="${td}">${c.phone ?? "—"}</td>
+        <td style="${td}">${c.total_experience_years != null ? `${c.total_experience_years} yrs` : "—"}</td>
+        <td style="${td}">${c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L` : "—"}</td>
+        <td style="${td}">${workingStatus(c.current_employment_status)}</td>
+      </tr>`;
     })
     .join("");
+  const candidateListHtml = `<table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;">
+    <thead>
+      <tr style="background:#0f172a;">
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Name</th>
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Mobile</th>
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Exp</th>
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Current CTC</th>
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Status</th>
+      </tr>
+    </thead>
+    <tbody>${candidateTableRows}</tbody>
+  </table>`;
 
   const recruiterName = profile.full_name ?? "The StaffAnchor Team";
   const subject = `${candidates.length} candidate${candidates.length === 1 ? "" : "s"} shared for ${mandate.role_title} — ${mandate.client_name}`;
@@ -183,7 +232,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     preheader: `${candidates.length} candidate${candidates.length === 1 ? "" : "s"} shared for ${mandate.role_title}.`,
     bodyHtml: `<p>${greeting},</p>
 <p>Please find below the candidate${candidates.length === 1 ? "" : "s"} we'd like to submit for <strong>${mandate.role_title}</strong>:</p>
-<ul style="margin:0 0 16px 0;padding-left:20px;">${candidateListHtml}</ul>
+${candidateListHtml}
 <p>Resumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.</p>
 <p>You can also review the full shortlist, with more detail on each candidate, here: <a href="${shortlistUrl}">${shortlistUrl}</a></p>
 <p style="color:#94a3b8;font-size:12px;">Opening it will ask you to verify this email address with a one-time code -- that's expected, it's how we keep the shortlist private to this client.</p>
