@@ -7,7 +7,6 @@ import { getStaffPreviewRole } from "@/lib/is-staff-viewer";
 import AccessGate from "./access-gate";
 import FeedbackButtons from "./feedback-buttons";
 import ResumePreview from "./resume-preview";
-import ProfilePassportTrigger from "./profile-passport";
 
 // Gap identified in the July 2026 audit: CTC is shown as raw "₹XL" with no
 // explanation that "L" means lakhs (1L = INR 100,000) -- fine for an Indian
@@ -314,30 +313,15 @@ function CandidateCard({
         )}
       </div>
 
-      {candidate.ai_summary && (
-        <p className="text-sm text-slate-700 mt-4 pl-3.5 border-l-2 border-blue-200 leading-relaxed line-clamp-2">
-          {candidate.ai_summary}
-        </p>
-      )}
-
+      {/* No AI-written narrative on this client-facing card -- ai_summary
+          and the Sales Passport's "Quick AI summary" popup are generated for
+          internal recruiter use and aren't filtered for client-safe
+          language (e.g. a stability_line calling out job-hopping), so they
+          never belonged on a page a hiring manager reads directly. The full
+          Sales Passport link below is unaffected: that page renders only
+          structured, candidate-self-reported career data and already hides
+          recruiter assessment scores/red flags/stability for viewer="client". */}
       <div className="flex items-center gap-3 mt-3 flex-wrap">
-        <ProfilePassportTrigger
-          candidateId={candidate.candidate_id}
-          token={token}
-          fullName={candidate.full_name}
-          currentJobTitle={candidate.current_job_title}
-          currentEmployer={candidate.current_employer}
-          currentLocation={candidate.current_location}
-          totalExperienceYears={candidate.total_experience_years}
-          subDomain={candidate.sub_domain}
-          currentFixedCtc={candidate.current_fixed_ctc}
-          expectedFixedCtc={candidate.expected_fixed_ctc}
-          verifiedRelocation={candidate.verified_relocation}
-          verifiedNotice={candidate.verified_notice}
-          industries={candidate.industries}
-          aiSummary={candidate.ai_summary}
-          aiPassport={candidate.ai_passport}
-        />
         <Link
           href={`/shortlist/${token}/passport/${candidate.candidate_id}`}
           className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
