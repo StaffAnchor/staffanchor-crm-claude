@@ -124,6 +124,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // `resumeless` so the recruiter knows to chase it down separately.
   const attachments: { filename: string; content: Buffer }[] = [];
   const resumeless: string[] = [];
+  // "Preview CV" links -- email clients can't embed a PDF viewer inline in
+  // the body, so the closest equivalent is a one-click, no-login link that
+  // opens the resume in the browser (same signed-URL approach the client
+  // shortlist page already uses). 30-day expiry rather than the shortlist
+  // page's 1hr, since a client may come back to this specific email well
+  // after first reading it, unlike the always-fresh shortlist page.
+  const previewUrls: Record<string, string> = {};
   if (admin) {
     for (const c of candidates) {
       if (!c.resume_file_url) {
@@ -141,6 +148,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const ext = cleanPath.includes(".") ? cleanPath.slice(cleanPath.lastIndexOf(".")) : ".pdf";
         const safeName = c.full_name.replace(/[^a-zA-Z0-9-_ ]/g, "").trim() || "Candidate";
         attachments.push({ filename: `${safeName} - Resume${ext}`, content: buffer });
+
+        const { data: signed } = await admin.storage.from("resumes").createSignedUrl(cleanPath, 60 * 60 * 24 * 30);
+        if (signed?.signedUrl) {
+          previewUrls[c.id] = signed.signedUrl;
+        }
       } catch {
         resumeless.push(c.full_name);
       }
@@ -195,16 +207,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     ),
   ].join("\n");
 
+  // Preview links don't fit cleanly into the fixed-width text table above
+  // (URLs are long and would break the column alignment), so they're
+  // listed separately underneath it instead.
+  const previewLinesText = candidates
+    .filter((c) => previewUrls[c.id])
+    .map((c) => `${c.full_name}: ${previewUrls[c.id]}`)
+    .join("\n");
+
   const candidateTableRows = candidates
     .map((c, i) => {
       const bg = i % 2 === 0 ? "#ffffff" : "#f8fafc";
       const td = `padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;`;
+      const previewUrl = previewUrls[c.id];
       return `<tr style="background:${bg};">
         <td style="${td}"><strong>${c.full_name}</strong>${c.current_employer ? `<br/><span style="color:#94a3b8;font-size:12px;">${c.sub_domain ?? c.category?.replace(/_/g, " ") ?? ""}${c.sub_domain || c.category ? " · " : ""}${c.current_employer}</span>` : ""}</td>
         <td style="${td}">${c.phone ?? "—"}</td>
         <td style="${td}">${c.total_experience_years != null ? `${c.total_experience_years} yrs` : "—"}</td>
         <td style="${td}">${c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L` : "—"}</td>
         <td style="${td}">${workingStatus(c.current_employment_status)}</td>
+        <td style="${td}">${previewUrl ? `<a href="${previewUrl}" style="color:#7c3aed;font-weight:600;text-decoration:none;">Preview CV</a>` : "—"}</td>
       </tr>`;
     })
     .join("");
@@ -216,6 +238,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Exp</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Current CTC</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Status</th>
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">CV</th>
       </tr>
     </thead>
     <tbody>${candidateTableRows}</tbody>
@@ -226,7 +249,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const text = `${greeting},\n\nPlease find below the candidate${candidates.length === 1 ? "" : "s"} we'd like to submit for ${mandate.role_title}${
     candidates.length === 1 ? "'s" : ""
-  }:\n\n${candidateLines}\n\nResumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.\n\nYou can also review the full shortlist, with more detail on each candidate, here: ${shortlistUrl}\n(Opening it will ask you to verify this email address with a one-time code -- that's expected, it's how we keep the shortlist private to this client.)\n\nLet us know your thoughts whenever convenient.\n\nThanks,\n${recruiterName}\nStaffAnchor`;
+  }:\n\n${candidateLines}${previewLinesText ? `\n\nCV previews (view online, no login needed):\n${previewLinesText}` : ""}\n\nResumes are attached${resumeless.length > 0 ? ` (resume not on file yet for: ${resumeless.join(", ")})` : ""}.\n\nYou can also review the full shortlist, with more detail on each candidate, here: ${shortlistUrl}\n(Opening it will ask you to verify this email address with a one-time code -- that's expected, it's how we keep the shortlist private to this client.)\n\nLet us know your thoughts whenever convenient.\n\nThanks,\n${recruiterName}\nStaffAnchor`;
 
   const html = renderEmailShell({
     preheader: `${candidates.length} candidate${candidates.length === 1 ? "" : "s"} shared for ${mandate.role_title}.`,
