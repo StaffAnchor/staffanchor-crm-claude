@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, candidates(id, full_name, phone, category, sub_domain, total_experience_years, current_fixed_ctc, current_employer, current_employment_status, resume_file_url)"
+      "id, stage, candidates(id, full_name, phone, category, sub_domain, total_experience_years, current_fixed_ctc, current_employer, notice_period, resume_file_url)"
     )
     .eq("mandate_id", mandateId)
     .in("candidate_id", candidateIds);
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     total_experience_years: number | null;
     current_fixed_ctc: number | null;
     current_employer: string | null;
-    current_employment_status: string | null;
+    notice_period: string | null;
     resume_file_url: string | null;
   };
   const candidates = targetLinks.map((l) => l.candidates as unknown as Cand);
@@ -161,34 +161,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     resumeless.push(...candidates.map((c) => c.full_name));
   }
 
-  // Candidates' `current_employment_status` is free text (Employed, Serving
-  // Notice, Between Jobs, Career Break / Sabbatical, Freelancing /
-  // Consulting, Entrepreneur / Founder, First Job Seeker, etc) rather than a
-  // clean boolean, so we bucket it down to the simple "currently
-  // working / not working" read the client actually wants in the table.
-  function workingStatus(status: string | null): string {
-    if (!status) return "—";
-    const s = status.toLowerCase();
-    if (
-      s.includes("between") ||
-      s.includes("break") ||
-      s.includes("sabbatical") ||
-      s.includes("first job seeker") ||
-      s.includes("not employed") ||
-      s.includes("unemployed")
-    ) {
-      return "Not working";
-    }
-    return "Currently working";
+  // What the client actually wants to know isn't the binary "currently
+  // working" status -- it's when the person can actually start. Candidates'
+  // `notice_period` is already recruiter-entered free text (Immediate,
+  // 15/30/60/90+ days), so it's shown as-is; only candidates with nothing
+  // on file fall back to "—".
+  function canJoinIn(c: Cand): string {
+    return c.notice_period ?? "—";
   }
 
   const greeting = validContacts.length === 1 ? `Hi ${validContacts[0].full_name.split(" ")[0]}` : "Hi Team";
 
   // Plain-text alternative: tables don't render in a text-only client, so
   // this is laid out as fixed-width, pipe-separated columns mirroring the
-  // HTML table below (Name, Mobile, Exp, Current CTC, Working status).
-  const textColWidths = [24, 15, 8, 14, 16];
-  const textHeaderRow = ["Name", "Mobile", "Exp", "Current CTC", "Status"]
+  // HTML table below (Name, Mobile, Exp, Current CTC, Can join in).
+  const textColWidths = [24, 15, 8, 14, 20];
+  const textHeaderRow = ["Name", "Mobile", "Exp", "Current CTC", "Can join in"]
     .map((h, i) => h.padEnd(textColWidths[i]))
     .join(" | ");
   const candidateLines = [
@@ -200,7 +188,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         c.phone ?? "—",
         c.total_experience_years != null ? `${c.total_experience_years} yrs` : "—",
         c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L` : "—",
-        workingStatus(c.current_employment_status),
+        canJoinIn(c),
       ]
         .map((v, i) => String(v).padEnd(textColWidths[i]))
         .join(" | ")
@@ -225,7 +213,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         <td style="${td}">${c.phone ?? "—"}</td>
         <td style="${td}">${c.total_experience_years != null ? `${c.total_experience_years} yrs` : "—"}</td>
         <td style="${td}">${c.current_fixed_ctc != null ? `₹${c.current_fixed_ctc}L` : "—"}</td>
-        <td style="${td}">${workingStatus(c.current_employment_status)}</td>
+        <td style="${td}">${canJoinIn(c)}</td>
         <td style="${td}">${previewUrl ? `<a href="${previewUrl}" style="color:#7c3aed;font-weight:600;text-decoration:none;">Preview CV</a>` : "—"}</td>
       </tr>`;
     })
@@ -237,7 +225,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Mobile</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Exp</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Current CTC</th>
-        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Status</th>
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">Can join in</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#ffffff;">CV</th>
       </tr>
     </thead>
