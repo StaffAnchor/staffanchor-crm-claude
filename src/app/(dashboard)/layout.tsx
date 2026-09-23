@@ -69,6 +69,11 @@ export default async function DashboardLayout({
       ? [
           { href: "/team", label: "Team", enabled: true },
           { href: "/vendors", label: "Vendors", enabled: true },
+          // Sales Circle referral network admin panel (Sep 2026) --
+          // approve/reject referrer applications, move referrals through
+          // the status pipeline, manage payout slabs and mark payouts
+          // eligible/paid. Admin-only, same gate as Team/Vendors.
+          { href: "/sales-circle", label: "Sales Circle", enabled: true },
           { href: "/analytics", label: "Analytics", enabled: true },
         ]
       : []),

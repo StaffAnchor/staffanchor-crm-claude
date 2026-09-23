@@ -80,7 +80,10 @@ export async function updateSession(request: NextRequest) {
     // Self-serve vendor signup -- authorizes itself via the vendor_agencies
     // invite_token (checked server-side in the route), not a staff cookie.
     // No account exists yet at this point, so there's nothing to redirect to.
-    /^\/api\/vendor-signup\/[^/]+$/.test(request.nextUrl.pathname);
+    /^\/api\/vendor-signup\/[^/]+$/.test(request.nextUrl.pathname) ||
+    // Same class again: Sales Circle referrer signup -- the
+    // sales_circle_referrers.invite_token is the only credential.
+    /^\/api\/referrer-signup\/[^/]+$/.test(request.nextUrl.pathname);
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||
@@ -98,7 +101,12 @@ export async function updateSession(request: NextRequest) {
     // vendors.staffanchor.com (rewritten to this path above) and directly
     // at /vendor-apply on the main CRM domain.
     request.nextUrl.pathname.startsWith("/vendor-apply") ||
-    request.nextUrl.pathname.startsWith("/api/vendor-apply");
+    request.nextUrl.pathname.startsWith("/api/vendor-apply") ||
+    // Sales Circle referrer application + no-account-yet signup -- same
+    // class as the vendor pair immediately above.
+    request.nextUrl.pathname.startsWith("/referrer-signup") ||
+    request.nextUrl.pathname.startsWith("/referrer-apply") ||
+    request.nextUrl.pathname.startsWith("/api/referrer-apply");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -133,6 +141,13 @@ export async function updateSession(request: NextRequest) {
     // the same class of bug fixed previously for /api/internal/*.
     const isVendorRoute =
       request.nextUrl.pathname.startsWith("/vendor/") || request.nextUrl.pathname.startsWith("/api/vendor/");
+    // Same isolation for the Sales Circle referrer portal -- "/referrer/"
+    // with trailing slash for the same reason as isVendorRoute above (bare
+    // "/referrer" would also match nothing else here, but keeping the same
+    // defensive shape for consistency and to avoid the same bug class if a
+    // "/referrers" admin page is ever added).
+    const isReferrerRoute =
+      request.nextUrl.pathname.startsWith("/referrer/") || request.nextUrl.pathname.startsWith("/api/referrer/");
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -145,6 +160,16 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     if (profile?.role !== "freelancer" && isVendorRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/inbox";
+      return NextResponse.redirect(url);
+    }
+    if (profile?.role === "referrer" && !isReferrerRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/referrer/roles";
+      return NextResponse.redirect(url);
+    }
+    if (profile?.role !== "referrer" && isReferrerRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/inbox";
       return NextResponse.redirect(url);
