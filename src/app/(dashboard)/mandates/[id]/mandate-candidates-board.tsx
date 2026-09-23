@@ -479,6 +479,29 @@ export default function MandateCandidatesBoard({
                                 Match {row.match_score}
                               </span>
                             )}
+                            {/* Client's own click on the no-login shortlist
+                                link (interested/not interested/schedule
+                                interview) -- see the client_feedback field
+                                comment in mandate-candidates-table.tsx for
+                                why this needed its own badge rather than
+                                staying invisible outside that link. */}
+                            {row.client_feedback && (
+                              <span
+                                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${
+                                  row.client_feedback === "interested"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : row.client_feedback === "interview_requested"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-rose-100 text-rose-800"
+                                }`}
+                              >
+                                {row.client_feedback === "interested"
+                                  ? "Client: Interested"
+                                  : row.client_feedback === "interview_requested"
+                                    ? "Client: Wants interview"
+                                    : "Client: Not interested"}
+                              </span>
+                            )}
                           </div>
                           <p className="text-[10.5px] text-slate-400 truncate">
                             {row.candidate.sub_domain ?? "—"}

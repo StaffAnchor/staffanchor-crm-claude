@@ -122,6 +122,16 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
     label: "Client feedback overdue",
     tint: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200",
   },
+  // A client explicitly clicked Interested / Not interested / Schedule
+  // interview on their no-login shortlist link -- see
+  // submit_client_shortlist_feedback RPC. Distinct from
+  // CLIENT_FEEDBACK_OVERDUE (a system nudge for silence) since this is a
+  // real response that just happened, not an absence of one.
+  CLIENT_SHORTLIST_FEEDBACK: {
+    icon: MessageCircle,
+    label: "Client responded",
+    tint: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  },
   NEW_REFERRAL: {
     icon: UserPlus2,
     label: "New referral",
@@ -196,6 +206,7 @@ const TASK_TYPE_GROUP: Record<string, keyof typeof GROUP_META> = {
   INTERVIEW_REMINDER: "interviews",
   STALE_MANDATE: "sourcing",
   CLIENT_FEEDBACK_OVERDUE: "clients",
+  CLIENT_SHORTLIST_FEEDBACK: "clients",
   STALE_CANDIDATE: "candidates",
   MISSING_ASSESSMENT: "candidates",
   NEW_REFERRAL: "candidates",
@@ -269,6 +280,7 @@ const TASK_TYPE_BOX: Record<string, BoxKey> = {
   INTERVIEW_REMINDER: "mandate",
   STALE_MANDATE: "mandate",
   CLIENT_FEEDBACK_OVERDUE: "mandate",
+  CLIENT_SHORTLIST_FEEDBACK: "mandate",
   STALE_CANDIDATE: "mandate",
   MISSING_ASSESSMENT: "mandate",
   FOLLOW_UP_ON_OFFER: "mandate",

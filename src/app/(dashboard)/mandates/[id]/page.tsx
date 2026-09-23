@@ -80,7 +80,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
     )
     .eq("mandate_id", id);
 
@@ -460,6 +460,7 @@ export default async function MandateDetailPage({
                 match_score: l.match_score ?? null,
                 match_assessment: (l.match_assessment as MandateCandidateRow["match_assessment"]) ?? null,
                 viewed_at: l.viewed_at ?? null,
+                client_feedback: (l.client_feedback as MandateCandidateRow["client_feedback"]) ?? null,
                 candidate: cand,
                 screened: screenedCandidateIds.includes(cand.id),
               };

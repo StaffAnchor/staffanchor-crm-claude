@@ -79,6 +79,16 @@ export type MandateCandidateRow = {
   // recruiters working the same mandate both see the same read state), not
   // a per-user read receipt.
   viewed_at: string | null;
+  // Set by the client themselves via the no-login shortlist link (see
+  // submit_client_shortlist_feedback RPC / shortlist/[token]/feedback-buttons.tsx)
+  // -- "interested" and "not_interested" never touch stage, so without this
+  // surfaced somewhere a recruiter had no way to see those two responses at
+  // all short of re-opening the client's own link. "interview_requested"
+  // also moves stage to client_interview, so this badge is somewhat
+  // redundant with the stage badge for that one value, but showing it here
+  // too keeps all three responses visually consistent instead of two being
+  // invisible and one being a totally different UI element.
+  client_feedback: "interested" | "not_interested" | "interview_requested" | null;
   candidate: {
     id: string;
     full_name: string;
@@ -779,14 +789,36 @@ export default function MandateCandidatesTable({
                 )}
               </td>
               <td className="px-4 py-3">
-                <button
-                  onClick={() => toggleShortlist(l.id, !l.in_shortlist)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                    l.in_shortlist ? "bg-teal-100 text-teal-800 hover:bg-teal-200" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  {l.in_shortlist ? "Yes — click to remove" : "No — click to add"}
-                </button>
+                <div className="flex flex-col items-start gap-1">
+                  <button
+                    onClick={() => toggleShortlist(l.id, !l.in_shortlist)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                      l.in_shortlist ? "bg-teal-100 text-teal-800 hover:bg-teal-200" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {l.in_shortlist ? "Yes — click to remove" : "No — click to add"}
+                  </button>
+                  {/* Client's own click on the shortlist link -- see the
+                      client_feedback field comment on MandateCandidateRow
+                      above for why this needed its own badge. */}
+                  {l.client_feedback && (
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium whitespace-nowrap ${
+                        l.client_feedback === "interested"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : l.client_feedback === "interview_requested"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-rose-100 text-rose-800"
+                      }`}
+                    >
+                      {l.client_feedback === "interested"
+                        ? "Client: Interested"
+                        : l.client_feedback === "interview_requested"
+                          ? "Client: Wants interview"
+                          : "Client: Not interested"}
+                    </span>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
