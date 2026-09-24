@@ -6,6 +6,31 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 // account exists yet, exempted in middleware.ts). Service-role client since
 // there's no anon-key insert policy on sales_circle_referrers (writes go
 // through this route and the admin approve/reject routes only).
+//
+// Called cross-origin from the marketing site's /sales-circle page
+// (staffanchor.com and www.staffanchor.com, a separate Next.js app/domain
+// from this CRM) -- the referrer-facing marketing + application UI lives
+// there, not here, since it's an external opportunity page rather than a
+// CRM feature. CORS is scoped to just those two origins.
+const ALLOWED_ORIGINS = new Set([
+  "https://staffanchor.com",
+  "https://www.staffanchor.com",
+]);
+
+function corsHeaders(origin: string | null): HeadersInit {
+  const allowOrigin = origin && ALLOWED_ORIGINS.has(origin) ? origin : "";
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    Vary: "Origin",
+  };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(req.headers.get("origin")) });
+}
+
 function adminClient(): SupabaseClient | null {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,8 +39,9 @@ function adminClient(): SupabaseClient | null {
 }
 
 export async function POST(req: NextRequest) {
+  const cors = corsHeaders(req.headers.get("origin"));
   const admin = adminClient();
-  if (!admin) return NextResponse.json({ error: "Not configured" }, { status: 503 });
+  if (!admin) return NextResponse.json({ error: "Not configured" }, { status: 503, headers: cors });
 
   const form = await req.formData();
   const fullName = String(form.get("fullName") ?? "").trim();
@@ -30,10 +56,10 @@ export async function POST(req: NextRequest) {
   const tosAccepted = form.get("tosAccepted");
 
   if (!fullName || !email || !phone) {
-    return NextResponse.json({ error: "Name, email, and phone are required." }, { status: 400 });
+    return NextResponse.json({ error: "Name, email, and phone are required." }, { status: 400, headers: cors });
   }
   if (tosAccepted !== "true") {
-    return NextResponse.json({ error: "Please accept the Terms & Conditions to continue." }, { status: 400 });
+    return NextResponse.json({ error: "Please accept the Terms & Conditions to continue." }, { status: 400, headers: cors });
   }
 
   const yoeNum = Number(yearsOfExperience);
@@ -54,8 +80,8 @@ export async function POST(req: NextRequest) {
   });
 
   if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+    return NextResponse.json({ error: insertError.message }, { status: 500, headers: cors });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true }, { headers: cors });
 }
