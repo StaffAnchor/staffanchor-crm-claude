@@ -34,7 +34,7 @@ export default async function ReferrerRolesPage() {
   const { data: mandates } = await supabase
     .from("mandates")
     .select(
-      "id, role_title, category, sub_domain, city, budget_min, budget_max, team_size_band, company_size_band, must_haves, client_name, referral_reveal_company_to_trusted"
+      "id, role_title, category, sub_domain, city, budget_min, budget_max, team_size_band, company_size_band, must_haves, client_name, referral_reveal_company_to_trusted, referral_summary"
     )
     .eq("referral_visible", true)
     .eq("is_archived", false)
@@ -91,11 +91,16 @@ export default async function ReferrerRolesPage() {
                   <Stat label="Team size" value={m.team_size_band ?? "—"} />
                   <Stat label="Company size" value={m.company_size_band ?? "—"} />
                 </div>
-                {m.must_haves && m.must_haves.length > 0 && (
-                  <p className="text-[12px] text-slate-500 mt-3">
-                    <span className="font-medium text-slate-600">Key requirements: </span>
-                    {m.must_haves.join(", ")}
-                  </p>
+                {m.referral_summary ? (
+                  <p className="text-[13px] text-slate-600 mt-3 leading-relaxed">{m.referral_summary}</p>
+                ) : (
+                  m.must_haves &&
+                  m.must_haves.length > 0 && (
+                    <p className="text-[12px] text-slate-500 mt-3">
+                      <span className="font-medium text-slate-600">Key requirements: </span>
+                      {m.must_haves.join(", ")}
+                    </p>
+                  )
                 )}
                 <Link
                   href={`/referrer/refer?mandate=${m.id}`}

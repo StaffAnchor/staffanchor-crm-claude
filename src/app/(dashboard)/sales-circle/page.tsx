@@ -97,7 +97,9 @@ export default async function SalesCirclePage() {
 
   const { data: visibleMandates } = await supabase
     .from("mandates")
-    .select("id, role_title, client_name, referral_visible, referral_reveal_company_to_trusted, is_archived")
+    .select(
+      "id, role_title, client_name, referral_visible, referral_reveal_company_to_trusted, referral_summary, is_archived"
+    )
     .eq("is_archived", false)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -145,8 +147,10 @@ export default async function SalesCirclePage() {
                   <td className="px-3 py-2">
                     <MandateVisibilityControl
                       mandateId={m.id}
+                      roleTitle={m.role_title}
                       referralVisible={m.referral_visible}
                       revealCompany={m.referral_reveal_company_to_trusted}
+                      referralSummary={m.referral_summary}
                     />
                   </td>
                 </tr>

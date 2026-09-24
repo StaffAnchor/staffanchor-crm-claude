@@ -21,6 +21,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const update: Record<string, unknown> = {};
   if (typeof body.referralVisible === "boolean") update.referral_visible = body.referralVisible;
   if (typeof body.revealCompany === "boolean") update.referral_reveal_company_to_trusted = body.revealCompany;
+  // Admin-approved crisp write-up for referrers, saved alongside the
+  // visibility flip when the admin confirms it in the review modal (see
+  // mandate-visibility-control.tsx) so a mandate never goes visible with
+  // an un-reviewed or stale summary.
+  if (typeof body.referralSummary === "string") update.referral_summary = body.referralSummary.trim() || null;
 
   const { error } = await supabase.from("mandates").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
