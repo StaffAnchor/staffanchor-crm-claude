@@ -53,23 +53,70 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
   }
 
-  const { data: existing } = await admin.from("profiles").select("id").eq("email", referrer.email).maybeSingle();
-  if (existing) {
+  const { data: existingProfile } = await admin.from("profiles").select("id").eq("email", referrer.email).maybeSingle();
+  if (existingProfile) {
     return NextResponse.json({ error: "An account with this email already exists. Try signing in instead." }, { status: 409 });
   }
 
+  // A person can already have a Supabase Auth account under this email
+  // without having a `profiles` row -- most commonly because they're an
+  // existing candidate (candidates.user_id links to auth.users directly,
+  // bypassing `profiles` entirely; see jobs.staffanchor.com's candidate
+  // portal). Supabase Auth enforces one auth.users row per email
+  // project-wide, so a plain createUser() call fails for them with
+  // "already been registered" even though, from the referral program's
+  // point of view, they have no account yet. Being a candidate should never
+  // block someone from also becoming a referrer, so: try to create a new
+  // auth user first (the common case), and only if that fails specifically
+  // because the email is taken, look up the existing auth user, reset their
+  // password to the one just chosen here (so this referrer signup flow
+  // actually leaves them with working credentials), and attach the new
+  // `profiles` row to that same auth id instead of creating a second one --
+  // Supabase Auth has no concept of "one email, two accounts", so reusing
+  // the identity is the only way to give this email both a candidate record
+  // and a referrer profile.
+  let authUserId: string;
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email: referrer.email,
     password,
     email_confirm: true,
     user_metadata: { full_name: referrer.full_name },
   });
-  if (createError || !created?.user) {
+
+  if (created?.user) {
+    authUserId = created.user.id;
+  } else if (createError && /already.*registered|email.*exists|email_exists/i.test(createError.message ?? "")) {
+    let existingAuthUserId: string | null = null;
+    let page = 1;
+    while (!existingAuthUserId) {
+      const { data: pageData, error: listError } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (listError || !pageData?.users?.length) break;
+      const match = pageData.users.find((u) => u.email?.toLowerCase() === referrer.email.toLowerCase());
+      if (match) {
+        existingAuthUserId = match.id;
+        break;
+      }
+      if (pageData.users.length < 1000) break;
+      page += 1;
+    }
+    if (!existingAuthUserId) {
+      return NextResponse.json({ error: "Failed to create account" }, { status: 500 });
+    }
+    const { error: updateError } = await admin.auth.admin.updateUserById(existingAuthUserId, {
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: referrer.full_name },
+    });
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+    authUserId = existingAuthUserId;
+  } else {
     return NextResponse.json({ error: createError?.message ?? "Failed to create account" }, { status: 500 });
   }
 
   const { error: profileError } = await admin.from("profiles").insert({
-    id: created.user.id,
+    id: authUserId,
     full_name: referrer.full_name,
     email: referrer.email,
     role: "referrer",
