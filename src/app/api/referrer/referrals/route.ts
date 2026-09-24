@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
@@ -6,9 +7,11 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 // the cookie-authed server client to confirm who's signed in and to do the
 // actual insert (RLS's sales_circle_referrals_self_insert policy already
 // scopes that to the caller's own referrer_id), and a service-role client
-// just for the duplicate-ownership check, since that has to see across ALL
-// referrers' submissions -- RLS would otherwise hide every other referrer's
-// rows from this query.
+// for the duplicate-ownership check and the resume upload -- the duplicate
+// check has to see across ALL referrers' submissions (RLS would otherwise
+// hide every other referrer's rows), and the resumes bucket has no
+// referrer-facing storage policy (same pattern as vendor-apply/route.ts),
+// so the upload goes through the service-role client from the server side.
 //
 // Duplicate rule per spec: if the same candidate (by phone/email/LinkedIn)
 // was already submitted by anyone within the last 6 months, the new
@@ -16,6 +19,9 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 // timestamp determines ownership, so this referrer isn't told who has it or
 // why, just that it's unavailable.
 const OWNERSHIP_WINDOW_DAYS = 180;
+const MAX_RESUME_BYTES = 8 * 1024 * 1024; // 8MB, matches vendor-apply's limit
+
+const VALID_SALES_EXPERIENCE = ["b2b_sales", "b2c_sales", "both", "neither"];
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -33,16 +39,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const candidateName = String(body.candidateName ?? "").trim();
-  const candidatePhone = String(body.candidatePhone ?? "").trim();
-  const candidateEmail = String(body.candidateEmail ?? "").trim();
-  const candidateLinkedinUrl = String(body.candidateLinkedinUrl ?? "").trim();
-  const candidateCurrentCompany = String(body.candidateCurrentCompany ?? "").trim();
-  const candidateCurrentDesignation = String(body.candidateCurrentDesignation ?? "").trim();
-  const whyFit = String(body.whyFit ?? "").trim();
-  const mandateId = body.mandateId ? String(body.mandateId) : null;
-  const consentConfirmed = body.consentConfirmed === true;
+  const form = await req.formData();
+  const str = (key: string) => String(form.get(key) ?? "").trim();
+
+  const candidateName = str("candidateName");
+  const candidatePhone = str("candidatePhone");
+  const candidateEmail = str("candidateEmail");
+  const candidateLinkedinUrl = str("candidateLinkedinUrl");
+  const candidateCurrentCompany = str("candidateCurrentCompany");
+  const candidateCurrentDesignation = str("candidateCurrentDesignation");
+  const whyFit = str("whyFit");
+  const mandateId = str("mandateId") || null;
+  const consentConfirmed = str("consentConfirmed") === "true";
+
+  const salesExperienceRaw = str("salesExperience");
+  const candidateSalesExperience = VALID_SALES_EXPERIENCE.includes(salesExperienceRaw) ? salesExperienceRaw : null;
+  const experienceYearsRaw = str("experienceYears");
+  const candidateTotalExperienceYears = experienceYearsRaw && !Number.isNaN(Number(experienceYearsRaw)) ? Number(experienceYearsRaw) : null;
+  const expectedCtcRaw = str("expectedCtc");
+  const candidateExpectedCtc = expectedCtcRaw && !Number.isNaN(Number(expectedCtcRaw)) ? Number(expectedCtcRaw) : null;
+  const candidateNoticePeriod = str("noticePeriod") || null;
+
+  const resumeFile = form.get("resume");
 
   if (!candidateName) {
     return NextResponse.json({ error: "Candidate name is required." }, { status: 400 });
@@ -55,6 +73,14 @@ export async function POST(req: NextRequest) {
       { error: "Please confirm the candidate knows you're recommending them and agrees to be contacted." },
       { status: 400 }
     );
+  }
+  if (resumeFile instanceof File && resumeFile.size > 0) {
+    if (resumeFile.size > MAX_RESUME_BYTES) {
+      return NextResponse.json({ error: "Resume file is too large (max 8MB)." }, { status: 400 });
+    }
+    if (resumeFile.type !== "application/pdf" && !resumeFile.name.toLowerCase().endsWith(".pdf")) {
+      return NextResponse.json({ error: "Please upload the resume as a PDF." }, { status: 400 });
+    }
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -89,6 +115,21 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let resumeFilePath: string | null = null;
+  if (admin && resumeFile instanceof File && resumeFile.size > 0) {
+    const safeName = candidateName.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) || "referral";
+    const path = `sales-circle-referrals/${Date.now()}-${crypto.randomBytes(4).toString("hex")}-${safeName}.pdf`;
+    const bytes = new Uint8Array(await resumeFile.arrayBuffer());
+    const { error: uploadError } = await admin.storage.from("resumes").upload(path, bytes, {
+      contentType: "application/pdf",
+      upsert: false,
+    });
+    if (uploadError) {
+      return NextResponse.json({ error: `Resume upload failed: ${uploadError.message}` }, { status: 500 });
+    }
+    resumeFilePath = path;
+  }
+
   const { data: inserted, error: insertError } = await supabase
     .from("sales_circle_referrals")
     .insert({
@@ -102,6 +143,11 @@ export async function POST(req: NextRequest) {
       candidate_current_designation: candidateCurrentDesignation || null,
       why_fit: whyFit || null,
       consent_confirmed: true,
+      resume_file_path: resumeFilePath,
+      candidate_sales_experience: candidateSalesExperience,
+      candidate_total_experience_years: candidateTotalExperienceYears,
+      candidate_expected_ctc: candidateExpectedCtc,
+      candidate_notice_period: candidateNoticePeriod,
     })
     .select("id")
     .single();

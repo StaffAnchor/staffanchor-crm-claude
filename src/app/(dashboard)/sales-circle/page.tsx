@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import ReferrerApplicationsPanel from "./referrer-applications-panel";
 import ReferrersTable from "./referrers-table";
 import ReferralsStatusControl from "./referrals-status-control";
 import PayoutSlabsPanel from "./payout-slabs-panel";
 import PayoutsPanel from "./payouts-panel";
 import MandateVisibilityControl from "./mandate-visibility-control";
+import ReferralDetailsToggle from "./referral-details-toggle";
 
 // Admin control room for the Sales Circle referral network -- external
 // referrers (not vendors: passive one-time introducers, capped slab
@@ -35,9 +37,23 @@ export default async function SalesCirclePage() {
 
   const { data: referralsRaw } = await supabase
     .from("sales_circle_referrals")
-    .select("id, candidate_name, status, created_at, referrer_id, mandate_id, sales_circle_referrers(full_name), mandates(role_title, client_name)")
+    .select(
+      "id, candidate_name, candidate_phone, candidate_email, candidate_linkedin_url, status, created_at, referrer_id, mandate_id, resume_file_path, candidate_sales_experience, candidate_total_experience_years, candidate_expected_ctc, candidate_notice_period, why_fit, sales_circle_referrers(full_name), mandates(role_title, client_name)"
+    )
     .order("created_at", { ascending: false })
     .limit(200);
+
+  const referralResumePaths = (referralsRaw ?? []).map((r) => r.resume_file_path).filter((p): p is string => !!p);
+  const referralResumeUrlByPath: Record<string, string> = {};
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  if (serviceKey && referralResumePaths.length > 0) {
+    const admin = createSupabaseClient(supabaseUrl, serviceKey);
+    const { data: signedBatch } = await admin.storage.from("resumes").createSignedUrls(referralResumePaths, 60 * 60 * 12);
+    for (const s of signedBatch ?? []) {
+      if (s.path && s.signedUrl) referralResumeUrlByPath[s.path] = s.signedUrl;
+    }
+  }
 
   const referrals = (referralsRaw ?? []).map((r) => {
     const referrer = Array.isArray(r.sales_circle_referrers) ? r.sales_circle_referrers[0] : r.sales_circle_referrers;
@@ -50,6 +66,17 @@ export default async function SalesCirclePage() {
       referrer_name: referrer?.full_name ?? "—",
       role_title: mandate?.role_title ?? "Bench",
       client_name: mandate?.client_name ?? "—",
+      details: {
+        resume_signed_url: r.resume_file_path ? referralResumeUrlByPath[r.resume_file_path] ?? null : null,
+        candidate_sales_experience: r.candidate_sales_experience,
+        candidate_total_experience_years: r.candidate_total_experience_years,
+        candidate_expected_ctc: r.candidate_expected_ctc,
+        candidate_notice_period: r.candidate_notice_period,
+        why_fit: r.why_fit,
+        candidate_phone: r.candidate_phone,
+        candidate_email: r.candidate_email,
+        candidate_linkedin_url: r.candidate_linkedin_url,
+      },
     };
   });
 
@@ -139,6 +166,7 @@ export default async function SalesCirclePage() {
                 <th className="text-left font-medium px-3 py-2">Referrer</th>
                 <th className="text-left font-medium px-3 py-2">Role</th>
                 <th className="text-left font-medium px-3 py-2">Status</th>
+                <th className="text-left font-medium px-3 py-2">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -153,11 +181,14 @@ export default async function SalesCirclePage() {
                   <td className="px-3 py-2">
                     <ReferralsStatusControl referralId={r.id} currentStatus={r.status} />
                   </td>
+                  <td className="px-3 py-2">
+                    <ReferralDetailsToggle details={r.details} />
+                  </td>
                 </tr>
               ))}
               {referrals.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
                     No referrals yet.
                   </td>
                 </tr>
