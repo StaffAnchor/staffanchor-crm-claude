@@ -12,6 +12,8 @@ export type MatchItem = {
   headline: string;
   years: number | null;
   location: string | null;
+  currentCtc: number | null;
+  expectedCtc: number | null;
   fit: "strong" | "possible" | "weak";
   score: number;
   summary: string | null;
@@ -25,6 +27,20 @@ const FIT_STYLE: Record<MatchItem["fit"], { label: string; cls: string }> = {
   possible: { label: "Possible", cls: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
   weak: { label: "Weak", cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
 };
+
+type CtcBasis = "expected_else_current" | "current" | "expected";
+
+// The number a candidate is judged on for the CTC filter, or null if the
+// profile has none for the chosen basis.
+function ctcFor(m: MatchItem, basis: CtcBasis): number | null {
+  if (basis === "current") return m.currentCtc;
+  if (basis === "expected") return m.expectedCtc;
+  return m.expectedCtc ?? m.currentCtc;
+}
+
+function fmtCtc(v: number): string {
+  return `${Number.isInteger(v) ? v : v.toFixed(1)} L`;
+}
 
 const DISMISS_REASONS = ["Wrong domain or motion", "Experience doesn't fit", "Compensation doesn't fit", "Location doesn't fit", "Other"];
 
@@ -89,6 +105,11 @@ function Card({ m, mandateId, onChanged }: { m: MatchItem; mandateId: string; on
           </div>
           <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">
             {[m.headline, m.years != null ? `${m.years} yrs` : null, m.location].filter(Boolean).join(" · ")}
+          </p>
+          <p className={`text-[12px] ${m.currentCtc == null && m.expectedCtc == null ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+            {m.currentCtc == null && m.expectedCtc == null
+              ? "No CTC available"
+              : [m.currentCtc != null ? `Current ${fmtCtc(m.currentCtc)}` : "Current: not given", m.expectedCtc != null ? `Expected ${fmtCtc(m.expectedCtc)}` : "Expected: not given"].join(" · ")}
           </p>
         </div>
         {m.status === "added" ? (
@@ -184,6 +205,8 @@ export default function AiMatchesList({
   cvsRead,
   cvsTotal,
   items,
+  budgetMin,
+  budgetMax,
 }: {
   mandateId: string;
   roleOpen: boolean;
@@ -192,18 +215,39 @@ export default function AiMatchesList({
   cvsRead: number;
   cvsTotal: number;
   items: MatchItem[];
+  budgetMin: number | null;
+  budgetMax: number | null;
 }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showWeak, setShowWeak] = useState(false);
+  // CTC filter (lakhs per annum). The maximum starts at the role's budget when
+  // there is one; clear it to see everyone.
+  const [ctcMin, setCtcMin] = useState("");
+  const [ctcMax, setCtcMax] = useState(budgetMax != null ? String(budgetMax) : "");
+  const [ctcBasis, setCtcBasis] = useState<CtcBasis>("expected_else_current");
+  const [includeNoCtc, setIncludeNoCtc] = useState(true);
 
   const suggested = items.filter((i) => i.status === "suggested");
   const added = items.filter((i) => i.status === "added");
   const order = { strong: 0, possible: 1, weak: 2 } as const;
-  const visible = suggested.filter((i) => showWeak || i.fit !== "weak").sort((a, b) => order[a.fit] - order[b.fit] || b.score - a.score);
+  const minV = ctcMin.trim() === "" ? null : Number(ctcMin);
+  const maxV = ctcMax.trim() === "" ? null : Number(ctcMax);
+  const ctcActive = (minV != null && Number.isFinite(minV)) || (maxV != null && Number.isFinite(maxV));
+  const passesCtc = (m: MatchItem) => {
+    const v = ctcFor(m, ctcBasis);
+    if (v == null) return includeNoCtc;
+    if (minV != null && Number.isFinite(minV) && v < minV) return false;
+    if (maxV != null && Number.isFinite(maxV) && v > maxV) return false;
+    return true;
+  };
+  const afterCtc = (list: MatchItem[]) => list.filter(passesCtc);
+  const visible = afterCtc(suggested.filter((i) => showWeak || i.fit !== "weak")).sort((a, b) => order[a.fit] - order[b.fit] || b.score - a.score);
   const weakCount = suggested.filter((i) => i.fit === "weak").length;
+  const hiddenByCtc = suggested.filter((i) => (showWeak || i.fit !== "weak") && !passesCtc(i)).length;
+  const noCtcCount = suggested.filter((i) => ctcFor(i, ctcBasis) == null).length;
 
   async function run() {
     setRunning(true);
@@ -260,8 +304,46 @@ export default function AiMatchesList({
       {message && <p className="text-[13px] text-slate-700 dark:text-slate-300 mb-3">{message}</p>}
       {error && <p className="text-[13px] text-red-600 mb-3">{error}</p>}
 
+      {suggested.length > 0 && (
+        <div className="mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 p-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">CTC min (lakhs)</label>
+              <input value={ctcMin} onChange={(e) => setCtcMin(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">CTC max (lakhs)</label>
+              <input value={ctcMax} onChange={(e) => setCtcMax(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Judge on</label>
+              <select value={ctcBasis} onChange={(e) => setCtcBasis(e.target.value as CtcBasis)} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]">
+                <option value="expected_else_current">Expected CTC, else current</option>
+                <option value="current">Current CTC</option>
+                <option value="expected">Expected CTC only</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-300 pb-1.5">
+              <input type="checkbox" checked={includeNoCtc} onChange={(e) => setIncludeNoCtc(e.target.checked)} />
+              Include candidates with no CTC ({noCtcCount})
+            </label>
+            {(ctcMin || ctcMax) && (
+              <button onClick={() => { setCtcMin(""); setCtcMax(""); }} className="text-[12.5px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 pb-1.5">
+                Clear CTC range
+              </button>
+            )}
+          </div>
+          <p className="mt-2 text-[12px] text-slate-500 dark:text-slate-400">
+            {budgetMin != null || budgetMax != null ? `Role budget: ${budgetMin ?? "?"} to ${budgetMax ?? "?"} lakhs. ` : "No budget set on this role. "}
+            {ctcActive && hiddenByCtc > 0 ? `${hiddenByCtc} ${hiddenByCtc === 1 ? "candidate is" : "candidates are"} hidden by the CTC filter.` : ""}
+          </p>
+        </div>
+      )}
+
       {visible.length === 0 && roleOpen && hasMustHaves ? (
-        <p className="text-[13px] text-slate-500 dark:text-slate-400 py-6">Nothing to show yet. Press Find matches to check the best candidates from your bank.</p>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400 py-6">
+          {suggested.length > 0 && hiddenByCtc > 0 ? "Everyone is hidden by the CTC filter. Widen the range or clear it." : "Nothing to show yet. Press Find matches to check the best candidates from your bank."}
+        </p>
       ) : (
         <ul className="space-y-3">
           {visible.map((m) => (
