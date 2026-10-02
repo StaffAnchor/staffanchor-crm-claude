@@ -22,7 +22,7 @@ export default async function ReferrerLayout({ children }: { children: React.Rea
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "referrer") redirect("/inbox");
+  if (profile?.role !== "referrer") redirect("/today");
 
   const { data: referrer } = profile.sales_circle_referrer_id
     ? await supabase.from("sales_circle_referrers").select("tier").eq("id", profile.sales_circle_referrer_id).single()
