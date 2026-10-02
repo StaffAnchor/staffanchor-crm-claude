@@ -25,6 +25,9 @@ export type GenerationResult = {
 };
 
 export type GenerationOptions = {
+  // Ask Gemini for strict JSON output (no markdown fence) and a low temperature,
+  // for extraction work where the same input should give the same answer.
+  json?: boolean;
   // Order of Gemini models to try. Defaults to the cheapest-first list; pass a
   // quality-first list for work where accuracy matters more than speed.
   geminiModels?: string[];
@@ -44,14 +47,17 @@ const GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.6-
 const GROQ_MODEL = "openai/gpt-oss-120b";
 const MISTRAL_MODEL = "mistral-small-latest";
 
-async function tryGemini(prompt: string, models: string[] = GEMINI_MODELS): Promise<GenerationResult | null> {
+async function tryGemini(prompt: string, models: string[] = GEMINI_MODELS, json = false): Promise<GenerationResult | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
   const genAI = new GoogleGenerativeAI(apiKey);
   let lastErr: unknown = null;
   for (const modelName of models) {
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        ...(json ? { generationConfig: { responseMimeType: "application/json", temperature: 0.1 } } : {}),
+      });
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
       const meta = result.response.usageMetadata;
@@ -60,7 +66,13 @@ async function tryGemini(prompt: string, models: string[] = GEMINI_MODELS): Prom
           text,
           provider: "gemini",
           model: modelName,
-          usage: meta ? { inputTokens: meta.promptTokenCount ?? 0, outputTokens: meta.candidatesTokenCount ?? 0 } : undefined,
+          // Gemini 2.5 bills its internal "thinking" tokens as output, so count them.
+          usage: meta
+            ? {
+                inputTokens: meta.promptTokenCount ?? 0,
+                outputTokens: (meta.candidatesTokenCount ?? 0) + ((meta as { thoughtsTokenCount?: number }).thoughtsTokenCount ?? 0),
+              }
+            : undefined,
         };
       }
     } catch (err) {
@@ -140,7 +152,7 @@ export async function generateTextWithFallback(prompt: string, options?: Generat
 
   const geminiModels = options?.geminiModels;
   for (const [name, fn] of [
-    ["gemini", (p: string) => tryGemini(p, geminiModels)],
+    ["gemini", (p: string) => tryGemini(p, geminiModels, options?.json)],
     ["groq", tryGroq],
     ["mistral", tryMistral],
   ] as const) {
