@@ -42,10 +42,10 @@ export default async function MandateDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ back?: string; box?: string }>;
+  searchParams: Promise<{ back?: string; box?: string; stage?: string }>;
 }) {
   const { id } = await params;
-  const { back, box } = await searchParams;
+  const { back, box, stage: initialStage } = await searchParams;
   const supabase = await createClient();
 
   // Opened from a My Desk "Mandate Tasks" item -- send "back" to that box
@@ -437,6 +437,7 @@ export default async function MandateDetailPage({
       <MandateSplitLayout
         left={
         <MandateCandidatesView
+          initialStage={initialStage}
           rows={(links ?? [])
             .map((l) => {
               const cand = l.candidates as unknown as MandateCandidateRow["candidate"] | null;

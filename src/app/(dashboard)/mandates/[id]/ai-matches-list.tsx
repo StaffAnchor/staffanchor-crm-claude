@@ -199,6 +199,7 @@ function Card({ m, mandateId, onChanged }: { m: MatchItem; mandateId: string; on
 
 export default function AiMatchesList({
   mandateId,
+  fullPage = false,
   roleOpen,
   hasMustHaves,
   lastRunAt,
@@ -209,6 +210,7 @@ export default function AiMatchesList({
   budgetMax,
 }: {
   mandateId: string;
+  fullPage?: boolean;
   roleOpen: boolean;
   hasMustHaves: boolean;
   lastRunAt: string | null;
@@ -286,6 +288,11 @@ export default function AiMatchesList({
             Candidates whose CVs have been read ({cvsRead} of {cvsTotal}), checked against this role&apos;s must-haves. A doubt isn&apos;t a no: it&apos;s something to confirm with the candidate.
             {lastRunAt ? ` Last checked ${new Date(lastRunAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}.` : ""}
           </p>
+          {!fullPage && (
+            <Link href={`/mandates/${mandateId}/ai-matches`} className="mt-1.5 inline-block text-[12.5px] font-medium text-teal-700 dark:text-teal-300 hover:underline">
+              Open full screen
+            </Link>
+          )}
         </div>
         <button
           onClick={run}

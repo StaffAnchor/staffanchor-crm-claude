@@ -2,7 +2,7 @@ import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GEMINI_QUALITY_MODELS, generateTextWithFallback } from "@/lib/ai-providers";
 import { logAiUsage } from "@/lib/ai-usage";
-import type { CvFacts } from "@/lib/cv-facts";
+import { extractCvFactsForCandidate, type CvFacts } from "@/lib/cv-facts";
 
 // AI matching from the whole candidate bank, in two stages so it stays fast
 // and cheap as the bank grows:
@@ -393,4 +393,96 @@ export async function runAiMatchForMandate(mandateId: string, admin: SupabaseCli
     remaining: Math.max(0, needsCheck.length - batch.length),
     failed: counts.failed,
   };
+}
+
+
+export type CandidateCheck = {
+  fit: Fit;
+  score: number;
+  summary: string | null;
+  checks: MatchChecks;
+};
+
+export type CheckCandidateResult = { ok: true; result: CandidateCheck; cached: boolean } | { ok: false; error: string };
+
+// Checks ONE candidate (typically someone who already applied) against a
+// role's requirements and stores the result. Used by the triage screen so a
+// recruiter sees evidence and doubts for the person in front of them. Reads
+// the CV first if it has not been read yet. Reuses a stored result when the
+// requirements and the CV facts have not changed.
+export async function checkCandidateForMandate(mandateId: string, candidateId: string, admin: SupabaseClient): Promise<CheckCandidateResult> {
+  const { data: role, error } = await admin
+    .from("mandates")
+    .select("id, role_title, status, must_haves, good_to_haves, experience_min, experience_max, cities, city, embedding")
+    .eq("id", mandateId)
+    .single();
+  if (error || !role) return { ok: false, error: "Role not found" };
+  const r = role as unknown as RoleForMatch;
+  const must = cleanList(r.must_haves);
+  const good = cleanList(r.good_to_haves);
+  if (must.length === 0) return { ok: false, error: "Set the must-haves first." };
+  const spec = specHashOf(r);
+
+  let { data: factsRow } = await admin.from("candidate_cv_facts").select("candidate_id, facts, source_hash").eq("candidate_id", candidateId).maybeSingle();
+  if (!factsRow) {
+    const read = await extractCvFactsForCandidate(candidateId, admin);
+    if (!read.ok) return { ok: false, error: read.error };
+    ({ data: factsRow } = await admin.from("candidate_cv_facts").select("candidate_id, facts, source_hash").eq("candidate_id", candidateId).maybeSingle());
+  }
+  if (!factsRow) return { ok: false, error: "No CV facts available" };
+  const row = factsRow as FactsRow;
+
+  const { data: prior } = await admin.from("mandate_ai_matches").select("fit, score, summary, checks, spec_hash, facts_hash").eq("mandate_id", mandateId).eq("candidate_id", candidateId).maybeSingle();
+  if (prior && prior.spec_hash === spec && prior.facts_hash === row.source_hash) {
+    return { ok: true, cached: true, result: { fit: prior.fit as Fit, score: prior.score as number, summary: (prior.summary as string | null) ?? null, checks: prior.checks as MatchChecks } };
+  }
+
+  const { data: profile } = await admin
+    .from("candidates")
+    .select("id, full_name, total_experience_years, current_location, open_to_relocation, notice_period, current_fixed_ctc, expected_fixed_ctc, current_job_title, current_employer")
+    .eq("id", candidateId)
+    .single();
+  if (!profile) return { ok: false, error: "Candidate not found" };
+  const p = profile as CandidateProfile;
+
+  const years = p.total_experience_years != null ? Number(p.total_experience_years) : row.facts.experience_years_from_dates;
+  const exp = experienceFit(years, r.experience_min, r.experience_max);
+  const loc = locationFit([...cleanList(r.cities), ...(r.city ? [r.city] : [])], p.current_location, p.open_to_relocation);
+
+  const prompt = buildEvidencePrompt(r, must, good, row.facts, p);
+  let parsed: ReturnType<typeof parseEvidenceJson> = null;
+  for (let attempt = 1; attempt <= 2 && !parsed; attempt++) {
+    try {
+      const res = await generateTextWithFallback(prompt, { geminiModels: GEMINI_QUALITY_MODELS, json: true, thinkingBudget: MATCH_THINKING_BUDGET });
+      parsed = parseEvidenceJson(res.text, must, good);
+      await logAiUsage({ purpose: "ai_match_single", refType: "mandate", refId: mandateId, result: res, error: parsed ? undefined : `unparseable response (attempt ${attempt})` });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await logAiUsage({ purpose: "ai_match_single", refType: "mandate", refId: mandateId, error: message });
+      if (message.includes("429")) return { ok: false, error: "The AI is at its usage limit right now." };
+    }
+  }
+  if (!parsed) return { ok: false, error: "The AI answer couldn't be read. Try again." };
+
+  const fit = deriveFit(parsed.must, loc);
+  const score = scoreFrom(parsed.must, parsed.good, exp, loc);
+  const checks: MatchChecks = { must: parsed.must, good: parsed.good, experience: exp, location: loc };
+  await admin.from("mandate_ai_matches").upsert(
+    {
+      mandate_id: mandateId,
+      candidate_id: candidateId,
+      fit,
+      score,
+      summary: parsed.summary,
+      checks,
+      spec_hash: spec,
+      facts_hash: row.source_hash,
+      model: GEMINI_QUALITY_MODELS[0],
+      // Already in this role's pipeline, so it belongs under "Already added".
+      status: "added",
+      computed_at: new Date().toISOString(),
+    },
+    { onConflict: "mandate_id,candidate_id" }
+  );
+  return { ok: true, cached: false, result: { fit, score, summary: parsed.summary, checks } };
 }
