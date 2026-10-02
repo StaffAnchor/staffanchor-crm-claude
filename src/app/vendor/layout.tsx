@@ -23,7 +23,7 @@ export default async function VendorLayout({ children }: { children: React.React
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "freelancer") redirect("/inbox");
+  if (profile?.role !== "freelancer") redirect("/today");
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">

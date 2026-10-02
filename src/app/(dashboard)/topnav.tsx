@@ -58,7 +58,7 @@ export default function TopNav({
   return (
     <header className="ros-glass border-b sticky top-0 z-30">
       <div className="max-w-[1500px] mx-auto px-5 h-16 flex items-center gap-4">
-        <Link href="/inbox" className="flex items-center shrink-0">
+        <Link href="/today" className="flex items-center shrink-0">
           <Image
             src="/Staffanchor_Logo.svg"
             alt="StaffAnchor"

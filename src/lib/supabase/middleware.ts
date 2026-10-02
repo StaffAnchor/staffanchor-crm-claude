@@ -119,7 +119,7 @@ export async function updateSession(request: NextRequest) {
     // Freelancer accounts get redirected onward to /vendor/mandates by the
     // block below on their very next request.
     const url = request.nextUrl.clone();
-    url.pathname = "/inbox";
+    url.pathname = "/today";
     return NextResponse.redirect(url);
   }
 
@@ -161,7 +161,7 @@ export async function updateSession(request: NextRequest) {
     }
     if (profile?.role !== "freelancer" && isVendorRoute) {
       const url = request.nextUrl.clone();
-      url.pathname = "/inbox";
+      url.pathname = "/today";
       return NextResponse.redirect(url);
     }
     if (profile?.role === "referrer" && !isReferrerRoute) {
@@ -171,7 +171,7 @@ export async function updateSession(request: NextRequest) {
     }
     if (profile?.role !== "referrer" && isReferrerRoute) {
       const url = request.nextUrl.clone();
-      url.pathname = "/inbox";
+      url.pathname = "/today";
       return NextResponse.redirect(url);
     }
   }

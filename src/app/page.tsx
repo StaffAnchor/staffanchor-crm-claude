@@ -6,5 +6,5 @@ import { redirect } from "next/navigation";
 // middleware already redirects them straight to /vendor/mandates), so this
 // only needs to cover staff.
 export default function Home() {
-  redirect("/inbox");
+  redirect("/today");
 }
