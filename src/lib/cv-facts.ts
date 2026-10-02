@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
-import { GEMINI_QUALITY_MODELS, generateTextWithFallback } from "@/lib/ai-providers";
+import { GEMINI_QUALITY_MODELS, generateFromFile, generateTextWithFallback, type GenerationResult } from "@/lib/ai-providers";
 import { logAiUsage } from "@/lib/ai-usage";
 import { extractResumeText } from "@/lib/resume-text";
 
@@ -59,6 +59,9 @@ export type CvFacts = {
   flags: CvFlag[];
 };
 
+// Reading a CV into a fixed structure needs little reasoning; a small budget
+// keeps cost and time down (it was about 7,000 output tokens per CV unbounded).
+const CV_THINKING_BUDGET = 1024;
 const MAX_ROLES = 8;
 const MAX_RESUME_CHARS = 14000;
 
@@ -197,20 +200,54 @@ export type CvFactsOutcome =
   | { ok: true; candidateId: string; skipped?: boolean; roles: number; flags: number }
   | { ok: false; candidateId: string; error: string };
 
-async function loadResumeText(candidate: { resume_text: string | null; resume_file_url: string | null }, candidateId: string, admin: SupabaseClient): Promise<string | null> {
-  if (candidate.resume_text && candidate.resume_text.trim().length > 200) return candidate.resume_text;
-  if (!candidate.resume_file_url) return null;
+const MIN_TEXT_CHARS = 200;
+const MAX_INLINE_BYTES = 15 * 1024 * 1024;
+
+function mimeForName(name: string): string | null {
+  const n = name.toLowerCase();
+  if (n.endsWith(".pdf")) return "application/pdf";
+  if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
+  if (n.endsWith(".png")) return "image/png";
+  if (n.endsWith(".webp")) return "image/webp";
+  return null;
+}
+
+type CvSource =
+  | { kind: "text"; text: string }
+  | { kind: "file"; mimeType: string; base64: string; hash: string }
+  | { kind: "none"; reason: string };
+
+// Finds the best readable form of the CV: saved text, else text pulled from
+// the file, else (scanned PDFs and photos, which have no text layer) the file
+// itself for the AI to read directly.
+async function loadCvSource(
+  candidate: { resume_text: string | null; resume_file_url: string | null },
+  candidateId: string,
+  admin: SupabaseClient
+): Promise<CvSource> {
+  if (candidate.resume_text && candidate.resume_text.trim().length >= MIN_TEXT_CHARS) return { kind: "text", text: candidate.resume_text };
+  if (!candidate.resume_file_url) return { kind: "none", reason: "No CV file on record" };
   try {
     const cleanPath = candidate.resume_file_url.replace(/^resumes\//, "");
     const { data: signed } = await admin.storage.from("resumes").createSignedUrl(cleanPath, 300);
-    if (!signed?.signedUrl) return null;
+    if (!signed?.signedUrl) return { kind: "none", reason: "CV file not found in storage" };
     const buffer = await (await fetch(signed.signedUrl)).arrayBuffer();
+
     const text = await extractResumeText(buffer, cleanPath);
-    if (text) await admin.from("candidates").update({ resume_text: text }).eq("id", candidateId);
-    return text;
+    if (text && text.trim().length >= MIN_TEXT_CHARS) {
+      const { error } = await admin.from("candidates").update({ resume_text: text }).eq("id", candidateId);
+      if (error) console.error("[cv-facts] could not cache resume text", candidateId, error.message);
+      return { kind: "text", text };
+    }
+
+    const mimeType = mimeForName(cleanPath);
+    if (!mimeType) return { kind: "none", reason: "CV has no readable text and is not a PDF or image" };
+    if (buffer.byteLength > MAX_INLINE_BYTES) return { kind: "none", reason: "CV file is too large to read" };
+    const bytes = Buffer.from(buffer);
+    return { kind: "file", mimeType, base64: bytes.toString("base64"), hash: crypto.createHash("sha256").update(bytes).digest("hex") };
   } catch (err) {
     console.error("[cv-facts] resume download/parse failed", candidateId, err instanceof Error ? err.message : err);
-    return null;
+    return { kind: "none", reason: "CV file could not be downloaded" };
   }
 }
 
@@ -225,17 +262,17 @@ export async function extractCvFactsForCandidate(candidateId: string, admin: Sup
       .single();
     if (error || !c) return { ok: false, candidateId, error: "Candidate not found" };
 
-    const text = await loadResumeText(c, candidateId, admin);
-    if (!text) return { ok: false, candidateId, error: "No readable CV on file" };
-    const excerpt = text.slice(0, MAX_RESUME_CHARS);
-    const hash = crypto.createHash("sha256").update(excerpt).digest("hex");
+    const source = await loadCvSource(c, candidateId, admin);
+    if (source.kind === "none") return { ok: false, candidateId, error: source.reason };
+    const excerpt = source.kind === "text" ? source.text.slice(0, MAX_RESUME_CHARS) : null;
+    const hash = source.kind === "text" ? crypto.createHash("sha256").update(excerpt as string).digest("hex") : source.hash;
 
     if (!opts.force) {
       const { data: existing } = await admin.from("candidate_cv_facts").select("source_hash").eq("candidate_id", candidateId).maybeSingle();
       if (existing?.source_hash === hash) return { ok: true, candidateId, skipped: true, roles: 0, flags: 0 };
     }
 
-    const prompt = buildCvFactsPrompt(excerpt, {
+    const prompt = buildCvFactsPrompt(excerpt ?? "(The CV is the attached file. Read it directly.)", {
       current_job_title: c.current_job_title,
       current_employer: c.current_employer,
       total_experience_years: c.total_experience_years,
@@ -244,18 +281,34 @@ export async function extractCvFactsForCandidate(candidateId: string, admin: Sup
       current_fixed_ctc_lakhs: c.current_fixed_ctc,
       expected_fixed_ctc_lakhs: c.expected_fixed_ctc,
     });
+    const purpose = source.kind === "file" ? "cv_facts_vision" : "cv_facts";
 
-    let result;
-    try {
-      result = await generateTextWithFallback(prompt, { geminiModels: GEMINI_QUALITY_MODELS, json: true });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      await logAiUsage({ purpose: "cv_facts", refType: "candidate", refId: candidateId, error: message });
-      return { ok: false, candidateId, error: message.includes("429") ? "AI is at its usage limit" : "AI call failed" };
+    // One retry: the model occasionally returns JSON that does not parse,
+    // and a second attempt almost always succeeds. Each attempt is logged.
+    let facts: CvFacts | null = null;
+    let result: GenerationResult | undefined;
+    for (let attempt = 1; attempt <= 2 && !facts; attempt++) {
+      try {
+        result =
+          source.kind === "file"
+            ? await generateFromFile(prompt, { mimeType: source.mimeType, base64: source.base64 }, { geminiModels: GEMINI_QUALITY_MODELS, json: true, thinkingBudget: CV_THINKING_BUDGET })
+            : await generateTextWithFallback(prompt, { geminiModels: GEMINI_QUALITY_MODELS, json: true, thinkingBudget: CV_THINKING_BUDGET });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        await logAiUsage({ purpose, refType: "candidate", refId: candidateId, error: message });
+        if (message.includes("429") || attempt === 2) return { ok: false, candidateId, error: message.includes("429") ? "AI is at its usage limit" : "AI call failed" };
+        continue;
+      }
+      facts = parseCvFactsJson(result.text);
+      await logAiUsage({
+        purpose,
+        refType: "candidate",
+        refId: candidateId,
+        result,
+        error: facts ? undefined : `unparseable response (attempt ${attempt}): ${result.text.slice(0, 160).replace(/\s+/g, " ")} ... ${result.text.slice(-80).replace(/\s+/g, " ")}`,
+      });
     }
-    const facts = parseCvFactsJson(result.text);
-    await logAiUsage({ purpose: "cv_facts", refType: "candidate", refId: candidateId, result, error: facts ? undefined : "unparseable response" });
-    if (!facts) return { ok: false, candidateId, error: "The AI response couldn't be read" };
+    if (!facts || !result) return { ok: false, candidateId, error: "The AI response couldn't be read" };
 
     const { error: upErr } = await admin
       .from("candidate_cv_facts")

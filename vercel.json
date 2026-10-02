@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/cv-facts-sweep",
       "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/ai-match-sweep",
+      "schedule": "30 7 * * *"
     }
   ]
 }

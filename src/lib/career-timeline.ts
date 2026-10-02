@@ -212,10 +212,52 @@ function isCombinedRollupEntry(company: string): boolean {
  * replacement, so the two should read as consistent rather than competing
  * vocabularies.
  */
+const INTERN_TITLE = /\b(intern|internship|trainee|apprentice)\b/i;
+
+function latestMonth(a: string | null, b: string | null): string | null {
+  if (a === null || b === null) return null; // either still current
+  return a > b ? a : b;
+}
+
+/**
+ * Employer-level tenures. Several roles at the same company (promotions, a
+ * title change, a move between teams) are ONE stay, so they are joined into a
+ * single span from the earliest start to the latest end (or today if any of
+ * them is current). Counting each role separately made a promotion look like
+ * a job change and pulled the score down. Internships and trainee stints are
+ * left out of the average because they are short by design.
+ */
+export function employerTenures(merged: MergedTimelineEntry[]): { company: string; tenureMonths: number }[] {
+  const real = merged.filter((e) => e.tenureMonths > 0 && !isCombinedRollupEntry(e.company));
+  // Only internships on record means there is no real employment history to
+  // judge yet, so no score rather than a false "job-hopper".
+  const pool = real.filter((e) => !INTERN_TITLE.test(e.title ?? ""));
+
+  const groups: { company: string; start: string | null; end: string | null }[] = [];
+  for (const e of pool) {
+    const g = groups.find((x) => sameCompany(x.company, e.company));
+    if (!g) {
+      groups.push({ company: e.company, start: e.start_month, end: e.end_month });
+    } else {
+      if (e.start_month && (!g.start || e.start_month < g.start)) g.start = e.start_month;
+      g.end = latestMonth(g.end, e.end_month);
+    }
+  }
+  return groups.map((g) => ({ company: g.company, tenureMonths: monthsBetween(g.start, g.end) })).filter((g) => g.tenureMonths > 0);
+}
+
+/**
+ * Tenure-weighted stability, on a 0-100 meter plus the same three labels the
+ * recruiter-assessment scorecard already uses for its manual "Job stability"
+ * field -- this is an auto-computed complement to that judgment call, not a
+ * replacement, so the two should read as consistent rather than competing
+ * vocabularies. Tenure is measured per EMPLOYER (see employerTenures), so
+ * growing inside one company never counts as hopping.
+ */
 export function computeStabilityScore(merged: MergedTimelineEntry[]): StabilityResult | null {
-  const withTenure = merged.filter((e) => e.tenureMonths > 0 && !isCombinedRollupEntry(e.company));
-  if (withTenure.length === 0) return null;
-  const avgMonths = withTenure.reduce((sum, e) => sum + e.tenureMonths, 0) / withTenure.length;
+  const stays = employerTenures(merged);
+  if (stays.length === 0) return null;
+  const avgMonths = stays.reduce((sum, e) => sum + e.tenureMonths, 0) / stays.length;
   const score = Math.round(Math.max(0, Math.min(100, (avgMonths / 42) * 100)));
   const label: StabilityResult["label"] = avgMonths >= 30 ? "Stable" : avgMonths >= 15 ? "Some Movement" : "Frequent Job-Hopper";
   return { score, label };
