@@ -33,6 +33,7 @@ export default async function DashboardLayout({
     // boxes on this page (Mandate Tasks/Build Pipeline/Profile Completion),
     // so the tab needed a name covering all three, not just the first.
     { href: "/today", label: "Today", enabled: true },
+    { href: "/tasks", label: "Tasks", enabled: true },
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
