@@ -55,6 +55,17 @@ export type CandidateProfile = {
   current_employer: string | null;
 };
 
+// CTC is stored in lakhs per annum, but some profiles hold rupees (for example
+// 3500000). Treat zero or negative as missing and rupee-sized values as rupees.
+export function normalizeCtc(v: unknown): number | null {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const lakhs = n > 1000 ? n / 100000 : n;
+  // Anything that works out to under half a lakh is not a real annual CTC.
+  if (lakhs < 0.5) return null;
+  return Math.round(lakhs * 10) / 10;
+}
+
 export function cleanList(v: unknown): string[] {
   return Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : [];
 }
