@@ -9,6 +9,7 @@ import BasicDetailsPanel from "./basic-details-panel";
 import GoldStandardPanel from "./gold-standard-panel";
 import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
+import AiMatchesPanel from "./ai-matches-panel";
 import FindMatchesPanel from "./find-matches-panel";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
@@ -24,7 +25,7 @@ import PriorityApplicantFunnelPanel from "./priority-applicant-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
 import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
-import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
+import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2, Sparkles } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
@@ -642,6 +643,12 @@ export default async function MandateDetailPage({
                   </Link>
                 </>
               ),
+            },
+            {
+              key: "ai-matches",
+              label: "AI Matches",
+              icon: <Sparkles className="h-3.5 w-3.5" />,
+              content: <AiMatchesPanel mandateId={id} />,
             },
             {
               key: "sourcing",

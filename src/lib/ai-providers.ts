@@ -25,6 +25,10 @@ export type GenerationResult = {
 };
 
 export type GenerationOptions = {
+  // Cap on Gemini 2.5's internal "thinking" tokens (billed as output). Extraction
+  // and checking tasks do not need long reasoning, so a small budget cuts cost
+  // and time a lot. 0 turns thinking off.
+  thinkingBudget?: number;
   // Ask Gemini for strict JSON output (no markdown fence) and a low temperature,
   // for extraction work where the same input should give the same answer.
   json?: boolean;
@@ -47,17 +51,25 @@ const GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.6-
 const GROQ_MODEL = "openai/gpt-oss-120b";
 const MISTRAL_MODEL = "mistral-small-latest";
 
-async function tryGemini(prompt: string, models: string[] = GEMINI_MODELS, json = false): Promise<GenerationResult | null> {
+function geminiConfig(options?: { json?: boolean; thinkingBudget?: number }) {
+  if (!options?.json && options?.thinkingBudget == null) return {};
+  const generationConfig: Record<string, unknown> = {};
+  if (options?.json) {
+    generationConfig.responseMimeType = "application/json";
+    generationConfig.temperature = 0.1;
+  }
+  if (options?.thinkingBudget != null) generationConfig.thinkingConfig = { thinkingBudget: options.thinkingBudget };
+  return { generationConfig };
+}
+
+async function tryGemini(prompt: string, models: string[] = GEMINI_MODELS, options?: GenerationOptions): Promise<GenerationResult | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
   const genAI = new GoogleGenerativeAI(apiKey);
   let lastErr: unknown = null;
   for (const modelName of models) {
     try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        ...(json ? { generationConfig: { responseMimeType: "application/json", temperature: 0.1 } } : {}),
-      });
+      const model = genAI.getGenerativeModel({ model: modelName, ...geminiConfig(options) } as never);
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
       const meta = result.response.usageMetadata;
@@ -99,10 +111,7 @@ export async function generateFromFile(
   let lastErr: unknown = null;
   for (const modelName of models) {
     try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        ...(options?.json ? { generationConfig: { responseMimeType: "application/json", temperature: 0.1 } } : {}),
-      });
+      const model = genAI.getGenerativeModel({ model: modelName, ...geminiConfig(options) } as never);
       const result = await model.generateContent([{ inlineData: { mimeType: file.mimeType, data: file.base64 } }, { text: prompt }]);
       const text = result.response.text().trim();
       const meta = result.response.usageMetadata;
@@ -195,7 +204,7 @@ export async function generateTextWithFallback(prompt: string, options?: Generat
 
   const geminiModels = options?.geminiModels;
   for (const [name, fn] of [
-    ["gemini", (p: string) => tryGemini(p, geminiModels, options?.json)],
+    ["gemini", (p: string) => tryGemini(p, geminiModels, options)],
     ["groq", tryGroq],
     ["mistral", tryMistral],
   ] as const) {

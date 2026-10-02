@@ -59,6 +59,9 @@ export type CvFacts = {
   flags: CvFlag[];
 };
 
+// Reading a CV into a fixed structure needs little reasoning; a small budget
+// keeps cost and time down (it was about 7,000 output tokens per CV unbounded).
+const CV_THINKING_BUDGET = 1024;
 const MAX_ROLES = 8;
 const MAX_RESUME_CHARS = 14000;
 
@@ -288,8 +291,8 @@ export async function extractCvFactsForCandidate(candidateId: string, admin: Sup
       try {
         result =
           source.kind === "file"
-            ? await generateFromFile(prompt, { mimeType: source.mimeType, base64: source.base64 }, { geminiModels: GEMINI_QUALITY_MODELS, json: true })
-            : await generateTextWithFallback(prompt, { geminiModels: GEMINI_QUALITY_MODELS, json: true });
+            ? await generateFromFile(prompt, { mimeType: source.mimeType, base64: source.base64 }, { geminiModels: GEMINI_QUALITY_MODELS, json: true, thinkingBudget: CV_THINKING_BUDGET })
+            : await generateTextWithFallback(prompt, { geminiModels: GEMINI_QUALITY_MODELS, json: true, thinkingBudget: CV_THINKING_BUDGET });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         await logAiUsage({ purpose, refType: "candidate", refId: candidateId, error: message });

@@ -813,7 +813,10 @@ export default async function CandidateDetailPage({
         </div>
 
         <div>
-          <Card className="sticky top-20">
+          {/* Not sticky: this card is taller than most screens, so a sticky
+              top-20 made the Vetting score card scroll up underneath it and
+              become unreadable. */}
+          <Card>
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Recruiter assessment</h2>
               {recommendation && (

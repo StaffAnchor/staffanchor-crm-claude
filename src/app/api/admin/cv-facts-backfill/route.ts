@@ -8,8 +8,8 @@ import { extractCvFactsForCandidate, getServiceClient, pickCandidatesForCvFacts 
 // more.
 export const maxDuration = 300;
 const DEFAULT_BATCH = 20;
-const MAX_BATCH = 40;
-const CONCURRENCY = 4;
+const MAX_BATCH = 30;
+const CONCURRENCY = 6;
 
 async function requireAdmin() {
   const supabase = await createClient();
