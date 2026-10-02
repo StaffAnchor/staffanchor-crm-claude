@@ -61,6 +61,8 @@ export function normalizeCtc(v: unknown): number | null {
   const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
   if (!Number.isFinite(n) || n <= 0) return null;
   const lakhs = n > 1000 ? n / 100000 : n;
+  // Anything that works out to under half a lakh is not a real annual CTC.
+  if (lakhs < 0.5) return null;
   return Math.round(lakhs * 10) / 10;
 }
 
