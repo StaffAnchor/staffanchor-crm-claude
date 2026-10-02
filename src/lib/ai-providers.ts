@@ -16,7 +16,23 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // silently skipped (not an error), so this degrades gracefully back to
 // Gemini-only behavior on any deploy that hasn't added the extra keys yet.
 
-export type GenerationResult = { text: string; provider: string; model: string };
+export type GenerationResult = {
+  text: string;
+  provider: string;
+  model: string;
+  // Token counts when the provider reports them (Gemini does), for cost tracking.
+  usage?: { inputTokens: number; outputTokens: number };
+};
+
+export type GenerationOptions = {
+  // Order of Gemini models to try. Defaults to the cheapest-first list; pass a
+  // quality-first list for work where accuracy matters more than speed.
+  geminiModels?: string[];
+};
+
+// For judgment-heavy work (reading a JD or resume and deciding what it means)
+// we try the stronger model first and keep the cheap one as a last resort.
+export const GEMINI_QUALITY_MODELS = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.5-flash-lite"];
 
 // gemini-2.0-flash was shut down (404) -- replaced with gemini-3.6-flash,
 // Google's suggested migration target. gemini-2.5-flash-lite/-flash remain
@@ -28,17 +44,25 @@ const GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.6-
 const GROQ_MODEL = "openai/gpt-oss-120b";
 const MISTRAL_MODEL = "mistral-small-latest";
 
-async function tryGemini(prompt: string): Promise<GenerationResult | null> {
+async function tryGemini(prompt: string, models: string[] = GEMINI_MODELS): Promise<GenerationResult | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
   const genAI = new GoogleGenerativeAI(apiKey);
   let lastErr: unknown = null;
-  for (const modelName of GEMINI_MODELS) {
+  for (const modelName of models) {
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
-      if (text) return { text, provider: "gemini", model: modelName };
+      const meta = result.response.usageMetadata;
+      if (text) {
+        return {
+          text,
+          provider: "gemini",
+          model: modelName,
+          usage: meta ? { inputTokens: meta.promptTokenCount ?? 0, outputTokens: meta.candidatesTokenCount ?? 0 } : undefined,
+        };
+      }
     } catch (err) {
       lastErr = err;
       console.error(`[ai-providers] Gemini failed (${modelName})`, err instanceof Error ? err.message : err);
@@ -111,11 +135,12 @@ async function tryMistral(prompt: string): Promise<GenerationResult | null> {
  * error-surfacing logic (e.g. "hit free-tier quota" messaging) can still
  * work, now just naming all attempted providers instead of only Gemini.
  */
-export async function generateTextWithFallback(prompt: string): Promise<GenerationResult> {
+export async function generateTextWithFallback(prompt: string, options?: GenerationOptions): Promise<GenerationResult> {
   const attempts: { provider: string; error: string }[] = [];
 
+  const geminiModels = options?.geminiModels;
   for (const [name, fn] of [
-    ["gemini", tryGemini],
+    ["gemini", (p: string) => tryGemini(p, geminiModels)],
     ["groq", tryGroq],
     ["mistral", tryMistral],
   ] as const) {

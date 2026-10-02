@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ListChecks, Check, Pencil, X, Plus, ChevronDown } from "lucide-react";
+import { ListChecks, Check, Pencil, X, Plus, ChevronDown, Sparkles, Loader2 } from "lucide-react";
 
 function TagEditor({
   label,
@@ -81,6 +81,40 @@ export default function MustHavesPanel({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftInfo, setDraftInfo] = useState<{ questions: string[]; sources: { text: string; source: string }[] } | null>(null);
+
+  // Asks the server for a suggestion built from this role's JD. Nothing is
+  // saved: suggestions land in the editor (added to whatever is already
+  // there, skipping duplicates) and the recruiter reviews them and presses Save.
+  async function handleDraft() {
+    setDrafting(true);
+    setDraftError(null);
+    try {
+      const res = await fetch(`/api/mandates/${mandateId}/draft-spec`, { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDraftError(body.error ?? "Couldn't draft this just now. Try again.");
+        return;
+      }
+      const merge = (current: string[], incoming: { text: string }[]) => {
+        const have = new Set(current.map((c) => c.toLowerCase()));
+        return [...current, ...incoming.map((i) => i.text).filter((t) => !have.has(t.toLowerCase()))];
+      };
+      setMustHaves((cur) => merge(cur, body.mustHaves ?? []));
+      setGoodToHaves((cur) => merge(cur, body.goodToHaves ?? []));
+      setDraftInfo({
+        questions: body.questionsForClient ?? [],
+        sources: [...(body.mustHaves ?? []), ...(body.goodToHaves ?? [])].filter((i: { source: string }) => i.source),
+      });
+      setEditing(true);
+    } catch {
+      setDraftError("Couldn't reach the server. Try again.");
+    } finally {
+      setDrafting(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -92,6 +126,7 @@ export default function MustHavesPanel({
     setSaving(false);
     setSaved(true);
     setEditing(false);
+    setDraftInfo(null);
     router.refresh();
     setTimeout(() => setSaved(false), 2000);
   }
@@ -119,6 +154,46 @@ export default function MustHavesPanel({
         required before this mandate can be published -- a candidate missing a must-have is excluded from
         matches; a candidate missing a good-to-have is never penalized for it, only scored higher if they have it.
       </p>
+
+      <div className="mb-3">
+        <button
+          onClick={handleDraft}
+          disabled={drafting}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 text-[12px] font-medium px-3 py-1.5 hover:bg-teal-100 dark:hover:bg-teal-950/50 disabled:opacity-60"
+        >
+          {drafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {drafting ? "Reading the JD..." : "Draft from the JD"}
+        </button>
+        {draftError && <p className="text-[12px] text-red-600 mt-1.5">{draftError}</p>}
+      </div>
+
+      {draftInfo && (
+        <div className="mb-3 rounded-lg border border-teal-200 dark:border-teal-900 bg-teal-50/60 dark:bg-teal-950/20 p-3 text-[12px] text-slate-700 dark:text-slate-300">
+          <p className="font-medium text-teal-900 dark:text-teal-200 mb-1">Suggested from the JD. Check each one, edit or remove what&apos;s wrong, then Save.</p>
+          {draftInfo.questions.length > 0 && (
+            <>
+              <p className="mt-2 font-medium">Worth asking the client</p>
+              <ul className="list-disc pl-4">
+                {draftInfo.questions.map((q, i) => (
+                  <li key={i}>{q}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {draftInfo.sources.length > 0 && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-slate-500 dark:text-slate-400">Where each came from</summary>
+              <ul className="mt-1 space-y-0.5">
+                {draftInfo.sources.map((it, i) => (
+                  <li key={i}>
+                    <span className="font-medium">{it.text}</span> <span className="text-slate-500 dark:text-slate-400">· {it.source}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      )}
 
       {editing ? (
         <>
