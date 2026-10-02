@@ -18,6 +18,7 @@ import PracticeMatchesPanel from "./practice-matches-panel";
 import Tabs from "./tabs";
 import Timeline from "./timeline";
 import AiSummaryPanel from "./ai-summary-panel";
+import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
@@ -679,6 +680,13 @@ export default async function CandidateDetailPage({
           initialSkillInventory={candidate.skill_inventory}
           initialStabilityScore={candidate.stability_score}
         />
+      </Card>
+
+      {/* Structured facts read from the CV: what they sold, to whom, team
+          size, tools and honesty flags. These are what a role's requirements
+          get checked against. */}
+      <Card className="mt-4">
+        <CvFactsPanel candidateId={candidate.id} />
       </Card>
 
       {/* Resume-truth reconciliation: the AI passport call already compares

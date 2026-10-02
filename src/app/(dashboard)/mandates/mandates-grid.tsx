@@ -31,6 +31,8 @@ export type MandateSummary = {
   // Separate from status -- a mandate can be "filled" and archived, or
   // "on_hold" and archived, etc. See archive-mandate-button.tsx.
   is_archived: boolean;
+  // Why the role was paused (status on_hold), if it was paused from the table.
+  paused_reason?: string | null;
   // Number of openings this mandate needs, and how many are placed so far
   // (placed derived live from candidate_mandate_links, never stored).
   // headcount is usually 1 -- only rendered when >1.

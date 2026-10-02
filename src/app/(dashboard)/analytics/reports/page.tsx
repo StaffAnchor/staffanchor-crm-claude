@@ -27,6 +27,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/fetch-all-rows";
 import ReportBarList, { type BarItem } from "./report-bar-list";
 import AiHealthCard from "./ai-health-card";
+import CvFactsCard from "./cv-facts-card";
 import SystemHealthCard from "./system-health-card";
 import InflowTrend, { type InflowPoint } from "./inflow-trend";
 import FunnelChart from "./funnel-chart";
@@ -929,6 +930,7 @@ export default async function ReportsPage({
 
       {isAdminViewer && <SystemHealthCard />}
       {isAdminViewer && <AiHealthCard />}
+      {isAdminViewer && <CvFactsCard />}
 
       {/* Headline KPI strip -- every tile here is NEW information, not a
           restatement of a chart below (the prior version showed "leading

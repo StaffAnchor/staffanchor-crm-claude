@@ -84,7 +84,7 @@ export default async function MandatesPage({
 
   let query = supabase
     .from("mandates")
-    .select("id, client_name, role_title, category, sub_domain, city, status, is_archived, headcount, created_at, auto_match_results")
+    .select("id, client_name, role_title, category, sub_domain, city, status, is_archived, paused_reason, headcount, created_at, auto_match_results")
     .order("created_at", { ascending: false });
   // is_archived is a visibility flag, separate from status (a mandate can
   // be "filled" and archived, "on_hold" and archived, etc. -- see
@@ -243,6 +243,7 @@ export default async function MandatesPage({
       city: m.city,
       status: m.status,
       is_archived: m.is_archived,
+      paused_reason: (m as { paused_reason?: string | null }).paused_reason ?? null,
       headcount: m.headcount,
       placed: placedByMandate[m.id] ?? 0,
       created_at: m.created_at,

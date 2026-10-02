@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { MandateSummary } from "./mandates-grid";
+import PauseMandateButton from "./pause-mandate-button";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   draft: "info",
@@ -94,7 +95,12 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Status",
     render: (m) => (
       <span className="inline-flex items-center gap-1">
-        <Badge tone={STATUS_TONE[m.status] ?? "neutral"} size="sm" className="normal-case tracking-normal">
+        <Badge
+          tone={STATUS_TONE[m.status] ?? "neutral"}
+          size="sm"
+          className="normal-case tracking-normal"
+          title={m.status === "on_hold" && m.paused_reason ? `Paused: ${m.paused_reason}` : undefined}
+        >
           {m.status.replace("_", " ")}
         </Badge>
         {m.is_archived && (
@@ -544,6 +550,7 @@ export default function MandatesTable({
                   {col.label}
                 </th>
               ))}
+              <th className="px-4 py-2.5 sticky top-0 right-0 z-30 bg-slate-50 dark:bg-slate-800/50 w-px" aria-label="Actions" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -576,6 +583,13 @@ export default function MandatesTable({
                     {col.render(m)}
                   </td>
                 ))}
+                <td
+                  className={`px-4 py-3 sticky right-0 z-10 ${
+                    selected.has(m.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"
+                  }`}
+                >
+                  <PauseMandateButton mandateId={m.id} status={m.status} roleTitle={m.role_title} />
+                </td>
               </tr>
             ))}
           </tbody>

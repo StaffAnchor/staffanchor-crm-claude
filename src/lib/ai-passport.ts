@@ -10,6 +10,7 @@ import {
 import { generateCareerTimelineForCandidate } from "@/lib/generate-career-timeline-from-resume";
 import { embedCandidate } from "@/lib/embeddings";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
+import { extractCvFactsForCandidate, getServiceClient } from "@/lib/cv-facts";
 
 export type AiPassport = {
   headline?: string;
@@ -449,6 +450,17 @@ ${resumeExcerpt ?? "(no resume text available)"}`;
         await queueProactiveMatchesForCandidate(candidateId, supabase);
       } catch (err) {
         console.error("Proactive-match queueing failed after AI passport generation", candidateId, err);
+      }
+
+      // Read the CV into structured facts (what they sold, to whom, team
+      // size, tools, flags) so role requirements can be checked against
+      // evidence. Skips quietly if the CV has not changed or there is no
+      // service key, and never fails the generation that already succeeded.
+      try {
+        const writer = getServiceClient();
+        if (writer) await extractCvFactsForCandidate(candidateId, writer);
+      } catch (err) {
+        console.error("CV facts step failed after AI passport generation", candidateId, err);
       }
 
       return {
