@@ -18,6 +18,7 @@ import { Alert } from "@/components/ui/alert";
 // reject/remove) via MandateBulkActionsBar, so the full mandateContext
 // (including clientContacts/clientResources) is passed to both.
 export default function MandateCandidatesView({
+  initialStage,
   rows,
   mandateContext,
   teamMembers = [],
@@ -26,6 +27,9 @@ export default function MandateCandidatesView({
   resumeSignedUrlByCandidate = {},
   flaggedCallByCandidate = {},
 }: {
+  // Opened from Today with ?stage=shortlisted and similar, so the list lands
+  // on the right pile instead of all 149 rows.
+  initialStage?: string;
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
   // Owner visibility (who this candidate belongs to) + admin-only
@@ -103,7 +107,7 @@ export default function MandateCandidatesView({
   // down to, say, just "client_interview" instead of scrolling/scanning the
   // full pipeline. Board already visually groups by stage as columns, but
   // this still lets it hide every other column when you only care about one.
-  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>(initialStage && initialStage !== "" ? initialStage : "all");
 
   const stageCounts = useMemo(() => {
     const counts: Record<string, number> = {};

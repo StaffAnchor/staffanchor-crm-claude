@@ -18,6 +18,12 @@ export const UNREVIEWED_THRESHOLD = 5;
 export const NO_SUBMISSION_DAYS = 7;
 // Nothing in the pipeline has moved for this long = "slow".
 export const PIPELINE_QUIET_DAYS = 7;
+// A task older than this is probably dead (the interview happened, the
+// candidate moved on). It stays in All tasks but leaves the daily list.
+export const TASK_FRESH_DAYS = 21;
+// Interview reminders are only useful on the day.
+export const REMINDER_FRESH_DAYS = 1;
+const DEAD_STAGES = new Set(["rejected", "pulled_back", "placed"]);
 export const MAX_DECISIONS = 6;
 export const MAX_NEXT_UP = 3;
 
@@ -67,6 +73,8 @@ export type DeskTask = {
   mandate_client_name: string | null;
   client_id: string | null;
   recruiter_id: string | null;
+  link_stage?: string | null;
+  created_at?: string | null;
 };
 
 export type Tone = "urgent" | "attention" | "info";
@@ -122,6 +130,7 @@ export type TodayDesk = {
   roles: RoleRow[];
   nextUp: NextUp[];
   moreNextUp: number;
+  staleCount: number;
   routineCount: number;
   routineCapped: boolean;
 };
@@ -269,7 +278,7 @@ export function buildTodayDesk(input: {
         title: `${staleShortlist.length} shortlisted ${plural(staleShortlist.length, "profile")} not sent to ${client}`,
         detail: `${role} · waiting ${oldest} ${plural(oldest, "day")}`,
         actionLabel: "Review and send",
-        href,
+        href: `${href}?stage=shortlisted`,
         rank: 1,
       });
     }
@@ -283,7 +292,7 @@ export function buildTodayDesk(input: {
         title: `${client} hasn't replied on ${silent.length} ${plural(silent.length, "profile")}`,
         detail: `${role} · longest wait ${longest} days`,
         actionLabel: "Chase the client",
-        href,
+        href: `${href}?stage=submitted`,
         rank: 2,
       });
     }
@@ -296,7 +305,7 @@ export function buildTodayDesk(input: {
         title: `${unreviewed.length} applicants for ${role} not reviewed`,
         detail: `${client} · oldest applied ${oldest} ${plural(oldest, "day")} ago`,
         actionLabel: "Review applicants",
-        href,
+        href: `${href}/triage`,
         rank: 4,
       });
     }
@@ -308,7 +317,7 @@ export function buildTodayDesk(input: {
         title: `No profile sent to ${client} yet`,
         detail: `${role} · open ${daysOpen} days, ${active.length} in the pipeline`,
         actionLabel: "Pick the best to send",
-        href,
+        href: `${href}/triage`,
         rank: 5,
       });
     }
@@ -371,8 +380,14 @@ export function buildTodayDesk(input: {
   });
 
   // --- next up: real tasks for me (or nobody yet), not bulk reminders ---
-  const mine = tasks
-    .filter((t) => !ROUTINE_TASK_TYPES.has(t.task_type) && (t.recruiter_id === userId || t.recruiter_id === null))
+  const nowMs = now.getTime();
+  const ageDays = (iso?: string | null) => (iso ? (nowMs - new Date(iso).getTime()) / DAY_MS : 0);
+  const isDead = (t: DeskTask) => !!t.link_stage && DEAD_STAGES.has(t.link_stage);
+  const isStale = (t: DeskTask) => ageDays(t.created_at) > (t.task_type === "INTERVIEW_REMINDER" ? REMINDER_FRESH_DAYS : TASK_FRESH_DAYS);
+  const mineAll = tasks.filter((t) => !ROUTINE_TASK_TYPES.has(t.task_type) && (t.recruiter_id === userId || t.recruiter_id === null));
+  const staleCount = mineAll.filter((t) => isDead(t) || isStale(t)).length;
+  const mine = mineAll
+    .filter((t) => !isDead(t) && !isStale(t))
     .map((t, i) => ({ t, i }))
     .sort(
       (a, b) =>
@@ -409,6 +424,7 @@ export function buildTodayDesk(input: {
     roles,
     nextUp,
     moreNextUp: Math.max(0, mine.length - nextUp.length),
+    staleCount,
     routineCount: routine.length,
     routineCapped: !!input.tasksCapped,
   };

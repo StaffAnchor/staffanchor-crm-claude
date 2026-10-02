@@ -27,11 +27,6 @@ const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...a
 // Same thresholds as the Matching Workspace's scoreColor() -- keeps "what
 // counts as a strong match" consistent whether a recruiter is looking at
 // the match list or the pipeline table/board.
-function matchScoreTone(score: number) {
-  if (score >= 75) return "bg-emerald-50 text-emerald-700";
-  if (score >= 50) return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
-}
 
 export type MandateCandidateRow = {
   id: string;
@@ -546,14 +541,9 @@ export default function MandateCandidatesTable({
                       <Zap className="h-2.5 w-2.5" /> Priority
                     </span>
                   )}
-                  {l.match_score != null && (
-                    <span
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${matchScoreTone(l.match_score)}`}
-                      title="Match score at the time this candidate was added to the pipeline"
-                    >
-                      Match {l.match_score}
-                    </span>
-                  )}
+                  {/* The old "Match NN" badge was removed: it came from a score that
+                      gave almost everyone 76 to 88 and contradicted the evidence-based
+                      verdict. Triage and AI Matches show the verdict with its doubts. */}
                 </div>
                 <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
               </td>

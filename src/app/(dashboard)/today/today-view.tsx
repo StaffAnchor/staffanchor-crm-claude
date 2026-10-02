@@ -213,7 +213,8 @@ export default function TodayView({ desk }: { desk: TodayDesk }) {
               <span className="flex items-center gap-2">
                 <ListChecks className="h-4 w-4" aria-hidden />
                 {desk.moreNextUp > 0 ? `${desk.moreNextUp} more tasks` : "All tasks"}
-                {desk.routineCount > 0 ? ` · ${desk.routineCapped ? "1,000+" : desk.routineCount} routine reminders` : ""}
+                {desk.staleCount > 0 ? ` · ${desk.staleCount} old` : ""}
+                {desk.routineCount > 0 ? ` · ${desk.routineCapped ? "1,000+" : desk.routineCount} routine` : ""}
               </span>
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>

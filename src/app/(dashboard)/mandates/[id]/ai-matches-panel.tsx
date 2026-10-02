@@ -5,7 +5,7 @@ import AiMatchesList, { type MatchItem } from "./ai-matches-list";
 // The role's own space for AI-found candidates: people from the whole bank
 // (including old applicants and freshly read CVs) checked against this role's
 // must-haves and good-to-haves, with evidence and the doubts to confirm.
-export default async function AiMatchesPanel({ mandateId }: { mandateId: string }) {
+export default async function AiMatchesPanel({ mandateId, fullPage = false }: { mandateId: string; fullPage?: boolean }) {
   const supabase = await createClient();
 
   const [{ data: role }, { data: rows }, { count: read }, { count: withCv }] = await Promise.all([
@@ -73,6 +73,7 @@ export default async function AiMatchesPanel({ mandateId }: { mandateId: string 
   return (
     <AiMatchesList
       mandateId={mandateId}
+      fullPage={fullPage}
       roleOpen={r.status === "open"}
       hasMustHaves={cleanList(r.must_haves).length > 0}
       lastRunAt={r.ai_match_last_run_at}
