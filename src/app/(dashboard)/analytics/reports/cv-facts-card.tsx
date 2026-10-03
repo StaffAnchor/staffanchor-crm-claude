@@ -52,15 +52,15 @@ export default function CvFactsCard() {
 
   // Keeps reading batches until every CV is read (or something fails twice
   // in a row). The page has to stay open while it runs.
-  async function runAll() {
+  async function runAll(maxToRead: number = Infinity) {
     setLoopRunning(true);
     setError(null);
     setResult(null);
     let totalRead = 0;
     let failuresInARow = 0;
     try {
-      for (let i = 0; i < 80; i++) {
-        const res = await fetch("/api/admin/cv-facts-backfill", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ limit: 20 }) });
+      for (let i = 0; i < 80 && totalRead < maxToRead; i++) {
+        const res = await fetch("/api/admin/cv-facts-backfill", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ limit: Math.min(20, maxToRead - totalRead) }) });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || data.error) {
           setError(data.error ?? "Reading stopped");
@@ -70,6 +70,10 @@ export default function CvFactsCard() {
         failuresInARow = data.read === 0 && data.attempted > 0 ? failuresInARow + 1 : 0;
         setLoopNote(`Read ${totalRead} so far...`);
         await load();
+        if (totalRead >= maxToRead) {
+          setLoopNote(`Done. Read ${totalRead} CVs.`);
+          break;
+        }
         if (data.attempted === 0 || failuresInARow >= 2) {
           setLoopNote(data.attempted === 0 ? `Done. Read ${totalRead} CVs.` : `Stopped after ${totalRead}: the remaining CVs couldn't be read.`);
           break;
@@ -123,7 +127,14 @@ export default function CvFactsCard() {
             {running ? "Reading..." : "Read the newest 20"}
           </button>
           <button
-            onClick={runAll}
+            onClick={() => runAll(100)}
+            disabled={running || loopRunning}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[13px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+          >
+            Read the next 100
+          </button>
+          <button
+            onClick={() => runAll()}
             disabled={running || loopRunning}
             className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[13px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
           >
