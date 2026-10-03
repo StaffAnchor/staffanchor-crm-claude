@@ -31,7 +31,11 @@ export const runtime = "nodejs";
 // /api/candidate-create route per confirmed row, same as "Create candidate"
 // does today, so this route's only job is turning a pile of PDFs into
 // pre-filled, editable draft rows.
+// The page sends a few CVs per request (to stay under the request size limit), so
+// this is the cap for one request, not for one upload.
 const MAX_FILES = 10;
+const CONCURRENCY = 3;
+export const maxDuration = 300;
 
 export type BulkExtractResult = {
   fileName: string;
@@ -109,8 +113,9 @@ export async function POST(req: NextRequest) {
   };
 
   const results: BulkExtractResult[] = [];
-  for (const file of files) {
-    results.push(await processOne(file, admin, aiConfigured, user.id, hint));
+  for (let i = 0; i < files.length; i += CONCURRENCY) {
+    const chunk = files.slice(i, i + CONCURRENCY);
+    results.push(...(await Promise.all(chunk.map((file) => processOne(file, admin, aiConfigured, user.id, hint)))));
   }
 
   return NextResponse.json({ results });
