@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { UploadCloud, FileText, X, Loader2, AlertTriangle, Check, ArrowRight, Link2 } from "lucide-react";
 import { profileTypeOptions, languageOptions, level1OptionsForProfileType } from "@/lib/candidate-options";
 import { createClient } from "@/lib/supabase/client";
+import { b2bSoldGroups, b2cSoldGroups, yourLevelOptions } from "@/lib/candidate-taxonomy";
 
 const SOURCE_CHANNEL_OPTIONS = ["Naukri", "LinkedIn", "IIMJobs", "Monster", "Referral", "Other"];
 const MAX_FILES = 10;
@@ -29,6 +30,21 @@ type Row = {
   current_job_title: string;
   total_experience_years: string;
   languages_known: string[];
+  // Read from the CV to line up with the candidate registration form.
+  category: string;
+  sells_now: string[];
+  sells_before: string[];
+  role_level: string;
+  team_size: string;
+  industries: string[];
+  customer_segments: string[];
+  tools: string[];
+  skills: string[];
+  current_industry: string;
+  highest_qualification: string;
+  linkedin_url: string;
+  current_fixed_ctc: string;
+  notice_period: string;
   // Optional: a batch might be sourced for one specific mandate, or just
   // general pipeline-building with no mandate in mind -- so this defaults
   // to "" (unlinked), not required to create the candidate.
@@ -45,7 +61,8 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const [profileType, setProfileType] = useState("");
+  // "auto" = not sure: read the type (and what they sell) from each CV.
+  const [profileType, setProfileType] = useState("auto");
   // Optional, batch-level Function/Specialization -- previously bulk-uploaded
   // candidates got a Profile Type (B2B/B2C/Non-Sales) but no sub_domain at
   // all, since the AI extraction never inferred it and there was no field to
@@ -54,7 +71,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
   // resets whenever Profile Type changes since the option list depends on it.
   const [subDomain, setSubDomain] = useState("");
   const [subDomainOther, setSubDomainOther] = useState("");
-  const subDomainOptions = level1OptionsForProfileType(profileType || null);
+  const subDomainOptions = level1OptionsForProfileType(profileType === "auto" ? null : profileType || null);
   const [sourceChannel, setSourceChannel] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -80,6 +97,8 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
     try {
       const formData = new FormData();
       files.forEach((f) => formData.append("files", f));
+      formData.append("profileType", profileType);
+      if (subDomain && subDomain !== "Other") formData.append("sells", subDomain);
       const res = await fetch("/api/candidates/bulk-extract", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {
@@ -105,6 +124,20 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               ? String(extracted.total_experience_years)
               : "",
           languages_known: (extracted.languages_known as string[]) ?? [],
+          category: (extracted.category as string) ?? (profileType !== "auto" ? profileType : ""),
+          sells_now: (extracted.sells_now as string[]) ?? [],
+          sells_before: (extracted.sells_before as string[]) ?? [],
+          role_level: (extracted.role_level as string) ?? "",
+          team_size: (extracted.team_size as string) ?? "",
+          industries: (extracted.industries as string[]) ?? [],
+          customer_segments: (extracted.customer_segments as string[]) ?? [],
+          tools: (extracted.tools as string[]) ?? [],
+          skills: (extracted.skills as string[]) ?? [],
+          current_industry: (extracted.current_industry as string) ?? "",
+          highest_qualification: (extracted.highest_qualification as string) ?? "",
+          linkedin_url: (extracted.linkedin_url as string) ?? "",
+          current_fixed_ctc: extracted.current_fixed_ctc != null ? String(extracted.current_fixed_ctc) : "",
+          notice_period: (extracted.notice_period as string) ?? "",
           mandate_id: "",
           included: (r.ok as boolean) && !r.duplicate,
           createState: "idle",
@@ -133,22 +166,48 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            candidate: {
-              full_name: row.full_name || "Unknown",
-              email: row.email,
-              phone: row.phone || null,
-              category: profileType,
-              sub_domain: subDomain ? (subDomain === "Other" ? subDomainOther || null : subDomain) : null,
-              current_location: row.current_location || null,
-              current_employer: row.current_employer || null,
-              current_job_title: row.current_job_title || null,
-              total_experience_years: row.total_experience_years ? Number(row.total_experience_years) : null,
-              resume_file_url: row.resumeFileUrl ?? null,
-              segment_data: row.languages_known.length ? { languages_known: row.languages_known } : {},
-              status: "awaiting_input",
-              created_by: "bulk_resume_upload",
-              source_channel: sourceChannel,
-            },
+            candidate: (() => {
+              const category = row.category || (profileType !== "auto" ? profileType : "");
+              const sales = category === "b2b_sales" || category === "b2c_sales";
+              const lead = yourLevelOptions.find((l) => l.value === row.role_level)?.lead ?? false;
+              const segment: Record<string, unknown> = {};
+              if (row.languages_known.length) segment.languages_known = row.languages_known;
+              if (row.role_level) {
+                segment.role_level = row.role_level;
+                segment.role_type = lead ? "Team Lead" : "IC";
+              }
+              if (lead && row.team_size) segment.team_size = row.team_size;
+              if (sales && row.sells_now.length) segment.sells_now = row.sells_now;
+              if (sales && row.sells_before.length) segment.sells_before = row.sells_before;
+              if (category === "b2b_sales" && row.customer_segments.length) segment.customer_segment_sold = row.customer_segments;
+              if (row.tools.length) segment.crm_tools = row.tools;
+              return {
+                full_name: row.full_name || "Unknown",
+                email: row.email,
+                phone: row.phone || null,
+                category: category || null,
+                sub_domain: sales
+                  ? row.sells_now[0] ?? (subDomain && subDomain !== "Other" ? subDomain : null)
+                  : subDomain ? (subDomain === "Other" ? subDomainOther || null : subDomain) : null,
+                secondary_sub_domains: sales ? [...row.sells_now.slice(1), ...row.sells_before] : [],
+                industries: row.industries,
+                current_industry: row.current_industry || null,
+                skills: row.skills.length ? row.skills.join(", ") : null,
+                highest_qualification: row.highest_qualification || null,
+                linkedin_url: row.linkedin_url || null,
+                current_fixed_ctc: row.current_fixed_ctc ? Number(row.current_fixed_ctc) : null,
+                notice_period: row.notice_period || null,
+                current_location: row.current_location || null,
+                current_employer: row.current_employer || null,
+                current_job_title: row.current_job_title || null,
+                total_experience_years: row.total_experience_years ? Number(row.total_experience_years) : null,
+                resume_file_url: row.resumeFileUrl ?? null,
+                segment_data: segment,
+                status: "awaiting_input",
+                created_by: "bulk_resume_upload",
+                source_channel: sourceChannel,
+              };
+            })(),
           }),
         });
         const data = await res.json();
@@ -195,7 +254,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 Current profile type <span className="text-red-500">*</span>
               </label>
               <p className="text-[11px] text-slate-400 mb-1.5">
-                Applies to every resume in this batch -- since a bulk upload usually pertains to one mandate.
+                Applies to every resume in this batch. Not sure about older CVs? Leave it on &ldquo;read it from each CV&rdquo;.
               </p>
               <select
                 value={profileType}
@@ -206,7 +265,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 }}
                 className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
               >
-                <option value="">Select...</option>
+                <option value="auto">Not sure -- read it from each CV</option>
                 {profileTypeOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -214,10 +273,39 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 ))}
               </select>
             </div>
-            {subDomainOptions.length > 0 && (
+            {profileType === "auto" && (
+              <p className="self-end text-[11.5px] text-slate-400 pb-1.5">
+                Profile type, what they sell, level, industries, tools and skills will be read from each CV. You can correct them before saving.
+              </p>
+            )}
+            {(profileType === "b2b_sales" || profileType === "b2c_sales") && (
               <div>
                 <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
-                  Function / Specialization <span className="font-normal text-slate-400">(optional)</span>
+                  What do they sell? <span className="font-normal text-slate-400">(optional)</span>
+                </label>
+                <p className="text-[11px] text-slate-400 mb-1.5">Also applies to the whole batch. Leave on &ldquo;read it from each CV&rdquo; if unsure.</p>
+                <select
+                  value={subDomain}
+                  onChange={(e) => setSubDomain(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                >
+                  <option value="">Not sure -- read it from each CV</option>
+                  {(profileType === "b2c_sales" ? b2cSoldGroups : b2bSoldGroups).map((g) => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.options.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+            )}
+            {profileType === "non_sales" && subDomainOptions.length > 0 && (
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                  Function <span className="font-normal text-slate-400">(optional)</span>
                 </label>
                 <p className="text-[11px] text-slate-400 mb-1.5">Also applies to the whole batch.</p>
                 <select
@@ -501,6 +589,71 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                   </div>
               </div>
 
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 border-t border-slate-100 dark:border-slate-800 pt-3">
+                <div>
+                  <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Profile type</label>
+                  <select
+                    value={row.category}
+                    onChange={(e) => updateRow(row.fileName, { category: e.target.value, sells_now: [], sells_before: [], customer_segments: [] })}
+                    disabled={row.createState === "saved"}
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
+                  >
+                    <option value="">Not sure</option>
+                    {profileTypeOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Role level</label>
+                  <select
+                    value={row.role_level}
+                    onChange={(e) => updateRow(row.fileName, { role_level: e.target.value, team_size: "" })}
+                    disabled={row.createState === "saved"}
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
+                  >
+                    <option value="">Not sure</option>
+                    {yourLevelOptions.map((l) => (
+                      <option key={l.value} value={l.value}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {(row.category === "b2b_sales" || row.category === "b2c_sales") && (
+                  <div>
+                    <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Add what they sell</label>
+                    <select
+                      value=""
+                      onChange={(e) => e.target.value && updateRow(row.fileName, { sells_now: [...row.sells_now, e.target.value].slice(0, 3) })}
+                      disabled={row.createState === "saved"}
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
+                    >
+                      <option value="">Choose...</option>
+                      {(row.category === "b2c_sales" ? b2cSoldGroups : b2bSoldGroups).map((g) => (
+                        <optgroup key={g.group} label={g.group}>
+                          {g.options.filter((o) => !row.sells_now.includes(o)).map((o) => (
+                            <option key={o} value={o}>
+                              {o}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div className="mt-2.5 space-y-1.5">
+                <ChipList label="Sells now (first is main)" items={row.sells_now} onRemove={(v) => updateRow(row.fileName, { sells_now: row.sells_now.filter((x) => x !== v) })} />
+                <ChipList label="Sold earlier" items={row.sells_before} onRemove={(v) => updateRow(row.fileName, { sells_before: row.sells_before.filter((x) => x !== v) })} />
+                <ChipList label="Industries sold into" items={row.industries} onRemove={(v) => updateRow(row.fileName, { industries: row.industries.filter((x) => x !== v) })} />
+                <ChipList label="Sells to" items={row.customer_segments} onRemove={(v) => updateRow(row.fileName, { customer_segments: row.customer_segments.filter((x) => x !== v) })} />
+                <ChipList label="Tools" items={row.tools} onRemove={(v) => updateRow(row.fileName, { tools: row.tools.filter((x) => x !== v) })} />
+                <ChipList label="Skills" items={row.skills} onRemove={(v) => updateRow(row.fileName, { skills: row.skills.filter((x) => x !== v) })} />
+              </div>
+
               {row.createState === "error" && (
                 <p className="mt-2 text-[12px] text-rose-600">{row.createError}</p>
               )}
@@ -549,6 +702,24 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
       />
+    </div>
+  );
+}
+
+// Read-from-CV values shown as removable chips, so a wrong guess is one tap to fix.
+function ChipList({ label, items, onRemove }: { label: string; items: string[]; onRemove: (v: string) => void }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mr-0.5">{label}:</span>
+      {items.map((t) => (
+        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11.5px] text-slate-700 dark:text-slate-200">
+          {t}
+          <button type="button" onClick={() => onRemove(t)} aria-label={`Remove ${t}`} className="text-slate-400 hover:text-slate-700">
+            ×
+          </button>
+        </span>
+      ))}
     </div>
   );
 }
