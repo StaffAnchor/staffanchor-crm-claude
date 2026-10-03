@@ -5,6 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import { generateTextWithFallback } from "@/lib/ai-providers";
 import { extractResumeText } from "@/lib/resume-text";
 import { logTimeSaved } from "@/lib/time-saved";
+import {
+  b2bSoldGroups,
+  b2cSoldGroups,
+  industrySoldGroups,
+  yourLevelOptions,
+  customerSegmentOptions,
+  teamSizeBands,
+  flat,
+  keepAllowed,
+} from "@/lib/candidate-taxonomy";
 
 export const runtime = "nodejs";
 
@@ -37,6 +47,21 @@ export type BulkExtractResult = {
     current_job_title: string | null;
     total_experience_years: number | null;
     languages_known: string[];
+    // Read from the CV to line up with the candidate registration form.
+    category: string | null;
+    sells_now: string[];
+    sells_before: string[];
+    role_level: string | null;
+    team_size: string | null;
+    industries: string[];
+    customer_segments: string[];
+    tools: string[];
+    skills: string[];
+    current_industry: string | null;
+    highest_qualification: string | null;
+    linkedin_url: string | null;
+    current_fixed_ctc: number | null;
+    notice_period: string | null;
   };
   duplicate?: { candidateId: string; fullName: string } | null;
 };
@@ -75,9 +100,17 @@ export async function POST(req: NextRequest) {
 
   const aiConfigured = !!(process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY || process.env.MISTRAL_API_KEY);
 
+  // What the recruiter is sure about for this batch. "auto" (or blank) means
+  // "not sure -- read it from each CV".
+  const rawType = String(formData.get("profileType") ?? "auto");
+  const hint = {
+    category: ["b2b_sales", "b2c_sales", "non_sales"].includes(rawType) ? rawType : null,
+    sells: String(formData.get("sells") ?? "").trim() || null,
+  };
+
   const results: BulkExtractResult[] = [];
   for (const file of files) {
-    results.push(await processOne(file, admin, aiConfigured, user.id));
+    results.push(await processOne(file, admin, aiConfigured, user.id, hint));
   }
 
   return NextResponse.json({ results });
@@ -87,7 +120,8 @@ async function processOne(
   file: File,
   admin: SupabaseClient,
   aiConfigured: boolean,
-  recruiterId: string
+  recruiterId: string,
+  hint: { category: string | null; sells: string | null }
 ): Promise<BulkExtractResult> {
   const fileName = file.name;
   try {
@@ -128,7 +162,7 @@ async function processOne(
     // failure instead, same as the "couldn't read text" case above, so the
     // UI shows an error banner and the recruiter knows to fill the row in
     // manually rather than assuming the tool just found nothing.
-    const extracted = await extractFieldsWithGemini(resumeText, aiConfigured);
+    const extracted = await extractFieldsWithGemini(resumeText, aiConfigured, hint);
     if (!extracted) {
       return {
         fileName,
@@ -181,37 +215,96 @@ function normalizePhone(raw: string): string {
   return digits;
 }
 
-async function extractFieldsWithGemini(resumeText: string, aiConfigured: boolean) {
+const B2B_SELLS = flat(b2bSoldGroups);
+const B2C_SELLS = flat(b2cSoldGroups);
+const INDUSTRIES = flat(industrySoldGroups);
+const LEVELS = yourLevelOptions.map((l) => l.value);
+const CATEGORIES = ["b2b_sales", "b2c_sales", "non_sales"];
+
+async function extractFieldsWithGemini(
+  resumeText: string,
+  aiConfigured: boolean,
+  hint: { category: string | null; sells: string | null }
+): Promise<BulkExtractResult["extracted"] | null> {
   if (!aiConfigured) return null;
 
-  const prompt = `Extract this candidate's identity/contact details from the resume text below. Return ONLY a JSON object (no markdown fence, no commentary), shaped exactly like:
-{"full_name": "..." | null, "email": "..." | null, "phone": "..." | null, "current_location": "..." | null, "current_employer": "..." | null, "current_job_title": "..." | null, "total_experience_years": number | null, "languages_known": ["..."]}
+  const categoryRule = hint.category
+    ? `The recruiter has already set the profile type to "${hint.category}". Return that value for "category".`
+    : `"category" is one of "b2b_sales" (sells to businesses, e.g. SaaS, IT, industrial, corporate services), "b2c_sales" (sells to consumers, e.g. insurance, loans, EdTech, real estate, retail, telecom/DTH) or "non_sales" (marketing, HR, finance, operations, engineering and similar). Decide from what they actually sell.`;
+  const sellsRule = hint.sells
+    ? `The recruiter has already set what they sell to "${hint.sells}": return exactly that as the first item of "sells_now".`
+    : `"sells_now" is what they sell in their CURRENT or most recent role: up to 3 values copied EXACTLY from the allowed list that matches the category.`;
 
-Rules:
-- current_location should be just the city name (e.g. "Bangalore"), not a full address.
-- phone should be digits only, no country code prefix, no spaces/dashes.
-- total_experience_years is your best estimate of total professional experience in years (a number, can be a decimal like 5.5), or null if you can't tell.
-- languages_known: only include a language if the resume explicitly states it (a "Languages" section, "fluent in X", etc.) -- do not guess from the candidate's name or location. Return [] if none are stated.
-- If a field truly cannot be determined, use null (or [] for languages_known) rather than guessing.
+  const prompt = `Read this resume and return ONLY a JSON object (no markdown, no commentary) shaped exactly like:
+{"full_name": string|null, "email": string|null, "phone": string|null, "current_location": string|null, "current_employer": string|null, "current_job_title": string|null, "total_experience_years": number|null, "languages_known": string[],
+"category": string|null, "sells_now": string[], "sells_before": string[], "role_level": string|null, "team_size": string|null, "industries": string[], "customer_segments": string[], "tools": string[], "skills": string[], "current_industry": string|null, "highest_qualification": string|null, "linkedin_url": string|null, "current_fixed_ctc_lpa": number|null, "notice_period": string|null}
+
+General rules:
+- current_location: just the city. phone: digits only, no country code. total_experience_years: best estimate, may be a decimal.
+- languages_known: only if the resume explicitly states them.
+- Use null / [] for anything not clearly supported by the resume. Never guess.
+
+Classification rules (these must line up with a registration form, so use the allowed values EXACTLY as written):
+- ${categoryRule}
+- ${sellsRule}
+- B2B allowed values: ${JSON.stringify(B2B_SELLS)}
+- B2C allowed values: ${JSON.stringify(B2C_SELLS)}
+- "sells_before": what they sold in EARLIER roles, from the same allowed list for the category, excluding anything already in sells_now. Up to 4.
+- "role_level": one of ${JSON.stringify(LEVELS)} (SDR/BDR level = "IC – Sales Development", account executive = "IC – Account Executive", senior individual seller = "IC", etc.), judged from their latest title.
+- "team_size": only if they lead a team and a number is stated; one of ${JSON.stringify(teamSizeBands)}; else null.
+- "industries": industries they have sold INTO (their customers' industries), up to 8, copied EXACTLY from: ${JSON.stringify(INDUSTRIES)}
+- "customer_segments": only for B2B, from ${JSON.stringify(customerSegmentOptions)}, based on who they sold to.
+- "tools": CRM or sales tools named in the resume (Salesforce, HubSpot, Zoho, Sales Navigator, ...). Free text, up to 10.
+- "skills": up to 10 core sales/professional skills named in the resume. Free text.
+- "current_industry": one value from the industries list for their current employer's industry, else null.
+- "highest_qualification": e.g. "MBA", "B.Tech", "BBA", "B.Com", else null.
+- "current_fixed_ctc_lpa": only if the resume explicitly states current fixed CTC; convert to lakhs per annum. Else null.
+- "notice_period": only if explicitly stated, else null.
 
 Resume text:
-${resumeText.slice(0, 12000)}`;
+${resumeText.slice(0, 14000)}`;
 
   try {
-    const { text: raw } = await generateTextWithFallback(prompt);
+    const { text: raw } = await generateTextWithFallback(prompt, { json: true, thinkingBudget: 512 });
     const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
     const parsed = JSON.parse(cleaned) as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+
+    const category = hint.category ?? (typeof parsed.category === "string" && CATEGORIES.includes(parsed.category) ? parsed.category : null);
+    const sellsAllowed = category === "b2c_sales" ? B2C_SELLS : category === "b2b_sales" ? B2B_SELLS : [];
+    let sellsNow = keepAllowed(parsed.sells_now, sellsAllowed, 3);
+    if (hint.sells) sellsNow = [hint.sells, ...sellsNow.filter((x) => x !== hint.sells)].slice(0, 3);
+    const sellsBefore = keepAllowed(parsed.sells_before, sellsAllowed, 4).filter((x) => !sellsNow.includes(x));
+    const level = typeof parsed.role_level === "string" && LEVELS.includes(parsed.role_level) ? parsed.role_level : null;
+    const leads = yourLevelOptions.find((l) => l.value === level)?.lead ?? false;
+    const teamSize = leads && typeof parsed.team_size === "string" && teamSizeBands.includes(parsed.team_size) ? parsed.team_size : null;
+    const ctc = typeof parsed.current_fixed_ctc_lpa === "number" && parsed.current_fixed_ctc_lpa > 0.5 && parsed.current_fixed_ctc_lpa <= 120 ? parsed.current_fixed_ctc_lpa : null;
+    const freeList = (v: unknown, max: number) =>
+      Array.isArray(v) ? Array.from(new Set(v.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim()))).slice(0, max) : [];
+
     return {
-      full_name: typeof parsed.full_name === "string" ? parsed.full_name.trim() : null,
+      full_name: str(parsed.full_name),
       email: typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : null,
       phone: typeof parsed.phone === "string" ? normalizePhone(parsed.phone) : null,
-      current_location: typeof parsed.current_location === "string" ? parsed.current_location.trim() : null,
-      current_employer: typeof parsed.current_employer === "string" ? parsed.current_employer.trim() : null,
-      current_job_title: typeof parsed.current_job_title === "string" ? parsed.current_job_title.trim() : null,
+      current_location: str(parsed.current_location),
+      current_employer: str(parsed.current_employer),
+      current_job_title: str(parsed.current_job_title),
       total_experience_years: typeof parsed.total_experience_years === "number" ? parsed.total_experience_years : null,
-      languages_known: Array.isArray(parsed.languages_known)
-        ? parsed.languages_known.filter((l): l is string => typeof l === "string")
-        : [],
+      languages_known: freeList(parsed.languages_known, 8),
+      category,
+      sells_now: sellsNow,
+      sells_before: sellsBefore,
+      role_level: level,
+      team_size: teamSize,
+      industries: keepAllowed(parsed.industries, INDUSTRIES, 8),
+      customer_segments: category === "b2b_sales" ? keepAllowed(parsed.customer_segments, customerSegmentOptions, 6) : [],
+      tools: freeList(parsed.tools, 10),
+      skills: freeList(parsed.skills, 10),
+      current_industry: typeof parsed.current_industry === "string" && INDUSTRIES.includes(parsed.current_industry) ? parsed.current_industry : null,
+      highest_qualification: str(parsed.highest_qualification),
+      linkedin_url: str(parsed.linkedin_url),
+      current_fixed_ctc: ctc,
+      notice_period: str(parsed.notice_period),
     };
   } catch (err) {
     console.error("bulk-extract failed on every configured AI provider", err);
