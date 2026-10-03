@@ -9,7 +9,12 @@ import { createClient } from "@/lib/supabase/client";
 import { b2bSoldGroups, b2cSoldGroups, yourLevelOptions } from "@/lib/candidate-taxonomy";
 
 const SOURCE_CHANNEL_OPTIONS = ["Naukri", "LinkedIn", "IIMJobs", "Monster", "Referral", "Other"];
-const MAX_FILES = 10;
+const MAX_FILES = 100;
+// Each request carries a few CVs: server functions cap the request size, and a
+// small batch finishes well inside the time limit.
+const CHUNK_FILES = 5;
+const CHUNK_BYTES = 3_500_000;
+const CHUNK_CONCURRENCY = 2;
 
 type MandateOption = { id: string; role_title: string; client_name: string };
 
@@ -75,6 +80,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
   const [sourceChannel, setSourceChannel] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [extractProgress, setExtractProgress] = useState(0);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [creating, setCreating] = useState(false);
   const [bulkMandateId, setBulkMandateId] = useState("");
@@ -90,25 +96,70 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
     setFiles((prev) => prev.filter((f) => f.name !== name));
   }
 
+  // Splits the picked files into small requests (by count and total size).
+  function chunkFiles(list: File[]): File[][] {
+    const chunks: File[][] = [];
+    let cur: File[] = [];
+    let bytes = 0;
+    for (const f of list) {
+      if (cur.length > 0 && (cur.length >= CHUNK_FILES || bytes + f.size > CHUNK_BYTES)) {
+        chunks.push(cur);
+        cur = [];
+        bytes = 0;
+      }
+      cur.push(f);
+      bytes += f.size;
+    }
+    if (cur.length) chunks.push(cur);
+    return chunks;
+  }
+
   async function handleExtract() {
     if (files.length === 0 || !profileType || !sourceChannel) return;
     setExtracting(true);
     setExtractError(null);
+    setExtractProgress(0);
     try {
-      const formData = new FormData();
-      files.forEach((f) => formData.append("files", f));
-      formData.append("profileType", profileType);
-      if (subDomain && subDomain !== "Other") formData.append("sells", subDomain);
-      const res = await fetch("/api/candidates/bulk-extract", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) {
-        setExtractError(data?.error ?? "Something went wrong reading these resumes.");
-        return;
+      const chunks = chunkFiles(files);
+      const resultsByChunk: Array<Array<Record<string, unknown>>> = new Array(chunks.length);
+      let done = 0;
+      let next = 0;
+      async function worker() {
+        while (next < chunks.length) {
+          const i = next++;
+          const chunk = chunks[i];
+          try {
+            const formData = new FormData();
+            chunk.forEach((f) => formData.append("files", f));
+            formData.append("profileType", profileType);
+            if (subDomain && subDomain !== "Other") formData.append("sells", subDomain);
+            const res = await fetch("/api/candidates/bulk-extract", { method: "POST", body: formData });
+            const json = await res.json().catch(() => ({}));
+            resultsByChunk[i] =
+              res.ok && Array.isArray(json.results)
+                ? json.results
+                : chunk.map((f) => ({ fileName: f.name, ok: false, error: json?.error ?? "This batch of resumes could not be read. Try these again." }));
+          } catch {
+            resultsByChunk[i] = chunk.map((f) => ({ fileName: f.name, ok: false, error: "Network error while reading this resume. Try again." }));
+          }
+          done += chunk.length;
+          setExtractProgress(done);
+        }
       }
+      await Promise.all(Array.from({ length: Math.min(CHUNK_CONCURRENCY, chunks.length) }, () => worker()));
+      const data = { results: resultsByChunk.flat() };
+      // Rows are keyed by file name, and downloaded CVs often share one ("Resume.pdf"),
+      // so make repeats unique.
+      const seenNames = new Map<string, number>();
+      const uniqueName = (name: string) => {
+        const n = (seenNames.get(name) ?? 0) + 1;
+        seenNames.set(name, n);
+        return n === 1 ? name : name.replace(/(\.[^.]*)?$/, ` (${n})$1`);
+      };
       const newRows: Row[] = (data.results as Array<Record<string, unknown>>).map((r) => {
         const extracted = (r.extracted as Record<string, unknown>) ?? {};
         return {
-          fileName: r.fileName as string,
+          fileName: uniqueName(r.fileName as string),
           ok: r.ok as boolean,
           error: r.error as string | undefined,
           resumeFileUrl: r.resumeFileUrl as string | undefined,
@@ -358,7 +409,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             <span className="text-[13px] font-medium text-slate-600 dark:text-slate-300">
               Click to choose resumes, or drag them here
             </span>
-            <span className="text-[11px] text-slate-400">PDF or DOCX -- up to {MAX_FILES} files</span>
+            <span className="text-[11px] text-slate-400">PDF or DOCX -- up to {MAX_FILES} files at a time</span>
             <input
               ref={fileInputRef}
               type="file"
@@ -370,7 +421,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           </label>
 
           {files.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
               {files.map((f) => (
                 <div
                   key={f.name}
@@ -404,7 +455,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
           >
             {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
-            {extracting ? `Reading ${files.length} resume${files.length === 1 ? "" : "s"}...` : "Extract & review"}
+            {extracting ? `Reading resumes (${extractProgress}/${files.length})...` : "Extract & review"}
           </button>
         </div>
       )}
