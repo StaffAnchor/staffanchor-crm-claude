@@ -240,11 +240,11 @@ async function sendRecruiterCreatedWelcomeEmail(
     missingFields.length > 0
       ? ` Specifically, we still need: ${missingFields.map((f) => MISSING_FIELD_LABELS[f] ?? f).join(", ")}.`
       : "";
-  const subject = "A recruiter started your StaffAnchor profile — here's what's next";
-  const text = `Hi ${firstName},\n\nA StaffAnchor recruiter has started a profile for you so we can match you to the right sales roles.${missingFieldText}\n\nYour profile is currently ${completionScore}% complete. Sign in below to review it, add the rest of your details, and start hearing about relevant openings:\n\n${actionLink}\n\nNo password needed -- that link logs you straight in.\n\nThanks,\nStaffAnchor Team`;
+  const subject = "Please confirm your details so we can match you to sales roles";
+  const text = `Hi ${firstName},\n\nA StaffAnchor recruiter has started a profile for you from your CV, so we can match you to the right revenue roles in technology.${missingFieldText}\n\nA CV can't tell us a few things, like your current and expected CTC and your notice period. Sign in below and you'll see what we already have. Confirm it or change it, and add the rest. It takes about three minutes and is mostly taps:\n\n${actionLink}\n\nNo password needed -- that link logs you straight in.\n\nThanks,\nStaffAnchor Team`;
   const html = renderEmailShell({
-    preheader: `Your profile is ${completionScore}% complete -- sign in to finish it.`,
-    bodyHtml: `<p>Hi ${firstName},</p><p>A StaffAnchor recruiter has started a profile for you so we can match you to the right sales roles.${missingFieldText}</p><p>Your profile is currently <strong>${completionScore}% complete</strong>. Sign in below to review it, add the rest of your details, and start hearing about relevant openings:</p><p><a href="${actionLink}">${actionLink}</a></p><p>No password needed — that link logs you straight in.</p><p>Thanks,<br/>StaffAnchor Team</p>`,
+    preheader: "Confirm what we have from your CV and add your CTC and notice period. About three minutes.",
+    bodyHtml: `<p>Hi ${firstName},</p><p>A StaffAnchor recruiter has started a profile for you from your CV, so we can match you to the right revenue roles in technology.${missingFieldText}</p><p>A CV can&rsquo;t tell us a few things, like your <strong>current and expected CTC</strong> and your <strong>notice period</strong>. Sign in below and you&rsquo;ll see what we already have. Confirm it or change it, and add the rest. It takes about three minutes and is mostly taps:</p><p><a href="${actionLink}">${actionLink}</a></p><p>No password needed &mdash; that link logs you straight in.</p><p>Thanks,<br/>StaffAnchor Team</p>`,
   });
 
   await sendEmail({ to: email, subject, text, html });
