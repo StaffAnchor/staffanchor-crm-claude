@@ -518,6 +518,21 @@ export default async function CandidateDetailPage({
                     </Badge>
                   )}
                 </div>
+                {(() => {
+                  const at = candidate.details_confirmed_at as string | null | undefined;
+                  const days = at ? Math.floor((Date.now() - new Date(at).getTime()) / 86_400_000) : null;
+                  const stale = days == null || days > 60;
+                  return (
+                    <p
+                      className={`text-[11px] mt-0.5 ${stale ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}
+                      title="The last time the candidate confirmed or updated their own details (CTC, notice period, role)"
+                    >
+                      {at
+                        ? `Details confirmed by candidate ${new Date(at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${stale ? ` (${days} days ago)` : ""}`
+                        : "Details never confirmed by candidate. Verify CTC and notice period."}
+                    </p>
+                  );
+                })()}
                 <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {candidate.current_job_title}
                   {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
