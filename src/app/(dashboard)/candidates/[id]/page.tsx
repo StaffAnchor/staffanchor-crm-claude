@@ -72,6 +72,10 @@ const SENIORITY_LABEL: Record<string, string> = {
   vp_plus: "VP & above",
 };
 
+function daysAgo(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
+
 export default async function CandidateDetailPage({
   params,
   searchParams,
@@ -520,7 +524,7 @@ export default async function CandidateDetailPage({
                 </div>
                 {(() => {
                   const at = candidate.details_confirmed_at as string | null | undefined;
-                  const days = at ? Math.floor((Date.now() - new Date(at).getTime()) / 86_400_000) : null;
+                  const days = at ? daysAgo(at) : null;
                   const stale = days == null || days > 60;
                   return (
                     <p
