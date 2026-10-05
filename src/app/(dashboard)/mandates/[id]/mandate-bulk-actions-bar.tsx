@@ -92,7 +92,7 @@ export default function MandateBulkActionsBar({
       const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).eq("id", row.id);
       if (error) {
         const why = error.message.includes("Still needed:")
-          ? error.message.split("Still needed:")[1].split(". Complete these")[0].trim()
+          ? error.message.split("Still needed:")[1].split(". Use \"Confirm details\"")[0].trim()
           : error.message;
         blocked.push(`${row.candidate.full_name} (${why})`);
       } else {
