@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, Check, ChevronDown, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -110,6 +110,36 @@ export default function CallCompanion({
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+
+  // Keep what the recruiter has tapped so far across a background page refresh
+  // (the candidate page refreshes itself when the AI work finishes).
+  const draftKey = `call-companion-draft-${candidate.id}`;
+  /* eslint-disable react-hooks/set-state-in-effect -- restore a saved draft once on mount; sessionStorage doesn't exist during server render, so it can't be a lazy initializer */
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw) as Record<string, string>;
+      if (d.expected) setExpected(d.expected);
+      if (d.workMode) setWorkMode(d.workMode);
+      if (d.notice) setNotice(d.notice);
+      if (d.relocation) setRelocation(d.relocation);
+      if (d.offer) setOffer(d.offer);
+      if (d.offerCtc) setOfferCtc(d.offerCtc);
+      if (d.note) setNote(d.note);
+    } catch {
+      /* storage unavailable: fine */
+    }
+  }, [draftKey]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({ expected, workMode, notice, relocation, offer, offerCtc, note }));
+    } catch {
+      /* storage unavailable: fine */
+    }
+  }, [draftKey, expected, workMode, notice, relocation, offer, offerCtc, note]);
 
   const missing = missingForRegistration(candidate, { expected, workMode, notice, relocation });
   const incomplete = candidate.status === "lead" || candidate.status === "awaiting_input";
@@ -117,6 +147,7 @@ export default function CallCompanion({
 
   async function save() {
     setError(null);
+    setSavedMsg(null);
     if (offer === "Yes" && !offerCtc) {
       setError("Pick the offer CTC, or set offer in hand to No.");
       return;
@@ -168,6 +199,22 @@ export default function CallCompanion({
     });
     setSaving(false);
     setNote("");
+    try {
+      sessionStorage.removeItem(draftKey);
+    } catch {
+      /* ignore */
+    }
+    // Say exactly what was written, so a save is never a silent no-op.
+    const written: string[] = [];
+    if (expected && expected !== (has(candidate.expected_fixed_ctc) ? String(Number(candidate.expected_fixed_ctc)) : "")) written.push(`expected CTC ${expected} LPA`);
+    if (workMode && workMode !== (candidate.work_mode ?? "")) written.push(`work mode ${workMode}`);
+    if (notice && notice !== (candidate.notice_period ?? "")) written.push(`notice ${notice}`);
+    if (relocation && relocation !== (candidate.open_to_relocation ?? "")) written.push(`relocation ${relocation}`);
+    if (offer) written.push(offer === "Yes" ? `offer in hand (${offerCtc} LPA)` : "no offer in hand");
+    setSavedMsg(
+      (written.length ? `Saved: ${written.join(", ")}.` : "Saved, but no new answers were entered. Pick the answers above and save again.") +
+        (graduates ? " This candidate is now Registered." : "")
+    );
     router.refresh();
   }
 
@@ -261,6 +308,11 @@ export default function CallCompanion({
               >
                 <Check className="w-3.5 h-3.5" /> {saving ? "Saving..." : "Save call answers"}
               </button>
+              {savedMsg && (
+                <span className={`text-[12px] ${savedMsg.startsWith("Saved:") ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+                  {savedMsg}
+                </span>
+              )}
               {incomplete &&
                 (missing.length === 0 ? (
                   <span className="text-[12px] text-emerald-600 dark:text-emerald-400">Saving these will mark this candidate Registered.</span>
