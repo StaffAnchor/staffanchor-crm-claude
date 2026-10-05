@@ -18,6 +18,7 @@ import PracticeMatchesPanel from "./practice-matches-panel";
 import Tabs from "./tabs";
 import Timeline from "./timeline";
 import AiSummaryPanel from "./ai-summary-panel";
+import CallCompanion from "./call-companion";
 import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
 import ResumePreview from "./resume-preview";
@@ -113,6 +114,17 @@ export default async function CandidateDetailPage({
     ? await supabase.from("profiles").select("full_name, email").eq("id", viewerUser.id).single()
     : { data: null };
   const scorerName = viewerProfile?.full_name ?? viewerProfile?.email ?? "Unknown";
+
+  // Things worth asking on a call: the AI's watch-areas plus any honesty or gap
+  // flags raised when the CV was read.
+  const { data: cvFactsRow } = await supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle();
+  const cvFlagDetails = (((cvFactsRow?.facts as { flags?: { detail?: string }[] } | null)?.flags ?? []) as { detail?: string }[])
+    .map((f) => f?.detail)
+    .filter((d): d is string => typeof d === "string" && d.trim().length > 0);
+  const watchAreas = (((candidate.ai_decision_flags as { watch_areas?: string[] } | null)?.watch_areas ?? []) as string[]).filter(
+    (d) => typeof d === "string" && d.trim().length > 0
+  );
+  const callDoubts = Array.from(new Set([...watchAreas, ...cvFlagDetails])).slice(0, 8);
 
   // Smart regenerate-on-view: if the recruiter's manual assessment
   // (communication/confidence/attitude/job_stability scorecard) was saved
@@ -523,7 +535,8 @@ export default async function CandidateDetailPage({
                   )}
                 </div>
                 {(() => {
-                  const at = candidate.details_confirmed_at as string | null | undefined;
+                  const callAt = (candidate.segment_data as { call_confirmed?: { at?: string } } | null)?.call_confirmed?.at;
+                  const at = (candidate.details_confirmed_at as string | null | undefined) ?? callAt;
                   const days = at ? daysAgo(at) : null;
                   const stale = days == null || days > 60;
                   return (
@@ -532,7 +545,7 @@ export default async function CandidateDetailPage({
                       title="The last time the candidate confirmed or updated their own details (CTC, notice period, role)"
                     >
                       {at
-                        ? `Details confirmed by candidate ${new Date(at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${stale ? ` (${days} days ago)` : ""}`
+                        ? `Details confirmed ${candidate.details_confirmed_at ? "by candidate" : "on a recruiter call"} ${new Date(at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${stale ? ` (${days} days ago)` : ""}`
                         : "Details never confirmed by candidate. Verify CTC and notice period."}
                     </p>
                   );
@@ -687,6 +700,11 @@ export default async function CandidateDetailPage({
             </div>
           )}
         </div>
+      </Card>
+
+      {/* --- Call companion: confirm what a CV can't tell us, on the call --- */}
+      <Card className="mt-4">
+        <CallCompanion candidate={candidate as never} doubts={callDoubts} recruiterName={scorerName} />
       </Card>
 
       {/* --- AI summary: front and center, not buried in a tab --- */}
