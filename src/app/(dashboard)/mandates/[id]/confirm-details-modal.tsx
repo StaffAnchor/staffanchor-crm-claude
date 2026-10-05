@@ -62,7 +62,7 @@ export default function ConfirmDetailsModal({
 
   const ready = blockers.length === 0;
   const fixableHere = (b: string) =>
-    FIXABLE_HERE.has(b) || b === CONFIRMATION || b.startsWith("Candidate confirmed interested") || b.startsWith("Review of") || b.startsWith("A short note");
+    FIXABLE_HERE.has(b) || b === CONFIRMATION || b.startsWith("Candidate confirmed interested") || b.startsWith("Review of") || b.startsWith("A short note") || b.startsWith("This role has no");
   const needsProfileEdit = blockers.filter((b) => !fixableHere(b));
 
   return (
