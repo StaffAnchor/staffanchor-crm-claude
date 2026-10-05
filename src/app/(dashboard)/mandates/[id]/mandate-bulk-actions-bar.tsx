@@ -87,7 +87,7 @@ export default function MandateBulkActionsBar({
     const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).in("id", ids);
     if (error) {
       setBusy(false);
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: error.message.replace(/^NOT_CLIENT_READY:\s*/, "") });
       return;
     }
     setRows((prev) => prev.map((r) => (ids.includes(r.id) ? { ...r, in_shortlist: true } : r)));

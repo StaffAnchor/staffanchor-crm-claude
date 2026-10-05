@@ -108,7 +108,15 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
     if (!date || !time) return;
     setBusy(true);
     const iso = new Date(`${date}T${time}`).toISOString();
-    await supabase.from("candidate_mandate_links").update({ confirmed_interview_at: iso }).eq("id", row.id);
+    const { error: confirmError } = await supabase.from("candidate_mandate_links").update({ confirmed_interview_at: iso }).eq("id", row.id);
+    // The client is waiting on this: email them the confirmed time with a calendar invite.
+    if (!confirmError) {
+      fetch("/api/interviews/notify-confirmed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkId: row.id }),
+      }).catch(() => {});
+    }
     setBusy(false);
     setScheduling(false);
     router.refresh();
