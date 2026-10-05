@@ -5,12 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AssessmentForm from "./assessment-form";
-import VettingScorePanel from "./vetting-score-panel";
 import PracticeTagsPanel from "./practice-tags-panel";
 import MandateDiscussions from "./mandate-discussions";
 import CareerTimelinePanel from "./career-timeline-panel";
 import NotesPanel from "./notes-panel";
-import VerifiedFactsPanel from "./verified-facts-panel";
 import ResumeMismatchesPanel from "./resume-mismatches-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
@@ -323,12 +321,6 @@ export default async function CandidateDetailPage({
   const { data: notes } = await supabase
     .from("recruiter_notes")
     .select("id, note_type, content, created_at, author_id")
-    .eq("candidate_id", id)
-    .order("created_at", { ascending: false });
-
-  const { data: verifiedFacts } = await supabase
-    .from("candidate_verified_facts")
-    .select("id, fact_type, note, created_at")
     .eq("candidate_id", id)
     .order("created_at", { ascending: false });
 
@@ -736,15 +728,6 @@ export default async function CandidateDetailPage({
         </Card>
       )}
 
-      {/* Durable, recruiter-confirmed facts about this candidate as a
-          person (not tied to any one mandate) -- fed into future mandate
-          matching (src/lib/candidate-match.ts) as a real signal, distinct
-          from the per-mandate must-have checklist. Sits right under the AI
-          summary since it directly shapes what that summary/matching sees. */}
-      <Card className="mt-4">
-        <VerifiedFactsPanel candidateId={candidate.id} initialFacts={verifiedFacts ?? []} />
-      </Card>
-
       <div className="grid grid-cols-3 gap-6 mt-6">
         <div className="col-span-2">
           <Card>
@@ -882,31 +865,6 @@ export default async function CandidateDetailPage({
               linkedMandateCities={linkedMandateCities}
             />
             <MandateDiscussions entries={(candidate.mandate_discussion_summaries ?? []) as never} />
-          </Card>
-
-          {/* The recruiter's own structured, documented judgment call --
-              deliberately separate from the AI-generated scoring above
-              (stability_score / ai_decision_flags / talent_micro_index).
-              This is the compounding vetting asset the business model is
-              actually built on. */}
-          <Card className="mt-4">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Vetting score</h2>
-              {typeof candidate.vetting_score_overall === "number" && (
-                <Badge tone="accent" size="sm">
-                  {candidate.vetting_score_overall}/100
-                </Badge>
-              )}
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
-              Structured, per-criterion score -- the documented judgment behind why this candidate is worth
-              presenting, not just a note buried in text.
-            </p>
-            <VettingScorePanel
-              candidateId={candidate.id}
-              initial={(candidate.vetting_score ?? {}) as never}
-              scorerName={scorerName}
-            />
           </Card>
 
           {/* Which recruiting practice(s) this candidate belongs to, each

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CallCompanion from "../../candidates/[id]/call-companion";
+import RoleFitReview from "./role-fit-review";
 
 // What the Call companion itself can fix. Everything else on the checklist is a
 // profile field the recruiter edits on the candidate page.
@@ -12,6 +13,8 @@ const FIXABLE_HERE = new Set(["Expected fixed CTC", "Notice period", "Open to re
 const CONFIRMATION = "Recruiter confirmation of these details (use Call companion)";
 
 export default function ConfirmDetailsModal({
+  linkId,
+  mandateId,
   candidateId,
   candidateName,
   blockers,
@@ -19,6 +22,8 @@ export default function ConfirmDetailsModal({
   onShare,
   onClose,
 }: {
+  linkId: string;
+  mandateId: string;
   candidateId: string;
   candidateName: string;
   blockers: string[];
@@ -56,16 +61,18 @@ export default function ConfirmDetailsModal({
   }, [candidateId]);
 
   const ready = blockers.length === 0;
-  const needsProfileEdit = blockers.filter((b) => !FIXABLE_HERE.has(b) && b !== CONFIRMATION);
+  const fixableHere = (b: string) =>
+    FIXABLE_HERE.has(b) || b === CONFIRMATION || b.startsWith("Candidate confirmed interested") || b.startsWith("Review of") || b.startsWith("A short note") || b.startsWith("This role has no");
+  const needsProfileEdit = blockers.filter((b) => !fixableHere(b));
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4" onClick={onClose}>
       <div className="mt-8 w-full max-w-3xl rounded-xl bg-white dark:bg-slate-900 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-5 py-4">
           <div>
-            <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Confirm details before sharing</h2>
+            <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Confirm before sharing</h2>
             <p className="text-[12.5px] text-slate-500">
-              {candidateName}: the client will see these, so a recruiter confirms them first.
+              {candidateName}: the client will see all of this, so a recruiter confirms it first.
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
@@ -83,7 +90,7 @@ export default function ConfirmDetailsModal({
               <p className="font-medium">Still needed ({blockers.length}):</p>
               <ul className="mt-1 list-disc pl-5">
                 {blockers.map((b) => (
-                  <li key={b}>{b === CONFIRMATION ? "Recruiter confirmation: tap the answers below and save" : b}</li>
+                  <li key={b}>{b === CONFIRMATION ? "Recruiter confirmation: tap the answers in \"Call details\" below and save" : b}</li>
                 ))}
               </ul>
               {needsProfileEdit.length > 0 && (
@@ -97,8 +104,13 @@ export default function ConfirmDetailsModal({
             </div>
           )}
 
+          <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
+            <RoleFitReview linkId={linkId} mandateId={mandateId} candidateId={candidateId} onSaved={onRecheck} />
+          </div>
+
           {candidate && (
             <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
+              <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Call details</p>
               <CallCompanion
                 candidate={candidate as never}
                 doubts={[]}

@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MessageCircleQuestion } from "lucide-react";
-import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
+import { type MandateScreeningContext } from "./mandate-screening-panel";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import MandateRejectModal from "./mandate-reject-modal";
 import ConfirmDetailsModal from "./confirm-details-modal";
@@ -198,7 +197,6 @@ export default function MandateCandidatesTable({
   const [flagMap, setFlagMap] = useState<Record<string, ExistingCallFlag>>(flaggedCallByCandidate);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [screeningRowId, setScreeningRowId] = useState<string | null>(null);
   // Which row is mid-edit on its stage select, and whether that edit is
   // being attributed to the client (vs. the recruiter's own call) --
   // separate from `rows` state since most rows are never being edited.
@@ -480,10 +478,10 @@ export default function MandateCandidatesTable({
 
   // What's still missing before each not-yet-shared candidate can be shown to the
   // client. One call for the whole list; the database enforces the same rule.
-  async function refreshReadiness(candidateIds?: string[]) {
-    const ids = candidateIds ?? rows.filter((r) => !r.in_shortlist).map((r) => r.candidate.id);
+  async function refreshReadiness(linkIds?: string[]) {
+    const ids = linkIds ?? rows.filter((r) => !r.in_shortlist).map((r) => r.id);
     if (ids.length === 0) return;
-    const { data } = await supabase.rpc("client_share_blockers_bulk", { p_ids: ids });
+    const { data } = await supabase.rpc("client_share_blockers_bulk_links", { p_link_ids: ids });
     if (data && typeof data === "object") setReadiness((prev) => ({ ...prev, ...(data as Record<string, string[]>) }));
   }
 
@@ -501,7 +499,7 @@ export default function MandateCandidatesTable({
     const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).eq("id", row.id);
     if (error) {
       if (error.message.includes("NOT_CLIENT_READY")) {
-        await refreshReadiness([row.candidate.id]);
+        await refreshReadiness([row.id]);
         setConfirmRow(row);
       } else {
         setMessage({ type: "error", text: error.message });
@@ -564,10 +562,8 @@ export default function MandateCandidatesTable({
             <th className="text-left px-4 py-2.5">Source</th>
             <th className="text-left px-4 py-2.5">CTC / Notice</th>
             <th className="text-left px-4 py-2.5">Stability</th>
-            <th className="text-left px-4 py-2.5">AI Summary</th>
             <th className="text-left px-4 py-2.5">AI Read</th>
             <th className="text-left px-4 py-2.5">Recommendation</th>
-            <th className="text-left px-4 py-2.5">Screening</th>
             <th className="text-left px-4 py-2.5">Stage</th>
             <th className="text-left px-4 py-2.5">Client</th>
           </tr>
@@ -712,18 +708,6 @@ export default function MandateCandidatesTable({
                   </span>
                 )}
               </td>
-              <td className="px-4 py-3 max-w-[220px]">
-                {l.candidate.ai_summary ? (
-                  <p
-                    title={l.candidate.ai_summary}
-                    className="text-[12px] text-slate-600 dark:text-slate-400 line-clamp-3 cursor-help"
-                  >
-                    {l.candidate.ai_summary}
-                  </p>
-                ) : (
-                  <span className="text-[11px] text-slate-400 italic">Generating…</span>
-                )}
-              </td>
               <td className="px-4 py-3">
                 <MandateAssessmentPopover
                   assessment={l.match_assessment}
@@ -733,19 +717,6 @@ export default function MandateCandidatesTable({
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                 {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}
-              </td>
-              <td className="px-4 py-3">
-                <button
-                  onClick={() => setScreeningRowId(l.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
-                    l.screened
-                      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                      : "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                  }`}
-                >
-                  <MessageCircleQuestion className="w-3 h-3" />
-                  {l.screened ? "Screened" : "Screen"}
-                </button>
               </td>
               <td className="px-4 py-3">
                 {editingStageId === l.id ? (
@@ -859,7 +830,7 @@ export default function MandateCandidatesTable({
                         </>
                       );
                     }
-                    const missing = readiness[l.candidate.id];
+                    const missing = readiness[l.id];
                     if (missing === undefined) return <span className="text-xs text-slate-400">Checking…</span>;
                     if (missing.length === 0) {
                       return (
@@ -914,29 +885,15 @@ export default function MandateCandidatesTable({
         </p>
       )}
 
-      {screeningRowId && (() => {
-        const row = rows.find((r) => r.id === screeningRowId);
-        if (!row) return null;
-        return (
-          <MandateScreeningPanel
-            open={true}
-            onClose={() => setScreeningRowId(null)}
-            candidate={row.candidate}
-            mandateContext={mandateContext}
-            onSaved={() => {
-              setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, screened: true } : r)));
-              router.refresh();
-            }}
-          />
-        );
-      })()}
 
       {confirmRow && (
         <ConfirmDetailsModal
+          linkId={confirmRow.id}
+          mandateId={mandateContext.mandateId as string}
           candidateId={confirmRow.candidate.id}
           candidateName={confirmRow.candidate.full_name}
-          blockers={readiness[confirmRow.candidate.id] ?? []}
-          onRecheck={() => refreshReadiness([confirmRow.candidate.id])}
+          blockers={readiness[confirmRow.id] ?? []}
+          onRecheck={() => refreshReadiness([confirmRow.id])}
           onShare={() => shareWithClient(confirmRow)}
           onClose={() => setConfirmRow(null)}
         />

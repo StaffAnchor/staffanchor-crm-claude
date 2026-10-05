@@ -126,12 +126,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   for (const link of targetLinks) {
     const cand = link.candidates as unknown as Cand;
     if ((STAGE_ORDER[link.stage] ?? 0) >= STAGE_ORDER["submitted"]) continue;
-    const { data: blockers } = await supabase.rpc("client_share_blockers", { p_candidate_id: cand.id });
+    const { data: blockers } = await supabase.rpc("client_share_blockers_for_link", { p_link_id: link.id });
     if (Array.isArray(blockers) && blockers.length > 0) notReady.push(`${cand.full_name} (${blockers.join(", ")})`);
   }
   if (notReady.length > 0) {
     return NextResponse.json(
-      { error: `Not ready to share with the client yet: ${notReady.join("; ")}. Complete these on the candidate page (Call companion), then try again.` },
+      { error: `Not ready to share with the client yet: ${notReady.join("; ")}. Use "Confirm details" on each candidate in the mandate table, then try again.` },
       { status: 409 }
     );
   }
