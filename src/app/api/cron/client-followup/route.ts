@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { internalEmailsEnabled } from "@/lib/internal-email";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { withHeartbeat } from "@/lib/cron-heartbeat";
@@ -27,6 +28,11 @@ async function handler(req: NextRequest) {
     if (auth !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+  }
+
+  // Internal reminder digest: staff see these as in-app notifications instead.
+  if (!internalEmailsEnabled()) {
+    return NextResponse.json({ ok: true, skipped: "Internal emails are turned off" });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

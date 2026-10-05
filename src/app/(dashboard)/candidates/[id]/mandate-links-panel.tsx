@@ -225,7 +225,12 @@ export default function MandateLinksPanel({
   }
 
   async function toggleShortlist(linkId: string, current: boolean) {
-    await supabase.from("candidate_mandate_links").update({ in_shortlist: !current }).eq("id", linkId);
+    setStageError(null);
+    const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: !current }).eq("id", linkId);
+    if (error) {
+      setStageError(error.message.replace(/^NOT_CLIENT_READY:\s*/, ""));
+      return;
+    }
     router.refresh();
   }
 

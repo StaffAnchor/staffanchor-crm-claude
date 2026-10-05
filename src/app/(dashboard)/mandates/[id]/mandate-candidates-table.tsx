@@ -459,7 +459,7 @@ export default function MandateCandidatesTable({
     setRows((prev) => prev.map((r) => (r.id === linkId ? { ...r, in_shortlist: next } : r)));
     const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: next }).eq("id", linkId);
     if (error) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: error.message.replace(/^NOT_CLIENT_READY:\s*/, "") });
       setRows((prev) => prev.map((r) => (r.id === linkId ? { ...r, in_shortlist: !next } : r)));
       return;
     }

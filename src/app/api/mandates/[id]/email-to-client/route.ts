@@ -119,6 +119,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   };
   const candidates = targetLinks.map((l) => l.candidates as unknown as Cand);
 
+  // Don't email a client about someone whose details a recruiter hasn't confirmed.
+  // (The database enforces the same rule; checking here means we never send the
+  // email and then fail to mark the candidate as shared.)
+  const notReady: string[] = [];
+  for (const link of targetLinks) {
+    const cand = link.candidates as unknown as Cand;
+    if ((STAGE_ORDER[link.stage] ?? 0) >= STAGE_ORDER["submitted"]) continue;
+    const { data: blockers } = await supabase.rpc("client_share_blockers", { p_candidate_id: cand.id });
+    if (Array.isArray(blockers) && blockers.length > 0) notReady.push(`${cand.full_name} (${blockers.join(", ")})`);
+  }
+  if (notReady.length > 0) {
+    return NextResponse.json(
+      { error: `Not ready to share with the client yet: ${notReady.join("; ")}. Complete these on the candidate page (Call companion), then try again.` },
+      { status: 409 }
+    );
+  }
+
   // Resume attachments -- best-effort per candidate; a missing/unreadable
   // resume never blocks the email, it just isn't attached and shows up in
   // `resumeless` so the recruiter knows to chase it down separately.

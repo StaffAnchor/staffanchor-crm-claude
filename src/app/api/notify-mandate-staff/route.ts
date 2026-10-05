@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { internalEmailsEnabled } from "@/lib/internal-email";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 
@@ -37,6 +38,11 @@ export async function POST(req: NextRequest) {
     .single();
   if (!person?.email) {
     return NextResponse.json({ error: "Assigned person has no email on file." }, { status: 400 });
+  }
+
+  // The in-app notification already told them; no inbox email for an internal assignment.
+  if (!internalEmailsEnabled()) {
+    return NextResponse.json({ ok: false, skipped: "Internal emails are turned off" });
   }
 
   const gmailUser = process.env.GMAIL_USER;
