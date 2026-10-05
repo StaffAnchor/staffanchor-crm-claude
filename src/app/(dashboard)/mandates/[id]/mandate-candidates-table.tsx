@@ -90,6 +90,9 @@ export type MandateCandidateRow = {
   // too keeps all three responses visually consistent instead of two being
   // invisible and one being a totally different UI element.
   client_feedback: "interested" | "not_interested" | "interview_requested" | null;
+  // Why the client passed, as they chose it in the portal (and any note they added).
+  client_pass_reason: string | null;
+  client_pass_note: string | null;
   candidate: {
     id: string;
     full_name: string;
@@ -871,6 +874,12 @@ export default function MandateCandidatesTable({
                         : l.client_feedback === "interview_requested"
                           ? "Client: Wants interview"
                           : "Client: Not interested"}
+                    </span>
+                  )}
+                  {l.client_feedback === "not_interested" && l.client_pass_reason && (
+                    <span className="max-w-[170px] text-[10.5px] leading-4 text-slate-500" title={l.client_pass_note ?? undefined}>
+                      {rejectionReasonLabel("client_relayed", l.client_pass_reason)}
+                      {l.client_pass_note ? `: ${l.client_pass_note}` : ""}
                     </span>
                   )}
                 </div>
