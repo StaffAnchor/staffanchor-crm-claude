@@ -1,3 +1,4 @@
+import CopyShareLinkButton from "./copy-share-link-button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -326,6 +327,7 @@ export default async function MandateDetailPage({
           <MandateStaffingControl mandateId={id} initialAssigned={assignedStaff} allProfiles={allStaffProfiles ?? []} />
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {mandate.status === "open" && mandate.short_code && <CopyShareLinkButton shortCode={mandate.short_code} />}
           <DownloadJdButton mandateId={id} />
           {mandate.is_archived ? (
             <UnarchiveMandateButton mandateId={id} />
