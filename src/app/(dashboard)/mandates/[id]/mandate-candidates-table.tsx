@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +8,7 @@ import { MessageCircleQuestion } from "lucide-react";
 import MandateScreeningPanel, { type MandateScreeningContext } from "./mandate-screening-panel";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import MandateRejectModal from "./mandate-reject-modal";
+import ConfirmDetailsModal from "./confirm-details-modal";
 import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
@@ -23,6 +24,12 @@ import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-sou
 // should auto-advance stage -- never downgrades a candidate who's already
 // further along (e.g. already at client_interview) back to "submitted".
 const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {});
+
+// Stages where a recruiter often records something the client told them, and where a
+// joining date can matter. For every other stage neither question applies, so the
+// editor doesn't show them.
+const CLIENT_DECISION_STAGES = new Set<string>(["client_interview", "client_shortlisted", "offer", "placed"]);
+const JOINING_STAGES = new Set<string>(["offer", "placed"]);
 
 // Same thresholds as the Matching Workspace's scoreColor() -- keeps "what
 // counts as a strong match" consistent whether a recruiter is looking at
@@ -199,6 +206,10 @@ export default function MandateCandidatesTable({
   const [clientRelayed, setClientRelayed] = useState(false);
   const [dateOfJoining, setDateOfJoining] = useState("");
   const [savingStage, setSavingStage] = useState(false);
+  const [pickedStage, setPickedStage] = useState<Stage>("sourced");
+  // Per-candidate list of what still blocks sharing with the client (empty = ready).
+  const [readiness, setReadiness] = useState<Record<string, string[]>>({});
+  const [confirmRow, setConfirmRow] = useState<MandateCandidateRow | null>(null);
   const [rejectModalRow, setRejectModalRow] = useState<MandateCandidateRow | null>(null);
   const [rejecting, setRejecting] = useState(false);
 
@@ -467,6 +478,59 @@ export default function MandateCandidatesTable({
     router.refresh();
   }
 
+  // What's still missing before each not-yet-shared candidate can be shown to the
+  // client. One call for the whole list; the database enforces the same rule.
+  async function refreshReadiness(candidateIds?: string[]) {
+    const ids = candidateIds ?? rows.filter((r) => !r.in_shortlist).map((r) => r.candidate.id);
+    if (ids.length === 0) return;
+    const { data } = await supabase.rpc("client_share_blockers_bulk", { p_ids: ids });
+    if (data && typeof data === "object") setReadiness((prev) => ({ ...prev, ...(data as Record<string, string[]>) }));
+  }
+
+  useEffect(() => {
+    // Load once on mount: the readiness list comes from the database, not from props.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refreshReadiness();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The one way to put a candidate in front of the client: shortlist + stage move
+  // together. If details are missing, the confirm-details window opens instead.
+  async function shareWithClient(row: MandateCandidateRow): Promise<boolean> {
+    setMessage(null);
+    const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).eq("id", row.id);
+    if (error) {
+      if (error.message.includes("NOT_CLIENT_READY")) {
+        await refreshReadiness([row.candidate.id]);
+        setConfirmRow(row);
+      } else {
+        setMessage({ type: "error", text: error.message });
+      }
+      return false;
+    }
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, in_shortlist: true } : r)));
+    await syncStageForShortlist(row, true);
+    setMessage({ type: "success", text: `${row.candidate.full_name} is now visible to the client.` });
+    router.refresh();
+    return true;
+  }
+
+  function handleStagePick(row: MandateCandidateRow, next: Stage) {
+    setPickedStage(next);
+    if (next === "rejected") {
+      setRejectModalRow(row);
+      return;
+    }
+    // "Submitted" and "shared with the client" are the same event: use the share flow.
+    if (next === "submitted" && !row.in_shortlist && (STAGE_ORDER[row.stage] ?? 0) < STAGE_ORDER["submitted"]) {
+      setEditingStageId(null);
+      void shareWithClient(row);
+      return;
+    }
+    // Stages with nothing extra to record save straight away.
+    if (!CLIENT_DECISION_STAGES.has(next)) void saveStage(row, next);
+  }
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mt-6 shadow-sm">
       {message && (
@@ -505,7 +569,7 @@ export default function MandateCandidatesTable({
             <th className="text-left px-4 py-2.5">Recommendation</th>
             <th className="text-left px-4 py-2.5">Screening</th>
             <th className="text-left px-4 py-2.5">Stage</th>
-            <th className="text-left px-4 py-2.5">In client shortlist</th>
+            <th className="text-left px-4 py-2.5">Client</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -685,21 +749,11 @@ export default function MandateCandidatesTable({
               </td>
               <td className="px-4 py-3">
                 {editingStageId === l.id ? (
-                  <div className="flex flex-col gap-1.5 min-w-[160px]">
+                  <div className="flex flex-col gap-1.5 min-w-[170px]">
                     <select
-                      defaultValue={l.stage}
+                      value={pickedStage}
                       autoFocus
-                      onChange={(e) => {
-                        const next = e.target.value as Stage;
-                        // Rejecting has its own dedicated modal (who's
-                        // rejecting + mandatory reason) instead of this
-                        // generic save path -- see MandateRejectModal.
-                        if (next === "rejected") {
-                          setRejectModalRow(l);
-                          return;
-                        }
-                        saveStage(l, next);
-                      }}
+                      onChange={(e) => handleStagePick(l, e.target.value as Stage)}
                       disabled={savingStage}
                       className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
                     >
@@ -709,28 +763,41 @@ export default function MandateCandidatesTable({
                         </option>
                       ))}
                     </select>
-                    <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400">
-                      <input type="checkbox" checked={clientRelayed} onChange={(e) => setClientRelayed(e.target.checked)} />
-                      Client told us this
-                    </label>
-                    <label className="text-[10px] text-slate-400">
-                      Joining date (expected or confirmed -- can be set at any stage)
-                    </label>
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="date"
-                        value={dateOfJoining}
-                        onChange={(e) => setDateOfJoining(e.target.value)}
-                        className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1 flex-1"
-                      />
+                    {CLIENT_DECISION_STAGES.has(pickedStage) && (
+                      <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400">
+                        <input type="checkbox" checked={clientRelayed} onChange={(e) => setClientRelayed(e.target.checked)} />
+                        The client told us this (outside the portal)
+                      </label>
+                    )}
+                    {JOINING_STAGES.has(pickedStage) && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-slate-400">Joining date (expected or confirmed)</label>
+                        <input
+                          type="date"
+                          value={dateOfJoining}
+                          onChange={(e) => setDateOfJoining(e.target.value)}
+                          className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1"
+                        />
+                      </div>
+                    )}
+                    {CLIENT_DECISION_STAGES.has(pickedStage) && pickedStage !== l.stage && (
+                      <button
+                        onClick={() => saveStage(l, pickedStage)}
+                        disabled={savingStage}
+                        className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11.5px] font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                      >
+                        Save stage
+                      </button>
+                    )}
+                    {pickedStage === l.stage && JOINING_STAGES.has(l.stage) && (
                       <button
                         onClick={() => saveJoiningDate(l)}
                         disabled={savingStage || !dateOfJoining}
-                        className="text-[10.5px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                        className="text-[11px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-40 text-left"
                       >
-                        Save
+                        Save joining date
                       </button>
-                    </div>
+                    )}
                     <button
                       onClick={() => {
                         setEditingStageId(null);
@@ -747,6 +814,7 @@ export default function MandateCandidatesTable({
                     <button
                       onClick={() => {
                         setEditingStageId(l.id);
+                        setPickedStage(l.stage as Stage);
                         setDateOfJoining(l.date_of_joining ?? "");
                       }}
                       className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${STAGE_COLOR[l.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
@@ -780,14 +848,40 @@ export default function MandateCandidatesTable({
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-col items-start gap-1">
-                  <button
-                    onClick={() => toggleShortlist(l.id, !l.in_shortlist)}
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      l.in_shortlist ? "bg-teal-100 text-teal-800 hover:bg-teal-200" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                    }`}
-                  >
-                    {l.in_shortlist ? "Yes — click to remove" : "No — click to add"}
-                  </button>
+                  {(() => {
+                    if (l.in_shortlist) {
+                      return (
+                        <>
+                          <span className="inline-flex rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium text-teal-800">Shared with client</span>
+                          <button onClick={() => toggleShortlist(l.id, false)} className="text-[11px] text-slate-400 underline hover:text-slate-600">
+                            Pull back
+                          </button>
+                        </>
+                      );
+                    }
+                    const missing = readiness[l.candidate.id];
+                    if (missing === undefined) return <span className="text-xs text-slate-400">Checking…</span>;
+                    if (missing.length === 0) {
+                      return (
+                        <>
+                          <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Ready to share</span>
+                          <button onClick={() => shareWithClient(l)} className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-500">
+                            Share with client
+                          </button>
+                        </>
+                      );
+                    }
+                    return (
+                      <>
+                        <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700" title={missing.join(", ")}>
+                          {missing.length} to confirm
+                        </span>
+                        <button onClick={() => setConfirmRow(l)} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                          Confirm details
+                        </button>
+                      </>
+                    );
+                  })()}
                   {/* Client's own click on the shortlist link -- see the
                       client_feedback field comment on MandateCandidateRow
                       above for why this needed its own badge. */}
@@ -836,6 +930,17 @@ export default function MandateCandidatesTable({
           />
         );
       })()}
+
+      {confirmRow && (
+        <ConfirmDetailsModal
+          candidateId={confirmRow.candidate.id}
+          candidateName={confirmRow.candidate.full_name}
+          blockers={readiness[confirmRow.candidate.id] ?? []}
+          onRecheck={() => refreshReadiness([confirmRow.candidate.id])}
+          onShare={() => shareWithClient(confirmRow)}
+          onClose={() => setConfirmRow(null)}
+        />
+      )}
 
       {rejectModalRow && (
         <MandateRejectModal
