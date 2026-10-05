@@ -91,10 +91,12 @@ export default function CallCompanion({
   candidate,
   doubts,
   recruiterName,
+  onSaved,
 }: {
   candidate: Candidate;
   doubts: string[];
   recruiterName: string;
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -216,6 +218,7 @@ export default function CallCompanion({
         (graduates ? " This candidate is now Registered." : "")
     );
     router.refresh();
+    onSaved?.();
   }
 
   return (

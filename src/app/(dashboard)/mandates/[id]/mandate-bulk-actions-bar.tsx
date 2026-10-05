@@ -84,17 +84,36 @@ export default function MandateBulkActionsBar({
     setMessage(null);
     const ids = Array.from(selected);
     const targetRows = rows.filter((r) => ids.includes(r.id));
-    const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).in("id", ids);
-    if (error) {
-      setBusy(false);
-      setMessage({ type: "error", text: error.message.replace(/^NOT_CLIENT_READY:\s*/, "") });
-      return;
+    // One candidate at a time, so a single not-ready candidate doesn't stop the rest
+    // and the message can say exactly who needs what.
+    const shared: typeof targetRows = [];
+    const blocked: string[] = [];
+    for (const row of targetRows) {
+      const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).eq("id", row.id);
+      if (error) {
+        const why = error.message.includes("Still needed:")
+          ? error.message.split("Still needed:")[1].split(". Complete these")[0].trim()
+          : error.message;
+        blocked.push(`${row.candidate.full_name} (${why})`);
+      } else {
+        shared.push(row);
+      }
     }
-    setRows((prev) => prev.map((r) => (ids.includes(r.id) ? { ...r, in_shortlist: true } : r)));
-    await Promise.all(targetRows.map((row) => syncStageForShortlist(row, true)));
+    if (shared.length > 0) {
+      const sharedIds = shared.map((r) => r.id);
+      setRows((prev) => prev.map((r) => (sharedIds.includes(r.id) ? { ...r, in_shortlist: true } : r)));
+      await Promise.all(shared.map((row) => syncStageForShortlist(row, true)));
+    }
     setBusy(false);
-    setSelected(new Set());
-    setMessage({ type: "success", text: `Moved ${ids.length} candidate${ids.length === 1 ? "" : "s"} to the client shortlist and set stage to submitted.` });
+    setSelected(new Set(blocked.length > 0 ? targetRows.filter((r) => !shared.includes(r)).map((r) => r.id) : []));
+    setMessage({
+      type: blocked.length > 0 ? "error" : "success",
+      text:
+        (shared.length > 0 ? `Shared ${shared.length} with the client. ` : "") +
+        (blocked.length > 0
+          ? `Not ready, so not shared: ${blocked.join("; ")}. Use "Confirm details" on each row.`
+          : ""),
+    });
     router.refresh();
   }
 
