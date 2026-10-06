@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutGrid, Table2, Sparkles, Loader2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
@@ -52,22 +52,6 @@ export default function MandateCandidatesView({
   const [view, setView] = useState<"board" | "table">("table");
   const [scoring, setScoring] = useState(false);
   const [scoreMessage, setScoreMessage] = useState<{ text: string; messageTone: "success" | "error" } | null>(null);
-  // Board/Table both seed local state from `rows` on mount only (see the
-  // stageFilter key comment below) -- router.refresh() alone re-fetches the
-  // rows prop but does NOT force either child to pick it up, since neither
-  // remounts on its own. Bumping this whenever `rows` actually changes (a
-  // new array reference lands from the server) and folding it into `key`
-  // forces a clean remount so any server-side data change -- Score
-  // pipeline, a stage edit elsewhere, another tab -- actually shows up here.
-  const [dataVersion, setDataVersion] = useState(0);
-  const mountedRef = useRef(false);
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-    setDataVersion((v) => v + 1);
-  }, [rows]);
 
   // Backfills match_score for candidates already on this pipeline who never
   // went through the Matching Workspace's "Add to pipeline" (bulk sourcing,
@@ -272,13 +256,10 @@ export default function MandateCandidatesView({
 
       {view === "board" ? (
         <MandateCandidatesBoard
-          // Both Board and Table seed their own local state from `rows` on
-          // mount (for optimistic stage-drag/edit updates) and never resync
-          // to a changed prop -- keying on the filter AND dataVersion forces
-          // a clean remount both when the filter changes and whenever the
-          // underlying rows actually change server-side (e.g. Score
-          // pipeline writing new match_score values).
-          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}-${dataVersion}`}
+          // Keyed on the filters so changing a filter starts the list fresh. New data from
+          // the server is picked up in place (see the comment where rows state is declared),
+          // so a refresh no longer closes a CV preview or window the recruiter has open.
+          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}`}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}
@@ -289,11 +270,8 @@ export default function MandateCandidatesView({
         />
       ) : (
         <MandateCandidatesTable
-          // Same remount-on-data-change reasoning as Board above -- Table
-          // is the default view, so this was the actual bug users hit
-          // ("scores didn't update after Score pipeline"): only Board's key
-          // included dataVersion, Table's didn't.
-          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}-${dataVersion}`}
+          // Same as Board above: filters reset the list; new server data is picked up in place.
+          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}`}
           rows={filteredRows}
           mandateContext={mandateContext}
           teamMembers={teamMembers}

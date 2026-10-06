@@ -198,6 +198,20 @@ export default function MandateCandidatesTable({
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
   const [flagMap, setFlagMap] = useState<Record<string, ExistingCallFlag>>(flaggedCallByCandidate);
+  // Pick up fresh data from the server IN PLACE. This view used to be torn down and rebuilt
+  // whenever new rows arrived, which closed anything open on it (a CV preview, a window) a few
+  // seconds after the page loaded, each time background work finished. React's recommended
+  // way to follow a changed prop is to adjust state while rendering, not to remount.
+  const [seenRows, setSeenRows] = useState(initialRows);
+  if (seenRows !== initialRows) {
+    setSeenRows(initialRows);
+    setRows(initialRows);
+  }
+  const [seenFlags, setSeenFlags] = useState(flaggedCallByCandidate);
+  if (seenFlags !== flaggedCallByCandidate) {
+    setSeenFlags(flaggedCallByCandidate);
+    setFlagMap(flaggedCallByCandidate);
+  }
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   // Which row is mid-edit on its stage select, and whether that edit is
