@@ -49,6 +49,7 @@ type Row = {
   highest_qualification: string;
   linkedin_url: string;
   current_fixed_ctc: string;
+  expected_fixed_ctc: string;
   notice_period: string;
   // Optional: a batch might be sourced for one specific mandate, or just
   // general pipeline-building with no mandate in mind -- so this defaults
@@ -188,6 +189,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           highest_qualification: (extracted.highest_qualification as string) ?? "",
           linkedin_url: (extracted.linkedin_url as string) ?? "",
           current_fixed_ctc: extracted.current_fixed_ctc != null ? String(extracted.current_fixed_ctc) : "",
+          expected_fixed_ctc: "",
           notice_period: (extracted.notice_period as string) ?? "",
           mandate_id: "",
           included: (r.ok as boolean) && !r.duplicate,
@@ -246,7 +248,8 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 skills: row.skills.length ? row.skills.join(", ") : null,
                 highest_qualification: row.highest_qualification || null,
                 linkedin_url: row.linkedin_url || null,
-                current_fixed_ctc: row.current_fixed_ctc ? Number(row.current_fixed_ctc) : null,
+                current_fixed_ctc: parseLakhs(row.current_fixed_ctc),
+                expected_fixed_ctc: parseLakhs(row.expected_fixed_ctc),
                 notice_period: row.notice_period || null,
                 current_location: row.current_location || null,
                 current_employer: row.current_employer || null,
@@ -597,6 +600,22 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     value={row.total_experience_years}
                     onChange={(v) => updateRow(row.fileName, { total_experience_years: v })}
                   />
+                  <Field
+                    label="Current fixed CTC (LPA)"
+                    value={row.current_fixed_ctc}
+                    placeholder="e.g. 18"
+                    inputMode="decimal"
+                    invalid={!!row.current_fixed_ctc.trim() && parseLakhs(row.current_fixed_ctc) === null}
+                    onChange={(v) => updateRow(row.fileName, { current_fixed_ctc: v })}
+                  />
+                  <Field
+                    label="Expected fixed CTC (LPA)"
+                    value={row.expected_fixed_ctc}
+                    placeholder="e.g. 24"
+                    inputMode="decimal"
+                    invalid={!!row.expected_fixed_ctc.trim() && parseLakhs(row.expected_fixed_ctc) === null}
+                    onChange={(v) => updateRow(row.fileName, { expected_fixed_ctc: v })}
+                  />
                   {mandates.length > 0 && (
                     <div>
                       <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
@@ -744,15 +763,43 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+// CTC is typed in lakhs per annum. Accepts "18", "18.5", or "18 LPA"; anything else is
+// treated as not a number so the box can warn instead of silently saving nothing.
+function parseLakhs(raw: string): number | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const m = t.match(/^(\d+(?:\.\d+)?)\s*(?:l|lpa|lac|lacs|lakh|lakhs)?$/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return n >= 0 && n <= 120 ? n : null;
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  inputMode,
+  invalid,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  inputMode?: "decimal" | "numeric" | "text";
+  invalid?: boolean;
+}) {
   return (
     <div>
       <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
+        placeholder={placeholder}
+        inputMode={inputMode}
+        className={`w-full rounded-lg border px-2 py-1 text-[12.5px] ${invalid ? "border-rose-300" : "border-slate-200 dark:border-slate-700"}`}
       />
+      {invalid && <p className="mt-0.5 text-[10.5px] text-rose-600">Enter a number in lakhs, like 18 or 18.5</p>}
     </div>
   );
 }
