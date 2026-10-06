@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Phone, Building2, Briefcase, ArrowRight, Trash2, ChevronDown, ChevronUp, Users2 } from "lucide-react";
+import { Mail, Phone, Building2, Briefcase, ArrowRight, Trash2, ChevronDown, ChevronUp, Users2, Clock, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -115,6 +115,55 @@ const FILTERS: { key: InquiryStatus | "all"; label: string }[] = [
   { key: "dismissed", label: "Dismissed" },
 ];
 
+// All dates are shown in Indian time, so "today" and "3 Oct" mean the same thing to everyone.
+const IST = "Asia/Kolkata";
+const dayKeyOf = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: IST }); // YYYY-MM-DD
+
+function dayHeading(key: string, now: number) {
+  const today = dayKeyOf(new Date(now).toISOString());
+  const yesterday = dayKeyOf(new Date(now - 86_400_000).toISOString());
+  const pretty = new Date(`${key}T12:00:00+05:30`).toLocaleDateString("en-IN", {
+    timeZone: IST,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  if (key === today) return `Today · ${pretty}`;
+  if (key === yesterday) return `Yesterday · ${pretty}`;
+  return pretty;
+}
+
+const receivedAt = (iso: string) =>
+  new Date(iso).toLocaleString("en-IN", { timeZone: IST, day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true });
+
+function ageText(iso: string, now: number) {
+  const mins = Math.floor(Math.max(0, now - new Date(iso).getTime()) / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+const waitingDays = (iso: string, now: number) => Math.floor((now - new Date(iso).getTime()) / 86_400_000);
+
+type DateRange = "all" | "today" | "7d" | "30d";
+const DATE_RANGES: { key: DateRange; label: string; days: number | null }[] = [
+  { key: "all", label: "Any date", days: null },
+  { key: "today", label: "Today", days: 0 },
+  { key: "7d", label: "Last 7 days", days: 7 },
+  { key: "30d", label: "Last 30 days", days: 30 },
+];
+
+const SOURCE_FILTERS: { key: InquirySource | "all"; label: string }[] = [
+  { key: "all", label: "All sources" },
+  { key: "employers_page", label: "Employer form" },
+  { key: "contact_page", label: "Contact page" },
+  { key: "client_mandate_request", label: "Client brief" },
+];
+
 export default function EmployerInquiriesView({
   initialRows,
   teamMembers,
@@ -126,6 +175,11 @@ export default function EmployerInquiriesView({
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState(initialRows);
   const [activeFilter, setActiveFilter] = useState<InquiryStatus | "all">("all");
+  const [dateRange, setDateRange] = useState<DateRange>("all");
+  const [sourceFilter, setSourceFilter] = useState<InquirySource | "all">("all");
+  const [query, setQuery] = useState("");
+  // Fixed when the page opens, so "3 days ago" doesn't change under your cursor.
+  const [now] = useState(() => Date.now());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Which row an error belongs to, so it renders under that specific card
@@ -183,10 +237,40 @@ export default function EmployerInquiriesView({
     setRows((cur) => cur.map((r) => (r.id === inquiryId ? { ...r, owner_id: ownerId } : r)));
   }
 
-  const filtered = useMemo(
-    () => (activeFilter === "all" ? rows : rows.filter((r) => r.status === activeFilter)),
-    [rows, activeFilter]
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const range = DATE_RANGES.find((d) => d.key === dateRange);
+    const todayKey = dayKeyOf(new Date(now).toISOString());
+    return rows
+      .filter((r) => activeFilter === "all" || r.status === activeFilter)
+      .filter((r) => sourceFilter === "all" || r.source === sourceFilter)
+      .filter((r) => {
+        if (!range || range.days === null) return true;
+        if (range.days === 0) return dayKeyOf(r.created_at) === todayKey;
+        return now - new Date(r.created_at).getTime() <= range.days * 86_400_000;
+      })
+      .filter(
+        (r) =>
+          !q ||
+          [r.company_name, r.full_name, r.work_email, r.role_title, r.message, r.designation]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(q))
+      )
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [rows, activeFilter, sourceFilter, dateRange, query, now]);
+
+  // Newest day first, newest inquiry first within each day.
+  const grouped = useMemo(() => {
+    const map = new Map<string, EmployerInquiryRow[]>();
+    for (const r of filtered) {
+      const key = dayKeyOf(r.created_at);
+      map.set(key, [...(map.get(key) ?? []), r]);
+    }
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  // New inquiries nobody has touched for a week: these are leads going cold.
+  const stale = useMemo(() => rows.filter((r) => r.status === "new" && waitingDays(r.created_at, now) >= 7), [rows, now]);
 
   async function setStatus(id: string, status: InquiryStatus) {
     const prev = rows;
@@ -523,12 +607,73 @@ export default function EmployerInquiriesView({
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        {DATE_RANGES.map((d) => (
+          <button
+            key={d.key}
+            onClick={() => setDateRange(d.key)}
+            className={`text-[12px] font-medium px-2.5 py-1 rounded-ros-full border transition-colors duration-200 ease-ros ${
+              dateRange === d.key
+                ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
+        <select
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value as InquirySource | "all")}
+          className="text-[12px] rounded-ros-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-slate-600 dark:text-slate-300"
+        >
+          {SOURCE_FILTERS.map((f) => (
+            <option key={f.key} value={f.key}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <div className="relative ml-auto">
+          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, company, email, message"
+            className="w-64 rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 pl-7 pr-2 text-[12px]"
+          />
+        </div>
+      </div>
+
+      {stale.length > 0 && activeFilter !== "new" && (
+        <button
+          type="button"
+          onClick={() => {
+            setActiveFilter("new");
+            setDateRange("all");
+          }}
+          className="mb-3 flex w-full items-center gap-2 rounded-ros-md border border-amber-200 bg-amber-50 px-3 py-2 text-left text-[12.5px] text-amber-800 hover:bg-amber-100"
+        >
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span suppressHydrationWarning>
+            <strong>{stale.length}</strong> new inquir{stale.length === 1 ? "y has" : "ies have"} been waiting a week or more. Show them.
+          </span>
+        </button>
+      )}
+
       {error && !errorRowId && (
         <p className="text-[12px] text-rose-600 dark:text-rose-400 mb-3">{error}</p>
       )}
 
-      <div className="space-y-2.5">
-        {filtered.map((row) => {
+      <div className="space-y-5">
+        {grouped.map(([key, items]) => (
+          <section key={key}>
+            <div className="sticky top-0 z-10 -mx-1 mb-2 flex items-baseline gap-2 bg-white/90 dark:bg-slate-950/90 px-1 py-1.5 backdrop-blur">
+              <h2 className="text-[12.5px] font-semibold text-slate-800 dark:text-slate-100" suppressHydrationWarning>{dayHeading(key, now)}</h2>
+              <span className="text-[11.5px] text-slate-400">
+                {items.length} inquir{items.length === 1 ? "y" : "ies"}
+              </span>
+            </div>
+            <div className="space-y-2.5">
+        {items.map((row) => {
           const isMandate = (row.source === "employers_page" || row.source === "client_mandate_request") && !!row.role_title;
           return (
             <Card key={row.id} padded={false} className="p-4">
@@ -671,7 +816,17 @@ export default function EmployerInquiriesView({
                         <Phone className="w-3 h-3" /> {row.mobile_number}
                       </span>
                     )}
-                    <span>{new Date(row.created_at).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-1 font-medium text-slate-600 dark:text-slate-300" title={new Date(row.created_at).toISOString()}>
+                      <Clock className="w-3 h-3" /> Received {receivedAt(row.created_at)}
+                      <span className="font-normal text-slate-400" suppressHydrationWarning> · {ageText(row.created_at, now)}</span>
+                    </span>
+                    {row.status === "new" && waitingDays(row.created_at, now) >= 2 && (
+                      <span suppressHydrationWarning>
+                        <Badge tone={waitingDays(row.created_at, now) >= 7 ? "danger" : "warning"} size="sm" className="normal-case tracking-normal">
+                          Waiting {waitingDays(row.created_at, now)} days
+                        </Badge>
+                      </span>
+                    )}
                   </div>
 
                   {expandedIds.has(row.id) && (
@@ -829,6 +984,9 @@ export default function EmployerInquiriesView({
             </Card>
           );
         })}
+            </div>
+          </section>
+        ))}
 
         {filtered.length === 0 && (
           <p className="text-[13px] text-slate-500 dark:text-slate-400 text-center py-8">No inquiries in this filter.</p>
