@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 
 export type InquiryStatus = "new" | "contacted" | "converted" | "dismissed";
+export type InquiryKind = "employer" | "jobseeker" | "spam";
 export type InquirySource = "employers_page" | "contact_page" | "client_mandate_request";
 
 export interface EmployerInquiryRow {
@@ -72,6 +73,8 @@ export interface EmployerInquiryRow {
   // client record instead of leaving mandates.client_id unset.
   existing_client_id: string | null;
   owner_id: string | null;
+  kind: InquiryKind;
+  kind_reason: string | null;
 }
 
 export type TeamMember = {
@@ -106,6 +109,14 @@ const CATEGORY_LABEL: Record<string, string> = {
   b2c_sales: "B2C Sales",
   non_sales: "Non-Sales / Other",
 };
+
+const KIND_TABS: { key: InquiryKind; label: string }[] = [
+  { key: "employer", label: "Employer leads" },
+  { key: "jobseeker", label: "Jobseekers" },
+  { key: "spam", label: "Spam & tests" },
+];
+
+const KIND_LABEL: Record<InquiryKind, string> = { employer: "an employer lead", jobseeker: "a jobseeker query", spam: "spam" };
 
 const FILTERS: { key: InquiryStatus | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -174,6 +185,7 @@ export default function EmployerInquiriesView({
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState(initialRows);
+  const [kindTab, setKindTab] = useState<InquiryKind>("employer");
   const [activeFilter, setActiveFilter] = useState<InquiryStatus | "all">("all");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [sourceFilter, setSourceFilter] = useState<InquirySource | "all">("all");
@@ -242,6 +254,7 @@ export default function EmployerInquiriesView({
     const range = DATE_RANGES.find((d) => d.key === dateRange);
     const todayKey = dayKeyOf(new Date(now).toISOString());
     return rows
+      .filter((r) => r.kind === kindTab)
       .filter((r) => activeFilter === "all" || r.status === activeFilter)
       .filter((r) => sourceFilter === "all" || r.source === sourceFilter)
       .filter((r) => {
@@ -257,7 +270,7 @@ export default function EmployerInquiriesView({
             .some((v) => String(v).toLowerCase().includes(q))
       )
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [rows, activeFilter, sourceFilter, dateRange, query, now]);
+  }, [rows, kindTab, activeFilter, sourceFilter, dateRange, query, now]);
 
   // Newest day first, newest inquiry first within each day.
   const grouped = useMemo(() => {
@@ -270,7 +283,18 @@ export default function EmployerInquiriesView({
   }, [filtered]);
 
   // New inquiries nobody has touched for a week: these are leads going cold.
-  const stale = useMemo(() => rows.filter((r) => r.status === "new" && waitingDays(r.created_at, now) >= 7), [rows, now]);
+  const stale = useMemo(() => rows.filter((r) => r.kind === "employer" && r.status === "new" && waitingDays(r.created_at, now) >= 7), [rows, now]);
+
+  async function moveTo(id: string, kind: InquiryKind) {
+    const prev = rows;
+    setRows((cur) => cur.map((r) => (r.id === id ? { ...r, kind } : r)));
+    const { error: moveError } = await supabase.rpc("mark_inquiry_kind", { p_id: id, p_kind: kind });
+    if (moveError) {
+      setRows(prev);
+      setErrorRowId(id);
+      setError(moveError.message);
+    }
+  }
 
   async function setStatus(id: string, status: InquiryStatus) {
     const prev = rows;
@@ -581,6 +605,41 @@ export default function EmployerInquiriesView({
         </div>
       )}
 
+      <div className="mb-3 flex items-center gap-1 border-b border-slate-200 dark:border-slate-700">
+        {KIND_TABS.map((t) => {
+          const count = rows.filter((r) => r.kind === t.key).length;
+          const active = kindTab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => {
+                setKindTab(t.key);
+                setActiveFilter("all");
+                setSelected(new Set());
+              }}
+              className={`-mb-px border-b-2 px-3 py-2 text-[13px] font-medium transition-colors ${
+                active
+                  ? "border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100"
+                  : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              }`}
+            >
+              {t.label} <span className="ml-1 text-[11.5px] text-slate-400">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {kindTab === "jobseeker" && (
+        <p className="mb-3 text-[12px] text-slate-500 dark:text-slate-400">
+          People who wrote in as jobseekers. Reply by email, then mark them as replied.
+        </p>
+      )}
+      {kindTab === "spam" && (
+        <p className="mb-3 text-[12px] text-slate-500 dark:text-slate-400">
+          Caught automatically (marketing pitches, tests, blocked senders). If something here is real, use &ldquo;Not spam&rdquo;.
+        </p>
+      )}
+
       <div className="flex items-center gap-1.5 mb-3">
         <label className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 mr-1 cursor-pointer select-none">
           <input
@@ -602,7 +661,7 @@ export default function EmployerInquiriesView({
             }`}
           >
             {f.label}
-            {f.key !== "all" && ` (${rows.filter((r) => r.status === f.key).length})`}
+            {f.key !== "all" && ` (${rows.filter((r) => r.kind === kindTab && r.status === f.key).length})`}
           </button>
         ))}
       </div>
@@ -643,7 +702,7 @@ export default function EmployerInquiriesView({
         </div>
       </div>
 
-      {stale.length > 0 && activeFilter !== "new" && (
+      {kindTab === "employer" && stale.length > 0 && activeFilter !== "new" && (
         <button
           type="button"
           onClick={() => {
@@ -708,6 +767,11 @@ export default function EmployerInquiriesView({
                     {row.existing_client_id && (
                       <Badge tone="success" size="sm" className="normal-case tracking-normal">
                         Existing client
+                      </Badge>
+                    )}
+                    {row.kind !== "employer" && row.kind_reason && (
+                      <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
+                        {row.kind_reason}
                       </Badge>
                     )}
                     {row.audience && (
@@ -929,7 +993,17 @@ export default function EmployerInquiriesView({
                     );
                   })()}
 
-                  {isMandate ? (
+                  {row.kind === "jobseeker" && row.status === "new" && (
+                    <button
+                      onClick={() => setStatus(row.id, "contacted")}
+                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-blue-600 hover:bg-blue-500 text-white transition-colors duration-200 ease-ros"
+                    >
+                      <Mail className="w-3 h-3" />
+                      Mark replied
+                    </button>
+                  )}
+
+                  {row.kind === "employer" && (isMandate ? (
                     <button
                       onClick={() => createMandate(row)}
                       disabled={busyId === row.id}
@@ -959,13 +1033,13 @@ export default function EmployerInquiriesView({
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     )
-                  )}
+                  ))}
 
                   {/* Not ready to be a mandate/client, or just want to keep
                       it warm without committing -- send it to the Sales
                       pipeline instead. Hidden once the inquiry has already
                       been converted some other way. */}
-                  {row.company_name && !row.converted_mandate_id && !row.converted_client_id && (
+                  {row.kind === "employer" && row.company_name && !row.converted_mandate_id && !row.converted_client_id && (
                     <button
                       onClick={() => convertToSalesLead(row)}
                       disabled={busyId === row.id}
@@ -979,6 +1053,20 @@ export default function EmployerInquiriesView({
                         : "Move to Sales Lead"}
                     </button>
                   )}
+
+                  <div className="flex flex-col items-end gap-0.5 text-[11.5px]">
+                    {(["employer", "jobseeker", "spam"] as InquiryKind[])
+                      .filter((k) => k !== row.kind)
+                      .map((k) => (
+                        <button
+                          key={k}
+                          onClick={() => moveTo(row.id, k)}
+                          className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline-offset-2 hover:underline"
+                        >
+                          {row.kind === "spam" && k === "employer" ? "Not spam" : `This is ${KIND_LABEL[k]}`}
+                        </button>
+                      ))}
+                  </div>
                 </div>
               </div>
             </Card>

@@ -20,7 +20,7 @@ export default async function EmployerInquiriesPage() {
   const { data: inquiries } = await supabase
     .from("employer_inquiries")
     .select(
-      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, audience, message, role_title, category, city, budget_min, budget_max, source, status, notes, converted_client_id, converted_mandate_id, converted_lead_id, sub_domains, cities, experience_min, experience_max, hiring_reason, team_handling, team_size_band, work_mode, working_days, shift_timing, reporting_manager_title, company_size_band, company_highlight_links, sales_cycle, deal_size_currency, deal_size_band, customer_profile, expectation_3_month, expectation_6_month, expectation_1_year, selling_style, preferred_industries, industries_sold_to, languages_required, week_off, week_off_type, rotational_offs_per_week, mandatory_working_days, b2c_customer_types, client_profile, existing_client_id, owner_id"
+      "id, created_at, company_name, industry, custom_industry, full_name, designation, work_email, mobile_number, audience, message, role_title, category, city, budget_min, budget_max, source, status, notes, converted_client_id, converted_mandate_id, converted_lead_id, sub_domains, cities, experience_min, experience_max, hiring_reason, team_handling, team_size_band, work_mode, working_days, shift_timing, reporting_manager_title, company_size_band, company_highlight_links, sales_cycle, deal_size_currency, deal_size_band, customer_profile, expectation_3_month, expectation_6_month, expectation_1_year, selling_style, preferred_industries, industries_sold_to, languages_required, week_off, week_off_type, rotational_offs_per_week, mandatory_working_days, b2c_customer_types, client_profile, existing_client_id, owner_id, kind, kind_reason"
     )
     .order("created_at", { ascending: false });
 
@@ -51,15 +51,18 @@ export default async function EmployerInquiriesPage() {
     .select("id, full_name, email, role, specialties")
     .order("full_name", { ascending: true });
 
+  // Headline numbers count genuine employer leads only: jobseeker queries
+  // and spam have their own tabs and must not inflate "New".
+  const employerRows = rows.filter((r) => r.kind === "employer");
   const counts = {
-    total: rows.length,
-    new: rows.filter((r) => r.status === "new").length,
-    converted: rows.filter((r) => r.status === "converted").length,
-    dismissed: rows.filter((r) => r.status === "dismissed").length,
+    total: employerRows.length,
+    new: employerRows.filter((r) => r.status === "new").length,
+    converted: employerRows.filter((r) => r.status === "converted").length,
+    dismissed: employerRows.filter((r) => r.status === "dismissed").length,
   };
 
   const statTiles = [
-    { label: "Total inquiries", value: counts.total, icon: Building2, accent: true },
+    { label: "Employer leads", value: counts.total, icon: Building2, accent: true },
     { label: "New", value: counts.new, icon: Inbox },
     { label: "Converted", value: counts.converted, icon: CheckCircle2 },
     { label: "Dismissed", value: counts.dismissed, icon: XCircle },
@@ -71,7 +74,7 @@ export default async function EmployerInquiriesPage() {
         <div>
           <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Employer Inquiries</h1>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Mandate + Contact Us submissions from staffanchor.com, awaiting recruiter review
+            Genuine hiring enquiries from staffanchor.com. Jobseeker queries and spam are filed in their own tabs
           </p>
         </div>
       </div>
