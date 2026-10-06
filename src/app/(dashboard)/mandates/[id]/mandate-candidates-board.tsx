@@ -124,6 +124,20 @@ export default function MandateCandidatesBoard({
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
   const [flagMap, setFlagMap] = useState<Record<string, ExistingCallFlag>>(flaggedCallByCandidate);
+  // Pick up fresh data from the server IN PLACE. This view used to be torn down and rebuilt
+  // whenever new rows arrived, which closed anything open on it (a CV preview, a window) a few
+  // seconds after the page loaded, each time background work finished. React's recommended
+  // way to follow a changed prop is to adjust state while rendering, not to remount.
+  const [seenRows, setSeenRows] = useState(initialRows);
+  if (seenRows !== initialRows) {
+    setSeenRows(initialRows);
+    setRows(initialRows);
+  }
+  const [seenFlags, setSeenFlags] = useState(flaggedCallByCandidate);
+  if (seenFlags !== flaggedCallByCandidate) {
+    setSeenFlags(flaggedCallByCandidate);
+    setFlagMap(flaggedCallByCandidate);
+  }
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
   const [reassessingIds, setReassessingIds] = useState<Set<string>>(new Set());
