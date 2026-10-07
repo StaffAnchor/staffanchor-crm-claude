@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateTextWithFallback } from "@/lib/ai-providers";
+import { ctcBand } from "@/lib/sales-circle";
+import { maskClientName } from "@/lib/blind-text";
 
 // Drafts the referrer-facing "crisp write-up" for a mandate: a short,
 // jargon-free summary a non-recruiter referrer can read in 10 seconds to
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: mandate, error: mandateError } = await supabase
     .from("mandates")
     .select(
-      "role_title, category, sub_domain, city, budget_min, budget_max, team_size_band, company_size_band, must_haves, good_to_haves, job_description, jd_overview, jd_responsibilities, jd_candidate_profile"
+      "role_title, client_name, category, sub_domain, city, budget_min, budget_max, team_size_band, company_size_band, must_haves, good_to_haves, job_description, jd_overview, jd_responsibilities, jd_candidate_profile"
     )
     .eq("id", id)
     .single();
@@ -36,10 +38,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json().catch(() => ({}));
   const adminNotes: string = typeof body.adminNotes === "string" ? body.adminNotes.trim() : "";
 
-  const budgetLine =
-    mandate.budget_min != null && mandate.budget_max != null
-      ? `₹${(mandate.budget_min / 100000).toFixed(1)}L - ₹${(mandate.budget_max / 100000).toFixed(1)}L`
-      : "not specified";
+  // Budgets are stored in lakhs per annum already; never divide by 100000.
+  const budgetLine = ctcBand(mandate.budget_min, mandate.budget_max) ?? "not specified";
 
   const jdParts = [mandate.jd_overview, mandate.jd_responsibilities, mandate.jd_candidate_profile, mandate.job_description]
     .filter(Boolean)
@@ -64,7 +64,8 @@ Write a crisp 3-5 sentence summary a referrer can skim in 10 seconds. Plain lang
 
   try {
     const result = await generateTextWithFallback(prompt);
-    return NextResponse.json({ summary: result.text.trim(), provider: result.provider });
+    // Belt and braces: even if the model slips and names the company, mask it before the admin ever sees it.
+    return NextResponse.json({ summary: maskClientName(result.text.trim(), mandate.client_name), provider: result.provider });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "AI generation failed" }, { status: 500 });
   }

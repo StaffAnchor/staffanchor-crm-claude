@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import ReferralJourneyRow, { type ReferralJourneyData } from "./referral-journey-row";
+import Link from "next/link";
+import type { ReferralJourneyData } from "./referral-journey-row";
+import ReferralsBoard from "./referrals-board";
 
 // Referrer-facing status list with a per-referral journey timeline.
 // internal_notes is deliberately never selected here -- referrers see
@@ -16,12 +18,17 @@ import ReferralJourneyRow, { type ReferralJourneyData } from "./referral-journey
 // upload path in api/referrer/referrals/route.ts).
 export default async function MyReferralsPage() {
   const supabase = await createClient();
+  // No join to mandates: that would pull in the client name. Role titles come
+  // from a function that returns the title only.
   const { data: referrals } = await supabase
     .from("sales_circle_referrals")
     .select(
-      "id, candidate_name, candidate_current_company, status, status_reason, created_at, mandate_id, resume_file_path, candidate_sales_experience, candidate_total_experience_years, candidate_expected_ctc, candidate_notice_period, why_fit, mandates(role_title, client_name)"
+      "id, candidate_name, candidate_current_company, status, status_reason, created_at, mandate_id, resume_file_path, candidate_sales_experience, candidate_total_experience_years, candidate_expected_ctc, candidate_notice_period, why_fit"
     )
     .order("created_at", { ascending: false });
+
+  const { data: roleTitles } = await supabase.rpc("referrer_role_titles");
+  const titleById = new Map(((roleTitles ?? []) as { id: string; role_title: string }[]).map((r) => [r.id, r.role_title]));
 
   const referralIds = (referrals ?? []).map((r) => r.id);
   const { data: historyRaw } = referralIds.length
@@ -51,38 +58,38 @@ export default async function MyReferralsPage() {
     }
   }
 
-  const journeyData: ReferralJourneyData[] = (referrals ?? []).map((r) => {
-    const mandate = Array.isArray(r.mandates) ? r.mandates[0] : r.mandates;
-    return {
-      id: r.id,
-      candidate_name: r.candidate_name,
-      candidate_current_company: r.candidate_current_company,
-      status: r.status,
-      created_at: r.created_at,
-      role_title: mandate?.role_title ?? null,
-      client_name: mandate?.client_name ?? null,
-      resume_signed_url: r.resume_file_path ? resumeUrlByPath[r.resume_file_path] ?? null : null,
-      candidate_sales_experience: r.candidate_sales_experience,
-      candidate_total_experience_years: r.candidate_total_experience_years,
-      candidate_expected_ctc: r.candidate_expected_ctc,
-      candidate_notice_period: r.candidate_notice_period,
-      why_fit: r.why_fit,
-      history: historyByReferral.get(r.id) ?? [],
-    };
-  });
+  const journeyData: ReferralJourneyData[] = (referrals ?? []).map((r) => ({
+    id: r.id,
+    candidate_name: r.candidate_name,
+    candidate_current_company: r.candidate_current_company,
+    status: r.status,
+    created_at: r.created_at,
+    role_title: r.mandate_id ? titleById.get(r.mandate_id) ?? null : null,
+    resume_signed_url: r.resume_file_path ? resumeUrlByPath[r.resume_file_path] ?? null : null,
+    candidate_sales_experience: r.candidate_sales_experience,
+    candidate_total_experience_years: r.candidate_total_experience_years,
+    candidate_expected_ctc: r.candidate_expected_ctc,
+    candidate_notice_period: r.candidate_notice_period,
+    why_fit: r.why_fit,
+    history: historyByReferral.get(r.id) ?? [],
+  }));
 
   return (
-    <div className="max-w-[900px] mx-auto px-5 py-8">
-      <h1 className="text-xl font-semibold text-slate-900">My Referrals</h1>
-      <p className="text-sm text-slate-500 mt-1">Every candidate you&apos;ve referred, and where they are. Tap a row to see the full journey.</p>
+    <div className="mx-auto max-w-[900px] px-5 py-8">
+      <h1 className="text-[22px] font-semibold tracking-tight text-slate-900">My referrals</h1>
+      <p className="mt-1 text-[14px] text-slate-500">Everyone you&apos;ve referred and exactly where they are. Open a name to see their full journey.</p>
 
       {journeyData.length === 0 ? (
-        <p className="text-sm text-slate-400 mt-8">No referrals yet. Head to Roles or Refer someone to get started.</p>
+        <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+          <p className="text-[15px] font-medium text-slate-700">You haven&apos;t referred anyone yet</p>
+          <p className="mt-1 text-[13px] text-slate-400">Pick a role that fits someone you know, and we&apos;ll take it from there.</p>
+          <Link href="/referrer/roles" className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white hover:bg-slate-700">
+            See open roles
+          </Link>
+        </div>
       ) : (
-        <div className="mt-6 divide-y divide-slate-100 bg-white rounded-xl border border-slate-200">
-          {journeyData.map((r) => (
-            <ReferralJourneyRow key={r.id} referral={r} />
-          ))}
+        <div className="mt-6">
+          <ReferralsBoard referrals={journeyData} />
         </div>
       )}
     </div>

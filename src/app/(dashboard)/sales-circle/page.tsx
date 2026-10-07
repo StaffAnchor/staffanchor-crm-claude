@@ -3,11 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import ReferrerApplicationsPanel from "./referrer-applications-panel";
 import ReferrersTable from "./referrers-table";
-import ReferralsStatusControl from "./referrals-status-control";
+import ReferralsAdmin, { type AdminReferral } from "./referrals-admin";
+import RolesAdmin, { type AdminRole } from "./roles-admin";
+import { ctcBand, inr } from "@/lib/sales-circle";
 import PayoutSlabsPanel from "./payout-slabs-panel";
 import PayoutsPanel from "./payouts-panel";
-import MandateVisibilityControl from "./mandate-visibility-control";
-import ReferralDetailsToggle from "./referral-details-toggle";
 
 // Admin control room for the Sales Circle referral network -- external
 // referrers (not vendors: passive one-time introducers, capped slab
@@ -38,7 +38,7 @@ export default async function SalesCirclePage() {
   const { data: referralsRaw } = await supabase
     .from("sales_circle_referrals")
     .select(
-      "id, candidate_name, candidate_phone, candidate_email, candidate_linkedin_url, status, created_at, referrer_id, mandate_id, resume_file_path, candidate_sales_experience, candidate_total_experience_years, candidate_expected_ctc, candidate_notice_period, why_fit, sales_circle_referrers(full_name), mandates(role_title, client_name)"
+      "id, candidate_name, candidate_phone, candidate_email, candidate_linkedin_url, status, created_at, referrer_id, mandate_id, resume_file_path, candidate_sales_experience, candidate_total_experience_years, candidate_expected_ctc, candidate_notice_period, why_fit, sales_circle_referrers(full_name), mandates(role_title, client_name, budget_min, budget_max)"
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -55,7 +55,7 @@ export default async function SalesCirclePage() {
     }
   }
 
-  const referrals = (referralsRaw ?? []).map((r) => {
+  const referrals: AdminReferral[] = (referralsRaw ?? []).map((r) => {
     const referrer = Array.isArray(r.sales_circle_referrers) ? r.sales_circle_referrers[0] : r.sales_circle_referrers;
     const mandate = Array.isArray(r.mandates) ? r.mandates[0] : r.mandates;
     return {
@@ -66,6 +66,7 @@ export default async function SalesCirclePage() {
       referrer_name: referrer?.full_name ?? "—",
       role_title: mandate?.role_title ?? "Bench",
       client_name: mandate?.client_name ?? "—",
+      ctc: ctcBand(mandate?.budget_min, mandate?.budget_max),
       details: {
         resume_signed_url: r.resume_file_path ? referralResumeUrlByPath[r.resume_file_path] ?? null : null,
         candidate_sales_experience: r.candidate_sales_experience,
@@ -95,121 +96,111 @@ export default async function SalesCirclePage() {
     return { ...p, candidate_name: referral?.candidate_name ?? "—" };
   });
 
-  const { data: visibleMandates } = await supabase
+  const { data: roleRows } = await supabase
     .from("mandates")
     .select(
-      "id, role_title, client_name, referral_visible, referral_reveal_company_to_trusted, referral_summary, is_archived"
+      "id, role_title, client_name, status, is_archived, category, sub_domain, city, cities, work_mode, working_days, week_off, shift_timing, experience_min, experience_max, budget_min, budget_max, team_size_band, company_size_band, team_handling, sales_cycle, deal_size_currency, deal_size_band, selling_style, languages_required, industries_sold_to, seniority_band, must_haves, good_to_haves, referral_summary, referral_visible, referral_reveal_company_to_trusted, created_at"
     )
     .eq("is_archived", false)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(200);
+  const adminRoles = ((roleRows ?? []) as unknown as AdminRole[]).map((r) => ({ ...r, company_name: null, payout_amount: null }));
+
+  // Headline numbers for the strip at the top.
+  const today = new Date().getTime();
+  const approved = (referrers ?? []).filter((r) => r.status === "approved");
+  const joinedReferrers = approved.filter((r) => r.tos_accepted_at).length;
+  const notJoinedYet = approved.length - joinedReferrers;
+  const rolesLive = adminRoles.filter((r) => r.referral_visible).length;
+  const needsScreening = referrals.filter((r) => r.status === "submitted").length;
+  const waitingLong = referrals.filter((r) => r.status === "submitted" && today - new Date(r.created_at).getTime() > 2 * 86_400_000).length;
+  const inProgress = referrals.filter((r) => !["submitted", "joined", "ninety_days_completed", "payment_received", "payout_processed", "not_suitable", "candidate_declined", "dropped_out", "left_before_90_days"].includes(r.status)).length;
+  const toPay = payouts.filter((p) => p.status === "eligible").reduce((a, p) => a + Number(p.computed_payout_amount ?? p.slab_amount ?? 0), 0);
+  const onItsWay = payouts.filter((p) => p.status === "pending").reduce((a, p) => a + Number(p.computed_payout_amount ?? p.slab_amount ?? 0), 0);
+  const applicationsWaiting = (pendingApplications ?? []).length;
+
+  const kpis: { label: string; value: string; sub: string; href: string; tone?: "alert" }[] = [
+    { label: "Applications", value: String(applicationsWaiting), sub: applicationsWaiting ? "waiting for review" : "all reviewed", href: "#applications", tone: applicationsWaiting ? "alert" : undefined },
+    { label: "Referrers", value: String(joinedReferrers), sub: notJoinedYet ? `${notJoinedYet} approved, not joined yet` : "active", href: "#referrers", tone: notJoinedYet ? "alert" : undefined },
+    { label: "Roles live", value: String(rolesLive), sub: `${adminRoles.filter((r) => r.referral_visible).length ? "on the referrer board" : "none on the board yet"}`, href: "#roles" },
+    { label: "To screen", value: String(needsScreening), sub: waitingLong ? `${waitingLong} waiting over 2 days` : "referrals", href: "#referrals", tone: waitingLong ? "alert" : undefined },
+    { label: "In progress", value: String(inProgress), sub: "referrals moving", href: "#referrals" },
+    { label: "Payouts", value: inr(toPay), sub: `${inr(onItsWay)} on its way`, href: "#payouts", tone: toPay ? "alert" : undefined },
+  ];
+
+  const jump = [
+    ["#applications", "Applications"],
+    ["#referrers", "Referrers"],
+    ["#roles", "Roles"],
+    ["#referrals", "Referrals"],
+    ["#payouts", "Payouts"],
+    ["#slabs", "Payout slabs"],
+  ];
 
   return (
-    <div className="max-w-[1500px] mx-auto px-5 py-8 space-y-8">
+    <div className="mx-auto max-w-[1500px] space-y-8 px-5 py-8">
       <div>
-        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Sales Circle</h1>
+        <h1 className="text-ros-display mb-1 font-semibold tracking-tight text-slate-900 dark:text-slate-100">Sales Circle</h1>
         <p className="text-[13px] text-slate-500 dark:text-slate-400">
-          External referrer network -- pending applications, active referrers, referral pipeline, payout slabs and
-          payout ledger.
+          Your referral network: who applies, which roles they see, who they refer, and what they earn.
         </p>
       </div>
 
-      <section className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {kpis.map((k) => (
+          <a
+            key={k.label}
+            href={k.href}
+            className={`rounded-xl border bg-white p-4 transition-shadow hover:shadow-sm dark:bg-slate-900 ${k.tone === "alert" ? "border-amber-300 dark:border-amber-700" : "border-slate-200 dark:border-slate-700"}`}
+          >
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{k.label}</div>
+            <div className="mt-1 text-[24px] font-bold leading-none text-slate-900 dark:text-slate-100">{k.value}</div>
+            <div className={`mt-1.5 text-[11.5px] ${k.tone === "alert" ? "font-medium text-amber-700 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>{k.sub}</div>
+          </a>
+        ))}
+      </div>
+
+      <nav className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-1 bg-white/90 px-1 py-2 backdrop-blur dark:bg-slate-950/90">
+        {jump.map(([href, label]) => (
+          <a key={href} href={href} className="rounded-full px-3 py-1 text-[12.5px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <section id="applications" className="scroll-mt-16 space-y-3">
         <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Pending applications</h2>
         <ReferrerApplicationsPanel applications={pendingApplications ?? []} />
       </section>
 
-      <section className="space-y-3">
+      <section id="referrers" className="scroll-mt-16 space-y-3">
         <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Referrers</h2>
         <ReferrersTable referrers={referrers ?? []} />
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Roles visible on referrer board</h2>
+      <section id="roles" className="scroll-mt-16 space-y-3">
+        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Roles on the referrer board</h2>
         <p className="text-[12px] text-slate-500 dark:text-slate-400">
-          Toggle which open mandates referrers can see and refer against, and whether Trusted-tier referrers see the
-          client company name.
+          Choose which open roles referrers can see. Each role shows how complete it is, so referrers see clear CTC, experience and requirements. Use
+          &ldquo;Preview as referrer&rdquo; to see exactly what they get. The client name stays hidden unless you reveal it to Trusted referrers.
         </p>
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <table className="w-full text-[13px]">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
-              <tr>
-                <th className="text-left font-medium px-3 py-2">Role</th>
-                <th className="text-left font-medium px-3 py-2">Client</th>
-                <th className="text-left font-medium px-3 py-2">Visibility</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {(visibleMandates ?? []).map((m) => (
-                <tr key={m.id}>
-                  <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{m.role_title}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{m.client_name}</td>
-                  <td className="px-3 py-2">
-                    <MandateVisibilityControl
-                      mandateId={m.id}
-                      roleTitle={m.role_title}
-                      referralVisible={m.referral_visible}
-                      revealCompany={m.referral_reveal_company_to_trusted}
-                      referralSummary={m.referral_summary}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <RolesAdmin roles={adminRoles} slabs={slabs ?? []} />
       </section>
 
-      <section className="space-y-3">
+      <section id="referrals" className="scroll-mt-16 space-y-3">
         <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Referrals</h2>
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <table className="w-full text-[13px]">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
-              <tr>
-                <th className="text-left font-medium px-3 py-2">Candidate</th>
-                <th className="text-left font-medium px-3 py-2">Referrer</th>
-                <th className="text-left font-medium px-3 py-2">Role</th>
-                <th className="text-left font-medium px-3 py-2">Status</th>
-                <th className="text-left font-medium px-3 py-2">Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {referrals.map((r) => (
-                <tr key={r.id}>
-                  <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{r.candidate_name}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{r.referrer_name}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
-                    {r.role_title}
-                    <div className="text-[11px] text-slate-400">{r.client_name}</div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <ReferralsStatusControl referralId={r.id} currentStatus={r.status} />
-                  </td>
-                  <td className="px-3 py-2">
-                    <ReferralDetailsToggle details={r.details} />
-                  </td>
-                </tr>
-              ))}
-              {referrals.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
-                    No referrals yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ReferralsAdmin referrals={referrals} />
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Payout slabs</h2>
-        <PayoutSlabsPanel slabs={slabs ?? []} />
-      </section>
-
-      <section className="space-y-3">
+      <section id="payouts" className="scroll-mt-16 space-y-3">
         <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Payouts</h2>
         <PayoutsPanel payouts={payouts} />
+      </section>
+
+      <section id="slabs" className="scroll-mt-16 space-y-3">
+        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Payout slabs</h2>
+        <p className="text-[12px] text-slate-500 dark:text-slate-400">What a referrer earns for a role, by the role&apos;s annual CTC budget. A role&apos;s budget is matched to a band automatically.</p>
+        <PayoutSlabsPanel slabs={slabs ?? []} />
       </section>
     </div>
   );

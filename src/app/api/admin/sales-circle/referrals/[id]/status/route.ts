@@ -68,12 +68,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const mandate = Array.isArray(referral.mandates) ? referral.mandates[0] : referral.mandates;
       let slabAmount: number | null = null;
       if (mandate?.budget_max != null) {
+        // budget_max is in lakhs per annum; the slab bands are stored in rupees.
+        const budgetRupees = Number(mandate.budget_max) * 100000;
         const { data: slab } = await supabase
           .from("sales_circle_payout_slabs")
           .select("payout_amount")
           .eq("active", true)
-          .lte("ctc_band_min", mandate.budget_max)
-          .or(`ctc_band_max.is.null,ctc_band_max.gt.${mandate.budget_max}`)
+          .lte("ctc_band_min", budgetRupees)
+          .or(`ctc_band_max.is.null,ctc_band_max.gt.${budgetRupees}`)
           .order("ctc_band_min", { ascending: false })
           .limit(1)
           .maybeSingle();

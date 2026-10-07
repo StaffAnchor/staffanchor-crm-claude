@@ -3,16 +3,9 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ctcBand, experienceBand, inr, lpa, locationText, categoryLabel as roleCategoryLabel, type RoleCardData } from "@/lib/sales-circle";
 
-type MandateSummary = {
-  id: string;
-  role_title: string;
-  category: string | null;
-  budget_min: number | null;
-  budget_max: number | null;
-  experience_min: number | null;
-  experience_max: number | null;
-};
+type MandateSummary = Pick<RoleCardData, "id" | "role_title" | "category" | "budget_min" | "budget_max" | "experience_min" | "experience_max" | "city" | "cities" | "payout_amount">;
 
 const SALES_EXPERIENCE_OPTIONS = [
   { value: "b2b_sales", label: "B2B sales" },
@@ -21,10 +14,10 @@ const SALES_EXPERIENCE_OPTIONS = [
   { value: "neither", label: "Neither / not a sales background" },
 ];
 
-function formatLakhs(n: number | null): string {
-  if (n == null) return "—";
-  return `₹${(n / 100000).toFixed(1)}L`;
-}
+// Budgets and expected CTC are in lakhs per annum. A referrer might type rupees
+// (11,00,000); anything over 1,000 is treated as rupees and converted.
+const toLakhs = (n: number) => (n > 1000 ? n / 100000 : n);
+const formatLakhs = (n: number | string | null) => lpa(n);
 
 function categoryLabel(category: string | null): string {
   if (category === "b2b_sales") return "B2B sales";
@@ -66,16 +59,16 @@ function fitHints(mandate: MandateSummary | null, salesExperience: string, exper
     });
   }
 
-  const ctc = Number(expectedCtc);
+  const ctc = toLakhs(Number(expectedCtc));
   if (expectedCtc && !Number.isNaN(ctc) && (mandate.budget_min != null || mandate.budget_max != null)) {
-    const min = mandate.budget_min ?? 0;
-    const max = mandate.budget_max ?? Infinity;
+    const min = Number(mandate.budget_min ?? 0);
+    const max = Number(mandate.budget_max ?? Infinity);
     const inBand = ctc >= min * 0.85 && ctc <= max * 1.1;
     hints.push({
       ok: inBand,
       text: inBand
-        ? `Expected CTC ${formatLakhs(ctc)} is close to the role's ${formatLakhs(mandate.budget_min)}–${formatLakhs(mandate.budget_max)} band.`
-        : `Role budget is ${formatLakhs(mandate.budget_min)}–${formatLakhs(mandate.budget_max)}; expected CTC ${formatLakhs(ctc)} is outside that.`,
+        ? `Expected CTC ${formatLakhs(ctc)} is close to the role's ${ctcBand(mandate.budget_min, mandate.budget_max)} budget.`
+        : `The role's budget is ${ctcBand(mandate.budget_min, mandate.budget_max)}; an expected CTC of ${formatLakhs(ctc)} is outside that.`,
     });
   }
 
@@ -109,12 +102,11 @@ function ReferForm() {
   useEffect(() => {
     if (!mandateId) return;
     const supabase = createClient();
-    supabase
-      .from("mandates")
-      .select("id, role_title, category, budget_min, budget_max, experience_min, experience_max")
-      .eq("id", mandateId)
-      .single()
-      .then(({ data }) => setMandate(data as MandateSummary | null));
+    // Roles come from the blind-safe function, never straight from the mandates table.
+    supabase.rpc("referrer_open_roles").then(({ data }) => {
+      const found = ((data ?? []) as MandateSummary[]).find((r) => r.id === mandateId);
+      setMandate(found ?? null);
+    });
   }, [mandateId]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -154,8 +146,8 @@ function ReferForm() {
   const hints = fitHints(mandate, form.salesExperience, form.experienceYears, form.expectedCtc);
 
   return (
-    <div className="max-w-lg mx-auto px-5 py-8">
-      <h1 className="text-xl font-semibold text-slate-900">Refer someone</h1>
+    <div className="max-w-xl mx-auto px-5 py-8">
+      <h1 className="text-[22px] font-semibold tracking-tight text-slate-900">Refer someone</h1>
       <p className="text-sm text-slate-500 mt-1">
         {mandateId
           ? mandate
@@ -163,6 +155,25 @@ function ReferForm() {
             : "Submitting for the role you selected."
           : "No specific role in mind? Submit them to our bench -- we'll match them to roles as they open up."}
       </p>
+
+      {mandate && (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-[14px] font-semibold text-slate-900">{mandate.role_title}</div>
+            <div className="mt-0.5 text-[12.5px] text-slate-500">
+              {[locationText(mandate), roleCategoryLabel(mandate.category), ctcBand(mandate.budget_min, mandate.budget_max), experienceBand(mandate.experience_min, mandate.experience_max)]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+          </div>
+          {mandate.payout_amount != null && (
+            <div className="rounded-lg bg-emerald-50 px-3 py-1.5 text-right ring-1 ring-emerald-100">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700/70">You earn</div>
+              <div className="text-[16px] font-bold text-emerald-700">{inr(mandate.payout_amount)}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 mt-6">
         {error && <div className="rounded-lg bg-rose-50 text-rose-700 text-sm px-3 py-2">{error}</div>}
@@ -226,7 +237,7 @@ function ReferForm() {
             type="number"
           />
           <Field
-            label="Expected CTC (₹, annual)"
+            label="Expected CTC (₹ lakhs per year, e.g. 12)"
             value={form.expectedCtc}
             onChange={(v) => set("expectedCtc", v)}
             type="number"

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { mentionsClientName } from "@/lib/blind-text";
 
 // Toggle whether a mandate appears on the referrer blind-brief board, and
 // whether Trusted-tier referrers see the client company name for it. This
@@ -25,7 +26,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // visibility flip when the admin confirms it in the review modal (see
   // mandate-visibility-control.tsx) so a mandate never goes visible with
   // an un-reviewed or stale summary.
-  if (typeof body.referralSummary === "string") update.referral_summary = body.referralSummary.trim() || null;
+  if (typeof body.referralSummary === "string") {
+    const summary = body.referralSummary.trim();
+    // The write-up is the one free-text field referrers read, so it must never name the client.
+    if (summary) {
+      const { data: m } = await supabase.from("mandates").select("client_name").eq("id", id).single();
+      if (mentionsClientName(summary, m?.client_name)) {
+        return NextResponse.json({ error: "The summary mentions the client's name. Please remove it, since referrers must not see the company." }, { status: 400 });
+      }
+    }
+    update.referral_summary = summary || null;
+  }
 
   const { error } = await supabase.from("mandates").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -100,7 +100,7 @@ export default function PayoutSlabsPanel({ slabs }: { slabs: Slab[] }) {
       {showForm ? (
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
           <label className="text-[12px] text-slate-500">
-            Min CTC (₹)
+            Role CTC from (₹ per year, e.g. 600000 = 6 LPA)
             <input
               value={form.ctcBandMin}
               onChange={(e) => setForm({ ...form, ctcBandMin: e.target.value })}
@@ -108,7 +108,7 @@ export default function PayoutSlabsPanel({ slabs }: { slabs: Slab[] }) {
             />
           </label>
           <label className="text-[12px] text-slate-500">
-            Max CTC (₹, blank = open)
+            Role CTC up to (₹, blank = no limit)
             <input
               value={form.ctcBandMax}
               onChange={(e) => setForm({ ...form, ctcBandMax: e.target.value })}

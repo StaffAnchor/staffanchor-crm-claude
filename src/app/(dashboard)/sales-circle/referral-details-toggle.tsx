@@ -1,5 +1,6 @@
 "use client";
 
+import { lpa } from "@/lib/sales-circle";
 import { useState } from "react";
 
 const SALES_EXPERIENCE_LABELS: Record<string, string> = {
@@ -9,10 +10,8 @@ const SALES_EXPERIENCE_LABELS: Record<string, string> = {
   neither: "Neither / not a sales background",
 };
 
-function formatLakhs(n: number | null): string {
-  if (n == null) return "—";
-  return `₹${(n / 100000).toFixed(1)}L`;
-}
+// Expected CTC is stored in lakhs per annum already.
+const formatLakhs = (n: number | null): string => lpa(n);
 
 export type ReferralDetails = {
   resume_signed_url: string | null;

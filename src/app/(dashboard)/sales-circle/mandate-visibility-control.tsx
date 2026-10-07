@@ -16,12 +16,15 @@ export default function MandateVisibilityControl({
   referralVisible,
   revealCompany,
   referralSummary,
+  missingCore = [],
 }: {
   mandateId: string;
   roleTitle: string;
   referralVisible: boolean;
   revealCompany: boolean;
   referralSummary: string | null;
+  // Core details still missing on the role; shown as a warning before it goes live.
+  missingCore?: string[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -80,6 +83,7 @@ export default function MandateVisibilityControl({
           mandateId={mandateId}
           roleTitle={roleTitle}
           initialSummary={referralSummary ?? ""}
+          missingCore={missingCore}
           onClose={() => setReviewOpen(false)}
           onConfirm={async (summary) => {
             await patch({ referralVisible: true, referralSummary: summary });
@@ -95,12 +99,14 @@ function ReviewModal({
   mandateId,
   roleTitle,
   initialSummary,
+  missingCore,
   onClose,
   onConfirm,
 }: {
   mandateId: string;
   roleTitle: string;
   initialSummary: string;
+  missingCore: string[];
   onClose: () => void;
   onConfirm: (summary: string) => Promise<void>;
 }) {
@@ -153,6 +159,12 @@ function ReviewModal({
             This is the write-up referrers will see on the roles board. Type notes below and generate an AI draft, or
             write/edit it directly -- nothing goes live until you confirm.
           </p>
+
+          {missingCore.filter((m) => m !== "Referrer summary").length > 0 && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+              Referrers will see &ldquo;To be confirmed&rdquo; for: {missingCore.filter((m) => m !== "Referrer summary").join(", ")}. Fill these in on the mandate first for a clearer listing.
+            </p>
+          )}
 
           <div>
             <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">

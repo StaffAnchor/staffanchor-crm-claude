@@ -57,7 +57,10 @@ export async function POST(req: NextRequest) {
   const experienceYearsRaw = str("experienceYears");
   const candidateTotalExperienceYears = experienceYearsRaw && !Number.isNaN(Number(experienceYearsRaw)) ? Number(experienceYearsRaw) : null;
   const expectedCtcRaw = str("expectedCtc");
-  const candidateExpectedCtc = expectedCtcRaw && !Number.isNaN(Number(expectedCtcRaw)) ? Number(expectedCtcRaw) : null;
+  // Stored in lakhs per annum. If someone types rupees (11,00,000), convert it
+  // so the number means the same thing as every other CTC in the system.
+  const expectedNum = expectedCtcRaw && !Number.isNaN(Number(expectedCtcRaw)) ? Number(expectedCtcRaw) : null;
+  const candidateExpectedCtc = expectedNum == null ? null : Math.round((expectedNum > 1000 ? expectedNum / 100000 : expectedNum) * 10) / 10;
   const candidateNoticePeriod = str("noticePeriod") || null;
 
   const resumeFile = form.get("resume");
