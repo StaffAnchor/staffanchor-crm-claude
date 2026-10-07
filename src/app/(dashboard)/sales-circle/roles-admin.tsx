@@ -10,7 +10,7 @@ import { ctcBand, roleReadiness, slabPayout, type PayoutSlab, type RoleCardData 
 export type AdminRole = RoleCardData & {
   client_name: string | null;
   referral_visible: boolean;
-  referral_reveal_company_to_trusted: boolean;
+  referral_payout_amount: number | string | null;
   status: string | null;
   is_archived: boolean;
 };
@@ -20,11 +20,15 @@ type Filter = "all" | "live" | "hidden" | "needs";
 export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs: PayoutSlab[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [asTrusted, setAsTrusted] = useState(false);
 
   const rows = useMemo(
     () =>
-      roles.map((r) => ({ role: r, ready: roleReadiness({ ...r, cities: r.cities }), payout: slabPayout(r.budget_max ?? r.budget_min, slabs) })),
+      roles.map((r) => ({
+        role: r,
+        ready: roleReadiness({ ...r, cities: r.cities }),
+        payout: r.referral_payout_amount != null && Number(r.referral_payout_amount) > 0 ? Number(r.referral_payout_amount) : null,
+        suggested: slabPayout(r.budget_max ?? r.budget_min, slabs),
+      })),
     [roles, slabs]
   );
   const counts = {
@@ -62,13 +66,17 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
       </div>
 
       <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-700 dark:bg-slate-900">
-        {shown.map(({ role: r, ready, payout }) => (
+        {shown.map(({ role: r, ready, payout, suggested }) => (
           <div key={r.id} className="grid gap-3 px-4 py-3.5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] lg:items-center">
             <div className="min-w-0">
               <div className="truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{r.role_title}</div>
               <div className="mt-0.5 truncate text-[12px] text-slate-500 dark:text-slate-400">
                 {r.client_name ?? "—"} · {r.city ?? "No city"} · {ctcBand(r.budget_min, r.budget_max) ?? "No CTC yet"}
-                {payout != null && <span className="font-medium text-emerald-700 dark:text-emerald-400"> · Pays ₹{payout.toLocaleString("en-IN")}</span>}
+                {payout != null ? (
+                  <span className="font-medium text-emerald-700 dark:text-emerald-400"> · Pays ₹{payout.toLocaleString("en-IN")}</span>
+                ) : (
+                  <span className="font-medium text-amber-700 dark:text-amber-400"> · Payout not set</span>
+                )}
               </div>
             </div>
 
@@ -98,8 +106,9 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
                 mandateId={r.id}
                 roleTitle={r.role_title}
                 referralVisible={r.referral_visible}
-                revealCompany={r.referral_reveal_company_to_trusted}
                 referralSummary={r.referral_summary}
+                referralPayout={payout}
+                suggestedPayout={suggested}
                 missingCore={ready.missingCore}
               />
             </div>
@@ -114,16 +123,9 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-[15px] font-semibold text-slate-900">Exactly what a referrer sees</h3>
-                <p className="text-[12px] text-slate-500">No client name unless a Trusted referrer is viewing a role marked &ldquo;Reveals to Trusted&rdquo;.</p>
+                <p className="text-[12px] text-slate-500">The client company name is never shown to referrers.</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex rounded-lg bg-white p-0.5 ring-1 ring-slate-200">
-                  {[false, true].map((t) => (
-                    <button key={String(t)} onClick={() => setAsTrusted(t)} className={`rounded-md px-3 py-1 text-[12px] font-medium ${asTrusted === t ? "bg-slate-900 text-white" : "text-slate-600"}`}>
-                      {t ? "Trusted" : "Member"}
-                    </button>
-                  ))}
-                </div>
                 <button onClick={() => setPreviewId(null)} aria-label="Close" className="text-slate-400 hover:text-slate-700">
                   <X className="h-5 w-5" />
                 </button>
@@ -131,11 +133,7 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
             </div>
             <RoleCard
               preview
-              role={{
-                ...previewing.role,
-                payout_amount: previewing.payout,
-                company_name: asTrusted && previewing.role.referral_reveal_company_to_trusted ? previewing.role.client_name : null,
-              }}
+              role={{ ...previewing.role, payout_amount: previewing.payout }}
             />
             {!previewing.ready.ready && (
               <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-800">

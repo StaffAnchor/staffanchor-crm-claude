@@ -10,8 +10,7 @@ const ACCENT: Record<string, { bar: string; pill: string }> = {
 
 // One role, exactly as a referrer sees it. Used on the referrer's Roles page
 // and in the admin's "Preview as referrer", so what you preview is what they get.
-// The company name only appears when the role data itself carries it (the
-// database only sends it to Trusted referrers on roles marked "reveal").
+// The company name is never shown to referrers, and the data they receive does not contain it.
 export default function RoleCard({
   role,
   isNew = false,
@@ -53,7 +52,7 @@ export default function RoleCard({
             <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
               <span className="inline-flex items-center gap-1">
                 <Building2 className="h-3.5 w-3.5" />
-                {role.company_name ? <span className="font-medium text-slate-700">{role.company_name}</span> : "Company confidential"}
+                Company confidential
               </span>
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
@@ -72,7 +71,7 @@ export default function RoleCard({
           ) : (
             <div className="shrink-0 rounded-xl bg-slate-50 px-4 py-2.5 text-right ring-1 ring-slate-100">
               <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Payout</div>
-              <div className="text-[13px] font-medium text-slate-500">Set once CTC is confirmed</div>
+              <div className="text-[13px] font-medium text-slate-500">To be confirmed</div>
             </div>
           )}
         </div>

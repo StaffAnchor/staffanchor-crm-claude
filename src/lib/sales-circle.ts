@@ -65,7 +65,7 @@ export type RoleCardData = {
   good_to_haves: string[] | null;
   referral_summary: string | null;
   created_at: string;
-  company_name: string | null;
+  // Set by an admin for each role before it is published. Rupees.
   payout_amount: number | string | null;
   my_referral_count?: number;
 };
@@ -122,6 +122,7 @@ export type ReadinessInput = {
   work_mode: unknown;
   must_haves: unknown;
   referral_summary: unknown;
+  referral_payout_amount?: unknown;
   sub_domain?: unknown;
   team_size_band?: unknown;
   company_size_band?: unknown;
@@ -140,6 +141,7 @@ export function roleReadiness(m: ReadinessInput) {
     ["Work mode", has(m.work_mode)],
     ["Must-have requirements", has(m.must_haves)],
     ["Referrer summary", has(m.referral_summary)],
+    ["Payout", has(m.referral_payout_amount)],
   ];
   const extra: [string, boolean][] = [
     ["Sector", has(m.sub_domain)],
@@ -158,7 +160,7 @@ export function roleReadiness(m: ReadinessInput) {
 
 export type PayoutSlab = { ctc_band_min: number | string; ctc_band_max: number | string | null; payout_amount: number | string; active: boolean };
 
-/** Payout for a role, from its budget in LAKHS and slabs in RUPEES. Same rule the database uses. */
+/** A suggested payout for a role (from its budget in LAKHS and the slabs in RUPEES). Only a starting point: an admin sets the real payout per role. */
 export function slabPayout(budgetLakhs: number | string | null | undefined, slabs: PayoutSlab[]): number | null {
   if (budgetLakhs == null || budgetLakhs === "") return null;
   const rupees = Number(budgetLakhs) * 100000;

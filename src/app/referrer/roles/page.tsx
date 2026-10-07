@@ -5,9 +5,8 @@ import RolesBoard from "./roles-board";
 
 // Roles a referrer can refer against. Everything comes from the
 // referrer_open_roles() database function: a fixed, blind-safe set of fields.
-// The client company name is included there only for Trusted referrers on
-// roles an admin has marked "reveal"; for everyone else it is not sent at all,
-// so it cannot be read from this page or from the network.
+// The client company name is never included, so it cannot be read from this
+// page or from the network. The payout is the amount an admin set for the role.
 export default async function ReferrerRolesPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("referrer_open_roles");

@@ -99,12 +99,12 @@ export default async function SalesCirclePage() {
   const { data: roleRows } = await supabase
     .from("mandates")
     .select(
-      "id, role_title, client_name, status, is_archived, category, sub_domain, city, cities, work_mode, working_days, week_off, shift_timing, experience_min, experience_max, budget_min, budget_max, team_size_band, company_size_band, team_handling, sales_cycle, deal_size_currency, deal_size_band, selling_style, languages_required, industries_sold_to, seniority_band, must_haves, good_to_haves, referral_summary, referral_visible, referral_reveal_company_to_trusted, created_at"
+      "id, role_title, client_name, status, is_archived, category, sub_domain, city, cities, work_mode, working_days, week_off, shift_timing, experience_min, experience_max, budget_min, budget_max, team_size_band, company_size_band, team_handling, sales_cycle, deal_size_currency, deal_size_band, selling_style, languages_required, industries_sold_to, seniority_band, must_haves, good_to_haves, referral_summary, referral_payout_amount, referral_visible, created_at"
     )
     .eq("is_archived", false)
     .order("created_at", { ascending: false })
     .limit(200);
-  const adminRoles = ((roleRows ?? []) as unknown as AdminRole[]).map((r) => ({ ...r, company_name: null, payout_amount: null }));
+  const adminRoles = ((roleRows ?? []) as unknown as AdminRole[]).map((r) => ({ ...r, payout_amount: r.referral_payout_amount }));
 
   // Headline numbers for the strip at the top.
   const today = new Date().getTime();
@@ -181,8 +181,8 @@ export default async function SalesCirclePage() {
       <section id="roles" className="scroll-mt-16 space-y-3">
         <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Roles on the referrer board</h2>
         <p className="text-[12px] text-slate-500 dark:text-slate-400">
-          Choose which open roles referrers can see. Each role shows how complete it is, so referrers see clear CTC, experience and requirements. Use
-          &ldquo;Preview as referrer&rdquo; to see exactly what they get. The client name stays hidden unless you reveal it to Trusted referrers.
+          Choose which open roles referrers can see, and set the payout for each one yourself before it goes live. Each role shows how complete it is. Use
+          &ldquo;Preview as referrer&rdquo; to see exactly what they get. The client company name is never shown to referrers.
         </p>
         <RolesAdmin roles={adminRoles} slabs={slabs ?? []} />
       </section>
@@ -198,8 +198,10 @@ export default async function SalesCirclePage() {
       </section>
 
       <section id="slabs" className="scroll-mt-16 space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Payout slabs</h2>
-        <p className="text-[12px] text-slate-500 dark:text-slate-400">What a referrer earns for a role, by the role&apos;s annual CTC budget. A role&apos;s budget is matched to a band automatically.</p>
+        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Suggested payout slabs</h2>
+        <p className="text-[12px] text-slate-500 dark:text-slate-400">
+          Only suggestions. When you publish a role, the payout field starts with the slab for its CTC budget, and you can change it to any amount. Referrers always see the amount you set for that role.
+        </p>
         <PayoutSlabsPanel slabs={slabs ?? []} />
       </section>
     </div>

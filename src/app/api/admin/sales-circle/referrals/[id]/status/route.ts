@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: referral } = await supabase
     .from("sales_circle_referrals")
-    .select("id, status, mandate_id, mandates(budget_max)")
+    .select("id, status, mandate_id, mandates(budget_max, referral_payout_amount)")
     .eq("id", id)
     .single();
   if (!referral) return NextResponse.json({ error: "Referral not found" }, { status: 404 });
@@ -66,8 +66,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .maybeSingle();
     if (!existingPayout) {
       const mandate = Array.isArray(referral.mandates) ? referral.mandates[0] : referral.mandates;
-      let slabAmount: number | null = null;
-      if (mandate?.budget_max != null) {
+      // The payout the admin set for this role is what the referrer was shown, so it is what is owed.
+      // Only if none was set (an older role) fall back to the slab for the role's budget.
+      let slabAmount: number | null = mandate?.referral_payout_amount != null ? Number(mandate.referral_payout_amount) : null;
+      if (slabAmount == null && mandate?.budget_max != null) {
         // budget_max is in lakhs per annum; the slab bands are stored in rupees.
         const budgetRupees = Number(mandate.budget_max) * 100000;
         const { data: slab } = await supabase

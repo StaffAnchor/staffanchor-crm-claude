@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { mentionsClientName } from "@/lib/blind-text";
 
-// Toggle whether a mandate appears on the referrer blind-brief board, and
-// whether Trusted-tier referrers see the client company name for it. This
-// is the single on/off switch referenced in roles/page.tsx.
+// Publish or unpublish a mandate on the referrer board. A role can only go
+// live with a payout the admin set for that role. The client company name is
+// never shown to referrers, so there is no reveal option.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -21,7 +21,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json();
   const update: Record<string, unknown> = {};
   if (typeof body.referralVisible === "boolean") update.referral_visible = body.referralVisible;
-  if (typeof body.revealCompany === "boolean") update.referral_reveal_company_to_trusted = body.revealCompany;
   // Admin-approved crisp write-up for referrers, saved alongside the
   // visibility flip when the admin confirms it in the review modal (see
   // mandate-visibility-control.tsx) so a mandate never goes visible with
@@ -36,6 +35,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
     update.referral_summary = summary || null;
+  }
+
+  // The payout is chosen by an admin for each role, in rupees.
+  if (body.referralPayout !== undefined && body.referralPayout !== null && body.referralPayout !== "") {
+    const amount = Number(String(body.referralPayout).replace(/,/g, ""));
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 10_000_000) {
+      return NextResponse.json({ error: "Enter the payout as an amount in rupees, for example 30000." }, { status: 400 });
+    }
+    update.referral_payout_amount = amount;
+  }
+  // Publishing needs a payout: either just entered, or already saved on the role.
+  if (body.referralVisible === true && update.referral_payout_amount == null) {
+    const { data: m } = await supabase.from("mandates").select("referral_payout_amount").eq("id", id).single();
+    if (!m?.referral_payout_amount || Number(m.referral_payout_amount) <= 0) {
+      return NextResponse.json({ error: "Set a payout for this role before publishing it to referrers." }, { status: 400 });
+    }
   }
 
   const { error } = await supabase.from("mandates").update(update).eq("id", id);
