@@ -32,7 +32,7 @@ export default async function SalesCirclePage() {
 
   const { data: referrers } = await supabase
     .from("sales_circle_referrers")
-    .select("id, full_name, email, status, tier, current_company, created_at")
+    .select("id, full_name, email, status, tier, current_company, created_at, tos_accepted_at, invite_token_expires_at")
     .order("created_at", { ascending: false });
 
   const { data: referralsRaw } = await supabase

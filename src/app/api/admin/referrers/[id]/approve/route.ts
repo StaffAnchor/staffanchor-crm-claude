@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
-import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { REFERRER_INVITE_TTL_MS, referrerMailConfigured, referrerSignupUrl, sendReferrerInviteEmail } from "@/lib/referrer-invite";
 
 // Approving a sales_circle_referrers application mints an invite token +
 // sends a set-password email -- the exact same mechanism
@@ -10,7 +10,6 @@ import { sendEmail, renderEmailShell } from "@/lib/mail";
 // no separate "application" vs "agency" entity here -- one referrer row
 // covers the whole applied -> approved -> active lifecycle -- so this just
 // updates the row in place rather than inserting a second record.
-const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -36,7 +35,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const inviteToken = crypto.randomBytes(24).toString("hex");
-  const inviteTokenExpiresAt = new Date(Date.now() + INVITE_TTL_MS).toISOString();
+  const inviteTokenExpiresAt = new Date(Date.now() + REFERRER_INVITE_TTL_MS).toISOString();
 
   const { error: updateError } = await supabase
     .from("sales_circle_referrers")
@@ -52,24 +51,14 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  const signupUrl = `https://clients.staffanchor.com/referrer-signup/${inviteToken}`;
+  const signupUrl = referrerSignupUrl(inviteToken);
 
-  if (!gmailUser || !gmailPass) {
+  if (!referrerMailConfigured()) {
     return NextResponse.json({ ok: true, signupUrl, emailSent: false });
   }
 
   try {
-    await sendEmail({
-      to: referrer.email,
-      subject: `You're in -- set up your StaffAnchor Sales Circle account`,
-      text: `Hi ${referrer.full_name},\n\nYour application to StaffAnchor Sales Circle has been approved.\n\nSet up your account here: ${signupUrl}\n\nThis link expires in 14 days.\n\nThanks,\nStaffAnchor Team`,
-      html: renderEmailShell({
-        preheader: `Set up your Sales Circle account.`,
-        bodyHtml: `<p>Hi ${referrer.full_name},</p><p>Your application to StaffAnchor Sales Circle has been approved.</p><p><a href="${signupUrl}">Set up your account here</a> — this link expires in 14 days.</p><p>Thanks,<br/>StaffAnchor Team</p>`,
-      }),
-    });
+    await sendReferrerInviteEmail({ to: referrer.email, name: referrer.full_name, signupUrl, reminder: false });
     return NextResponse.json({ ok: true, signupUrl, emailSent: true });
   } catch (err) {
     console.error("Referrer approval email send failed", err);
