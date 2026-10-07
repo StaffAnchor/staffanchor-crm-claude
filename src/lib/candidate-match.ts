@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateTextWithFallback } from "@/lib/ai-providers";
 import { ensureMandateEmbedding } from "@/lib/embeddings";
 import { getLatestOutcomeWeights, outcomeAdjustedScore } from "@/lib/outcome-weights";
+import { STRONG_BOOST_SAME_AREA, WEAK_PENALTY, reasonLabel, type ProfileRating, type ProfileRatingRow } from "@/lib/profile-rating";
 import {
   confirmationKey,
   confirmationMap,
@@ -81,6 +82,10 @@ export type CandidateMatch = {
   // someone out.
   qualifies?: boolean;
   to_confirm?: number;
+  // The recruiter's overall verdict on this candidate's CV (internal only).
+  // Weak candidates are marked down on every role; strong ones are lifted on
+  // roles in their own area.
+  profile_rating?: ProfileRating | null;
   // Attached directly from the candidate's own row data (never from the
   // LLM) so it's exact, not a paraphrase -- lets the match list itself flag
   // "no AI summary yet" and stability score without a second round trip to
@@ -192,6 +197,41 @@ export function applyConfirmations<T extends CandidateMatch>(matches: T[], confi
       score = Math.round(mustFit * 0.5 + goodFit * 0.1 + breakdown.experience_fit * 0.2 + breakdown.domain_relevance * 0.2);
     }
     return { ...m, must_haves: must, good_to_haves: good, meets_all_must_haves: sum.meetsAll, qualifies: sum.qualifies, to_confirm: sum.toConfirm, score, score_breakdown: breakdown };
+  });
+}
+
+async function loadProfileRatings(supabase: SupabaseClient, ids: string[]): Promise<Map<string, ProfileRatingRow>> {
+  if (ids.length === 0) return new Map();
+  const { data } = await supabase
+    .from("candidate_profile_ratings")
+    .select("candidate_id, rating, reasons, note, rated_by_name")
+    .in("candidate_id", ids);
+  return new Map(((data ?? []) as ProfileRatingRow[]).map((r) => [r.candidate_id, r]));
+}
+
+// A strong profile only lifts a role in the same area as the candidate's own
+// work (same sub-domain, or same category when the role names no sub-domain).
+function sameArea(c: { category?: string | null; sub_domain?: string | null; secondary_sub_domains?: string[] | null }, m: { category?: string | null; sub_domain?: string | null }): boolean {
+  if (m.sub_domain) return c.sub_domain === m.sub_domain || !!c.secondary_sub_domains?.includes(m.sub_domain);
+  return !!m.category && c.category === m.category;
+}
+
+/** Weak profile: -15 on every role. Strong profile: +6 on roles in the same area. Explained in the reason line. */
+export function applyProfileRatings<T extends CandidateMatch>(matches: T[], ratings: Map<string, ProfileRatingRow>, isSameArea: (candidateId: string) => boolean): T[] {
+  if (ratings.size === 0) return matches;
+  return matches.map((m) => {
+    const r = ratings.get(m.candidate_id);
+    if (!r) return m;
+    const delta = r.rating === "weak" ? -WEAK_PENALTY : isSameArea(m.candidate_id) ? STRONG_BOOST_SAME_AREA : 0;
+    const why = r.reasons.map(reasonLabel).join(", ");
+    const tag = r.rating === "weak" ? `Marked weak profile${why ? ` (${why})` : ""}` : `Marked strong profile${why ? ` (${why})` : ""}`;
+    return {
+      ...m,
+      profile_rating: r.rating,
+      score: Math.max(0, Math.min(100, m.score + delta)),
+      outcome_adjusted_score: m.outcome_adjusted_score == null ? null : Math.max(0, Math.min(100, m.outcome_adjusted_score + delta)),
+      reason: `${m.reason}${m.reason ? " · " : ""}${tag}${delta ? ` (${delta > 0 ? "+" : ""}${delta})` : ""}`,
+    };
   });
 }
 
@@ -832,7 +872,11 @@ Sort the array by score descending. ${
         });
 
       // Anything a recruiter has already confirmed on a call overrides the AI's read.
-      const matches = applyConfirmations(aiMatches, await loadConfirmations(supabase, mandateId)).sort(byTierThenScore);
+      const confirmed = applyConfirmations(aiMatches, await loadConfirmations(supabase, mandateId));
+      const matches = applyProfileRatings(confirmed, await loadProfileRatings(supabase, confirmed.map((c) => c.candidate_id)), (id) => {
+        const c = rowById.get(id);
+        return !!c && sameArea(c, m);
+      }).sort(byTierThenScore);
 
       const requirementsChecked = [
         ...((m.must_haves as string[] | null) ?? []),
@@ -1196,7 +1240,13 @@ export async function matchCandidatesDeterministic(
   const confirmedMatches = applyConfirmations(matches, await loadConfirmations(supabase, mandateId));
   const filtered = options?.scoreAllProvided ? confirmedMatches : confirmedMatches.filter((r) => r.score >= 35 || practiceSeniorityByCandidate.has(r.candidate_id));
 
-  const sorted = filtered.sort(byTierThenScore);
+  // Ratings are applied after the cut-off so a weak profile is demoted, not silently dropped.
+  const candidateById = new Map(candidates.map((c) => [c.id, c]));
+  const rated = applyProfileRatings(filtered, await loadProfileRatings(supabase, filtered.map((r) => r.candidate_id)), (id) => {
+    const c = candidateById.get(id);
+    return !!c && sameArea(c, m);
+  });
+  const sorted = rated.sort(byTierThenScore);
 
   const capped = options?.scoreAllProvided ? sorted : sorted.slice(0, options?.maxResults ?? 30);
 

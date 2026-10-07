@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { X, UserX, Building2, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { RatingPicker, emptyDraft, saveProfileRating, type RatingDraft } from "@/components/profile-rating";
 import { RECRUITER_REJECTION_REASONS, CLIENT_REJECTION_REASONS, type StageSource } from "@/lib/mandate-stage";
 
 // Replaces the old single "Rejected" dropdown option + easy-to-miss "Client
@@ -15,11 +17,17 @@ import { RECRUITER_REJECTION_REASONS, CLIENT_REJECTION_REASONS, type StageSource
 // that's actually true for whoever made the call.
 export default function MandateRejectModal({
   candidateName,
+  candidateId,
+  mandateId,
   onCancel,
   onConfirm,
   submitting = false,
 }: {
   candidateName: string;
+  // When given, the window also asks for an overall CV rating and saves it
+  // on the candidate (separate from the role-specific reason above).
+  candidateId?: string;
+  mandateId?: string;
   onCancel: () => void;
   onConfirm: (result: { source: Extract<StageSource, "recruiter" | "client_relayed">; category: string; note: string }) => void;
   submitting?: boolean;
@@ -27,6 +35,7 @@ export default function MandateRejectModal({
   const [source, setSource] = useState<"recruiter" | "client_relayed" | null>(null);
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
+  const [rating, setRating] = useState<RatingDraft>(emptyDraft);
 
   const reasons = source === "recruiter" ? RECRUITER_REJECTION_REASONS : CLIENT_REJECTION_REASONS;
 
@@ -106,12 +115,25 @@ export default function MandateRejectModal({
                 className="w-full text-[13px] rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-2 bg-white dark:bg-slate-900 resize-none"
               />
             </div>
+            {candidateId && (
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                  Overall, how is this CV? <span className="font-normal text-slate-400">(optional, remembered for other roles)</span>
+                </label>
+                <RatingPicker draft={rating} onChange={setRating} strongLabel="Strong, wrong for this role" averageLabel="Average / skip" />
+              </div>
+            )}
             <div className="flex items-center justify-end gap-2 pt-1">
               <button onClick={onCancel} className="text-[12.5px] font-medium text-slate-500 hover:text-slate-700 px-3 py-1.5">
                 Cancel
               </button>
               <button
-                onClick={() => onConfirm({ source, category, note })}
+                onClick={() => {
+                  if (candidateId && rating.rating) {
+                    void saveProfileRating(createClient(), candidateId, { rating: rating.rating, reasons: rating.reasons, note: rating.note }, mandateId);
+                  }
+                  onConfirm({ source, category, note });
+                }}
                 disabled={!category || submitting}
                 className="flex items-center gap-1.5 text-[12.5px] font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-3.5 py-1.5"
               >

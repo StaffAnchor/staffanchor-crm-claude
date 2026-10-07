@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { type MandateScreeningContext } from "./mandate-screening-panel";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import MandateRejectModal from "./mandate-reject-modal";
+import { ProfileRatingBadge, useProfileRatings } from "@/components/profile-rating";
 import ConfirmDetailsModal from "./confirm-details-modal";
 import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
@@ -226,6 +227,7 @@ export default function MandateCandidatesTable({
   const [readiness, setReadiness] = useState<Record<string, string[]>>({});
   const [confirmRow, setConfirmRow] = useState<MandateCandidateRow | null>(null);
   const [rejectModalRow, setRejectModalRow] = useState<MandateCandidateRow | null>(null);
+  const ratings = useProfileRatings();
   const [rejecting, setRejecting] = useState(false);
 
   const [reassigningId, setReassigningId] = useState<string | null>(null);
@@ -602,6 +604,7 @@ export default function MandateCandidatesTable({
                       {l.candidate.full_name}
                     </Link>
                   </ApplicationAnswersQuickView>
+                  <ProfileRatingBadge row={ratings.get(l.candidate.id)} />
                   {!l.viewed_at && (
                     <span
                       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
@@ -925,6 +928,8 @@ export default function MandateCandidatesTable({
       {rejectModalRow && (
         <MandateRejectModal
           candidateName={rejectModalRow.candidate.full_name}
+          candidateId={rejectModalRow.candidate.id}
+          mandateId={mandateContext.mandateId as string}
           submitting={rejecting}
           onCancel={() => setRejectModalRow(null)}
           onConfirm={confirmReject}

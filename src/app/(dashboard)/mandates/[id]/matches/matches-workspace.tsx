@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BasisTag, ConfirmPanel, overlayCheck, useConfirmations } from "@/components/requirement-confirm";
+import { ProfileRatingBadge, useProfileRatings } from "@/components/profile-rating";
 import { matchTier, summarizeMustHaves, type EvidenceBasis } from "@/lib/requirement-confirmations";
 import {
   Sparkles,
@@ -208,6 +209,8 @@ export default function MatchesWorkspace({
   const [lastRunUsedExtraCriteria, setLastRunUsedExtraCriteria] = useState(false);
   const [fullMatchesOnly, setFullMatchesOnly] = useState(false);
   const confirmations = useConfirmations(mandateId);
+  const ratings = useProfileRatings();
+  const [showWeakProfiles, setShowWeakProfiles] = useState(false);
   // Which requirement's detail panel is open: "<candidate>::<must|good>::<index>".
   const [activeCheck, setActiveCheck] = useState<string | null>(null);
   const [linkedOnly, setLinkedOnly] = useState(false);
@@ -243,9 +246,15 @@ export default function MatchesWorkspace({
       if (metB !== metA) return metB - metA;
       return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
     });
-    const fullOnly = fullMatchesOnly ? sorted.filter((m) => summarizeMustHaves(m.must_haves).meetsAll) : sorted;
+    // Candidates the team has marked as weak profiles stay out of the list unless asked for.
+    const visible = showWeakProfiles ? sorted : sorted.filter((m) => ratings.get(m.candidate_id)?.rating !== "weak");
+    const fullOnly = fullMatchesOnly ? visible.filter((m) => summarizeMustHaves(m.must_haves).meetsAll) : visible;
     return linkedOnly ? fullOnly.filter((m) => linkedIdSet.has(m.candidate_id)) : fullOnly;
-  }, [viewMatches, fullMatchesOnly, linkedOnly, linkedIdSet]);
+  }, [viewMatches, fullMatchesOnly, linkedOnly, linkedIdSet, showWeakProfiles, ratings]);
+  const hiddenWeakCount = useMemo(
+    () => (viewMatches ?? []).filter((m) => ratings.get(m.candidate_id)?.rating === "weak").length,
+    [viewMatches, ratings]
+  );
 
   async function runMatch(useExtraCriteria: boolean) {
     setLoading(true);
@@ -552,6 +561,12 @@ export default function MatchesWorkspace({
                   Fully confirmed must-haves only
                 </label>
               )}
+              {matches && hiddenWeakCount > 0 && (
+                <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                  <input type="checkbox" checked={showWeakProfiles} onChange={(e) => setShowWeakProfiles(e.target.checked)} className="rounded border-slate-300" />
+                  Show weak profiles ({hiddenWeakCount})
+                </label>
+              )}
               {matches && matches.length > 0 && linkedIdSet.size > 0 && (
                 <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
                   <input
@@ -660,6 +675,7 @@ export default function MatchesWorkspace({
                         >
                           {m.full_name}
                         </Link>
+                        <ProfileRatingBadge row={ratings.get(m.candidate_id)} />
                         <button
                           onClick={() => toggleScoreOpen(m.candidate_id)}
                           title="Click to see how this score was calculated"

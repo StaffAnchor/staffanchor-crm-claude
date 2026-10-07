@@ -23,6 +23,7 @@ import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
 import QuickContactActions from "./quick-contact-actions";
+import { ProfileRatingPanel } from "@/components/profile-rating";
 import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
 import { formatExperience } from "@/lib/format-experience";
@@ -668,6 +669,8 @@ export default async function CandidateDetailPage({
               </span>
             )}
           </div>
+
+          <ProfileRatingPanel candidateId={candidate.id} />
 
           {/* Secondary details -- everything else, kept to the denser grid
               now that the four headline numbers above have their own row. */}

@@ -191,6 +191,7 @@ type SearchParams = {
   previous_industry?: string;
   origin?: string;
   incomplete?: string;
+  rating?: string;
   from?: string;
   to?: string;
   recruiter?: string;
@@ -405,6 +406,12 @@ export default async function CandidatesPage({
     ? Array.from(new Set(((stageLinksRes.data ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id)))
     : null;
   const allPracticesForFilter = allPracticesRes.data as { id: string; name: string; group_name: string }[] | null;
+  // "Strong profiles" / "Weak profiles" chips: resolve the rated candidates
+  // first, same resolve-then-.in("id", ...) pattern as practice above.
+  const ratingCandidateIds: string[] | null =
+    params.rating === "strong" || params.rating === "weak"
+      ? (((await supabase.from("candidate_profile_ratings").select("candidate_id").eq("rating", params.rating)).data ?? []) as { candidate_id: string }[]).map((r) => r.candidate_id)
+      : null;
   const practiceCandidateIds: string[] | null = params.practice
     ? Array.from(new Set(((practiceLinksRes.data ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id)))
     : null;
@@ -531,6 +538,9 @@ export default async function CandidatesPage({
     }
     if (mandateStageCandidateIds) {
       qq = qq.in("id", mandateStageCandidateIds.length ? mandateStageCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
+    }
+    if (ratingCandidateIds) {
+      qq = qq.in("id", ratingCandidateIds.length ? ratingCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
     }
     if (practiceCandidateIds) {
       qq = qq.in("id", practiceCandidateIds.length ? practiceCandidateIds : ["00000000-0000-0000-0000-000000000000"]);
@@ -1076,6 +1086,7 @@ export default async function CandidatesPage({
           {params.previous_industry && <input type="hidden" name="previous_industry" value={params.previous_industry} />}
           {params.origin && <input type="hidden" name="origin" value={params.origin} />}
           {params.incomplete && <input type="hidden" name="incomplete" value={params.incomplete} />}
+          {params.rating && <input type="hidden" name="rating" value={params.rating} />}
           {params.from && <input type="hidden" name="from" value={params.from} />}
           {params.to && <input type="hidden" name="to" value={params.to} />}
           {params.recruiter && <input type="hidden" name="recruiter" value={params.recruiter} />}
@@ -1135,6 +1146,26 @@ export default async function CandidatesPage({
             }`}
           >
             ⚠ Incomplete profiles
+          </Link>
+          <Link
+            href={qs({ rating: params.rating === "strong" ? undefined : "strong" })}
+            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
+              params.rating === "strong"
+                ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300"
+                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            }`}
+          >
+            ★ Strong profiles
+          </Link>
+          <Link
+            href={qs({ rating: params.rating === "weak" ? undefined : "weak" })}
+            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
+              params.rating === "weak"
+                ? "bg-rose-100 text-rose-800 ring-1 ring-rose-300"
+                : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+            }`}
+          >
+            ⚑ Weak profiles
           </Link>
           {multiValueChips("status", "Status", { labels: STATUS_LABEL })}
           {multiValueChips("mandate_stage", "Pipeline stage", { tone: "success", labels: STAGE_LABEL })}

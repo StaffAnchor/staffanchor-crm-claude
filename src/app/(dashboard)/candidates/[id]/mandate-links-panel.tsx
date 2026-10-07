@@ -399,6 +399,8 @@ export default function MandateLinksPanel({
       {rejectModalLink && (
         <MandateRejectModal
           candidateName={candidateName}
+          candidateId={candidateId}
+          mandateId={rejectModalLink.mandate_id}
           submitting={rejecting}
           onCancel={() => setRejectModalLink(null)}
           onConfirm={confirmReject}

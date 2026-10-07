@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, Check, HelpCircle, X, ChevronDown } from "lucide-react";
 import type { MatchChecks, ReqCheck } from "@/lib/ai-match";
 import { BasisTag, ConfirmPanel, overlayCheck, useConfirmations } from "@/components/requirement-confirm";
+import { ProfileRatingBadge, useProfileRatings } from "@/components/profile-rating";
+import type { ProfileRatingRow } from "@/lib/profile-rating";
 
 export type MatchItem = {
   candidateId: string;
@@ -71,11 +73,13 @@ function Card({
   mandateId,
   onChanged,
   confirmations,
+  rating,
 }: {
   m: MatchItem;
   mandateId: string;
   onChanged: () => void;
   confirmations: ReturnType<typeof useConfirmations>;
+  rating?: ProfileRatingRow;
 }) {
   const [open, setOpen] = useState(false);
   // Which requirement's "where did this come from / confirm it" panel is open.
@@ -117,6 +121,7 @@ function Card({
             <Link href={`/candidates/${m.candidateId}`} className="text-[14px] font-semibold text-blue-700 dark:text-blue-400 hover:underline">
               {m.name}
             </Link>
+            <ProfileRatingBadge row={rating} />
             <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-medium ${f.cls}`}>{f.label}</span>
             <span className="text-[12px] text-slate-500 dark:text-slate-400 tabular-nums">{m.score}/100</span>
             {m.stale && <span className="text-[11px] text-slate-500 dark:text-slate-400">Requirements changed, re-check</span>}
@@ -260,6 +265,7 @@ export default function AiMatchesList({
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const confirmations = useConfirmations(mandateId);
+  const ratings = useProfileRatings();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showWeak, setShowWeak] = useState(false);
@@ -284,8 +290,13 @@ export default function AiMatchesList({
     return true;
   };
   const afterCtc = (list: MatchItem[]) => list.filter(passesCtc);
-  const visible = afterCtc(suggested.filter((i) => showWeak || i.fit !== "weak")).sort((a, b) => order[a.fit] - order[b.fit] || b.score - a.score);
-  const weakCount = suggested.filter((i) => i.fit === "weak").length;
+  // Weak CVs (as marked by the team) stay hidden with the weak matches; strong CVs lead within their fit.
+  const isWeakCv = (i: MatchItem) => ratings.get(i.candidateId)?.rating === "weak";
+  const strongRank = (i: MatchItem) => (ratings.get(i.candidateId)?.rating === "strong" ? 0 : 1);
+  const visible = afterCtc(suggested.filter((i) => showWeak || (i.fit !== "weak" && !isWeakCv(i)))).sort(
+    (a, b) => order[a.fit] - order[b.fit] || strongRank(a) - strongRank(b) || b.score - a.score
+  );
+  const weakCount = suggested.filter((i) => i.fit === "weak" || isWeakCv(i)).length;
   const hiddenByCtc = suggested.filter((i) => (showWeak || i.fit !== "weak") && !passesCtc(i)).length;
   const noCtcCount = suggested.filter((i) => ctcFor(i, ctcBasis) == null).length;
 
@@ -392,14 +403,14 @@ export default function AiMatchesList({
       ) : (
         <ul className="space-y-3">
           {visible.map((m) => (
-            <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} onChanged={() => router.refresh()} />
+            <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} />
           ))}
         </ul>
       )}
 
       {weakCount > 0 && (
         <button onClick={() => setShowWeak((s) => !s)} className="mt-3 text-[12.5px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-          {showWeak ? "Hide" : "Show"} {weakCount} weak {weakCount === 1 ? "match" : "matches"}
+          {showWeak ? "Hide" : "Show"} {weakCount} weak {weakCount === 1 ? "match or profile" : "matches or profiles"}
         </button>
       )}
 
@@ -408,7 +419,7 @@ export default function AiMatchesList({
           <summary className="cursor-pointer text-[13px] font-medium text-slate-700 dark:text-slate-200">Already added to the pipeline ({added.length})</summary>
           <ul className="mt-2 space-y-3">
             {added.map((m) => (
-              <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} onChanged={() => router.refresh()} />
+              <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} />
             ))}
           </ul>
         </details>

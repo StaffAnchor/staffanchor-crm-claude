@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import { STAGES, applyStageChange, rejectionReasonLabel, type Stage } from "@/lib/mandate-stage";
 import MandateRejectModal from "./mandate-reject-modal";
+import { ProfileRatingBadge, useProfileRatings } from "@/components/profile-rating";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
@@ -239,6 +240,7 @@ export default function MandateCandidatesBoard({
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const ratings = useProfileRatings();
   const [rejectModalRow, setRejectModalRow] = useState<MandateCandidateRow | null>(null);
   const [rejecting, setRejecting] = useState(false);
   // Dragging a card into "Placed" used to call moveCard directly with no
@@ -463,6 +465,7 @@ export default function MandateCandidatesBoard({
                                 {row.candidate.full_name}
                               </Link>
                             </ApplicationAnswersQuickView>
+                            <ProfileRatingBadge row={ratings.get(row.candidate.id)} />
                             {!row.viewed_at && (
                               <span
                                 className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
@@ -668,6 +671,8 @@ export default function MandateCandidatesBoard({
       {rejectModalRow && (
         <MandateRejectModal
           candidateName={rejectModalRow.candidate.full_name}
+          candidateId={rejectModalRow.candidate.id}
+          mandateId={mandateContext.mandateId as string}
           submitting={rejecting}
           onCancel={() => setRejectModalRow(null)}
           onConfirm={confirmReject}

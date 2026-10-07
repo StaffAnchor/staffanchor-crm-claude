@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import WhatsAppShareModal from "@/components/whatsapp-share-modal";
+import { ProfileRatingBadge, useProfileRatings } from "@/components/profile-rating";
 import { formatExperience } from "@/lib/format-experience";
 import {
   level1OptionsForProfileType,
@@ -1045,6 +1046,7 @@ export default function CandidatesTable({
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [waOpen, setWaOpen] = useState(false);
+  const ratings = useProfileRatings();
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
   const [summaryTooltip, setSummaryTooltip] = useState<{
@@ -1782,6 +1784,7 @@ export default function CandidatesTable({
                         {c.full_name}
                       </p>
                     </Link>
+                    <ProfileRatingBadge row={ratings.get(c.id)} />
                     {(mandateLinksByCandidate[c.id] ?? []).length > 0 && (
                       <button
                         type="button"
