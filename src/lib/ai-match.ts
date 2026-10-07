@@ -1,3 +1,4 @@
+import { parseBasis, type EvidenceBasis } from "@/lib/requirement-confirmations";
 import crypto from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GEMINI_QUALITY_MODELS, generateTextWithFallback } from "@/lib/ai-providers";
@@ -16,7 +17,10 @@ import { extractCvFactsForCandidate, type CvFacts } from "@/lib/cv-facts";
 // Results are stored per role so nobody has to re-run them to look.
 
 export type ReqStatus = "met" | "doubt" | "missing";
-export type ReqCheck = { requirement: string; status: ReqStatus; evidence: string | null; question: string | null };
+// basis: "stated" = the CV facts say it directly; "inferred" = worked out from
+// company, industry or title rather than stated; "confirmed" = a recruiter
+// settled it on a call (added when confirmations are overlaid, never by the AI).
+export type ReqCheck = { requirement: string; status: ReqStatus; evidence: string | null; question: string | null; basis?: EvidenceBasis | null };
 export type Fit = "strong" | "possible" | "weak";
 export type ExperienceFit = "within" | "below" | "above" | "unknown";
 export type LocationFit = "match" | "relocate" | "other" | "unknown";
@@ -188,6 +192,7 @@ function normalizeChecks(raw: unknown, requirements: string[]): ReqCheck[] {
       requirement,
       status,
       evidence: str(o.evidence, 220),
+      basis: status === "doubt" ? null : parseBasis(o.basis, str(o.evidence, 220)),
       question: status === "met" ? null : str(o.question, 200) ?? (status === "doubt" ? "Confirm this on the call" : null),
     };
   });
@@ -239,6 +244,7 @@ ${role.experience_min != null || role.experience_max != null ? `\nExperience ask
 
 For every requirement, in the same order, give:
 - "status": "met" if the facts clearly show it; "missing" only if the facts clearly show the opposite (for example only B2C selling when B2B is required, or no sales roles at all); "doubt" if the facts are silent, partial or ambiguous. Not stated is a "doubt", never "missing".
+- "basis": for met or missing, "stated" if the facts say it directly, or "inferred" if you worked it out from the company, industry or title rather than reading it. Leave out for a doubt.
 - "evidence": for met or missing, the specific fact in under 20 words, naming the company where possible. For a doubt, what the CV does say that is related, or null.
 - "question": for a doubt or missing item, one short, specific question a recruiter can ask on a call to settle it. null if met.
 Do not treat the headline claim as evidence unless the job history backs it up. Do not invent facts.
@@ -247,7 +253,7 @@ Also give "summary": one plain sentence a recruiter can read in three seconds, w
 Candidate facts (JSON):
 ${JSON.stringify(compactFacts(f, p))}
 
-Return ONLY JSON: {"must_haves":[{"requirement":"","status":"","evidence":"","question":""}],"good_to_haves":[{"requirement":"","status":"","evidence":"","question":""}],"summary":""}`;
+Return ONLY JSON: {"must_haves":[{"requirement":"","status":"","basis":"","evidence":"","question":""}],"good_to_haves":[{"requirement":"","status":"","basis":"","evidence":"","question":""}],"summary":""}`;
 }
 
 export type AiMatchRunResult =

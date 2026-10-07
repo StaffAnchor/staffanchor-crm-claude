@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, Check, HelpCircle, X, ChevronDown } from "lucide-react";
 import type { MatchChecks, ReqCheck } from "@/lib/ai-match";
+import { BasisTag, ConfirmPanel, overlayCheck, useConfirmations } from "@/components/requirement-confirm";
 
 export type MatchItem = {
   candidateId: string;
@@ -65,14 +66,31 @@ function Chip({ c }: { c: ReqCheck }) {
   );
 }
 
-function Card({ m, mandateId, onChanged }: { m: MatchItem; mandateId: string; onChanged: () => void }) {
+function Card({
+  m,
+  mandateId,
+  onChanged,
+  confirmations,
+}: {
+  m: MatchItem;
+  mandateId: string;
+  onChanged: () => void;
+  confirmations: ReturnType<typeof useConfirmations>;
+}) {
   const [open, setOpen] = useState(false);
+  // Which requirement's "where did this come from / confirm it" panel is open.
+  const [openReq, setOpenReq] = useState<string | null>(null);
+  // Call-confirmed answers override what the AI read from the CV.
+  const checks = {
+    must: m.checks.must.map((c) => overlayCheck(c, m.candidateId, confirmations.map, "ai")),
+    good: m.checks.good.map((c) => overlayCheck(c, m.candidateId, confirmations.map, "ai")),
+  };
   const [busy, setBusy] = useState<"add" | "dismiss" | null>(null);
   const [dismissing, setDismissing] = useState(false);
   const [reason, setReason] = useState(DISMISS_REASONS[0]);
   const [error, setError] = useState<string | null>(null);
   const f = FIT_STYLE[m.fit];
-  const doubts = [...m.checks.must, ...m.checks.good].filter((c) => c.status !== "met");
+  const doubts = [...checks.must, ...checks.good].filter((c) => c.status !== "met");
 
   async function decide(action: "add" | "dismiss") {
     setBusy(action);
@@ -133,7 +151,7 @@ function Card({ m, mandateId, onChanged }: { m: MatchItem; mandateId: string; on
       {m.summary && <p className="mt-2 text-[13px] text-slate-700 dark:text-slate-300">{m.summary}</p>}
 
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {m.checks.must.map((c, i) => (
+        {checks.must.map((c, i) => (
           <Chip key={`m${i}`} c={c} />
         ))}
       </div>
@@ -170,8 +188,8 @@ function Card({ m, mandateId, onChanged }: { m: MatchItem; mandateId: string; on
       {open && (
         <div className="mt-2 space-y-3 text-[12.5px]">
           {([
-            ["Must haves", m.checks.must],
-            ["Good to haves", m.checks.good],
+            ["Must haves", checks.must],
+            ["Good to haves", checks.good],
           ] as const).map(([title, list]) =>
             list.length === 0 ? null : (
               <div key={title}>
@@ -181,9 +199,28 @@ function Card({ m, mandateId, onChanged }: { m: MatchItem; mandateId: string; on
                     <li key={i} className="grid grid-cols-[16px_minmax(0,1fr)] gap-2">
                       <StatusIcon s={c.status} />
                       <div className="min-w-0">
-                        <p className="text-slate-800 dark:text-slate-200">{c.requirement}</p>
+                        <button
+                          type="button"
+                          onClick={() => setOpenReq((cur) => (cur === `${title}::${i}` ? null : `${title}::${i}`))}
+                          className="flex flex-wrap items-center gap-2 text-left text-slate-800 hover:underline dark:text-slate-200"
+                          title="Click to see where this came from or record a call answer"
+                        >
+                          {c.requirement} <BasisTag basis={c.basis} />
+                        </button>
                         {c.evidence && <p className="text-slate-500 dark:text-slate-400">{c.evidence}</p>}
-                        {c.question && <p className="text-amber-800 dark:text-amber-300">Ask: {c.question}</p>}
+                        {c.question && c.basis !== "confirmed" && <p className="text-amber-800 dark:text-amber-300">Ask: {c.question}</p>}
+                        {openReq === `${title}::${i}` && (
+                          <div className="mt-1.5">
+                            <ConfirmPanel
+                              candidateId={m.candidateId}
+                              requirement={c.requirement}
+                              evidence={c.evidence}
+                              basis={c.basis}
+                              question={c.question}
+                              confirmations={confirmations}
+                            />
+                          </div>
+                        )}
                       </div>
                     </li>
                   ))}
@@ -222,6 +259,7 @@ export default function AiMatchesList({
 }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
+  const confirmations = useConfirmations(mandateId);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showWeak, setShowWeak] = useState(false);
@@ -354,7 +392,7 @@ export default function AiMatchesList({
       ) : (
         <ul className="space-y-3">
           {visible.map((m) => (
-            <Card key={m.candidateId} m={m} mandateId={mandateId} onChanged={() => router.refresh()} />
+            <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} onChanged={() => router.refresh()} />
           ))}
         </ul>
       )}
@@ -370,7 +408,7 @@ export default function AiMatchesList({
           <summary className="cursor-pointer text-[13px] font-medium text-slate-700 dark:text-slate-200">Already added to the pipeline ({added.length})</summary>
           <ul className="mt-2 space-y-3">
             {added.map((m) => (
-              <Card key={m.candidateId} m={m} mandateId={mandateId} onChanged={() => router.refresh()} />
+              <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} onChanged={() => router.refresh()} />
             ))}
           </ul>
         </details>

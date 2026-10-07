@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BasisTag, ConfirmPanel, overlayCheck, useConfirmations } from "@/components/requirement-confirm";
+import { matchTier, summarizeMustHaves, type EvidenceBasis } from "@/lib/requirement-confirmations";
 import {
   Sparkles,
   Loader2,
@@ -18,7 +20,7 @@ import {
 } from "lucide-react";
 
 type RequirementStatus = "met" | "not_met" | "unclear";
-type RequirementCheck = { requirement: string; status: RequirementStatus; evidence: string };
+type RequirementCheck = { requirement: string; status: RequirementStatus; evidence: string; basis?: EvidenceBasis | null };
 
 type ScoreBreakdown = {
   must_haves_fit: number;
@@ -128,34 +130,26 @@ function stabilityLabel(score: number): { label: string; tone: string } {
   return { label: "Frequent Job-Hopper", tone: "text-red-700 bg-red-50" };
 }
 
-function StatusChip({ check }: { check: RequirementCheck }) {
-  if (check.status === "met") {
-    return (
-      <span
-        title={check.evidence}
-        className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-1 text-[11px]"
-      >
-        <Check className="w-3 h-3 shrink-0" /> {check.requirement}
-      </span>
-    );
-  }
-  if (check.status === "not_met") {
-    return (
-      <span
-        title={check.evidence}
-        className="inline-flex items-center gap-1 rounded-full bg-red-50 text-red-700 px-2 py-1 text-[11px]"
-      >
-        <X className="w-3 h-3 shrink-0" /> {check.requirement}
-      </span>
-    );
-  }
+function StatusChip({ check, active, onClick }: { check: RequirementCheck; active: boolean; onClick: () => void }) {
+  const tone =
+    check.status === "met"
+      ? "bg-emerald-50 text-emerald-700"
+      : check.status === "not_met"
+        ? "bg-red-50 text-red-700"
+        : "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200";
+  const Icon = check.status === "met" ? Check : check.status === "not_met" ? X : HelpCircle;
   return (
-    <span
+    <button
+      type="button"
+      onClick={onClick}
       title={check.evidence || "Not mentioned in profile or resume — confirm on call"}
-      className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 text-[11px]"
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] ${tone} ${active ? "ring-2 ring-blue-400" : "hover:ring-1 hover:ring-current"}`}
     >
-      <HelpCircle className="w-3 h-3 shrink-0" /> {check.requirement}
-    </span>
+      <Icon className="w-3 h-3 shrink-0" /> {check.requirement}
+      {check.basis === "inferred" && <span className="italic opacity-70">(inferred)</span>}
+      {check.basis === "confirmed" && <span className="font-semibold opacity-80">(confirmed)</span>}
+      {check.status === "unclear" && <span className="opacity-70">· to confirm</span>}
+    </button>
   );
 }
 
@@ -213,6 +207,9 @@ export default function MatchesWorkspace({
   const [extraCriteria, setExtraCriteria] = useState("");
   const [lastRunUsedExtraCriteria, setLastRunUsedExtraCriteria] = useState(false);
   const [fullMatchesOnly, setFullMatchesOnly] = useState(false);
+  const confirmations = useConfirmations(mandateId);
+  // Which requirement's detail panel is open: "<candidate>::<must|good>::<index>".
+  const [activeCheck, setActiveCheck] = useState<string | null>(null);
   const [linkedOnly, setLinkedOnly] = useState(false);
   const linkedIdSet = useMemo(() => new Set(initialLinkedCandidateIds ?? []), [initialLinkedCandidateIds]);
   const [registeredAt, setRegisteredAt] = useState<Record<string, string>>({});
@@ -225,18 +222,30 @@ export default function MatchesWorkspace({
   const [matchMethod, setMatchMethod] = useState<"deterministic" | "ai" | null>(null);
   const [aiReadLoading, setAiReadLoading] = useState(false);
 
+  // The recruiter's call-confirmed answers always override the AI's read.
+  const viewMatches = useMemo(
+    () =>
+      matches?.map((m) => ({
+        ...m,
+        must_haves: m.must_haves.map((c) => overlayCheck(c, m.candidate_id, confirmations.map, "match")),
+        good_to_haves: m.good_to_haves.map((c) => overlayCheck(c, m.candidate_id, confirmations.map, "match")),
+      })) ?? null,
+    [matches, confirmations.map]
+  );
+
   const sortedMatches = useMemo(() => {
-    if (!matches) return null;
-    const sorted = [...matches].sort((a, b) => {
-      if (a.meets_all_must_haves !== b.meets_all_must_haves) return a.meets_all_must_haves ? -1 : 1;
+    if (!viewMatches) return null;
+    const sorted = [...viewMatches].sort((a, b) => {
+      // All confirmed, then "nothing contradicted but some to confirm", then contradicted.
+      if (matchTier(a.must_haves) !== matchTier(b.must_haves)) return matchTier(a.must_haves) - matchTier(b.must_haves);
       const metA = a.must_haves.filter((c) => c.status === "met").length;
       const metB = b.must_haves.filter((c) => c.status === "met").length;
       if (metB !== metA) return metB - metA;
       return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
     });
-    const fullOnly = fullMatchesOnly ? sorted.filter((m) => m.meets_all_must_haves) : sorted;
+    const fullOnly = fullMatchesOnly ? sorted.filter((m) => summarizeMustHaves(m.must_haves).meetsAll) : sorted;
     return linkedOnly ? fullOnly.filter((m) => linkedIdSet.has(m.candidate_id)) : fullOnly;
-  }, [matches, fullMatchesOnly, linkedOnly, linkedIdSet]);
+  }, [viewMatches, fullMatchesOnly, linkedOnly, linkedIdSet]);
 
   async function runMatch(useExtraCriteria: boolean) {
     setLoading(true);
@@ -540,7 +549,7 @@ export default function MatchesWorkspace({
                     onChange={(e) => setFullMatchesOnly(e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  Full must-have matches only
+                  Fully confirmed must-haves only
                 </label>
               )}
               {matches && matches.length > 0 && linkedIdSet.size > 0 && (
@@ -620,7 +629,7 @@ export default function MatchesWorkspace({
               {linkedOnly
                 ? "None of the candidates already linked to this mandate are in the current match list. Uncheck the filter to see the full pool."
                 : fullMatchesOnly
-                  ? "No candidates fully satisfy every must-have. Uncheck the filter to see partial matches."
+                  ? "No candidates have every must-have confirmed yet. Uncheck the filter to see the ones still to confirm."
                   : "No strong matches found in the current candidate pool for this mandate."}
             </p>
           )}
@@ -665,6 +674,14 @@ export default function MatchesWorkspace({
                             {metCount}/{totalCount} must-haves
                           </span>
                         )}
+                        {(() => {
+                          const sum = summarizeMustHaves(m.must_haves);
+                          if (sum.notMet > 0)
+                            return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700">{sum.notMet} contradicted</span>;
+                          if (sum.toConfirm > 0)
+                            return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">Worth a call · {sum.toConfirm} to confirm</span>;
+                          return null;
+                        })()}
                         {stability && (
                           <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${stability.tone}`}>
                             {stability.label}
@@ -734,7 +751,12 @@ export default function MatchesWorkspace({
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {m.must_haves.map((check, i) => (
-                              <StatusChip key={i} check={check} />
+                              <StatusChip
+                                key={i}
+                                check={check}
+                                active={activeCheck === `${m.candidate_id}::must::${i}`}
+                                onClick={() => setActiveCheck((cur) => (cur === `${m.candidate_id}::must::${i}` ? null : `${m.candidate_id}::must::${i}`))}
+                              />
                             ))}
                           </div>
                         </div>
@@ -746,17 +768,41 @@ export default function MatchesWorkspace({
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {m.good_to_haves.map((check, i) => (
-                              <StatusChip key={i} check={check} />
+                              <StatusChip
+                                key={i}
+                                check={check}
+                                active={activeCheck === `${m.candidate_id}::good::${i}`}
+                                onClick={() => setActiveCheck((cur) => (cur === `${m.candidate_id}::good::${i}` ? null : `${m.candidate_id}::good::${i}`))}
+                              />
                             ))}
                           </div>
                         </div>
                       )}
-                      {m.must_haves.some((c) => c.status === "unclear") && (
+                      {(() => {
+                        const list = activeCheck?.startsWith(`${m.candidate_id}::`) ? activeCheck.split("::") : null;
+                        const check = list ? (list[1] === "must" ? m.must_haves : m.good_to_haves)[Number(list[2])] : null;
+                        return check ? (
+                          <ConfirmPanel
+                            key={activeCheck}
+                            candidateId={m.candidate_id}
+                            requirement={check.requirement}
+                            evidence={check.evidence}
+                            basis={check.basis}
+                            confirmations={confirmations}
+                          />
+                        ) : null;
+                      })()}
+                      {m.must_haves.some((c) => c.status === "unclear") ? (
                         <p className="text-[11px] text-slate-400 italic">
-                          Grey items weren&apos;t mentioned anywhere in the profile or resume — worth a quick
-                          confirmation call rather than ruling the candidate out.
+                          Amber items weren&apos;t mentioned in the profile or resume. They&apos;re questions for the call, not
+                          rejections. Click one to record the answer.
                         </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 italic">Click any requirement to see where it came from or record a call answer.</p>
                       )}
+                      <p className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-slate-400">
+                        Labels: <BasisTag basis="stated" /> <BasisTag basis="inferred" /> <BasisTag basis="confirmed" />
+                      </p>
                     </div>
                   )}
 

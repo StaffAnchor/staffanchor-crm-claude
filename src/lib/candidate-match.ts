@@ -2,6 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateTextWithFallback } from "@/lib/ai-providers";
 import { ensureMandateEmbedding } from "@/lib/embeddings";
 import { getLatestOutcomeWeights, outcomeAdjustedScore } from "@/lib/outcome-weights";
+import {
+  confirmationKey,
+  confirmationMap,
+  matchTier,
+  parseBasis,
+  summarizeMustHaves,
+  type Confirmation,
+  type EvidenceBasis,
+} from "@/lib/requirement-confirmations";
 
 // Three-way per-requirement verdict -- this is the crux of the accuracy
 // upgrade. "not_met" means the data actively contradicts/fails the
@@ -21,6 +30,10 @@ export type RequirementCheck = {
   // Short grounding note: the specific fact that justified the verdict, or
   // for "unclear", a plain confirmation this simply wasn't mentioned.
   evidence: string;
+  // Where the verdict came from: read straight from the CV ("stated"), worked
+  // out by the AI from employer/title/profile shape ("inferred"), or answered
+  // by a recruiter on a call ("confirmed"). null = not labelled.
+  basis?: EvidenceBasis | null;
 };
 
 // Named, weighted components behind the overall score -- computed by the
@@ -63,6 +76,11 @@ export type CandidateMatch = {
   // alone, which can look deceptively close even when a hard requirement
   // failed.
   meets_all_must_haves: boolean;
+  // True when no must-have is contradicted (some may still be "to confirm").
+  // These candidates are worth a call; only a contradicted must-have rules
+  // someone out.
+  qualifies?: boolean;
+  to_confirm?: number;
   // Attached directly from the candidate's own row data (never from the
   // LLM) so it's exact, not a paraphrase -- lets the match list itself flag
   // "no AI summary yet" and stability score without a second round trip to
@@ -95,7 +113,7 @@ export type MandateAssessment = {
   missing: string[];
 };
 
-function recommendationForScore(score: number, meetsAllMustHaves: boolean): MandateAssessment["recommendation"] {
+function recommendationForScore(score: number, mustHaves: RequirementCheck[]): MandateAssessment["recommendation"] {
   // Same 75/50 thresholds as matchScoreTone() in mandate-candidates-table.tsx
   // -- keeps the AI Read badge and the Match-score badge color-coded
   // consistently instead of two competing scales. Must-haves are a hard
@@ -104,7 +122,12 @@ function recommendationForScore(score: number, meetsAllMustHaves: boolean): Mand
   // rest of the profile is -- a high score from good-to-haves/experience/
   // domain alone should never read as "Strong Fit" when a hard requirement
   // failed.
-  if (!meetsAllMustHaves) return "Not a Fit";
+  // Contradicted must-have = not a fit. A must-have that is merely unconfirmed
+  // is a reason to call, not a reason to skip: it can't read "Strong Fit"
+  // until confirmed, but it is never written off for being unmentioned.
+  const s = summarizeMustHaves(mustHaves);
+  if (!s.qualifies) return "Not a Fit";
+  if (s.toConfirm > 0) return score >= 50 ? "Fit with Reservations" : "Not a Fit";
   if (score >= 75) return "Strong Fit";
   if (score >= 50) return "Fit with Reservations";
   return "Not a Fit";
@@ -115,11 +138,69 @@ export function buildMatchAssessment(
 ): MandateAssessment {
   const all = [...(m.must_haves ?? []), ...(m.good_to_haves ?? [])];
   return {
-    recommendation: recommendationForScore(m.score, m.meets_all_must_haves),
+    recommendation: recommendationForScore(m.score, m.must_haves ?? []),
     positives: all.filter((r) => r.status === "met").map((r) => `${r.requirement}: ${r.evidence}`),
     red_flags: all.filter((r) => r.status === "not_met").map((r) => `${r.requirement}: ${r.evidence}`),
-    missing: all.filter((r) => r.status === "unclear").map((r) => r.requirement),
+    missing: all.filter((r) => r.status === "unclear").map((r) => `${r.requirement} (confirm on call)`),
   };
+}
+
+// Fully confirmed first, then "nothing contradicted but some to confirm",
+// then contradicted; within a tier, more confirmed must-haves, then score.
+function byTierThenScore(a: CandidateMatch, b: CandidateMatch): number {
+  const ta = matchTier(a.must_haves);
+  const tb = matchTier(b.must_haves);
+  if (ta !== tb) return ta - tb;
+  const metA = a.must_haves.filter((c) => c.status === "met").length;
+  const metB = b.must_haves.filter((c) => c.status === "met").length;
+  if (metB !== metA) return metB - metA;
+  return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
+}
+
+/**
+ * A recruiter's call-confirmed answer beats the AI's read, for that candidate
+ * and that mandate. Replaces the matching checks, marks them "confirmed", and
+ * re-scores the must-have component so ranking reflects it.
+ */
+export function applyConfirmations<T extends CandidateMatch>(matches: T[], confirmations: Confirmation[]): T[] {
+  if (confirmations.length === 0) return matches;
+  const byKey = confirmationMap(confirmations);
+  return matches.map((m) => {
+    let changed = false;
+    const apply = (checks: RequirementCheck[]) =>
+      checks.map((c) => {
+        const conf = byKey.get(confirmationKey(m.candidate_id, c.requirement));
+        if (!conf) return c;
+        changed = true;
+        return {
+          requirement: c.requirement,
+          status: conf.status,
+          basis: "confirmed" as const,
+          evidence: `Confirmed by ${conf.confirmed_by_name ?? "a recruiter"}${conf.note ? `: ${conf.note}` : ""}`,
+        };
+      });
+    const must = apply(m.must_haves);
+    const good = apply(m.good_to_haves);
+    if (!changed) return m;
+    const sum = summarizeMustHaves(must);
+    let score = m.score;
+    let breakdown = m.score_breakdown;
+    if (breakdown) {
+      const mustFit = mustHaveFitScore(must);
+      const goodFit = goodToHaveFitScore(good);
+      breakdown = { ...breakdown, must_haves_fit: mustFit, good_to_haves_fit: goodFit };
+      score = Math.round(mustFit * 0.5 + goodFit * 0.1 + breakdown.experience_fit * 0.2 + breakdown.domain_relevance * 0.2);
+    }
+    return { ...m, must_haves: must, good_to_haves: good, meets_all_must_haves: sum.meetsAll, qualifies: sum.qualifies, to_confirm: sum.toConfirm, score, score_breakdown: breakdown };
+  });
+}
+
+async function loadConfirmations(supabase: SupabaseClient, mandateId: string): Promise<Confirmation[]> {
+  const { data } = await supabase
+    .from("requirement_confirmations")
+    .select("candidate_id, requirement, status, note, confirmed_by_name")
+    .eq("mandate_id", mandateId);
+  return (data ?? []) as Confirmation[];
 }
 
 export type MatchMandateResult =
@@ -595,13 +676,14 @@ Candidates to evaluate (JSON array). Each candidate includes their core profile 
 ${JSON.stringify(factSheets, null, 2)}
 
 CRITICAL -- how to evaluate each must-have / good-to-have / ad hoc requirement, one clause at a time. This is the single most important instruction: for EVERY requirement, decide one of exactly three verdicts, and do not conflate them:
-- "met": the candidate's data (any of profile fields, self-assessment, recruiter scorecard, resume text) POSITIVELY confirms this requirement. This includes confident INDIRECT inference, not just explicit statements -- e.g. if the mandate needs "enterprise SaaS sales experience" and the candidate's current_employer is a well-known enterprise SaaS company (Salesforce, Freshworks, Zoho, etc.) with a matching job title, that's a legitimate basis for "met" even if the resume never uses the phrase "enterprise SaaS" verbatim. When you do this, say so plainly in the evidence (e.g. "Inferred from employer (Salesforce) and title (Enterprise AE), not explicitly stated") so the recruiter can see it's an inference, not a direct quote.
-- "not_met": the candidate's data ACTIVELY CONTRADICTS or fails this requirement -- e.g. the mandate needs 5-9 years and this candidate has 2 or 14; the mandate needs a specific language and the candidate lists several languages spoken but not that one; the mandate needs B2C and the candidate's whole background is explicitly B2B with no B2C mentioned as a list item where it would have appeared. Give the specific contradicting fact as evidence.
-- "unclear": after genuinely trying to infer from employer name, job title, and overall profile shape (not just a literal keyword search), there is still no reasonable basis to call it either way. This is the fallback when guessing would be unfounded, not the default when a literal keyword is absent. Say so plainly in the evidence (e.g. "Not mentioned or inferable from profile/resume -- confirm on call").
+- "met": the candidate's data (any of profile fields, self-assessment, recruiter scorecard, resume text) POSITIVELY confirms this requirement. This includes confident INDIRECT inference, not just explicit statements -- e.g. if the mandate needs "enterprise SaaS sales experience" and the candidate's current_employer is a well-known enterprise SaaS company (Salesforce, Freshworks, Zoho, etc.) with a matching job title, that's a legitimate basis for "met" even if the resume never uses the phrase "enterprise SaaS" verbatim. When you do this, say so plainly in the evidence (e.g. "Inferred from employer (Salesforce) and title (Enterprise AE), not explicitly stated") and set "basis" to "inferred", so the recruiter can see it's an inference, not a direct quote. Set "basis" to "stated" only when the data says it directly.
+- "not_met": the candidate's data ACTIVELY CONTRADICTS this requirement with a specific fact -- e.g. the mandate needs 5-9 years and this candidate has 2 or 14; the mandate needs B2C and the candidate's roles are all explicitly described as B2B selling. Give that specific contradicting fact as evidence and set "basis" to "stated". A requirement that is merely NOT MENTIONED is never "not_met": silence is "unclear", even when you would have expected to see it. Never mark "not_met" because something is absent from a profile or because you guessed from an employer name.
+- "unclear": after genuinely trying to infer from employer name, job title, and overall profile shape (not just a literal keyword search), there is still no reasonable basis to call it either way. This is the fallback when guessing would be unfounded, not the default when a literal keyword is absent. Say so plainly in the evidence (e.g. "Not mentioned or inferable from profile/resume -- confirm on call"). An "unclear" must-have is something the recruiter will confirm on a call; it is a question, not a rejection.
 Getting this three-way split right (met vs. not_met vs. unclear) matters more than the numeric score -- it's what lets a recruiter trust the tool enough to call a borderline candidate instead of skipping them.
 
 MUST-HAVES ARE A HARD FILTER, GOOD-TO-HAVES ARE BONUS-ONLY -- this is the second most important instruction:
-- A must-have that is "not_met" OR "unclear" means this candidate DOES NOT QUALIFY as a match for this mandate. There is no partial credit -- every must-have needs a "met" verdict, grounded in something actually in the candidate's data (directly stated or confidently inferred as above), or the candidate fails the hard filter. Still score and return these candidates (the recruiter should see near-misses, not have them silently disappear), but do not describe them as a fit in "reason", and do not let a strong good-to-haves/experience/domain profile talk you into treating a missing must-have as a minor gap.
+- A must-have that is "not_met" means this candidate DOES NOT QUALIFY for this mandate: it is contradicted by their data. Still score and return these candidates (the recruiter should see near-misses), but do not describe them as a fit in "reason", and do not let a strong good-to-haves/experience/domain profile talk you into treating a contradicted must-have as a minor gap.
+- A must-have that is "unclear" does NOT disqualify the candidate. It means "confirm this on a call". If no must-have is "not_met" but some are "unclear", the candidate is still worth a call: say in "reason" which specific points to confirm, and do not call them a confirmed fit until those are settled.
 - A good-to-have that is "not_met" or "unclear" must NEVER count against the candidate -- it simply contributes nothing. Only a "met" good-to-have adds anything. Do not lower a candidate's score, reasoning, or recommendation because a good-to-have wasn't found; that's not what it's for.
 
 ${
@@ -611,7 +693,7 @@ ${
 }
 
 SCORE FORMULA -- the overall score must be explainable, not a vibe. Compute it from four named components, each 0-100, so a recruiter can see exactly why a candidate landed where they did:
-- must_haves_fit (weight ~50%): 100 if EVERY must-have is "met". If even one is "not_met" or "unclear", this component must be 0 -- it's a hard filter, not a sliding scale, so there is no partial credit for "most of them."
+- must_haves_fit (weight ~50%): 100 if EVERY must-have is "met". If ANY must-have is "not_met", this component must be 0 (a contradicted requirement is a hard stop). If none is "not_met" but some are "unclear", use 40 + 50 x (met must-haves / total must-haves), rounded: never 100 until the unclear ones are confirmed, and never 0 just because something was not mentioned.
 - good_to_haves_fit (weight ~10%): proportion of good-to-haves that are "met" (0 if none are -- never negative, never penalized, purely a bonus for what's confirmed present).
 - experience_fit (weight ~20%): how well total_experience_years sits inside the mandate's experience range (100 if comfortably inside; lower the further outside).
 - domain_relevance (weight ~20%): how well category/sub-domain/industry/skill_inventory align with the mandate's category/sub-domain, independent of the must-have checklist. If "in_mandate_practice_pool" is true, this candidate has been explicitly tagged by a recruiter into the SAME practice this mandate belongs to -- treat that as a strong positive signal for domain_relevance; if "seniority_band_in_practice" also matches the mandate's target seniority band, that's an even stronger signal this candidate is exactly the kind of profile this mandate is looking for.
@@ -622,8 +704,8 @@ Return ONLY a JSON array (no markdown fence, no commentary), one object per incl
 - "score": integer 0-100, per the SCORE FORMULA above.
 - "score_breakdown": object {"must_haves_fit": <0-100>, "good_to_haves_fit": <0-100>, "experience_fit": <0-100>, "domain_relevance": <0-100>, "notes": "<one or two sentences on what specifically pulled the score up or down, referencing the actual gap -- e.g. 'Capped by one not_met must-have (language) and experience 1 year below range; strong domain match otherwise.'>"}.
 - "reason": one tight sentence a recruiter would say explaining why this candidate is worth considering (or notable caveat), grounded in specific facts, not generic praise.
-- "must_haves": array of objects, one per must-have clause (mandate's own must_haves, in order, followed by any ad hoc clauses you split out of the extra criteria text) -- each object is exactly {"requirement": "<the clause text>", "status": "met" | "not_met" | "unclear", "evidence": "<short grounding note, or 'Not mentioned in profile or resume -- confirm on call' for unclear>"}.
-- "good_to_haves": array of objects in the same {"requirement", "status", "evidence"} shape, one per good-to-have clause.
+- "must_haves": array of objects, one per must-have clause (mandate's own must_haves, in order, followed by any ad hoc clauses you split out of the extra criteria text) -- each object is exactly {"requirement": "<the clause text>", "status": "met" | "not_met" | "unclear", "basis": "stated" | "inferred", "evidence": "<short grounding note, or 'Not mentioned in profile or resume -- confirm on call' for unclear>"}.
+- "good_to_haves": array of objects in the same {"requirement", "status", "basis", "evidence"} shape, one per good-to-have clause.
 
 Sort the array by score descending. ${
     options?.scoreAllProvided
@@ -664,19 +746,29 @@ Sort the array by score descending. ${
       function normalizeChecks(raw: unknown): RequirementCheck[] {
         if (!Array.isArray(raw)) return [];
         return raw
-          .filter((item): item is { requirement?: unknown; status?: unknown; evidence?: unknown } => !!item && typeof item === "object")
+          .filter((item): item is { requirement?: unknown; status?: unknown; evidence?: unknown; basis?: unknown } => !!item && typeof item === "object")
           .map((item) => {
-            const status = item.status === "met" || item.status === "not_met" ? item.status : "unclear";
+            let status = (item.status === "met" || item.status === "not_met" ? item.status : "unclear") as RequirementStatus;
+            let evidence = typeof item.evidence === "string" ? item.evidence : "";
+            const basis = parseBasis(item.basis, evidence);
+            // A "no" must rest on a stated, contradicting fact. A "no" that is
+            // only inferred (or that doesn't say what it rests on) is a guess,
+            // so it becomes "confirm on call" instead of ruling the person out.
+            if (status === "not_met" && basis !== "stated") {
+              status = "unclear";
+              evidence = `Not confirmed (AI guessed a mismatch): ${evidence}`.trim();
+            }
             return {
               requirement: typeof item.requirement === "string" ? item.requirement : "",
-              status: status as RequirementStatus,
-              evidence: typeof item.evidence === "string" ? item.evidence : "",
+              status,
+              evidence,
+              basis: status === "unclear" ? null : basis,
             };
           })
           .filter((c) => c.requirement.length > 0);
       }
 
-      const matches: CandidateMatch[] = (
+      const aiMatches: CandidateMatch[] = (
         parsed as unknown as {
           candidate_id: string;
           score?: number;
@@ -708,7 +800,9 @@ Sort the array by score descending. ${
             reason: row.reason ?? "",
             must_haves: mustHavesChecked,
             good_to_haves: normalizeChecks(row.good_to_haves),
-            meets_all_must_haves: mustHavesChecked.length === 0 || mustHavesChecked.every((c) => c.status === "met"),
+            meets_all_must_haves: summarizeMustHaves(mustHavesChecked).meetsAll,
+            qualifies: summarizeMustHaves(mustHavesChecked).qualifies,
+            to_confirm: summarizeMustHaves(mustHavesChecked).toConfirm,
             // Sourced directly from the candidate's own row, never the LLM --
             // exact and lets the match card itself flag "no AI summary yet"
             // or show stability without a click into the profile.
@@ -730,12 +824,15 @@ Sort the array by score descending. ${
         // resolved pipeline outcomes exist to move the weights away from the
         // fixed 50/10/20/20 default (see lib/outcome-weights.ts).
         .sort((a, b) => {
-          if (a.meets_all_must_haves !== b.meets_all_must_haves) return a.meets_all_must_haves ? -1 : 1;
+          if (matchTier(a.must_haves) !== matchTier(b.must_haves)) return matchTier(a.must_haves) - matchTier(b.must_haves);
           const metA = a.must_haves.filter((c) => c.status === "met").length;
           const metB = b.must_haves.filter((c) => c.status === "met").length;
           if (metB !== metA) return metB - metA;
           return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
         });
+
+      // Anything a recruiter has already confirmed on a call overrides the AI's read.
+      const matches = applyConfirmations(aiMatches, await loadConfirmations(supabase, mandateId)).sort(byTierThenScore);
 
       const requirementsChecked = [
         ...((m.must_haves as string[] | null) ?? []),
@@ -845,9 +942,9 @@ function evaluateClauseDeterministically(
   if (yearsRange && candidate.total_experience_years != null) {
     const y = candidate.total_experience_years;
     if (y >= yearsRange.min && y <= yearsRange.max) {
-      return { requirement: clause, status: "met", evidence: `Candidate has ${y} years experience, within the required range.` };
+      return { requirement: clause, status: "met", basis: "stated", evidence: `Candidate has ${y} years experience, within the required range.` };
     }
-    return { requirement: clause, status: "not_met", evidence: `Candidate has ${y} years experience, outside the required range (${yearsRange.min}${yearsRange.max === Infinity ? "+" : `-${yearsRange.max}`}).` };
+    return { requirement: clause, status: "not_met", basis: "stated", evidence: `Candidate has ${y} years experience, outside the required range (${yearsRange.min}${yearsRange.max === Infinity ? "+" : `-${yearsRange.max}`}).` };
   }
 
   // Explicit B2B/B2C clause -- checked against the candidate's own
@@ -857,10 +954,13 @@ function evaluateClauseDeterministically(
   if (wantsB2B || wantsB2C) {
     const hasB2B = /\bb2b\b/i.test(searchableText);
     const hasB2C = /\bb2c\b/i.test(searchableText);
-    if (wantsB2B && hasB2B && !hasB2C) return { requirement: clause, status: "met", evidence: "Candidate's category/domain data is B2B." };
-    if (wantsB2C && hasB2C && !hasB2B) return { requirement: clause, status: "met", evidence: "Candidate's category/domain data is B2C." };
-    if (wantsB2B && hasB2C && !hasB2B) return { requirement: clause, status: "not_met", evidence: "Candidate's category/domain data is B2C, not B2B." };
-    if (wantsB2C && hasB2B && !hasB2C) return { requirement: clause, status: "not_met", evidence: "Candidate's category/domain data is B2B, not B2C." };
+    if (wantsB2B && hasB2B && !hasB2C) return { requirement: clause, status: "met", basis: "stated", evidence: "Candidate's category/domain data is B2B." };
+    if (wantsB2C && hasB2C && !hasB2B) return { requirement: clause, status: "met", basis: "stated", evidence: "Candidate's category/domain data is B2C." };
+    // Seeing only the other label is not proof they never did this kind of
+    // selling (an earlier job may have been B2C), so it is a question for the
+    // call rather than a rejection.
+    if (wantsB2B && hasB2C && !hasB2B) return { requirement: clause, status: "unclear", evidence: "Profile reads as B2C and shows no B2B -- confirm on call." };
+    if (wantsB2C && hasB2B && !hasB2C) return { requirement: clause, status: "unclear", evidence: "Profile reads as B2B and shows no B2C -- confirm on call." };
     // Both, neither, or ambiguous -- don't guess.
   }
 
@@ -872,19 +972,23 @@ function evaluateClauseDeterministically(
   const hitCount = clauseTokens.filter((t) => searchableText.includes(t)).length;
   const overlap = hitCount / clauseTokens.length;
   if (overlap >= 0.6) {
-    return { requirement: clause, status: "met", evidence: `Matched on profile/skill data (${hitCount}/${clauseTokens.length} key terms found).` };
+    return { requirement: clause, status: "met", basis: "inferred", evidence: `Matched on profile/skill data (${hitCount}/${clauseTokens.length} key terms found), not stated word for word.` };
   }
   return { requirement: clause, status: "unclear", evidence: "Not confidently found in profile/skill data -- confirm on call." };
 }
 
-// Must-haves are a hard filter: 100 only when every single clause is
-// "met" (or there are none), otherwise 0 -- no partial credit for "most
-// of them," since the whole point is that a missing must-have disqualifies
-// the candidate rather than just dinging the score. See
-// CandidateMatch.meets_all_must_haves, computed identically.
+// Must-haves: 100 only when every clause is confirmed "met"; 0 if any clause
+// is actively contradicted; in between (40-90) when nothing is contradicted
+// but some are still "to confirm" -- an unmentioned requirement is a question
+// for the call, not a reason to zero someone out.
 function mustHaveFitScore(checks: RequirementCheck[]): number {
   if (checks.length === 0) return 100;
-  return checks.every((c) => c.status === "met") ? 100 : 0;
+  const s = summarizeMustHaves(checks);
+  if (s.notMet > 0) return 0; // a contradicted requirement is a hard stop
+  if (s.toConfirm === 0) return 100; // everything confirmed
+  // Nothing contradicted but some unconfirmed: partial credit, never full
+  // until confirmed, never zero just because a CV didn't mention something.
+  return Math.round(40 + 50 * (s.met / s.total));
 }
 
 // Good-to-haves are bonus-only: a "not_met"/"unclear" clause simply
@@ -1019,7 +1123,8 @@ export async function matchCandidatesDeterministic(
 
     const must_haves_fit = mustHaveFitScore(mustHaveChecks);
     const good_to_haves_fit = goodToHaveFitScore(goodToHaveChecks);
-    const meets_all_must_haves = mustHaveChecks.length === 0 || mustHaveChecks.every((c) => c.status === "met");
+    const mustSummary = summarizeMustHaves(mustHaveChecks);
+    const meets_all_must_haves = mustSummary.meetsAll;
 
     let experience_fit = 60; // neutral default when either side lacks data
     if (m.experience_min != null && m.experience_max != null && c.total_experience_years != null) {
@@ -1075,6 +1180,8 @@ export async function matchCandidatesDeterministic(
       must_haves: mustHaveChecks,
       good_to_haves: goodToHaveChecks,
       meets_all_must_haves,
+      qualifies: mustSummary.qualifies,
+      to_confirm: mustSummary.toConfirm,
       stability_score: c.stability_score ?? null,
       has_ai_summary: !!c.ai_summary,
       current_job_title: c.current_job_title ?? null,
@@ -1086,15 +1193,10 @@ export async function matchCandidatesDeterministic(
     };
   });
 
-  const filtered = options?.scoreAllProvided ? matches : matches.filter((r) => r.score >= 35 || practiceSeniorityByCandidate.has(r.candidate_id));
+  const confirmedMatches = applyConfirmations(matches, await loadConfirmations(supabase, mandateId));
+  const filtered = options?.scoreAllProvided ? confirmedMatches : confirmedMatches.filter((r) => r.score >= 35 || practiceSeniorityByCandidate.has(r.candidate_id));
 
-  const sorted = filtered.sort((a, b) => {
-    if (a.meets_all_must_haves !== b.meets_all_must_haves) return a.meets_all_must_haves ? -1 : 1;
-    const metA = a.must_haves.filter((c) => c.status === "met").length;
-    const metB = b.must_haves.filter((c) => c.status === "met").length;
-    if (metB !== metA) return metB - metA;
-    return (b.outcome_adjusted_score ?? b.score) - (a.outcome_adjusted_score ?? a.score);
-  });
+  const sorted = filtered.sort(byTierThenScore);
 
   const capped = options?.scoreAllProvided ? sorted : sorted.slice(0, options?.maxResults ?? 30);
 
