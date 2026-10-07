@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // A person has taken over this chat: the assistant stays quiet from now on.
+  await supabase.from("whatsapp_contacts").upsert({ phone_key: key, bot_paused: true, needs_human: false }, { onConflict: "phone_key" });
+
   if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 200 });
   return NextResponse.json({ ok: true });
 }

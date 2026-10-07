@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { groupConversations, type WaMessage } from "@/lib/whatsapp-threads";
-import WhatsAppInbox from "./whatsapp-inbox";
+import WhatsAppInbox, { type ContactInfo } from "./whatsapp-inbox";
 
 // Everyone who has messaged the StaffAnchor WhatsApp number, newest first, with a
 // reply box. Candidates who message first (from the "Message us on WhatsApp"
@@ -22,6 +22,26 @@ export default async function WhatsAppPage() {
   const names: Record<string, string> = {};
   for (const c of cands ?? []) names[c.id as string] = (c.full_name as string) ?? "";
 
+  const { data: contactRows } = await supabase
+    .from("whatsapp_contacts")
+    .select("phone_key, kind, archived_at, muted, bot_paused, needs_human, needs_human_reason, opted_out, bot_state, display_name");
+  const contacts: Record<string, ContactInfo> = {};
+  for (const r of contactRows ?? []) {
+    const st = (r.bot_state ?? {}) as { status?: string; step?: string };
+    contacts[r.phone_key as string] = {
+      kind: r.kind as ContactInfo["kind"],
+      archived: !!r.archived_at,
+      muted: !!r.muted,
+      botPaused: !!r.bot_paused,
+      needsHuman: !!r.needs_human,
+      reason: (r.needs_human_reason as string | null) ?? null,
+      optedOut: !!r.opted_out,
+      botStatus: st.status ?? null,
+      botStep: st.step ?? null,
+      displayName: (r.display_name as string | null) ?? null,
+    };
+  }
+
   return (
     <div className="mx-auto max-w-[1300px] px-5 py-8">
       <div className="mb-5">
@@ -30,7 +50,7 @@ export default async function WhatsAppPage() {
           People who message StaffAnchor on WhatsApp, and your replies. You can reply freely for 24 hours after someone writes.
         </p>
       </div>
-      <WhatsAppInbox conversations={conversations} names={names} />
+      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} />
     </div>
   );
 }
