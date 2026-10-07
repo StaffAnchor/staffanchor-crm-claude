@@ -29,6 +29,24 @@ async function loadValidReferrer(admin: SupabaseClient, token: string) {
   return { referrer, reason: null as string | null };
 }
 
+// Looks up an existing login for this email (a candidate from the jobs site,
+// for instance). Email can only belong to one login project-wide, so a person
+// who is already a candidate has to be given the referrer role on that same
+// login rather than a second one.
+async function findAuthUserByEmail(admin: SupabaseClient, email: string): Promise<{ id: string } | null> {
+  const wanted = email.toLowerCase();
+  for (let page = 1; page < 50; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error || !data?.users?.length) return null;
+    const match = data.users.find((u) => u.email?.toLowerCase() === wanted);
+    if (match) return { id: match.id };
+    if (data.users.length < 1000) return null;
+  }
+  return null;
+}
+
+const escapeLike = (v: string) => v.replace(/[\\%_]/g, (c) => `\\${c}`);
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const admin = adminClient();
@@ -37,7 +55,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
   const { referrer, reason } = await loadValidReferrer(admin, token);
   if (!referrer) return NextResponse.json({ error: reason }, { status: 404 });
 
-  return NextResponse.json({ ok: true, fullName: referrer.full_name, email: referrer.email });
+  // Tells the page whether to ask for a new password or to add Sales Circle to
+  // an account this person already has.
+  const existing = await findAuthUserByEmail(admin, referrer.email);
+  return NextResponse.json({ ok: true, fullName: referrer.full_name, email: referrer.email, existingAccount: !!existing });
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -48,71 +69,43 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const { referrer, reason } = await loadValidReferrer(admin, token);
   if (!referrer) return NextResponse.json({ error: reason }, { status: 404 });
 
-  const { password } = await req.json();
-  if (!password || password.length < 8) {
-    return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
-  }
+  const { password } = await req.json().catch(() => ({ password: undefined }));
 
-  const { data: existingProfile } = await admin.from("profiles").select("id").eq("email", referrer.email).maybeSingle();
+  // A team, vendor or referrer profile that already uses this email means this
+  // is not a new person. Stop before touching any account. Case-insensitive.
+  const { data: existingProfile } = await admin.from("profiles").select("id").ilike("email", escapeLike(referrer.email)).maybeSingle();
   if (existingProfile) {
     return NextResponse.json({ error: "An account with this email already exists. Try signing in instead." }, { status: 409 });
   }
 
-  // A person can already have a Supabase Auth account under this email
-  // without having a `profiles` row -- most commonly because they're an
-  // existing candidate (candidates.user_id links to auth.users directly,
-  // bypassing `profiles` entirely; see jobs.staffanchor.com's candidate
-  // portal). Supabase Auth enforces one auth.users row per email
-  // project-wide, so a plain createUser() call fails for them with
-  // "already been registered" even though, from the referral program's
-  // point of view, they have no account yet. Being a candidate should never
-  // block someone from also becoming a referrer, so: try to create a new
-  // auth user first (the common case), and only if that fails specifically
-  // because the email is taken, look up the existing auth user, reset their
-  // password to the one just chosen here (so this referrer signup flow
-  // actually leaves them with working credentials), and attach the new
-  // `profiles` row to that same auth id instead of creating a second one --
-  // Supabase Auth has no concept of "one email, two accounts", so reusing
-  // the identity is the only way to give this email both a candidate record
-  // and a referrer profile.
+  const existingAuth = await findAuthUserByEmail(admin, referrer.email);
   let authUserId: string;
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: referrer.email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: referrer.full_name },
-  });
+  let createdNewLogin = false;
 
-  if (created?.user) {
-    authUserId = created.user.id;
-  } else if (createError && /already.*registered|email.*exists|email_exists/i.test(createError.message ?? "")) {
-    let existingAuthUserId: string | null = null;
-    let page = 1;
-    while (!existingAuthUserId) {
-      const { data: pageData, error: listError } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-      if (listError || !pageData?.users?.length) break;
-      const match = pageData.users.find((u) => u.email?.toLowerCase() === referrer.email.toLowerCase());
-      if (match) {
-        existingAuthUserId = match.id;
-        break;
-      }
-      if (pageData.users.length < 1000) break;
-      page += 1;
+  if (existingAuth) {
+    // Already has a login (usually a candidate). Their password is NOT changed;
+    // they keep signing in the way they already do. A profile by id can still
+    // exist if its email was stored differently, so check that too.
+    const { data: profileById } = await admin.from("profiles").select("id").eq("id", existingAuth.id).maybeSingle();
+    if (profileById) {
+      return NextResponse.json({ error: "An account with this email already exists. Try signing in instead." }, { status: 409 });
     }
-    if (!existingAuthUserId) {
-      return NextResponse.json({ error: "Failed to create account" }, { status: 500 });
+    authUserId = existingAuth.id;
+  } else {
+    if (!password || password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
-    const { error: updateError } = await admin.auth.admin.updateUserById(existingAuthUserId, {
+    const { data: created, error: createError } = await admin.auth.admin.createUser({
+      email: referrer.email,
       password,
       email_confirm: true,
       user_metadata: { full_name: referrer.full_name },
     });
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (!created?.user) {
+      return NextResponse.json({ error: createError?.message ?? "Failed to create account" }, { status: 500 });
     }
-    authUserId = existingAuthUserId;
-  } else {
-    return NextResponse.json({ error: createError?.message ?? "Failed to create account" }, { status: 500 });
+    authUserId = created.user.id;
+    createdNewLogin = true;
   }
 
   const { error: profileError } = await admin.from("profiles").insert({
@@ -123,13 +116,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     sales_circle_referrer_id: referrer.id,
   });
   if (profileError) {
+    // Don't leave a half-made login behind. Only ever remove one made here.
+    if (createdNewLogin) {
+      try {
+        await admin.auth.admin.deleteUser(authUserId);
+      } catch (cleanupError) {
+        console.error("Referrer signup: could not remove the half-made login", authUserId, cleanupError);
+      }
+    }
     return NextResponse.json({ error: profileError.message }, { status: 500 });
   }
 
-  // Consume the token, and record the T&C acceptance -- version + timestamp,
-  // per the spec's DPDP-consciousness. This is the actual "acceptance"
-  // moment (the checkbox on the application form just gated getting this
-  // far), since it's the point a real account is being created.
+  // Consume the token and record the T&C acceptance (version + timestamp, per
+  // the spec's DPDP-consciousness): this is the moment a real account exists.
   await admin
     .from("sales_circle_referrers")
     .update({
@@ -140,5 +139,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     })
     .eq("id", referrer.id);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, existingAccount: !createdNewLogin });
 }

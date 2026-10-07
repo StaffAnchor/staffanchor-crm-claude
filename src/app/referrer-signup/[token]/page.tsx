@@ -19,6 +19,9 @@ export default function ReferrerSignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  // True when this email already has a StaffAnchor login (for example from the
+  // jobs site). Then no password is asked for and none is changed.
+  const [existingAccount, setExistingAccount] = useState(false);
 
   useEffect(() => {
     fetch(`/api/referrer-signup/${params.token}`)
@@ -31,6 +34,7 @@ export default function ReferrerSignupPage() {
         }
         setFullName(json.fullName ?? "");
         setEmail(json.email ?? "");
+        setExistingAccount(!!json.existingAccount);
         setStatus("valid");
       })
       .catch(() => {
@@ -46,7 +50,7 @@ export default function ReferrerSignupPage() {
     const res = await fetch(`/api/referrer-signup/${params.token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify(existingAccount ? {} : { password }),
     });
     const json = await res.json();
     setSubmitting(false);
@@ -55,7 +59,7 @@ export default function ReferrerSignupPage() {
       return;
     }
     setDone(true);
-    setTimeout(() => router.push("/login"), 2500);
+    setTimeout(() => router.push("/login"), existingAccount ? 7000 : 2500);
   }
 
   return (
@@ -69,31 +73,51 @@ export default function ReferrerSignupPage() {
         {status === "valid" && !done && (
           <>
             <p className="text-sm text-slate-500 mb-4">
-              Welcome, {fullName}. Set a password for <strong>{email}</strong> to finish setting up your account.
+              {existingAccount ? (
+                <>
+                  Welcome, {fullName}. <strong>{email}</strong>{" "}
+                  already has a StaffAnchor account (for example from jobs.staffanchor.com). We&apos;ll add Sales Circle to it. Your password stays
+                  exactly as it is.
+                </>
+              ) : (
+                <>
+                  Welcome, {fullName}. Set a password for <strong>{email}</strong> to finish setting up your account.
+                </>
+              )}
             </p>
             <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                required
-                type="password"
-                placeholder="Choose a password (min. 8 characters)"
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
+              {!existingAccount && (
+                <input
+                  required
+                  type="password"
+                  placeholder="Choose a password (min. 8 characters)"
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              )}
               {error && <p className="text-xs text-red-600">{error}</p>}
               <button
                 type="submit"
                 disabled={submitting}
                 className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 disabled:opacity-60"
               >
-                {submitting ? "Creating account..." : "Create account"}
+                {submitting ? "Working..." : existingAccount ? "Add Sales Circle to my account" : "Create account"}
               </button>
             </form>
           </>
         )}
 
-        {done && <p className="text-sm text-emerald-700 mt-3">Account created. Redirecting you to sign in. You can sign in any time at clients.staffanchor.com/login.</p>}
+        {done && !existingAccount && (
+          <p className="text-sm text-emerald-700 mt-3">Account created. Redirecting you to sign in. You can sign in any time at clients.staffanchor.com/login.</p>
+        )}
+        {done && existingAccount && (
+          <p className="text-sm text-emerald-700 mt-3">
+            Done. Sales Circle is now on your account. Sign in at clients.staffanchor.com/login with your usual password, or choose &ldquo;Email me a code
+            instead&rdquo;. Taking you there now.
+          </p>
+        )}
       </div>
     </div>
   );
