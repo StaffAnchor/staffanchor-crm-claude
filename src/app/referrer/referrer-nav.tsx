@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import LiveClock from "@/components/ui/live-clock";
+import { whatsappEntryLink } from "@/lib/whatsapp-entry";
 
 function ReferrerSignOutButton() {
   const supabase = createClient();
@@ -85,6 +86,15 @@ export default function ReferrerNav({
         )}
         <LiveClock />
         <span className="text-[12px] text-slate-400 hidden sm:block">{fullName ?? email}</span>
+        <a
+          href={whatsappEntryLink("Hi StaffAnchor, I'm a Sales Circle referrer. I have a question.")}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[13px] font-medium text-emerald-400 hover:text-emerald-300"
+          title="Message StaffAnchor on WhatsApp"
+        >
+          WhatsApp us
+        </a>
         <ReferrerSignOutButton />
       </div>
     </header>

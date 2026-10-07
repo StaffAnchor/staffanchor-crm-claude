@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { whatsappEntryLink } from "@/lib/whatsapp-entry";
 import { ctcBand, experienceBand, inr, lpa, locationText, categoryLabel as roleCategoryLabel, type RoleCardData } from "@/lib/sales-circle";
 
 type MandateSummary = Pick<RoleCardData, "id" | "role_title" | "category" | "budget_min" | "budget_max" | "experience_min" | "experience_max" | "city" | "cities" | "payout_amount">;
@@ -139,6 +140,14 @@ function ReferForm() {
       <div className="max-w-lg mx-auto px-5 py-16 text-center">
         <h1 className="text-lg font-semibold text-slate-900">Referral submitted</h1>
         <p className="text-sm text-slate-500 mt-2">We&apos;ll take it from here. Taking you to My Referrals...</p>
+        <a
+          href={whatsappEntryLink("Hi StaffAnchor, I'm a Sales Circle referrer and I just submitted a referral. Could you confirm you received it?")}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 inline-block text-[13px] font-medium text-emerald-700 underline underline-offset-2"
+        >
+          Questions? Message us on WhatsApp
+        </a>
       </div>
     );
   }

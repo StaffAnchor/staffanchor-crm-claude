@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { whatsappEmailLine } from "@/lib/whatsapp-entry";
 import { renderJdPdf, clientDisplayName, type JdPdfMandate } from "@/lib/generate-jd-pdf";
 
 // Emails the same JD PDF (see /api/mandates/[id]/jd-pdf) directly to one or
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         text: `Hi ${candidate.full_name},\n\nPlease find attached the job description for ${mandate.role_title} at ${clientDisplay}.${linksTextBlock}\n\nThanks,\nStaffAnchor Team`,
         html: renderEmailShell({
           preheader: `The job description for ${mandate.role_title} is attached.`,
-          bodyHtml: `<p>Hi ${candidate.full_name},</p><p>Please find attached the job description for <strong>${mandate.role_title}</strong> at <strong>${clientDisplay}</strong>.</p>${linksHtmlBlock}<p>Thanks,<br/>StaffAnchor Team</p>`,
+          bodyHtml: `<p>Hi ${candidate.full_name},</p><p>Please find attached the job description for <strong>${mandate.role_title}</strong> at <strong>${clientDisplay}</strong>.</p>${linksHtmlBlock}<p>Thanks,<br/>StaffAnchor Team</p>${whatsappEmailLine(`Hi StaffAnchor, I got the job description for ${mandate.role_title}. I have a question.`).html}`,
         }),
         attachments: [
           { filename: `${fileNameSafe}.pdf`, content: pdfBuffer, contentType: "application/pdf" },

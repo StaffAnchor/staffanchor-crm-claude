@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { sendWhatsAppFreeform } from "@/lib/whatsapp";
 
 // Meta WhatsApp Cloud API webhook (Phase 2, Task 2). Two jobs:
 //  - GET: the one-time verification handshake Meta requires when you
@@ -121,15 +122,58 @@ export async function POST(req: NextRequest) {
             candidateId = match?.id ?? null;
           }
 
+          // Meta retries a delivery it thinks failed, so never store the same message twice.
+          const incomingId: string | null = message?.id ?? null;
+          if (incomingId) {
+            const { data: already } = await admin.from("whatsapp_messages").select("id").eq("meta_message_id", incomingId).limit(1);
+            if (already && already.length > 0) continue;
+          }
+
+          // A tapped quick-reply button arrives as an interactive/button reply, not text.
+          const shownText: string | null =
+            bodyText ?? message?.button?.text ?? message?.interactive?.button_reply?.title ?? message?.interactive?.list_reply?.title ?? null;
+
           await admin.from("whatsapp_messages").insert({
             candidate_id: candidateId,
             direction: "inbound",
             to_phone: fromPhone,
-            body_preview: bodyText,
+            body_preview: shownText,
             status: "delivered",
-            meta_message_id: message?.id ?? null,
+            meta_message_id: incomingId,
             raw_payload: message,
           });
+
+          // Optional first acknowledgement, only when switched on (WHATSAPP_AUTO_ACK=true).
+          // One per 24 hours per person, sent inside the window the person just opened,
+          // so it is free and not a template.
+          if (process.env.WHATSAPP_AUTO_ACK === "true" && fromPhone) {
+            const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const { data: recentOut } = await admin
+              .from("whatsapp_messages")
+              .select("id")
+              .eq("direction", "outbound")
+              .ilike("to_phone", `%${fromPhone.slice(-10)}`)
+              .gte("created_at", since)
+              .limit(1);
+            if (!recentOut || recentOut.length === 0) {
+              let first = "there";
+              if (candidateId) {
+                const { data: cand } = await admin.from("candidates").select("full_name").eq("id", candidateId).maybeSingle();
+                first = (cand?.full_name as string | undefined)?.trim().split(/\s+/)[0] || "there";
+              }
+              const ackBody = `Hi ${first}, thanks for messaging StaffAnchor. A recruiter will reply shortly, usually within one working day. Meanwhile, you can send your latest CV here and tell us your current CTC, expected CTC and notice period.`;
+              const sent = await sendWhatsAppFreeform({ to: fromPhone, body: ackBody });
+              await admin.from("whatsapp_messages").insert({
+                candidate_id: candidateId,
+                direction: "outbound",
+                to_phone: fromPhone,
+                body_preview: ackBody,
+                status: sent.ok ? "sent" : sent.status === "not_configured" ? "not_configured" : "failed",
+                meta_message_id: sent.ok ? sent.metaMessageId : null,
+                error: sent.ok ? null : sent.error,
+              });
+            }
+          }
         }
       }
     }

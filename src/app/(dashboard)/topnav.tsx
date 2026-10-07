@@ -10,6 +10,7 @@ import ThemeToggle from "@/components/theme-toggle";
 import NotificationBell from "./notification-bell";
 import CallsFlaggedBell from "./calls-flagged-bell";
 import TasksNavBadge from "./tasks-nav-badge";
+import WhatsAppNavBadge from "./whatsapp-nav-badge";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
@@ -96,6 +97,7 @@ export default function TopNav({
               >
                 {link.label}
                 {link.href === "/tasks" && !active ? <TasksNavBadge /> : null}
+                {link.href === "/whatsapp" ? <WhatsAppNavBadge /> : null}
               </Link>
             );
           })}

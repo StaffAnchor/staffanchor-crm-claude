@@ -1,0 +1,229 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { AlertCircle, Check, CheckCheck, Clock, MessageCircle, Send, UserPlus } from "lucide-react";
+import { WINDOW_MS, type WaConversation } from "@/lib/whatsapp-threads";
+
+type Filter = "needs" | "all" | "unknown";
+
+const QUICK_REPLIES = [
+  "Thanks for reaching out to StaffAnchor! Could you share your current CTC, expected CTC and notice period?",
+  "Could you send your latest CV here (PDF or Word)? We'll look at suitable roles.",
+  "Happy to help. Which city are you open to working in, and are you open to relocating?",
+  "Thank you! A recruiter will review this and get back to you shortly.",
+];
+
+const clock = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+
+function ago(iso: string, now: number) {
+  const m = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
+  if (m < 1) return "now";
+  if (m < 60) return `${m}m`;
+  if (m < 1440) return `${Math.round(m / 60)}h`;
+  return `${Math.round(m / 1440)}d`;
+}
+
+export default function WhatsAppInbox({ conversations, names }: { conversations: WaConversation[]; names: Record<string, string> }) {
+  const router = useRouter();
+  const [filter, setFilter] = useState<Filter>("needs");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  // New messages arrive while the page is open: refresh quietly every 30 seconds.
+  useEffect(() => {
+    const t = setInterval(() => {
+      setNow(Date.now());
+      router.refresh();
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [router]);
+
+  const nameOf = (c: WaConversation) => (c.candidateId && names[c.candidateId]) || `+${c.phone.replace(/\D/g, "")}`;
+  const counts = useMemo(
+    () => ({ needs: conversations.filter((c) => c.needsReply).length, all: conversations.length, unknown: conversations.filter((c) => !c.candidateId).length }),
+    [conversations]
+  );
+  const shown = conversations.filter((c) => (filter === "needs" ? c.needsReply : filter === "unknown" ? !c.candidateId : true));
+  const active = conversations.find((c) => c.key === selected) ?? shown[0] ?? null;
+
+  async function send() {
+    if (!active || !draft.trim()) return;
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/whatsapp/reply-to-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: active.phone, candidateId: active.candidateId, body: draft }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Couldn't send that message.");
+      } else {
+        setDraft("");
+        router.refresh();
+      }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const chips: { key: Filter; label: string }[] = [
+    { key: "needs", label: `Needs reply ${counts.needs}` },
+    { key: "all", label: `All ${counts.all}` },
+    { key: "unknown", label: `Not in database ${counts.unknown}` },
+  ];
+
+  const windowLeft = active?.lastInboundAt ? WINDOW_MS - (now - new Date(active.lastInboundAt).getTime()) : 0;
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {chips.map((c) => (
+          <button
+            key={c.key}
+            onClick={() => setFilter(c.key)}
+            className={`rounded-full border px-3 py-1 text-[12px] font-medium ${
+              filter === c.key ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {conversations.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
+          <MessageCircle className="mx-auto h-8 w-8 text-slate-300" />
+          <p className="mt-3 text-[14px] font-medium text-slate-700 dark:text-slate-200">No WhatsApp conversations yet</p>
+          <p className="mx-auto mt-1 max-w-md text-[12.5px] text-slate-400">When someone taps &ldquo;Message us on WhatsApp&rdquo; on the jobs site, the website or an email, their message appears here.</p>
+        </div>
+      ) : (
+        <div className="grid min-h-[560px] gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+            {shown.length === 0 && <p className="px-4 py-8 text-center text-[13px] text-slate-400">Nothing in this view.</p>}
+            {shown.map((c) => {
+              const last = c.messages[c.messages.length - 1];
+              const isActive = active?.key === c.key;
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => {
+                    setSelected(c.key);
+                    setError(null);
+                  }}
+                  className={`block w-full border-b border-slate-100 px-4 py-3 text-left last:border-b-0 dark:border-slate-800 ${isActive ? "bg-slate-50 dark:bg-slate-800/60" : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      {c.needsReply && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-label="Needs reply" />}
+                      <span className={`truncate text-[13.5px] ${c.needsReply ? "font-semibold" : "font-medium"} text-slate-900 dark:text-slate-100`}>{nameOf(c)}</span>
+                    </span>
+                    <span className="shrink-0 text-[11px] text-slate-400" suppressHydrationWarning>
+                      {ago(c.lastAt, now)}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 truncate text-[12px] text-slate-500 dark:text-slate-400">
+                    {last.direction === "outbound" ? "You: " : ""}
+                    {last.body_preview || (last.template_name ? `Template: ${last.template_name}` : "Message")}
+                  </p>
+                  {!c.candidateId && <span className="mt-1 inline-block rounded bg-amber-50 px-1.5 py-px text-[10.5px] font-medium text-amber-700">Not in database</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {active ? (
+            <div className="flex max-h-[70vh] flex-col rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                <div className="min-w-0">
+                  <div className="truncate text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{nameOf(active)}</div>
+                  <div className="text-[12px] text-slate-400">+{active.phone.replace(/\D/g, "")}</div>
+                </div>
+                <div className="flex items-center gap-3 text-[12px]">
+                  {active.candidateId ? (
+                    <Link href={`/candidates/${active.candidateId}`} className="font-medium text-blue-600 hover:underline">
+                      Open candidate
+                    </Link>
+                  ) : (
+                    <Link href="/candidates/new" className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline">
+                      <UserPlus className="h-3.5 w-3.5" /> Add as candidate
+                    </Link>
+                  )}
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${windowLeft > 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`} suppressHydrationWarning>
+                    <Clock className="h-3 w-3" />
+                    {windowLeft > 0 ? `Reply window open · ${Math.max(1, Math.floor(windowLeft / 3_600_000))}h left` : "Reply window closed"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50/60 px-4 py-4 dark:bg-slate-950/30">
+                {active.messages.map((m) => {
+                  const mine = m.direction === "outbound";
+                  return (
+                    <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[13px] leading-snug ${mine ? "bg-emerald-600 text-white" : "bg-white text-slate-800 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"}`}>
+                        <p className="whitespace-pre-wrap">{m.body_preview || (m.template_name ? `Template: ${m.template_name}` : "Message")}</p>
+                        <div className={`mt-1 flex items-center justify-end gap-1 text-[10.5px] ${mine ? "text-emerald-100" : "text-slate-400"}`} suppressHydrationWarning>
+                          {clock(m.created_at)}
+                          {mine && (m.status === "read" ? <CheckCheck className="h-3 w-3" /> : m.status === "delivered" || m.status === "sent" ? <Check className="h-3 w-3" /> : null)}
+                        </div>
+                        {m.status === "failed" && (
+                          <p className="mt-1 flex items-start gap-1 text-[11px] text-rose-100">
+                            <AlertCircle className="mt-px h-3 w-3 shrink-0" /> Not delivered{m.error ? `: ${m.error}` : ""}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+                {windowLeft > 0 ? (
+                  <>
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {QUICK_REPLIES.map((q) => (
+                        <button key={q} onClick={() => setDraft(q)} className="rounded-full border border-slate-200 px-2.5 py-1 text-[11.5px] text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                          {q.length > 44 ? `${q.slice(0, 44)}…` : q}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <textarea
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        rows={2}
+                        placeholder="Write a reply"
+                        className="flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900"
+                      />
+                      <button
+                        onClick={send}
+                        disabled={sending || !draft.trim()}
+                        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-emerald-600 px-4 text-[13px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                      >
+                        <Send className="h-3.5 w-3.5" /> {sending ? "Sending…" : "Send"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[12.5px] text-slate-500">
+                    The 24-hour reply window has closed. WhatsApp allows a free message only within 24 hours of their last message. They can message again, or use an approved template.
+                  </p>
+                )}
+                {error && <p className="mt-2 text-[12px] text-rose-600">{error}</p>}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[13px] text-slate-400 dark:border-slate-700">Select a conversation.</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

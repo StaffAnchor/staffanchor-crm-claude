@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { whatsappEmailLine } from "@/lib/whatsapp-entry";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
       text: `Hi ${candidate.full_name},\n\nA StaffAnchor recruiter has started a profile for you.${missingFieldText} Please complete it here so we can match you to the right roles:\n\n${registerUrl}\n\nThanks,\nStaffAnchor Team`,
       html: renderEmailShell({
         preheader: "Complete your candidate profile so we can match you to the right roles.",
-        bodyHtml: `<p>Hi ${candidate.full_name},</p><p>A StaffAnchor recruiter has started a profile for you.${missingFieldText}</p><p>Please complete it so we can match you to the right roles:</p><p><a href="${registerUrl}">${registerUrl}</a></p><p>Thanks,<br/>StaffAnchor Team</p>`,
+        bodyHtml: `<p>Hi ${candidate.full_name},</p><p>A StaffAnchor recruiter has started a profile for you.${missingFieldText}</p><p>Please complete it so we can match you to the right roles:</p><p><a href="${registerUrl}">${registerUrl}</a></p><p>Thanks,<br/>StaffAnchor Team</p>${whatsappEmailLine("Hi StaffAnchor, I got your email about completing my profile. Could you help?").html}`,
       }),
     });
 
