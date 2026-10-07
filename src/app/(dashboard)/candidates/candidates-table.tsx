@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import WhatsAppShareModal from "@/components/whatsapp-share-modal";
 import { formatExperience } from "@/lib/format-experience";
 import {
   level1OptionsForProfileType,
@@ -36,6 +37,7 @@ import {
   Sparkles,
   FolderPlus,
   Download,
+  MessageCircle,
 } from "lucide-react";
 
 export type OpenMandate = {
@@ -1042,6 +1044,7 @@ export default function CandidatesTable({
   const [panelOpen, setPanelOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [waOpen, setWaOpen] = useState(false);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [generatingStability, setGeneratingStability] = useState<Set<string>>(new Set());
   const [summaryTooltip, setSummaryTooltip] = useState<{
@@ -1524,6 +1527,14 @@ export default function CandidatesTable({
           <Button
             variant="secondary"
             size="sm"
+            onClick={() => setWaOpen(true)}
+            icon={<MessageCircle className="w-3.5 h-3.5" />}
+          >
+            Send WhatsApp
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setConfirmingInvite(true)}
             disabled={bulkBusy}
             icon={bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <SendIcon className="w-3.5 h-3.5" />}
@@ -1604,6 +1615,8 @@ export default function CandidatesTable({
           <p className="text-[12px] text-slate-500 dark:text-slate-400">{bulkMessage}</p>
         </div>
       )}
+
+      {waOpen && <WhatsAppShareModal candidateIds={Array.from(selected)} onClose={() => setWaOpen(false)} />}
 
       {mapModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setMapModalOpen(false)}>

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Mail, FolderPlus, Send } from "lucide-react";
+import { Loader2, Mail, FolderPlus, Send, MessageCircle } from "lucide-react";
+import WhatsAppShareModal from "@/components/whatsapp-share-modal";
 import { STAGES, applyStageChange, type Stage } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
 
@@ -38,6 +39,7 @@ export default function MandateBulkActionsBar({
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
   const [emailingJd, setEmailingJd] = useState(false);
+  const [waOpen, setWaOpen] = useState(false);
 
   const clientContacts =
     (mandateContext.clientContacts as { id: string; full_name: string; email: string | null; is_primary: boolean }[]) ?? [];
@@ -308,6 +310,14 @@ export default function MandateBulkActionsBar({
             Move to client shortlist
           </button>
           <button
+            onClick={() => setWaOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-medium"
+            title="Opens each selected candidate's WhatsApp chat with this role's message ready to send"
+          >
+            <MessageCircle className="w-3 h-3" />
+            Send WhatsApp
+          </button>
+          <button
             onClick={openJdModal}
             disabled={emailingJd}
             className="flex items-center gap-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
@@ -351,6 +361,15 @@ export default function MandateBulkActionsBar({
         </div>
       </div>
 
+      {waOpen && (
+        <WhatsAppShareModal
+          candidateIds={Array.from(selected)
+            .map((linkId) => rows.find((r) => r.id === linkId)?.candidate.id)
+            .filter((v): v is string => Boolean(v))}
+          defaultMandateId={mandateContext.mandateId}
+          onClose={() => setWaOpen(false)}
+        />
+      )}
       {groupModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setGroupModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>

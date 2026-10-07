@@ -11,11 +11,14 @@ export default function WhatsAppMenu({
   phone,
   templates,
   onSend,
+  onIntroduce,
   className,
 }: {
   phone: string | null | undefined;
   templates: WhatsAppTemplate[];
   onSend?: (templateKey: string) => void;
+  // When given, the first entry is "Share an opportunity…" and opens the opportunity picker instead of a fixed message.
+  onIntroduce?: () => void;
   className: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -39,6 +42,19 @@ export default function WhatsAppMenu({
       </button>
       {open && (
         <div role="menu" className="absolute left-0 z-30 mt-1 w-60 rounded-ros-md border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          {onIntroduce && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onIntroduce();
+              }}
+              className="block w-full rounded px-2.5 py-1.5 text-left text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-slate-800"
+            >
+              Share an opportunity…
+            </button>
+          )}
           {templates.map((t) => (
             <a
               key={t.key}

@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Phone, Mail } from "lucide-react";
+import WhatsAppShareModal from "@/components/whatsapp-share-modal";
 import WhatsAppMenu from "@/components/whatsapp-menu";
 import { candidateTemplates } from "@/lib/whatsapp-link";
 import { createClient } from "@/lib/supabase/client";
@@ -40,6 +42,8 @@ export default function QuickContactActions({
   phone?: string | null;
   email: string;
 }) {
+  const [sharing, setSharing] = useState(false);
+  const [ids] = useState(() => [candidateId]);
   return (
     <>
       {phone && (
@@ -49,13 +53,15 @@ export default function QuickContactActions({
       )}
       <WhatsAppMenu
         phone={phone}
-        templates={candidateTemplates(candidateName)}
+        templates={candidateTemplates(candidateName).filter((t) => t.key !== "intro")}
+        onIntroduce={() => setSharing(true)}
         onSend={() => logActivity(candidateId, "whatsapp")}
         className={linkClass}
       />
       <a href={`mailto:${email}`} className={linkClass} onClick={() => logActivity(candidateId, "email")}>
         <Mail className="w-3 h-3" /> Email
       </a>
+      {sharing && <WhatsAppShareModal candidateIds={ids} onClose={() => setSharing(false)} />}
     </>
   );
 }
