@@ -93,7 +93,7 @@ export default function ReferrerSignupPage() {
           </>
         )}
 
-        {done && <p className="text-sm text-emerald-700 mt-3">Account created. Redirecting you to sign in...</p>}
+        {done && <p className="text-sm text-emerald-700 mt-3">Account created. Redirecting you to sign in. You can sign in any time at clients.staffanchor.com/login.</p>}
       </div>
     </div>
   );

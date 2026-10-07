@@ -45,9 +45,9 @@ export default function LoginPage() {
           <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">
             StaffAnchor
           </p>
-          <h1 className="text-xl font-semibold text-slate-900 mt-1">Recruiter sign in</h1>
+          <h1 className="text-xl font-semibold text-slate-900 mt-1">Sign in</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Internal access only — candidates never log in here.
+            For the StaffAnchor team, vendors and Sales Circle members. Candidates and clients sign in at jobs.staffanchor.com.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
