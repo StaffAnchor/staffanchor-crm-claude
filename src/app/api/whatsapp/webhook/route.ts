@@ -64,14 +64,45 @@ export async function POST(req: NextRequest) {
         for (const status of value.statuses ?? []) {
           const metaMessageId = status?.id;
           if (!metaMessageId) continue;
-          await admin
+          const known = ["sent", "delivered", "read", "failed"];
+          if (!known.includes(status?.status)) continue;
+          // Keep Meta's error code with its title: the code (for example 131049,
+          // "not delivered to maintain healthy ecosystem engagement") is what
+          // says why a message did not arrive.
+          const firstError = status?.errors?.[0];
+          const errorText = firstError ? `${firstError.code ?? ""} ${firstError.title ?? firstError.message ?? ""}`.trim() : null;
+
+          const { data: updated } = await admin
             .from("whatsapp_messages")
             .update({
               status: status.status, // "sent" | "delivered" | "read" | "failed"
-              error: status?.errors?.[0]?.title ?? null,
+              error: errorText,
               raw_payload: status,
             })
-            .eq("meta_message_id", metaMessageId);
+            .eq("meta_message_id", metaMessageId)
+            .select("id");
+
+          // A message sent from outside the CRM (a test from the Graph API
+          // Explorer, or another tool) has no row yet. Record its result anyway
+          // so a delivery problem is never invisible.
+          if (!updated || updated.length === 0) {
+            const recipient: string | null = status?.recipient_id ?? null;
+            let candidateId: string | null = null;
+            if (recipient) {
+              const { data: match } = await admin.from("candidates").select("id").ilike("phone", `%${recipient.slice(-10)}`).limit(1).maybeSingle();
+              candidateId = match?.id ?? null;
+            }
+            await admin.from("whatsapp_messages").insert({
+              candidate_id: candidateId,
+              direction: "outbound",
+              to_phone: recipient,
+              body_preview: "Sent outside the CRM",
+              status: status.status,
+              meta_message_id: metaMessageId,
+              error: errorText,
+              raw_payload: status,
+            });
+          }
         }
 
         // Inbound messages from candidates replying on WhatsApp.
@@ -102,9 +133,10 @@ export async function POST(req: NextRequest) {
         }
       }
     }
-  } catch {
-    // Swallow -- webhook processing failures shouldn't surface to Meta as
-    // a delivery failure; worst case a status update is missed, not fatal.
+  } catch (err) {
+    // Don't surface to Meta as a delivery failure (it would keep retrying), but do
+    // leave a trace so a missed update is visible in the logs.
+    console.error("WhatsApp webhook processing failed", err);
   }
 
   return NextResponse.json({ ok: true });
