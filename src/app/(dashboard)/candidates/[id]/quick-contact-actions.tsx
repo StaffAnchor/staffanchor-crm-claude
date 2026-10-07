@@ -1,6 +1,8 @@
 "use client";
 
-import { Phone, Mail, MessageCircle } from "lucide-react";
+import { Phone, Mail } from "lucide-react";
+import WhatsAppMenu from "@/components/whatsapp-menu";
+import { candidateTemplates } from "@/lib/whatsapp-link";
 import { createClient } from "@/lib/supabase/client";
 
 // Wraps the header's Call / WhatsApp / Email links so each click also
@@ -29,10 +31,12 @@ const linkClass =
 
 export default function QuickContactActions({
   candidateId,
+  candidateName,
   phone,
   email,
 }: {
   candidateId: string;
+  candidateName?: string | null;
   phone?: string | null;
   email: string;
 }) {
@@ -43,17 +47,12 @@ export default function QuickContactActions({
           <Phone className="w-3 h-3" /> Call
         </a>
       )}
-      {phone && (
-        <a
-          href={`https://wa.me/91${phone.replace(/\D/g, "").slice(-10)}`}
-          target="_blank"
-          rel="noreferrer"
-          className={linkClass}
-          onClick={() => logActivity(candidateId, "whatsapp")}
-        >
-          <MessageCircle className="w-3 h-3" /> WhatsApp
-        </a>
-      )}
+      <WhatsAppMenu
+        phone={phone}
+        templates={candidateTemplates(candidateName)}
+        onSend={() => logActivity(candidateId, "whatsapp")}
+        className={linkClass}
+      />
       <a href={`mailto:${email}`} className={linkClass} onClick={() => logActivity(candidateId, "email")}>
         <Mail className="w-3 h-3" /> Email
       </a>

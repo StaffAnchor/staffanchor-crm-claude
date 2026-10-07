@@ -6,6 +6,8 @@ import { Mail, Phone, Building2, Briefcase, ArrowRight, Trash2, ChevronDown, Che
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import WhatsAppMenu from "@/components/whatsapp-menu";
+import { employerTemplates, jobseekerTemplates } from "@/lib/whatsapp-link";
 
 export type InquiryStatus = "new" | "contacted" | "converted" | "dismissed";
 export type InquiryKind = "employer" | "jobseeker" | "spam";
@@ -992,6 +994,14 @@ export default function EmployerInquiriesView({
                       </select>
                     );
                   })()}
+
+                  {row.kind !== "spam" && (
+                    <WhatsAppMenu
+                      phone={row.mobile_number}
+                      templates={row.kind === "jobseeker" ? jobseekerTemplates(row.full_name) : employerTemplates(row.full_name, row.role_title)}
+                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-900 transition-colors duration-200 ease-ros"
+                    />
+                  )}
 
                   {row.kind === "jobseeker" && row.status === "new" && (
                     <button
