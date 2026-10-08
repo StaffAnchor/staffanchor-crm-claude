@@ -35,6 +35,7 @@ const CREATED_BY_LABELS: Record<string, string> = {
   bulk_import: "One-Time Upload (Zoho)",
   browser_extension: "LinkedIn (Chrome Extension)",
   linkedin_sourced: "LinkedIn (Manual Sourcing)",
+  whatsapp: "WhatsApp Chat",
 };
 
 const SELF_SERVICE_SOURCE_LABELS: Record<string, string> = {

@@ -1,6 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendWhatsAppFreeform } from "@/lib/whatsapp";
+import { handleInbound, type Io } from "@/lib/whatsapp-bot/engine";
+import { supabaseStore } from "@/lib/whatsapp-bot/store";
+
+// Reads the assistant switches. Off unless WHATSAPP_BOT=true; WHATSAPP_BOT_ALLOWLIST (comma-separated
+// numbers) limits it to those people, which is how it is tested on your own phone first.
+const botEnv = () => ({
+  enabled: process.env.WHATSAPP_BOT === "true",
+  allowlist: process.env.WHATSAPP_BOT_ALLOWLIST
+    ? process.env.WHATSAPP_BOT_ALLOWLIST.split(",").map((n) => n.replace(/\D/g, "").slice(-10)).filter(Boolean)
+    : null,
+  nowMs: new Date().getTime(),
+});
+
+const botIo: Io = {
+  async send(to, body) {
+    const r = await sendWhatsAppFreeform({ to, body });
+    if (r.ok) return { ok: true, id: r.metaMessageId ?? "" };
+    return { ok: false, error: r.error ?? "send failed", notConfigured: r.status === "not_configured" };
+  },
+  async downloadMedia(mediaId) {
+    const token = process.env.WHATSAPP_ACCESS_TOKEN;
+    if (!token) return null;
+    try {
+      const meta = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!meta.ok) return null;
+      const info = (await meta.json()) as { url?: string; mime_type?: string };
+      if (!info.url) return null;
+      const file = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!file.ok) return null;
+      return { bytes: new Uint8Array(await file.arrayBuffer()), mime: info.mime_type ?? null };
+    } catch {
+      return null;
+    }
+  },
+};
 
 // Meta WhatsApp Cloud API webhook (Phase 2, Task 2). Two jobs:
 //  - GET: the one-time verification handshake Meta requires when you
@@ -142,6 +177,31 @@ export async function POST(req: NextRequest) {
             meta_message_id: incomingId,
             raw_payload: message,
           });
+
+          // The assistant: sorts the chat (jobseeker / employer / referrer / other) and, for
+          // jobseekers only, collects a profile. Employers are never asked profile questions.
+          const bot = botEnv();
+          if (fromPhone) {
+            try {
+              await handleInbound(
+                bot,
+                supabaseStore(admin),
+                botIo,
+                {
+                  phone: fromPhone,
+                  id: incomingId ?? `nomid-${bot.nowMs}`,
+                  type: message?.type ?? "text",
+                  text: shownText,
+                  mediaId: message?.document?.id ?? null,
+                  mimeType: message?.document?.mime_type ?? null,
+                  filename: message?.document?.filename ?? null,
+                },
+              );
+            } catch (err) {
+              console.error("WhatsApp assistant failed", err);
+            }
+            if (bot.enabled) continue;
+          }
 
           // Optional first acknowledgement, only when switched on (WHATSAPP_AUTO_ACK=true).
           // One per 24 hours per person, sent inside the window the person just opened,

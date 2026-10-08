@@ -3,10 +3,39 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Check, CheckCheck, Clock, MessageCircle, Send, UserPlus } from "lucide-react";
+import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, Send, UserPlus } from "lucide-react";
 import { WINDOW_MS, type WaConversation } from "@/lib/whatsapp-threads";
 
-type Filter = "needs" | "all" | "unknown";
+type Kind = "unsorted" | "jobseeker" | "employer" | "referrer" | "other";
+export type ContactInfo = {
+  kind: Kind;
+  archived: boolean;
+  muted: boolean;
+  botPaused: boolean;
+  needsHuman: boolean;
+  reason: string | null;
+  optedOut: boolean;
+  botStatus: string | null;
+  botStep: string | null;
+  displayName: string | null;
+};
+type Tab = "jobseeker" | "employer" | "other" | "unsorted" | "archived";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "jobseeker", label: "Jobseekers" },
+  { key: "employer", label: "Employers" },
+  { key: "other", label: "Referrers & other" },
+  { key: "unsorted", label: "Unsorted" },
+  { key: "archived", label: "Archived" },
+];
+const KIND_LABEL: Record<Kind, string> = { unsorted: "Unsorted", jobseeker: "Jobseeker", employer: "Employer", referrer: "Referrer", other: "Other" };
+const tabOf = (info: ContactInfo | undefined): Tab => {
+  if (info?.archived) return "archived";
+  const k = info?.kind ?? "unsorted";
+  return k === "referrer" || k === "other" ? "other" : k;
+};
+
+type Filter = "needs" | "all";
 
 const QUICK_REPLIES = [
   "Thanks for reaching out to StaffAnchor! Could you share your current CTC, expected CTC and notice period?",
@@ -25,8 +54,9 @@ function ago(iso: string, now: number) {
   return `${Math.round(m / 1440)}d`;
 }
 
-export default function WhatsAppInbox({ conversations, names }: { conversations: WaConversation[]; names: Record<string, string> }) {
+export default function WhatsAppInbox({ conversations, names, contacts }: { conversations: WaConversation[]; names: Record<string, string>; contacts: Record<string, ContactInfo> }) {
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("jobseeker");
   const [filter, setFilter] = useState<Filter>("needs");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -43,13 +73,30 @@ export default function WhatsAppInbox({ conversations, names }: { conversations:
     return () => clearInterval(t);
   }, [router]);
 
-  const nameOf = (c: WaConversation) => (c.candidateId && names[c.candidateId]) || `+${c.phone.replace(/\D/g, "")}`;
-  const counts = useMemo(
-    () => ({ needs: conversations.filter((c) => c.needsReply).length, all: conversations.length, unknown: conversations.filter((c) => !c.candidateId).length }),
-    [conversations]
-  );
-  const shown = conversations.filter((c) => (filter === "needs" ? c.needsReply : filter === "unknown" ? !c.candidateId : true));
-  const active = conversations.find((c) => c.key === selected) ?? shown[0] ?? null;
+  const nameOf = (c: WaConversation) => (c.candidateId && names[c.candidateId]) || contacts[c.key]?.displayName || `+${c.phone.replace(/\D/g, "")}`;
+  const inTab = useMemo(() => {
+    const m: Record<Tab, WaConversation[]> = { jobseeker: [], employer: [], other: [], unsorted: [], archived: [] };
+    for (const c of conversations) m[tabOf(contacts[c.key])].push(c);
+    return m;
+  }, [conversations, contacts]);
+  const tabCounts = (t: Tab) => inTab[t].filter((c) => c.needsReply || contacts[c.key]?.needsHuman).length;
+  const pool = inTab[tab];
+  const shown = pool.filter((c) => (filter === "needs" && tab !== "archived" ? c.needsReply || contacts[c.key]?.needsHuman : true));
+  const active = shown.find((c) => c.key === selected) ?? shown[0] ?? null;
+  const info = active ? contacts[active.key] : undefined;
+
+  async function control(action: string, kind?: string) {
+    if (!active) return;
+    setError(null);
+    const res = await fetch("/api/whatsapp/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: active.phone, action, kind }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) setError(data.error ?? "That didn't work.");
+    else router.refresh();
+  }
 
   async function send() {
     if (!active || !draft.trim()) return;
@@ -74,28 +121,47 @@ export default function WhatsAppInbox({ conversations, names }: { conversations:
   }
 
   const chips: { key: Filter; label: string }[] = [
-    { key: "needs", label: `Needs reply ${counts.needs}` },
-    { key: "all", label: `All ${counts.all}` },
-    { key: "unknown", label: `Not in database ${counts.unknown}` },
+    { key: "needs", label: "Needs attention" },
+    { key: "all", label: "All" },
   ];
 
   const windowLeft = active?.lastInboundAt ? WINDOW_MS - (now - new Date(active.lastInboundAt).getTime()) : 0;
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        {chips.map((c) => (
-          <button
-            key={c.key}
-            onClick={() => setFilter(c.key)}
-            className={`rounded-full border px-3 py-1 text-[12px] font-medium ${
-              filter === c.key ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
+      <div className="mb-2 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
+        {TABS.map((t) => {
+          const n = tabCounts(t.key);
+          return (
+            <button
+              key={t.key}
+              onClick={() => {
+                setTab(t.key);
+                setSelected(null);
+              }}
+              className={`-mb-px border-b-2 px-3 py-2 text-[13px] font-medium ${tab === t.key ? "border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
+            >
+              {t.label} <span className="text-slate-400">{inTab[t.key].length}</span>
+              {n > 0 && t.key !== "archived" && <span className="ml-1 rounded-full bg-emerald-500 px-1.5 py-px text-[10.5px] font-semibold text-white">{n}</span>}
+            </button>
+          );
+        })}
       </div>
+      {tab !== "archived" && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {chips.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setFilter(c.key)}
+              className={`rounded-full border px-3 py-1 text-[12px] font-medium ${
+                filter === c.key ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {conversations.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
@@ -132,7 +198,11 @@ export default function WhatsAppInbox({ conversations, names }: { conversations:
                     {last.direction === "outbound" ? "You: " : ""}
                     {last.body_preview || (last.template_name ? `Template: ${last.template_name}` : "Message")}
                   </p>
-                  {!c.candidateId && <span className="mt-1 inline-block rounded bg-amber-50 px-1.5 py-px text-[10.5px] font-medium text-amber-700">Not in database</span>}
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {!c.candidateId && <span className="inline-block rounded bg-amber-50 px-1.5 py-px text-[10.5px] font-medium text-amber-700">Not in database</span>}
+                    {contacts[c.key]?.needsHuman && <span className="inline-block rounded bg-rose-50 px-1.5 py-px text-[10.5px] font-medium text-rose-700">Needs a person</span>}
+                    {contacts[c.key]?.botStatus === "active" && !contacts[c.key]?.botPaused && <span className="inline-block rounded bg-sky-50 px-1.5 py-px text-[10.5px] font-medium text-sky-700">Collecting profile</span>}
+                  </div>
                 </button>
               );
             })}
@@ -162,12 +232,57 @@ export default function WhatsAppInbox({ conversations, names }: { conversations:
                 </div>
               </div>
 
+              <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-2 text-[12px] dark:border-slate-800">
+                <label className="inline-flex items-center gap-1 text-slate-500">
+                  Type
+                  <select value={info?.kind ?? "unsorted"} onChange={(e) => control("set_kind", e.target.value)} className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] dark:border-slate-700 dark:bg-slate-900">
+                    {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
+                      <option key={k} value={k}>
+                        {KIND_LABEL[k]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <span className="inline-flex items-center gap-1 text-slate-500">
+                  <Bot className="h-3.5 w-3.5" />
+                  {info?.optedOut ? "Opted out of automatic messages" : info?.botPaused ? "Assistant paused" : info?.botStatus === "active" ? `Assistant collecting profile${info.botStep ? ` (${info.botStep})` : ""}` : "Assistant idle"}
+                </span>
+                {info && !info.optedOut && (
+                  <button onClick={() => control(info.botPaused ? "resume_bot" : "pause_bot")} className="font-medium text-blue-600 hover:underline">
+                    {info.botPaused ? "Resume assistant" : "Pause assistant"}
+                  </button>
+                )}
+                {info?.needsHuman && (
+                  <button onClick={() => control("mark_handled")} className="font-medium text-blue-600 hover:underline">
+                    Mark handled
+                  </button>
+                )}
+                <span className="ml-auto flex items-center gap-3">
+                  {info?.archived ? (
+                    <button onClick={() => control("unarchive")} className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline">
+                      <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => control("archive")} className="inline-flex items-center gap-1 font-medium text-slate-600 hover:underline dark:text-slate-300">
+                        <Archive className="h-3.5 w-3.5" /> Archive
+                      </button>
+                      <button onClick={() => control("archive_mute")} title="Archive, and stay archived even if they message again" className="font-medium text-slate-600 hover:underline dark:text-slate-300">
+                        Archive &amp; mute
+                      </button>
+                    </>
+                  )}
+                </span>
+              </div>
+              {info?.needsHuman && info.reason && <p className="border-b border-rose-100 bg-rose-50 px-4 py-1.5 text-[12px] text-rose-700">{info.reason}</p>}
+
               <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50/60 px-4 py-4 dark:bg-slate-950/30">
                 {active.messages.map((m) => {
                   const mine = m.direction === "outbound";
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[13px] leading-snug ${mine ? "bg-emerald-600 text-white" : "bg-white text-slate-800 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"}`}>
+                        {mine && m.template_name?.startsWith("bot:") && <p className="mb-0.5 text-[10.5px] font-medium uppercase tracking-wide text-emerald-100">Assistant</p>}
                         <p className="whitespace-pre-wrap">{m.body_preview || (m.template_name ? `Template: ${m.template_name}` : "Message")}</p>
                         <div className={`mt-1 flex items-center justify-end gap-1 text-[10.5px] ${mine ? "text-emerald-100" : "text-slate-400"}`} suppressHydrationWarning>
                           {clock(m.created_at)}

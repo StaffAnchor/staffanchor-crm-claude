@@ -18,6 +18,8 @@ export async function GET() {
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(1000);
+  const { data: archived } = await supabase.from("whatsapp_contacts").select("phone_key").not("archived_at", "is", null);
+  const hidden = new Set((archived ?? []).map((a) => a.phone_key as string));
   const convs = groupConversations((data ?? []) as WaMessage[], new Date().getTime());
-  return NextResponse.json({ needsReply: convs.filter((c) => c.needsReply).length });
+  return NextResponse.json({ needsReply: convs.filter((c) => c.needsReply && !hidden.has(c.key)).length });
 }
