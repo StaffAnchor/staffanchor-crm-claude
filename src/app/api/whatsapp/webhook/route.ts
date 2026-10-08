@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendWhatsAppFreeform } from "@/lib/whatsapp";
 import { handleInbound, type Io } from "@/lib/whatsapp-bot/engine";
 import { supabaseStore } from "@/lib/whatsapp-bot/store";
+import { downloadWhatsAppMedia } from "@/lib/whatsapp-media";
 
 // Reads the assistant switches. Off unless WHATSAPP_BOT=true; WHATSAPP_BOT_ALLOWLIST (comma-separated
 // numbers) limits it to those people, which is how it is tested on your own phone first.
@@ -24,21 +25,7 @@ const botIo: Io = {
     if (r.ok) return { ok: true, id: r.metaMessageId ?? "" };
     return { ok: false, error: r.error ?? "send failed", notConfigured: r.status === "not_configured" };
   },
-  async downloadMedia(mediaId) {
-    const token = process.env.WHATSAPP_ACCESS_TOKEN;
-    if (!token) return null;
-    try {
-      const meta = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!meta.ok) return null;
-      const info = (await meta.json()) as { url?: string; mime_type?: string };
-      if (!info.url) return null;
-      const file = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!file.ok) return null;
-      return { bytes: new Uint8Array(await file.arrayBuffer()), mime: info.mime_type ?? null };
-    } catch {
-      return null;
-    }
-  },
+  downloadMedia: downloadWhatsAppMedia,
 };
 
 // Meta WhatsApp Cloud API webhook (Phase 2, Task 2). Two jobs:

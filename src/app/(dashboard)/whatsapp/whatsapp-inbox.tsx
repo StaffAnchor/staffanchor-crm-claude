@@ -62,6 +62,8 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ id: string; name: string | null; isNew: boolean } | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   // New messages arrive while the page is open: refresh quietly every 30 seconds.
@@ -84,6 +86,38 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
   const shown = pool.filter((c) => (filter === "needs" && tab !== "archived" ? c.needsReply || contacts[c.key]?.needsHuman : true));
   const active = shown.find((c) => c.key === selected) ?? shown[0] ?? null;
   const info = active ? contacts[active.key] : undefined;
+
+  // Turn a CV someone sent into a profile: the number is from the chat, the rest is read from the CV.
+  async function createProfile(messageId: string) {
+    setCreating(messageId);
+    setError(null);
+    setCreated(null);
+    try {
+      let email: string | undefined;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await fetch("/api/whatsapp/create-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messageId, email }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.needsEmail) {
+          const typed = window.prompt(`${data.error}${data.name ? `\n\nName on the CV: ${data.name}` : ""}`);
+          if (!typed || !typed.includes("@")) return;
+          email = typed.trim();
+          continue;
+        }
+        if (!res.ok || !data.ok) setError(data.error ?? "Couldn't create the profile.");
+        else {
+          setCreated({ id: data.candidateId, name: data.name ?? null, isNew: !!data.created });
+          router.refresh();
+        }
+        return;
+      }
+    } finally {
+      setCreating(null);
+    }
+  }
 
   async function control(action: string, kind?: string) {
     if (!active) return;
@@ -288,6 +322,15 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
                             <Paperclip className="h-3 w-3" /> Open {m.media_name || "file"}
                           </a>
                         )}
+                        {!mine && !active.candidateId && (m.media_path || m.body_preview?.startsWith("Document:")) && (
+                          <button
+                            onClick={() => createProfile(m.id)}
+                            disabled={creating !== null}
+                            className="mb-1 mr-2 inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-[11.5px] font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+                          >
+                            <UserPlus className="h-3 w-3" /> {creating === m.id ? "Reading the CV…" : "Create profile from this CV"}
+                          </button>
+                        )}
                         <p className="whitespace-pre-wrap">{m.body_preview || (m.template_name ? `Template: ${m.template_name}` : "Message")}</p>
                         <div className={`mt-1 flex items-center justify-end gap-1 text-[10.5px] ${mine ? "text-emerald-100" : "text-slate-400"}`} suppressHydrationWarning>
                           {clock(m.created_at)}
@@ -337,6 +380,15 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
                   </p>
                 )}
                 {error && <p className="mt-2 text-[12px] text-rose-600">{error}</p>}
+                {created && (
+                  <p className="mt-2 text-[12px] text-emerald-700">
+                    {created.isNew ? "Profile created" : "CV added to the existing profile"}
+                    {created.name ? ` for ${created.name}` : ""}.{" "}
+                    <Link href={`/candidates/${created.id}`} className="font-medium underline">
+                      Open candidate
+                    </Link>
+                  </p>
+                )}
               </div>
             </div>
           ) : (
