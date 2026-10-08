@@ -3,7 +3,8 @@ import {
   isRestart,
   isSkip,
   isStop,
-  parseCategory,
+  parseCompany,
+  isNoCompany,
   parseCtcLakhs,
   parseEmail,
   parseExperienceYears,
@@ -19,8 +20,8 @@ import * as T from "./texts";
 // (new state, replies, things to do) out. No database and no network in here, so every path
 // can be tested. The engine around it does the sending and saving.
 
-export type Step = "name" | "role" | "experience" | "category" | "ctc" | "expected" | "notice" | "location" | "email" | "cv" | "done";
-export const FIELD_STEPS = ["name", "role", "experience", "category", "ctc", "expected", "notice", "location", "email"] as const;
+export type Step = "name" | "role" | "experience" | "ctc" | "expected" | "notice" | "location" | "email" | "company" | "cv" | "done";
+export const FIELD_STEPS = ["name", "role", "experience", "ctc", "expected", "notice", "location", "email"] as const;
 type FieldStep = (typeof FIELD_STEPS)[number];
 const REQUIRED: ReadonlySet<Step> = new Set<Step>(["name", "email"]);
 
@@ -105,7 +106,6 @@ const answered = (a: Answers, s: FieldStep): boolean => {
     case "name": return !!a.full_name;
     case "role": return !!a.current_job_title;
     case "experience": return a.total_experience_years !== undefined;
-    case "category": return !!a.category;
     case "ctc": return a.current_fixed_ctc !== undefined;
     case "expected": return a.expected_fixed_ctc !== undefined;
     case "notice": return !!a.notice_period;
@@ -175,6 +175,12 @@ function moveOn(r: StepResult): StepResult {
   return r;
 }
 
+/** Once a profile is saved and the CV has been read: if we still don't know their company, ask. */
+export function askCompany(prev: BotState): StepResult {
+  const state: BotState = { ...prev, answers: { ...prev.answers }, skipped: [...prev.skipped], status: "active", step: "company", retries: 0 };
+  return { state, replies: [question(state, "company")], effects: [] };
+}
+
 function finish(r: StepResult, lead: string[] = []): StepResult {
   r.state.status = "done";
   r.state.step = "done";
@@ -241,6 +247,11 @@ export function step(prev: BotState, m: Inbound): StepResult {
       r.effects.push({ type: "save_cv", mediaId: m.mediaId, mimeType: m.mimeType ?? null, filename: m.filename ?? null });
       return finish(r, [T.CV_THANKS]);
     }
+    if (state.step === "company") {
+      r.effects.push({ type: "save_cv", mediaId: m.mediaId, mimeType: m.mimeType ?? null, filename: m.filename ?? null });
+      r.replies.push(T.CV_THANKS, question(state, "company"));
+      return r;
+    }
     state.pendingCv = { mediaId: m.mediaId, mimeType: m.mimeType ?? null, filename: m.filename ?? null };
     r.replies.push(T.CV_THANKS, question(state, state.step));
     return r;
@@ -257,6 +268,25 @@ export function step(prev: BotState, m: Inbound): StepResult {
   if (state.status === "saved") {
     if (!isSkip(text) && looksLikeAnotherQuery(text)) return pause(r, "Sent a message instead of a CV", T.DIFFERENT_QUERY_ACK);
     return finish(r);
+  }
+
+  // The company question, asked after the CV was read and no current employer could be found.
+  if (state.step === "company") {
+    const cid = state.candidateId ?? state.existingCandidateId;
+    if (isSkip(text) || isNoCompany(text)) return finish(r);
+    const company = parseCompany(text);
+    if (company) {
+      state.answers.current_employer = company;
+      if (cid) r.effects.push({ type: "update_candidate", candidateId: cid, answers: { current_employer: company } });
+      return finish(r);
+    }
+    if (looksLikeAnotherQuery(text)) return pause(r, "Asked something else when asked for current company", T.DIFFERENT_QUERY_ACK);
+    state.retries += 1;
+    if (state.retries === 1) {
+      r.replies.push(`${T.HINT.company} ${question(state, "company")}`);
+      return r;
+    }
+    return finish(r); // two tries is enough; a recruiter can fill it in
   }
 
   // A normal answer to the current question.
@@ -311,12 +341,6 @@ function applyAnswer(s: BotState, st: FieldStep, text: string): boolean {
       const v = parseExperienceYears(text);
       if (v == null) return false;
       a.total_experience_years = v;
-      return true;
-    }
-    case "category": {
-      const v = parseCategory(text);
-      if (!v) return false;
-      a.category = v;
       return true;
     }
     case "ctc": {

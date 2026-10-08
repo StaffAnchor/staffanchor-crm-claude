@@ -6,11 +6,15 @@ import { supabaseStore } from "@/lib/whatsapp-bot/store";
 
 // Reads the assistant switches. Off unless WHATSAPP_BOT=true; WHATSAPP_BOT_ALLOWLIST (comma-separated
 // numbers) limits it to those people, which is how it is tested on your own phone first.
+// The assistant can read a CV with AI before replying, which takes a while.
+export const maxDuration = 60;
+
+const lastTen = (list: string | undefined) => (list ? list.split(",").map((n) => n.replace(/\D/g, "").slice(-10)).filter(Boolean) : null);
+
 const botEnv = () => ({
   enabled: process.env.WHATSAPP_BOT === "true",
-  allowlist: process.env.WHATSAPP_BOT_ALLOWLIST
-    ? process.env.WHATSAPP_BOT_ALLOWLIST.split(",").map((n) => n.replace(/\D/g, "").slice(-10)).filter(Boolean)
-    : null,
+  allowlist: lastTen(process.env.WHATSAPP_BOT_ALLOWLIST),
+  staff: lastTen(process.env.WHATSAPP_STAFF_NUMBERS) ?? [],
   nowMs: new Date().getTime(),
 });
 
@@ -165,8 +169,21 @@ export async function POST(req: NextRequest) {
           }
 
           // A tapped quick-reply button arrives as an interactive/button reply, not text.
+          const caption: string | null = message?.image?.caption ?? message?.document?.caption ?? message?.video?.caption ?? null;
           const shownText: string | null =
-            bodyText ?? message?.button?.text ?? message?.interactive?.button_reply?.title ?? message?.interactive?.list_reply?.title ?? null;
+            bodyText ??
+            message?.button?.text ??
+            message?.interactive?.button_reply?.title ??
+            message?.interactive?.list_reply?.title ??
+            (message?.type === "document"
+              ? `Document: ${message?.document?.filename ?? "file"}${caption ? ` (${caption})` : ""}`
+              : message?.type === "image"
+                ? `Photo${caption ? `: ${caption}` : ""}`
+                : message?.type === "audio"
+                  ? "Voice note"
+                  : message?.type === "video"
+                    ? "Video"
+                    : null);
 
           await admin.from("whatsapp_messages").insert({
             candidate_id: candidateId,
@@ -191,9 +208,9 @@ export async function POST(req: NextRequest) {
                   phone: fromPhone,
                   id: incomingId ?? `nomid-${bot.nowMs}`,
                   type: message?.type ?? "text",
-                  text: shownText,
-                  mediaId: message?.document?.id ?? null,
-                  mimeType: message?.document?.mime_type ?? null,
+                  text: message?.type === "document" || message?.type === "image" ? (caption ?? null) : shownText,
+                  mediaId: message?.document?.id ?? message?.image?.id ?? null,
+                  mimeType: message?.document?.mime_type ?? message?.image?.mime_type ?? null,
                   filename: message?.document?.filename ?? null,
                 },
               );

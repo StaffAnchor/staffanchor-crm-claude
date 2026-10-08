@@ -155,3 +155,17 @@ export const isStop = (t: string) => only(t, ["stop", "unsubscribe", "opt out", 
 export const isRestart = (t: string) => only(t, ["restart", "start over", "profile", "start", "begin", "register"]);
 export const isHuman = (t: string) => only(t, ["human", "agent", "recruiter", "help", "call me", "talk to someone", "talk to a recruiter"]);
 export const isSkip = (t: string) => only(t, ["skip", "pass", "later", "not now", "prefer not to say", "na", "n/a"]);
+
+export const isMenu = (t: string) => only(t, ["menu", "main menu", "back to menu", "wrong option"]);
+/** "none", "not working" and the like, when asked for the current company. */
+export const isNoCompany = (t: string) =>
+  only(t, ["none", "no", "nil", "not working", "currently not working", "unemployed", "not employed", "between jobs", "no job", "freelance", "freelancing", "self employed", "self-employed"]);
+
+/** A company name. Short, not a question, not an email or a link. */
+export function parseCompany(raw: string): string | null {
+  const t = collapse(raw).replace(/^(i work (?:at|in|with|for)|i am (?:at|with|in)|i'm (?:at|with|in)|currently (?:at|with|in)|working (?:at|in|with|for)|company is|it'?s|its)\s+/i, "").replace(/[.!]+$/, "");
+  if (t.length < 2 || t.length > 80 || t.split(" ").length > 8) return null;
+  if (/@\S+\.\S+/.test(t) || /https?:\/\//i.test(t) || looksLikeQuestion(t) || NOT_A_NAME.has(t.toLowerCase())) return null;
+  if (!/[\p{L}]/u.test(t)) return null;
+  return titleCase(t);
+}

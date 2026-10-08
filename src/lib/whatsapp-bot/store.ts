@@ -68,7 +68,12 @@ export interface Store {
   setCandidateResume(id: string, path: string): Promise<void>;
   uploadResume(path: string, bytes: Uint8Array, contentType: string | null): Promise<string | null>;
   logMessage(m: LoggedMessage): Promise<void>;
-  countBotMessagesSince(key: string, sinceIso: string): Promise<number>;
+  countBotMessagesSince(key: string, sinceIso: string, template?: string): Promise<number>;
+  getCandidate(id: string): Promise<CandidateLite | null>;
+  /** Read the candidate's CV and fill blanks (company, title, selling type). Returns the company the CV names as current, if any. Never throws. */
+  enrichFromCv(candidateId: string): Promise<{ cvEmployer: string | null }>;
+  /** Keep a file someone sent (a JD, say) and tie it to the message it came in. */
+  saveAttachment(metaMessageId: string, path: string, bytes: Uint8Array, name: string | null, contentType: string | null): Promise<boolean>;
   hasOutboundSince(key: string, sinceIso: string): Promise<boolean>;
 }
 
@@ -172,15 +177,48 @@ export function supabaseStore(admin: SupabaseClient): Store {
         error: m.error ?? null,
       });
     },
-    async countBotMessagesSince(key, sinceIso) {
+    async countBotMessagesSince(key, sinceIso, template) {
       const { count } = await admin
         .from("whatsapp_messages")
         .select("id", { count: "exact", head: true })
         .eq("direction", "outbound")
-        .like("template_name", "bot:%")
+        .like("template_name", template ?? "bot:%")
         .ilike("to_phone", `%${key}`)
         .gte("created_at", sinceIso);
       return count ?? 0;
+    },
+    async getCandidate(id) {
+      const { data } = await admin.from("candidates").select(CANDIDATE_COLUMNS).eq("id", id).maybeSingle();
+      return (data as CandidateLite | null) ?? null;
+    },
+    async enrichFromCv(candidateId) {
+      try {
+        const { extractCvFactsForCandidate } = await import("@/lib/cv-facts");
+        // The AI read can be slow. Give it 30 seconds, then carry on without it.
+        const read = await Promise.race([extractCvFactsForCandidate(candidateId, admin), new Promise<null>((r) => setTimeout(() => r(null), 30_000))]);
+        if (!read || !read.ok) return { cvEmployer: null };
+        const { data } = await admin.from("candidate_cv_facts").select("facts").eq("candidate_id", candidateId).maybeSingle();
+        const facts = data?.facts as { roles?: { company: string | null; title: string | null; is_current: boolean; end: string | null }[]; sales?: { customer_type: string | null } } | undefined;
+        const current = (facts?.roles ?? []).find((r) => r.is_current && r.company) ?? null;
+        const { data: cur } = await admin.from("candidates").select("current_employer, current_job_title, category").eq("id", candidateId).maybeSingle();
+        const patch: Record<string, unknown> = {};
+        const blank = (v: unknown) => v === null || v === undefined || String(v).trim() === "";
+        if (current?.company && blank(cur?.current_employer)) patch.current_employer = current.company;
+        if (current?.title && blank(cur?.current_job_title)) patch.current_job_title = current.title;
+        const ct = facts?.sales?.customer_type;
+        if (blank(cur?.category) && (ct === "b2b" || ct === "b2c")) patch.category = ct === "b2b" ? "b2b_sales" : "b2c_sales";
+        if (Object.keys(patch).length) await admin.from("candidates").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", candidateId);
+        return { cvEmployer: current?.company ?? null };
+      } catch (err) {
+        console.error("[whatsapp-bot] CV enrichment failed", err instanceof Error ? err.message : err);
+        return { cvEmployer: null };
+      }
+    },
+    async saveAttachment(metaMessageId, path, bytes, name, contentType) {
+      const { error } = await admin.storage.from("client-resources").upload(path, bytes, { contentType: contentType ?? undefined });
+      if (error) return false;
+      await admin.from("whatsapp_messages").update({ media_path: path, media_name: name, media_type: contentType }).eq("meta_message_id", metaMessageId);
+      return true;
     },
     async hasOutboundSince(key, sinceIso) {
       const { data } = await admin.from("whatsapp_messages").select("id").eq("direction", "outbound").ilike("to_phone", `%${key}`).gte("created_at", sinceIso).limit(1);

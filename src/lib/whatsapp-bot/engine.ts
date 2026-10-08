@@ -1,6 +1,6 @@
 import { classifyText, parseMenuChoice, type ContactKind } from "./classify";
-import { emptyState, startOnboarding, step, type BotState, type Effect, type Inbound, type StepResult } from "./flow";
-import { isStop } from "./parse";
+import { askCompany, emptyState, startOnboarding, step, type BotState, type Effect, type Inbound, type StepResult } from "./flow";
+import { isMenu, isStop } from "./parse";
 import * as T from "./texts";
 import type { Contact, Store } from "./store";
 
@@ -24,6 +24,8 @@ export interface EngineEnv {
   enabled: boolean;
   /** When set, the assistant only talks to these numbers (last 10 digits): used to test on your own phone. */
   allowlist: string[] | null;
+  /** Our own team's numbers (last 10 digits): recorded, never answered. */
+  staff?: string[];
   nowMs: number;
 }
 
@@ -65,6 +67,12 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   const contact: Contact = (await store.getContact(key)) ?? (await store.createContact(key));
   const patch: Partial<Omit<Contact, "phone_key" | "bot_version">> = {};
 
+  // Our own team is never answered by the assistant.
+  if (env.staff?.includes(key)) {
+    if (contact.kind !== "other" || contact.kind_source !== "manual") await store.updateContact(key, { kind: "other", kind_source: "manual", bot_paused: true });
+    return { action: "staff", kind: "other", replies: [] };
+  }
+
   // A muted, archived chat is left alone. An archived chat that is not muted comes back.
   if (contact.archived_at) {
     if (contact.muted) return { action: "muted", kind: contact.kind, replies: [] };
@@ -100,6 +108,11 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
 
   // May the assistant speak at all?
   const allowed = env.enabled && (!env.allowlist || env.allowlist.includes(key));
+  const isFile = (m.type === "document" || m.type === "image") && !!m.mediaId;
+
+  // Keep files people send us (a job description, say) so a recruiter can open them from the chat.
+  // A jobseeker's file is handled by the profile conversation (it is their CV).
+  if (allowed && isFile && kind !== "jobseeker") await keepAttachment(store, io, key, m);
   if (!allowed || contact.opted_out || contact.bot_paused) {
     if (Object.keys(patch).length) await store.updateContact(key, patch);
     return { action: allowed ? "silent" : "recorded", kind, replies: [] };
@@ -131,6 +144,18 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
     else action = "silent";
   };
 
+  // An employer who sends a job description (a file, or a long message) gets a "received" note,
+  // once a day, instead of being asked again what they are hiring for.
+  const employerReply = async () => {
+    const isJd = isFile || (m.text ?? "").trim().length >= 120;
+    if (!isJd) return ackOnce(T.EMPLOYER_ACK, "Employer enquiry");
+    flow = "jd";
+    hand("Employer sent a job description");
+    const already = await store.countBotMessagesSince(key, new Date(env.nowMs - DAY).toISOString(), "bot:jd");
+    if (already === 0) replies = [T.JD_ACK];
+    else action = "silent";
+  };
+
   const startJobseeker = () => {
     const c = identity.candidate;
     const prefill = c
@@ -154,7 +179,17 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
     effects = started.effects;
   };
 
-  if (kind === "unsorted") {
+  if ((m.type === "text" || m.type === "button") && m.text !== null && isMenu(m.text)) {
+    // "Wrong option": start again from the menu, whoever we thought they were.
+    kind = "unsorted";
+    patch.kind = "unsorted";
+    patch.kind_source = "manual";
+    patch.needs_human = false;
+    patch.needs_human_reason = null;
+    state = { ...emptyState(), awaitingMenu: true, menuSentAt: now };
+    flow = "menu";
+    replies = [T.MENU];
+  } else if (kind === "unsorted") {
     flow = "menu";
     const choice = state.awaitingMenu ? parseMenuChoice(m.text) : null;
     if (choice) {
@@ -167,7 +202,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
           await ackOnce(T.KNOWN_ACK(T.firstName(identity.candidate.full_name)), "Registered candidate messaged");
         } else startJobseeker();
         flow = "onboarding";
-      } else if (choice === "employer") await ackOnce(T.EMPLOYER_ACK, "Employer enquiry");
+      } else if (choice === "employer") await employerReply();
       else await ackOnce(T.OTHER_ACK, "Other enquiry");
     } else if (state.awaitingMenu) {
       state.retries += 1;
@@ -193,7 +228,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
       effects = r.effects;
     }
   } else if (kind === "employer") {
-    await ackOnce(T.EMPLOYER_ACK, "Employer enquiry");
+    await employerReply();
   } else if (kind === "referrer") {
     await ackOnce(T.REFERRER_ACK, "Referrer message");
   } else {
@@ -244,6 +279,25 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   }
   if (state.existingCandidateId && !state.candidateId) state.candidateId = state.existingCandidateId;
 
+  // The profile is complete. Read the CV to fill what the chat did not cover (company, selling type),
+  // and if we still do not know where they work, ask once rather than guess.
+  const justFinished = flow === "onboarding" && prev.status !== "done" && prev.step !== "company" && state.status === "done" && replies.some((r) => r.startsWith(T.DONE_PREFIX));
+  if (justFinished && state.candidateId) {
+    const before = await store.getCandidate(state.candidateId);
+    if (before?.resume_file_url) {
+      const { cvEmployer } = await store.enrichFromCv(state.candidateId);
+      const said = (before.current_employer ?? "").trim().toLowerCase();
+      const cv = (cvEmployer ?? "").trim().toLowerCase();
+      if (said && cv && !said.includes(cv) && !cv.includes(said)) hand(`CV shows current company "${cvEmployer}" but the candidate said "${before.current_employer}"`);
+    }
+    const after = await store.getCandidate(state.candidateId);
+    if (after && !(after.current_employer ?? "").trim()) {
+      const ask = askCompany(state);
+      state = ask.state;
+      replies = replies.filter((r) => !r.startsWith(T.DONE_PREFIX)).concat(ask.replies);
+    }
+  }
+
   // Send, then remember. If the first message cannot be sent, the conversation does not move on.
   let allSent = true;
   for (const text of replies) {
@@ -285,5 +339,18 @@ async function saveCv(store: Store, io: Io, candidateId: string, mediaId: string
     return true;
   } catch {
     return false;
+  }
+}
+
+async function keepAttachment(store: Store, io: Io, key: string, m: InboundMessage): Promise<void> {
+  try {
+    const media = await io.downloadMedia(m.mediaId as string);
+    if (!media || media.bytes.byteLength === 0 || media.bytes.byteLength > 15 * 1024 * 1024) return;
+    const mime = media.mime ?? m.mimeType;
+    const base = (m.filename ?? (m.type === "image" ? "photo" : "file")).normalize("NFKD").replace(/[^\w.\-]+/g, "_").replace(/_+/g, "_");
+    const ext = /\.[A-Za-z0-9]{2,5}$/.test(base) ? "" : /pdf/i.test(mime ?? "") ? ".pdf" : /word/i.test(mime ?? "") ? ".docx" : /png/i.test(mime ?? "") ? ".png" : /jpe?g/i.test(mime ?? "") ? ".jpg" : "";
+    await store.saveAttachment(m.id, `whatsapp/${key}/${crypto.randomUUID()}-${base}${ext}`, media.bytes, m.filename ?? base, mime ?? null);
+  } catch {
+    // Best effort: the message is still in the chat.
   }
 }

@@ -12,6 +12,8 @@ export type WaMessage = {
   status: string | null;
   error: string | null;
   template_name: string | null;
+  media_path?: string | null;
+  media_name?: string | null;
 };
 
 export type WaConversation = {

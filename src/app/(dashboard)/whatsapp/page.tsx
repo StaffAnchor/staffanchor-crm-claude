@@ -11,7 +11,7 @@ export default async function WhatsAppPage() {
   const since = new Date(new Date().getTime() - 30 * 86_400_000).toISOString();
   const { data } = await supabase
     .from("whatsapp_messages")
-    .select("id, created_at, candidate_id, direction, to_phone, body_preview, status, error, template_name")
+    .select("id, created_at, candidate_id, direction, to_phone, body_preview, status, error, template_name, media_path, media_name")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(2000);

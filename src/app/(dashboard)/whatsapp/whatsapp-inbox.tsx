@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, Send, UserPlus } from "lucide-react";
+import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, Paperclip, Send, UserPlus } from "lucide-react";
 import { WINDOW_MS, type WaConversation } from "@/lib/whatsapp-threads";
 
 type Kind = "unsorted" | "jobseeker" | "employer" | "referrer" | "other";
@@ -283,6 +283,11 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[13px] leading-snug ${mine ? "bg-emerald-600 text-white" : "bg-white text-slate-800 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"}`}>
                         {mine && m.template_name?.startsWith("bot:") && <p className="mb-0.5 text-[10.5px] font-medium uppercase tracking-wide text-emerald-100">Assistant</p>}
+                        {m.media_path && (
+                          <a href={`/api/whatsapp/media?id=${m.id}`} target="_blank" rel="noreferrer" className={`mb-1 inline-flex items-center gap-1 text-[12px] font-medium underline ${mine ? "text-white" : "text-blue-600"}`}>
+                            <Paperclip className="h-3 w-3" /> Open {m.media_name || "file"}
+                          </a>
+                        )}
                         <p className="whitespace-pre-wrap">{m.body_preview || (m.template_name ? `Template: ${m.template_name}` : "Message")}</p>
                         <div className={`mt-1 flex items-center justify-end gap-1 text-[10.5px] ${mine ? "text-emerald-100" : "text-slate-400"}`} suppressHydrationWarning>
                           {clock(m.created_at)}
