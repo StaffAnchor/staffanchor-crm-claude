@@ -21,3 +21,11 @@ export function draftMissingMessage(fullName: string | null | undefined, c: KeyD
   const intro = hasResumeAlready ? "thanks for sharing your profile" : "thanks for getting in touch";
   return `Hi ${first}, ${intro}. To match you with the right roles, could you share ${missing.length === 1 ? "one quick detail" : `${missing.length} quick details`}?\n${lines.join("\n")}${example}`;
 }
+
+/** A closing note after a candidate has shared their details. No timelines, no role or company names. */
+export function thankYouMessage(fullName: string | null | undefined, stillMissing: boolean): string {
+  const first = (fullName ?? "").trim().split(/\s+/)[0] || "there";
+  return stillMissing
+    ? `Hi ${first}, thanks for sharing your details. We've updated your profile and will reach out here when a role that fits comes up. If you can, please also send the remaining details we asked for. If anything changes, such as your notice period or expected CTC, just message us here.`
+    : `Hi ${first}, thanks for sharing your details. Your profile is now complete. We'll reach out here when a role that fits your experience and expectations comes up. If anything changes, such as your notice period or expected CTC, just message us here.`;
+}

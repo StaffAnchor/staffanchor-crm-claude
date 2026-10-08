@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, Paperclip, Send, UserPlus } from "lucide-react";
+import { thankYouMessage } from "@/lib/missing-message";
 import AskMissingDetails from "../candidates/[id]/ask-missing-details";
 import { WINDOW_MS, formatPhone, type WaConversation } from "@/lib/whatsapp-threads";
 
@@ -487,7 +488,22 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing,
                     </div>
                   </div>
                 )}
-                {reading?.saved && <p className="mt-2 text-[12px] text-emerald-700">Saved to the profile: {reading.saved.join(", ")}.</p>}
+                {reading?.saved && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
+                    <span className="text-emerald-700">Saved to the profile: {reading.saved.join(", ")}.</span>
+                    <button
+                      onClick={() => {
+                        const left = (active?.candidateId ? missing[active.candidateId] ?? [] : []).filter((l) => !reading.saved?.includes(l)).length > 0;
+                        setDraft(thankYouMessage(active ? names[active.candidateId ?? ""] ?? null : null, left));
+                        setEmailedOk(false);
+                      }}
+                      className="rounded-full border border-emerald-300 px-2.5 py-1 font-semibold text-emerald-800 hover:bg-emerald-50"
+                    >
+                      Write thank-you
+                    </button>
+                    <span className="text-slate-400">Fills the reply box so you can check it before sending.</span>
+                  </div>
+                )}
                 {created && (
                   <p className="mt-2 text-[12px] text-emerald-700">
                     {created.isNew ? "Profile created" : "CV added to the existing profile (matched by the email on the CV)"}{created.alt ? ", and this WhatsApp number was saved as an alternate number" : ""}
