@@ -19,6 +19,8 @@ import AiSummaryPanel from "./ai-summary-panel";
 import CallCompanion from "./call-companion";
 import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
+import AskMissingDetails from "./ask-missing-details";
+import { missingKeyDetails } from "@/lib/key-details";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
@@ -616,6 +618,7 @@ export default async function CandidateDetailPage({
                     </span>
                   )}
                 </div>
+                <AskMissingDetails candidateId={candidate.id} missing={missingKeyDetails(candidate).map((m) => m.label)} />
               </div>
             </div>
             <div className="flex items-start gap-2">
