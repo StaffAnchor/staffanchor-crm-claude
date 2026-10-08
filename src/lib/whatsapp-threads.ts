@@ -62,3 +62,10 @@ export function groupConversations(messages: WaMessage[], now: number): WaConver
   }
   return out.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
 }
+
+/** Show a number the same way however it was stored: 10 digits are Indian numbers, so "+91 98765 43210". */
+export const formatPhone = (p: string | null | undefined): string => {
+  const d = (p ?? "").replace(/\D/g, "");
+  const local = d.length === 10 ? d : d.length === 12 && d.startsWith("91") ? d.slice(2) : null;
+  return local ? `+91 ${local.slice(0, 5)} ${local.slice(5)}` : `+${d}`;
+};

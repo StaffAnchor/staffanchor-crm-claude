@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, Paperclip, Send, UserPlus } from "lucide-react";
-import { WINDOW_MS, type WaConversation } from "@/lib/whatsapp-threads";
+import { WINDOW_MS, formatPhone, type WaConversation } from "@/lib/whatsapp-threads";
 
 type Kind = "unsorted" | "jobseeker" | "employer" | "referrer" | "other";
 export type ContactInfo = {
@@ -73,7 +73,7 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
     return () => clearInterval(t);
   }, [router]);
 
-  const nameOf = (c: WaConversation) => (c.candidateId && names[c.candidateId]) || contacts[c.key]?.displayName || `+${c.phone.replace(/\D/g, "")}`;
+  const nameOf = (c: WaConversation) => (c.candidateId && names[c.candidateId]) || contacts[c.key]?.displayName || formatPhone(c.phone);
   const inTab = useMemo(() => {
     const m: Record<Tab, WaConversation[]> = { jobseeker: [], employer: [], other: [], unsorted: [], archived: [] };
     for (const c of conversations) m[tabOf(contacts[c.key])].push(c);
@@ -213,7 +213,7 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                 <div className="min-w-0">
                   <div className="truncate text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{nameOf(active)}</div>
-                  <div className="text-[12px] text-slate-400">+{active.phone.replace(/\D/g, "")}</div>
+                  <div className="text-[12px] text-slate-400">{formatPhone(active.phone)}</div>
                 </div>
                 <div className="flex items-center gap-3 text-[12px]">
                   {active.candidateId ? (
