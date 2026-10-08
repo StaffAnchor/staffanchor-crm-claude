@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { missingKeyDetails } from "@/lib/key-details";
 import { groupConversations, type WaMessage } from "@/lib/whatsapp-threads";
 import WhatsAppInbox, { type ContactInfo } from "./whatsapp-inbox";
 
@@ -18,9 +19,15 @@ export default async function WhatsAppPage() {
 
   const conversations = groupConversations((data ?? []) as WaMessage[], new Date().getTime());
   const ids = Array.from(new Set(conversations.map((c) => c.candidateId).filter((v): v is string => !!v)));
-  const { data: cands } = ids.length ? await supabase.from("candidates").select("id, full_name").in("id", ids) : { data: [] };
+  const { data: cands } = ids.length
+    ? await supabase.from("candidates").select("id, full_name, current_job_title, current_employer, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, resume_file_url").in("id", ids)
+    : { data: [] };
   const names: Record<string, string> = {};
-  for (const c of cands ?? []) names[c.id as string] = (c.full_name as string) ?? "";
+  const missing: Record<string, string[]> = {};
+  for (const c of cands ?? []) {
+    names[c.id as string] = (c.full_name as string) ?? "";
+    missing[c.id as string] = missingKeyDetails(c).map((m) => m.label);
+  }
 
   const { data: contactRows } = await supabase
     .from("whatsapp_contacts")
@@ -50,7 +57,7 @@ export default async function WhatsAppPage() {
           People who message StaffAnchor on WhatsApp, and your replies. You can reply freely for 24 hours after someone writes.
         </p>
       </div>
-      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} />
+      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} />
     </div>
   );
 }

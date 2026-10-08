@@ -1,8 +1,8 @@
 import { classifyText, parseMenuChoice, type ContactKind } from "./classify";
-import { askCompany, emptyState, startOnboarding, step, type BotState, type Effect, type Inbound, type StepResult } from "./flow";
+import { askCompany, emptyState, startOnboarding, step, type Answers, type BotState, type Effect, type Inbound, type StepResult } from "./flow";
 import { isMenu, isStop } from "./parse";
 import * as T from "./texts";
-import type { Contact, Store } from "./store";
+import type { CandidateLite, Contact, Store } from "./store";
 
 // The rules for every WhatsApp message that comes in.
 //
@@ -107,7 +107,10 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   if (wantsStop) patch.opted_out = true;
 
   // May the assistant speak at all?
-  const allowed = env.enabled && (!env.allowlist || env.allowlist.includes(key));
+  // A recruiter who asks for someone's missing details has chosen that chat, so the assistant may carry on there.
+  const botState = contact.bot_state as Partial<BotState>;
+  const recruiterAsked = botState.recruiterStarted === true && (botState.status === "active" || botState.status === "saved");
+  const allowed = env.enabled && (!env.allowlist || env.allowlist.includes(key) || recruiterAsked);
   const isFile = (m.type === "document" || m.type === "image") && !!m.mediaId;
 
   // Keep every file people send us (a CV, a job description) so a recruiter can open it from the chat,
@@ -158,20 +161,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
 
   const startJobseeker = () => {
     const c = identity.candidate;
-    const prefill = c
-      ? {
-          ...(c.full_name ? { full_name: c.full_name } : {}),
-          ...(c.email ? { email: c.email } : {}),
-          ...(c.current_job_title ? { current_job_title: c.current_job_title } : {}),
-          current_employer: c.current_employer ?? null,
-          ...(c.total_experience_years != null ? { total_experience_years: Number(c.total_experience_years) } : {}),
-          ...(c.category ? { category: c.category as "b2b_sales" | "b2c_sales" | "non_sales" } : {}),
-          ...(c.current_fixed_ctc != null ? { current_fixed_ctc: Number(c.current_fixed_ctc) } : {}),
-          ...(c.expected_fixed_ctc != null ? { expected_fixed_ctc: Number(c.expected_fixed_ctc) } : {}),
-          ...(c.notice_period ? { notice_period: c.notice_period } : {}),
-          ...(c.current_location ? { current_location: c.current_location } : {}),
-        }
-      : {};
+    const prefill = c ? candidatePrefill(c) : {};
     const started: StepResult = startOnboarding({ prefill, existingCandidateId: c?.id ?? null, hasResume: !!c?.resume_file_url, nowIso: now });
     started.state.lastMessageId = m.id;
     state = started.state;
@@ -353,4 +343,20 @@ async function keepAttachment(store: Store, io: Io, key: string, m: InboundMessa
   } catch {
     // Best effort: the message is still in the chat.
   }
+}
+
+/** What we already know about a candidate, in the shape the profile conversation reads. */
+export function candidatePrefill(c: CandidateLite): Answers {
+  return {
+    ...(c.full_name ? { full_name: c.full_name } : {}),
+    ...(c.email ? { email: c.email } : {}),
+    ...(c.current_job_title ? { current_job_title: c.current_job_title } : {}),
+    current_employer: c.current_employer ?? null,
+    ...(c.total_experience_years != null ? { total_experience_years: Number(c.total_experience_years) } : {}),
+    ...(c.category ? { category: c.category as "b2b_sales" | "b2c_sales" | "non_sales" } : {}),
+    ...(c.current_fixed_ctc != null ? { current_fixed_ctc: Number(c.current_fixed_ctc) } : {}),
+    ...(c.expected_fixed_ctc != null ? { expected_fixed_ctc: Number(c.expected_fixed_ctc) } : {}),
+    ...(c.notice_period ? { notice_period: c.notice_period } : {}),
+    ...(c.current_location ? { current_location: c.current_location } : {}),
+  };
 }

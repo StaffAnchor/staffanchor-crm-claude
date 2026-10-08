@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, Paperclip, Send, UserPlus } from "lucide-react";
+import AskMissingDetails from "../candidates/[id]/ask-missing-details";
 import { WINDOW_MS, formatPhone, type WaConversation } from "@/lib/whatsapp-threads";
 
 type Kind = "unsorted" | "jobseeker" | "employer" | "referrer" | "other";
@@ -54,7 +55,7 @@ function ago(iso: string, now: number) {
   return `${Math.round(m / 1440)}d`;
 }
 
-export default function WhatsAppInbox({ conversations, names, contacts }: { conversations: WaConversation[]; names: Record<string, string>; contacts: Record<string, ContactInfo> }) {
+export default function WhatsAppInbox({ conversations, names, contacts, missing }: { conversations: WaConversation[]; names: Record<string, string>; contacts: Record<string, ContactInfo>; missing: Record<string, string[]> }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("jobseeker");
   const [filter, setFilter] = useState<Filter>("needs");
@@ -308,6 +309,11 @@ export default function WhatsAppInbox({ conversations, names, contacts }: { conv
                   )}
                 </span>
               </div>
+              {active.candidateId && (missing[active.candidateId]?.length ?? 0) > 0 && (
+                <div className="border-b border-slate-100 px-4 pb-2 dark:border-slate-800">
+                  <AskMissingDetails candidateId={active.candidateId} missing={missing[active.candidateId]} />
+                </div>
+              )}
               {info?.needsHuman && info.reason && <p className="border-b border-rose-100 bg-rose-50 px-4 py-1.5 text-[12px] text-rose-700">{info.reason}</p>}
 
               <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50/60 px-4 py-4 dark:bg-slate-950/30">
