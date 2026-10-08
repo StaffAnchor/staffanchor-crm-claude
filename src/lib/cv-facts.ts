@@ -321,18 +321,26 @@ export async function extractCvFactsForCandidate(candidateId: string, admin: Sup
 }
 
 // Newest candidates first, skipping anyone already read from their current CV.
-export async function pickCandidatesForCvFacts(admin: SupabaseClient, limit: number, scan = 400): Promise<string[]> {
-  const { data: recent } = await admin
-    .from("candidates")
-    .select("id")
-    .or("resume_file_url.not.is.null,resume_text.not.is.null")
-    .order("created_at", { ascending: false })
-    .limit(scan);
-  const ids = (recent ?? []).map((r) => r.id as string);
-  if (ids.length === 0) return [];
-  const { data: done } = await admin.from("candidate_cv_facts").select("candidate_id").in("candidate_id", ids);
-  const have = new Set((done ?? []).map((d) => d.candidate_id as string));
-  return ids.filter((id) => !have.has(id)).slice(0, limit);
+// It walks back through the whole candidate list in pages (the API returns at most
+// 1,000 rows at a time), so older candidates are reached once the newest are done.
+export async function pickCandidatesForCvFacts(admin: SupabaseClient, limit: number, scan = 5000): Promise<string[]> {
+  const PAGE = 400;
+  const picked: string[] = [];
+  for (let from = 0; from < scan && picked.length < limit; from += PAGE) {
+    const { data: page } = await admin
+      .from("candidates")
+      .select("id")
+      .or("resume_file_url.not.is.null,resume_text.not.is.null")
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE - 1);
+    const ids = (page ?? []).map((r) => r.id as string);
+    if (ids.length === 0) break;
+    const { data: done } = await admin.from("candidate_cv_facts").select("candidate_id").in("candidate_id", ids);
+    const have = new Set((done ?? []).map((d) => d.candidate_id as string));
+    for (const id of ids) if (!have.has(id) && picked.length < limit) picked.push(id);
+    if (ids.length < PAGE) break;
+  }
+  return picked;
 }
 
 // Service-role client for writing facts (staff sessions can only read them).
