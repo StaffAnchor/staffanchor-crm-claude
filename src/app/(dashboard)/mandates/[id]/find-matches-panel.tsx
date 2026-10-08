@@ -221,6 +221,12 @@ export default function FindMatchesPanel({
       <p className="text-[12px] text-slate-400 mb-3">
         AI scans your existing candidate pool against this mandate&apos;s JD, must haves, and good to haves.
       </p>
+      <p className="text-[12px] mb-3">
+        <Link href={`/candidates/search?mandate=${mandateId}`} className="font-medium text-indigo-600 hover:underline">
+          Search the whole database for this mandate →
+        </Link>{" "}
+        <span className="text-slate-400">with filters you can adjust, key facts and a tick per requirement.</span>
+      </p>
 
       {!matches && (
         <button
