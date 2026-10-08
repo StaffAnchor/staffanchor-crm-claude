@@ -110,9 +110,9 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   const allowed = env.enabled && (!env.allowlist || env.allowlist.includes(key));
   const isFile = (m.type === "document" || m.type === "image") && !!m.mediaId;
 
-  // Keep files people send us (a job description, say) so a recruiter can open them from the chat.
-  // A jobseeker's file is handled by the profile conversation (it is their CV).
-  if (allowed && isFile && kind !== "jobseeker") await keepAttachment(store, io, key, m);
+  // Keep every file people send us (a CV, a job description) so a recruiter can open it from the chat,
+  // whether or not the assistant is switched on for this number.
+  if (isFile) await keepAttachment(store, io, key, m);
   if (!allowed || contact.opted_out || contact.bot_paused) {
     if (Object.keys(patch).length) await store.updateContact(key, patch);
     return { action: allowed ? "silent" : "recorded", kind, replies: [] };
