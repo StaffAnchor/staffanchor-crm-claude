@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { missingKeyDetails } from "@/lib/key-details";
+import { draftMissingMessage } from "@/lib/missing-message";
 import { groupConversations, type WaMessage } from "@/lib/whatsapp-threads";
 import WhatsAppInbox, { type ContactInfo } from "./whatsapp-inbox";
 
@@ -24,9 +25,12 @@ export default async function WhatsAppPage() {
     : { data: [] };
   const names: Record<string, string> = {};
   const missing: Record<string, string[]> = {};
+  const drafts: Record<string, string> = {};
   for (const c of cands ?? []) {
     names[c.id as string] = (c.full_name as string) ?? "";
     missing[c.id as string] = missingKeyDetails(c).map((m) => m.label);
+    const d = draftMissingMessage(c.full_name as string | null, c, !!c.resume_file_url);
+    if (d) drafts[c.id as string] = d;
   }
 
   const { data: contactRows } = await supabase
@@ -57,7 +61,7 @@ export default async function WhatsAppPage() {
           People who message StaffAnchor on WhatsApp, and your replies. You can reply freely for 24 hours after someone writes.
         </p>
       </div>
-      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} />
+      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} drafts={drafts} />
     </div>
   );
 }

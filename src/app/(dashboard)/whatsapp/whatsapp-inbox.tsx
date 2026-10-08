@@ -55,7 +55,7 @@ function ago(iso: string, now: number) {
   return `${Math.round(m / 1440)}d`;
 }
 
-export default function WhatsAppInbox({ conversations, names, contacts, missing }: { conversations: WaConversation[]; names: Record<string, string>; contacts: Record<string, ContactInfo>; missing: Record<string, string[]> }) {
+export default function WhatsAppInbox({ conversations, names, contacts, missing, drafts }: { conversations: WaConversation[]; names: Record<string, string>; contacts: Record<string, ContactInfo>; missing: Record<string, string[]>; drafts: Record<string, string> }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("jobseeker");
   const [filter, setFilter] = useState<Filter>("needs");
@@ -64,6 +64,10 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState(false);
+  const [emailedOk, setEmailedOk] = useState(false);
+  type Found = { key: string; label: string; display: string; raw: string };
+  const [reading, setReading] = useState<{ messageId: string; busy: boolean; found: Found[] | null; saved: string[] | null } | null>(null);
   const [created, setCreated] = useState<{ id: string; name: string | null; isNew: boolean } | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -117,6 +121,53 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing 
       }
     } finally {
       setCreating(null);
+    }
+  }
+
+  // Read a free-text reply into the profile: first a preview, and only a click on Apply saves anything.
+  async function readReply(messageId: string) {
+    if (!active?.candidateId) return;
+    setError(null);
+    setReading({ messageId, busy: true, found: null, saved: null });
+    const res = await fetch("/api/whatsapp/read-reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: active.candidateId, messageId }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      setError(data.error ?? "Couldn't read that reply.");
+      setReading(null);
+    } else setReading({ messageId, busy: false, found: data.found as Found[], saved: null });
+  }
+
+  async function applyReply() {
+    if (!active?.candidateId || !reading?.found) return;
+    setReading({ ...reading, busy: true });
+    const apply: Record<string, string> = {};
+    for (const f of reading.found) apply[f.key] = f.raw;
+    const res = await fetch("/api/whatsapp/read-reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: active.candidateId, apply }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      setError(data.error ?? "Couldn't save.");
+      setReading(null);
+    } else {
+      setReading({ messageId: reading.messageId, busy: false, found: null, saved: data.saved as string[] });
+      router.refresh();
+    }
+  }
+
+  async function emailDraft() {
+    if (!active?.candidateId || !draft.trim()) return;
+    setEmailing(true);
+    setError(null);
+    setEmailedOk(false);
+    try {
+      const res = await fetch("/api/whatsapp/email-candidate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: active.candidateId, body: draft }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) setError(data.error ?? "Couldn't send the email.");
+      else {
+        setEmailedOk(true);
+        setDraft("");
+      }
+    } finally {
+      setEmailing(false);
     }
   }
 
@@ -311,7 +362,20 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing 
               </div>
               {active.candidateId && (missing[active.candidateId]?.length ?? 0) > 0 && (
                 <div className="border-b border-slate-100 px-4 pb-2 dark:border-slate-800">
-                  <AskMissingDetails candidateId={active.candidateId} missing={missing[active.candidateId]} />
+                  <div className="flex flex-wrap items-center gap-x-3">
+                    <AskMissingDetails candidateId={active.candidateId} missing={missing[active.candidateId]} />
+                    {drafts[active.candidateId] && (
+                      <button
+                        onClick={() => {
+                          setDraft(drafts[active.candidateId as string]);
+                          setEmailedOk(false);
+                        }}
+                        className="mt-2 inline-flex items-center gap-1 rounded-full border border-slate-300 px-2.5 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"
+                      >
+                        Suggest message
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
               {info?.needsHuman && info.reason && <p className="border-b border-rose-100 bg-rose-50 px-4 py-1.5 text-[12px] text-rose-700">{info.reason}</p>}
@@ -335,6 +399,11 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing 
                             className="mb-1 mr-2 inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-[11.5px] font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
                           >
                             <UserPlus className="h-3 w-3" /> {creating === m.id ? "Reading the CV…" : "Create profile from this CV"}
+                          </button>
+                        )}
+                        {!mine && active.candidateId && (missing[active.candidateId]?.length ?? 0) > 0 && m.body_preview && !/^(Document|Photo|Voice note|Video)/.test(m.body_preview) && m.body_preview.length > 2 && (
+                          <button onClick={() => readReply(m.id)} disabled={reading?.busy} className="mb-1 mr-2 inline-flex items-center gap-1 rounded-full border border-blue-200 px-2 py-0.5 text-[11px] font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-60">
+                            {reading?.busy && reading.messageId === m.id ? "Reading…" : "Fill profile from this reply"}
                           </button>
                         )}
                         <p className="whitespace-pre-wrap">{m.body_preview || (m.template_name ? `Template: ${m.template_name}` : "Message")}</p>
@@ -381,11 +450,44 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing 
                     </div>
                   </>
                 ) : (
-                  <p className="text-[12.5px] text-slate-500">
-                    The 24-hour reply window has closed. WhatsApp allows a free message only within 24 hours of their last message. They can message again, or use an approved template.
-                  </p>
+                  <div>
+                    <p className="text-[12.5px] text-slate-500">
+                      The 24-hour reply window has closed. WhatsApp allows a free message only within 24 hours of their last message. They can message again, or use an approved template.
+                      {active.candidateId ? " You can email the candidate instead." : ""}
+                    </p>
+                    {active.candidateId && draft && (
+                      <div className="mt-2 flex items-end gap-2">
+                        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} className="flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
+                        <button onClick={emailDraft} disabled={emailing || !draft.trim()} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-slate-800 px-4 text-[13px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+                          {emailing ? "Sending…" : "Send by email"}
+                        </button>
+                      </div>
+                    )}
+                    {emailedOk && <p className="mt-2 text-[12px] text-emerald-700">Email sent.</p>}
+                  </div>
                 )}
                 {error && <p className="mt-2 text-[12px] text-rose-600">{error}</p>}
+                {reading?.found && (
+                  <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-[12.5px] dark:border-blue-900 dark:bg-blue-950/30">
+                    <p className="font-medium text-slate-800 dark:text-slate-100">Found in their reply. Save these to the profile?</p>
+                    <ul className="mt-1 space-y-0.5 text-slate-700 dark:text-slate-300">
+                      {reading.found.map((f) => (
+                        <li key={f.key}>
+                          {f.label}: <span className="font-semibold">{f.display}</span> <span className="text-slate-400">(they wrote &ldquo;{f.raw}&rdquo;)</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-2 flex gap-2">
+                      <button onClick={applyReply} disabled={reading.busy} className="rounded-full bg-blue-600 px-3 py-1 font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
+                        {reading.busy ? "Saving…" : "Apply to profile"}
+                      </button>
+                      <button onClick={() => setReading(null)} className="rounded-full border border-slate-300 px-3 py-1 text-slate-600 dark:border-slate-600 dark:text-slate-300">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {reading?.saved && <p className="mt-2 text-[12px] text-emerald-700">Saved to the profile: {reading.saved.join(", ")}.</p>}
                 {created && (
                   <p className="mt-2 text-[12px] text-emerald-700">
                     {created.isNew ? "Profile created" : "CV added to the existing profile"}
