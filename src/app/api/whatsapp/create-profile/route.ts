@@ -103,6 +103,7 @@ export async function POST(req: NextRequest) {
 
   let candidateId: string;
   let created = false;
+  let addedAlternate = false;
   if (existingId) {
     // Fill blanks only, and attach the CV if there is none.
     const { data: cur } = await admin.from("candidates").select("*").eq("id", existingId).maybeSingle();
@@ -112,7 +113,16 @@ export async function POST(req: NextRequest) {
       const empty = have === null || have === undefined || have === "" || (Array.isArray(have) && have.length === 0);
       if (empty && v !== null && v !== undefined) patch[col] = v;
     }
-    if (!(cur as { phone?: string | null } | null)?.phone) patch.phone = key;
+    const curPhone = (cur as { phone?: string | null } | null)?.phone ?? null;
+    if (!curPhone) patch.phone = key;
+    else if (phoneKey(curPhone) !== key) {
+      // Matched by the email on the CV, but this WhatsApp number is not the one on file: keep it as an alternate number.
+      const alts = ((cur as { alt_phones?: string[] | null } | null)?.alt_phones ?? []).filter(Boolean);
+      if (!alts.some((a) => phoneKey(a) === key)) {
+        patch.alt_phones = [...alts, key];
+        addedAlternate = true;
+      }
+    }
     if (!(cur as { resume_file_url?: string | null } | null)?.resume_file_url) patch.resume_file_url = path;
     if (Object.keys(patch).length) await admin.from("candidates").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", existingId);
     candidateId = existingId;
@@ -150,5 +160,5 @@ export async function POST(req: NextRequest) {
   await admin.from("whatsapp_messages").update({ candidate_id: candidateId }).ilike("to_phone", `%${key}`).is("candidate_id", null);
   waitUntil(extractCvFactsForCandidate(candidateId, admin).catch(() => undefined));
 
-  return NextResponse.json({ ok: true, candidateId, created, name: x?.full_name ?? null });
+  return NextResponse.json({ ok: true, candidateId, created, addedAlternate, name: x?.full_name ?? null });
 }

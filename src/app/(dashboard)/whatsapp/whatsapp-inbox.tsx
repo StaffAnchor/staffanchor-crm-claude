@@ -68,7 +68,7 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing,
   const [emailedOk, setEmailedOk] = useState(false);
   type Found = { key: string; label: string; display: string; raw: string };
   const [reading, setReading] = useState<{ messageId: string; busy: boolean; found: Found[] | null; saved: string[] | null } | null>(null);
-  const [created, setCreated] = useState<{ id: string; name: string | null; isNew: boolean } | null>(null);
+  const [created, setCreated] = useState<{ id: string; name: string | null; isNew: boolean; alt: boolean } | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   // New messages arrive while the page is open: refresh quietly every 30 seconds.
@@ -114,7 +114,7 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing,
         }
         if (!res.ok || !data.ok) setError(data.error ?? "Couldn't create the profile.");
         else {
-          setCreated({ id: data.candidateId, name: data.name ?? null, isNew: !!data.created });
+          setCreated({ id: data.candidateId, name: data.name ?? null, isNew: !!data.created, alt: !!data.addedAlternate });
           router.refresh();
         }
         return;
@@ -490,7 +490,7 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing,
                 {reading?.saved && <p className="mt-2 text-[12px] text-emerald-700">Saved to the profile: {reading.saved.join(", ")}.</p>}
                 {created && (
                   <p className="mt-2 text-[12px] text-emerald-700">
-                    {created.isNew ? "Profile created" : "CV added to the existing profile"}
+                    {created.isNew ? "Profile created" : "CV added to the existing profile (matched by the email on the CV)"}{created.alt ? ", and this WhatsApp number was saved as an alternate number" : ""}
                     {created.name ? ` for ${created.name}` : ""}.{" "}
                     <Link href={`/candidates/${created.id}`} className="font-medium underline">
                       Open candidate
