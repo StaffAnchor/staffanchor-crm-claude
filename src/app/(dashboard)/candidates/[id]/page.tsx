@@ -612,6 +612,11 @@ export default async function CandidateDetailPage({
                       <Phone className="w-3 h-3" /> {candidate.phone}
                     </span>
                   )}
+                  {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 && (
+                    <span className="flex items-center gap-1" title="Alternate number (for example the WhatsApp number)">
+                      <Phone className="w-3 h-3" /> Alt: {candidate.alt_phones.join(", ")}
+                    </span>
+                  )}
                   {candidate.current_location && (
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {candidate.current_location}
