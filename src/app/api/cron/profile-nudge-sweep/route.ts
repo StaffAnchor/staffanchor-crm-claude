@@ -61,6 +61,9 @@ async function handler(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const { data: staffRows } = await admin.from("profiles").select("email");
+  const staffEmails = new Set(((staffRows ?? []) as { email: string | null }[]).map((r) => (r.email ?? "").toLowerCase()).filter(Boolean));
+
   const now = Date.now();
   const results: { candidate_id: string; sent: boolean; stage?: number; reason?: string }[] = [];
 
@@ -97,6 +100,10 @@ async function handler(req: NextRequest) {
       continue;
     }
 
+    if (staffEmails.has(String(candidate.email ?? "").toLowerCase())) {
+      results.push({ candidate_id: candidate.id, sent: false, reason: "staff address" });
+      continue;
+    }
     if (recentlyAsked.has(candidate.id as string)) {
       results.push({ candidate_id: candidate.id, sent: false, reason: "already asked in the last 7 days" });
       continue;

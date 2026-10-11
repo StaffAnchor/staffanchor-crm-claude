@@ -52,6 +52,9 @@ export async function checkEmailReplies(admin: SupabaseClient, opts: { sinceDays
       const { data: seen } = await admin.from("email_replies").select("message_id").gte("created_at", new Date(since.getTime() - 86_400_000).toISOString());
       for (const r of (seen ?? []) as { message_id: string }[]) seenRows.push(r);
       seenRows.forEach((r) => known.add(r.message_id));
+      // Our own team's addresses are never a candidate reply.
+      const { data: staffRows } = await admin.from("profiles").select("email");
+      const staffEmails = new Set(((staffRows ?? []) as { email: string | null }[]).map((r) => (r.email ?? "").toLowerCase()).filter(Boolean));
 
       for await (const msg of client.fetch(uids, { source: true, envelope: true }, { uid: false })) {
         if (!msg.source) continue;
@@ -70,7 +73,7 @@ export async function checkEmailReplies(admin: SupabaseClient, opts: { sinceDays
         };
 
         // Mail from ourselves is never a reply.
-        if (!from || from === user.toLowerCase()) {
+        if (!from || from === user.toLowerCase() || staffEmails.has(from)) {
           await record("not_a_reply");
           out.ignored++;
           continue;
