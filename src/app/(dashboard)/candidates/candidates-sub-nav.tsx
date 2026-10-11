@@ -8,6 +8,7 @@ const TABS = [
   { href: "/candidates/referrals", label: "Referrals" },
   { href: "/practice-pool", label: "Practice Pool" },
   { href: "/candidates/outreach", label: "Outreach" },
+  { href: "/candidates/files", label: "CV files" },
 ];
 
 // Referrals used to be its own top-level nav item; folded in here (Sep
