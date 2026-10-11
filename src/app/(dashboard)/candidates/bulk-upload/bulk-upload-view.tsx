@@ -22,6 +22,8 @@ type Row = {
   fileName: string;
   ok: boolean;
   error?: string;
+  // The file isn't a CV at all; it was thrown away and can't be added.
+  notResume?: boolean;
   resumeFileUrl?: string;
   duplicate?: { candidateId: string; fullName: string } | null;
   // Editable fields, seeded from the AI extraction but the recruiter can
@@ -165,6 +167,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           fileName: uniqueName(r.fileName as string),
           ok: r.ok as boolean,
           error: r.error as string | undefined,
+          notResume: r.notResume === true,
           resumeFileUrl: r.resumeFileUrl as string | undefined,
           duplicate: r.duplicate as Row["duplicate"],
           full_name: (extracted.full_name as string) ?? "",
@@ -513,7 +516,19 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             </div>
           )}
 
-          {rows.map((row) => (
+          {rows
+            .filter((row) => row.notResume)
+            .map((row) => (
+              <div key={row.fileName} className="flex items-start gap-2 rounded-ros-lg border border-rose-200 bg-rose-50/60 p-3 text-[12.5px] dark:border-rose-900 dark:bg-rose-950/20">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-600" />
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-800 dark:text-slate-200">{row.fileName}</p>
+                  <p className="text-rose-700 dark:text-rose-300">{row.error ?? "This doesn't look like a resume, so it was not added."}</p>
+                </div>
+              </div>
+            ))}
+
+          {rows.filter((row) => !row.notResume).map((row) => (
             <div
               key={row.fileName}
               className={`bg-white dark:bg-slate-900 border rounded-ros-lg p-3.5 shadow-ros-sm ${

@@ -6,6 +6,7 @@ const FLAG_LABEL: Record<string, string> = {
   gap: "Gap",
   short_stints: "Short stints",
   claim_not_backed: "Claim not backed",
+  not_a_resume: "Not a resume",
   inconsistent: "Inconsistent",
   other: "Note",
 };

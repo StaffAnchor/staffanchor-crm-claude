@@ -14,6 +14,10 @@ import {
 // WhatsApp "create profile from this CV" button, so both read a CV the same way.
 
 export type ExtractedCvFields = {
+  // false when the document is not a CV/resume at all (an offer letter, ID, certificate, job description,
+  // brochure, invoice...). Callers reject those rather than create a profile from them.
+  is_resume: boolean;
+  document_type: string | null;
   full_name: string | null;
   email: string | null;
   phone: string | null;
@@ -60,6 +64,25 @@ const INDUSTRIES = flat(industrySoldGroups);
 const LEVELS = yourLevelOptions.map((l) => l.value);
 const CATEGORIES = ["b2b_sales", "b2c_sales", "non_sales"];
 
+// How many of the usual CV sections the text has (experience, education, skills, and so on). A real
+// CV has several; an offer letter, ID or brochure has almost none. Used as a second opinion so a CV is
+// never thrown away on the AI's word alone.
+export function resumeCueCount(text: string): number {
+  const t = text.toLowerCase();
+  const cues = [
+    /experience/,
+    /education|qualification/,
+    /skills?\b/,
+    /employment|work history|career|professional summary|work experience/,
+    /objective|summary|profile/,
+    /university|college|school|b\.?\s?tech|mba|b\.?com|bba|degree|diploma|bachelor|master|graduat/,
+    /projects?\b/,
+    /achievements?|responsibilit|accomplishment|certification/,
+    /@[a-z0-9.-]+\.[a-z]{2,}|\+?\d[\d\s-]{8,}\d/,
+  ];
+  return cues.filter((re) => re.test(t)).length;
+}
+
 export async function extractFieldsWithGemini(
   resumeText: string,
   aiConfigured: boolean,
@@ -74,11 +97,12 @@ export async function extractFieldsWithGemini(
     ? `The recruiter has already set what they sell to "${hint.sells}": return exactly that as the first item of "sells_now".`
     : `"sells_now" is what they sell in their CURRENT or most recent role: up to 3 values copied EXACTLY from the allowed list that matches the category.`;
 
-  const prompt = `Read this resume and return ONLY a JSON object (no markdown, no commentary) shaped exactly like:
-{"full_name": string|null, "email": string|null, "phone": string|null, "current_location": string|null, "current_employer": string|null, "current_job_title": string|null, "total_experience_years": number|null, "languages_known": string[],
+  const prompt = `Read this document and return ONLY a JSON object (no markdown, no commentary) shaped exactly like:
+{"is_resume": boolean, "document_type": string, "full_name": string|null, "email": string|null, "phone": string|null, "current_location": string|null, "current_employer": string|null, "current_job_title": string|null, "total_experience_years": number|null, "languages_known": string[],
 "category": string|null, "sells_now": string[], "sells_before": string[], "role_level": string|null, "team_size": string|null, "industries": string[], "customer_segments": string[], "tools": string[], "skills": string[], "current_industry": string|null, "highest_qualification": string|null, "linkedin_url": string|null, "current_fixed_ctc_lpa": number|null, "notice_period": string|null}
 
 General rules:
+- "is_resume": true only if this is a CV/resume/biodata of ONE person that describes their own work history, skills or education. false for anything else: offer or relieving letters, payslips, ID or address proofs, certificates or marksheets on their own, job descriptions, company profiles or brochures, invoices, proposals, forms, covering notes, or a CV of several people. "document_type": a short label for what it is ("resume", "offer letter", "job description", ...). When is_resume is false, leave every other field null / [].
 - current_location: just the city. phone: digits only, no country code. total_experience_years: best estimate, may be a decimal.
 - languages_known: only if the resume explicitly states them.
 - Use null / [] for anything not clearly supported by the resume. Never guess.
@@ -121,7 +145,13 @@ ${resumeText.slice(0, 14000)}`;
     const freeList = (v: unknown, max: number) =>
       Array.isArray(v) ? Array.from(new Set(v.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim()))).slice(0, max) : [];
 
+    const documentType = str(parsed.document_type);
+    // Only called "not a resume" when the AI says so AND the text has almost none of the usual CV
+    // sections; otherwise it is treated as a CV.
+    const isResume = parsed.is_resume !== false || resumeCueCount(resumeText) >= 4;
     return {
+      is_resume: isResume,
+      document_type: documentType,
       full_name: str(parsed.full_name),
       email: typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : null,
       phone: typeof parsed.phone === "string" ? normalizePhone(parsed.phone) : null,

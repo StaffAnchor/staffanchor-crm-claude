@@ -62,6 +62,13 @@ export async function POST(req: NextRequest) {
   if (!text) return NextResponse.json({ error: "Couldn't read text from this file. Only PDF and Word CVs can be read." }, { status: 422 });
   const extracted = await extractFieldsWithGemini(text, !!(process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY || process.env.MISTRAL_API_KEY), { category: null, sells: null });
 
+  if (extracted && !extracted.is_resume) {
+    return NextResponse.json(
+      { ok: false, error: `This file doesn't look like a CV${extracted.document_type ? ` (it looks like a ${extracted.document_type})` : ""}, so no profile was created.` },
+      { status: 422 }
+    );
+  }
+
   // 3. Already in the database? Add the CV to that profile instead of making a second one.
   const { data: ident } = await admin.rpc("whatsapp_identity_lookup", { p_key: key });
   const known = (ident as { candidate?: { id: string } | null } | null)?.candidate ?? null;

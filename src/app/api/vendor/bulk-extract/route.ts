@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 import { createClient } from "@/lib/supabase/server";
 import { generateTextWithFallback } from "@/lib/ai-providers";
 import { extractResumeText } from "@/lib/resume-text";
+import { resumeCueCount } from "@/lib/cv-profile-extract";
 
 export const runtime = "nodejs";
 
@@ -135,6 +136,15 @@ async function processOne(
       };
     }
 
+    if (!extracted.is_resume) {
+      await admin.storage.from("resumes").remove([path]);
+      return {
+        fileName,
+        ok: false,
+        error: `This doesn't look like a resume${extracted.document_type ? ` (it looks like a ${extracted.document_type})` : ""}, so it was not added.`,
+      };
+    }
+
     let duplicate: VendorBulkExtractResult["duplicate"] = null;
     if (extracted.email) {
       const { data: existing } = await admin
@@ -167,9 +177,10 @@ async function extractFieldsWithGemini(resumeText: string, aiConfigured: boolean
   if (!aiConfigured) return null;
 
   const prompt = `Extract this candidate's identity/contact details from the resume text below. Return ONLY a JSON object (no markdown fence, no commentary), shaped exactly like:
-{"full_name": "..." | null, "email": "..." | null, "phone": "..." | null, "current_location": "..." | null, "current_employer": "..." | null, "current_job_title": "..." | null, "total_experience_years": number | null}
+{"is_resume": boolean, "document_type": "...", "full_name": "..." | null, "email": "..." | null, "phone": "..." | null, "current_location": "..." | null, "current_employer": "..." | null, "current_job_title": "..." | null, "total_experience_years": number | null}
 
 Rules:
+- is_resume is true only if the document is the CV/resume of one person. false for offer letters, IDs, certificates alone, job descriptions, brochures, invoices and the like. document_type is a short label for what it is.
 - current_location should be just the city name (e.g. "Bangalore"), not a full address.
 - phone should be digits only, no country code prefix, no spaces/dashes.
 - total_experience_years is your best estimate of total professional experience in years (a number, can be a decimal like 5.5), or null if you can't tell.
@@ -183,6 +194,8 @@ ${resumeText.slice(0, 12000)}`;
     const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
     const parsed = JSON.parse(cleaned) as Record<string, unknown>;
     return {
+      is_resume: parsed.is_resume !== false || resumeCueCount(resumeText) >= 4,
+      document_type: typeof parsed.document_type === "string" ? parsed.document_type.trim() : null,
       full_name: typeof parsed.full_name === "string" ? parsed.full_name.trim() : null,
       email: typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : null,
       phone: typeof parsed.phone === "string" ? normalizePhone(parsed.phone) : null,

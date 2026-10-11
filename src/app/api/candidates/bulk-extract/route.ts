@@ -31,6 +31,8 @@ export type BulkExtractResult = {
   fileName: string;
   ok: boolean;
   error?: string;
+  // True when the file was rejected for not being a resume (it is also removed from storage).
+  notResume?: boolean;
   resumeFileUrl?: string;
   extracted?: ExtractedCvFields;
   duplicate?: { candidateId: string; fullName: string } | null;
@@ -140,6 +142,17 @@ async function processOne(
         ok: false,
         error: "Couldn't extract fields from this resume automatically. Fill them in manually below.",
         resumeFileUrl: path,
+      };
+    }
+
+    // Not a CV at all (offer letter, ID, job description...): don't keep it and don't offer it for review.
+    if (!extracted.is_resume) {
+      await admin.storage.from("resumes").remove([path]);
+      return {
+        fileName,
+        ok: false,
+        notResume: true,
+        error: `This doesn't look like a resume${extracted.document_type ? ` (it looks like a ${extracted.document_type})` : ""}, so it was not added.`,
       };
     }
 
