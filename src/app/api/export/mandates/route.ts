@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     m.status,
     linkedCount[m.id] ?? 0,
     shortlistedCount[m.id] ?? 0,
-    m.created_at ? new Date(m.created_at).toLocaleDateString() : "",
+    m.created_at ? new Date(m.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "",
   ]);
 
   const csv = toCsv(headers, rows);

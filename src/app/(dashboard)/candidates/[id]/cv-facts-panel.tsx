@@ -93,7 +93,7 @@ export default async function CvFactsPanel({ candidateId }: { candidateId: strin
     <div>
       {header}
       <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-2">
-        Read on {new Date(data.extracted_at as string).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}. Only what the CV states is shown.
+        Read on {new Date(data.extracted_at as string).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}. Only what the CV states is shown.
       </p>
 
       {f.flags.length > 0 && (

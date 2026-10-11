@@ -220,7 +220,7 @@ export default function VendorApplicationsPanel({ applications }: { applications
                         <p>
                           <span className="text-slate-400">Availability:</span> {a.expected_hours_per_week ?? "—"},{" "}
                           {a.available_to_start
-                            ? new Date(a.available_to_start).toLocaleDateString("en-IN", {
+                            ? new Date(a.available_to_start).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata",
                                 day: "numeric",
                                 month: "short",
                                 year: "numeric",

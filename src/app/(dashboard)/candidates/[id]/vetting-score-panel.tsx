@@ -109,7 +109,7 @@ export default function VettingScorePanel({
       )}
       {form.scored_by_name && form.scored_at && (
         <p className="text-[11px] text-slate-400">
-          Last scored by {form.scored_by_name} on {new Date(form.scored_at).toLocaleDateString()}
+          Last scored by {form.scored_by_name} on {new Date(form.scored_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
         </p>
       )}
       <Button onClick={handleSave} disabled={saving} className="w-full">

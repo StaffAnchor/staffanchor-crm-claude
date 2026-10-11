@@ -81,7 +81,7 @@ export default async function ReferrerPayoutsPage() {
                   <div className="truncate text-[14.5px] font-semibold text-slate-900">{referral?.candidate_name ?? "—"}</div>
                   <div className="mt-0.5 text-[12.5px] text-slate-500">
                     {role ? `${role} · ` : ""}
-                    {paid && p.paid_date ? `Paid on ${new Date(p.paid_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : copy.note}
+                    {paid && p.paid_date ? `Paid on ${new Date(p.paid_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}` : copy.note}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

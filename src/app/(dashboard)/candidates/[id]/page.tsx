@@ -541,7 +541,7 @@ export default async function CandidateDetailPage({
                       title="The last time the candidate confirmed or updated their own details (CTC, notice period, role)"
                     >
                       {at
-                        ? `Details confirmed ${candidate.details_confirmed_at ? "by candidate" : "on a recruiter call"} ${new Date(at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${stale ? ` (${days} days ago)` : ""}`
+                        ? `Details confirmed ${candidate.details_confirmed_at ? "by candidate" : "on a recruiter call"} ${new Date(at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}${stale ? ` (${days} days ago)` : ""}`
                         : "Details never confirmed by candidate. Verify CTC and notice period."}
                     </p>
                   );

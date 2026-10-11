@@ -148,7 +148,7 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
       {lead.next_follow_up_date && (
         <p className={`flex items-center gap-1 text-[11px] mt-2 ${isOverdue(lead.next_follow_up_date) ? "text-rose-500 font-medium" : "text-slate-400"}`}>
           <CalendarClock className="w-3 h-3" />
-          Follow up {new Date(lead.next_follow_up_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+          Follow up {new Date(lead.next_follow_up_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })}
         </p>
       )}
 

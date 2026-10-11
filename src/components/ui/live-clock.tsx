@@ -20,9 +20,9 @@ export default function LiveClock() {
     return <div className="hidden lg:block w-[150px]" />;
   }
 
-  const day = now.toLocaleDateString("en-US", { weekday: "short" });
-  const date = now.toLocaleDateString("en-US", { day: "2-digit", month: "short" });
-  const time = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+  const day = now.toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", weekday: "short" });
+  const date = now.toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" });
+  const time = now.toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
 
   return (
     <div className="hidden lg:flex items-center gap-2.5 rounded-lg border border-amber-500/10 bg-amber-500/[0.03] px-3 py-1 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">

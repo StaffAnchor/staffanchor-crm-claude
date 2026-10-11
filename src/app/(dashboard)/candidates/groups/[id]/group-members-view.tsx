@@ -203,7 +203,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   <ResumeCell resumeFileUrl={m.resume_file_url} resumeSignedUrl={m.resume_signed_url} />
                 </td>
-                <td className="px-3 py-2.5 text-slate-400 text-[12px] whitespace-nowrap">{new Date(m.addedAt).toLocaleDateString()}</td>
+                <td className="px-3 py-2.5 text-slate-400 text-[12px] whitespace-nowrap">{new Date(m.addedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</td>
                 <td className="px-3 py-2.5">
                   <button
                     type="button"

@@ -218,7 +218,7 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
       </td>
       <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-200 tabular-nums">{inr(gross)}</td>
       <td className="py-2 pr-3 text-slate-500 dark:text-slate-400">
-        {row.due_date ? new Date(row.due_date).toLocaleDateString() : "—"}
+        {row.due_date ? new Date(row.due_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "—"}
       </td>
       <td className="py-2 pr-3">
         <Badge tone={STATUS_TONE[row.status] ?? "neutral"} size="sm">

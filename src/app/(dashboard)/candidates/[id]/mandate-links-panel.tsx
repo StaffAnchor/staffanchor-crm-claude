@@ -310,7 +310,7 @@ export default function MandateLinksPanel({
 
               {l.date_of_joining && l.stage !== "placed" && (
                 <p className="mt-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                  Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                  Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric", year: "numeric" })}
                 </p>
               )}
 

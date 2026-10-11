@@ -513,7 +513,7 @@ function RetentionCheckinRow({
           </Badge>
         )}
       </div>
-      <p className="text-[11px] text-slate-400">Due {new Date(checkin.due_date).toLocaleDateString()}</p>
+      <p className="text-[11px] text-slate-400">Due {new Date(checkin.due_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
 
       {!checkin.completed_at ? (
         <div className="flex items-center gap-1.5 flex-wrap ml-auto">

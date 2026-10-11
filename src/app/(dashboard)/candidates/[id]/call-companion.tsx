@@ -231,7 +231,7 @@ export default function CallCompanion({
         <span className="flex items-center gap-2">
           {callConfirmed?.at && (
             <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-              Confirmed on call {new Date(callConfirmed.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+              Confirmed on call {new Date(callConfirmed.at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}
               {callConfirmed.by ? ` by ${callConfirmed.by}` : ""}
             </span>
           )}

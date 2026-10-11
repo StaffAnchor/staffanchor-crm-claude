@@ -18,7 +18,7 @@ function daysInMonth(monthStart: string): number {
   return lastDayOfMonth(monthStart).getUTCDate();
 }
 function fmtDate(d: Date) {
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
 }
 
 const STATUS_TONE: Record<string, BadgeTone> = {

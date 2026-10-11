@@ -37,7 +37,7 @@ const STAGE_DOT_LABEL: Record<string, string> = {
 
 function fmtDate(iso: string | null) {
   if (!iso) return null;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" });
 }
 
 function daysSince(iso: string | null): number | null {

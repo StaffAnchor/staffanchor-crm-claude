@@ -290,7 +290,7 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
                     </td>
                     <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{r.role_hint || "—"}</td>
                     <td className="px-3 py-2 text-slate-400 whitespace-nowrap">
-                      {new Date(r.sent_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                      {new Date(r.sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })}
                     </td>
                     <td className="px-3 py-2">
                       <input

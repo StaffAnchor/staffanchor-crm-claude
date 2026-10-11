@@ -570,7 +570,7 @@ export default async function ReportsPage({
           const cd = c.created_at.slice(0, 10);
           return cd >= from && cd <= to;
         }).length;
-        return { key: from, label: monthDate.toLocaleString("en-IN", { month: "short" }), count, href: `/candidates?from=${from}&to=${to}` };
+        return { key: from, label: monthDate.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", month: "short" }), count, href: `/candidates?from=${from}&to=${to}` };
       });
       const prevStart = new Date(start.getFullYear() - 1, start.getMonth(), 1);
       const prevEnd = new Date(prevStart.getFullYear() + 1, prevStart.getMonth(), 0);
@@ -588,7 +588,7 @@ export default async function ReportsPage({
       d.setDate(d.getDate() - (days - 1 - i));
       const ds = toDateStr(d);
       const count = organicRows.filter((c) => c.created_at.slice(0, 10) === ds).length;
-      return { key: ds, label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), count, href: `/candidates?from=${ds}&to=${ds}` };
+      return { key: ds, label: d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }), count, href: `/candidates?from=${ds}&to=${ds}` };
     });
     const prevEnd = new Date(today);
     prevEnd.setDate(prevEnd.getDate() - days);
@@ -835,7 +835,7 @@ export default async function ReportsPage({
     const minutes = tsRows
       .filter((r) => r.created_at.slice(0, 10) === ds)
       .reduce((sum, r) => sum + Number(r.estimated_minutes_saved ?? 0), 0);
-    return { key: ds, label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), count: minutes, href: "/analytics/reports?range=" + range };
+    return { key: ds, label: d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }), count: minutes, href: "/analytics/reports?range=" + range };
   });
 
   // Priority Applicant funnel -- how many candidates even see a Priority
@@ -1022,7 +1022,7 @@ export default async function ReportsPage({
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-[12.5px] font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
-                              {new Date(j.dateOfJoining).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                              {new Date(j.dateOfJoining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
                             </p>
                             <p
                               className={`text-[10.5px] font-medium ${
@@ -1563,7 +1563,7 @@ export default async function ReportsPage({
                             <li key={p.id} className="flex items-center justify-between gap-2 text-[12.5px] border-b border-slate-100 dark:border-slate-800 pb-1.5 last:border-0">
                               <span className="truncate text-slate-700 dark:text-slate-300">{cand?.full_name || cand?.email || "Unknown candidate"}</span>
                               <span className="shrink-0 text-slate-400">
-                                Pack {p.pack_tier} · {new Date(p.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                                Pack {p.pack_tier} · {new Date(p.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })}
                               </span>
                             </li>
                           );

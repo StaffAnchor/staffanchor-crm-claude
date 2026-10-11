@@ -197,7 +197,7 @@ function monthLabel(m: string | null): string {
   if (!m) return "Present";
   const [y, mo] = m.split("-");
   const d = new Date(Number(y), Number(mo) - 1);
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" });
 }
 
 export default function CareerTimelinePanel({

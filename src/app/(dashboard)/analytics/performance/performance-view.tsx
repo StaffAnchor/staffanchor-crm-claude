@@ -135,7 +135,7 @@ export default function PerformanceView({ rows }: { rows: RevenueRow[] }) {
             String(c.count),
             fmt(c.gross),
             fmt(c.net),
-            new Date(c.lastDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+            new Date(c.lastDate).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" }),
           ])}
         />
       )}

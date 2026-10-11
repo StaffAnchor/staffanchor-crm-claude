@@ -108,8 +108,8 @@ async function handler(req: NextRequest) {
 
     const describe = (i: Item) =>
       i.overdue
-        ? `${i.name} -- was due to join ${new Date(i.date).toLocaleDateString()} (confirm or update stage)`
-        : `${i.name} -- joining ${new Date(i.date).toLocaleDateString()}`;
+        ? `${i.name} -- was due to join ${new Date(i.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })} (confirm or update stage)`
+        : `${i.name} -- joining ${new Date(i.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}`;
     const listText = group.items.map((i) => `- ${describe(i)}`).join("\n");
     const listHtml = group.items
       .map((i) => `<li${i.overdue ? ' style="color:#b91c1c"' : ""}>${describe(i)}</li>`)

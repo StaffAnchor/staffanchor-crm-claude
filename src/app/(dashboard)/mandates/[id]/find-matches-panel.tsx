@@ -254,7 +254,7 @@ export default function FindMatchesPanel({
             <p className="text-[11px] text-slate-400">
               {scanned > 0
                 ? `${matches.length} suggested of ${scanned} candidates scanned`
-                : `${matches.length} suggested${computedAt ? ` — auto-matched ${new Date(computedAt).toLocaleDateString()}` : ""}`}
+                : `${matches.length} suggested${computedAt ? ` — auto-matched ${new Date(computedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}` : ""}`}
               {calibration && calibration.positive + calibration.negative > 0 && (
                 <span
                   className="ml-1.5 text-purple-500"
