@@ -16,10 +16,11 @@ export type ReplySummary = {
   noCandidate: number;
   ignored: number;
   bounced: number;
+  softBounced: number;
   optedOut: number;
 };
 
-const EMPTY: ReplySummary = { ok: true, read: 0, applied: 0, unclear: 0, noCandidate: 0, ignored: 0, bounced: 0, optedOut: 0 };
+const EMPTY: ReplySummary = { ok: true, read: 0, applied: 0, unclear: 0, noCandidate: 0, ignored: 0, bounced: 0, softBounced: 0, optedOut: 0 };
 const FIELD_COLUMNS = "id, email, current_job_title, current_employer, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, resume_file_url";
 const SAFE_FIELDS = ["current_fixed_ctc", "expected_fixed_ctc", "notice_period", "total_experience_years", "current_location", "current_employer", "current_job_title"];
 
@@ -81,6 +82,11 @@ export async function checkEmailReplies(admin: SupabaseClient, opts: { sinceDays
 
         // A delivery-failure notice: pause that address everywhere so we stop writing to a dead mailbox.
         if (/mailer-daemon|postmaster/i.test(from) || /delivery status notification|undeliverable|undelivered|returned mail|delivery failure|failure notice/i.test(subject)) {
+          // Only a permanently dead address is paused. "Inbox full" or "delivery delayed" is temporary:
+          // it is recorded, but the person keeps getting email.
+          const looksTemporary = /(delivery incomplete|temporary problem|will retry|retry for|inbox full|mailbox full|over quota|quota exceeded|try again later|\b4\.\d\.\d\b)/i.test(body);
+          const looksPermanent = /(address not found|couldn'?t be found|unable to receive|does not exist|no such user|user unknown|domain not found|\b5\.1\.[01]\b|\b550\b)/i.test(body);
+          const isHard = looksPermanent && !looksTemporary;
           const failed = Array.from(new Set((body.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g) ?? []).map((e) => e.toLowerCase()))).filter(
             (e) => e !== user.toLowerCase() && !/mailer-daemon|postmaster/.test(e) && !e.endsWith("@googlemail.com")
           );
@@ -89,11 +95,12 @@ export async function checkEmailReplies(admin: SupabaseClient, opts: { sinceDays
             const { data: c } = await admin.from("candidates").select("id").ilike("email", e).maybeSingle();
             if (c) {
               candidateId = c.id as string;
-              await admin.from("candidates").update({ email_opt_out: true, profile_nudge_unsubscribed: true }).eq("id", candidateId);
+              if (isHard) await admin.from("candidates").update({ email_opt_out: true, profile_nudge_unsubscribed: true }).eq("id", candidateId);
             }
           }
-          await record("bounced", { candidate_id: candidateId });
-          out.bounced++;
+          await record(isHard ? "bounced" : "soft_bounce", { candidate_id: candidateId });
+          if (isHard) out.bounced++;
+          else out.softBounced++;
           continue;
         }
 
@@ -119,7 +126,8 @@ export async function checkEmailReplies(admin: SupabaseClient, opts: { sinceDays
           admin.from("audit_log").select("id").eq("action", "profile_nudge_sent").eq("entity_id", cand.id).gte("at", cutoff).limit(1),
         ]);
         const wroteTo = (o.data?.length ?? 0) + (w.data?.length ?? 0) + (n.data?.length ?? 0) > 0;
-        if (!wroteTo) {
+        const answersOurSubject = /^\s*re:/i.test(subject) && /(confirm your (profile|details)|complete your|details to match you|present your profile|presented|one last note about your profile|still need a few details|StaffAnchor)/i.test(subject);
+        if (!wroteTo && !answersOurSubject) {
           await record("not_a_reply", { candidate_id: cand.id });
           out.ignored++;
           continue;
