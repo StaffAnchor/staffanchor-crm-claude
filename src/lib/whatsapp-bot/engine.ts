@@ -1,6 +1,7 @@
 import { classifyText, parseMenuChoice, type ContactKind } from "./classify";
 import { askCompany, emptyState, startOnboarding, step, type Answers, type BotState, type Effect, type Inbound, type StepResult } from "./flow";
 import { isMenu, isStop } from "./parse";
+import { firstEmail, introducedName, saysNew } from "./identity";
 import * as T from "./texts";
 import type { CandidateLite, Contact, Store } from "./store";
 
@@ -159,14 +160,63 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
     else action = "silent";
   };
 
-  const startJobseeker = () => {
+  const startJobseeker = (extraPrefill?: Answers) => {
     const c = identity.candidate;
-    const prefill = c ? candidatePrefill(c) : {};
+    const prefill = { ...(c ? candidatePrefill(c) : {}), ...(extraPrefill ?? {}) };
     const started: StepResult = startOnboarding({ prefill, existingCandidateId: c?.id ?? null, hasResume: !!c?.resume_file_url, nowIso: now });
     started.state.lastMessageId = m.id;
     state = started.state;
     replies = started.replies;
     effects = started.effects;
+  };
+
+  // A new jobseeker. If they introduce themselves with a name that is already in our database but this
+  // number is not on that profile, never register them as new: ask for the email they registered with.
+  const beginJobseeker = async () => {
+    const name = identity.candidate ? null : introducedName(m.text);
+    if (name) {
+      const matches = await store.findCandidatesByName(name);
+      if (matches.length > 0) {
+        state = { ...emptyState(), status: "active", step: state.step, startedAt: now, lastMessageId: m.id, verify: { ids: matches.map((c) => c.id), name, asked: 1 } };
+        replies = [T.VERIFY_EMAIL(T.firstName(name))];
+        return;
+      }
+    }
+    startJobseeker();
+  };
+
+  // Their answer to "which email did you register with?". An email that matches proves who they are.
+  const verifyReply = async () => {
+    const v = state.verify!;
+    const email = firstEmail(m.text);
+    if (email) {
+      let match: CandidateLite | null = null;
+      for (const id of v.ids) {
+        const c = await store.getCandidate(id);
+        if (c?.email && c.email.toLowerCase() === email) match = c;
+      }
+      // An email that belongs to a different profile still proves who they are: link to that one.
+      if (!match) match = await store.findCandidateByEmail(email);
+      if (match) {
+        await store.addAlternatePhone(match.id, storedPhone(m.phone.replace(/\D/g, "")));
+        patch.candidate_id = match.id;
+        if (match.full_name) patch.display_name = match.full_name;
+        state = { ...emptyState(), status: "done", step: "done", candidateId: match.id, existingCandidateId: match.id };
+        flow = "verify";
+        replies = [T.LINKED_EXISTING(T.firstName(match.full_name ?? v.name))];
+        return;
+      }
+      // Not in our records under that email: a new person (their name matched someone else).
+      startJobseeker({ full_name: v.name, email });
+      return;
+    }
+    if (saysNew(m.text) || v.asked >= 2) {
+      startJobseeker({ full_name: v.name });
+      return;
+    }
+    state.verify = { ...v, asked: v.asked + 1 };
+    replies = [T.VERIFY_REMINDER];
+    flow = "verify";
   };
 
   if ((m.type === "text" || m.type === "button") && m.text !== null && isMenu(m.text)) {
@@ -190,8 +240,8 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
       if (choice === "jobseeker") {
         if (identity.candidate && REGISTERED_STATUS(identity.candidate.status)) {
           await ackOnce(T.KNOWN_ACK(T.firstName(identity.candidate.full_name)), "Registered candidate messaged");
-        } else startJobseeker();
-        flow = "onboarding";
+        } else await beginJobseeker();
+        flow = state.verify ? "verify" : "onboarding";
       } else if (choice === "employer") await employerReply();
       else await ackOnce(T.OTHER_ACK, "Other enquiry");
     } else if (state.awaitingMenu) {
@@ -209,8 +259,11 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   } else if (kind === "jobseeker") {
     if (identity.candidate && REGISTERED_STATUS(identity.candidate.status)) {
       await ackOnce(T.KNOWN_ACK(T.firstName(identity.candidate.full_name)), "Registered candidate messaged");
+    } else if (state.verify) {
+      await verifyReply();
     } else if (state.status === "idle") {
-      startJobseeker();
+      await beginJobseeker();
+      if (state.verify) flow = "verify";
     } else {
       const r = step(state, asFlowInbound(m));
       state = r.state;
@@ -236,6 +289,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
       if (dup) {
         // This person is already in the database under that email: link the number, never create a second profile.
         await store.fillCandidate(dup.id, e.answers, phoneForProfile);
+        await store.addAlternatePhone(dup.id, phoneForProfile);
         state.candidateId = dup.id;
         patch.candidate_id = dup.id;
         const n = T.firstName(e.answers.full_name ?? dup.full_name);

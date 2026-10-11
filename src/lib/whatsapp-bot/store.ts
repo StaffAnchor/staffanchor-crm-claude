@@ -62,6 +62,10 @@ export interface Store {
   updateContact(key: string, patch: Partial<Omit<Contact, "phone_key" | "bot_version">>, expectVersion?: number): Promise<boolean>;
   lookupIdentity(key: string): Promise<Identity>;
   findCandidateByEmail(email: string): Promise<CandidateLite | null>;
+  /** Profiles whose full name is exactly this (ignoring case and extra spaces). At most a few. */
+  findCandidatesByName(name: string): Promise<CandidateLite[]>;
+  /** Save another number for the same person, so the next message from it is recognised. */
+  addAlternatePhone(id: string, phone: string): Promise<void>;
   createCandidate(a: Answers, phone: string): Promise<{ id: string } | { error: string }>;
   /** Fill blanks only; never overwrite what a candidate or recruiter already entered. */
   fillCandidate(id: string, a: Answers, phone: string): Promise<void>;
@@ -110,6 +114,16 @@ export function supabaseStore(admin: SupabaseClient): Store {
     async findCandidateByEmail(email) {
       const { data } = await admin.from("candidates").select(CANDIDATE_COLUMNS).ilike("email", email).limit(1).maybeSingle();
       return (data as CandidateLite | null) ?? null;
+    },
+    async findCandidatesByName(name) {
+      const clean = name.trim().replace(/\s+/g, " ").replace(/[%_,()]/g, "");
+      if (clean.split(" ").length < 2) return [];
+      const { data } = await admin.from("candidates").select(CANDIDATE_COLUMNS).ilike("full_name", clean).limit(4);
+      return ((data ?? []) as CandidateLite[]).filter((c) => (c.full_name ?? "").trim().replace(/\s+/g, " ").toLowerCase() === clean.toLowerCase());
+    },
+    async addAlternatePhone(id, phone) {
+      const { addAlternatePhone } = await import("@/lib/alt-phone");
+      await addAlternatePhone(admin, id, phone);
     },
     async createCandidate(a, phone) {
       const { data, error } = await admin

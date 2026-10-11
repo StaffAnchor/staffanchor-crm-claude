@@ -63,6 +63,11 @@ export interface BotState {
   menuSentAt: string | null;
   /** A recruiter asked the assistant to collect this person's missing details, so it may continue on their replies. */
   recruiterStarted?: boolean;
+  /**
+   * The person gave a name that matches an existing profile but their number is not on it, so we asked for
+   * the email they registered with before treating them as new. `ids` are the profiles that name matched.
+   */
+  verify?: { ids: string[]; name: string; asked: number } | null;
 }
 
 export type Effect =
