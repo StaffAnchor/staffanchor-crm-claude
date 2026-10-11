@@ -184,7 +184,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
                   {g.description && <p className="text-[12px] text-slate-400 truncate">{g.description}</p>}
                   <p className="text-[11px] text-slate-400 mt-0.5">
                     {g.createdByName ? `Created by ${g.createdByName} · ` : ""}
-                    {new Date(g.createdAt).toLocaleDateString()}
+                    {new Date(g.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                   </p>
                 </Link>
                 <button

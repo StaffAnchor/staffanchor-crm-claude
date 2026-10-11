@@ -106,7 +106,7 @@ export default function LeadActivityPanel({
                   </p>
                   <p className="text-[10.5px] text-slate-400 mt-0.5">
                     {a.actor_id ? `${actorNames[a.actor_id] ?? "Unknown"} · ` : ""}
-                    {new Date(a.at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {new Date(a.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
               </div>

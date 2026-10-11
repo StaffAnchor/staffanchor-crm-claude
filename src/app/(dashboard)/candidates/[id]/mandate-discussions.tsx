@@ -36,7 +36,7 @@ export default function MandateDiscussions({ entries }: { entries: MandateDiscus
                 {entry.role_title} <span className="text-slate-400 font-normal">· {entry.client_name}</span>
               </p>
               <p className="text-[10px] text-slate-400 shrink-0">
-                {new Date(entry.created_at).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" })}
+                {new Date(entry.created_at).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
               </p>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-snug">{entry.summary}</p>

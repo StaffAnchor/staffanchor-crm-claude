@@ -39,7 +39,7 @@ const OPTIONAL_COLUMNS: Record<string, { header: string; get: (c: Record<string,
   open_to_relocation: { header: "Open to Relocation", get: (c) => c.open_to_relocation },
   created_at: {
     header: "Added On",
-    get: (c) => (c.created_at ? new Date(c.created_at as string).toLocaleDateString() : ""),
+    get: (c) => (c.created_at ? new Date(c.created_at as string).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : ""),
   },
 };
 

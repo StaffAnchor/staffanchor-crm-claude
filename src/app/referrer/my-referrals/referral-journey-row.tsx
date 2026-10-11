@@ -37,7 +37,7 @@ export type ReferralJourneyData = {
   history: ReferralHistoryEntry[];
 };
 
-const formatDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const formatDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" });
 
 const PILL: Record<ReturnType<typeof referralGroup>, string> = {
   progress: "bg-indigo-50 text-indigo-700",
@@ -75,7 +75,7 @@ function Stepper({ status, history }: { status: string; history: ReferralHistory
               {done || (ended && i <= reached) ? <Check className="h-3.5 w-3.5" /> : i + 1}
             </span>
             <span className={`mt-1.5 text-[10.5px] font-medium leading-tight ${current ? "text-indigo-700" : done ? "text-slate-700" : "text-slate-400"}`}>{s.label}</span>
-            {d && <span className="mt-0.5 text-[10px] text-slate-400">{new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>}
+            {d && <span className="mt-0.5 text-[10px] text-slate-400">{new Date(d).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}</span>}
           </li>
         );
       })}

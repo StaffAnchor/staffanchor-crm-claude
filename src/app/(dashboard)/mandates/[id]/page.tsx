@@ -350,7 +350,7 @@ export default async function MandateDetailPage({
             &quot;{mandate.archived_reason ? ` (${mandate.archived_reason})` : ""}
           </p>
           <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
-            {mandate.archived_at ? `Archived ${new Date(mandate.archived_at).toLocaleDateString()}. ` : ""}
+            {mandate.archived_at ? `Archived ${new Date(mandate.archived_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}. ` : ""}
             It won't show up in the active Mandates list, cron sweeps, or open-mandate counts until reactivated.
           </p>
         </div>

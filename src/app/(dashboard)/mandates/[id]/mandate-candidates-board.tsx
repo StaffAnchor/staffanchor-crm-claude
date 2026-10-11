@@ -646,7 +646,7 @@ export default function MandateCandidatesBoard({
 
                       {row.date_of_joining && (
                         <p className="mt-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                          Joining {new Date(row.date_of_joining).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          Joining {new Date(row.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
                         </p>
                       )}
                       {row.stage === "rejected" && row.rejection_category && (

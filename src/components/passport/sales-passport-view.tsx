@@ -23,7 +23,7 @@ function monthLabel(ym: string | null | undefined): string {
   if (!ym) return "—";
   const [y, m] = ym.split("-").map(Number);
   if (!y || !m) return ym;
-  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return new Date(y, m - 1, 1).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", month: "short", year: "numeric" });
 }
 
 const RECOMMENDATION_TONE: Record<string, BadgeTone> = {

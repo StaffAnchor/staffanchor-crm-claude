@@ -93,7 +93,7 @@ export default function ReferralsAdmin({ referrals }: { referrals: AdminReferral
                   <td className="px-3 py-2.5">
                     <div className="font-medium text-slate-900 dark:text-slate-100">{r.candidate_name}</div>
                     <div className="text-[11px] text-slate-400" suppressHydrationWarning>
-                      {new Date(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      {new Date(r.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}
                       {waiting >= 2 && <span className={`ml-1.5 font-medium ${waiting >= 5 ? "text-rose-600" : "text-amber-600"}`}>· waiting {waiting} days</span>}
                     </div>
                   </td>

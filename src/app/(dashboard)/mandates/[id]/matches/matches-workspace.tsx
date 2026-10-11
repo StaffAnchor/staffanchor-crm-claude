@@ -116,7 +116,7 @@ function matchCountColor(met: number, total: number) {
 // in the pool for months.
 function registeredLabel(iso: string): { text: string; isNew: boolean } {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
-  const dateStr = new Date(iso).toLocaleDateString();
+  const dateStr = new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
   const relative = days <= 0 ? "today" : days === 1 ? "1 day ago" : days < 30 ? `${days} days ago` : dateStr;
   return { text: `Registered ${relative}`, isNew: days <= 14 };
 }
@@ -610,7 +610,7 @@ export default function MatchesWorkspace({
             <p className="text-[11px] text-slate-400 mb-3">
               {scanned > 0
                 ? `${sortedMatches.length} suggested of ${scanned} candidates scanned`
-                : `${sortedMatches.length} suggested${computedAt ? ` — computed ${new Date(computedAt).toLocaleDateString()}` : ""}`}
+                : `${sortedMatches.length} suggested${computedAt ? ` — computed ${new Date(computedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}` : ""}`}
               {matchMethod && (
                 <span className={`ml-1.5 ${matchMethod === "ai" ? "text-purple-500" : "text-slate-400"}`}>
                   · {matchMethod === "ai" ? "AI-judged" : "instant match, no AI call"}

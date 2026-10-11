@@ -46,7 +46,7 @@ const QUICK_REPLIES = [
   "Thank you! A recruiter will review this and get back to you shortly.",
 ];
 
-const clock = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const clock = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 function ago(iso: string, now: number) {
   const m = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));

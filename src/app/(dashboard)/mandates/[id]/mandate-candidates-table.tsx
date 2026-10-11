@@ -819,7 +819,7 @@ export default function MandateCandidatesTable({
                     <StageTimeline stage={l.stage} stageUpdatedAt={l.stage_updated_at} rejectedFromStage={l.rejected_from_stage} />
                     {l.date_of_joining && (
                       <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
-                        Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
                       </span>
                     )}
                     {/* "Where do the answers reflect" -- right here, without

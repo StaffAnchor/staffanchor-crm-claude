@@ -181,7 +181,7 @@ function fmtDate(d: string | Date | null): string {
   if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
   if (isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return date.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" });
 }
 
 function InvoiceDocument({ input }: { input: InvoicePdfInput }) {

@@ -159,7 +159,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Created",
     render: (m) => (
       <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">
-        {new Date(m.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+        {new Date(m.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
       </span>
     ),
   },

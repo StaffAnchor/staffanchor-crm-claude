@@ -37,8 +37,8 @@ function dayLabel(iso: string, now: Date) {
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Tomorrow";
   if (diffDays === -1) return "Yesterday";
-  if (diffDays > 1 && diffDays < 7) return d.toLocaleDateString("en-IN", { weekday: "long" });
-  return d.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" });
+  if (diffDays > 1 && diffDays < 7) return d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "long" });
+  return d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "2-digit", month: "short" });
 }
 
 export default async function InterviewsPage() {
