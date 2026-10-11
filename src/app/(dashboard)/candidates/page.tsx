@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import ProfileGroupsStrip from "./profile-groups-strip";
+import type { GroupOverview } from "@/lib/profile-groups";
 import CandidatesTable from "./candidates-table";
 import {
   industryOptions,
@@ -217,6 +219,9 @@ type SearchParams = {
   source_recruiter?: string;
   owner?: string;
   practice?: string;
+  // Profile group (B2B / B2C / Non-Sales) and, for Non-Sales, its sub-group. 'review' and 'waiting' are the two side tiles.
+  group?: string;
+  subgroup?: string;
 };
 
 const PAGE_SIZE = 100;
@@ -460,6 +465,13 @@ export default async function CandidatesPage({
       }
     }
     if (params.category) qq = qq.eq("category", params.category);
+    if (params.group === "review") qq = qq.eq("profile_group_needs_review", true);
+    else if (params.group === "waiting") qq = qq.eq("profile_group_confidence", "low").eq("profile_group_needs_review", false);
+    else if (params.group) qq = qq.eq("profile_group", params.group);
+    if (params.subgroup) {
+      if (params.subgroup === "Other / unspecified") qq = qq.is("profile_subgroup", null);
+      else qq = qq.eq("profile_subgroup", params.subgroup);
+    }
     if (params.status) qq = qq.in("status", params.status.split(","));
     if (params.min_ctc) qq = qq.gte("current_fixed_ctc", Number(params.min_ctc));
     if (params.max_ctc) qq = qq.lte("current_fixed_ctc", Number(params.max_ctc));
@@ -576,7 +588,7 @@ export default async function CandidatesPage({
   const baseQuery = supabase
     .from("candidates")
     .select(
-      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
+      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
     )
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);
@@ -948,6 +960,12 @@ export default async function CandidatesPage({
   // "Clear all filters" navigates back to the bare /candidates route.
   const filtersKey = JSON.stringify(params);
 
+  // The profile-group overview strip at the top of the page: counts by group, sub-group and the two
+  // review tiles. A failure here must never stop the candidate list from loading.
+  const { data: groupOverviewRaw } = await supabase.rpc("profile_group_overview");
+  const groupOverview = (groupOverviewRaw ?? null) as GroupOverview | null;
+  const groupHref = (group?: string, subgroup?: string) => qs({ group, subgroup });
+
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
       <CandidatesSubNav />
@@ -1000,6 +1018,8 @@ export default async function CandidatesPage({
           is everyone in the client pipeline right now. Fixed column spans
           (not flex-wrap) so the boxes line up into a real grid instead of
           drifting to whatever width their content happens to need. */}
+      {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} />}
+
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-4 mb-3 shadow-ros-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 items-stretch">
           {/* Total Candidates -- same bordered-box grammar as the clusters

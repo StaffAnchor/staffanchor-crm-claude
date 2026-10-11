@@ -20,6 +20,7 @@ import CallCompanion from "./call-companion";
 import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
 import AskMissingDetails from "./ask-missing-details";
+import ProfileGroupControl from "./profile-group-control";
 import { missingKeyDetails } from "@/lib/key-details";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
@@ -623,6 +624,15 @@ export default async function CandidateDetailPage({
                     </span>
                   )}
                 </div>
+                <ProfileGroupControl
+                  candidateId={candidate.id}
+                  group={candidate.profile_group ?? null}
+                  subgroup={candidate.profile_subgroup ?? null}
+                  also={candidate.profile_group_also ?? null}
+                  reason={candidate.profile_group_reason ?? null}
+                  needsReview={!!candidate.profile_group_needs_review}
+                  locked={!!candidate.profile_group_locked}
+                />
                 <AskMissingDetails candidateId={candidate.id} missing={missingKeyDetails(candidate).map((m) => m.label)} />
               </div>
             </div>

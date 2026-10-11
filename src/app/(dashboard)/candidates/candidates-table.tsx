@@ -1,5 +1,6 @@
 "use client";
 
+import { ProfileGroupBadge } from "./profile-group-badge";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -66,6 +67,11 @@ export type CandidateRow = {
   current_employer: string | null;
   current_job_title: string | null;
   category: string | null;
+  profile_group?: string | null;
+  profile_subgroup?: string | null;
+  profile_group_also?: string | null;
+  profile_group_needs_review?: boolean | null;
+  profile_group_reason?: string | null;
   sub_domain: string | null;
   secondary_sub_domains: string[] | null;
   total_experience_years: number | null;
@@ -601,6 +607,13 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.current_employer ?? "—"}</span>,
   },
   {
+    key: "profile_group",
+    label: "Profile group",
+    render: (c) => (
+      <ProfileGroupBadge group={c.profile_group} subgroup={c.profile_subgroup} also={c.profile_group_also} needsReview={!!c.profile_group_needs_review} reason={c.profile_group_reason} />
+    ),
+  },
+  {
     key: "category",
     label: "Current Profile Type",
     render: (c) => (
@@ -963,6 +976,7 @@ const COLUMN_DEFS: ColumnDef[] = [
 const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
 
 const DEFAULT_VISIBLE = new Set([
+  "profile_group",
   "created_at",
   "owner",
   "verification_level",
