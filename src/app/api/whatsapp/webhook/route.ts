@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendWhatsAppFreeform } from "@/lib/whatsapp";
-import { handleInbound, type Io } from "@/lib/whatsapp-bot/engine";
+import { handleInbound, type Io, type Outcome } from "@/lib/whatsapp-bot/engine";
 import { supabaseStore } from "@/lib/whatsapp-bot/store";
 import { downloadWhatsAppMedia } from "@/lib/whatsapp-media";
 
@@ -185,9 +185,10 @@ export async function POST(req: NextRequest) {
           // The assistant: sorts the chat (jobseeker / employer / referrer / other) and, for
           // jobseekers only, collects a profile. Employers are never asked profile questions.
           const bot = botEnv();
+          let assistantOutcome: Outcome | null = null;
           if (fromPhone) {
             try {
-              await handleInbound(
+              assistantOutcome = await handleInbound(
                 bot,
                 supabaseStore(admin),
                 botIo,
@@ -204,13 +205,22 @@ export async function POST(req: NextRequest) {
             } catch (err) {
               console.error("WhatsApp assistant failed", err);
             }
-            if (bot.enabled) continue;
+            // When the assistant has dealt with the message (replied, stayed quiet on purpose, or the
+            // number is our own team), nothing more is sent here. When it only recorded the message
+            // because it is not switched on for this number, the optional first acknowledgement below
+            // still goes out, so the person is never left in silence.
+            if (bot.enabled && assistantOutcome?.action !== "recorded") continue;
           }
 
           // Optional first acknowledgement, only when switched on (WHATSAPP_AUTO_ACK=true).
           // One per 24 hours per person, sent inside the window the person just opened,
           // so it is free and not a template.
-          if (process.env.WHATSAPP_AUTO_ACK === "true" && fromPhone) {
+          // Never to someone who asked us to stop, or to a chat a recruiter has paused to handle personally.
+          const { data: ackContact } = fromPhone
+            ? await admin.from("whatsapp_contacts").select("opted_out, bot_paused").eq("phone_key", fromPhone.slice(-10)).maybeSingle()
+            : { data: null };
+          const ackBlocked = !!(ackContact && (ackContact.opted_out || ackContact.bot_paused));
+          if (process.env.WHATSAPP_AUTO_ACK === "true" && fromPhone && !ackBlocked) {
             const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
             const { data: recentOut } = await admin
               .from("whatsapp_messages")
