@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ReadinessStrip from "./readiness-strip";
+import CandidatesFilterBar, { type HeaderCounts } from "./candidates-filter-bar";
 import type { ReadinessOverview } from "@/lib/readiness";
 import ProfileGroupsStrip from "./profile-groups-strip";
 import type { GroupOverview, CvCoverage } from "@/lib/profile-groups";
@@ -164,12 +165,6 @@ const PRACTICE_GROUP_LABEL_ORDER: { value: "enterprise_sales" | "b2c_sales" | "f
   { value: "functional", label: "Functional Practices" },
 ];
 
-const CATEGORIES = [
-  { value: "", label: "All" },
-  { value: "b2b_sales", label: "B2B Sales" },
-  { value: "b2c_sales", label: "B2C Sales" },
-  { value: "non_sales", label: "Non-Sales" },
-];
 
 const RECOMMENDATIONS = ["Strong Fit", "Fit with Reservations", "Not a Fit"];
 
@@ -259,15 +254,19 @@ type CandidateKpiRow = {
 async function fetchAllCandidateRows(
   supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<{ data: CandidateKpiRow[]; error: null } | { data: null; error: unknown }> {
-  const rows: CandidateKpiRow[] = [];
-  for (let offset = 0; offset < KPI_SCAN_MAX_ROWS; offset += KPI_SCAN_PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("candidates")
-      .select("sub_domain, status, created_at, created_by, current_location, city_canonical, recruiter_assessment")
-      .range(offset, offset + KPI_SCAN_PAGE_SIZE - 1);
-    if (error) return { data: null, error };
-    rows.push(...((data ?? []) as CandidateKpiRow[]));
-    if (!data || data.length < KPI_SCAN_PAGE_SIZE) break;
+  const cols = "sub_domain, status, created_at, created_by, current_location, city_canonical, recruiter_assessment";
+  // First page also tells us the total, so every remaining page can be fetched at the same time
+  // instead of one round trip after another.
+  const first = await supabase.from("candidates").select(cols, { count: "exact" }).range(0, KPI_SCAN_PAGE_SIZE - 1);
+  if (first.error) return { data: null, error: first.error };
+  const rows: CandidateKpiRow[] = [...((first.data ?? []) as CandidateKpiRow[])];
+  const total = Math.min(first.count ?? rows.length, KPI_SCAN_MAX_ROWS);
+  const offsets: number[] = [];
+  for (let offset = KPI_SCAN_PAGE_SIZE; offset < total; offset += KPI_SCAN_PAGE_SIZE) offsets.push(offset);
+  const rest = await Promise.all(offsets.map((offset) => supabase.from("candidates").select(cols).range(offset, offset + KPI_SCAN_PAGE_SIZE - 1)));
+  for (const page of rest) {
+    if (page.error) return { data: null, error: page.error };
+    rows.push(...((page.data ?? []) as CandidateKpiRow[]));
   }
   return { data: rows, error: null };
 }
@@ -313,6 +312,10 @@ export default async function CandidatesPage({
     allRowsRes,
     allStageLinksRes,
     offerJoiningDetailRes,
+    groupOverviewRes,
+    readinessRes,
+    coverageRes,
+    headerCountsRes,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ]: any[] = await Promise.all([
     currentUser
@@ -407,6 +410,12 @@ export default async function CandidatesPage({
         "candidate_id, mandate_id, stage, date_of_joining, candidates(full_name), mandates(role_title, client_name)"
       )
       .in("stage", ["offer", "placed", "pulled_back"]),
+    // The numbers for the group tiles, readiness strip, CV coverage line and header chips, fetched in
+    // the same wave as everything else so they cost no extra round trips.
+    supabase.rpc("profile_group_overview"),
+    supabase.rpc("readiness_overview"),
+    supabase.rpc("cv_coverage"),
+    supabase.rpc("candidate_header_counts", { p_owner: currentUser?.id ?? null }),
   ]);
 
   const currentProfile = currentProfileRes.data as { role: string } | null;
@@ -983,12 +992,13 @@ export default async function CandidatesPage({
 
   // The profile-group overview strip at the top of the page: counts by group, sub-group and the two
   // review tiles. A failure here must never stop the candidate list from loading.
-  const { data: groupOverviewRaw } = await supabase.rpc("profile_group_overview");
+  const groupOverviewRaw = groupOverviewRes?.data ?? null;
   const groupOverview = (groupOverviewRaw ?? null) as GroupOverview | null;
   const groupHref = (group?: string, subgroup?: string) => qs({ group, subgroup });
-  const { data: readinessRaw } = await supabase.rpc("readiness_overview");
+  const readinessRaw = readinessRes?.data ?? null;
   const readinessOverview = (readinessRaw ?? null) as ReadinessOverview | null;
-  const { data: coverageRaw } = await supabase.rpc("cv_coverage");
+  const headerCounts = (headerCountsRes?.data ?? null) as HeaderCounts | null;
+  const coverageRaw = coverageRes?.data ?? null;
   const cvCoverage = (coverageRaw ?? null) as CvCoverage | null;
   const readinessHref = (ready?: string, missing?: string) => qs({ ready, missing });
 
@@ -1153,69 +1163,15 @@ export default async function CandidatesPage({
           </button>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap mt-3">
-          {/* Defaults every recruiter's view to their own book of candidates
-              -- with 10 recruiters sharing one table, "everything" is the
-              wrong default and "mine" is the one that matters most, most
-              of the time. One click switches to All. */}
-          <Link
-            href={qs({ owner: params.owner ? undefined : "me" })}
-            className={`text-[12px] font-semibold px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
-              params.owner
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-            }`}
-          >
-            {params.owner === "me" ? "★ My Candidates" : params.owner ? "★ Filtered by owner" : "My Candidates"}
-          </Link>
-          <span className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" aria-hidden />
-          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide shrink-0">
-            Current profile type
-          </span>
-          {CATEGORIES.map((c) => (
-            <Link
-              key={c.value}
-              href={qs({ category: c.value || undefined })}
-              className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
-                (params.category ?? "") === c.value
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-              }`}
-            >
-              {c.label}
-            </Link>
-          ))}
-          <span className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" aria-hidden />
-          <Link
-            href={qs({ incomplete: params.incomplete ? undefined : "1" })}
-            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
-              params.incomplete
-                ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
-                : "bg-amber-50 text-amber-700 hover:bg-amber-100"
-            }`}
-          >
-            ⚠ Incomplete profiles
-          </Link>
-          <Link
-            href={qs({ rating: params.rating === "strong" ? undefined : "strong" })}
-            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
-              params.rating === "strong"
-                ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300"
-                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-            }`}
-          >
-            ★ Strong profiles
-          </Link>
-          <Link
-            href={qs({ rating: params.rating === "weak" ? undefined : "weak" })}
-            className={`text-[12px] font-medium px-3 py-1 rounded-full transition-all duration-200 ease-ros ${
-              params.rating === "weak"
-                ? "bg-rose-100 text-rose-800 ring-1 ring-rose-300"
-                : "bg-rose-50 text-rose-700 hover:bg-rose-100"
-            }`}
-          >
-            ⚑ Weak profiles
-          </Link>
+        <CandidatesFilterBar
+          counts={headerCounts}
+          owner={params.owner}
+          group={params.group}
+          incomplete={!!params.incomplete}
+          rating={params.rating}
+          hrefFor={qs}
+        />
+        <div className="flex items-center gap-2.5 flex-wrap mt-2">
           {multiValueChips("status", "Status", { labels: STATUS_LABEL })}
           {multiValueChips("mandate_stage", "Pipeline stage", { tone: "success", labels: STAGE_LABEL })}
           {params.sub_domain &&
