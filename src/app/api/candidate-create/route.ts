@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { candidate?: Record<string, unknown>; skipWelcomeEmail?: boolean };
+  let body: { candidate?: Record<string, unknown>; skipWelcomeEmail?: boolean; allowNoEmail?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -49,18 +49,48 @@ export async function POST(req: NextRequest) {
   if (!candidateFields || typeof candidateFields !== "object") {
     return NextResponse.json({ error: "candidate is required." }, { status: 400 });
   }
-  const email = typeof candidateFields.email === "string" ? candidateFields.email.trim() : "";
+  let email = typeof candidateFields.email === "string" ? candidateFields.email.trim() : "";
+  // A CV with a mobile number but no email can still become a profile: it is saved under a placeholder
+  // address that is clearly marked as "no email" (.invalid), gets no login and no email, and shows
+  // "Email" as something to collect later.
+  let noEmail = false;
   if (!email || !email.includes("@")) {
-    return NextResponse.json({ error: "A valid email is required." }, { status: 400 });
+    const p10 = String(candidateFields.phone ?? "").replace(/\D/g, "").slice(-10);
+    if (body.allowNoEmail === true && p10.length === 10) {
+      email = `no-email-${p10}@noemail.staffanchor.invalid`;
+      candidateFields.email = email;
+      noEmail = true;
+    } else {
+      return NextResponse.json({ error: "A valid email is required, or a 10-digit mobile number to save without one." }, { status: 400 });
+    }
   }
 
   const admin = createSupabaseClient(supabaseUrl, serviceKey);
 
-  try {
-    const existingUser = await findAuthUserByEmail(admin, email);
-    let userId: string;
+  if (noEmail) {
+    // Same person might already be here under their mobile number.
+    const p10 = email.replace(/^no-email-/, "").slice(0, 10);
+    const { data: samePhone } = await admin
+      .from("candidates")
+      .select("id, full_name, email")
+      .or(`phone.ilike.%${p10},alt_phones.cs.{${p10}}`)
+      .limit(1);
+    if (samePhone && samePhone.length > 0) {
+      return NextResponse.json(
+        { error: `Already in the system under this mobile number: ${samePhone[0].full_name ?? "a profile"}. Open that profile instead.`, existingCandidateId: samePhone[0].id },
+        { status: 409 }
+      );
+    }
+    candidateFields.segment_data = { ...((candidateFields.segment_data as Record<string, unknown> | null) ?? {}), no_email: true };
+  }
 
-    if (existingUser) {
+  try {
+    const existingUser = noEmail ? null : await findAuthUserByEmail(admin, email);
+    let userId: string | null = null;
+
+    if (noEmail) {
+      // No real address, so no login account yet; one is created if an email is added later.
+    } else if (existingUser) {
       userId = existingUser.id;
     } else {
       const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -113,9 +143,11 @@ export async function POST(req: NextRequest) {
       )
     );
 
-    const { error: linkError } = await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);
-    if (linkError) {
-      console.error("Failed to link candidates.user_id after recruiter-created candidate", linkError);
+    if (userId) {
+      const { error: linkError } = await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);
+      if (linkError) {
+        console.error("Failed to link candidates.user_id after recruiter-created candidate", linkError);
+      }
     }
 
     // Recruiter Created candidates get a welcome + login email every time
@@ -127,8 +159,8 @@ export async function POST(req: NextRequest) {
     const missingFields = Array.isArray(segmentData?.missing_fields)
       ? segmentData!.missing_fields.filter((f): f is string => typeof f === "string")
       : [];
-    if (body.skipWelcomeEmail === true) {
-      // The recruiter chose to create this profile without emailing the candidate.
+    if (body.skipWelcomeEmail === true || noEmail) {
+      // Either the recruiter chose not to email the candidate, or there is no email address to send to.
     } else if (candidateFields.created_by === "bulk_resume_upload") {
       // Bulk uploads are queued and sent a few at a time (see /api/cron/welcome-queue), so a big upload
       // never turns into a burst of emails from the company mailbox.
@@ -142,7 +174,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ candidateId, isNewSignup: !existingUser });
+    return NextResponse.json({ candidateId, isNewSignup: !existingUser, noEmail });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
     return NextResponse.json({ error: message }, { status: 500 });

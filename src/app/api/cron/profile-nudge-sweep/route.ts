@@ -53,6 +53,7 @@ async function handler(req: NextRequest) {
     .eq("profile_nudge_unsubscribed", false)
     .lt("profile_nudge_count", NUDGE_INTERVALS_DAYS.length)
     .not("email", "is", null)
+    .not("email", "ilike", "%.invalid")
     .order("created_at", { ascending: true })
     .limit(BATCH_LIMIT);
 
