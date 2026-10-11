@@ -7,6 +7,7 @@ import {
   OTHER_SUBGROUP,
   SUBGROUPS,
   type GroupOverview,
+  type CvCoverage,
   type ProfileGroup,
 } from "@/lib/profile-groups";
 
@@ -44,11 +45,13 @@ export default function ProfileGroupsStrip({
   activeGroup,
   activeSubgroup,
   hrefFor,
+  coverage,
 }: {
   overview: GroupOverview;
   activeGroup?: string;
   activeSubgroup?: string;
   hrefFor: (group?: string, subgroup?: string) => string;
+  coverage?: CvCoverage | null;
 }) {
   const total = Math.max(1, overview.total);
   const count = (g: ProfileGroup) => overview.groups[g]?.n ?? 0;
@@ -122,6 +125,14 @@ export default function ProfileGroupsStrip({
           </Link>
         ))}
       </div>
+
+      {coverage && (
+        <p className="mb-3 text-[11px] text-slate-500 dark:text-slate-400">
+          {coverage.total} profiles · {coverage.with_cv_file} with a CV file ·{" "}
+          {coverage.cv_read} CVs read · {coverage.no_cv_file} without a CV file.
+          The groups above count profiles, so they add up to {coverage.total}.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
         {ORDER.map((g) => {
@@ -241,7 +252,7 @@ export default function ProfileGroupsStrip({
         })}
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-3">
         <Link
           href={hrefFor("review", undefined)}
           className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "review" ? "border-rose-300 bg-rose-50/60 dark:border-rose-800 dark:bg-rose-950/20" : "border-slate-200 dark:border-slate-700"}`}
@@ -257,17 +268,31 @@ export default function ProfileGroupsStrip({
           </span>
         </Link>
         <Link
-          href={hrefFor("waiting", undefined)}
-          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "waiting" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
+          href={hrefFor("unread", undefined)}
+          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "unread" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
         >
           <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
-            <FileQuestion className="h-4 w-4 text-slate-400" /> Waiting for CV
+            <FileQuestion className="h-4 w-4 text-slate-400" /> CV not read yet
             <span className="text-[11px] text-slate-400">
-              grouped from the title for now
+              has a CV; grouped from the title until it is read
             </span>
           </span>
           <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
-            {overview.waiting_for_cv}
+            {coverage?.cv_unread ?? 0}
+          </span>
+        </Link>
+        <Link
+          href={hrefFor("nocv", undefined)}
+          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "nocv" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
+        >
+          <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
+            <FileQuestion className="h-4 w-4 text-slate-400" /> No CV on file
+            <span className="text-[11px] text-slate-400">
+              ask the candidate for a CV
+            </span>
+          </span>
+          <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
+            {coverage?.no_cv_file ?? 0}
           </span>
         </Link>
       </div>

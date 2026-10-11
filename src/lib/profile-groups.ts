@@ -47,6 +47,14 @@ export const SUBGROUPS = [
 
 export const OTHER_SUBGROUP = "Other / unspecified";
 
+export type CvCoverage = {
+  total: number;
+  with_cv_file: number;
+  no_cv_file: number;
+  cv_read: number;
+  cv_unread: number;
+};
+
 export type GroupOverview = {
   total: number;
   groups: Partial<Record<ProfileGroup, { n: number; new7: number; high: number; with_cv: number }>>;
