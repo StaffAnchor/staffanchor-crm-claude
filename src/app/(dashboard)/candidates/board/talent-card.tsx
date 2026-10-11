@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { ProfileGroupBadge } from "../profile-group-badge";
 import ResumePreview from "../[id]/resume-preview";
 import { MISSING_LABEL, TIER_PILL, type ReadinessTier } from "@/lib/readiness";
+import SaveToList from "./save-to-list";
+import type { ShortlistSummary } from "@/lib/shortlists";
 
 export type TalentCardData = {
   id: string;
@@ -54,7 +56,7 @@ function Fact({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-export default function TalentCard({ c, mandates }: { c: TalentCardData; mandates: MandateOption[] }) {
+export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: { c: TalentCardData; mandates: MandateOption[]; lists?: ShortlistSummary[]; memberOf?: string[] }) {
   const [target, setTarget] = useState("");
   const [state, setState] = useState<"idle" | "adding" | "added" | "exists" | "error">("idle");
   const tier = (c.readiness_tier ?? "needs_work") as ReadinessTier;
@@ -135,6 +137,7 @@ export default function TalentCard({ c, mandates }: { c: TalentCardData; mandate
       )}
 
       <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800" style={{ marginTop: "0.9rem" }}>
+        <SaveToList candidateId={c.id} lists={lists} memberOf={memberOf} />
         {c.resume_signed_url && <ResumePreview signedUrl={c.resume_signed_url} fileName={(c.resume_file_url ?? `${c.full_name}-resume`).replace(/^resumes\//, "")} label="CV" />}
         {waLink && (
           <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50" title="Open WhatsApp">

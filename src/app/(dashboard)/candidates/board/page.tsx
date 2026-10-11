@@ -2,11 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LayoutGrid, Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import CandidatesSubNav from "../candidates-sub-nav";
 import TalentCard, { type MandateOption, type TalentCardData } from "./talent-card";
 import { GROUP_LABEL, type ProfileGroup } from "@/lib/profile-groups";
 import { TIER_LABEL, type ReadinessTier } from "@/lib/readiness";
+import { buildTalentCards, CARD_COLUMNS } from "@/lib/talent-cards";
 
 export const dynamic = "force-dynamic";
 
@@ -46,27 +46,6 @@ const num = (v: string | undefined) => {
 };
 const fmt = (n: number) => n.toLocaleString("en-IN");
 
-type Facts = {
-  roles?: { is_current?: boolean; company?: string | null; title?: string | null; sells?: string | null; customer_type?: string | null; deal_size?: string | null; achievement?: string | null }[];
-  tools?: string[];
-  sales?: { hunter_or_farmer?: string | null };
-};
-
-function fromFacts(f: Facts | null | undefined): { highlight: string | null; chips: string[] } {
-  if (!f) return { highlight: null, chips: [] };
-  const cur = (f.roles ?? []).find((r) => r.is_current) ?? (f.roles ?? [])[0];
-  const parts: string[] = [];
-  if (cur?.sells) parts.push(`Sells ${cur.sells}${cur.customer_type ? ` to ${cur.customer_type.toUpperCase() === "B2B" ? "businesses" : cur.customer_type.toUpperCase() === "B2C" ? "consumers" : cur.customer_type}` : ""}`);
-  if (cur?.deal_size) parts.push(`deal size ${cur.deal_size}`);
-  let highlight = parts.length ? `${parts.join(", ")}.` : null;
-  if (cur?.achievement) highlight = `${highlight ? `${highlight} ` : ""}${cur.achievement}`.slice(0, 180);
-  const chips: string[] = [];
-  const hf = f.sales?.hunter_or_farmer;
-  if (hf && /hunt|farm|both/i.test(hf)) chips.push(/both/i.test(hf) ? "Hunter + farmer" : /hunt/i.test(hf) ? "Hunter" : "Farmer");
-  for (const t of (f.tools ?? []).slice(0, 2)) chips.push(t);
-  return { highlight, chips };
-}
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
@@ -91,10 +70,7 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
 
   let q = supabase
     .from("candidates")
-    .select(
-      "id, candidate_number, full_name, email, phone, current_job_title, current_employer, employer_canonical, city_canonical, current_location, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, notice_days_est, profile_group, profile_subgroup, profile_group_needs_review, readiness_score, readiness_tier, readiness_missing, industries, resume_file_url, created_at",
-      { count: "exact" }
-    );
+    .select(CARD_COLUMNS, { count: "exact" });
   const term = (p.q ?? "").replace(/[%_,()]/g, " ").trim();
   if (term) q = q.or(`full_name.ilike.%${term}%,current_employer.ilike.%${term}%,employer_canonical.ilike.%${term}%,current_job_title.ilike.%${term}%`);
   if (p.group && ["b2b_sales", "b2c_sales", "non_sales", "unclear"].includes(p.group)) q = q.eq("profile_group", p.group);
@@ -128,54 +104,16 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
   const counts = (countsRes.data ?? null) as Counts | null;
   const mandates = (mandatesRes.data ?? []) as MandateOption[];
 
-  // Extras for just the 24 cards on this page: CV facts, ratings, and short-lived CV links.
-  const ids = rows.map((r) => r.id as string);
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const admin = key ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key) : null;
-  const [factsRes, ratingsRes] = await Promise.all([
-    ids.length ? supabase.from("candidate_cv_facts").select("candidate_id, facts").in("candidate_id", ids) : Promise.resolve({ data: [] }),
-    ids.length ? supabase.from("candidate_profile_ratings").select("candidate_id, rating").in("candidate_id", ids) : Promise.resolve({ data: [] }),
+  const cards: TalentCardData[] = await buildTalentCards(supabase, rows);
+  const ids = cards.map((c) => c.id);
+  // Which saved shortlists exist, and which of them each card is already in.
+  const [listsRes, memberRes] = await Promise.all([
+    supabase.rpc("candidate_lists_with_counts"),
+    ids.length ? supabase.from("candidate_list_items").select("list_id, candidate_id").in("candidate_id", ids) : Promise.resolve({ data: [] }),
   ]);
-  const factsBy = new Map<string, Facts>(((factsRes.data ?? []) as { candidate_id: string; facts: Facts }[]).map((r) => [r.candidate_id, r.facts]));
-  const ratingBy = new Map<string, "strong" | "weak">(((ratingsRes.data ?? []) as { candidate_id: string; rating: "strong" | "weak" }[]).map((r) => [r.candidate_id, r.rating]));
-  const paths = rows.map((r) => r.resume_file_url as string | null).filter((v): v is string => !!v);
-  const signedBy = new Map<string, string>();
-  if (admin && paths.length) {
-    const { data: signed } = await admin.storage.from("resumes").createSignedUrls(paths, 3600);
-    for (const s of signed ?? []) if (s.path && s.signedUrl) signedBy.set(s.path, s.signedUrl);
-  }
-
-  const cards: TalentCardData[] = rows.map((r) => {
-    const id = r.id as string;
-    const f = fromFacts(factsBy.get(id));
-    const title = (r.current_job_title as string | null) ?? null;
-    const company = (r.employer_canonical as string | null) ?? (r.current_employer as string | null) ?? null;
-    return {
-      id,
-      candidate_number: (r.candidate_number as number | null) ?? null,
-      full_name: (r.full_name as string) || "Unnamed",
-      headline: [title, company].filter(Boolean).join(" at "),
-      city: (r.city_canonical as string | null) ?? (r.current_location as string | null) ?? null,
-      experience: (r.total_experience_years as number | null) ?? null,
-      current_ctc: (r.current_fixed_ctc as number | null) ?? null,
-      expected_ctc: (r.expected_fixed_ctc as number | null) ?? null,
-      notice: (r.notice_period as string | null) ?? null,
-      group: (r.profile_group as string | null) ?? null,
-      subgroup: (r.profile_subgroup as string | null) ?? null,
-      needs_review: !!r.profile_group_needs_review,
-      readiness_score: (r.readiness_score as number | null) ?? null,
-      readiness_tier: (r.readiness_tier as string | null) ?? null,
-      readiness_missing: (r.readiness_missing as string[] | null) ?? [],
-      industries: (r.industries as string[] | null) ?? [],
-      highlight: f.highlight,
-      chips: f.chips,
-      rating: ratingBy.get(id) ?? null,
-      has_email: !/\.invalid$/i.test((r.email as string) ?? ""),
-      phone: (r.phone as string | null) ?? null,
-      resume_file_url: (r.resume_file_url as string | null) ?? null,
-      resume_signed_url: r.resume_file_url ? signedBy.get(r.resume_file_url as string) ?? null : null,
-    };
-  });
+  const lists = ((listsRes.data ?? []) as { id: string; name: string; n: number | string; owner_name: string | null }[]).map((l) => ({ id: l.id, name: l.name, n: Number(l.n), owner_name: l.owner_name }));
+  const memberOf = new Map<string, string[]>();
+  for (const m of (memberRes.data ?? []) as { list_id: string; candidate_id: string }[]) memberOf.set(m.candidate_id, [...(memberOf.get(m.candidate_id) ?? []), m.list_id]);
 
   const href = (o: Partial<Record<keyof Params, string | undefined>>) => {
     const merged: Record<string, string | undefined> = { ...p, page: undefined, ...o };
@@ -311,7 +249,7 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
               {cards.map((c) => (
-                <TalentCard key={c.id} c={c} mandates={mandates} />
+                <TalentCard key={c.id} c={c} mandates={mandates} lists={lists} memberOf={memberOf.get(c.id) ?? []} />
               ))}
             </div>
           )}
