@@ -190,3 +190,87 @@ Don't want these requests? ${stop}`;
 </body></html>`;
   return { subject, text, html, unsubscribe: stop };
 }
+
+/**
+ * The automatic reminder for incomplete profiles (days 3, 7 and 14 after they were created). Same voice
+ * and design as the welcome and outreach emails, with the tone getting gently firmer by stage.
+ */
+export function buildReminderEmail(
+  stage: 1 | 2 | 3,
+  c: { id: string; full_name: string | null },
+  missingFields: string[],
+  unsubscribeLink: string
+) {
+  const raw = (c.full_name ?? "").trim().split(/\s+/)[0] || "";
+  const first = raw ? raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() : "there";
+  const wanted = missingFields.map((f) => LABEL_FOR_WELCOME[f]).filter(Boolean).slice(0, 5);
+  const items = wanted.length ? wanted : ["current fixed CTC", "expected fixed CTC", "notice period"];
+  const list = items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}` : items[0];
+  const form = `${APP_URL}/u/${c.id}`;
+  const name = first === "there" ? "" : `${first}, `;
+
+  const copy = {
+    1: {
+      subject: `${name}your profile is almost ready to be presented`.replace(/^./, (ch) => ch.toUpperCase()),
+      lead: "Thank you for your interest in opportunities through StaffAnchor.",
+      body: `Your profile is nearly there. To present you in the strongest possible way we still need your <strong>${esc(list)}</strong>. This is a key part of your job search with us.`,
+      plain: `Your profile is nearly there. To present you in the strongest possible way we still need your ${list}. This is a key part of your job search with us.`,
+    },
+    2: {
+      subject: `${name}a reminder: we still need a few details to present you`.replace(/^./, (ch) => ch.toUpperCase()),
+      lead: "A quick follow-up on our earlier note.",
+      body: `Your profile is still missing your <strong>${esc(list)}</strong>, so we haven&rsquo;t been able to put you forward for roles yet. It takes about a minute to finish.`,
+      plain: `Your profile is still missing your ${list}, so we haven't been able to put you forward for roles yet. It takes about a minute to finish.`,
+    },
+    3: {
+      subject: `${name}one last note about your profile`.replace(/^./, (ch) => ch.toUpperCase()),
+      lead: "This is our last reminder.",
+      body: `Your profile is still missing your <strong>${esc(list)}</strong>, so we haven&rsquo;t been able to consider you for roles. If the timing isn&rsquo;t right, no problem: complete it whenever you&rsquo;re ready, or tell us and we won&rsquo;t ask again.`,
+      plain: `Your profile is still missing your ${list}, so we haven't been able to consider you for roles. If the timing isn't right, no problem: complete it whenever you're ready, or tell us and we won't ask again.`,
+    },
+  }[stage];
+
+  const text = `Hi ${first},
+
+${copy.lead}
+
+${copy.plain}
+
+Complete it in about a minute: ${form}
+Or simply reply to this email with the details in one line.
+
+We use these details only to match you with suitable roles.
+
+Warm regards,
+StaffAnchor Talent Solutions
+www.staffanchor.com
+
+Don't want these reminders? ${unsubscribeLink}`;
+
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(copy.subject)}</title></head>
+<body style="margin:0;padding:0;background:#F5F7FA;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">It takes about a minute to finish your profile.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F7FA;padding:28px 12px;">
+<tr><td align="center">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:10px;">
+<tr><td style="padding:26px 34px 0 34px;font-family:Georgia,'Times New Roman',serif;font-size:19px;letter-spacing:0.4px;color:${NAVY};">StaffAnchor<span style="color:${BLUE};">.</span></td></tr>
+<tr><td style="padding:6px 34px 0 34px;"><div style="height:1px;background:#E5E7EB;line-height:1px;font-size:1px;">&nbsp;</div></td></tr>
+<tr><td style="padding:22px 34px 8px 34px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${NAVY};">
+<p style="margin:0 0 16px 0;">Hi ${esc(first)},</p>
+<p style="margin:0 0 16px 0;">${copy.lead}</p>
+<p style="margin:0 0 18px 0;">${copy.body}</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;"><tr><td style="background:${BLUE};border-radius:6px;"><a href="${form}" style="display:inline-block;padding:11px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14.5px;font-weight:600;color:#FFFFFF;text-decoration:none;">Complete my profile</a></td></tr></table>
+<p style="margin:0 0 20px 0;color:${SLATE};font-size:14px;">Prefer not to sign in? <strong>Just reply to this email</strong> with the details in one line.</p>
+<p style="margin:0 0 20px 0;color:${SLATE};font-size:14px;">We use these details only to match you with suitable roles.</p>
+<p style="margin:0 0 4px 0;">Warm regards,</p>
+<p style="margin:0 0 6px 0;font-weight:600;">StaffAnchor Talent Solutions</p>
+</td></tr>
+<tr><td style="padding:14px 34px 24px 34px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${MUTED};border-top:1px solid #F1F5F9;">
+<a href="https://www.staffanchor.com" style="color:${MUTED};text-decoration:none;">www.staffanchor.com</a> &nbsp;&middot;&nbsp; Don&rsquo;t want these reminders? <a href="${unsubscribeLink}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.
+</td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+  return { subject: copy.subject, text, html };
+}

@@ -50,3 +50,6 @@ export async function GET(req: NextRequest) {
     { status: 200, headers: { "Content-Type": "text/html" } }
   );
 }
+
+// Mail apps that use one-click unsubscribe POST to the same address.
+export const POST = GET;
