@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileGroupBadge } from "./profile-group-badge";
+import { MISSING_LABEL, TIER_PILL, type ReadinessTier } from "@/lib/readiness";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -72,6 +73,11 @@ export type CandidateRow = {
   profile_group_also?: string | null;
   profile_group_needs_review?: boolean | null;
   profile_group_reason?: string | null;
+  city_canonical?: string | null;
+  employer_canonical?: string | null;
+  readiness_score?: number | null;
+  readiness_tier?: string | null;
+  readiness_missing?: string[] | null;
   sub_domain: string | null;
   secondary_sub_domains: string[] | null;
   total_experience_years: number | null;
@@ -604,7 +610,23 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "current_employer",
     label: "Current Company",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]">{c.current_employer ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[160px]" title={c.current_employer ?? undefined}>{c.employer_canonical ?? c.current_employer ?? "—"}</span>,
+  },
+  {
+    key: "readiness",
+    label: "Readiness",
+    render: (c) => {
+      const tier = (c.readiness_tier ?? "needs_work") as ReadinessTier;
+      const missing = (c.readiness_missing ?? []).map((k) => MISSING_LABEL[k] ?? k);
+      return (
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ring-1 ${TIER_PILL[tier]}`}
+          title={missing.length ? `Missing: ${missing.join(", ")}` : "Nothing missing"}
+        >
+          {c.readiness_score ?? "—"}
+        </span>
+      );
+    },
   },
   {
     key: "profile_group",
@@ -644,7 +666,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "current_location",
     label: "Location",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{c.current_location ?? "—"}</span>,
+    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap" title={c.current_location ?? undefined}>{c.city_canonical ?? c.current_location ?? "—"}</span>,
   },
   {
     key: "role_level",
@@ -976,6 +998,7 @@ const COLUMN_DEFS: ColumnDef[] = [
 const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
 
 const DEFAULT_VISIBLE = new Set([
+  "readiness",
   "profile_group",
   "created_at",
   "owner",

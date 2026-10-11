@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import ReadinessStrip from "./readiness-strip";
+import type { ReadinessOverview } from "@/lib/readiness";
 import ProfileGroupsStrip from "./profile-groups-strip";
 import type { GroupOverview } from "@/lib/profile-groups";
 import CandidatesTable from "./candidates-table";
@@ -174,6 +176,8 @@ const SCORE_OPTIONS = [1, 2, 3, 4, 5];
 
 type SearchParams = {
   q?: string;
+  ready?: string;
+  missing?: string;
   category?: string;
   status?: string;
   min_ctc?: string;
@@ -243,6 +247,7 @@ type CandidateKpiRow = {
   created_at: string;
   created_by: string | null;
   current_location: string | null;
+  city_canonical: string | null;
   recruiter_assessment: unknown;
 };
 
@@ -253,7 +258,7 @@ async function fetchAllCandidateRows(
   for (let offset = 0; offset < KPI_SCAN_MAX_ROWS; offset += KPI_SCAN_PAGE_SIZE) {
     const { data, error } = await supabase
       .from("candidates")
-      .select("sub_domain, status, created_at, created_by, current_location, recruiter_assessment")
+      .select("sub_domain, status, created_at, created_by, current_location, city_canonical, recruiter_assessment")
       .range(offset, offset + KPI_SCAN_PAGE_SIZE - 1);
     if (error) return { data: null, error };
     rows.push(...((data ?? []) as CandidateKpiRow[]));
@@ -434,6 +439,7 @@ export default async function CandidatesPage({
         created_at: string;
         created_by: string | null;
         current_location: string | null;
+        city_canonical: string | null;
         recruiter_assessment: Record<string, unknown> | null;
       }[]
     | null;
@@ -465,6 +471,8 @@ export default async function CandidatesPage({
       }
     }
     if (params.category) qq = qq.eq("category", params.category);
+    if (params.ready && ["ready", "almost", "needs_work"].includes(params.ready)) qq = qq.eq("readiness_tier", params.ready);
+    if (params.missing && /^[a-z_]+$/.test(params.missing)) qq = qq.contains("readiness_missing", [params.missing]);
     if (params.group === "review") qq = qq.eq("profile_group_needs_review", true);
     else if (params.group === "waiting") qq = qq.eq("profile_group_confidence", "low").eq("profile_group_needs_review", false);
     else if (params.group) qq = qq.eq("profile_group", params.group);
@@ -494,7 +502,7 @@ export default async function CandidatesPage({
     if (params.location) {
       const cities = params.location.split(",").map((c) => c.trim()).filter(Boolean);
       if (cities.length > 0) {
-        qq = qq.or(cities.map((c) => `current_location.ilike.${c}%`).join(","));
+        qq = qq.or([...cities.map((c) => `city_canonical.eq.${c}`), ...cities.map((c) => `current_location.ilike.${c}%`)].join(","));
       }
     }
     if (params.secondary_domain) qq = qq.overlaps("secondary_sub_domains", params.secondary_domain.split(","));
@@ -588,7 +596,7 @@ export default async function CandidatesPage({
   const baseQuery = supabase
     .from("candidates")
     .select(
-      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
+      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, city_canonical, employer_canonical, readiness_score, readiness_tier, readiness_missing, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
     )
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);
@@ -768,7 +776,7 @@ export default async function CandidatesPage({
   const locationOptions = Array.from(
     new Set(
       (allRows ?? [])
-        .map((r) => (r.current_location ?? "").split(",")[0].trim())
+        .map((r) => r.city_canonical ?? (r.current_location ?? "").split(",")[0].trim())
         .filter((v): v is string => Boolean(v))
     )
   ).sort();
@@ -965,6 +973,9 @@ export default async function CandidatesPage({
   const { data: groupOverviewRaw } = await supabase.rpc("profile_group_overview");
   const groupOverview = (groupOverviewRaw ?? null) as GroupOverview | null;
   const groupHref = (group?: string, subgroup?: string) => qs({ group, subgroup });
+  const { data: readinessRaw } = await supabase.rpc("readiness_overview");
+  const readinessOverview = (readinessRaw ?? null) as ReadinessOverview | null;
+  const readinessHref = (ready?: string, missing?: string) => qs({ ready, missing });
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
@@ -1019,6 +1030,7 @@ export default async function CandidatesPage({
           (not flex-wrap) so the boxes line up into a real grid instead of
           drifting to whatever width their content happens to need. */}
       {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} />}
+      {readinessOverview && <ReadinessStrip overview={readinessOverview} activeTier={params.ready} activeMissing={params.missing} hrefFor={readinessHref} />}
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-4 mb-3 shadow-ros-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 items-stretch">
