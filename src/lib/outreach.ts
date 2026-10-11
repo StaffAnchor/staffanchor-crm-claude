@@ -57,7 +57,7 @@ export function buildOutreachEmail(c: { id: string; full_name: string | null; em
   const form = `${APP_URL}/u/${c.id}`;
   const wa = `${APP_URL}/w/${c.id}`;
   const stop = unsubscribeUrl(c.id);
-  const subject = `${first}, a reply needed to present your profile to hiring managers`;
+  const subject = first === "there" ? "A reply needed to present your profile to hiring managers" : `${first}, a reply needed to present your profile to hiring managers`;
 
   const text = `Hi ${first},
 
@@ -141,7 +141,7 @@ export function buildWelcomeEmail(
   const items = wanted.length ? wanted : ["current fixed CTC", "expected fixed CTC", "notice period"];
   const list = items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}` : items[0];
   const stop = unsubscribeUrl(c.id);
-  const subject = `${first}, confirm your profile so we can present you to hiring managers`;
+  const subject = first === "there" ? "Confirm your profile so we can present you to hiring managers" : `${first}, confirm your profile so we can present you to hiring managers`;
 
   const text = `Hi ${first},
 
