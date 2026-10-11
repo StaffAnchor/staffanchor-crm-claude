@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/mail";
 import { buildOutreachEmail, dailyCap, MAX_PER_CLICK, sendGapMs } from "@/lib/outreach";
+import { sendQueuedWelcomes } from "@/lib/welcome-queue";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -33,7 +34,12 @@ export async function POST(req: NextRequest) {
   const want = Math.min(Math.max(1, Math.floor(body.count ?? MAX_PER_CLICK)), MAX_PER_CLICK, room);
   if (want <= 0) return NextResponse.json({ ok: true, sent: 0, failed: 0, note: `Today's limit of ${cap} is used up. Try again later; it resets on a rolling 24 hours.` });
 
-  const { data: next, error } = await admin.rpc("outreach_next", { p_limit: want });
+  // Bulk-upload welcome emails waiting in the queue go first; the rest of the batch is outreach.
+  const welcomes = await sendQueuedWelcomes(admin, want);
+  const left = want - welcomes.sent - welcomes.failed;
+  if (left <= 0) return NextResponse.json({ ok: true, sent: welcomes.sent, failed: welcomes.failed, welcomes: welcomes.sent });
+
+  const { data: next, error } = await admin.rpc("outreach_next", { p_limit: left });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const batch = (next ?? []) as Next[];
 
@@ -69,5 +75,5 @@ export async function POST(req: NextRequest) {
     }
     await new Promise((r) => setTimeout(r, sendGapMs));
   }
-  return NextResponse.json({ ok: true, sent, failed, stoppedEarly: consecutiveFails >= 3 });
+  return NextResponse.json({ ok: true, sent: sent + welcomes.sent, failed: failed + welcomes.failed, welcomes: welcomes.sent, stoppedEarly: consecutiveFails >= 3 });
 }
