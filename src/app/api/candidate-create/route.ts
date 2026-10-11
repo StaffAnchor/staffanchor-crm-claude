@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { sendEmail, renderEmailShell } from "@/lib/mail";
+import { sendEmail } from "@/lib/mail";
+import { buildWelcomeEmail } from "@/lib/outreach";
 import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 import { waitUntil } from "@vercel/functions";
 
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
     const missingFields = Array.isArray(segmentData?.missing_fields)
       ? segmentData!.missing_fields.filter((f): f is string => typeof f === "string")
       : [];
-    await sendRecruiterCreatedWelcomeEmail(admin, email, fullName, completionScore, missingFields).catch((err) => {
+    await sendRecruiterCreatedWelcomeEmail(admin, email, candidateId, fullName, completionScore, missingFields).catch((err) => {
       console.error("Failed to send recruiter-created welcome email", err);
     });
 
@@ -186,30 +187,10 @@ function computeProfileCompletionScore(fields: Record<string, unknown>): number 
   return Math.round((filled / COMPLETION_FIELDS.length) * 100);
 }
 
-// Human labels for segment_data.missing_fields entries -- same vocabulary
-// as the Create Candidate form's skip checkboxes and send-invite's
-// analogous tweak, so a candidate sees consistent wording no matter which
-// email actually reaches them first.
-const MISSING_FIELD_LABELS: Record<string, string> = {
-  sub_domain: "your practice / vertical / function",
-  current_employer: "your current employer",
-  current_job_title: "your current job title",
-  current_employment_status: "your employment status",
-  current_industry: "your current industry",
-  total_experience_years: "your total experience",
-  current_fixed_ctc: "your current fixed CTC",
-  expected_fixed_ctc: "your expected fixed CTC",
-  notice_period: "your notice period / days to join",
-  role_type: "whether you're an IC or leading a team",
-  highest_qualification: "your highest qualification",
-  work_mode: "your preferred work mode",
-  open_to_relocation: "whether you're open to relocation",
-  resume: "your resume",
-};
-
 async function sendRecruiterCreatedWelcomeEmail(
   admin: SupabaseClient,
   email: string,
+  candidateId: string,
   fullName: string,
   completionScore: number,
   missingFields: string[] = []
@@ -235,17 +216,14 @@ async function sendRecruiterCreatedWelcomeEmail(
   }
   const actionLink = data.properties.action_link;
 
-  const firstName = fullName.split(" ")[0] || "there";
-  const missingFieldText =
-    missingFields.length > 0
-      ? ` Specifically, we still need: ${missingFields.map((f) => MISSING_FIELD_LABELS[f] ?? f).join(", ")}.`
-      : "";
-  const subject = "Please confirm your details so we can match you to sales roles";
-  const text = `Hi ${firstName},\n\nA StaffAnchor recruiter has started a profile for you from your CV, so we can match you to the right revenue roles in technology.${missingFieldText}\n\nA CV can't tell us a few things, like your current and expected CTC and your notice period. Sign in below and you'll see what we already have. Confirm it or change it, and add the rest. It takes about three minutes and is mostly taps:\n\n${actionLink}\n\nNo password needed -- that link logs you straight in.\n\nThanks,\nStaffAnchor Team`;
-  const html = renderEmailShell({
-    preheader: "Confirm what we have from your CV and add your CTC and notice period. About three minutes.",
-    bodyHtml: `<p>Hi ${firstName},</p><p>A StaffAnchor recruiter has started a profile for you from your CV, so we can match you to the right revenue roles in technology.${missingFieldText}</p><p>A CV can&rsquo;t tell us a few things, like your <strong>current and expected CTC</strong> and your <strong>notice period</strong>. Sign in below and you&rsquo;ll see what we already have. Confirm it or change it, and add the rest. It takes about three minutes and is mostly taps:</p><p><a href="${actionLink}">${actionLink}</a></p><p>No password needed &mdash; that link logs you straight in.</p><p>Thanks,<br/>StaffAnchor Team</p>`,
-  });
+  const { subject, text, html, unsubscribe } = buildWelcomeEmail({ id: candidateId, full_name: fullName }, missingFields, actionLink);
 
-  await sendEmail({ to: email, subject, text, html });
+  await sendEmail({
+    to: email,
+    subject,
+    text,
+    html,
+    plain: true,
+    headers: { "List-Unsubscribe": `<${unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+  });
 }
