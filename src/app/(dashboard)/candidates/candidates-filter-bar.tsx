@@ -11,6 +11,8 @@ export type HeaderCounts = {
   strong: number;
   weak: number;
   ready: number;
+  almost: number;
+  needs_work: number;
   review: number;
 };
 
@@ -66,6 +68,7 @@ export default function CandidatesFilterBar({
   group,
   incomplete,
   rating,
+  ready,
   hrefFor,
 }: {
   counts: HeaderCounts | null;
@@ -73,6 +76,7 @@ export default function CandidatesFilterBar({
   group?: string;
   incomplete?: boolean;
   rating?: string;
+  ready?: string;
   hrefFor: (overrides: Record<string, string | undefined>) => string;
 }) {
   const c = counts;
@@ -100,14 +104,26 @@ export default function CandidatesFilterBar({
       ))}
 
       <span className="mx-0.5 h-4 w-px shrink-0 bg-slate-200 dark:bg-slate-700" aria-hidden />
+      <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-400" title="How complete the profile is for a mandate: CTC, notice, CV read and so on">Readiness</span>
+      <Pill href={hrefFor({ ready: ready === "ready" ? undefined : "ready", missing: undefined })} active={ready === "ready"} count={c?.ready} tone="emerald">
+        Ready
+      </Pill>
+      <Pill href={hrefFor({ ready: ready === "almost" ? undefined : "almost", missing: undefined })} active={ready === "almost"} count={c?.almost} tone="amber">
+        Almost there
+      </Pill>
+      <Pill href={hrefFor({ ready: ready === "needs_work" ? undefined : "needs_work", missing: undefined })} active={ready === "needs_work"} count={c?.needs_work} tone="rose">
+        Needs work
+      </Pill>
+
+      <span className="mx-0.5 h-4 w-px shrink-0 bg-slate-200 dark:bg-slate-700" aria-hidden />
       <Pill href={hrefFor({ incomplete: incomplete ? undefined : "1" })} active={!!incomplete} count={c?.incomplete} tone="amber">
         Haven&apos;t finished registering
       </Pill>
       <Pill href={hrefFor({ rating: rating === "strong" ? undefined : "strong" })} active={rating === "strong"} count={c?.strong} tone="emerald">
-        ★ Strong
+        ★ Rated strong
       </Pill>
       <Pill href={hrefFor({ rating: rating === "weak" ? undefined : "weak" })} active={rating === "weak"} count={c?.weak} tone="rose">
-        ⚑ Weak
+        ⚑ Rated weak
       </Pill>
     </div>
   );
