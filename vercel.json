@@ -70,6 +70,10 @@
     {
       "path": "/api/cron/welcome-queue",
       "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/read-email-replies",
+      "schedule": "15 5 * * *"
     }
   ]
 }

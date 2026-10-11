@@ -19,7 +19,15 @@ export async function sendQueuedWelcomes(admin: SupabaseClient, limit: number): 
     .order("created_at", { ascending: true })
     .limit(limit);
 
+  const { data: staffRows } = await admin.from("profiles").select("email");
+  const staffEmails = new Set(((staffRows ?? []) as { email: string | null }[]).map((r) => (r.email ?? "").toLowerCase()).filter(Boolean));
+
   for (const q of queued ?? []) {
+    if (staffEmails.has((q.email ?? "").toLowerCase())) {
+      await admin.from("welcome_queue").update({ status: "skipped", error: "staff address" }).eq("candidate_id", q.candidate_id);
+      out.skipped++;
+      continue;
+    }
     const { data: cand } = await admin
       .from("candidates")
       .select("id, email_opt_out, profile_nudge_unsubscribed, profile_nudge_last_sent_at")
