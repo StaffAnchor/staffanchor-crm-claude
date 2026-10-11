@@ -58,13 +58,13 @@ export function buildOutreachEmail(c: { id: string; full_name: string | null; em
   const form = `${APP_URL}/u/${c.id}`;
   const wa = `${APP_URL}/w/${c.id}`;
   const stop = unsubscribeUrl(c.id);
-  const subject = `${first}, a quick detail so we can put you forward`;
+  const subject = `${first}, a reply needed to present your profile to hiring managers`;
 
   const text = `Hi ${first},
 
 Thank you for your interest in opportunities through StaffAnchor.
 
-We're shortlisting for roles right now, and we'd like your profile ready when the right one opens. To do that properly we need your ${list}. Hiring managers screen on these first, so they decide whether a strong profile gets seen at all.
+We're shortlisting for roles right now, and we want to present your profile in the strongest possible way. To do that properly we need your ${list}. Hiring managers screen on these first, so they decide whether a strong profile gets seen at all, and this is a key part of your job search with us.
 
 The quickest way is to reply to this email with a single line, for example: ${example}.
 
@@ -82,7 +82,7 @@ Don't want these requests? ${stop}`;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(subject)}</title></head>
 <body style="margin:0;padding:0;background:#F5F7FA;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Ten seconds: reply with ${esc(list)} and we'll take it from there.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">A one-line reply is all it takes to get your profile presented properly.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F7FA;padding:28px 12px;">
 <tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:10px;">
@@ -91,7 +91,7 @@ Don't want these requests? ${stop}`;
 <tr><td style="padding:22px 34px 8px 34px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${NAVY};">
 <p style="margin:0 0 16px 0;">Hi ${esc(first)},</p>
 <p style="margin:0 0 16px 0;">Thank you for your interest in opportunities through StaffAnchor.</p>
-<p style="margin:0 0 16px 0;">We&rsquo;re shortlisting for roles right now, and we&rsquo;d like your profile ready when the right one opens. To do that properly we need your <strong>${esc(list)}</strong>. Hiring managers screen on these first, so they decide whether a strong profile gets seen at all.</p>
+<p style="margin:0 0 16px 0;">We&rsquo;re shortlisting for roles right now, and we want to present your profile in the strongest possible way. To do that properly we need your <strong>${esc(list)}</strong>. Hiring managers screen on these first, so they decide whether a strong profile gets seen at all, and this is a key part of your job search with us.</p>
 <p style="margin:0 0 6px 0;">The quickest way: <strong>just reply to this email with one line</strong>, for example:</p>
 <p style="margin:0 0 20px 0;padding:10px 14px;background:#F8FAFC;border-left:3px solid ${BLUE};color:${SLATE};">${esc(example)}</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;"><tr><td style="background:${BLUE};border-radius:6px;"><a href="${form}" style="display:inline-block;padding:11px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14.5px;font-weight:600;color:#FFFFFF;text-decoration:none;">Share my details</a></td></tr></table>
