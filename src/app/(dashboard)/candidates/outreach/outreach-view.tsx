@@ -11,7 +11,7 @@ type Props = {
   stats: { eligible: number; sent24h: number; sentTotal: number; failedTotal: number; optedOut: number };
   cap: number;
   next: { id: string; name: string; asks: string[]; emailHint: string }[];
-  preview: { subject: string; text: string };
+  preview: { subject: string; html: string };
 };
 
 export default function OutreachView({ sender, configured, stats, cap, next, preview }: Props) {
@@ -118,7 +118,7 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
           <h2 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">What they receive</h2>
           <div className="rounded-lg border border-slate-100 bg-white p-4 text-[13px] dark:border-slate-800 dark:bg-slate-900">
             <p className="mb-2 text-[12px] text-slate-500">Subject: {preview.subject}</p>
-            <pre className="whitespace-pre-wrap font-sans leading-relaxed text-slate-800 dark:text-slate-200">{preview.text}</pre>
+            <iframe title="Email preview" srcDoc={preview.html} sandbox="" className="h-[560px] w-full rounded-md border border-slate-200 bg-white dark:border-slate-700" />
           </div>
         </section>
       </div>

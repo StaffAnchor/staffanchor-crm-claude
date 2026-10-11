@@ -44,7 +44,7 @@ export default async function OutreachPage() {
         }}
         cap={cap}
         next={next}
-        preview={{ subject: sample.subject, text: sample.text.replace(/\?c=[0-9a-f-]+&t=[0-9a-f]+/, "?c=…&t=…") }}
+        preview={{ subject: sample.subject, html: sample.html }}
       />
     </div>
   );

@@ -85,7 +85,9 @@ export async function updateSession(request: NextRequest) {
     // sales_circle_referrers.invite_token is the only credential.
     /^\/api\/referrer-signup\/[^/]+$/.test(request.nextUrl.pathname) ||
     // The unsubscribe link in outreach emails: signed token, no staff cookie.
-    request.nextUrl.pathname === "/api/outreach/unsubscribe";
+    request.nextUrl.pathname === "/api/outreach/unsubscribe" ||
+    // Short links in outreach emails (profile form and WhatsApp) open for the candidate without a login.
+    /^\/(u|w)\/[0-9a-fA-F-]{36}$/.test(request.nextUrl.pathname);
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||
