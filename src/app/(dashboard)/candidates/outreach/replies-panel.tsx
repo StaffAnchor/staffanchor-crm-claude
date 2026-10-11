@@ -10,7 +10,8 @@ export type ReplyRow = { message_id: string; status: string; received_at: string
 const STATUS: Record<string, { label: string; cls: string }> = {
   applied: { label: "Profile updated", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
   unclear: { label: "Couldn't read the answer", cls: "bg-amber-50 text-amber-800 ring-amber-200" },
-  bounced: { label: "Email bounced", cls: "bg-rose-50 text-rose-700 ring-rose-200" },
+  bounced: { label: "Address invalid, paused", cls: "bg-rose-50 text-rose-700 ring-rose-200" },
+  soft_bounce: { label: "Temporary delivery problem", cls: "bg-amber-50 text-amber-800 ring-amber-200" },
   opt_out: { label: "Asked to stop", cls: "bg-slate-100 text-slate-700 ring-slate-200" },
   no_candidate: { label: "Not a known candidate", cls: "bg-slate-100 text-slate-600 ring-slate-200" },
   not_a_reply: { label: "Ignored", cls: "bg-slate-100 text-slate-500 ring-slate-200" },
@@ -31,7 +32,7 @@ export default function RepliesPanel({ mailbox, counts, rows }: { mailbox: strin
       const d = await res.json().catch(() => ({}));
       if (!res.ok) setMsg(d.error ?? "Couldn't check the mailbox.");
       else if (d.ok === false) setMsg(d.error ?? "Couldn't read the mailbox.");
-      else setMsg(`Read ${d.read} new message${d.read === 1 ? "" : "s"}: ${d.applied} profile${d.applied === 1 ? "" : "s"} updated, ${d.unclear} unclear, ${d.bounced} bounced, ${d.optedOut} asked to stop.`);
+      else setMsg(`Read ${d.read} new message${d.read === 1 ? "" : "s"}: ${d.applied} profile${d.applied === 1 ? "" : "s"} updated, ${d.unclear} unclear, ${d.bounced} invalid addresses paused, ${d.softBounced ?? 0} temporary problems, ${d.optedOut} asked to stop.`);
       router.refresh();
     } finally {
       setBusy(false);
@@ -55,7 +56,7 @@ export default function RepliesPanel({ mailbox, counts, rows }: { mailbox: strin
       </div>
       {msg && <p className="mb-3 rounded-md bg-slate-100 px-3 py-2 text-[12.5px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{msg}</p>}
       <div className="mb-3 flex flex-wrap gap-2 text-[12px]">
-        {(["applied", "unclear", "bounced", "opt_out"] as const).map((k) => (
+        {(["applied", "unclear", "bounced", "soft_bounce", "opt_out"] as const).map((k) => (
           <span key={k} className={`rounded-full px-2.5 py-1 font-medium ring-1 ${STATUS[k].cls}`}>
             {STATUS[k].label} · {counts[k] ?? 0}
           </span>
