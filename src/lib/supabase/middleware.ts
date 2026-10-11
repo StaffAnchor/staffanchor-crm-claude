@@ -86,6 +86,9 @@ export async function updateSession(request: NextRequest) {
     /^\/api\/referrer-signup\/[^/]+$/.test(request.nextUrl.pathname) ||
     // The unsubscribe link in outreach emails: signed token, no staff cookie.
     request.nextUrl.pathname === "/api/outreach/unsubscribe" ||
+    // The unsubscribe link in the automatic profile reminders: signed token, no staff cookie. It was
+    // missing from this list, so candidates who clicked it were sent to the staff login page instead.
+    request.nextUrl.pathname === "/api/unsubscribe-nudge" ||
     // Short links in outreach emails (profile form and WhatsApp) open for the candidate without a login.
     /^\/(u|w)\/[0-9a-fA-F-]{36}$/.test(request.nextUrl.pathname);
   const isPublicRoute =

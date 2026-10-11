@@ -20,9 +20,19 @@ export async function sendQueuedWelcomes(admin: SupabaseClient, limit: number): 
     .limit(limit);
 
   for (const q of queued ?? []) {
-    const { data: cand } = await admin.from("candidates").select("id, email_opt_out, profile_nudge_unsubscribed").eq("id", q.candidate_id).maybeSingle();
-    if (!cand || cand.email_opt_out || cand.profile_nudge_unsubscribed) {
-      await admin.from("welcome_queue").update({ status: "skipped" }).eq("candidate_id", q.candidate_id);
+    const { data: cand } = await admin
+      .from("candidates")
+      .select("id, email_opt_out, profile_nudge_unsubscribed, profile_nudge_last_sent_at")
+      .eq("id", q.candidate_id)
+      .maybeSingle();
+    const sevenDaysAgo = new Date(new Date().getTime() - 7 * 86_400_000).toISOString();
+    const { data: asked } = await admin.from("profile_outreach").select("id").eq("candidate_id", q.candidate_id).in("status", ["sent", "failed"]).gt("created_at", sevenDaysAgo).limit(1);
+    const nudgedRecently = !!cand?.profile_nudge_last_sent_at && cand.profile_nudge_last_sent_at > sevenDaysAgo;
+    if (!cand || cand.email_opt_out || cand.profile_nudge_unsubscribed || nudgedRecently || (asked && asked.length > 0)) {
+      await admin
+        .from("welcome_queue")
+        .update({ status: "skipped", error: !cand || cand.email_opt_out || cand.profile_nudge_unsubscribed ? "opted out" : "already asked in the last 7 days" })
+        .eq("candidate_id", q.candidate_id);
       out.skipped++;
       continue;
     }
