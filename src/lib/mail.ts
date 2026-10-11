@@ -83,6 +83,8 @@ export async function sendEmail({
   text,
   attachments,
   fromName = "StaffAnchor",
+  plain = false,
+  headers,
 }: {
   to: string;
   subject: string;
@@ -90,6 +92,9 @@ export async function sendEmail({
   text?: string;
   attachments?: MailAttachment[];
   fromName?: string;
+  // Plain personal-looking mail (no logo attachment), which is what lands in the inbox for outreach.
+  plain?: boolean;
+  headers?: Record<string, string>;
 }) {
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_APP_PASSWORD;
@@ -112,6 +117,7 @@ export async function sendEmail({
     // that's the one image-loading method every major mail client -- including
     // Outlook desktop and Gmail's image-blocking-by-default mode -- renders
     // without the user having to click "show images".
-    attachments: [{ filename: "staffanchor-logo.png", path: LOGO_PATH, cid: LOGO_CID }, ...(attachments ?? [])],
+    headers,
+    attachments: plain ? attachments : [{ filename: "staffanchor-logo.png", path: LOGO_PATH, cid: LOGO_CID }, ...(attachments ?? [])],
   });
 }

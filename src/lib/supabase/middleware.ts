@@ -83,7 +83,9 @@ export async function updateSession(request: NextRequest) {
     /^\/api\/vendor-signup\/[^/]+$/.test(request.nextUrl.pathname) ||
     // Same class again: Sales Circle referrer signup -- the
     // sales_circle_referrers.invite_token is the only credential.
-    /^\/api\/referrer-signup\/[^/]+$/.test(request.nextUrl.pathname);
+    /^\/api\/referrer-signup\/[^/]+$/.test(request.nextUrl.pathname) ||
+    // The unsubscribe link in outreach emails: signed token, no staff cookie.
+    request.nextUrl.pathname === "/api/outreach/unsubscribe";
   const isPublicRoute =
     isAuthRoute ||
     isPasswordResetRoute ||
