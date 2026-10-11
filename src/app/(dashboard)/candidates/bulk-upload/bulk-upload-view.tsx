@@ -84,6 +84,8 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
   const [extractProgress, setExtractProgress] = useState(0);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [creating, setCreating] = useState(false);
+  // On by default: each new profile is queued a "confirm your profile" email, sent gradually.
+  const [emailThem, setEmailThem] = useState(true);
   const [bulkMandateId, setBulkMandateId] = useState("");
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -219,6 +221,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            skipWelcomeEmail: !emailThem,
             candidate: (() => {
               const category = row.category || (profileType !== "auto" ? profileType : "");
               const sales = category === "b2b_sales" || category === "b2c_sales";
@@ -732,6 +735,14 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           ))}
 
           {!allDone ? (
+            <>
+            <label className="mb-2 flex items-start gap-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+              <input type="checkbox" className="mt-0.5" checked={emailThem} onChange={(e) => setEmailThem(e.target.checked)} />
+              <span>
+                Email them to confirm their profile and add CTC and notice period. Emails are queued and go out gradually (up to 30 a day at first),
+                so a large upload never becomes a burst. Untick to create the profiles without emailing anyone.
+              </span>
+            </label>
             <button
               type="button"
               onClick={handleCreateAll}
@@ -741,12 +752,14 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               {creating
                 ? `Creating candidates (${savedCount}/${includedCount})...`
-                : `Create ${includedCount} candidate${includedCount === 1 ? "" : "s"} & email them to complete their profile`}
+                : `Create ${includedCount} candidate${includedCount === 1 ? "" : "s"}`}
             </button>
+            </>
           ) : (
             <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-3.5 py-2.5">
               <p className="text-[13px] font-medium text-emerald-800">
-                {savedCount} candidate{savedCount === 1 ? "" : "s"} created and emailed to complete their profile.
+                {savedCount} candidate{savedCount === 1 ? "" : "s"} created.{" "}
+                {emailThem ? "Their confirmation emails are queued and go out gradually." : "No emails were queued."}
               </p>
               <button
                 type="button"
