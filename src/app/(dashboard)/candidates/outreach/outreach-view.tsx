@@ -62,7 +62,7 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
           ["Sent in total", stats.sentTotal],
           ["Failed", stats.failedTotal],
           ["Opted out", stats.optedOut],
-          ["Welcome emails queued", stats.welcomeQueued],
+          ["Welcome emails queued (go first)", stats.welcomeQueued],
         ].map(([label, n]) => (
           <div key={label as string} className="rounded-lg border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <div className="text-[22px] font-bold tabular-nums text-slate-900 dark:text-slate-100">{n}</div>
@@ -93,7 +93,7 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Send
           </button>
           <span className="text-[12px] text-slate-500 dark:text-slate-400">
-            {room > 0 ? `${room} left under today's limit.` : "Today's limit is used up. It frees up on a rolling 24 hours."} The limit is shared with welcome emails for bulk uploads and automatic profile reminders, and grows after a week and again after two.
+            {room > 0 ? `${room} left under today's limit.` : "Today's limit is used up. It frees up on a rolling 24 hours."} The limit is shared with welcome emails for bulk uploads (sent automatically once a day at 10:00 IST, or first when you press Send) and automatic profile reminders, and grows after a week and again after two.
           </span>
         </div>
         {result && <p className="mt-3 text-[13px] text-slate-700 dark:text-slate-200">{result}</p>}
