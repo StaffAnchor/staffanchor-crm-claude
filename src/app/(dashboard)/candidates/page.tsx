@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import ReadinessStrip from "./readiness-strip";
 import type { ReadinessOverview } from "@/lib/readiness";
 import ProfileGroupsStrip from "./profile-groups-strip";
-import type { GroupOverview } from "@/lib/profile-groups";
+import type { GroupOverview, CvCoverage } from "@/lib/profile-groups";
 import CandidatesTable from "./candidates-table";
 import {
   industryOptions,
@@ -141,7 +141,12 @@ const STAGE_LABEL: Record<string, string> = {
   rejected: "Rejected",
 };
 
+// Every created_by value that has its own tile; anything else is counted under "Other" so the tiles
+// always add up to the total.
+const KNOWN_ORIGINS = ["quick_apply", "self_registration", "candidate_self_signup", "recruiter_created", "bulk_resume_upload", "bulk_import", "naukri_export"];
+
 const ORIGIN_LABEL: Record<string, string> = {
+  naukri_export: "Naukri Export",
   quick_apply: "Job Quick Apply",
   self_registration: "Build Your Profile",
   candidate_self_signup: "Build Your Profile",
@@ -474,6 +479,8 @@ export default async function CandidatesPage({
     if (params.ready && ["ready", "almost", "needs_work"].includes(params.ready)) qq = qq.eq("readiness_tier", params.ready);
     if (params.missing && /^[a-z_]+$/.test(params.missing)) qq = qq.contains("readiness_missing", [params.missing]);
     if (params.group === "review") qq = qq.eq("profile_group_needs_review", true);
+    else if (params.group === "unread") qq = qq.not("resume_file_url", "is", null).contains("readiness_missing", ["cv_read"]);
+    else if (params.group === "nocv") qq = qq.is("resume_file_url", null);
     else if (params.group === "waiting") qq = qq.eq("profile_group_confidence", "low").eq("profile_group_needs_review", false);
     else if (params.group) qq = qq.eq("profile_group", params.group);
     if (params.subgroup) {
@@ -541,7 +548,8 @@ export default async function CandidatesPage({
       // so it's dropped rather than guessed at.
       if (vals.length === 1) qq = qq.neq("current_industry", vals[0]);
     }
-    if (params.origin) qq = qq.in("created_by", params.origin.split(","));
+    if (params.origin === "other") qq = qq.or(`created_by.is.null,created_by.not.in.(${KNOWN_ORIGINS.join(",")})`);
+    else if (params.origin) qq = qq.in("created_by", params.origin.split(","));
     if (params.source_recruiter) qq = qq.in("created_by_user", params.source_recruiter.split(","));
     if (params.incomplete) qq = qq.in("status", ["awaiting_input", "lead"]);
     if (params.ids) {
@@ -823,6 +831,11 @@ export default async function CandidatesPage({
   const recruiterAddedCount = createdByCounts["recruiter_created"] ?? 0;
   const bulkUploadCount = createdByCounts["bulk_resume_upload"] ?? 0;
   const zohoImportCount = createdByCounts["bulk_import"] ?? 0;
+  const naukriExportCount = createdByCounts["naukri_export"] ?? 0;
+  const otherOriginCount = Math.max(
+    0,
+    totalCount - (quickApplyCount + jobPortalCount + recruiterAddedCount + bulkUploadCount + zohoImportCount + naukriExportCount)
+  );
   const incompleteCount = (statusCounts["awaiting_input"] ?? 0) + (statusCounts["lead"] ?? 0);
 
   // Pipeline progress (Submitted / Client Interview / Client Shortlisted /
@@ -975,6 +988,8 @@ export default async function CandidatesPage({
   const groupHref = (group?: string, subgroup?: string) => qs({ group, subgroup });
   const { data: readinessRaw } = await supabase.rpc("readiness_overview");
   const readinessOverview = (readinessRaw ?? null) as ReadinessOverview | null;
+  const { data: coverageRaw } = await supabase.rpc("cv_coverage");
+  const cvCoverage = (coverageRaw ?? null) as CvCoverage | null;
   const readinessHref = (ready?: string, missing?: string) => qs({ ready, missing });
 
   return (
@@ -1029,7 +1044,7 @@ export default async function CandidatesPage({
           is everyone in the client pipeline right now. Fixed column spans
           (not flex-wrap) so the boxes line up into a real grid instead of
           drifting to whatever width their content happens to need. */}
-      {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} />}
+      {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} coverage={cvCoverage} />}
       {readinessOverview && <ReadinessStrip overview={readinessOverview} activeTier={params.ready} activeMissing={params.missing} hrefFor={readinessHref} />}
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-4 mb-3 shadow-ros-sm">
@@ -1050,7 +1065,7 @@ export default async function CandidatesPage({
                     href={qs({ incomplete: "1" })}
                     className="inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 mt-1.5 transition-colors duration-200 ease-ros"
                   >
-                    <AlertTriangle className="w-3 h-3" /> {incompleteCount} need completion
+                    <AlertTriangle className="w-3 h-3" /> {incompleteCount} haven&apos;t finished registering
                   </Link>
                 )}
               </div>
@@ -1061,6 +1076,8 @@ export default async function CandidatesPage({
                 <MiniStat value={bulkUploadCount} label="Bulk Uploads" tone="warning" href={qs({ origin: "bulk_resume_upload" })} />
                 <MiniStat value={zohoImportCount} label="One-Time Upload (Zoho)" tone="neutral" href={qs({ origin: "bulk_import" })} />
                 <MiniStat value={recruiterAddedCount} label="Recruiter Created" tone="success" href={qs({ origin: "recruiter_created" })} />
+                <MiniStat value={naukriExportCount} label="Naukri Export" tone="warning" href={qs({ origin: "naukri_export" })} />
+                {otherOriginCount > 0 && <MiniStat value={otherOriginCount} label="Other" tone="neutral" href={qs({ origin: "other" })} />}
               </div>
             </div>
           </div>

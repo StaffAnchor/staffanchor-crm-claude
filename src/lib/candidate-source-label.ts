@@ -36,6 +36,7 @@ const CREATED_BY_LABELS: Record<string, string> = {
   browser_extension: "LinkedIn (Chrome Extension)",
   linkedin_sourced: "LinkedIn (Manual Sourcing)",
   whatsapp: "WhatsApp Chat",
+  naukri_export: "Naukri Export",
 };
 
 const SELF_SERVICE_SOURCE_LABELS: Record<string, string> = {
