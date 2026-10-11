@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { candidate?: Record<string, unknown> };
+  let body: { candidate?: Record<string, unknown>; skipWelcomeEmail?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -127,7 +127,9 @@ export async function POST(req: NextRequest) {
     const missingFields = Array.isArray(segmentData?.missing_fields)
       ? segmentData!.missing_fields.filter((f): f is string => typeof f === "string")
       : [];
-    if (candidateFields.created_by === "bulk_resume_upload") {
+    if (body.skipWelcomeEmail === true) {
+      // The recruiter chose to create this profile without emailing the candidate.
+    } else if (candidateFields.created_by === "bulk_resume_upload") {
       // Bulk uploads are queued and sent a few at a time (see /api/cron/welcome-queue), so a big upload
       // never turns into a burst of emails from the company mailbox.
       const { error: queueErr } = await admin
