@@ -64,6 +64,25 @@ const INDUSTRIES = flat(industrySoldGroups);
 const LEVELS = yourLevelOptions.map((l) => l.value);
 const CATEGORIES = ["b2b_sales", "b2c_sales", "non_sales"];
 
+// How many of the usual CV sections the text has (experience, education, skills, and so on). A real
+// CV has several; an offer letter, ID or brochure has almost none. Used as a second opinion so a CV is
+// never thrown away on the AI's word alone.
+export function resumeCueCount(text: string): number {
+  const t = text.toLowerCase();
+  const cues = [
+    /experience/,
+    /education|qualification/,
+    /skills?\b/,
+    /employment|work history|career|professional summary|work experience/,
+    /objective|summary|profile/,
+    /university|college|school|b\.?\s?tech|mba|b\.?com|bba|degree|diploma|bachelor|master|graduat/,
+    /projects?\b/,
+    /achievements?|responsibilit|accomplishment|certification/,
+    /@[a-z0-9.-]+\.[a-z]{2,}|\+?\d[\d\s-]{8,}\d/,
+  ];
+  return cues.filter((re) => re.test(t)).length;
+}
+
 export async function extractFieldsWithGemini(
   resumeText: string,
   aiConfigured: boolean,
@@ -127,7 +146,9 @@ ${resumeText.slice(0, 14000)}`;
       Array.isArray(v) ? Array.from(new Set(v.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim()))).slice(0, max) : [];
 
     const documentType = str(parsed.document_type);
-    const isResume = parsed.is_resume !== false;
+    // Only called "not a resume" when the AI says so AND the text has almost none of the usual CV
+    // sections; otherwise it is treated as a CV.
+    const isResume = parsed.is_resume !== false || resumeCueCount(resumeText) >= 4;
     return {
       is_resume: isResume,
       document_type: documentType,

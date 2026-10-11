@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 import { createClient } from "@/lib/supabase/server";
 import { generateTextWithFallback } from "@/lib/ai-providers";
 import { extractResumeText } from "@/lib/resume-text";
+import { resumeCueCount } from "@/lib/cv-profile-extract";
 
 export const runtime = "nodejs";
 
@@ -193,7 +194,7 @@ ${resumeText.slice(0, 12000)}`;
     const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
     const parsed = JSON.parse(cleaned) as Record<string, unknown>;
     return {
-      is_resume: parsed.is_resume !== false,
+      is_resume: parsed.is_resume !== false || resumeCueCount(resumeText) >= 4,
       document_type: typeof parsed.document_type === "string" ? parsed.document_type.trim() : null,
       full_name: typeof parsed.full_name === "string" ? parsed.full_name.trim() : null,
       email: typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : null,
