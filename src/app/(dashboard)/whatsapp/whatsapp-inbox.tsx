@@ -56,7 +56,21 @@ function ago(iso: string, now: number) {
   return `${Math.round(m / 1440)}d`;
 }
 
-export default function WhatsAppInbox({ conversations, names, contacts, missing, drafts }: { conversations: WaConversation[]; names: Record<string, string>; contacts: Record<string, ContactInfo>; missing: Record<string, string[]>; drafts: Record<string, string> }) {
+export default function WhatsAppInbox({
+  conversations,
+  names,
+  contacts,
+  missing,
+  drafts,
+  suggestions = {},
+}: {
+  conversations: WaConversation[];
+  names: Record<string, string>;
+  contacts: Record<string, ContactInfo>;
+  missing: Record<string, string[]>;
+  drafts: Record<string, string>;
+  suggestions?: Record<string, { candidateId: string; name: string; phone: string | null }>;
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("jobseeker");
   const [filter, setFilter] = useState<Filter>("needs");
@@ -70,6 +84,8 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing,
   type Found = { key: string; label: string; display: string; raw: string };
   const [reading, setReading] = useState<{ messageId: string; busy: boolean; found: Found[] | null; saved: string[] | null } | null>(null);
   const [created, setCreated] = useState<{ id: string; name: string | null; isNew: boolean; alt: boolean } | null>(null);
+  const [linking, setLinking] = useState(false);
+  const [linkMessage, setLinkMessage] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   // New messages arrive while the page is open: refresh quietly every 30 seconds.
@@ -318,6 +334,41 @@ export default function WhatsAppInbox({ conversations, names, contacts, missing,
                   </span>
                 </div>
               </div>
+
+              {!active.candidateId && suggestions[active.key] && (
+                <div className="flex flex-wrap items-center gap-2 border-b border-amber-100 bg-amber-50/70 px-4 py-2 text-[12.5px] dark:border-amber-900 dark:bg-amber-950/20">
+                  <span className="text-amber-900 dark:text-amber-200">
+                    Possible match: <strong>{suggestions[active.key].name}</strong>
+                    {suggestions[active.key].phone ? ` (profile number ${formatPhone(suggestions[active.key].phone)})` : ""}. Same person, different number?
+                  </span>
+                  <button
+                    disabled={linking}
+                    onClick={async () => {
+                      setLinking(true);
+                      setLinkMessage(null);
+                      try {
+                        const res = await fetch("/api/whatsapp/link-candidate", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ phone: active.phone, candidateId: suggestions[active.key].candidateId }),
+                        });
+                        const d = await res.json().catch(() => ({}));
+                        setLinkMessage(res.ok ? `Linked to ${d.name ?? "the profile"}. This number is saved as an alternate.` : d.error ?? "Couldn't link.");
+                        router.refresh();
+                      } finally {
+                        setLinking(false);
+                      }
+                    }}
+                    className="rounded-full bg-amber-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
+                  >
+                    Link this chat and save the number
+                  </button>
+                  <Link href={`/candidates/${suggestions[active.key].candidateId}`} className="text-[12px] font-medium text-blue-600 hover:underline">
+                    Open profile
+                  </Link>
+                </div>
+              )}
+              {linkMessage && <p className="border-b border-slate-100 bg-emerald-50 px-4 py-1.5 text-[12px] text-emerald-800">{linkMessage}</p>}
 
               <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-2 text-[12px] dark:border-slate-800">
                 <label className="inline-flex items-center gap-1 text-slate-500">

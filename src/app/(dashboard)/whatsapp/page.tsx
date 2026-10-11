@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { missingKeyDetails } from "@/lib/key-details";
 import { draftMissingMessage } from "@/lib/missing-message";
 import { groupConversations, type WaMessage } from "@/lib/whatsapp-threads";
+import { introducedName } from "@/lib/whatsapp-bot/identity";
 import WhatsAppInbox, { type ContactInfo } from "./whatsapp-inbox";
 
 // Everyone who has messaged the StaffAnchor WhatsApp number, newest first, with a
@@ -33,6 +34,30 @@ export default async function WhatsAppPage() {
     if (d) drafts[c.id as string] = d;
   }
 
+  // A chat from a number that is not on any profile, where the person said a name that matches exactly one
+  // profile: suggest it, for a recruiter to confirm. Never linked automatically.
+  const suggestions: Record<string, { candidateId: string; name: string; phone: string | null }> = {};
+  const unlinked = conversations.filter((c) => !c.candidateId);
+  const nameByChat = new Map<string, string>();
+  for (const c of unlinked) {
+    const lastIntro = [...c.messages].reverse().find((m) => m.direction === "inbound" && introducedName(m.body_preview));
+    const n = lastIntro ? introducedName(lastIntro.body_preview) : null;
+    if (n) nameByChat.set(c.key, n);
+  }
+  const wanted = Array.from(new Set(Array.from(nameByChat.values()).map((n) => n.replace(/[%_,()]/g, ""))));
+  if (wanted.length) {
+    const { data: hits } = await supabase
+      .from("candidates")
+      .select("id, full_name, phone")
+      .or(wanted.map((n) => `full_name.ilike.${n}`).join(","))
+      .limit(200);
+    const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+    for (const [chatKey, n] of nameByChat) {
+      const matches = (hits ?? []).filter((h) => norm((h.full_name as string) ?? "") === norm(n));
+      if (matches.length === 1) suggestions[chatKey] = { candidateId: matches[0].id as string, name: matches[0].full_name as string, phone: (matches[0].phone as string | null) ?? null };
+    }
+  }
+
   const { data: contactRows } = await supabase
     .from("whatsapp_contacts")
     .select("phone_key, kind, archived_at, muted, bot_paused, needs_human, needs_human_reason, opted_out, bot_state, display_name");
@@ -61,7 +86,7 @@ export default async function WhatsAppPage() {
           People who message StaffAnchor on WhatsApp, and your replies. You can reply freely for 24 hours after someone writes.
         </p>
       </div>
-      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} drafts={drafts} />
+      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} drafts={drafts} suggestions={suggestions} />
     </div>
   );
 }
