@@ -1169,6 +1169,7 @@ export default async function CandidatesPage({
           group={params.group}
           incomplete={!!params.incomplete}
           rating={params.rating}
+          ready={params.ready}
           hrefFor={qs}
         />
         <div className="flex items-center gap-2.5 flex-wrap mt-2">
