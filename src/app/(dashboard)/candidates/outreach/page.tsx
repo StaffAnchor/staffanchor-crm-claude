@@ -41,6 +41,7 @@ export default async function OutreachPage() {
           sentTotal: Number(stats?.sent_total ?? 0),
           failedTotal: Number(stats?.failed_total ?? 0),
           optedOut: Number(stats?.opted_out ?? 0),
+          welcomeQueued: Number(stats?.welcome_queued ?? 0),
         }}
         cap={cap}
         next={next}

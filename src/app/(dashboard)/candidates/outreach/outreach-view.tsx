@@ -8,7 +8,7 @@ import { MISSING_LABEL } from "@/lib/readiness";
 type Props = {
   sender: string | null;
   configured: boolean;
-  stats: { eligible: number; sent24h: number; sentTotal: number; failedTotal: number; optedOut: number };
+  stats: { eligible: number; sent24h: number; sentTotal: number; failedTotal: number; optedOut: number; welcomeQueued: number };
   cap: number;
   next: { id: string; name: string; asks: string[]; emailHint: string }[];
   preview: { subject: string; html: string };
@@ -55,13 +55,14 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
 
       {!configured && <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[13px] text-amber-800">Email sending isn&apos;t fully configured, so Send is disabled.</p>}
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-6">
         {[
           ["Eligible now", stats.eligible],
           [`Sent in last 24h (limit ${cap})`, stats.sent24h],
           ["Sent in total", stats.sentTotal],
           ["Failed", stats.failedTotal],
           ["Opted out", stats.optedOut],
+          ["Welcome emails queued", stats.welcomeQueued],
         ].map(([label, n]) => (
           <div key={label as string} className="rounded-lg border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <div className="text-[22px] font-bold tabular-nums text-slate-900 dark:text-slate-100">{n}</div>
@@ -92,7 +93,7 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Send
           </button>
           <span className="text-[12px] text-slate-500 dark:text-slate-400">
-            {room > 0 ? `${room} left under today's limit.` : "Today's limit is used up. It frees up on a rolling 24 hours."} The limit grows after a week and again after two.
+            {room > 0 ? `${room} left under today's limit.` : "Today's limit is used up. It frees up on a rolling 24 hours."} The limit is shared with welcome emails for bulk uploads and automatic profile reminders, and grows after a week and again after two.
           </span>
         </div>
         {result && <p className="mt-3 text-[13px] text-slate-700 dark:text-slate-200">{result}</p>}

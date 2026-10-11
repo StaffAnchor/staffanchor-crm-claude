@@ -127,9 +127,18 @@ export async function POST(req: NextRequest) {
     const missingFields = Array.isArray(segmentData?.missing_fields)
       ? segmentData!.missing_fields.filter((f): f is string => typeof f === "string")
       : [];
-    await sendRecruiterCreatedWelcomeEmail(admin, email, candidateId, fullName, completionScore, missingFields).catch((err) => {
-      console.error("Failed to send recruiter-created welcome email", err);
-    });
+    if (candidateFields.created_by === "bulk_resume_upload") {
+      // Bulk uploads are queued and sent a few at a time (see /api/cron/welcome-queue), so a big upload
+      // never turns into a burst of emails from the company mailbox.
+      const { error: queueErr } = await admin
+        .from("welcome_queue")
+        .upsert({ candidate_id: candidateId, email, full_name: fullName, missing: missingFields, status: "queued" }, { onConflict: "candidate_id" });
+      if (queueErr) console.error("Failed to queue welcome email", queueErr);
+    } else {
+      await sendRecruiterCreatedWelcomeEmail(admin, email, candidateId, fullName, completionScore, missingFields).catch((err) => {
+        console.error("Failed to send recruiter-created welcome email", err);
+      });
+    }
 
     return NextResponse.json({ candidateId, isNewSignup: !existingUser });
   } catch (err) {
