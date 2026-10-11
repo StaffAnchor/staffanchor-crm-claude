@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import CandidatesSubNav from "../candidates-sub-nav";
 import { buildOutreachEmail, dailyCap } from "@/lib/outreach";
 import OutreachView from "./outreach-view";
+import RepliesPanel, { type ReplyRow } from "./replies-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +27,30 @@ export default async function OutreachPage() {
     asks: r.asks,
     emailHint: r.email.replace(/^(.).*(@.*)$/, "$1•••$2"),
   }));
+  // Replies read from the mailbox in the last 30 days.
+  const since30 = new Date(new Date().getTime() - 30 * 86_400_000).toISOString();
+  const { data: replyData } = await supabase
+    .from("email_replies")
+    .select("message_id, status, received_at, from_email, candidate_id, applied, snippet")
+    .gte("created_at", since30)
+    .order("received_at", { ascending: false })
+    .limit(200);
+  const replyAll = (replyData ?? []) as Omit<ReplyRow, "name">[];
+  const replyCounts: Record<string, number> = {};
+  for (const r of replyAll) replyCounts[r.status] = (replyCounts[r.status] ?? 0) + 1;
+  const shown = replyAll.filter((r) => r.status !== "not_a_reply").slice(0, 8);
+  const replyIds = Array.from(new Set(shown.map((r) => r.candidate_id).filter((v): v is string => !!v)));
+  const { data: replyNames } = replyIds.length ? await supabase.from("candidates").select("id, full_name").in("id", replyIds) : { data: [] };
+  const nameOf = new Map(((replyNames ?? []) as { id: string; full_name: string | null }[]).map((c) => [c.id, c.full_name]));
+  const replyRows: ReplyRow[] = shown.map((r) => ({ ...r, name: r.candidate_id ? nameOf.get(r.candidate_id) ?? null : null }));
+
   const sample = buildOutreachEmail({ id: "00000000-0000-0000-0000-000000000000", full_name: "Priya Sharma", email: "priya@example.com" }, ["current_ctc", "expected_ctc", "notice"]);
   const cap = dailyCap((stats?.first_sent_at as string | null) ?? null, new Date().getTime());
 
   return (
     <div className="max-w-[1100px] mx-auto px-5 py-8">
       <CandidatesSubNav />
+      <RepliesPanel mailbox={process.env.GMAIL_USER ?? null} counts={replyCounts} rows={replyRows} />
       <OutreachView
         sender={process.env.GMAIL_USER ?? null}
         configured={!!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD && key)}
