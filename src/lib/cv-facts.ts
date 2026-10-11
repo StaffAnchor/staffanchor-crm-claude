@@ -31,7 +31,7 @@ export type CvRole = {
   evidence: string | null;
 };
 
-export type CvFlag = { kind: "gap" | "short_stints" | "claim_not_backed" | "inconsistent" | "other"; detail: string };
+export type CvFlag = { kind: "gap" | "short_stints" | "claim_not_backed" | "inconsistent" | "not_a_resume" | "other"; detail: string };
 
 export type CvFacts = {
   headline_claim: string | null;
@@ -107,7 +107,8 @@ export function normalizeCvFacts(raw: unknown): CvFacts | null {
   const st = (r.stated ?? {}) as Record<string, unknown>;
   const edu = Array.isArray(r.education) ? r.education : [];
   const flags = Array.isArray(r.flags) ? r.flags : [];
-  if (roles.length === 0 && !str(r.headline_claim)) return null;
+  const notResume = flags.some((f) => (f as Record<string, unknown> | null)?.kind === "not_a_resume");
+  if (roles.length === 0 && !str(r.headline_claim) && !notResume) return null;
   return {
     headline_claim: str(r.headline_claim),
     experience_years_from_dates: num(r.experience_years_from_dates),
@@ -144,7 +145,7 @@ export function normalizeCvFacts(raw: unknown): CvFacts | null {
       .slice(0, 5)
       .map((f) => {
         const o = (f ?? {}) as Record<string, unknown>;
-        const kind = oneOf(o.kind, ["gap", "short_stints", "claim_not_backed", "inconsistent", "other"] as const) ?? "other";
+        const kind = oneOf(o.kind, ["gap", "short_stints", "claim_not_backed", "inconsistent", "not_a_resume", "other"] as const) ?? "other";
         const detail = str(o.detail, 240);
         return detail ? { kind, detail } : null;
       })
@@ -170,7 +171,7 @@ Strict rules:
 - experience_years_from_dates: total years of work computed from the dated roles, rounded to one decimal; null if dates are too incomplete.
 - For each role: "sells" is what the product or service actually is. "industry" is the company's industry, taken from the company and what it sells, not from the candidate's headline. "customer_type" is b2b, b2c, b2b2c or mixed. "segments" is any of "smb", "mid-market", "enterprise", "consumer" that the CV supports. "motion" is one short phrase such as "inside sales", "field sales", "enterprise AE", "SDR/BDR", "channel/partner", "key account management", "business development", "team leadership". "buyers" are the titles sold to. "deal_size", "quota_or_target" and "achievement" are copied as stated, with units. "team_size" is the number of people managed, if stated. "evidence" is a short quote (under 20 words) from the CV supporting this role's entry.
 - sales.owned_full_cycle: "yes" only if the CV shows prospecting through closing by the person; "no" if clearly only part of the cycle (for example only lead generation or only account servicing); otherwise "unclear". hunter_or_farmer likewise: "unclear" unless the CV shows it.
-- flags (0 to 5, each with kind and a one-sentence detail, only real issues): "gap" (an unexplained gap of 6 months or more), "short_stints" (several roles under 12 months), "claim_not_backed" (for example the headline or skills claim a domain, such as B2B SaaS, that the job history does not show), "inconsistent" (dates or titles that do not add up), "other". Empty if nothing stands out. Do not flag seniority or notice period as risks.
+- flags (0 to 5, each with kind and a one-sentence detail, only real issues): "gap" (an unexplained gap of 6 months or more), "short_stints" (several roles under 12 months), "claim_not_backed" (for example the headline or skills claim a domain, such as B2B SaaS, that the job history does not show), "inconsistent" (dates or titles that do not add up), "not_a_resume" (the document is not a CV at all, for example an offer letter, ID, certificate, job description or brochure; then return no roles), "other". Empty if nothing stands out. Do not flag seniority or notice period as risks.
 - headline_claim: the one-line positioning the CV gives itself, if any.
 - stated: current_ctc, expected_ctc, notice_period, location and relocation, only if the CV says them in so many words.
 - Do not include the candidate's name, email or phone.
