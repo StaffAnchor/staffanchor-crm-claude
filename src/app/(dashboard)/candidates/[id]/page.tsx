@@ -606,7 +606,7 @@ export default async function CandidateDetailPage({
                 )}
                 <div className="flex flex-wrap items-center gap-3 mt-2 text-[12px] text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1">
-                    <Mail className="w-3 h-3" /> {candidate.email}
+                    <Mail className="w-3 h-3" /> {/\.invalid$/i.test(candidate.email ?? "") ? "No email yet" : candidate.email}
                   </span>
                   {candidate.phone && (
                     <span className="flex items-center gap-1">

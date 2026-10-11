@@ -222,6 +222,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             skipWelcomeEmail: !emailThem,
+            allowNoEmail: true,
             candidate: (() => {
               const category = row.category || (profileType !== "auto" ? profileType : "");
               const sales = category === "b2b_sales" || category === "b2c_sales";
@@ -557,6 +558,15 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               {!row.ok && (
                 <p className="flex items-center gap-1.5 text-[12px] text-rose-600 mb-2">
                   <AlertTriangle className="w-3.5 h-3.5" /> {row.error ?? "Couldn't process this file."}
+                </p>
+              )}
+
+              {row.createState !== "saved" && !row.email.trim() && (
+                <p className="flex items-center gap-1.5 text-[12px] text-amber-700 mb-2.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {row.phone.replace(/\D/g, "").length >= 10
+                    ? "No email found on this CV. It will be saved with the mobile number only, with no email sent. Add the email later, or here now."
+                    : "No email or mobile number found on this CV. Add one of them to save this profile."}
                 </p>
               )}
 

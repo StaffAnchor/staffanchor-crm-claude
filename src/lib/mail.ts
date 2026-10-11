@@ -96,6 +96,10 @@ export async function sendEmail({
   plain?: boolean;
   headers?: Record<string, string>;
 }) {
+  // A profile saved without an email gets a placeholder ending in .invalid; never try to mail it.
+  if (/\.invalid$/i.test(to.trim())) {
+    throw new Error("No real email address on file for this recipient.");
+  }
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_APP_PASSWORD;
   if (!gmailUser || !gmailPass) {

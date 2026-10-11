@@ -574,7 +574,12 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "email",
     label: "Email",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[180px]">{c.email}</span>,
+    render: (c) =>
+      /\.invalid$/i.test(c.email ?? "") ? (
+        <span className="text-amber-600 dark:text-amber-400 block text-[12px]">No email yet</span>
+      ) : (
+        <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[180px]">{c.email}</span>
+      ),
   },
   {
     key: "phone",
