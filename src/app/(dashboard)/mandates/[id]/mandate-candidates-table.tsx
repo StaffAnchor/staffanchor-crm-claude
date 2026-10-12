@@ -1,5 +1,6 @@
 "use client";
 
+import OriginChip from "./origin-chip";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -51,6 +52,10 @@ export type MandateCandidateRow = {
   vendor_update_note: string | null;
   vendor_update_note_at: string | null;
   created_at: string | null;
+  // How this person got into the pipeline (applied themselves, added by a recruiter, accepted from an
+  // AI suggestion, a vendor, or the older pipeline whose origin was never recorded).
+  origin: "applied" | "team" | "ai" | "vendor" | "earlier";
+  origin_label: string;
   screened: boolean;
   // Set when the candidate spent a Priority Applicant credit on this
   // specific application (jobs.staffanchor.com purchase flow) -- surfaced
@@ -605,6 +610,7 @@ export default function MandateCandidatesTable({
                     </Link>
                   </ApplicationAnswersQuickView>
                   <ProfileRatingBadge row={ratings.get(l.candidate.id)} />
+                  <OriginChip origin={l.origin} label={l.origin_label} />
                   {!l.viewed_at && (
                     <span
                       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white"

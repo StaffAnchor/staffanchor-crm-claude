@@ -18,12 +18,17 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
       .from("mandate_ai_matches")
       .select("candidate_id, fit, score, summary, checks, spec_hash, status, computed_at, candidates(full_name, current_job_title, current_employer, total_experience_years, current_location, current_fixed_ctc, expected_fixed_ctc)")
       .eq("mandate_id", mandateId)
-      .neq("status", "dismissed")
+      .eq("status", "suggested")
       .order("score", { ascending: false })
       .limit(300),
     supabase.from("candidate_cv_facts").select("candidate_id", { count: "exact", head: true }),
     supabase.from("candidates").select("id", { count: "exact", head: true }).or("resume_file_url.not.is.null,resume_text.not.is.null"),
   ]);
+
+  // Anyone already in this role's pipeline (added here, applied, or added from another screen) is no
+  // longer a suggestion.
+  const { data: inPipeline } = await supabase.from("candidate_mandate_links").select("candidate_id").eq("mandate_id", mandateId);
+  const pipelineIds = new Set(((inPipeline ?? []) as { candidate_id: string }[]).map((x) => x.candidate_id));
 
   const r = role as (RoleForMatch & { ai_match_last_run_at: string | null; budget_min: number | null; budget_max: number | null }) | null;
   if (!r) return null;
@@ -51,7 +56,7 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
     candidates: CandidateRow | CandidateRow[] | null;
   };
 
-  const items: MatchItem[] = ((rows ?? []) as unknown as Row[]).map((m) => {
+  const items: MatchItem[] = ((rows ?? []) as unknown as Row[]).filter((m) => !pipelineIds.has(m.candidate_id)).map((m) => {
     const c = Array.isArray(m.candidates) ? m.candidates[0] : m.candidates;
     return {
       candidateId: m.candidate_id,

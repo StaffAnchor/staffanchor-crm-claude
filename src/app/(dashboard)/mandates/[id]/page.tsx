@@ -26,7 +26,7 @@ import PriorityApplicantFunnelPanel from "./priority-applicant-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
 import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
-import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2, Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
@@ -82,7 +82,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+      "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
     )
     .eq("mandate_id", id);
 
@@ -245,6 +245,31 @@ export default async function MandateDetailPage({
   const assignedStaff = (assignments ?? [])
     .map((a) => a.profiles as unknown as { id: string; full_name: string | null; email: string; role: string } | null)
     .filter((p): p is { id: string; full_name: string | null; email: string; role: string } => p !== null);
+
+  // AI suggestions that are not in the pipeline yet (the second set on this page).
+  const { data: aiSuggestedRows } = await supabase.from("mandate_ai_matches").select("candidate_id").eq("mandate_id", id).eq("status", "suggested");
+  const pipelineCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean) as string[]);
+  const aiSuggestionCount = ((aiSuggestedRows ?? []) as { candidate_id: string }[]).filter((x) => !pipelineCandidateIds.has(x.candidate_id)).length;
+
+  // How each person got into the pipeline. Applied = they came in through the job link or form (they
+  // answered this role's application questions, spent a priority credit, or registered/applied on the
+  // jobs site) and no recruiter put them there. A recorded recruiter is shown by name. Older rows whose
+  // origin was never recorded say so, rather than being guessed.
+  const staffName = new Map((allStaffProfiles ?? []).map((p) => [p.id as string, { name: (p.full_name as string | null) || (p.email as string), role: p.role as string }]));
+  const SELF_SERVED = new Set(["quick_apply", "self_registration", "candidate_self_signup"]);
+  function originOf(l: { added_by: string | null; match_source: string | null; is_priority: boolean | null; candidates: unknown }): { origin: "applied" | "team" | "ai" | "vendor" | "earlier"; label: string } {
+    const cand = l.candidates as { id: string; created_by: string | null } | null;
+    const adder = l.added_by ? staffName.get(l.added_by) : null;
+    if (l.match_source === "ai_evidence") return { origin: "ai", label: adder ? `AI suggestion, added by ${adder.name}` : "AI suggestion, added" };
+    if (l.added_by) {
+      if (adder?.role === "freelancer") return { origin: "vendor", label: `Vendor: ${adder.name}` };
+      return { origin: "team", label: adder ? `Added by ${adder.name}` : "Added by the team" };
+    }
+    const answered = !!(cand && (applicationAnswersByCandidate[cand.id]?.length ?? 0) > 0);
+    const selfServed = !!(cand && cand.created_by && SELF_SERVED.has(cand.created_by) && l.match_source !== "pipeline_backfill");
+    if (answered || l.is_priority || selfServed) return { origin: "applied", label: "Applied" };
+    return { origin: "earlier", label: "Earlier pipeline" };
+  }
 
   const linkedCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean));
   const { data: allCandidates } = await supabase
@@ -439,6 +464,8 @@ export default async function MandateDetailPage({
       <MandateSplitLayout
         left={
         <MandateCandidatesView
+          aiSuggestions={<AiMatchesPanel mandateId={id} />}
+          aiCount={aiSuggestionCount}
           initialStage={initialStage}
           rows={(links ?? [])
             .map((l) => {
@@ -460,6 +487,8 @@ export default async function MandateDetailPage({
                 vendor_update_note: l.vendor_update_note ?? null,
                 vendor_update_note_at: l.vendor_update_note_at ?? null,
                 created_at: l.created_at,
+                origin: originOf(l as never).origin,
+                origin_label: originOf(l as never).label,
                 is_priority: l.is_priority ?? false,
                 match_score: l.match_score ?? null,
                 match_assessment: (l.match_assessment as MandateCandidateRow["match_assessment"]) ?? null,
@@ -648,12 +677,6 @@ export default async function MandateDetailPage({
                   </Link>
                 </>
               ),
-            },
-            {
-              key: "ai-matches",
-              label: "AI Matches",
-              icon: <Sparkles className="h-3.5 w-3.5" />,
-              content: <AiMatchesPanel mandateId={id} />,
             },
             {
               key: "sourcing",
