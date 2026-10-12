@@ -33,6 +33,7 @@ export type TalentCardData = {
   highlight: string | null;
   chips: string[];
   rating: "strong" | "weak" | null;
+  role_fit?: { count: number; strong: number; roles: { mandateId: string; title: string; fit: string; score: number }[] } | null;
   has_email: boolean;
   phone: string | null;
   resume_file_url: string | null;
@@ -128,6 +129,30 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
       </div>
 
       {c.highlight && <p className="mt-3 line-clamp-2 text-[12.5px] leading-snug text-slate-700 dark:text-slate-300">{c.highlight}</p>}
+
+      {c.role_fit && c.role_fit.roles.length > 0 && (
+        <div className="mt-2.5 rounded-lg bg-violet-50/70 px-2.5 py-2 dark:bg-violet-950/20">
+          <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">
+            Fits {c.role_fit.count} open {c.role_fit.count === 1 ? "role" : "roles"}
+            {c.role_fit.strong > 0 ? ` · ${c.role_fit.strong} strong` : ""}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {c.role_fit.roles.map((r) => (
+              <Link
+                key={r.mandateId}
+                href={`/mandates/${r.mandateId}`}
+                className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${
+                  r.fit === "strong" ? "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800" : "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800"
+                }`}
+                title={`${r.fit === "strong" ? "Strong" : "Possible"} fit, score ${r.score}`}
+              >
+                <span className="truncate">{r.title}</span>
+                <span className="shrink-0 tabular-nums opacity-80">{r.score}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {(c.chips.length > 0 || c.industries.length > 0) && (
         <div className="mt-2.5 flex flex-wrap gap-1">

@@ -703,8 +703,16 @@ export default async function CandidatesPage({
     practicesByCandidateId[row.candidate_id] = list;
   });
 
+  // Open roles each person on this page looks right for (strong or possible, not in that pipeline yet).
+  const fitPageIds = (candidates ?? []).map((c) => c.id as string);
+  const { data: fitRows } = fitPageIds.length
+    ? await supabase.from("candidate_role_fit").select("candidate_id, suggested_count, strong_count, top_roles").in("candidate_id", fitPageIds)
+    : { data: [] };
+  const fitById = new Map(((fitRows ?? []) as { candidate_id: string; suggested_count: number; strong_count: number; top_roles: unknown }[]).map((r) => [r.candidate_id, r]));
+
   const candidatesWithResumeUrls = (candidates ?? []).map((c) => ({
     ...c,
+    role_fit: fitById.get(c.id as string) ?? null,
     resume_signed_url: c.resume_file_url ? resumeUrlByPath[c.resume_file_url.replace(/^resumes\//, "")] ?? null : null,
     practices: practicesByCandidateId[c.id] ?? [],
   }));
