@@ -305,6 +305,7 @@ export async function extractCvFactsForCandidate(candidateId: string, admin: Sup
         purpose,
         refType: "candidate",
         refId: candidateId,
+        prompt,
         result,
         error: facts ? undefined : `unparseable response (attempt ${attempt}): ${result.text.slice(0, 160).replace(/\s+/g, " ")} ... ${result.text.slice(-80).replace(/\s+/g, " ")}`,
       });

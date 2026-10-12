@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Wallet, Target, Users, TrendingUp } from "lucide-react";
+import { BarChart3, Wallet, Target, Users, TrendingUp, Activity } from "lucide-react";
 
 const TABS = [
   { href: "/analytics/reports", label: "Reports", icon: BarChart3 },
+  { href: "/analytics/flow", label: "Flow & AI", icon: Activity },
   { href: "/analytics/billing", label: "Billing", icon: Wallet },
   { href: "/analytics/performance", label: "Performance", icon: TrendingUp },
   { href: "/analytics/targets", label: "FY Targets", icon: Target },
