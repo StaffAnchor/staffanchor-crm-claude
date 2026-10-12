@@ -28,7 +28,15 @@ type Params = {
   page?: string;
 };
 
-type Facets = { cities: { name: string; n: number }[]; industries: { name: string; n: number }[]; notice: Record<string, number>; with_cv: number };
+type Facets = {
+  total: number;
+  groups: Record<string, number>;
+  groups_all: number;
+  ready: Record<string, number>;
+  notice: Record<string, number>;
+  cities: { name: string; n: number }[];
+  industries: { name: string; n: number }[];
+};
 type Counts = { total: number; b2b_sales: number; b2c_sales: number; non_sales: number; unclear: number; ready: number; almost: number; needs_work: number };
 
 const SORTS: Record<string, string> = {
@@ -94,14 +102,41 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
 
   const [rowsRes, facetsRes, countsRes, mandatesRes] = await Promise.all([
     q,
-    supabase.rpc("talent_board_facets"),
-    supabase.rpc("candidate_header_counts", { p_owner: user.id }),
+    // Every count in the left rail is worked out with the other filters already applied.
+    supabase.rpc("talent_board_facets_for", {
+      p_q: term || null,
+      p_group: p.group && ["b2b_sales", "b2c_sales", "non_sales", "unclear"].includes(p.group) ? p.group : null,
+      p_ready: p.ready && ["ready", "almost", "needs_work"].includes(p.ready) ? p.ready : null,
+      p_city: p.city || null,
+      p_industry: p.industry || null,
+      p_notice: nd,
+      p_exp_min: expMin,
+      p_exp_max: expMax,
+      p_ctc_min: ctcMin,
+      p_ctc_max: ctcMax,
+      p_has_cv: !!p.has_cv,
+    }),
+    Promise.resolve({ data: null }),
     supabase.from("mandates").select("id, role_title, city").eq("status", "open").order("created_at", { ascending: false }),
   ]);
   const rows = (rowsRes.data ?? []) as Record<string, unknown>[];
   const total = rowsRes.count ?? rows.length;
-  const facets = (facetsRes.data ?? { cities: [], industries: [], notice: {}, with_cv: 0 }) as Facets;
-  const counts = (countsRes.data ?? null) as Counts | null;
+  void countsRes;
+  const facets = (facetsRes.data ?? { total: 0, groups: {}, groups_all: 0, ready: {}, notice: {}, cities: [], industries: [] }) as Facets;
+  const counts: Counts = {
+    total: facets.groups_all,
+    b2b_sales: facets.groups.b2b_sales ?? 0,
+    b2c_sales: facets.groups.b2c_sales ?? 0,
+    non_sales: facets.groups.non_sales ?? 0,
+    unclear: facets.groups.unclear ?? 0,
+    ready: facets.ready.ready ?? 0,
+    almost: facets.ready.almost ?? 0,
+    needs_work: facets.ready.needs_work ?? 0,
+  };
+  // A selected city or industry always stays in its list, even when nobody matches it under the other filters.
+  const withSelected = (list: { name: string; n: number }[], sel: string | undefined) => (sel && !list.some((x) => x.name === sel) ? [...list, { name: sel, n: 0 }] : list);
+  const cityList = withSelected(facets.cities, p.city);
+  const industryList = withSelected(facets.industries, p.industry);
   const mandates = (mandatesRes.data ?? []) as MandateOption[];
 
   const cards: TalentCardData[] = await buildTalentCards(supabase, rows);
@@ -206,16 +241,16 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
             {facetLink("Needs work", { ready: p.ready === "needs_work" ? undefined : "needs_work" }, p.ready === "needs_work", counts?.needs_work)}
           </Section>
           <Section title="Notice period">
-            {facetLink("Immediate to 15 days", { notice: p.notice === "15" ? undefined : "15" }, p.notice === "15", facets.notice.immediate)}
+            {facetLink("Immediate to 15 days", { notice: p.notice === "15" ? undefined : "15" }, p.notice === "15", facets.notice.d15)}
             {facetLink("Up to 30 days", { notice: p.notice === "30" ? undefined : "30" }, p.notice === "30", facets.notice.d30)}
             {facetLink("Up to 60 days", { notice: p.notice === "60" ? undefined : "60" }, p.notice === "60", facets.notice.d60)}
             {facetLink("Up to 90 days", { notice: p.notice === "90" ? undefined : "90" }, p.notice === "90", facets.notice.d90)}
           </Section>
           <Section title="City">
-            {facets.cities.slice(0, 10).map((c) => facetLink(c.name, { city: p.city === c.name ? undefined : c.name }, p.city === c.name, c.n))}
+            {cityList.slice(0, 11).map((c) => facetLink(c.name, { city: p.city === c.name ? undefined : c.name }, p.city === c.name, c.n))}
           </Section>
           <Section title="Industry">
-            {facets.industries.slice(0, 10).map((c) => facetLink(c.name, { industry: p.industry === c.name ? undefined : c.name }, p.industry === c.name, c.n))}
+            {industryList.slice(0, 11).map((c) => facetLink(c.name, { industry: p.industry === c.name ? undefined : c.name }, p.industry === c.name, c.n))}
           </Section>
           <form method="get" className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
             {Object.entries(p).map(([k, v]) => (!["exp_min", "exp_max", "ctc_min", "ctc_max", "page"].includes(k) && v ? <input key={k} type="hidden" name={k} value={v} /> : null))}
