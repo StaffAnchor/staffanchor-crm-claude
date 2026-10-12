@@ -677,7 +677,7 @@ export default async function CandidateDetailPage({
           )}
 
           <div className="flex items-center gap-2 mt-4">
-            <QuickContactActions candidateId={candidate.id} candidateName={candidate.full_name} phone={candidate.phone} email={candidate.email} />
+            <QuickContactActions candidateId={candidate.id} candidateName={candidate.full_name} phone={candidate.phone} email={candidate.email} missing={missingKeyDetails(candidate).map((m) => m.key)} />
             {resumeSignedUrl && resumeFileName && (
               <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} />
             )}

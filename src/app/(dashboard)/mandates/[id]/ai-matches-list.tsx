@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import ResumePreview from "../../candidates/[id]/resume-preview";
+import WhatsAppMenu from "@/components/whatsapp-menu";
+import { candidateTemplates } from "@/lib/whatsapp-link";
+import { useMyFirstName } from "@/lib/use-my-name";
 import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, Check, HelpCircle, X, ChevronDown } from "lucide-react";
 import type { MatchChecks, ReqCheck } from "@/lib/ai-match";
@@ -21,6 +24,7 @@ export type MatchItem = {
   notice: string | null;
   phone: string | null;
   readiness: number | null;
+  missing: string[];
   resumeUrl: string | null;
   resumeName: string | null;
   elsewhere: { total: number; rejected: number };
@@ -96,7 +100,9 @@ function Card({
   rating,
   selected = false,
   onSelect,
+  roleTitle = null,
 }: {
+  roleTitle?: string | null;
   m: MatchItem;
   mandateId: string;
   onChanged: () => void;
@@ -106,6 +112,7 @@ function Card({
   onSelect?: (checked: boolean) => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const me = useMyFirstName();
   const [open, setOpen] = useState(false);
   // Which requirement's "where did this come from / confirm it" panel is open.
   const [openReq, setOpenReq] = useState<string | null>(null);
@@ -178,17 +185,11 @@ function Card({
         ) : (
           <div className="shrink-0 flex items-center gap-2">
             {m.resumeUrl && <ResumePreview signedUrl={m.resumeUrl} fileName={(m.resumeName ?? `${m.name}-resume`).replace(/^resumes\//, "")} label="CV" />}
-            {m.phone && (
-              <a
-                href={`https://wa.me/91${m.phone.replace(/\D/g, "").slice(-10)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-300 dark:ring-emerald-800"
-                title="Open WhatsApp"
-              >
-                WhatsApp
-              </a>
-            )}
+            <WhatsAppMenu
+              phone={m.phone}
+              templates={candidateTemplates(m.name, { me, candidateId: m.candidateId, missing: m.missing, role: roleTitle }).filter((t) => t.key !== "intro")}
+              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12.5px] text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-300 dark:ring-emerald-800"
+            />
             <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
               Not a fit
             </button>
@@ -308,6 +309,7 @@ function Card({
 
 export default function AiMatchesList({
   mandateId,
+  roleTitle = null,
   fullPage = false,
   roleOpen,
   hasMustHaves,
@@ -319,6 +321,7 @@ export default function AiMatchesList({
   budgetMax,
 }: {
   mandateId: string;
+  roleTitle?: string | null;
   fullPage?: boolean;
   roleOpen: boolean;
   hasMustHaves: boolean;
@@ -531,7 +534,7 @@ export default function AiMatchesList({
       ) : (
         <ul className="space-y-3">
           {visible.map((m) => (
-            <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} selected={picked.has(m.candidateId)} onSelect={(on) => togglePick(m.candidateId, on)} />
+            <Card key={m.candidateId} roleTitle={roleTitle} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} selected={picked.has(m.candidateId)} onSelect={(on) => togglePick(m.candidateId, on)} />
           ))}
         </ul>
       )}
@@ -547,7 +550,7 @@ export default function AiMatchesList({
           <summary className="cursor-pointer text-[13px] font-medium text-slate-700 dark:text-slate-200">Already added to the pipeline ({added.length})</summary>
           <ul className="mt-2 space-y-3">
             {added.map((m) => (
-              <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} />
+              <Card key={m.candidateId} roleTitle={roleTitle} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} />
             ))}
           </ul>
         </details>

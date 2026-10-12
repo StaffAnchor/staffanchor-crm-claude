@@ -5,6 +5,7 @@ import { Phone, Mail } from "lucide-react";
 import WhatsAppShareModal from "@/components/whatsapp-share-modal";
 import WhatsAppMenu from "@/components/whatsapp-menu";
 import { candidateTemplates } from "@/lib/whatsapp-link";
+import { useMyFirstName } from "@/lib/use-my-name";
 import { createClient } from "@/lib/supabase/client";
 
 // Wraps the header's Call / WhatsApp / Email links so each click also
@@ -36,12 +37,15 @@ export default function QuickContactActions({
   candidateName,
   phone,
   email,
+  missing,
 }: {
   candidateId: string;
   candidateName?: string | null;
   phone?: string | null;
   email: string;
+  missing?: string[];
 }) {
+  const me = useMyFirstName();
   const [sharing, setSharing] = useState(false);
   const [ids] = useState(() => [candidateId]);
   return (
@@ -53,7 +57,7 @@ export default function QuickContactActions({
       )}
       <WhatsAppMenu
         phone={phone}
-        templates={candidateTemplates(candidateName).filter((t) => t.key !== "intro")}
+        templates={candidateTemplates(candidateName, { me, candidateId, missing }).filter((t) => t.key !== "intro")}
         onIntroduce={() => setSharing(true)}
         onSend={() => logActivity(candidateId, "whatsapp")}
         className={linkClass}

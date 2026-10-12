@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, ChevronDown } from "lucide-react";
+import { MessageCircle, ChevronDown, Copy, Check } from "lucide-react";
 import { WHATSAPP_TARGET, whatsappLink, type WhatsAppTemplate } from "@/lib/whatsapp-link";
 
 // "WhatsApp" button with a short list of ready-made messages. Picking one
@@ -22,7 +22,19 @@ export default function WhatsAppMenu({
   className: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  async function copy(key: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied((c) => (c === key ? null : c)), 1800);
+      onSend?.(key);
+    } catch {
+      /* clipboard blocked: the Open link still works */
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +53,7 @@ export default function WhatsAppMenu({
         <MessageCircle className="w-3 h-3" /> WhatsApp <ChevronDown className="w-3 h-3 opacity-60" />
       </button>
       {open && (
-        <div role="menu" className="absolute left-0 z-30 mt-1 w-60 rounded-ros-md border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div role="menu" className="absolute left-0 z-30 mt-1 w-72 rounded-ros-md border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           {onIntroduce && (
             <button
               type="button"
@@ -56,20 +68,30 @@ export default function WhatsAppMenu({
             </button>
           )}
           {templates.map((t) => (
-            <a
-              key={t.key}
-              role="menuitem"
-              href={whatsappLink(phone, t.text) ?? "#"}
-              target={WHATSAPP_TARGET}
-              rel="noreferrer"
-              onClick={() => {
-                setOpen(false);
-                onSend?.(t.key);
-              }}
-              className="block rounded px-2.5 py-1.5 text-left text-[12.5px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              {t.label}
-            </a>
+            <div key={t.key} className="flex items-center gap-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
+              <a
+                role="menuitem"
+                href={whatsappLink(phone, t.text) ?? "#"}
+                target={WHATSAPP_TARGET}
+                rel="noreferrer"
+                onClick={() => {
+                  setOpen(false);
+                  onSend?.(t.key);
+                }}
+                title="Open WhatsApp with this message typed in"
+                className="min-w-0 flex-1 truncate px-2.5 py-1.5 text-left text-[12.5px] text-slate-700 dark:text-slate-200"
+              >
+                {t.label}
+              </a>
+              <button
+                type="button"
+                onClick={() => copy(t.key, t.text)}
+                title="Copy this message"
+                className="mr-1 inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-slate-500 hover:bg-white hover:text-slate-800 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+              >
+                {copied === t.key ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />} {copied === t.key ? "Copied" : "Copy"}
+              </button>
+            </div>
           ))}
           <a
             role="menuitem"
