@@ -1,5 +1,6 @@
 "use client";
 
+import PipelineWhatsApp from "./pipeline-whatsapp";
 import OriginChip from "./origin-chip";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -103,6 +104,8 @@ export type MandateCandidateRow = {
     id: string;
     full_name: string;
     email: string | null;
+    phone?: string | null;
+    readiness_missing?: string[] | null;
     category: string | null;
     sub_domain: string | null;
     total_experience_years: number | null;
@@ -645,6 +648,16 @@ export default function MandateCandidatesTable({
                   ) : (
                     <span className="text-[11px] text-slate-300">—</span>
                   )}
+                  <PipelineWhatsApp
+                    candidateId={l.candidate.id}
+                    candidateName={l.candidate.full_name}
+                    phone={l.candidate.phone}
+                    missing={l.candidate.readiness_missing}
+                    stage={l.stage}
+                    roleTitle={mandateContext.role_title ?? null}
+                    cities={(mandateContext.cities as string[] | undefined) ?? null}
+                    workMode={(mandateContext.work_mode as string | null | undefined) ?? null}
+                  />
                   <FlagForCallButton
                     candidateId={l.candidate.id}
                     candidateName={l.candidate.full_name}

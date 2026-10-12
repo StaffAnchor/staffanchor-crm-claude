@@ -152,3 +152,95 @@ export function jobseekerTemplates(name: string | null | undefined): WhatsAppTem
     },
   ];
 }
+
+export type PipelineContext = TemplateContext & {
+  /** This person's stage on this role: sourced, screened, submitted, client_interview, ... */
+  stage?: string | null;
+  cities?: string[] | null;
+  workMode?: string | null;
+};
+
+const EARLY = new Set(["sourced", "screened", "shortlisted"]);
+
+/**
+ * Messages for someone in a specific role's pipeline. They use the role, its location and work mode, and
+ * the person's stage, and never the client's name (who the client is stays with us until the right moment).
+ */
+export function pipelineTemplates(name: string | null | undefined, ctx: PipelineContext): WhatsAppTemplate[] {
+  const n = firstNameOf(name);
+  const me = (ctx.me ?? "").trim();
+  const who = me ? `this is ${me} from StaffAnchor Talent Solutions, a recruitment firm` : "this is from StaffAnchor Talent Solutions, a recruitment firm";
+  const sign = me ? `${me}, StaffAnchor` : "StaffAnchor";
+  const role = ctx.role?.trim() || "the role we spoke about";
+  const roleRef = ctx.role?.trim() ? `the ${ctx.role.trim()} role` : "the role we discussed";
+  const where = ctx.cities && ctx.cities.length > 0 ? ` in ${humanList(ctx.cities.slice(0, 3))}` : "";
+  const mode = ctx.workMode ? ` (${ctx.workMode.toLowerCase()})` : "";
+  const wa = ctx.candidateId ? `${APP_URL}/w/${ctx.candidateId}` : null;
+  const form = ctx.candidateId ? `${APP_URL}/u/${ctx.candidateId}` : null;
+  const asks = askedFor(ctx.missing);
+  const routes = wa && form ? `\n\nPlease reply here, message our official WhatsApp: ${wa}\nor complete your profile: ${form}` : "";
+  const stage = ctx.stage ?? "sourced";
+
+  const t: Record<string, WhatsAppTemplate> = {
+    role_check: {
+      key: "role_check",
+      label: "Check interest in this role",
+      text: `Hi ${n}, ${who}. You are being considered for ${roleRef}${where}${mode}. Are you open to it? ${asks.length ? `To take it forward, please confirm your ${humanList(asks)}.` : "If yes, please share a convenient time for a quick call."}${routes}\n\n${sign}`,
+    },
+    missing: {
+      key: "missing",
+      label: "Missing details for this role",
+      text: `Hi ${n}, ${who}. For ${roleRef}, I still need these details from you: ${humanList(asks)}.${routes}\n\nThank you!\n${sign}`,
+    },
+    call: {
+      key: "call",
+      label: "Schedule a quick call",
+      text: `Hi ${n}, ${who}. Regarding ${roleRef}, could we have a 10-minute call today or tomorrow? Please share a time that suits you.\n\n${sign}`,
+    },
+    summary: {
+      key: "summary",
+      label: "Role summary",
+      text: `Hi ${n}, ${who}. A quick summary of ${roleRef}:\n\nRole: ${role}${where ? `\nLocation:${where.replace(" in", "")}` : ""}${ctx.workMode ? `\nWork mode: ${ctx.workMode}` : ""}\n\nIf this interests you, please reply here and we will share more details.\n\n${sign}`,
+    },
+    submitted: {
+      key: "submitted",
+      label: "Update: profile shared",
+      text: `Hi ${n}, a quick update on ${roleRef}: your profile has been shared with the hiring team. I will let you know as soon as we hear back.\n\n${sign}`,
+    },
+    interview: {
+      key: "interview",
+      label: "Confirm interview availability",
+      text: `Hi ${n}, regarding your interview for ${roleRef}: please confirm you are available and reply here if anything changes. Wishing you the best!\n\n${sign}`,
+    },
+    next: {
+      key: "next",
+      label: "Next steps",
+      text: `Hi ${n}, there is positive movement on ${roleRef}. Could we speak today about the next steps? Please share a time that works for you.\n\n${sign}`,
+    },
+    joining: {
+      key: "joining",
+      label: "Joining reminder",
+      text: `Hi ${n}, a quick note ahead of your joining for ${roleRef}. Please confirm your joining date and let me know if you need anything from our side.\n\n${sign}`,
+    },
+    closure: {
+      key: "closure",
+      label: "Polite closure",
+      text: `Hi ${n}, thank you for your time and interest in ${roleRef}. The hiring team has decided to move ahead with other profiles for now. We will keep your profile in mind for suitable roles.\n\n${sign}`,
+    },
+    followup: {
+      key: "followup",
+      label: "Gentle follow-up",
+      text: `Hi ${n}, following up on ${roleRef}. Are you still interested? Happy to answer any questions.${wa ? ` You can also reach us on our official WhatsApp: ${wa}` : ""}\n\n${sign}`,
+    },
+  };
+
+  let order: string[];
+  if (EARLY.has(stage)) order = [...(asks.length ? ["missing"] : []), "role_check", "call", "summary", "followup"];
+  else if (stage === "submitted") order = ["submitted", ...(asks.length ? ["missing"] : []), "followup"];
+  else if (stage === "client_interview") order = ["interview", "call", "followup"];
+  else if (stage === "client_shortlisted" || stage === "offer") order = ["next", "call", "followup"];
+  else if (stage === "placed") order = ["joining", "followup"];
+  else if (stage === "rejected" || stage === "pulled_back") order = ["closure", "followup"];
+  else order = ["role_check", "call", "followup"];
+  return order.map((k) => t[k]).filter(Boolean);
+}
