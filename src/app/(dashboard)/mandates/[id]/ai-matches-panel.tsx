@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServiceClient } from "@/lib/cv-facts";
 import { specHashOf, cleanList, normalizeCtc, type MatchChecks, type RoleForMatch } from "@/lib/ai-match";
 import AiMatchesList, { type MatchItem } from "./ai-matches-list";
 
@@ -16,7 +17,7 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
       .single(),
     supabase
       .from("mandate_ai_matches")
-      .select("candidate_id, fit, score, summary, checks, spec_hash, status, computed_at, candidates(full_name, current_job_title, current_employer, total_experience_years, current_location, current_fixed_ctc, expected_fixed_ctc)")
+      .select("candidate_id, fit, score, summary, checks, spec_hash, status, computed_at, candidates(full_name, current_job_title, current_employer, total_experience_years, current_location, current_fixed_ctc, expected_fixed_ctc, notice_period, phone, readiness_score, resume_file_url)")
       .eq("mandate_id", mandateId)
       .eq("status", "suggested")
       .order("score", { ascending: false })
@@ -42,6 +43,10 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
     current_location: string | null;
     current_fixed_ctc: number | null;
     expected_fixed_ctc: number | null;
+    notice_period: string | null;
+    phone: string | null;
+    readiness_score: number | null;
+    resume_file_url: string | null;
   };
 
   type Row = {
@@ -56,7 +61,31 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
     candidates: CandidateRow | CandidateRow[] | null;
   };
 
-  const items: MatchItem[] = ((rows ?? []) as unknown as Row[]).filter((m) => !pipelineIds.has(m.candidate_id)).map((m) => {
+  const shown = ((rows ?? []) as unknown as Row[]).filter((m) => !pipelineIds.has(m.candidate_id));
+  const shownIds = shown.map((m) => m.candidate_id);
+
+  // Short-lived CV links for the preview button, and whether each person is already in other roles' pipelines.
+  const admin = getServiceClient();
+  const cvPaths = shown
+    .map((m) => (Array.isArray(m.candidates) ? m.candidates[0] : m.candidates)?.resume_file_url)
+    .filter((v): v is string => !!v);
+  const signedBy = new Map<string, string>();
+  if (admin && cvPaths.length) {
+    const { data: signed } = await admin.storage.from("resumes").createSignedUrls(cvPaths, 3600);
+    for (const s of signed ?? []) if (s.path && s.signedUrl) signedBy.set(s.path, s.signedUrl);
+  }
+  const { data: otherLinks } = shownIds.length
+    ? await supabase.from("candidate_mandate_links").select("candidate_id, stage").in("candidate_id", shownIds).neq("mandate_id", mandateId)
+    : { data: [] };
+  const elsewhere = new Map<string, { total: number; rejected: number }>();
+  for (const l of (otherLinks ?? []) as { candidate_id: string; stage: string }[]) {
+    const cur = elsewhere.get(l.candidate_id) ?? { total: 0, rejected: 0 };
+    cur.total++;
+    if (l.stage === "rejected") cur.rejected++;
+    elsewhere.set(l.candidate_id, cur);
+  }
+
+  const items: MatchItem[] = shown.map((m) => {
     const c = Array.isArray(m.candidates) ? m.candidates[0] : m.candidates;
     return {
       candidateId: m.candidate_id,
@@ -66,6 +95,12 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
       location: c?.current_location ?? null,
       currentCtc: normalizeCtc(c?.current_fixed_ctc),
       expectedCtc: normalizeCtc(c?.expected_fixed_ctc),
+      notice: c?.notice_period ?? null,
+      phone: c?.phone ?? null,
+      readiness: c?.readiness_score ?? null,
+      resumeUrl: c?.resume_file_url ? signedBy.get(c.resume_file_url) ?? null : null,
+      resumeName: c?.resume_file_url ?? null,
+      elsewhere: elsewhere.get(m.candidate_id) ?? { total: 0, rejected: 0 },
       fit: m.fit,
       score: m.score,
       summary: m.summary,
