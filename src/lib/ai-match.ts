@@ -416,7 +416,12 @@ export type CheckCandidateResult = { ok: true; result: CandidateCheck; cached: b
 // recruiter sees evidence and doubts for the person in front of them. Reads
 // the CV first if it has not been read yet. Reuses a stored result when the
 // requirements and the CV facts have not changed.
-export async function checkCandidateForMandate(mandateId: string, candidateId: string, admin: SupabaseClient): Promise<CheckCandidateResult> {
+export async function checkCandidateForMandate(
+  mandateId: string,
+  candidateId: string,
+  admin: SupabaseClient,
+  opts: { status?: "added" | "suggested" } = {}
+): Promise<CheckCandidateResult> {
   const { data: role, error } = await admin
     .from("mandates")
     .select("id, role_title, status, must_haves, good_to_haves, experience_min, experience_max, cities, city, embedding")
@@ -438,7 +443,7 @@ export async function checkCandidateForMandate(mandateId: string, candidateId: s
   if (!factsRow) return { ok: false, error: "No CV facts available" };
   const row = factsRow as FactsRow;
 
-  const { data: prior } = await admin.from("mandate_ai_matches").select("fit, score, summary, checks, spec_hash, facts_hash").eq("mandate_id", mandateId).eq("candidate_id", candidateId).maybeSingle();
+  const { data: prior } = await admin.from("mandate_ai_matches").select("fit, score, summary, checks, spec_hash, facts_hash, status").eq("mandate_id", mandateId).eq("candidate_id", candidateId).maybeSingle();
   if (prior && prior.spec_hash === spec && prior.facts_hash === row.source_hash) {
     return { ok: true, cached: true, result: { fit: prior.fit as Fit, score: prior.score as number, summary: (prior.summary as string | null) ?? null, checks: prior.checks as MatchChecks } };
   }
@@ -484,8 +489,9 @@ export async function checkCandidateForMandate(mandateId: string, candidateId: s
       spec_hash: spec,
       facts_hash: row.source_hash,
       model: GEMINI_QUALITY_MODELS[0],
-      // Already in this role's pipeline, so it belongs under "Already added".
-      status: "added",
+      // From the pipeline screens the person is already in the role ("added"). From a candidate's own page
+      // this is a suggestion, and a role someone has already said "not a fit" to stays dismissed.
+      status: prior?.status === "dismissed" ? "dismissed" : opts.status ?? "added",
       computed_at: new Date().toISOString(),
     },
     { onConflict: "mandate_id,candidate_id" }

@@ -12,6 +12,7 @@ import NotesPanel from "./notes-panel";
 import ResumeMismatchesPanel from "./resume-mismatches-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
+import SuggestedRolesPanel from "./suggested-roles-panel";
 import PracticeMatchesPanel from "./practice-matches-panel";
 import Tabs from "./tabs";
 import Timeline from "./timeline";
@@ -830,6 +831,10 @@ export default async function CandidateDetailPage({
                       applicationAnswersByMandate={applicationAnswersByMandate}
                     />
                   ),
+                },
+                {
+                  label: "Suggested roles",
+                  content: <SuggestedRolesPanel candidateId={candidate.id} hasCv={!!candidate.resume_file_url} />,
                 },
                 {
                   label: "Career",
