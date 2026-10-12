@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { fetchAllRows } from "@/lib/fetch-all-rows";
 import { stageLabel } from "@/lib/mandate-stage";
+import { dismissReasonLabel } from "@/lib/ai-feedback";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -80,17 +81,33 @@ export default async function FlowPage() {
     byPurpose.set(r.purpose, e);
   }
 
-  // Human decisions on AI suggestions, by the fit the AI gave.
-  const matches = await fetchAllRows<{ fit: string | null; status: string }>(supabase, "mandate_ai_matches", "fit, status");
-  const fitStats = new Map<string, { suggested: number; added: number; dismissed: number }>();
+  // Human decisions on AI suggestions, by the fit the AI gave, and how the
+  // ones that were added went on to do.
+  type MatchRow = { mandate_id: string; candidate_id: string; fit: string | null; status: string; dismissed_reason: string | null; dismissed_reason_codes: string[] | null };
+  const matches = await fetchAllRows<MatchRow>(
+    supabase,
+    "mandate_ai_matches",
+    "mandate_id, candidate_id, fit, status, dismissed_reason, dismissed_reason_codes"
+  );
+  const links = await fetchAllRows<{ mandate_id: string; candidate_id: string; stage: string }>(supabase, "candidate_mandate_links", "mandate_id, candidate_id, stage");
+  const stageOf = new Map((links.data ?? []).map((l) => [`${l.mandate_id}:${l.candidate_id}`, l.stage]));
+  const CLIENT_REACHED = new Set(["submitted", "client_interview", "client_shortlisted", "offer", "placed"]);
+  const fitStats = new Map<string, { suggested: number; added: number; dismissed: number; reachedClient: number }>();
+  const reasonCounts = new Map<string, number>();
   for (const m of matches.data ?? []) {
     const k = m.fit ?? "unrated";
-    const e = fitStats.get(k) ?? { suggested: 0, added: 0, dismissed: 0 };
-    if (m.status === "added") e.added += 1;
-    else if (m.status === "dismissed") e.dismissed += 1;
-    else e.suggested += 1;
+    const e = fitStats.get(k) ?? { suggested: 0, added: 0, dismissed: 0, reachedClient: 0 };
+    if (m.status === "added") {
+      e.added += 1;
+      if (CLIENT_REACHED.has(stageOf.get(`${m.mandate_id}:${m.candidate_id}`) ?? "")) e.reachedClient += 1;
+    } else if (m.status === "dismissed") {
+      e.dismissed += 1;
+      const labels = m.dismissed_reason_codes?.length ? m.dismissed_reason_codes.map(dismissReasonLabel) : [m.dismissed_reason ?? "No reason given"];
+      for (const l of labels) reasonCounts.set(l, (reasonCounts.get(l) ?? 0) + 1);
+    } else e.suggested += 1;
     fitStats.set(k, e);
   }
+  const topReasons = Array.from(reasonCounts.entries()).sort((x, y) => y[1] - x[1]).slice(0, 6);
   const fitOrder = ["strong", "possible", "weak", "unrated"];
 
   const totalActive = flow.aging.reduce((a, r) => a + r.n, 0);
@@ -304,14 +321,16 @@ export default async function FlowPage() {
           </Card>
 
           <Card padded={false}>
-            <p className="px-4 pt-3 pb-1 text-[13px] font-medium text-slate-800 dark:text-slate-200">What people did with suggestions</p>
+            <p className="px-4 pt-3 pb-1 text-[13px] font-medium text-slate-800 dark:text-slate-200">Was the AI right?</p>
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                   <th className="px-4 py-2 font-medium">AI rated</th>
                   <th className="px-4 py-2 font-medium text-right">Added</th>
                   <th className="px-4 py-2 font-medium text-right">Dismissed</th>
-                  <th className="px-4 py-2 font-medium text-right">Not yet decided</th>
+                  <th className="px-4 py-2 font-medium text-right">Agreed</th>
+                  <th className="px-4 py-2 font-medium text-right">Reached client</th>
+                  <th className="px-4 py-2 font-medium text-right">Undecided</th>
                 </tr>
               </thead>
               <tbody>
@@ -319,24 +338,41 @@ export default async function FlowPage() {
                   .filter((f) => fitStats.has(f))
                   .map((f) => {
                     const e = fitStats.get(f)!;
+                    const decided = e.added + e.dismissed;
                     return (
                       <tr key={f} className="border-b border-slate-50 dark:border-slate-800/60 last:border-0">
                         <td className="px-4 py-2 capitalize">{f}</td>
                         <td className="px-4 py-2 text-right tabular-nums">{e.added}</td>
                         <td className="px-4 py-2 text-right tabular-nums">{e.dismissed}</td>
+                        <td className="px-4 py-2 text-right tabular-nums" title={decided < 5 ? "Too few decisions to read anything into yet" : undefined}>
+                          {decided < 5 ? <span className="text-slate-400">too few</span> : `${Math.round((e.added / decided) * 100)}%`}
+                        </td>
+                        <td className="px-4 py-2 text-right tabular-nums">{e.reachedClient}</td>
                         <td className="px-4 py-2 text-right tabular-nums">{e.suggested}</td>
                       </tr>
                     );
                   })}
                 {fitStats.size === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-5 text-center text-slate-500">No suggestions yet.</td>
+                    <td colSpan={6} className="px-4 py-5 text-center text-slate-500">No suggestions yet.</td>
                   </tr>
                 )}
               </tbody>
             </table>
+            {topReasons.length > 0 && (
+              <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-[12px] font-medium text-slate-600 dark:text-slate-300 mb-1.5">Why suggestions were dismissed</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {topReasons.map(([label, n]) => (
+                    <Badge key={label} tone="neutral">
+                      {label}: {n}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
             <p className="px-4 py-2 text-[12px] text-slate-400">
-              Once people have decided enough of these, this shows whether &quot;strong&quot; really means strong. Until then, most are still undecided.
+              &quot;Agreed&quot; is the share of decided suggestions that people added. It shows once there are 5 decisions per rating, so &quot;strong&quot; can be checked against real choices.
             </p>
           </Card>
         </div>
