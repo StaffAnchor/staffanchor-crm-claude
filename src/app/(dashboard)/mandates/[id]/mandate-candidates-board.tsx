@@ -1,5 +1,6 @@
 "use client";
 
+import OriginChip from "./origin-chip";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -466,6 +467,7 @@ export default function MandateCandidatesBoard({
                               </Link>
                             </ApplicationAnswersQuickView>
                             <ProfileRatingBadge row={ratings.get(row.candidate.id)} />
+                            <OriginChip origin={row.origin} label={row.origin_label} />
                             {!row.viewed_at && (
                               <span
                                 className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
