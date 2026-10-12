@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, MessageCircle, Plus, Star, Flag } from "lucide-react";
+import { Check, Plus, Star, Flag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ProfileGroupBadge } from "../profile-group-badge";
 import ResumePreview from "../[id]/resume-preview";
 import { MISSING_LABEL, TIER_PILL, type ReadinessTier } from "@/lib/readiness";
 import SaveToList from "./save-to-list";
+import WhatsAppMenu from "@/components/whatsapp-menu";
+import { candidateTemplates } from "@/lib/whatsapp-link";
+import { useMyFirstName } from "@/lib/use-my-name";
 import type { ShortlistSummary } from "@/lib/shortlists";
 
 export type TalentCardData = {
@@ -61,7 +64,7 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
   const [state, setState] = useState<"idle" | "adding" | "added" | "exists" | "error">("idle");
   const tier = (c.readiness_tier ?? "needs_work") as ReadinessTier;
   const missing = c.readiness_missing.map((k) => MISSING_LABEL[k] ?? k);
-  const waLink = c.phone ? `https://wa.me/91${c.phone.replace(/\D/g, "").slice(-10)}` : null;
+  const me = useMyFirstName();
 
   async function add() {
     if (!target) return;
@@ -139,11 +142,11 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
       <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800" style={{ marginTop: "0.9rem" }}>
         <SaveToList candidateId={c.id} lists={lists} memberOf={memberOf} />
         {c.resume_signed_url && <ResumePreview signedUrl={c.resume_signed_url} fileName={(c.resume_file_url ?? `${c.full_name}-resume`).replace(/^resumes\//, "")} label="CV" />}
-        {waLink && (
-          <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50" title="Open WhatsApp">
-            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-          </a>
-        )}
+        <WhatsAppMenu
+          phone={c.phone}
+          templates={candidateTemplates(c.full_name, { me, candidateId: c.id, missing: c.readiness_missing }).filter((t) => t.key !== "intro")}
+          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
+        />
         <Link href={`/candidates/${c.id}`} className="inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700">
           Open
         </Link>

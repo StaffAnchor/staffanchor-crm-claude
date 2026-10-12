@@ -17,7 +17,7 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
       .single(),
     supabase
       .from("mandate_ai_matches")
-      .select("candidate_id, fit, score, summary, checks, spec_hash, status, computed_at, candidates(full_name, current_job_title, current_employer, total_experience_years, current_location, current_fixed_ctc, expected_fixed_ctc, notice_period, phone, readiness_score, resume_file_url)")
+      .select("candidate_id, fit, score, summary, checks, spec_hash, status, computed_at, candidates(full_name, current_job_title, current_employer, total_experience_years, current_location, current_fixed_ctc, expected_fixed_ctc, notice_period, phone, readiness_score, readiness_missing, resume_file_url)")
       .eq("mandate_id", mandateId)
       .eq("status", "suggested")
       .order("score", { ascending: false })
@@ -46,6 +46,7 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
     notice_period: string | null;
     phone: string | null;
     readiness_score: number | null;
+    readiness_missing: string[] | null;
     resume_file_url: string | null;
   };
 
@@ -98,6 +99,7 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
       notice: c?.notice_period ?? null,
       phone: c?.phone ?? null,
       readiness: c?.readiness_score ?? null,
+      missing: c?.readiness_missing ?? [],
       resumeUrl: c?.resume_file_url ? signedBy.get(c.resume_file_url) ?? null : null,
       resumeName: c?.resume_file_url ?? null,
       elsewhere: elsewhere.get(m.candidate_id) ?? { total: 0, rejected: 0 },
@@ -113,6 +115,7 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
   return (
     <AiMatchesList
       mandateId={mandateId}
+      roleTitle={(r as { role_title?: string | null }).role_title ?? null}
       fullPage={fullPage}
       roleOpen={r.status === "open"}
       hasMustHaves={cleanList(r.must_haves).length > 0}

@@ -26,33 +26,96 @@ export type WhatsAppTemplate = { key: string; label: string; text: string };
 
 export const firstNameOf = (full: string | null | undefined) => (full ?? "").trim().split(/\s+/)[0] || "there";
 
-export function candidateTemplates(name: string | null | undefined): WhatsAppTemplate[] {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com";
+
+// What we can ask a candidate for, in plain words, whichever naming the screen uses for it.
+const ASK: Record<string, string> = {
+  current_ctc: "current CTC",
+  current_fixed_ctc: "current CTC",
+  expected_ctc: "expected CTC",
+  expected_fixed_ctc: "expected CTC",
+  notice: "notice period",
+  notice_period: "notice period",
+  title: "current role",
+  current_job_title: "current role",
+  employer: "current company",
+  current_employer: "current company",
+  city: "current city",
+  current_location: "current city",
+  experience: "total experience",
+  total_experience_years: "total experience",
+  email: "email address",
+  cv: "latest CV",
+  resume_file_url: "latest CV",
+};
+
+export type TemplateContext = {
+  /** The signed-in team member's first name, so each person's message carries their own name. */
+  me?: string | null;
+  candidateId?: string | null;
+  /** What is missing from this profile, as readiness keys or profile column names. */
+  missing?: string[];
+  /** The role being discussed, when there is one. */
+  role?: string | null;
+};
+
+export const humanList = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}` : items[0] ?? "");
+
+export function askedFor(missing: string[] | undefined): string[] {
+  return Array.from(new Set((missing ?? []).map((k) => ASK[k]).filter(Boolean))).slice(0, 5);
+}
+
+export function candidateTemplates(name: string | null | undefined, ctx: TemplateContext = {}): WhatsAppTemplate[] {
   const n = firstNameOf(name);
+  const me = (ctx.me ?? "").trim();
+  const who = me ? `this is ${me} from StaffAnchor Talent Solutions, a recruitment firm` : "this is from StaffAnchor Talent Solutions, a recruitment firm";
+  const sign = me ? `${me}, StaffAnchor` : "StaffAnchor";
+  const wa = ctx.candidateId ? `${APP_URL}/w/${ctx.candidateId}` : null;
+  const form = ctx.candidateId ? `${APP_URL}/u/${ctx.candidateId}` : null;
+  const asks = askedFor(ctx.missing);
+  const forRole = ctx.role ? ` for the ${ctx.role} role` : "";
+  const routes = wa && form ? `\n\nPlease confirm by messaging our official WhatsApp: ${wa}\nor complete your profile here: ${form}` : "";
+  const out: WhatsAppTemplate[] = [];
+  if (asks.length > 0) {
+    out.push({
+      key: "complete",
+      label: "Missing details, with links",
+      text: `Hi ${n}, ${who}. While evaluating your profile${forRole}, I noticed these details are missing: ${humanList(asks)}.${routes || "\n\nCould you please share them here?"}\n\nThank you!`,
+    });
+  }
+  if (ctx.role) {
+    out.push({
+      key: "role",
+      label: `${ctx.role}: opportunity`,
+      text: `Hi ${n}, ${who}. Your profile looks relevant for ${/^[aeiou]/i.test(ctx.role) ? "an" : "a"} ${ctx.role} opportunity we are hiring for. Would you like to know more?${routes ? `\n\nReply here, message our official WhatsApp: ${wa}\nor complete your profile so we can present you well: ${form}` : ""}\n\n${sign}`,
+    });
+  }
   return [
+    ...out,
     {
       key: "intro",
       label: "Introduce an opportunity",
-      text: `Hi ${n}, this is from StaffAnchor, a recruitment firm for sales roles. I came across your profile and have an opportunity I'd like to discuss. Do you have 5 minutes for a quick call today?`,
+      text: `Hi ${n}, ${who}. I came across your profile and have an opportunity I'd like to discuss. Do you have 5 minutes for a quick call today?`,
     },
     {
       key: "cv",
       label: "Ask for updated CV",
-      text: `Hi ${n}, could you please share your updated CV here (PDF or Word)? Thanks, StaffAnchor`,
+      text: `Hi ${n}, could you please share your updated CV here (PDF or Word)? Thanks, ${sign}`,
     },
     {
       key: "details",
       label: "Confirm CTC and notice period",
-      text: `Hi ${n}, following up on our call. Could you please confirm your current CTC, expected CTC, notice period and preferred work mode? Thanks, StaffAnchor`,
+      text: `Hi ${n}, following up on our call. Could you please confirm your current CTC, expected CTC, notice period and preferred work mode? Thanks, ${sign}`,
     },
     {
       key: "interview",
       label: "Interview reminder",
-      text: `Hi ${n}, a quick reminder about your upcoming interview. Please confirm you're all set and reply here if anything changes. Thanks, StaffAnchor`,
+      text: `Hi ${n}, a quick reminder about your upcoming interview. Please confirm you're all set and reply here if anything changes. Thanks, ${sign}`,
     },
     {
       key: "followup",
       label: "Gentle follow-up",
-      text: `Hi ${n}, just checking in on the opportunity I shared. Are you still interested? Happy to answer any questions. StaffAnchor`,
+      text: `Hi ${n}, just checking in on the opportunity I shared. Are you still interested? Happy to answer any questions.${wa ? ` You can also reach us on our official WhatsApp: ${wa}` : ""}\n\n${sign}`,
     },
   ];
 }
