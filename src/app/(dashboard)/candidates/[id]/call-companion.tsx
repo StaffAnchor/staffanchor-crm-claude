@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Phone, Check, ChevronDown, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ctcOptions, noticePeriodOptions, workModeOptions, relocationOptions } from "@/lib/candidate-options";
+import { RATING_DIMENSIONS, type CallRating } from "@/lib/call-ratings";
+import { CallRatingTags, CallRatingHistory, type RatingRow } from "./call-rating-tags";
 
 type Candidate = {
   id: string;
@@ -110,9 +112,33 @@ export default function CallCompanion({
   const [offer, setOffer] = useState(typeof seg.offer_in_hand === "boolean" ? (seg.offer_in_hand ? "Yes" : "No") : "");
   const [offerCtc, setOfferCtc] = useState(typeof seg.offer_ctc === "number" ? String(seg.offer_ctc) : "");
   const [note, setNote] = useState("");
+  const [rating, setRating] = useState<CallRating>({});
+  const [history, setHistory] = useState<RatingRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("candidate_call_ratings")
+        .select("id, created_at, rated_by, communication, seriousness, stability, salary_realism, skill_match")
+        .eq("candidate_id", candidate.id)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      const rows = (data ?? []) as (Omit<RatingRow, "rater_name"> & { rated_by: string | null })[];
+      const ids = Array.from(new Set(rows.map((r) => r.rated_by).filter((v): v is string => !!v)));
+      const { data: people } = ids.length ? await supabase.from("profiles").select("id, full_name").in("id", ids) : { data: [] };
+      const nameOf = new Map(((people ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+      if (cancelled) return;
+      setHistory(rows.map((r) => ({ ...r, rater_name: r.rated_by ? nameOf.get(r.rated_by) ?? null : null })));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidate.id]);
 
   // Keep what the recruiter has tapped so far across a background page refresh
   // (the candidate page refreshes itself when the AI work finishes).
@@ -130,6 +156,7 @@ export default function CallCompanion({
       if (d.offer) setOffer(d.offer);
       if (d.offerCtc) setOfferCtc(d.offerCtc);
       if (d.note) setNote(d.note);
+      if (d.rating) setRating(JSON.parse(d.rating) as CallRating);
     } catch {
       /* storage unavailable: fine */
     }
@@ -137,11 +164,11 @@ export default function CallCompanion({
   /* eslint-enable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
-      sessionStorage.setItem(draftKey, JSON.stringify({ expected, workMode, notice, relocation, offer, offerCtc, note }));
+      sessionStorage.setItem(draftKey, JSON.stringify({ expected, workMode, notice, relocation, offer, offerCtc, note, rating: JSON.stringify(rating) }));
     } catch {
       /* storage unavailable: fine */
     }
-  }, [draftKey, expected, workMode, notice, relocation, offer, offerCtc, note]);
+  }, [draftKey, expected, workMode, notice, relocation, offer, offerCtc, note, rating]);
 
   const missing = missingForRegistration(candidate, { expected, workMode, notice, relocation });
   const incomplete = candidate.status === "lead" || candidate.status === "awaiting_input";
@@ -191,6 +218,19 @@ export default function CallCompanion({
         note_type: "call_note",
         content: note.trim(),
       });
+    }
+    const anyRating = RATING_DIMENSIONS.some((d) => rating[d.key]);
+    if (anyRating && user?.id) {
+      await supabase.from("candidate_call_ratings").insert({
+        candidate_id: candidate.id,
+        rated_by: user.id,
+        communication: rating.communication ?? null,
+        seriousness: rating.seriousness ?? null,
+        stability: rating.stability ?? null,
+        salary_realism: rating.salary_realism ?? null,
+        skill_match: rating.skill_match ?? null,
+      });
+      setRating({});
     }
     await supabase.from("audit_log").insert({
       actor: user?.id,
@@ -287,6 +327,10 @@ export default function CallCompanion({
                 )}
               </div>
             </Row>
+            <Row label="How did the call go?" hint="(optional, one tap each)">
+              <CallRatingTags value={rating} onChange={setRating} />
+            </Row>
+            {history.length > 0 && <CallRatingHistory rows={history} />}
             <Row label="Call note" hint="(optional, saved to notes)">
               <textarea
                 value={note}
