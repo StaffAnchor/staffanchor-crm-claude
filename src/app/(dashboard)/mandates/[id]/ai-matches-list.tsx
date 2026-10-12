@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ResumePreview from "../../candidates/[id]/resume-preview";
 import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, Check, HelpCircle, X, ChevronDown } from "lucide-react";
 import type { MatchChecks, ReqCheck } from "@/lib/ai-match";
@@ -17,6 +18,12 @@ export type MatchItem = {
   location: string | null;
   currentCtc: number | null;
   expectedCtc: number | null;
+  notice: string | null;
+  phone: string | null;
+  readiness: number | null;
+  resumeUrl: string | null;
+  resumeName: string | null;
+  elsewhere: { total: number; rejected: number };
   fit: "strong" | "possible" | "weak";
   score: number;
   summary: string | null;
@@ -39,6 +46,19 @@ function ctcFor(m: MatchItem, basis: CtcBasis): number | null {
   if (basis === "current") return m.currentCtc;
   if (basis === "expected") return m.expectedCtc;
   return m.expectedCtc ?? m.currentCtc;
+}
+
+// Best-effort days from free-text notice ("Immediate", "30 days", "2 months"); unknown sorts last.
+function noticeDays(text: string | null): number {
+  if (!text) return 9999;
+  const t = text.toLowerCase();
+  if (/immediate|available now|joins? now/.test(t) && !/\d/.test(t)) return 0;
+  const n = t.match(/(\d+)/);
+  if (!n) return 9999;
+  const v = Number(n[1]);
+  if (/month|mo\b/.test(t)) return v * 30;
+  if (/week/.test(t)) return v * 7;
+  return v;
 }
 
 function fmtCtc(v: number): string {
@@ -74,13 +94,18 @@ function Card({
   onChanged,
   confirmations,
   rating,
+  selected = false,
+  onSelect,
 }: {
   m: MatchItem;
   mandateId: string;
   onChanged: () => void;
   confirmations: ReturnType<typeof useConfirmations>;
   rating?: ProfileRatingRow;
+  selected?: boolean;
+  onSelect?: (checked: boolean) => void;
 }) {
+  const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   // Which requirement's "where did this come from / confirm it" panel is open.
   const [openReq, setOpenReq] = useState<string | null>(null);
@@ -118,6 +143,9 @@ function Card({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
+            {onSelect && m.status !== "added" && (
+              <input type="checkbox" checked={selected} onChange={(e) => onSelect(e.target.checked)} aria-label={`Select ${m.name}`} className="h-4 w-4" />
+            )}
             <Link href={`/candidates/${m.candidateId}`} className="text-[14px] font-semibold text-blue-700 dark:text-blue-400 hover:underline">
               {m.name}
             </Link>
@@ -134,11 +162,33 @@ function Card({
               ? "No CTC available"
               : [m.currentCtc != null ? `Current ${fmtCtc(m.currentCtc)}` : "Current: not given", m.expectedCtc != null ? `Expected ${fmtCtc(m.expectedCtc)}` : "Expected: not given"].join(" · ")}
           </p>
+          <p className="text-[12px] text-slate-500 dark:text-slate-400">
+            <span className={m.notice ? "" : "text-amber-700 dark:text-amber-300"}>{m.notice ? `Notice ${m.notice}` : "Notice: not given"}</span>
+            {m.readiness != null && <span title="How complete this profile is"> · Profile {m.readiness}/100</span>}
+          </p>
+          {m.elsewhere.total > 0 && (
+            <p className="text-[12px] text-violet-700 dark:text-violet-300">
+              Also in {m.elsewhere.total} other {m.elsewhere.total === 1 ? "pipeline" : "pipelines"}
+              {m.elsewhere.rejected > 0 ? ` (rejected in ${m.elsewhere.rejected})` : ""}
+            </p>
+          )}
         </div>
         {m.status === "added" ? (
           <span className="shrink-0 text-[12px] font-medium text-emerald-700 dark:text-emerald-300">In pipeline</span>
         ) : (
           <div className="shrink-0 flex items-center gap-2">
+            {m.resumeUrl && <ResumePreview signedUrl={m.resumeUrl} fileName={(m.resumeName ?? `${m.name}-resume`).replace(/^resumes\//, "")} label="CV" />}
+            {m.phone && (
+              <a
+                href={`https://wa.me/91${m.phone.replace(/\D/g, "").slice(-10)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-300 dark:ring-emerald-800"
+                title="Open WhatsApp"
+              >
+                WhatsApp
+              </a>
+            )}
             <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
               Not a fit
             </button>
@@ -186,6 +236,23 @@ function Card({
       )}
       {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
 
+      {doubts.some((d) => d.question) && (
+        <button
+          onClick={async () => {
+            const qs = doubts.filter((d) => d.question).map((d, i) => `${i + 1}. ${d.question}`).join("\n");
+            try {
+              await navigator.clipboard.writeText(`Questions for ${m.name}:\n${qs}`);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            } catch {
+              /* clipboard blocked: nothing to do */
+            }
+          }}
+          className="mt-2 mr-3 inline-flex items-center gap-1 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 hover:underline"
+        >
+          {copied ? "Copied" : "Copy the questions to ask"}
+        </button>
+      )}
       <button onClick={() => setOpen((o) => !o)} className="mt-2 inline-flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
         {open ? "Hide" : "Show"} evidence{doubts.length > 0 ? ` and ${doubts.length} to confirm` : ""}
@@ -264,6 +331,9 @@ export default function AiMatchesList({
 }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
+  const [sortBy, setSortBy] = useState<"best" | "ctc" | "notice">("best");
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const confirmations = useConfirmations(mandateId);
   const ratings = useProfileRatings();
   const [message, setMessage] = useState<string | null>(null);
@@ -293,12 +363,42 @@ export default function AiMatchesList({
   // Weak CVs (as marked by the team) stay hidden with the weak matches; strong CVs lead within their fit.
   const isWeakCv = (i: MatchItem) => ratings.get(i.candidateId)?.rating === "weak";
   const strongRank = (i: MatchItem) => (ratings.get(i.candidateId)?.rating === "strong" ? 0 : 1);
-  const visible = afterCtc(suggested.filter((i) => showWeak || (i.fit !== "weak" && !isWeakCv(i)))).sort(
-    (a, b) => order[a.fit] - order[b.fit] || strongRank(a) - strongRank(b) || b.score - a.score
-  );
+  const cmpBest = (a: MatchItem, b: MatchItem) => order[a.fit] - order[b.fit] || strongRank(a) - strongRank(b) || b.score - a.score;
+  const visible = afterCtc(suggested.filter((i) => showWeak || (i.fit !== "weak" && !isWeakCv(i)))).sort((a, b) => {
+    if (sortBy === "ctc") return (a.expectedCtc ?? a.currentCtc ?? 9999) - (b.expectedCtc ?? b.currentCtc ?? 9999) || cmpBest(a, b);
+    if (sortBy === "notice") return noticeDays(a.notice) - noticeDays(b.notice) || cmpBest(a, b);
+    return cmpBest(a, b);
+  });
   const weakCount = suggested.filter((i) => i.fit === "weak" || isWeakCv(i)).length;
   const hiddenByCtc = suggested.filter((i) => (showWeak || i.fit !== "weak") && !passesCtc(i)).length;
   const noCtcCount = suggested.filter((i) => ctcFor(i, ctcBasis) == null).length;
+
+  function togglePick(id: string, on: boolean) {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  // Add every ticked person to the pipeline, one after another, then refresh once.
+  async function addPicked() {
+    const ids = visible.filter((i) => picked.has(i.candidateId)).map((i) => i.candidateId);
+    if (ids.length === 0) return;
+    if (!window.confirm(`Add ${ids.length} ${ids.length === 1 ? "person" : "people"} to this role's pipeline?`)) return;
+    setBulkBusy(true);
+    setError(null);
+    let ok = 0;
+    for (const id of ids) {
+      const res = await fetch(`/api/mandates/${mandateId}/ai-match/decide`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: id, action: "add" }) });
+      if (res.ok) ok++;
+    }
+    setBulkBusy(false);
+    setPicked(new Set());
+    setMessage(`Added ${ok} of ${ids.length} to the pipeline.`);
+    router.refresh();
+  }
 
   async function run() {
     setRunning(true);
@@ -396,6 +496,34 @@ export default function AiMatchesList({
         </div>
       )}
 
+      {visible.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+            Sort by
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as "best" | "ctc" | "notice")} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[12.5px]">
+              <option value="best">Best fit first</option>
+              <option value="ctc">Lowest expected CTC</option>
+              <option value="notice">Shortest notice</option>
+            </select>
+          </label>
+          <div className="flex items-center gap-3 text-[12.5px]">
+            <button onClick={() => setPicked(new Set(visible.map((i) => i.candidateId)))} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
+              Select all {visible.length}
+            </button>
+            {picked.size > 0 && (
+              <>
+                <button onClick={() => setPicked(new Set())} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
+                  Clear
+                </button>
+                <button onClick={addPicked} disabled={bulkBusy} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 font-medium text-white hover:bg-slate-800 disabled:opacity-60">
+                  {bulkBusy && <Loader2 className="h-3 w-3 animate-spin" />} Add selected ({picked.size})
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {visible.length === 0 && roleOpen && hasMustHaves ? (
         <p className="text-[13px] text-slate-500 dark:text-slate-400 py-6">
           {suggested.length > 0 && hiddenByCtc > 0 ? "Everyone is hidden by the CTC filter. Widen the range or clear it." : "Nothing to show yet. Press Find matches to check the best candidates from your bank."}
@@ -403,7 +531,7 @@ export default function AiMatchesList({
       ) : (
         <ul className="space-y-3">
           {visible.map((m) => (
-            <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} />
+            <Card key={m.candidateId} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} selected={picked.has(m.candidateId)} onSelect={(on) => togglePick(m.candidateId, on)} />
           ))}
         </ul>
       )}
