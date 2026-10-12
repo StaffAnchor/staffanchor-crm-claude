@@ -351,11 +351,11 @@ export async function runAiMatchForMandate(mandateId: string, admin: SupabaseCli
       try {
         const res = await generateTextWithFallback(prompt, { geminiModels: GEMINI_QUALITY_MODELS, json: true, thinkingBudget: MATCH_THINKING_BUDGET });
         parsed = parseEvidenceJson(res.text, must, good);
-        await logAiUsage({ purpose: "ai_match", refType: "mandate", refId: mandateId, result: res, error: parsed ? undefined : `unparseable response (attempt ${attempt})` });
+        await logAiUsage({ purpose: "ai_match", refType: "mandate", refId: mandateId, prompt, result: res, error: parsed ? undefined : `unparseable response (attempt ${attempt})` });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         await logAiUsage({ purpose: "ai_match", refType: "mandate", refId: mandateId, error: message });
-        if (message.includes("429")) break;
+        if (message.includes("429") || message.includes("paused by an admin")) break;
       }
     }
     if (!parsed) {
@@ -466,10 +466,11 @@ export async function checkCandidateForMandate(
     try {
       const res = await generateTextWithFallback(prompt, { geminiModels: GEMINI_QUALITY_MODELS, json: true, thinkingBudget: MATCH_THINKING_BUDGET });
       parsed = parseEvidenceJson(res.text, must, good);
-      await logAiUsage({ purpose: "ai_match_single", refType: "mandate", refId: mandateId, result: res, error: parsed ? undefined : `unparseable response (attempt ${attempt})` });
+      await logAiUsage({ purpose: "ai_match_single", refType: "mandate", refId: mandateId, prompt, result: res, error: parsed ? undefined : `unparseable response (attempt ${attempt})` });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await logAiUsage({ purpose: "ai_match_single", refType: "mandate", refId: mandateId, error: message });
+      if (message.includes("paused by an admin")) return { ok: false, error: "AI is paused by an admin." };
       if (message.includes("429")) return { ok: false, error: "The AI is at its usage limit right now." };
     }
   }

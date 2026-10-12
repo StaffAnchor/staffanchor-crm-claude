@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { isAiPaused } from "@/lib/ai-switch";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Cheap, cost-optimized embedding generation for the Semantic Search
@@ -68,6 +69,7 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
 // null return as "degrade gracefully, don't block" rather than a hard
 // failure -- see matchCandidatesDeterministic's try/catch around this call.
 async function callGeminiEmbed(apiKey: string, text: string): Promise<{ embedding: number[] | null; error: string | null; status: number | null }> {
+  if (await isAiPaused()) return { embedding: null, error: "AI is paused by an admin", status: null };
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${apiKey}`,

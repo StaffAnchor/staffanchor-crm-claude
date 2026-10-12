@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { assertAiNotPaused } from "@/lib/ai-switch";
 
 // Multi-provider text-generation fallback chain: Gemini -> Groq -> Mistral.
 // Every generateContent-style AI call in this app (summaries, matching,
@@ -104,6 +105,7 @@ export async function generateFromFile(
   file: { mimeType: string; base64: string },
   options?: GenerationOptions
 ): Promise<GenerationResult> {
+  await assertAiNotPaused();
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -200,6 +202,7 @@ async function tryMistral(prompt: string): Promise<GenerationResult | null> {
  * work, now just naming all attempted providers instead of only Gemini.
  */
 export async function generateTextWithFallback(prompt: string, options?: GenerationOptions): Promise<GenerationResult> {
+  await assertAiNotPaused();
   const attempts: { provider: string; error: string }[] = [];
 
   const geminiModels = options?.geminiModels;

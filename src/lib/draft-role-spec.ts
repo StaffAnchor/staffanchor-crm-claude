@@ -147,7 +147,7 @@ export async function draftRoleSpec(role: RoleForSpec): Promise<DraftRoleSpecRes
   try {
     const result = await generateTextWithFallback(buildRoleSpecPrompt(role), { geminiModels: GEMINI_QUALITY_MODELS });
     const draft = parseRoleSpecJson(result.text);
-    await logAiUsage({ purpose: "role_spec_draft", refType: "mandate", refId: role.id, result, error: draft ? undefined : "unparseable response" });
+    await logAiUsage({ purpose: "role_spec_draft", refType: "mandate", refId: role.id, result, prompt: buildRoleSpecPrompt(role), error: draft ? undefined : "unparseable response" });
     if (!draft) return { ok: false, status: 502, error: "The AI response couldn't be read. Try again." };
     return { ok: true, draft };
   } catch (err) {
