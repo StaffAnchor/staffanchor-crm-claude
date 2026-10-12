@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import DismissReasons from "@/components/dismiss-reasons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, HelpCircle, Loader2, Sparkles, X } from "lucide-react";
@@ -22,8 +23,6 @@ const FIT: Record<RoleSuggestion["fit"], { label: string; cls: string }> = {
   possible: { label: "Possible fit", cls: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
   weak: { label: "Weak fit", cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
 };
-const REASONS = ["Wrong domain or motion", "Experience doesn't fit", "Compensation doesn't fit", "Location doesn't fit", "Other"];
-
 function ReqChip({ c }: { c: Req }) {
   const cls =
     c.status === "met"
@@ -43,7 +42,7 @@ function ReqChip({ c }: { c: Req }) {
 function Row({ s, candidateId, onDone }: { s: RoleSuggestion; candidateId: string; onDone: () => void }) {
   const [busy, setBusy] = useState<"add" | "dismiss" | null>(null);
   const [dismissing, setDismissing] = useState(false);
-  const [reason, setReason] = useState(REASONS[0]);
+  const [reasonCodes, setReasonCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const f = FIT[s.fit];
 
@@ -53,7 +52,7 @@ function Row({ s, candidateId, onDone }: { s: RoleSuggestion; candidateId: strin
     const res = await fetch(`/api/mandates/${s.mandateId}/ai-match/decide`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ candidateId, action, reason: action === "dismiss" ? reason : undefined }),
+      body: JSON.stringify({ candidateId, action, reasonCodes: action === "dismiss" ? reasonCodes : undefined }),
     });
     const d = await res.json().catch(() => ({}));
     setBusy(null);
@@ -99,19 +98,7 @@ function Row({ s, candidateId, onDone }: { s: RoleSuggestion; candidateId: strin
             .join(" · ")}
         </p>
       )}
-      {dismissing && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <select value={reason} onChange={(e) => setReason(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[12.5px] dark:border-slate-700 dark:bg-slate-900">
-            {REASONS.map((r) => (
-              <option key={r}>{r}</option>
-            ))}
-          </select>
-          <button onClick={() => decide("dismiss")} disabled={busy !== null} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
-            {busy === "dismiss" ? "Saving..." : "Confirm"}
-          </button>
-          <span className="text-[11.5px] text-slate-500">They stay in the bank for other roles.</span>
-        </div>
-      )}
+      {dismissing && <DismissReasons value={reasonCodes} onChange={setReasonCodes} onConfirm={() => decide("dismiss")} busy={busy !== null} />}
       {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
     </li>
   );

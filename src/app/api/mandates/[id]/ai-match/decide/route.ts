@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/cv-facts";
+import { cleanReasonCodes, dismissReasonLabel } from "@/lib/ai-feedback";
 
 // Records what a recruiter did with an AI suggestion: add the candidate to
 // this role's pipeline, or dismiss them with a reason (so they are not
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const admin = getServiceClient();
   if (!admin) return NextResponse.json({ error: "Server isn't configured (missing service key)." }, { status: 503 });
 
-  const { candidateId, action, reason } = await req.json();
+  const { candidateId, action, reason, reasonCodes } = await req.json();
   if (typeof candidateId !== "string" || (action !== "add" && action !== "dismiss")) {
     return NextResponse.json({ error: "candidateId and action (add or dismiss) are required" }, { status: 400 });
   }
@@ -42,7 +43,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: true });
   }
 
-  const cleanReason = typeof reason === "string" && reason.trim() ? reason.trim().slice(0, 200) : "Not a fit";
-  await admin.from("mandate_ai_matches").update({ status: "dismissed", dismissed_reason: cleanReason, decided_by: user.id, decided_at: new Date().toISOString() }).eq("mandate_id", id).eq("candidate_id", candidateId);
+  const codes = cleanReasonCodes(reasonCodes);
+  const typed = typeof reason === "string" && reason.trim() ? reason.trim().slice(0, 200) : "";
+  // Reasons are optional: with none chosen it is recorded as a plain dismissal.
+  const cleanReason = codes.length ? codes.map(dismissReasonLabel).join(", ") : typed || "Dismissed, no reason given";
+  await admin
+    .from("mandate_ai_matches")
+    .update({ status: "dismissed", dismissed_reason: cleanReason, dismissed_reason_codes: codes.length ? codes : null, decided_by: user.id, decided_at: new Date().toISOString() })
+    .eq("mandate_id", id)
+    .eq("candidate_id", candidateId);
   return NextResponse.json({ ok: true });
 }

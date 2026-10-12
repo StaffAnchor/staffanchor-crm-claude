@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import DismissReasons from "@/components/dismiss-reasons";
 import Link from "next/link";
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import WhatsAppMenu from "@/components/whatsapp-menu";
@@ -69,7 +70,6 @@ function fmtCtc(v: number): string {
   return `${Number.isInteger(v) ? v : v.toFixed(1)} L`;
 }
 
-const DISMISS_REASONS = ["Wrong domain or motion", "Experience doesn't fit", "Compensation doesn't fit", "Location doesn't fit", "Other"];
 
 function StatusIcon({ s }: { s: ReqCheck["status"] }) {
   if (s === "met") return <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-label="Met" />;
@@ -123,7 +123,7 @@ function Card({
   };
   const [busy, setBusy] = useState<"add" | "dismiss" | null>(null);
   const [dismissing, setDismissing] = useState(false);
-  const [reason, setReason] = useState(DISMISS_REASONS[0]);
+  const [reasonCodes, setReasonCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const f = FIT_STYLE[m.fit];
   const doubts = [...checks.must, ...checks.good].filter((c) => c.status !== "met");
@@ -134,7 +134,7 @@ function Card({
     const res = await fetch(`/api/mandates/${mandateId}/ai-match/decide`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ candidateId: m.candidateId, action, reason: action === "dismiss" ? reason : undefined }),
+      body: JSON.stringify({ candidateId: m.candidateId, action, reasonCodes: action === "dismiss" ? reasonCodes : undefined }),
     });
     const body = await res.json().catch(() => ({}));
     setBusy(null);
@@ -222,19 +222,7 @@ function Card({
         </p>
       )}
 
-      {dismissing && (
-        <div className="mt-3 flex items-center gap-2">
-          <select value={reason} onChange={(e) => setReason(e.target.value)} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[12.5px]">
-            {DISMISS_REASONS.map((r) => (
-              <option key={r}>{r}</option>
-            ))}
-          </select>
-          <button onClick={() => decide("dismiss")} disabled={busy !== null} className="rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-[12.5px] font-medium hover:bg-slate-50 dark:hover:bg-slate-800">
-            {busy === "dismiss" ? "Saving..." : "Confirm"}
-          </button>
-          <span className="text-[11.5px] text-slate-500 dark:text-slate-400">They stay in the bank for other roles.</span>
-        </div>
-      )}
+      {dismissing && <DismissReasons value={reasonCodes} onChange={setReasonCodes} onConfirm={() => decide("dismiss")} busy={busy !== null} />}
       {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
 
       {doubts.some((d) => d.question) && (
