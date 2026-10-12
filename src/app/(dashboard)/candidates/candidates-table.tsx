@@ -77,6 +77,7 @@ export type CandidateRow = {
   employer_canonical?: string | null;
   readiness_score?: number | null;
   readiness_tier?: string | null;
+  role_fit?: { suggested_count: number; strong_count: number; top_roles: { mandate_id: string; title: string; fit: string; score: number }[] | null } | null;
   readiness_missing?: string[] | null;
   sub_domain: string | null;
   secondary_sub_domains: string[] | null;
@@ -634,6 +635,31 @@ const COLUMN_DEFS: ColumnDef[] = [
     },
   },
   {
+    key: "role_fit",
+    label: "Suggested roles",
+    render: (c) => {
+      const rf = c.role_fit;
+      const roles = rf?.top_roles ?? [];
+      if (!rf || roles.length === 0) return <span className="text-slate-300 dark:text-slate-600">—</span>;
+      const first = roles[0];
+      const strong = first.fit === "strong";
+      return (
+        <div className="flex max-w-[210px] flex-col items-start gap-0.5" title={roles.map((r) => `${r.title} (${r.fit}, ${r.score})`).join("\n")}>
+          <Link
+            href={`/mandates/${first.mandate_id}`}
+            className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${
+              strong ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800" : "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800"
+            }`}
+          >
+            <span className="truncate">{first.title.trim()}</span>
+            <span className="shrink-0 tabular-nums opacity-80">{first.score}</span>
+          </Link>
+          {rf.suggested_count > 1 && <span className="text-[11px] text-slate-400">+{rf.suggested_count - 1} more{rf.strong_count > 1 ? `, ${rf.strong_count} strong` : ""}</span>}
+        </div>
+      );
+    },
+  },
+  {
     key: "profile_group",
     label: "Profile group",
     render: (c) => (
@@ -1004,6 +1030,7 @@ const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
 
 const DEFAULT_VISIBLE = new Set([
   "readiness",
+  "role_fit",
   "profile_group",
   "created_at",
   "owner",

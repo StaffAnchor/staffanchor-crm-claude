@@ -24,6 +24,7 @@ type Params = {
   ctc_min?: string;
   ctc_max?: string;
   has_cv?: string;
+  fit?: string;
   sort?: string;
   page?: string;
 };
@@ -34,6 +35,7 @@ type Facets = {
   groups_all: number;
   ready: Record<string, number>;
   notice: Record<string, number>;
+  role_fit?: { strong?: number; any?: number };
   cities: { name: string; n: number }[];
   industries: { name: string; n: number }[];
 };
@@ -93,6 +95,13 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
   if (ctcMin !== null) q = q.gte("current_fixed_ctc", ctcMin);
   if (ctcMax !== null) q = q.lte("current_fixed_ctc", ctcMax);
   if (p.has_cv) q = q.not("resume_file_url", "is", null);
+  // "Suggested for an open role": only people the matching engine flagged for a role they are not in yet.
+  const fit = p.fit === "strong" || p.fit === "any" ? p.fit : null;
+  if (fit) {
+    const { data: fitRows } = await supabase.from("candidate_role_fit").select("candidate_id, strong_count").limit(2000);
+    const ids = ((fitRows ?? []) as { candidate_id: string; strong_count: number }[]).filter((r) => fit === "any" || r.strong_count > 0).map((r) => r.candidate_id);
+    q = q.in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+  }
   if (sort === "new") q = q.order("created_at", { ascending: false });
   else if (sort === "notice") q = q.order("notice_days_est", { ascending: true, nullsFirst: false }).order("readiness_score", { ascending: false });
   else if (sort === "ctc_low") q = q.order("expected_fixed_ctc", { ascending: true, nullsFirst: false }).order("readiness_score", { ascending: false });
@@ -115,6 +124,7 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
       p_ctc_min: ctcMin,
       p_ctc_max: ctcMax,
       p_has_cv: !!p.has_cv,
+      p_role_fit: fit,
     }),
     Promise.resolve({ data: null }),
     supabase.from("mandates").select("id, role_title, city").eq("status", "open").order("created_at", { ascending: false }),
@@ -168,6 +178,7 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
   if (expMin !== null || expMax !== null) active.push({ label: `Experience ${expMin ?? 0}–${expMax ?? "any"} yrs`, clear: { exp_min: undefined, exp_max: undefined } });
   if (ctcMin !== null || ctcMax !== null) active.push({ label: `Current CTC ${ctcMin ?? 0}–${ctcMax ?? "any"} LPA`, clear: { ctc_min: undefined, ctc_max: undefined } });
   if (p.has_cv) active.push({ label: "Has a CV", clear: { has_cv: undefined } });
+  if (fit) active.push({ label: fit === "strong" ? "Strong fit for an open role" : "Fits an open role", clear: { fit: undefined } });
 
   const facetLink = (label: string, o: Partial<Record<keyof Params, string | undefined>>, isActive: boolean, n?: number) => (
     <Link
@@ -239,6 +250,10 @@ export default async function TalentBoardPage({ searchParams }: { searchParams: 
             {facetLink("Ready to shortlist", { ready: p.ready === "ready" ? undefined : "ready" }, p.ready === "ready", counts?.ready)}
             {facetLink("Almost there", { ready: p.ready === "almost" ? undefined : "almost" }, p.ready === "almost", counts?.almost)}
             {facetLink("Needs work", { ready: p.ready === "needs_work" ? undefined : "needs_work" }, p.ready === "needs_work", counts?.needs_work)}
+          </Section>
+          <Section title="Suggested for an open role">
+            {facetLink("Strong fit", { fit: p.fit === "strong" ? undefined : "strong" }, p.fit === "strong", facets.role_fit?.strong ?? 0)}
+            {facetLink("Strong or possible fit", { fit: p.fit === "any" ? undefined : "any" }, p.fit === "any", facets.role_fit?.any ?? 0)}
           </Section>
           <Section title="Notice period">
             {facetLink("Immediate to 15 days", { notice: p.notice === "15" ? undefined : "15" }, p.notice === "15", facets.notice.d15)}

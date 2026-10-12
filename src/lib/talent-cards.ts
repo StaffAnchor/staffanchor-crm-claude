@@ -36,10 +36,14 @@ export async function buildTalentCards(supabase: SupabaseClient, rows: Record<st
   const ids = rows.map((r) => r.id as string);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const admin = key ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key) : null;
-  const [factsRes, ratingsRes] = await Promise.all([
+  const [factsRes, ratingsRes, fitRes] = await Promise.all([
     ids.length ? supabase.from("candidate_cv_facts").select("candidate_id, facts").in("candidate_id", ids) : Promise.resolve({ data: [] }),
     ids.length ? supabase.from("candidate_profile_ratings").select("candidate_id, rating").in("candidate_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? supabase.from("candidate_role_fit").select("candidate_id, suggested_count, strong_count, top_roles").in("candidate_id", ids) : Promise.resolve({ data: [] }),
   ]);
+  const fitBy = new Map(
+    ((fitRes.data ?? []) as { candidate_id: string; suggested_count: number; strong_count: number; top_roles: { mandate_id: string; title: string; fit: string; score: number }[] | null }[]).map((r) => [r.candidate_id, r])
+  );
   const factsBy = new Map<string, Facts>(((factsRes.data ?? []) as { candidate_id: string; facts: Facts }[]).map((r) => [r.candidate_id, r.facts]));
   const ratingBy = new Map<string, "strong" | "weak">(((ratingsRes.data ?? []) as { candidate_id: string; rating: "strong" | "weak" }[]).map((r) => [r.candidate_id, r.rating]));
   const paths = rows.map((r) => r.resume_file_url as string | null).filter((v): v is string => !!v);
@@ -73,6 +77,9 @@ export async function buildTalentCards(supabase: SupabaseClient, rows: Record<st
       highlight: f.highlight,
       chips: f.chips,
       rating: ratingBy.get(id) ?? null,
+      role_fit: fitBy.get(id)
+        ? { count: fitBy.get(id)!.suggested_count, strong: fitBy.get(id)!.strong_count, roles: (fitBy.get(id)!.top_roles ?? []).map((r) => ({ mandateId: r.mandate_id, title: r.title.trim(), fit: r.fit, score: r.score })) }
+        : null,
       has_email: !/\.invalid$/i.test((r.email as string) ?? ""),
       phone: (r.phone as string | null) ?? null,
       resume_file_url: (r.resume_file_url as string | null) ?? null,
