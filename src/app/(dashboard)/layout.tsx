@@ -77,6 +77,7 @@ export default async function DashboardLayout({
           // eligible/paid. Admin-only, same gate as Team/Vendors.
           { href: "/sales-circle", label: "Sales Circle", enabled: true },
           { href: "/analytics", label: "Analytics", enabled: true },
+          { href: "/marketing", label: "Marketing", enabled: true },
         ]
       : []),
   ];
