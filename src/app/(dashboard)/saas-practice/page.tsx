@@ -8,6 +8,7 @@ import { StatTile } from "@/components/ui/stat-tile";
 import CandidatesSubNav from "../candidates/candidates-sub-nav";
 import { PASSPORT_COLUMNS, segmentLabel, type PassportRow } from "@/lib/saas-passport";
 import BenchTable, { type BenchRow } from "./bench-table";
+import type { RoleOption } from "@/lib/role-fit";
 import RunMatching from "./run-matching";
 
 export const dynamic = "force-dynamic";
@@ -66,11 +67,23 @@ export default async function SaasPracticePage() {
 
   const { data: roleRows } = await supabase
     .from("mandates")
-    .select("id, role_title, client_name, status")
+    .select("id, role_title, client_name, status, cities, city, experience_min, experience_max, budget_max, deal_size_band, sales_cycle")
     .eq("category", "b2b_sales")
     .in("status", ["open", "on_hold"])
     .order("status", { ascending: true });
-  const roles = (roleRows ?? []) as { id: string; role_title: string | null; client_name: string | null; status: string }[];
+  const roles = (roleRows ?? []) as {
+    id: string;
+    role_title: string | null;
+    client_name: string | null;
+    status: string;
+    cities: string[] | null;
+    city: string | null;
+    experience_min: number | null;
+    experience_max: number | null;
+    budget_max: number | string | null;
+    deal_size_band: string | null;
+    sales_cycle: string | null;
+  }[];
   const roleIds = roles.map((r) => r.id);
 
   type Match = { mandate_id: string; candidate_id: string; fit: string | null; status: string };
@@ -142,6 +155,35 @@ export default async function SaasPracticePage() {
       );
     }
   }
+
+  // What each open B2B role asks for, and what is already known about each candidate for it.
+  const roleOptions: RoleOption[] = roles.map((r) => ({
+    id: r.id,
+    title: r.role_title ?? "Role",
+    client: r.client_name,
+    status: r.status,
+    cities: (r.cities && r.cities.length ? r.cities : r.city ? [r.city] : []).filter(Boolean),
+    expMin: r.experience_min,
+    expMax: r.experience_max,
+    budgetMax: r.budget_max != null ? Number(r.budget_max) : null,
+    dealBand: r.deal_size_band,
+    cycle: r.sales_cycle,
+  }));
+  const matchesByRole: Record<string, Record<string, { fit: string; status: string }>> = {};
+  for (const m of matches) {
+    if (!m.fit || m.status === "dismissed") continue;
+    (matchesByRole[m.mandate_id] ??= {})[m.candidate_id] = { fit: m.fit, status: m.status };
+  }
+  const stageByRole: Record<string, Record<string, string>> = {};
+  for (const l of links) (stageByRole[l.mandate_id] ??= {})[l.candidate_id] = l.stage;
+  const { data: relocRows } = await supabase
+    .from("candidates")
+    .select("id, open_to_relocation")
+    .eq("profile_group", "b2b_sales")
+    .not("open_to_relocation", "is", null)
+    .limit(1000);
+  const relocation: Record<string, string> = {};
+  for (const c of (relocRows ?? []) as { id: string; open_to_relocation: string | null }[]) if (c.open_to_relocation) relocation[c.id] = c.open_to_relocation;
 
   const tableRows: BenchRow[] = all.map((r) => ({
     ...r,
@@ -243,7 +285,7 @@ export default async function SaasPracticePage() {
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The bench</h2>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Start with &quot;Needs details&quot;: pick the gap, select the people, and send them as tasks to the recruiter who will collect them. Read any CV without leaving the page.</p>
         </div>
-        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} />
+        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} />
       </section>
     </div>
   );
