@@ -1161,6 +1161,17 @@ export default function CandidatesTable({
   // first. Now shows the eligible/skipped breakdown and requires a second
   // confirm click.
   const [confirmingInvite, setConfirmingInvite] = useState(false);
+  // Bulk "Ask details on WhatsApp": a preview of who would get what, then the send.
+  const [askPlan, setAskPlan] = useState<{
+    loading: boolean;
+    error?: string;
+    considered?: number;
+    over?: number;
+    window?: number;
+    template?: number;
+    skipped?: Record<string, number>;
+  } | null>(null);
+  const [askSending, setAskSending] = useState(false);
   // "Add to group" -- saved candidate segments (see /candidates/groups),
   // modeled on Ceipal's Applicant Groups. Groups are fetched lazily only
   // once the picker actually opens, since most sessions never touch this.
@@ -1452,6 +1463,64 @@ export default function CandidatesTable({
   );
   const inviteSkipped = selected.size - inviteTargets.length;
 
+  const ASK_SKIP_TEXT: Record<string, string> = {
+    nothing_missing: "nothing missing",
+    no_phone: "no mobile number",
+    opted_out: "opted out",
+    staff: "team numbers",
+    assistant_busy: "already being asked",
+    recent: "asked in the last 30 days",
+    no_template: "window closed and no template set up",
+    no_email: "no email",
+  };
+  const skippedText = (s?: Record<string, number>) =>
+    Object.entries(s ?? {})
+      .map(([k, n]) => `${n} ${ASK_SKIP_TEXT[k] ?? k}`)
+      .join(", ");
+
+  async function previewAsk() {
+    if (selected.size === 0) return;
+    setBulkMessage(null);
+    setConfirmingInvite(false);
+    setAskPlan({ loading: true });
+    try {
+      const res = await fetch("/api/whatsapp/ask-bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateIds: Array.from(selected), dryRun: true }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) setAskPlan({ loading: false, error: d.error ?? "Could not check these candidates." });
+      else setAskPlan({ loading: false, considered: d.considered, over: d.over, window: d.window, template: d.template, skipped: d.skipped });
+    } catch {
+      setAskPlan({ loading: false, error: "Network error. Try again." });
+    }
+  }
+
+  async function sendAsk() {
+    if (selected.size === 0 || askSending) return;
+    setAskSending(true);
+    try {
+      const res = await fetch("/api/whatsapp/ask-bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateIds: Array.from(selected) }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) setBulkMessage(d.error ?? "That didn't work. Try again.");
+      else {
+        const sk = skippedText(d.skipped);
+        setBulkMessage(
+          `WhatsApp: ${d.sentWindow} asked in chat, ${d.sentTemplate} sent as template${d.failed ? `, ${d.failed} failed${d.error ? ` (${d.error})` : ""}` : ""}${sk ? `. Skipped: ${sk}` : ""}${d.over ? `. ${d.over} more were not included (20 per click), press again for them` : ""}.`
+        );
+      }
+    } catch {
+      setBulkMessage("Network error. Try again.");
+    }
+    setAskSending(false);
+    setAskPlan(null);
+  }
+
   async function handleBulkInvite() {
     if (selected.size === 0) return;
     const targets = inviteTargets;
@@ -1606,6 +1675,16 @@ export default function CandidatesTable({
           <Button
             variant="secondary"
             size="sm"
+            onClick={previewAsk}
+            disabled={bulkBusy || askSending || askPlan?.loading}
+            icon={<MessageCircle className="w-3.5 h-3.5" />}
+            title="Ask the selected people on WhatsApp for what their profile is missing"
+          >
+            Ask details on WhatsApp
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setConfirmingInvite(true)}
             disabled={bulkBusy}
             icon={bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <SendIcon className="w-3.5 h-3.5" />}
@@ -1675,6 +1754,40 @@ export default function CandidatesTable({
               onClick={() => setConfirmingInvite(false)}
               className="text-[12px] text-amber-700 hover:text-amber-900"
             >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {askPlan && (
+        <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex flex-wrap items-center gap-3">
+          {askPlan.loading ? (
+            <p className="text-[12.5px] text-emerald-900">Checking {Math.min(selected.size, 20)} candidates…</p>
+          ) : askPlan.error ? (
+            <p className="text-[12.5px] text-rose-700">{askPlan.error}</p>
+          ) : (
+            <p className="text-[12.5px] text-emerald-900">
+              {(askPlan.window ?? 0) + (askPlan.template ?? 0) === 0 ? (
+                <>Nobody to ask: {skippedText(askPlan.skipped) || "none eligible"}.</>
+              ) : (
+                <>
+                  Will ask <span className="font-semibold">{(askPlan.window ?? 0) + (askPlan.template ?? 0)}</span> on WhatsApp:{" "}
+                  <span className="font-semibold">{askPlan.window ?? 0}</span> in an open chat (free) and{" "}
+                  <span className="font-semibold">{askPlan.template ?? 0}</span> as an approved template message (charged per message by Meta).
+                  {skippedText(askPlan.skipped) && <span className="text-emerald-700"> Skipped: {skippedText(askPlan.skipped)}.</span>}
+                  {(askPlan.over ?? 0) > 0 && <span className="text-emerald-700"> {askPlan.over} more selected are not included, 20 per click.</span>}
+                </>
+              )}
+            </p>
+          )}
+          <div className="flex items-center gap-2 ml-auto">
+            {!askPlan.loading && !askPlan.error && (askPlan.window ?? 0) + (askPlan.template ?? 0) > 0 && (
+              <Button variant="secondary" size="sm" onClick={sendAsk} disabled={askSending}>
+                {askSending ? "Sending..." : `Send ${(askPlan.window ?? 0) + (askPlan.template ?? 0)}`}
+              </Button>
+            )}
+            <button onClick={() => setAskPlan(null)} className="text-[12px] text-emerald-800 hover:text-emerald-900">
               Cancel
             </button>
           </div>
