@@ -158,3 +158,21 @@ export function evaluate(r: PassportRow, f: RoleFilters, relocation: string | nu
 
   return out;
 }
+
+/** The active requirements in plain words, kept with a saved shortlist so it is clear how it was made. */
+export function describeFilters(role: RoleOption | null, f: RoleFilters): string {
+  const parts: string[] = [];
+  const cities = f.cities.split(",").map((s) => s.trim()).filter(Boolean);
+  if (cities.length) parts.push(`cities ${cities.join(", ")}${f.relocate ? " (or open to relocate)" : ""}`);
+  const lo = num(f.expMin);
+  const hi = num(f.expMax);
+  if (lo != null || hi != null) parts.push(`experience ${lo ?? 0}${hi != null ? `-${hi}` : "+"} years`);
+  if (num(f.ctcMax) != null) parts.push(`current CTC up to ${f.ctcMax} LPA`);
+  if (num(f.noticeMax) != null) parts.push(`notice up to ${f.noticeMax} days`);
+  if (f.deal) parts.push(`deal size ${f.deal} or more`);
+  if (f.cycle) parts.push(`sales cycle ${f.cycle} or longer`);
+  if (f.hunter) parts.push(f.hunter === "hunter" ? "hunter" : "farmer");
+  if (f.ready !== "any") parts.push(f.ready === "ready" ? "ready to shortlist" : "ready or almost ready");
+  const head = role ? `Made from the B2B SaaS bench for "${role.title}"` : "Made from the B2B SaaS bench";
+  return parts.length ? `${head}. Requirements: ${parts.join("; ")}.` : `${head}.`;
+}

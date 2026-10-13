@@ -185,6 +185,14 @@ export default async function SaasPracticePage() {
   const relocation: Record<string, string> = {};
   for (const c of (relocRows ?? []) as { id: string; open_to_relocation: string | null }[]) if (c.open_to_relocation) relocation[c.id] = c.open_to_relocation;
 
+  const { data: listRows } = await supabase.rpc("candidate_lists_with_counts");
+  const lists = ((listRows ?? []) as { id: string; name: string; n: number | string; owner_name: string | null }[]).map((l) => ({
+    id: l.id,
+    name: l.name,
+    n: Number(l.n),
+    owner_name: l.owner_name,
+  }));
+
   const tableRows: BenchRow[] = all.map((r) => ({
     ...r,
     strongRoles: strongRolesByCandidate.get(r.candidate_id) ?? [],
@@ -285,7 +293,7 @@ export default async function SaasPracticePage() {
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The bench</h2>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Start with &quot;Needs details&quot;: pick the gap, select the people, and send them as tasks to the recruiter who will collect them. Read any CV without leaving the page.</p>
         </div>
-        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} />
+        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} lists={lists} />
       </section>
     </div>
   );
