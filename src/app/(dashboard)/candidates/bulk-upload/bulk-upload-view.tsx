@@ -12,6 +12,8 @@ const SOURCE_CHANNEL_OPTIONS = ["Naukri", "LinkedIn", "IIMJobs", "Monster", "Ref
 const MAX_FILES = 100;
 // Each request carries a few CVs: server functions cap the request size, and a
 // small batch finishes well inside the time limit.
+import { ctcFromFileName } from "@/lib/ctc-from-filename";
+
 const CHUNK_FILES = 5;
 const CHUNK_BYTES = 3_500_000;
 const CHUNK_CONCURRENCY = 2;
@@ -51,6 +53,8 @@ type Row = {
   highest_qualification: string;
   linkedin_url: string;
   current_fixed_ctc: string;
+  // True when the current CTC was read from the file name (e.g. "Name_12L.pdf").
+  ctcFromFileName?: boolean;
   expected_fixed_ctc: string;
   notice_period: string;
   // Optional: a batch might be sourced for one specific mandate, or just
@@ -193,7 +197,14 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           current_industry: (extracted.current_industry as string) ?? "",
           highest_qualification: (extracted.highest_qualification as string) ?? "",
           linkedin_url: (extracted.linkedin_url as string) ?? "",
-          current_fixed_ctc: extracted.current_fixed_ctc != null ? String(extracted.current_fixed_ctc) : "",
+          // A CTC written into the file name by the recruiter wins over the CV's own figure.
+          current_fixed_ctc:
+            ctcFromFileName(String(r.fileName)) !== null
+              ? String(ctcFromFileName(String(r.fileName)))
+              : extracted.current_fixed_ctc != null
+                ? String(extracted.current_fixed_ctc)
+                : "",
+          ctcFromFileName: ctcFromFileName(String(r.fileName)) !== null,
           expected_fixed_ctc: "",
           notice_period: (extracted.notice_period as string) ?? "",
           mandate_id: "",
@@ -420,6 +431,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               Click to choose resumes, or drag them here
             </span>
             <span className="text-[11px] text-slate-400">PDF or DOCX -- up to {MAX_FILES} files at a time</span>
+            <span className="text-[11px] text-slate-400">Tip: name a file like Priya_Sharma_12L.pdf and 12 is filled in as current CTC (LPA)</span>
             <input
               ref={fileInputRef}
               type="file"
@@ -629,7 +641,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     onChange={(v) => updateRow(row.fileName, { total_experience_years: v })}
                   />
                   <Field
-                    label="Current fixed CTC (LPA)"
+                    label={row.ctcFromFileName ? "Current fixed CTC (LPA) · from file name" : "Current fixed CTC (LPA)"}
                     value={row.current_fixed_ctc}
                     placeholder="e.g. 18"
                     inputMode="decimal"
