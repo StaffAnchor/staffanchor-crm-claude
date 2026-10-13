@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Loader2, Mail, FolderPlus, Send, MessageCircle } from "lucide-react";
 import WhatsAppShareModal from "@/components/whatsapp-share-modal";
 import { STAGES, applyStageChange, type Stage } from "@/lib/mandate-stage";
+import { useWhatsAppTemplates } from "@/lib/use-whatsapp-templates";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
 
 // Shared bulk-action bar (+ its 3 modals: Add to group / Email to Client /
@@ -40,6 +41,56 @@ export default function MandateBulkActionsBar({
   const [busy, setBusy] = useState(false);
   const [emailingJd, setEmailingJd] = useState(false);
   const [waOpen, setWaOpen] = useState(false);
+  const templates = useWhatsAppTemplates();
+  // "WhatsApp the opportunity" with the approved template: preview who gets it, then send.
+  const [oppPlan, setOppPlan] = useState<{ loading: boolean; error?: string; willSend?: number; noPhone?: number; optedOut?: number; alreadySent?: number; over?: number } | null>(null);
+  const [oppSending, setOppSending] = useState(false);
+
+  const selectedCandidateIds = () =>
+    Array.from(selected)
+      .map((linkId) => rows.find((r) => r.id === linkId)?.candidate.id)
+      .filter((v): v is string => Boolean(v));
+
+  async function previewOpportunity() {
+    setOppPlan({ loading: true });
+    try {
+      const res = await fetch("/api/whatsapp/role-opportunity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mandateId: mandateContext.mandateId, candidateIds: selectedCandidateIds(), dryRun: true }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || d.ok === false) setOppPlan({ loading: false, error: d.error ?? "Could not check these candidates." });
+      else setOppPlan({ loading: false, willSend: d.willSend, noPhone: d.noPhone, optedOut: d.optedOut, alreadySent: d.alreadySent, over: d.over });
+    } catch {
+      setOppPlan({ loading: false, error: "Network error. Try again." });
+    }
+  }
+
+  async function sendOpportunity() {
+    if (oppSending) return;
+    setOppSending(true);
+    try {
+      const res = await fetch("/api/whatsapp/role-opportunity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mandateId: mandateContext.mandateId, candidateIds: selectedCandidateIds() }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || d.ok === false) setMessage({ type: "error", text: d.error ?? "That didn't work. Try again." });
+      else {
+        const skipped = (d.noPhone ?? 0) + (d.optedOut ?? 0) + (d.alreadySent ?? 0);
+        setMessage({
+          type: d.failed && !d.sent ? "error" : "success",
+          text: `WhatsApp: ${d.sent} sent${d.failed ? `, ${d.failed} failed${d.error ? ` (${d.error})` : ""}` : ""}${skipped ? `, ${skipped} skipped` : ""}${d.over ? `. ${d.over} more were not included (20 per click)` : ""}.`,
+        });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error. Try again." });
+    }
+    setOppSending(false);
+    setOppPlan(null);
+  }
 
   const clientContacts =
     (mandateContext.clientContacts as { id: string; full_name: string; email: string | null; is_primary: boolean }[]) ?? [];
@@ -317,6 +368,17 @@ export default function MandateBulkActionsBar({
             <MessageCircle className="w-3 h-3" />
             Send WhatsApp
           </button>
+          {templates?.opportunity && (
+            <button
+              onClick={previewOpportunity}
+              disabled={oppSending || oppPlan?.loading}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
+              title="Tell the selected people about this role with the approved WhatsApp template. You see the count first."
+            >
+              <MessageCircle className="w-3 h-3" />
+              WhatsApp this role (template)
+            </button>
+          )}
           <button
             onClick={openJdModal}
             disabled={emailingJd}
@@ -360,6 +422,35 @@ export default function MandateBulkActionsBar({
           </button>
         </div>
       </div>
+
+      {oppPlan && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[12.5px] text-emerald-900">
+          {oppPlan.loading ? (
+            <span>Checking the selected people…</span>
+          ) : oppPlan.error ? (
+            <span className="text-rose-700">{oppPlan.error}</span>
+          ) : (oppPlan.willSend ?? 0) === 0 ? (
+            <span>
+              Nobody to send to: {oppPlan.noPhone ?? 0} without a mobile number, {oppPlan.optedOut ?? 0} opted out, {oppPlan.alreadySent ?? 0} already sent in the last 30 days.
+            </span>
+          ) : (
+            <span>
+              Will send to <strong>{oppPlan.willSend}</strong> as an approved template message, charged per message by Meta. Skipped: {oppPlan.noPhone ?? 0} no mobile, {oppPlan.optedOut ?? 0} opted out, {oppPlan.alreadySent ?? 0} sent in the last 30 days.
+              {(oppPlan.over ?? 0) > 0 ? ` ${oppPlan.over} more selected are not included, 20 per click.` : ""} The client is never named.
+            </span>
+          )}
+          <span className="ml-auto flex items-center gap-2">
+            {!oppPlan.loading && !oppPlan.error && (oppPlan.willSend ?? 0) > 0 && (
+              <button onClick={sendOpportunity} disabled={oppSending} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-600 disabled:opacity-60">
+                {oppSending ? "Sending…" : `Send ${oppPlan.willSend}`}
+              </button>
+            )}
+            <button onClick={() => setOppPlan(null)} className="text-xs text-emerald-800 hover:underline">
+              Cancel
+            </button>
+          </span>
+        </div>
+      )}
 
       {waOpen && (
         <WhatsAppShareModal

@@ -1,6 +1,7 @@
 "use client";
 
 import PipelineWhatsApp from "./pipeline-whatsapp";
+import PipelineTemplateActions from "./pipeline-template-actions";
 import OriginChip from "./origin-chip";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -657,6 +658,13 @@ export default function MandateCandidatesTable({
                     roleTitle={mandateContext.role_title ?? null}
                     cities={(mandateContext.cities as string[] | undefined) ?? null}
                     workMode={(mandateContext.work_mode as string | null | undefined) ?? null}
+                  />
+                  <PipelineTemplateActions
+                    candidateId={l.candidate.id}
+                    mandateId={mandateContext.mandateId}
+                    stage={l.stage}
+                    missing={l.candidate.readiness_missing}
+                    showOpportunity={l.stage === "sourced" || l.stage === "screened"}
                   />
                   <FlagForCallButton
                     candidateId={l.candidate.id}

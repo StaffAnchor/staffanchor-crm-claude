@@ -13,7 +13,8 @@ const RECENT_DAYS = 30;
 
 // Tells selected candidates about an opening, on WhatsApp, with the approved marketing template. It
 // never names the client. A person presses the button; anyone who opted out, has no mobile number, or
-// was already sent this template in the last 30 days is skipped.
+// was already sent this template in the last 30 days is skipped. With `dryRun` it only reports how many
+// would be sent and why others are skipped, so the cost is visible first.
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const {
@@ -31,9 +32,11 @@ export async function POST(req: NextRequest) {
   if (!serviceKey) return NextResponse.json({ error: "Not configured" }, { status: 503 });
   const admin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { persistSession: false } });
 
-  const body = (await req.json().catch(() => ({}))) as { mandateId?: unknown; candidateIds?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { mandateId?: unknown; candidateIds?: unknown; dryRun?: unknown };
   const mandateId = typeof body.mandateId === "string" ? body.mandateId : "";
-  const ids = (Array.isArray(body.candidateIds) ? body.candidateIds : []).filter((x): x is string => typeof x === "string").slice(0, MAX_PER_CALL);
+  const dryRun = body.dryRun === true;
+  const all = (Array.isArray(body.candidateIds) ? body.candidateIds : []).filter((x): x is string => typeof x === "string");
+  const ids = all.slice(0, MAX_PER_CALL);
   if (!mandateId || ids.length === 0) return NextResponse.json({ error: "Choose a role and at least one candidate." }, { status: 400 });
 
   const { data: mandate } = await supabase.from("mandates").select("role_title, city, cities").eq("id", mandateId).maybeSingle();
@@ -54,12 +57,10 @@ export async function POST(req: NextRequest) {
   const recentlySent = new Set(((recent ?? []) as { candidate_id: string | null }[]).map((r) => r.candidate_id));
 
   const store = supabaseStore(admin);
-  let sent = 0;
-  let failed = 0;
   let noPhone = 0;
   let optedOut = 0;
   let already = 0;
-  let firstError: string | null = null;
+  const eligible: { id: string; first: string; key: string }[] = [];
 
   for (const c of (people ?? []) as { id: string; full_name: string | null; phone: string | null }[]) {
     const key = phoneKey(c.phone);
@@ -71,17 +72,26 @@ export async function POST(req: NextRequest) {
       already++;
       continue;
     }
-    let contact = await store.getContact(key);
+    const contact = await store.getContact(key);
     if (contact?.opted_out) {
       optedOut++;
       continue;
     }
-    const first = oneLine((c.full_name ?? "").trim().split(/\s+/)[0] || "there");
-    const res = await sendWhatsAppTemplate({ to: key, templateName, bodyParams: [first, role, city] });
+    eligible.push({ id: c.id, first: oneLine((c.full_name ?? "").trim().split(/\s+/)[0] || "there"), key });
+  }
+
+  const over = Math.max(0, all.length - ids.length);
+  if (dryRun) return NextResponse.json({ ok: true, dryRun: true, willSend: eligible.length, noPhone, optedOut, alreadySent: already, over });
+
+  let sent = 0;
+  let failed = 0;
+  let firstError: string | null = null;
+  for (const c of eligible) {
+    const res = await sendWhatsAppTemplate({ to: c.key, templateName, bodyParams: [c.first, role, city] });
     await store.logMessage({
       candidate_id: c.id,
       direction: "outbound",
-      to_phone: key,
+      to_phone: c.key,
       body_preview: `Template ${templateName}: ${role} in ${city}`,
       status: res.ok ? "sent" : res.status === "not_configured" ? "not_configured" : "failed",
       template_name: templateName,
@@ -90,8 +100,9 @@ export async function POST(req: NextRequest) {
     });
     if (res.ok) {
       sent++;
-      if (!contact) contact = await store.createContact(key);
-      await store.updateContact(key, { kind: "jobseeker", kind_source: "manual", candidate_id: c.id });
+      const contact = (await store.getContact(c.key)) ?? (await store.createContact(c.key));
+      void contact;
+      await store.updateContact(c.key, { kind: "jobseeker", kind_source: "manual", candidate_id: c.id });
     } else {
       failed++;
       firstError = firstError ?? res.error;
@@ -102,5 +113,5 @@ export async function POST(req: NextRequest) {
   if (sent > 0) {
     await admin.from("audit_log").insert({ actor: user.id, action: "role_opportunity_whatsapp", entity: "mandate", entity_id: mandateId, detail: { sent, failed, template: templateName } });
   }
-  return NextResponse.json({ ok: true, sent, failed, noPhone, optedOut, alreadySent: already, error: firstError });
+  return NextResponse.json({ ok: true, sent, failed, noPhone, optedOut, alreadySent: already, over, error: firstError });
 }
