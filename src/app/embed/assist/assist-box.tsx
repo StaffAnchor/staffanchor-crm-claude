@@ -58,6 +58,7 @@ export default function AssistBox() {
   const [hp, setHp] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [limited, setLimited] = useState(false);
   const [result, setResult] = useState<AssistResult | null>(null);
   const [sent, setSent] = useState("");
   const [showFix, setShowFix] = useState(false);
@@ -87,6 +88,7 @@ export default function AssistBox() {
     if (!m || busy) return;
     setBusy(true);
     setError(null);
+    setLimited(false);
     setResult(null);
     setShowFix(false);
     setOkd(false);
@@ -94,7 +96,10 @@ export default function AssistBox() {
     setSent(m);
     const { ok, data } = await call({ action: "classify", message: m, site, t: Math.round(performance.now() - startedAt.current), website: hp });
     if (ok && data.result) setResult(data.result as AssistResult);
-    else setError(data.error ?? "Something went wrong. Please try again.");
+    else {
+      setError(data.error ?? "Something went wrong. Please try again.");
+      setLimited(data.limited === true);
+    }
     setBusy(false);
   }
 
@@ -164,7 +169,21 @@ export default function AssistBox() {
           </div>
         </form>
 
-        {error && <p className="mt-3 text-[13px] text-rose-600">{error}</p>}
+        {error && (
+          <div className="mt-3">
+            <p className={`text-[13px] ${limited ? "text-slate-600" : "text-rose-600"}`}>{error}</p>
+            {limited && (
+              <a
+                href="https://wa.me/911204128963?text=Hi%20StaffAnchor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-emerald-700"
+              >
+                Message us on WhatsApp
+              </a>
+            )}
+          </div>
+        )}
 
         {result && (
           <div className="mt-5 rounded-xl bg-slate-50 p-4">
@@ -234,7 +253,8 @@ export default function AssistBox() {
                         <a
                           key={s.label}
                           href={s.href}
-                          target="_top"
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="group flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-slate-300 hover:shadow-sm"
                         >
                           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 group-hover:bg-blue-50 group-hover:text-blue-700">
