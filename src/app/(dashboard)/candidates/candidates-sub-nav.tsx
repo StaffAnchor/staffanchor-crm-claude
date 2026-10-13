@@ -8,6 +8,7 @@ const TABS = [
   { href: "/candidates/board", label: "Talent board" },
   { href: "/candidates/lists", label: "Shortlists" },
   { href: "/candidates/referrals", label: "Referrals" },
+  { href: "/saas-practice", label: "B2B SaaS" },
   { href: "/practice-pool", label: "Practice Pool" },
   { href: "/candidates/outreach", label: "Outreach" },
   { href: "/candidates/files", label: "CV files" },
