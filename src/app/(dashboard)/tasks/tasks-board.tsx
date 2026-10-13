@@ -15,6 +15,7 @@ const KIND_ICON: Record<PacketKind, typeof Send> = {
   new_matches: Sparkles,
   setup_role: Settings2,
   sales_followups: Briefcase,
+  collect_details: UserCheck,
   other: CircleDot,
 };
 

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatTile } from "@/components/ui/stat-tile";
 import CandidatesSubNav from "../candidates/candidates-sub-nav";
 import { PASSPORT_COLUMNS, segmentLabel, type PassportRow } from "@/lib/saas-passport";
-import BenchTable from "./bench-table";
+import BenchTable, { type BenchRow } from "./bench-table";
 import RunMatching from "./run-matching";
 
 export const dynamic = "force-dynamic";
@@ -107,7 +107,25 @@ export default async function SaasPracticePage() {
   const cycleCounts = countBy(all.map((r) => r.sales_cycle));
   const gapCounts = countBy(all.flatMap((r) => r.passport_missing ?? []));
 
-  const tableRows = all.map((r) => ({ ...r, strongRoles: strongRolesByCandidate.get(r.candidate_id) ?? [] }));
+  const { data: staffRows } = await supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "recruiter", "partner"]).order("full_name");
+  const recruiters = ((staffRows ?? []) as { id: string; full_name: string | null }[])
+    .filter((p) => !!p.full_name)
+    .map((p) => ({ id: p.id, name: p.full_name as string }));
+
+  // Candidates who already have an open "collect details" task.
+  const { data: taskRows } = await supabase
+    .from("recruiter_inbox")
+    .select("candidate_id")
+    .eq("task_type", "COLLECT_DETAILS")
+    .in("status", ["open", "snoozed"])
+    .limit(2000);
+  const withTask = new Set(((taskRows ?? []) as { candidate_id: string | null }[]).map((t) => t.candidate_id).filter((v): v is string => !!v));
+
+  const tableRows: BenchRow[] = all.map((r) => ({
+    ...r,
+    strongRoles: strongRolesByCandidate.get(r.candidate_id) ?? [],
+    openTask: withTask.has(r.candidate_id) ? "open" : null,
+  }));
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-6 space-y-8">
@@ -198,8 +216,11 @@ export default async function SaasPracticePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The bench</h2>
-        <BenchTable rows={tableRows} segmentOptions={segmentKeys} />
+        <div>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The bench</h2>
+          <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Start with &quot;Needs details&quot;: pick the gap, select the people, and send them as tasks to the recruiter who will collect them. Read any CV without leaving the page.</p>
+        </div>
+        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} />
       </section>
     </div>
   );
