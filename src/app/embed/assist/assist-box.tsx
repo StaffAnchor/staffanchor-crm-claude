@@ -4,19 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import type { AssistResult } from "@/lib/site-assist/classify";
 import type { Intent } from "@/lib/site-assist/rules";
 
-const COPY = {
-  main: {
-    heading: "Tell us what you need",
-    sub: "Type it the way you would say it. We will point you to the right next step.",
-    placeholder: "For example: we are hiring 5 SDRs for our SaaS company in Bangalore",
-    examples: ["We are hiring 5 SDRs in Bangalore", "I am looking for an enterprise sales role in Mumbai", "I run a staffing agency"],
-  },
-  jobs: {
-    heading: "What are you looking for?",
-    sub: "Type it in your own words. We will point you to the right next step.",
-    placeholder: "For example: I am a sales manager with 8 years' experience, looking for a role in Pune",
-    examples: ["I am looking for a sales role in Pune", "I want to refer a friend", "What is the status of my application?"],
-  },
+const copy = {
+  heading: "Tell us what you need",
+  sub: "Type it the way you would say it. We will point you to the right next step.",
+  placeholder: "For example: we are hiring 5 SDRs for our SaaS company in Bangalore",
+  examples: ["We are hiring 5 SDRs in Bangalore", "I am looking for an enterprise sales role in Mumbai", "I run a staffing agency"],
 } as const;
 
 const CLARIFY: { intent: Intent; label: string }[] = [
@@ -60,8 +52,8 @@ async function call(payload: Record<string, unknown>) {
   return { ok: res.ok, data };
 }
 
-export default function AssistBox({ site }: { site: "main" | "jobs" }) {
-  const copy = COPY[site];
+export default function AssistBox() {
+  const site = "main";
   const [text, setText] = useState("");
   const [hp, setHp] = useState("");
   const [busy, setBusy] = useState(false);
