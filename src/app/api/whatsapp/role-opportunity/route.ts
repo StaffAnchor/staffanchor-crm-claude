@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   const cities = (mandate.cities as string[] | null) ?? [];
   const city = oneLine(cities[0] ?? (mandate.city as string | null) ?? "India");
 
-  const { data: people } = await supabase.from("candidates").select("id, full_name, phone").in("id", ids);
+  const { data: people } = await supabase.from("candidates").select("id, full_name, phone, phone_hold").in("id", ids);
   const since = new Date(new Date().getTime() - RECENT_DAYS * 86_400_000).toISOString();
   const { data: recent } = await admin
     .from("whatsapp_messages")
@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
   let already = 0;
   const eligible: { id: string; first: string; key: string }[] = [];
 
-  for (const c of (people ?? []) as { id: string; full_name: string | null; phone: string | null }[]) {
+  for (const c of (people ?? []) as { id: string; full_name: string | null; phone: string | null; phone_hold: boolean | null }[]) {
     const key = phoneKey(c.phone);
-    if (!key || key.length !== 10) {
+    if (c.phone_hold || !key || key.length !== 10) {
       noPhone++;
       continue;
     }

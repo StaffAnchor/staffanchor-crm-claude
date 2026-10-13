@@ -36,10 +36,11 @@ export async function POST(req: NextRequest) {
   if (!templateName) return NextResponse.json({ ok: false, error: `The ${KINDS[kind].label} template isn't set up yet.` }, { status: 200 });
 
   const admin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { persistSession: false } });
-  const { data: cand } = await supabase.from("candidates").select("id, full_name, phone").eq("id", candidateId).maybeSingle();
+  const { data: cand } = await supabase.from("candidates").select("id, full_name, phone, phone_hold").eq("id", candidateId).maybeSingle();
   const { data: mandate } = await supabase.from("mandates").select("role_title").eq("id", mandateId).maybeSingle();
   if (!cand || !mandate) return NextResponse.json({ ok: false, error: "Candidate or role not found." }, { status: 200 });
 
+  if (cand.phone_hold) return NextResponse.json({ ok: false, error: "This number is on hold until the candidate confirms it." }, { status: 200 });
   const key = phoneKey(cand.phone as string | null);
   if (!key || key.length !== 10) return NextResponse.json({ ok: false, error: "No usable mobile number on file." }, { status: 200 });
   const store = supabaseStore(admin);

@@ -16,7 +16,7 @@ import { detailsPhrase, renderDetailsMessage } from "@/lib/whatsapp-template-tex
 //  - Otherwise, when allowed, an email that lists what is missing and links to the profile form.
 // Used by the one-candidate button and by the bulk ask, so both behave the same way.
 
-export type SkipReason = "nothing_missing" | "no_phone" | "opted_out" | "staff" | "assistant_busy" | "recent" | "no_template" | "no_email";
+export type SkipReason = "nothing_missing" | "no_phone" | "phone_hold" | "opted_out" | "staff" | "assistant_busy" | "recent" | "no_template" | "no_email";
 
 export type AskResult =
   | { ok: true; via: "whatsapp" | "whatsapp_template" | "email"; count: number; note?: string }
@@ -27,6 +27,7 @@ export type AskPlan = { ok: true; plan: "window" | "template"; count: number } |
 const SKIP_TEXT: Record<SkipReason, string> = {
   nothing_missing: "Nothing is missing from this profile.",
   no_phone: "No usable mobile number on file.",
+  phone_hold: "This number is on hold until the candidate confirms it.",
   opted_out: "They asked not to get automatic messages.",
   staff: "This number belongs to the team.",
   assistant_busy: "The assistant is already asking them. Wait for their reply.",
@@ -48,6 +49,7 @@ export async function planAsk(admin: SupabaseClient, candidateId: string): Promi
   if (!cand) return { ok: false, skip: "no_phone", error: "Candidate not found" };
   const missing = missingKeyDetails({ ...cand });
   if (missing.length === 0) return { ok: false, skip: "nothing_missing", error: SKIP_TEXT.nothing_missing, cand };
+  if (cand.phone_hold) return { ok: false, skip: "phone_hold", error: SKIP_TEXT.phone_hold, cand };
   const key = phoneKey(cand.phone);
   if (!key || key.length !== 10) return { ok: false, skip: "no_phone", error: SKIP_TEXT.no_phone, cand };
   if (staffKeys().has(key)) return { ok: false, skip: "staff", error: SKIP_TEXT.staff, cand };
