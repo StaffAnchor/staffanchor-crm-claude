@@ -100,6 +100,10 @@ export async function updateSession(request: NextRequest) {
     // class of route as /shortlist above: authorizes itself via the
     // interview_scheduling_tokens token inside the RPCs, not a staff cookie.
     request.nextUrl.pathname.startsWith("/schedule") ||
+    // The website message box: a public page shown in an iframe on the two public sites and the
+    // public endpoint behind it, which protects itself (rate limit, size cap, honeypot).
+    request.nextUrl.pathname.startsWith("/embed/") ||
+    request.nextUrl.pathname === "/api/public/assist" ||
     // Same class again: a would-be vendor has no account yet, so there's no
     // session to check -- the invite token itself is the credential.
     request.nextUrl.pathname.startsWith("/vendor-signup") ||
