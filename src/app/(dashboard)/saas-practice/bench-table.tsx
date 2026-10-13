@@ -10,7 +10,9 @@ import { candidateTemplates } from "@/lib/whatsapp-link";
 import { useMyFirstName } from "@/lib/use-my-name";
 import { createClient } from "@/lib/supabase/client";
 import { dealSizeBandsB2B, salesCycleOptions } from "@/lib/candidate-options";
-import { EMPTY_FILTERS, evaluate, filtersFromRole, type Check, type RoleFilters, type RoleOption } from "@/lib/role-fit";
+import { EMPTY_FILTERS, describeFilters, evaluate, filtersFromRole, type Check, type RoleFilters, type RoleOption } from "@/lib/role-fit";
+import type { ShortlistSummary } from "@/lib/shortlists";
+import SaveShortlist from "./save-shortlist";
 import { TIER_LABEL, TIER_PILL, type ReadinessTier } from "@/lib/readiness";
 import { FIT_LABEL, HUNTER_LABEL, gapKeys, gapLabels, isIncomplete, passportTone, segmentLabel, type PassportRow } from "@/lib/saas-passport";
 import ResumeViewerInline from "../candidates/[id]/resume-viewer-inline";
@@ -58,6 +60,7 @@ export default function BenchTable({
   matchesByRole,
   stageByRole,
   relocation,
+  lists,
 }: {
   rows: BenchRow[];
   segmentOptions: string[];
@@ -66,6 +69,7 @@ export default function BenchTable({
   matchesByRole: Record<string, Record<string, { fit: string; status: string }>>;
   stageByRole: Record<string, Record<string, string>>;
   relocation: Record<string, string>;
+  lists: ShortlistSummary[];
 }) {
   const me = useMyFirstName();
   const [mode, setMode] = useState<Mode>("needs");
@@ -561,6 +565,13 @@ export default function BenchTable({
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optional)"
             className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[12.5px] w-44"
+          />
+          <SaveShortlist
+            ids={picked.size > 0 ? Array.from(picked) : listRows.map((r) => r.candidate_id)}
+            label={picked.size > 0 ? `Save ${picked.size} as shortlist` : `Save these ${listRows.length} as shortlist`}
+            defaultName={`${role ? role.title : "B2B SaaS bench"} · ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}`}
+            description={describeFilters(role, role ? rf : EMPTY_FILTERS)}
+            lists={lists}
           />
           {role && (
             <button
