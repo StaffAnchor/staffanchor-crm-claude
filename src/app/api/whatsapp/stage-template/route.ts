@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendWhatsAppTemplate, templateNameForTaskType, oneLine } from "@/lib/whatsapp";
 import { supabaseStore } from "@/lib/whatsapp-bot/store";
 import { phoneKey } from "@/lib/whatsapp-threads";
+import { renderInterviewMessage, renderOfferMessage } from "@/lib/whatsapp-template-text";
 
 export const runtime = "nodejs";
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     candidate_id: candidateId,
     direction: "outbound",
     to_phone: key,
-    body_preview: `Template ${templateName}: ${KINDS[kind].label} for ${role}`,
+    body_preview: kind === "interview" ? renderInterviewMessage(first, role) : renderOfferMessage(first, role),
     status: res.ok ? "sent" : res.status === "not_configured" ? "not_configured" : "failed",
     template_name: templateName,
     meta_message_id: res.ok ? res.metaMessageId : null,

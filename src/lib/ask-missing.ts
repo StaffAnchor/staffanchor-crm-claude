@@ -7,6 +7,7 @@ import { startOnboarding } from "@/lib/whatsapp-bot/flow";
 import { candidatePrefill } from "@/lib/whatsapp-bot/engine";
 import { supabaseStore, type CandidateLite } from "@/lib/whatsapp-bot/store";
 import { WINDOW_MS, phoneKey } from "@/lib/whatsapp-threads";
+import { detailsPhrase, renderDetailsMessage } from "@/lib/whatsapp-template-text";
 
 // "Ask for missing details": ask one candidate for exactly what their profile lacks.
 //  - Inside WhatsApp's 24-hour window: the assistant asks the missing questions in the chat and fills
@@ -129,7 +130,7 @@ export async function askMissingDetails(
 
   const templateName = profileDetailsTemplate();
   if (p.ok && p.plan === "template" && templateName && key) {
-    const list = oneLine(missing.map((m) => m.ask).join(", "));
+    const list = oneLine(detailsPhrase(missing));
     const first = oneLine((cand.full_name ?? "").trim().split(/\s+/)[0] || "there");
     const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com"}/u/${cand.id}`;
     const res = await sendWhatsAppTemplate({ to: key, templateName, bodyParams: [first, list, link] });
@@ -137,7 +138,7 @@ export async function askMissingDetails(
       candidate_id: cand.id,
       direction: "outbound",
       to_phone: key,
-      body_preview: `Template ${templateName}: asked for ${list}`,
+      body_preview: renderDetailsMessage(first, list, link),
       status: res.ok ? "sent" : res.status === "not_configured" ? "not_configured" : "failed",
       template_name: templateName,
       meta_message_id: res.ok ? res.metaMessageId : null,
