@@ -1,6 +1,7 @@
 "use client";
 
 import PipelineWhatsApp from "./pipeline-whatsapp";
+import PipelineTemplateActions from "./pipeline-template-actions";
 import OriginChip from "./origin-chip";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -639,6 +640,15 @@ export default function MandateCandidatesBoard({
                           roleTitle={mandateContext.role_title ?? null}
                           cities={(mandateContext.cities as string[] | undefined) ?? null}
                           workMode={(mandateContext.work_mode as string | null | undefined) ?? null}
+                        />
+                      </div>
+                      <div className="mt-1" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                        <PipelineTemplateActions
+                          candidateId={row.candidate.id}
+                          mandateId={mandateContext.mandateId}
+                          stage={row.stage}
+                          missing={row.candidate.readiness_missing}
+                          showOpportunity={row.stage === "sourced" || row.stage === "screened"}
                         />
                       </div>
                       <div className="mt-1" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>

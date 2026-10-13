@@ -5,6 +5,7 @@ import DismissReasons from "@/components/dismiss-reasons";
 import Link from "next/link";
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import WhatsAppMenu from "@/components/whatsapp-menu";
+import PipelineTemplateActions from "./pipeline-template-actions";
 import { candidateTemplates } from "@/lib/whatsapp-link";
 import { useMyFirstName } from "@/lib/use-my-name";
 import { useRouter } from "next/navigation";
@@ -223,6 +224,9 @@ function Card({
       )}
 
       {dismissing && <DismissReasons value={reasonCodes} onChange={setReasonCodes} onConfirm={() => decide("dismiss")} busy={busy !== null} />}
+      <div className="mt-2">
+        <PipelineTemplateActions candidateId={m.candidateId} mandateId={mandateId} missing={m.missing} showOpportunity />
+      </div>
       {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
 
       {doubts.some((d) => d.question) && (
