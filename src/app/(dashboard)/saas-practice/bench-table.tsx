@@ -8,6 +8,9 @@ import { Drawer } from "@/components/ui/drawer";
 import WhatsAppMenu from "@/components/whatsapp-menu";
 import { candidateTemplates } from "@/lib/whatsapp-link";
 import { useMyFirstName } from "@/lib/use-my-name";
+import { createClient } from "@/lib/supabase/client";
+import { dealSizeBandsB2B, salesCycleOptions } from "@/lib/candidate-options";
+import { EMPTY_FILTERS, evaluate, filtersFromRole, type Check, type RoleFilters, type RoleOption } from "@/lib/role-fit";
 import { TIER_LABEL, TIER_PILL, type ReadinessTier } from "@/lib/readiness";
 import { FIT_LABEL, HUNTER_LABEL, gapKeys, gapLabels, isIncomplete, passportTone, segmentLabel, type PassportRow } from "@/lib/saas-passport";
 import ResumeViewerInline from "../candidates/[id]/resume-viewer-inline";
@@ -45,7 +48,25 @@ function ctcText(r: PassportRow) {
   return cur ? `${cur} (expected not asked)` : exp ? `Expects ${exp}` : null;
 }
 
-export default function BenchTable({ rows, segmentOptions, recruiters }: { rows: BenchRow[]; segmentOptions: string[]; recruiters: Recruiter[] }) {
+type RoleItem = { row: BenchRow; checks: Check[]; fails: number; unknowns: number; ai: { fit: string; status: string } | null; stage: string | null };
+
+export default function BenchTable({
+  rows,
+  segmentOptions,
+  recruiters,
+  roles,
+  matchesByRole,
+  stageByRole,
+  relocation,
+}: {
+  rows: BenchRow[];
+  segmentOptions: string[];
+  recruiters: Recruiter[];
+  roles: RoleOption[];
+  matchesByRole: Record<string, Record<string, { fit: string; status: string }>>;
+  stageByRole: Record<string, Record<string, string>>;
+  relocation: Record<string, string>;
+}) {
   const me = useMyFirstName();
   const [mode, setMode] = useState<Mode>("needs");
   const [q, setQ] = useState("");
@@ -61,6 +82,12 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
   const [assigning, setAssigning] = useState(false);
   const [assignMsg, setAssignMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [assigned, setAssigned] = useState<Set<string>>(new Set());
+  const [roleId, setRoleId] = useState("");
+  const [rf, setRf] = useState<RoleFilters>(EMPTY_FILTERS);
+  const [roleView, setRoleView] = useState<"fits" | "close">("fits");
+  const [addedLocal, setAddedLocal] = useState<Set<string>>(new Set());
+  const [adding, setAdding] = useState(false);
+  const [addMsg, setAddMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [emailing, setEmailing] = useState(false);
   const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [emailed, setEmailed] = useState<Set<string>>(new Set());
@@ -103,6 +130,98 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
     return out;
   }, [rows, mode, q, fit, segment, gap, matchOnly, sort]);
 
+  const role = roles.find((r) => r.id === roleId) ?? null;
+
+  const roleItems = useMemo<RoleItem[]>(() => {
+    if (!role) return [];
+    const needle = q.trim().toLowerCase();
+    const items: RoleItem[] = [];
+    for (const row of rows) {
+      if (fit !== "all" && row.practice_fit !== fit) continue;
+      if (segment !== "all" && !(row.segments ?? []).includes(segment)) continue;
+      if (needle) {
+        const hay = `${row.full_name ?? ""} ${row.current_employer ?? ""} ${row.current_job_title ?? ""} ${row.city ?? ""}`.toLowerCase();
+        if (!hay.includes(needle)) continue;
+      }
+      const checks = evaluate(row, rf, relocation[row.candidate_id] ?? null);
+      const fails = checks.filter((c) => c.state === "fail").length;
+      if (fails > 1) continue;
+      const m = matchesByRole[role.id]?.[row.candidate_id] ?? null;
+      items.push({
+        row,
+        checks,
+        fails,
+        unknowns: checks.filter((c) => c.state === "unknown").length,
+        ai: m,
+        stage: stageByRole[role.id]?.[row.candidate_id] ?? null,
+      });
+    }
+    const aiRank = (i: RoleItem) => (i.ai?.fit === "strong" ? 0 : i.ai?.fit === "possible" ? 1 : 2);
+    items.sort(
+      (a, b) =>
+        Number(!!a.stage) - Number(!!b.stage) ||
+        a.fails - b.fails ||
+        aiRank(a) - aiRank(b) ||
+        a.unknowns - b.unknowns ||
+        b.row.passport_score - a.row.passport_score
+    );
+    return items;
+  }, [role, rows, rf, q, fit, segment, matchesByRole, stageByRole, relocation]);
+
+  const roleFits = roleItems.filter((i) => i.fails === 0);
+  const roleClose = roleItems.filter((i) => i.fails === 1);
+  const roleVisible = roleView === "fits" ? roleFits : roleClose;
+  const roleInfo = useMemo(() => new Map(roleItems.map((i) => [i.row.candidate_id, i])), [roleItems]);
+  const listRows: BenchRow[] = role ? roleVisible.map((i) => i.row) : filtered;
+
+  function pickRole(id: string) {
+    setRoleId(id);
+    setPicked(new Set());
+    setAddMsg(null);
+    setShown(PAGE);
+    setRoleView("fits");
+    const r = roles.find((x) => x.id === id);
+    setRf(r ? filtersFromRole(r) : EMPTY_FILTERS);
+  }
+
+  async function addToRole(ids: string[]) {
+    if (!role || ids.length === 0 || adding) return;
+    setAdding(true);
+    setAddMsg(null);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const now = new Date().toISOString();
+    let added = 0;
+    let existing = 0;
+    let failed = 0;
+    const doneIds: string[] = [];
+    for (const id of ids) {
+      const { error } = await supabase.from("candidate_mandate_links").insert({
+        candidate_id: id,
+        mandate_id: role.id,
+        added_by: user?.id ?? null,
+        match_source: "talent_board",
+        matched_at: now,
+      });
+      if (!error) {
+        added++;
+        doneIds.push(id);
+      } else if (/duplicate|unique/i.test(error.message)) {
+        existing++;
+        doneIds.push(id);
+      } else failed++;
+    }
+    if (doneIds.length) setAddedLocal((prev) => new Set([...prev, ...doneIds.map((d) => `${role.id}:${d}`)]));
+    setPicked(new Set());
+    setAddMsg({
+      ok: failed === 0,
+      text: `${added} added to ${role.title}${existing ? `, ${existing} were already there` : ""}${failed ? `, ${failed} could not be added` : ""}.`,
+    });
+    setAdding(false);
+  }
+
   function toggle(id: string) {
     setPicked((prev) => {
       const next = new Set(prev);
@@ -113,7 +232,7 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
   }
 
   function pickAllFiltered() {
-    setPicked(new Set(filtered.filter((r) => !r.openTask && !assigned.has(r.candidate_id)).slice(0, MAX_ASSIGN).map((r) => r.candidate_id)));
+    setPicked(new Set(listRows.filter((r) => !r.openTask && !assigned.has(r.candidate_id)).slice(0, MAX_ASSIGN).map((r) => r.candidate_id)));
   }
 
   async function assign() {
@@ -212,13 +331,143 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="rounded-ros-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/40 dark:bg-blue-950/20 p-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200">Find people for a role</p>
+          <select value={roleId} onChange={(e) => pickRole(e.target.value)} className={`${select} min-w-[260px]`}>
+            <option value="">Pick an open B2B role…</option>
+            {roles.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.title}
+                {r.client ? ` · ${r.client}` : ""}
+                {r.status === "on_hold" ? " (on hold)" : ""}
+              </option>
+            ))}
+          </select>
+          {role && (
+            <>
+              <button type="button" onClick={() => pickRole(role.id)} className="text-[12px] text-blue-600 hover:underline">
+                Reset to the role
+              </button>
+              <button type="button" onClick={() => pickRole("")} className="text-[12px] text-slate-500 hover:underline">
+                Back to the whole bench
+              </button>
+              <Link href={`/mandates/${role.id}`} className="text-[12px] text-slate-500 hover:underline">
+                Open the role
+              </Link>
+            </>
+          )}
+        </div>
+        {role && (
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-2">
+            <label className="col-span-2 text-[11px] text-slate-500">
+              Cities (comma separated)
+              <input value={rf.cities} onChange={(e) => setRf({ ...rf, cities: e.target.value })} className={`${select} w-full mt-0.5`} placeholder="Noida, Gurgaon" />
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Experience from (yrs)
+              <input value={rf.expMin} onChange={(e) => setRf({ ...rf, expMin: e.target.value })} inputMode="decimal" className={`${select} w-full mt-0.5`} />
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Experience to (yrs)
+              <input value={rf.expMax} onChange={(e) => setRf({ ...rf, expMax: e.target.value })} inputMode="decimal" className={`${select} w-full mt-0.5`} />
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Current CTC up to (LPA)
+              <input value={rf.ctcMax} onChange={(e) => setRf({ ...rf, ctcMax: e.target.value })} inputMode="decimal" className={`${select} w-full mt-0.5`} />
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Notice up to
+              <select value={rf.noticeMax} onChange={(e) => setRf({ ...rf, noticeMax: e.target.value })} className={`${select} w-full mt-0.5`}>
+                <option value="">Any</option>
+                {[15, 30, 45, 60, 90].map((d) => (
+                  <option key={d} value={d}>
+                    {d} days
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Deal size at least
+              <select value={rf.deal} onChange={(e) => setRf({ ...rf, deal: e.target.value })} className={`${select} w-full mt-0.5`}>
+                <option value="">Any</option>
+                {(["INR", "USD"] as const).map((cur) => (
+                  <optgroup key={cur} label={cur}>
+                    {dealSizeBandsB2B[cur].map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Sales cycle at least
+              <select value={rf.cycle} onChange={(e) => setRf({ ...rf, cycle: e.target.value })} className={`${select} w-full mt-0.5`}>
+                <option value="">Any</option>
+                {salesCycleOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Hunter or farmer
+              <select value={rf.hunter} onChange={(e) => setRf({ ...rf, hunter: e.target.value })} className={`${select} w-full mt-0.5`}>
+                <option value="">Any</option>
+                <option value="hunter">Hunter</option>
+                <option value="farmer">Farmer</option>
+              </select>
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Readiness
+              <select value={rf.ready} onChange={(e) => setRf({ ...rf, ready: e.target.value as RoleFilters["ready"] })} className={`${select} w-full mt-0.5`}>
+                <option value="any">Any</option>
+                <option value="ready">Ready to shortlist</option>
+                <option value="ready_almost">Ready or almost</option>
+              </select>
+            </label>
+            <label className="col-span-2 flex items-end gap-1.5 text-[12px] text-slate-600 dark:text-slate-300 pb-1.5">
+              <input type="checkbox" checked={rf.relocate} onChange={(e) => setRf({ ...rf, relocate: e.target.checked })} />
+              Count people open to relocating
+            </label>
+          </div>
+        )}
+        {role && (
+          <div className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setRoleView("fits")}
+              className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium ${roleView === "fits" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-800"}`}
+            >
+              Fit the role <span className="opacity-70">{roleFits.length}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoleView("close")}
+              className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium ${roleView === "close" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-800"}`}
+            >
+              Miss one requirement <span className="opacity-70">{roleClose.length}</span>
+            </button>
+            <span className="text-[11.5px] text-slate-500 ml-2">&quot;?&quot; means the profile has no answer yet. Those people are not ruled out.</span>
+          </div>
+        )}
+        {addMsg && (
+          <p className={`text-[12.5px] flex items-center gap-1.5 ${addMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
+            {addMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />} {addMsg.text}
+          </p>
+        )}
+      </div>
+
+      <div className={`flex flex-wrap items-center gap-1 ${role ? "hidden" : ""}`}>
         {tab("needs", "Needs details", counts.needs)}
         {tab("complete", "Ready to use", counts.complete)}
         {tab("all", "Everyone", counts.all)}
       </div>
 
-      {mode === "needs" && gapCounts.length > 0 && (
+      {!role && mode === "needs" && gapCounts.length > 0 && (
         <div className="rounded-ros-xl border border-amber-100 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3">
           <p className="text-[12.5px] text-slate-700 dark:text-slate-300 mb-2">
             <span className="font-medium">What is missing most.</span> Tap one to list those people, then ask a recruiter to collect it.
@@ -291,7 +540,7 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
           <span className="font-medium">{picked.size}</span> selected
         </span>
         <button type="button" onClick={pickAllFiltered} className="text-[12px] text-blue-600 hover:underline">
-          Select the {Math.min(filtered.filter((r) => !r.openTask && !assigned.has(r.candidate_id)).length, MAX_ASSIGN)} shown by the filters
+          Select the {Math.min(listRows.filter((r) => !r.openTask && !assigned.has(r.candidate_id)).length, MAX_ASSIGN)} shown by the filters
         </button>
         {picked.size > 0 && (
           <button type="button" onClick={() => setPicked(new Set())} className="text-[12px] text-slate-500 hover:underline">
@@ -313,6 +562,17 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
             placeholder="Note (optional)"
             className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[12.5px] w-44"
           />
+          {role && (
+            <button
+              type="button"
+              onClick={() => addToRole(Array.from(picked))}
+              disabled={adding || picked.size === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+              Add {picked.size || ""} to this role
+            </button>
+          )}
           <button
             type="button"
             onClick={assign}
@@ -346,11 +606,11 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
       </div>
 
       <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
-        {filtered.length} of {rows.length} candidates
+        {role ? `${roleVisible.length} ${roleView === "fits" ? "fit" : "miss one requirement for"} ${role.title}` : `${filtered.length} of ${rows.length} candidates`}
       </p>
 
       <ul className="space-y-2">
-        {filtered.slice(0, shown).map((r) => {
+        {listRows.slice(0, shown).map((r) => {
           const gaps = gapLabels(r);
           const tier = r.readiness_tier as ReadinessTier | null;
           const taskSent = !!r.openTask || assigned.has(r.candidate_id);
@@ -406,6 +666,30 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
                       ))}
                     </div>
                   )}
+                  {role && roleInfo.get(r.candidate_id) && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                      {roleInfo.get(r.candidate_id)!.ai && (
+                        <Badge tone={roleInfo.get(r.candidate_id)!.ai!.fit === "strong" ? "success" : "neutral"}>
+                          AI: {roleInfo.get(r.candidate_id)!.ai!.fit} for this role
+                        </Badge>
+                      )}
+                      {roleInfo.get(r.candidate_id)!.checks.map((c) => (
+                        <span
+                          key={c.key}
+                          title={c.detail}
+                          className={`rounded-full px-2 py-0.5 text-[11.5px] ring-1 ${
+                            c.state === "pass"
+                              ? "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800"
+                              : c.state === "fail"
+                                ? "bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-800"
+                                : "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700"
+                          }`}
+                        >
+                          {c.state === "pass" ? "✓" : c.state === "fail" ? "✗" : "?"} {c.label}: {c.detail}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {r.strongRoles.length > 0 && (
                     <p className="mt-2 text-[12px] text-emerald-700 dark:text-emerald-400">Strong match for: {r.strongRoles.join(", ")}</p>
                   )}
@@ -426,6 +710,25 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
                     templates={candidateTemplates(r.full_name, { me, candidateId: r.candidate_id, missing: gapKeys(r) }).filter((t) => t.key !== "intro")}
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                   />
+                  {role &&
+                    (() => {
+                      const info = roleInfo.get(r.candidate_id);
+                      const inRole = info?.stage ?? (addedLocal.has(`${role.id}:${r.candidate_id}`) ? "added" : null);
+                      return inRole ? (
+                        <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-[11.5px] text-slate-600 dark:text-slate-300">
+                          In pipeline{inRole !== "added" ? `: ${inRole.replace(/_/g, " ")}` : ""}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addToRole([r.candidate_id])}
+                          disabled={adding}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          <UserPlus className="h-3.5 w-3.5" /> Add to role
+                        </button>
+                      );
+                    })()}
                   {canEmailAsk({ ...r, lastAsked: askedOn }) && (
                     <button
                       type="button"
@@ -448,15 +751,15 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
             </li>
           );
         })}
-        {filtered.length === 0 && (
+        {listRows.length === 0 && (
           <li className="rounded-ros-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-10 text-center text-[13px] text-slate-500">
             Nobody matches these filters.
           </li>
         )}
       </ul>
-      {filtered.length > shown && (
+      {listRows.length > shown && (
         <button type="button" onClick={() => setShown((n) => n + PAGE)} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[12.5px] hover:bg-slate-50 dark:hover:bg-slate-800">
-          Show {Math.min(PAGE, filtered.length - shown)} more
+          Show {Math.min(PAGE, listRows.length - shown)} more
         </button>
       )}
 
