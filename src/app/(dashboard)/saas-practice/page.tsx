@@ -293,7 +293,7 @@ export default async function SaasPracticePage() {
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The bench</h2>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Start with &quot;Needs details&quot;: pick the gap, select the people, and send them as tasks to the recruiter who will collect them. Read any CV without leaving the page.</p>
         </div>
-        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} lists={lists} />
+        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} lists={lists} waOpportunity={!!process.env.WHATSAPP_TEMPLATE_ROLE_OPPORTUNITY} />
       </section>
     </div>
   );
