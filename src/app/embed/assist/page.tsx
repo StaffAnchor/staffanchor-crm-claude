@@ -7,5 +7,11 @@ export const metadata = { title: "Message StaffAnchor", robots: { index: false, 
 // has no login. ?site=jobs tailors the wording for the job-seeker site.
 export default async function EmbedAssistPage({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
   const { site } = await searchParams;
-  return <AssistBox site={site === "jobs" ? "jobs" : "main"} />;
+  return (
+    <>
+      {/* The box is shown inside another site's page, so its own background must not show. */}
+      <style>{"html,body{background:transparent !important;}"}</style>
+      <AssistBox site={site === "jobs" ? "jobs" : "main"} />
+    </>
+  );
 }
