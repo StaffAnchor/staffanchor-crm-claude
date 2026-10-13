@@ -13,6 +13,8 @@ import ResumeMismatchesPanel from "./resume-mismatches-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
 import SuggestedRolesPanel from "./suggested-roles-panel";
+import SaasPassportCard from "./saas-passport-card";
+import { PASSPORT_COLUMNS, type PassportRow } from "@/lib/saas-passport";
 import PracticeMatchesPanel from "./practice-matches-panel";
 import Tabs from "./tabs";
 import Timeline from "./timeline";
@@ -120,6 +122,7 @@ export default async function CandidateDetailPage({
 
   // Things worth asking on a call: the AI's watch-areas plus any honesty or gap
   // flags raised when the CV was read.
+  const { data: passportRow } = await supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle();
   const { data: cvFactsRow } = await supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle();
   const cvFlagDetails = (((cvFactsRow?.facts as { flags?: { detail?: string }[] } | null)?.flags ?? []) as { detail?: string }[])
     .map((f) => f?.detail)
@@ -720,6 +723,8 @@ export default async function CandidateDetailPage({
       <Card className="mt-4">
         <CallCompanion candidate={candidate as never} doubts={callDoubts} recruiterName={scorerName} />
       </Card>
+
+      {passportRow && <SaasPassportCard row={passportRow as unknown as PassportRow} />}
 
       {/* --- AI summary: front and center, not buried in a tab --- */}
       <Card className="mt-4">
