@@ -61,9 +61,21 @@ export async function POST(req: NextRequest) {
   if (action === "classify" && typeof body.t === "number" && body.t < 700) return NextResponse.json({ error: "Please try again." }, { status: 429 });
   if (!message) return NextResponse.json({ error: "Type a message first." }, { status: 400 });
 
+  // Only messages that were actually read count toward the limit. Taps on example chips, corrections and
+  // confirmations are cheap and part of one visit, so they never use it up.
   const since = new Date(new Date().getTime() - 3_600_000).toISOString();
-  const { count: recent } = await db.from("public_assist_events").select("id", { count: "exact", head: true }).eq("ip_hash", hash).gte("created_at", since);
-  if ((recent ?? 0) >= HOURLY_LIMIT) return NextResponse.json({ error: "Too many messages. Please try again later." }, { status: 429 });
+  const { count: recent } = await db
+    .from("public_assist_events")
+    .select("id", { count: "exact", head: true })
+    .eq("ip_hash", hash)
+    .eq("kind", "understood")
+    .gte("created_at", since);
+  if ((recent ?? 0) >= HOURLY_LIMIT) {
+    return NextResponse.json(
+      { error: "You have sent quite a few messages in a short time. Please wait a little, or message us on WhatsApp.", limited: true },
+      { status: 429 }
+    );
+  }
 
   const entities = (body.entities && typeof body.entities === "object" ? body.entities : {}) as Entities;
   const log = (row: Record<string, unknown>) => db.from("public_assist_events").insert({ ip_hash: hash, site, message, ...row });

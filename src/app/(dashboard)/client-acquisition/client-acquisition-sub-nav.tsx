@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Handshake, Building2 } from "lucide-react";
+import { Handshake, Building2, Globe } from "lucide-react";
 
 const TABS = [
   { href: "/client-acquisition/sales", label: "Sales", icon: Handshake },
   { href: "/client-acquisition/employer-inquiries", label: "Employer Inquiries", icon: Building2 },
+  { href: "/client-acquisition/website-messages", label: "Website messages", icon: Globe },
 ];
 
 // Same pathname-prefix-match pattern as analytics-sub-nav.tsx -- Sales'
