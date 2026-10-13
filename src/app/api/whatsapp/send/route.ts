@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const { data: candidate, error: candidateError } = await supabase
     .from("candidates")
-    .select("full_name, phone")
+    .select("full_name, phone, phone_hold")
     .eq("id", item.candidate_id)
     .single();
 
@@ -101,6 +101,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (candidate.phone_hold) {
+    await logAttempt({ status: "failed", error: "Number on hold until confirmed." });
+    return NextResponse.json({ ok: false, status: "failed", error: "This number is on hold until the candidate confirms it." }, { status: 200 });
+  }
   if (!candidate.phone) {
     await logAttempt({ status: "failed", error: "Candidate has no phone number on file." });
     return NextResponse.json(

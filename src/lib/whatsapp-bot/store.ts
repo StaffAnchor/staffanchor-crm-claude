@@ -26,6 +26,7 @@ export interface CandidateLite {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  phone_hold?: boolean | null;
   status: string;
   current_job_title: string | null;
   current_employer: string | null;
@@ -82,7 +83,7 @@ export interface Store {
 }
 
 const CANDIDATE_COLUMNS =
-  "id, full_name, email, phone, status, current_job_title, current_employer, total_experience_years, category, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, resume_file_url";
+  "id, full_name, email, phone, phone_hold, status, current_job_title, current_employer, total_experience_years, category, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, resume_file_url";
 
 export function supabaseStore(admin: SupabaseClient): Store {
   const getContact = async (key: string) => {
