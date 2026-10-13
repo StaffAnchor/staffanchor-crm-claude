@@ -39,6 +39,7 @@ Return ONLY a JSON object:
  "role": string|null, "city": string|null, "headcount": number|null, "experience_years": number|null, "urgent": boolean}
 
 Rules:
+- The intent must be stated or clearly implied by the words. "Call me about opportunities" does not say whether the writer wants a job or is hiring, so use "other" with confidence below 0.5.
 - "employer" only if the writer is hiring or wants candidates for a company. "jobseeker" only if the writer wants a job for themselves.
 - If the message could be two of these, choose the more likely one but give confidence below 0.6.
 - If it is a greeting, spam, or has no clear intent, use "other" with confidence below 0.5.
@@ -89,6 +90,8 @@ function assemble(intent: Intent, confidence: number, via: AssistResult["via"], 
 export async function classifyMessage(message: string, site: string, allowAi: boolean): Promise<AssistResult> {
   const r: RuleResult = runRules(message);
   if (r.intent && r.confidence >= CONFIDENT) return assemble(r.intent, r.confidence, "rules", r.entities, message);
+  // Greetings and instruction-like text are never sent to the model.
+  if (r.trivial || r.injection) return assemble("other", 0, "rules", r.entities, message);
 
   if (allowAi) {
     const prompt = buildPrompt(message, site);
@@ -101,7 +104,13 @@ export async function classifyMessage(message: string, site: string, allowAi: bo
         const entities: Entities = { ...r.entities, ...parsed.entities };
         // If the rules and the model disagree on the intent, trust neither fully.
         const agree = !r.intent || r.intent === parsed.intent;
-        return assemble(parsed.intent, agree ? parsed.confidence : Math.min(parsed.confidence, 0.55), "ai", entities, message);
+        let confidence = agree ? parsed.confidence : Math.min(parsed.confidence, 0.55);
+        // A message that matched more than one kind of wording is never "sure": the visitor chooses.
+        if (r.mixed) confidence = Math.min(confidence, 0.55);
+        // The model is overconfident when the rules saw nothing at all, so it is held below "sure" and the
+        // visitor is asked to confirm. Where the rules agree with it, it keeps its own figure.
+        else if (r.signals.length === 0) confidence = Math.min(confidence, 0.75);
+        return assemble(parsed.intent, confidence, "ai", entities, message);
       }
     } catch (err) {
       await logAiUsage({ purpose: "site_assist", error: err instanceof Error ? err.message : String(err) });

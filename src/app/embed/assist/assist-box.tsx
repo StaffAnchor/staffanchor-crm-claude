@@ -42,6 +42,7 @@ export default function AssistBox({ site }: { site: "main" | "jobs" }) {
   const [result, setResult] = useState<AssistResult | null>(null);
   const [sent, setSent] = useState("");
   const [showFix, setShowFix] = useState(false);
+  const [okd, setOkd] = useState(false);
   const [contact, setContact] = useState("");
   const [contactDone, setContactDone] = useState(false);
   const startedAt = useRef(0);
@@ -69,6 +70,7 @@ export default function AssistBox({ site }: { site: "main" | "jobs" }) {
     setError(null);
     setResult(null);
     setShowFix(false);
+    setOkd(false);
     setContactDone(false);
     setSent(m);
     const { ok, data } = await call({ action: "classify", message: m, site, t: Math.round(performance.now() - startedAt.current), website: hp });
@@ -157,6 +159,28 @@ export default function AssistBox({ site }: { site: "main" | "jobs" }) {
                     </button>
                   ))}
                 </div>
+              </>
+            ) : !result.sure && !okd ? (
+              <>
+                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Is this right?</p>
+                <p className="mt-1 text-[15px] font-medium text-slate-900">{result.understood}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setOkd(true)} className="rounded-full bg-slate-900 px-4 py-1.5 text-[13.5px] font-semibold text-white hover:bg-slate-700">
+                    Yes, that is right
+                  </button>
+                  <button type="button" onClick={() => setShowFix(true)} className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-[13.5px] text-slate-800 hover:bg-slate-100">
+                    No, let me choose
+                  </button>
+                </div>
+                {showFix && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {CLARIFY.map((o) => (
+                      <button key={o.intent} type="button" onClick={() => void correct(o.intent)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] text-slate-800 hover:bg-slate-100">
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <>

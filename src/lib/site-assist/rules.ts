@@ -18,6 +18,12 @@ export type RuleResult = {
   confidence: number;
   entities: Entities;
   signals: string[];
+  /** More than one kind of wording matched ("I need a job and my friend is hiring"). */
+  mixed?: boolean;
+  /** Nothing worth reading: a greeting or a test. No AI call is made for these. */
+  trivial?: boolean;
+  /** The message tries to give the assistant instructions. It is routed to the generic step, never read. */
+  injection?: boolean;
 };
 
 const CITIES = [
@@ -74,6 +80,8 @@ const JOBSEEKER = /\b(i(?:'| a)?m looking for (?:a |an )?(?:new )?(?:job|role|op
 const REFERRER = /\b(refer|referral|referrer|sales circle|partner with you|earn (?:by|through) refer|introduce (?:candidates|people)|recommend (?:candidates|people))\b/i;
 const VENDOR = /\b(staffing (?:agency|firm|company|partner)|recruitment (?:agency|firm|partner)|we(?:'| a)?re an? (?:agency|vendor|consultancy)|vendor|empanel|empanelment|white-?label|collaborate on mandates|supply (?:candidates|profiles))\b/i;
 const STATUS = /\b(status of my|my application status|where is my application|any update on my|update on my application|have you shortlisted me|did (?:the )?client (?:respond|reply)|follow up on my|haven't heard back|no response from you)\b/i;
+const TRIVIAL = /^\W*(hi+|hello+|hey+|hola|namaste|test(?:ing)?|ok(?:ay)?|thanks?|thank you|good (?:morning|afternoon|evening)|\?+|\.+)\W*$/i;
+const INJECTION = /\b(ignore (?:all |any |the )?(?:previous|prior|above|earlier) (?:instructions?|messages?|prompts?)|disregard (?:the |all )?(?:previous|above|instructions?)|system prompt|you are (?:now )?an? (?:ai|assistant|bot|language model)|act as|pretend to be|jailbreak|reveal your (?:prompt|instructions))\b/i;
 const PRIVACY = /\b(delete my (?:data|profile|account|details)|remove my (?:data|profile|details|number|email)|unsubscribe|stop (?:messag(?:es|ing)|emails?|emailing|calling|contacting|texting)|do not (?:call|contact|message)|don'?t (?:call|contact|message)|opt out|privacy|gdpr|dpdp|data protection|complaint|harass|fraud|scam)\b/i;
 
 export function runRules(text: string): RuleResult {
@@ -100,7 +108,8 @@ export function runRules(text: string): RuleResult {
   };
   for (const [k, v] of Object.entries(hit)) if (v) signals.push(k);
 
-  if (t.length < 3) return { intent: null, confidence: 0, entities, signals };
+  if (t.length < 3 || TRIVIAL.test(t)) return { intent: null, confidence: 0, entities, signals, trivial: true };
+  if (INJECTION.test(t)) return { intent: null, confidence: 0, entities, signals, injection: true };
 
   // Privacy requests are always handled by a person, whatever else the message says.
   if (hit.privacy) return { intent: "privacy", confidence: 0.95, entities, signals };
@@ -118,7 +127,7 @@ export function runRules(text: string): RuleResult {
     return { intent: null, confidence: 0, entities, signals };
   }
   // Two or more intents at once ("I need a job and my friend is hiring"): let the AI layer or the visitor decide.
-  return { intent: null, confidence: 0.3, entities, signals };
+  return { intent: null, confidence: 0.3, entities, signals, mixed: true };
 }
 
 /** One sentence saying what we understood, built only from structured parts, never free text. */
