@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Search, FileText, ExternalLink, UserPlus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Search, FileText, ExternalLink, UserPlus, Loader2, AlertCircle, CheckCircle2, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Drawer } from "@/components/ui/drawer";
 import WhatsAppMenu from "@/components/whatsapp-menu";
@@ -15,7 +15,13 @@ import ResumeViewerInline from "../candidates/[id]/resume-viewer-inline";
 const PAGE = 40;
 const MAX_ASSIGN = 100;
 
-export type BenchRow = PassportRow & { strongRoles: string[]; openTask: string | null };
+export type BenchRow = PassportRow & { strongRoles: string[]; openTask: string | null; lastAsked: string | null };
+const MAX_EMAIL = 30;
+
+// What an email can ask for: the sales passport gaps.
+const EMAILABLE = ["segment", "deal size", "quota / attainment", "sales cycle", "hunter or farmer"];
+const canEmailAsk = (r: PassportRow & { lastAsked: string | null }) =>
+  !!r.email && !r.lastAsked && (r.passport_missing ?? []).some((g) => EMAILABLE.includes(g));
 type Recruiter = { id: string; name: string };
 type Mode = "all" | "needs" | "complete";
 
@@ -55,6 +61,9 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
   const [assigning, setAssigning] = useState(false);
   const [assignMsg, setAssignMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [assigned, setAssigned] = useState<Set<string>>(new Set());
+  const [emailing, setEmailing] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [emailed, setEmailed] = useState<Set<string>>(new Set());
   const [cvFor, setCvFor] = useState<BenchRow | null>(null);
   const [cv, setCv] = useState<{ url: string; fileName: string } | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
@@ -133,6 +142,39 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
       setAssignMsg({ ok: false, text: "Network error. Try again." });
     }
     setAssigning(false);
+  }
+
+  async function emailAsk(ids: string[]) {
+    if (ids.length === 0 || emailing) return;
+    const n = Math.min(ids.length, MAX_EMAIL);
+    const ok = window.confirm(
+      `Email ${n} candidate${n === 1 ? "" : "s"} asking for their sales details?\n\nIt goes from the StaffAnchor mailbox, counts toward today's sending limit, and skips anyone who opted out or was contacted in the last 30 days.`
+    );
+    if (!ok) return;
+    setEmailing(true);
+    setEmailMsg(null);
+    try {
+      const res = await fetch("/api/saas-practice/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateIds: ids.slice(0, MAX_EMAIL) }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEmailMsg({ ok: false, text: body.error ?? "That didn't work. Try again." });
+      } else {
+        const sentIds = new Set(ids.slice(0, MAX_EMAIL));
+        if (body.sent > 0) setEmailed((prev) => new Set([...prev, ...sentIds]));
+        const parts = [`${body.sent} sent`];
+        if (body.failed) parts.push(`${body.failed} failed`);
+        if (body.skipped) parts.push(`${body.skipped} skipped (opted out, contacted recently, no email, or nothing to ask)`);
+        setEmailMsg({ ok: body.sent > 0 || !body.failed, text: `${parts.join(", ")}.${body.note ? ` ${body.note}` : ""}` });
+        setPicked(new Set());
+      }
+    } catch {
+      setEmailMsg({ ok: false, text: "Network error. Try again." });
+    }
+    setEmailing(false);
   }
 
   async function openCv(r: BenchRow) {
@@ -280,7 +322,22 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
             {assigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
             Send as tasks
           </button>
+          <button
+            type="button"
+            onClick={() => emailAsk(Array.from(picked))}
+            disabled={emailing || picked.size === 0}
+            title="Email the selected people asking for the sales details their profile lacks"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+          >
+            {emailing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+            Email the ask
+          </button>
         </div>
+        {emailMsg && (
+          <p className={`basis-full text-[12.5px] flex items-center gap-1.5 ${emailMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
+            {emailMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />} {emailMsg.text}
+          </p>
+        )}
         {assignMsg && (
           <p className={`basis-full text-[12.5px] flex items-center gap-1.5 ${assignMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
             {assignMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />} {assignMsg.text}
@@ -297,6 +354,7 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
           const gaps = gapLabels(r);
           const tier = r.readiness_tier as ReadinessTier | null;
           const taskSent = !!r.openTask || assigned.has(r.candidate_id);
+          const askedOn = r.lastAsked ?? (emailed.has(r.candidate_id) ? "just now" : null);
           return (
             <li key={r.candidate_id} className="rounded-ros-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5">
               <div className="flex gap-3">
@@ -320,6 +378,7 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
                     {tier && <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] ring-1 ${TIER_PILL[tier]}`}>{TIER_LABEL[tier]}</span>}
                     <Badge tone={passportTone(r.passport_score)}>Passport {r.passport_score}%</Badge>
                     {taskSent && <Badge tone="info">Details requested</Badge>}
+                    {askedOn && <Badge tone="neutral">Emailed {askedOn}</Badge>}
                   </div>
                   <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
                     {[r.current_job_title, r.current_employer].filter(Boolean).join(" at ") || "No role on file"}
@@ -367,6 +426,17 @@ export default function BenchTable({ rows, segmentOptions, recruiters }: { rows:
                     templates={candidateTemplates(r.full_name, { me, candidateId: r.candidate_id, missing: gapKeys(r) }).filter((t) => t.key !== "intro")}
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                   />
+                  {canEmailAsk({ ...r, lastAsked: askedOn }) && (
+                    <button
+                      type="button"
+                      onClick={() => emailAsk([r.candidate_id])}
+                      disabled={emailing}
+                      title="Email this person asking for the sales details their profile lacks"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      <Mail className="h-3.5 w-3.5" /> Email the ask
+                    </button>
+                  )}
                   <Link
                     href={`/candidates/${r.candidate_id}`}
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"

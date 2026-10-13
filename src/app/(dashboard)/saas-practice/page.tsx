@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -121,10 +122,32 @@ export default async function SaasPracticePage() {
     .limit(2000);
   const withTask = new Set(((taskRows ?? []) as { candidate_id: string | null }[]).map((t) => t.candidate_id).filter((v): v is string => !!v));
 
+  // Who was already emailed in the last 30 days (the same window the sender uses to skip people).
+  const lastAsked = new Map<string, string>();
+  const skey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (skey) {
+    const admin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, skey, { auth: { persistSession: false } });
+    const since = new Date(new Date().getTime() - 30 * 86_400_000).toISOString();
+    const { data: sentRows } = await admin
+      .from("profile_outreach")
+      .select("candidate_id, created_at")
+      .eq("status", "sent")
+      .gte("created_at", since)
+      .order("created_at", { ascending: true })
+      .limit(5000);
+    for (const o of (sentRows ?? []) as { candidate_id: string; created_at: string }[]) {
+      lastAsked.set(
+        o.candidate_id,
+        new Date(o.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })
+      );
+    }
+  }
+
   const tableRows: BenchRow[] = all.map((r) => ({
     ...r,
     strongRoles: strongRolesByCandidate.get(r.candidate_id) ?? [],
     openTask: withTask.has(r.candidate_id) ? "open" : null,
+    lastAsked: lastAsked.get(r.candidate_id) ?? null,
   }));
 
   return (

@@ -274,3 +274,74 @@ Don't want these reminders? ${unsubscribeLink}`;
 </body></html>`;
   return { subject: copy.subject, text, html };
 }
+
+const SALES_PHRASE: Record<string, string> = {
+  deal_size: "your typical deal size",
+  quota: "your quota and how much of it you achieved",
+  sales_cycle: "your usual sales cycle",
+  customer_segments: "who you sell to (SMB, mid-market or enterprise)",
+  hunter_farmer: "whether you mostly open new accounts or grow existing ones",
+};
+
+/** The passport gaps this email can ask about. */
+export const SALES_ASK_KEYS = Object.keys(SALES_PHRASE);
+
+/**
+ * "A few quick sales details" email, for B2B and SaaS sales candidates whose profile lacks what hiring
+ * managers screen on first (deal size, quota, cycle, who they sell to). Same voice and design as the other
+ * outreach emails: plain, personal, one ask, an easy way out. A reply is read by a person, so it does not
+ * promise automatic filling.
+ */
+export function buildSalesDetailsEmail(c: { id: string; full_name: string | null }, asks: string[]) {
+  const raw = (c.full_name ?? "").trim().split(/\s+/)[0] || "";
+  const first = raw ? raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() : "there";
+  const items = asks.filter((a) => SALES_PHRASE[a]).map((a) => SALES_PHRASE[a].replace(/^your /, ""));
+  const list = items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}` : items[0] ?? "a few sales details";
+  const form = `${APP_URL}/u/${c.id}`;
+  const stop = unsubscribeUrl(c.id);
+  const subject = first === "there" ? "A few quick details so we can present your profile for sales roles" : `${first}, a few quick details so we can present your profile for sales roles`;
+
+  const text = `Hi ${first},
+
+Thank you for your interest in sales roles through StaffAnchor.
+
+Hiring managers for sales roles look at one thing before anything else: what you have actually sold. To present your profile properly we need ${list}.
+
+The quickest way is to fill them in here, it takes about a minute: ${form}
+You can also just reply to this email with a line or two and your recruiter will add them.
+
+We use these details only to match you with suitable roles.
+
+Warm regards,
+StaffAnchor Talent Solutions
+www.staffanchor.com
+
+Don't want these requests? ${stop}`;
+
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(subject)}</title></head>
+<body style="margin:0;padding:0;background:#F5F7FA;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Hiring managers screen on these first. It takes about a minute.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F7FA;padding:28px 12px;">
+<tr><td align="center">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:10px;">
+<tr><td style="padding:26px 34px 0 34px;font-family:Georgia,'Times New Roman',serif;font-size:19px;letter-spacing:0.4px;color:${NAVY};">StaffAnchor<span style="color:${BLUE};">.</span></td></tr>
+<tr><td style="padding:6px 34px 0 34px;"><div style="height:1px;background:#E5E7EB;line-height:1px;font-size:1px;">&nbsp;</div></td></tr>
+<tr><td style="padding:22px 34px 8px 34px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${NAVY};">
+<p style="margin:0 0 16px 0;">Hi ${esc(first)},</p>
+<p style="margin:0 0 16px 0;">Thank you for your interest in sales roles through StaffAnchor.</p>
+<p style="margin:0 0 16px 0;">Hiring managers for sales roles look at one thing before anything else: what you have actually sold. To present your profile properly we need <strong>${esc(list)}</strong>.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;"><tr><td style="background:${BLUE};border-radius:6px;"><a href="${form}" style="display:inline-block;padding:11px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14.5px;font-weight:600;color:#FFFFFF;text-decoration:none;">Add my sales details</a></td></tr></table>
+<p style="margin:0 0 20px 0;color:${SLATE};font-size:14px;">It takes about a minute. You can also just <strong>reply to this email</strong> with a line or two and your recruiter will add them.</p>
+<p style="margin:0 0 20px 0;color:${SLATE};font-size:14px;">We use these details only to match you with suitable roles.</p>
+<p style="margin:0 0 4px 0;">Warm regards,</p>
+<p style="margin:0 0 6px 0;font-weight:600;">StaffAnchor Talent Solutions</p>
+</td></tr>
+<tr><td style="padding:14px 34px 24px 34px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${MUTED};border-top:1px solid #F1F5F9;">
+<a href="https://www.staffanchor.com" style="color:${MUTED};text-decoration:none;">www.staffanchor.com</a> &nbsp;&middot;&nbsp; Don&rsquo;t want these requests? <a href="${stop}" style="color:${MUTED};text-decoration:underline;">Tell us and we won&rsquo;t ask again</a>.
+</td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+  return { subject, text, html, unsubscribe: stop };
+}
