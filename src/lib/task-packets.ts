@@ -18,6 +18,7 @@ export type PacketKind =
   | "new_matches"
   | "setup_role"
   | "sales_followups"
+  | "collect_details"
   | "other";
 
 export type SlaState = "overdue" | "due" | "ok";
@@ -54,6 +55,7 @@ export const SLA_DAYS: Record<PacketKind, number> = {
   new_matches: 7,
   setup_role: 3,
   sales_followups: 5,
+  collect_details: 5,
   other: 3,
 };
 
@@ -67,6 +69,7 @@ export const KIND_LABEL: Record<PacketKind, string> = {
   new_matches: "New matches",
   setup_role: "Role setup",
   sales_followups: "Prospects",
+  collect_details: "Collect details",
   other: "Other",
 };
 
@@ -80,6 +83,7 @@ const KIND_WEIGHT: Record<PacketKind, number> = {
   new_matches: 6,
   sales_followups: 7,
   record_assessment: 8,
+  collect_details: 8,
   other: 9,
 };
 
@@ -252,13 +256,15 @@ export function buildTaskBoard(input: PacketInput): TaskBoard {
       : t.task_type === "RESURFACED_MATCHES" ? "new_matches"
       : t.task_type === "CLIENT_FEEDBACK_OVERDUE" ? "chase_client"
       : SALES_TYPES.has(t.task_type) ? "sales_followups"
+      : t.task_type === "COLLECT_DETAILS" ? "collect_details"
       : null;
     if (!kind) {
       loose.push(t);
       continue;
     }
     if (kind === "chase_client" && t.mandate_id && chasedMandates.has(t.mandate_id)) continue; // already covered from the pipeline
-    const key = kind === "sales_followups" ? "sales" : `${kind}|${t.mandate_id ?? "none"}`;
+    const key =
+      kind === "sales_followups" ? "sales" : kind === "collect_details" ? `collect_details|${t.recruiter_id ?? "none"}` : `${kind}|${t.mandate_id ?? "none"}`;
     const a = grouped.get(key) ?? [];
     a.push(t);
     grouped.set(key, a);
@@ -268,7 +274,7 @@ export function buildTaskBoard(input: PacketInput): TaskBoard {
     const kind = (key === "sales" ? "sales_followups" : key.split("|")[0]) as PacketKind;
     const mid = ts[0].mandate_id;
     const m = mid ? roleOf.get(mid) : undefined;
-    const ctx = kind === "sales_followups" ? "Client acquisition" : m ? label(m) : `${ts[0].mandate_client_name ?? ""} · ${ts[0].mandate_role_title ?? ""}`.replace(/^ · | · $/g, "");
+    const ctx = kind === "sales_followups" ? "Client acquisition" : kind === "collect_details" ? "Candidate details" : m ? label(m) : `${ts[0].mandate_client_name ?? ""} · ${ts[0].mandate_role_title ?? ""}`.replace(/^ · | · $/g, "");
     const n = ts.length;
     const titles: Record<PacketKind, string> = {
       coordinate_interviews: `Coordinate ${n} ${plural(n, "interview")}`,
@@ -277,6 +283,7 @@ export function buildTaskBoard(input: PacketInput): TaskBoard {
       new_matches: n === 1 ? ts[0].title.split(":")[0] : `${n} match alerts`,
       chase_client: `Chase client feedback`,
       sales_followups: `Follow up ${n} ${plural(n, "prospect")}`,
+      collect_details: `Collect details for ${n} ${plural(n, "candidate")}`,
       review_applicants: "", send_shortlist: "", setup_role: "", other: "",
     };
     const primary: Record<string, { label: string; href: string }> = {
@@ -286,6 +293,7 @@ export function buildTaskBoard(input: PacketInput): TaskBoard {
       new_matches: { label: "See the matches", href: mid ? `/mandates/${mid}/ai-matches` : "/mandates" },
       chase_client: { label: "Open the role", href: mid ? `/mandates/${mid}?stage=submitted` : "/mandates" },
       sales_followups: { label: "Open prospects", href: "/client-acquisition/sales" },
+      collect_details: { label: "Open the B2B SaaS bench", href: "/saas-practice" },
     };
     const owner = ts.find((t) => t.recruiter_id)?.recruiter_id;
     push({

@@ -47,6 +47,12 @@ const ASK: Record<string, string> = {
   email: "email address",
   cv: "latest CV",
   resume_file_url: "latest CV",
+  // B2B sales passport gaps.
+  deal_size: "typical deal size",
+  quota: "quota and how much of it you achieved",
+  sales_cycle: "average sales cycle length",
+  customer_segments: "the kind of customers you sell to (SMB, mid-market or enterprise)",
+  hunter_farmer: "whether you mostly open new accounts or grow existing ones",
 };
 
 export type TemplateContext = {
