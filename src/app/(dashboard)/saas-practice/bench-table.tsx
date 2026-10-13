@@ -61,6 +61,7 @@ export default function BenchTable({
   stageByRole,
   relocation,
   lists,
+  waOpportunity,
 }: {
   rows: BenchRow[];
   segmentOptions: string[];
@@ -70,6 +71,7 @@ export default function BenchTable({
   stageByRole: Record<string, Record<string, string>>;
   relocation: Record<string, string>;
   lists: ShortlistSummary[];
+  waOpportunity: boolean;
 }) {
   const me = useMyFirstName();
   const [mode, setMode] = useState<Mode>("needs");
@@ -92,6 +94,7 @@ export default function BenchTable({
   const [addedLocal, setAddedLocal] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [addMsg, setAddMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [waSending, setWaSending] = useState(false);
   const [emailing, setEmailing] = useState(false);
   const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [emailed, setEmailed] = useState<Set<string>>(new Set());
@@ -265,6 +268,38 @@ export default function BenchTable({
       setAssignMsg({ ok: false, text: "Network error. Try again." });
     }
     setAssigning(false);
+  }
+
+  async function whatsappOpportunity(ids: string[]) {
+    if (!role || ids.length === 0 || waSending) return;
+    const n = Math.min(ids.length, 20);
+    const ok = window.confirm(
+      `Send ${n} candidate${n === 1 ? "" : "s"} a WhatsApp message about "${role.title}"?\n\nIt uses the approved opportunity template, never names the client, and is charged per message by Meta. Anyone who opted out or was sent it in the last 30 days is skipped.`
+    );
+    if (!ok) return;
+    setWaSending(true);
+    setAddMsg(null);
+    try {
+      const res = await fetch("/api/whatsapp/role-opportunity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mandateId: role.id, candidateIds: ids.slice(0, 20) }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.ok === false) {
+        setAddMsg({ ok: false, text: body.error ?? "That didn't work. Try again." });
+      } else {
+        const parts = [`${body.sent} sent`];
+        if (body.failed) parts.push(`${body.failed} failed${body.error ? ` (${body.error})` : ""}`);
+        const skipped = (body.noPhone ?? 0) + (body.optedOut ?? 0) + (body.alreadySent ?? 0);
+        if (skipped) parts.push(`${skipped} skipped (no mobile, opted out, or already sent)`);
+        setAddMsg({ ok: !body.failed || body.sent > 0, text: `WhatsApp: ${parts.join(", ")}.` });
+        setPicked(new Set());
+      }
+    } catch {
+      setAddMsg({ ok: false, text: "Network error. Try again." });
+    }
+    setWaSending(false);
   }
 
   async function emailAsk(ids: string[]) {
@@ -582,6 +617,18 @@ export default function BenchTable({
             >
               {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
               Add {picked.size || ""} to this role
+            </button>
+          )}
+          {role && waOpportunity && (
+            <button
+              type="button"
+              onClick={() => whatsappOpportunity(Array.from(picked))}
+              disabled={waSending || picked.size === 0}
+              title="Send the selected people a WhatsApp message about this role, using the approved template"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 px-3 py-1.5 text-[12.5px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-50"
+            >
+              {waSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+              WhatsApp the opportunity
             </button>
           )}
           <button

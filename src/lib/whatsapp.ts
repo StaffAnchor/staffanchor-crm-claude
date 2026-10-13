@@ -51,7 +51,7 @@ type TemplateComponent = {
 export async function sendWhatsAppTemplate({
   to,
   templateName,
-  languageCode = "en_US",
+  languageCode = process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? "en",
   bodyParams = [],
 }: {
   to: string;
@@ -219,6 +219,15 @@ export async function sendWhatsAppFreeform({
  * WHATSAPP_TEMPLATE_INTERVIEW_COORDINATION / WHATSAPP_TEMPLATE_OFFER_FOLLOWUP
  * once templates are approved, no code change needed.
  */
+/** Approved template used to ask a candidate for missing details when the 24-hour window is closed. */
+export const profileDetailsTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_PROFILE_DETAILS || null;
+
+/** Approved (marketing) template used to tell a candidate about an opening. */
+export const roleOpportunityTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_ROLE_OPPORTUNITY || null;
+
+/** Template variables must sit on one line: no line breaks, tabs or long runs of spaces. */
+export const oneLine = (s: string): string => s.replace(/\s+/g, " ").trim();
+
 export function templateNameForTaskType(taskType: string): string | null {
   if (taskType === "TRIGGER_INTERVIEW_COORDINATION") {
     return process.env.WHATSAPP_TEMPLATE_INTERVIEW_COORDINATION ?? null;

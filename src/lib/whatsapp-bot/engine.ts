@@ -107,6 +107,18 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   const wantsStop = (m.type === "text" || m.type === "button") && m.text !== null && isStop(m.text);
   if (wantsStop) patch.opted_out = true;
 
+  // A tapped button on a role-opportunity message. "Yes" goes to a recruiter (the assistant must not
+  // start questioning someone who just said they are interested); "Not now" is recorded and left alone.
+  const tapped = m.type === "button" && m.text !== null ? m.text.trim().toLowerCase() : "";
+  if (tapped === "yes, share details" || tapped === "yes share details") {
+    await store.updateContact(key, { ...patch, needs_human: true, needs_human_reason: "Tapped Yes on a role opportunity. Send them the details." });
+    return { action: "silent", kind: contact.kind, replies: [] };
+  }
+  if (tapped === "not now") {
+    if (Object.keys(patch).length) await store.updateContact(key, patch);
+    return { action: "silent", kind: contact.kind, replies: [] };
+  }
+
   // May the assistant speak at all?
   // A recruiter who asks for someone's missing details has chosen that chat, so the assistant may carry on there.
   const botState = contact.bot_state as Partial<BotState>;

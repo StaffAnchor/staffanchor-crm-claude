@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
-import { sendWhatsAppFreeform } from "@/lib/whatsapp";
+import { sendWhatsAppFreeform, sendWhatsAppTemplate, profileDetailsTemplate, oneLine } from "@/lib/whatsapp";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { whatsappEmailLine } from "@/lib/whatsapp-entry";
 import { missingKeyDetails } from "@/lib/key-details";
@@ -84,7 +84,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, via: "whatsapp", count: missing.length });
   }
 
-  // The window is closed: email instead.
+  // The window is closed. If an approved template is set up, ask on WhatsApp with it; otherwise email.
+  const templateName = profileDetailsTemplate();
+  if (templateName && key && key.length === 10 && !contact?.opted_out) {
+    const list = oneLine(missing.map((m) => m.ask).join(", "));
+    const first = oneLine((cand.full_name ?? "").trim().split(/\s+/)[0] || "there");
+    const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com"}/u/${cand.id}`;
+    const res = await sendWhatsAppTemplate({ to: key, templateName, bodyParams: [first, list, link] });
+    await store.logMessage({
+      candidate_id: cand.id,
+      direction: "outbound",
+      to_phone: key,
+      body_preview: `Template ${templateName}: asked for ${list}`,
+      status: res.ok ? "sent" : res.status === "not_configured" ? "not_configured" : "failed",
+      template_name: templateName,
+      meta_message_id: res.ok ? res.metaMessageId : null,
+      error: res.ok ? null : res.error,
+    });
+    if (res.ok) {
+      if (!contact) contact = await store.createContact(key);
+      await store.updateContact(key, { kind: "jobseeker", kind_source: "manual", candidate_id: cand.id });
+      await admin.from("audit_log").insert({ actor: user.id, action: "missing_details_asked", entity: "candidate", entity_id: cand.id, detail: { via: "whatsapp_template", template: templateName, missing: missing.map((m) => m.key) } });
+      return NextResponse.json({ ok: true, via: "whatsapp_template", count: missing.length, note: "Sent as an approved WhatsApp template, because the 24-hour window was closed." });
+    }
+    // The template failed (not approved yet, bad number...): fall through to email.
+  }
+
   return await emailFallback(admin, user.id, cand, missing.map((m) => m.ask), missing.map((m) => m.key));
 }
 
