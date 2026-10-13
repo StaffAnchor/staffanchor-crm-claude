@@ -31,7 +31,8 @@ export type DraftRole = {
 };
 
 export function shortLink(code: string): string {
-  return `${JOBS_SITE}/j/${code}?utm_source=linkedin&utm_medium=social&utm_campaign=pipeline`;
+  // /l/ is the LinkedIn short link: the jobs site tags those visits as linkedin itself.
+  return `${JOBS_SITE}/l/${code}`;
 }
 
 function parseJsonArray(raw: string): unknown[] | null {
