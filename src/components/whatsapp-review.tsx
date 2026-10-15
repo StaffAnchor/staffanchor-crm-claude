@@ -68,10 +68,21 @@ export default function WhatsAppReview({
   );
 
   useEffect(() => {
-    void load(undefined);
+    let alive = true;
+    loadPreview(undefined)
+      .then((r) => {
+        if (!alive) return;
+        if (r.ok) setPreview(r.preview);
+        else setError(r.error);
+      })
+      .catch(() => alive && setError("Couldn't prepare the message. Please try again."))
+      .finally(() => alive && setLoading(false));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && !sending && onClose();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      alive = false;
+      window.removeEventListener("keydown", onKey);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

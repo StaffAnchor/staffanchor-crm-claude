@@ -1,5 +1,6 @@
 "use client";
 
+import WhatsAppReview from "@/components/whatsapp-review";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -950,6 +951,7 @@ function ContextDrawer({
   // mandate instead, since that's where the actual work item lives.
   const box = boxFor(item.task_type);
   const [sending, setSending] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [, forceRerender] = useState(0);
 
@@ -996,25 +998,38 @@ function ContextDrawer({
 
   const aiInsight = aiInsightCache.get(item.id);
 
-  async function handleSendUpdate() {
-    setSending(true);
+  // "Send Update" opens the review step: the exact template message is shown and only its button sends it.
+  function handleSendUpdate() {
     setSendResult(null);
+    setReviewing(true);
+  }
+
+  async function reviewLoad() {
+    const res = await fetch("/api/whatsapp/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inboxItemId: item.id, preview: true }),
+    });
+    const body = await res.json().catch(() => ({}));
+    return body.ok && body.preview ? ({ ok: true, preview: body.preview } as const) : ({ ok: false, error: body.error ?? "Couldn't prepare the message." } as const);
+  }
+
+  async function reviewSend() {
+    setSending(true);
     try {
       const res = await fetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inboxItemId: item.id }),
       });
-      const body = await res.json();
+      const body = await res.json().catch(() => ({}));
       if (body.ok) {
         setSendResult({ ok: true, message: "WhatsApp update sent." });
-      } else if (body.status === "not_configured") {
-        setSendResult({ ok: false, message: "WhatsApp isn't connected yet -- this will send automatically once it's set up." });
-      } else {
-        setSendResult({ ok: false, message: body.error ?? "Couldn't send the update." });
+        return { ok: true, text: "WhatsApp update sent." };
       }
-    } catch {
-      setSendResult({ ok: false, message: "Couldn't send the update." });
+      const text = body.status === "not_configured" ? "WhatsApp isn't connected yet, so nothing was sent." : body.error ?? "Couldn't send the update.";
+      setSendResult({ ok: false, message: text });
+      return { ok: false, text };
     } finally {
       setSending(false);
     }
@@ -1187,11 +1202,20 @@ function ContextDrawer({
             icon={sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
             className="w-full mb-2 !text-emerald-700 !bg-emerald-50 hover:!bg-emerald-100 ring-emerald-200"
           >
-            Send Update via WhatsApp (auto)
+            Review &amp; send update (auto)
           </Button>
+          {reviewing && (
+            <WhatsAppReview
+              title="Send update on WhatsApp"
+              recipient={item.candidate_name ?? null}
+              loadPreview={reviewLoad}
+              send={reviewSend}
+              onClose={() => setReviewing(false)}
+            />
+          )}
           <p className="mb-2 text-[11px] leading-4 text-slate-400">
-            Auto: StaffAnchor&apos;s WhatsApp sends the approved template for this task straight away: interview coordination (asks them to confirm
-            the interview) or offer follow-up (checks where they stand on the offer). Meta charges per message.
+            Auto: StaffAnchor&apos;s WhatsApp sends the approved template for this task (interview coordination or offer follow-up) once you review the
+            message and press Send. Meta charges per message.
           </p>
           {sendResult && (
             <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500 dark:text-slate-400"}`}>

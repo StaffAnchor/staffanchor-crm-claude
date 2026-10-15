@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWhatsAppTemplates } from "@/lib/use-whatsapp-templates";
+import WhatsAppReview from "@/components/whatsapp-review";
 
 type Busy = "details" | "interview" | "offer" | "opportunity" | null;
 
@@ -27,73 +28,100 @@ export default function PipelineTemplateActions({
   showOpportunity?: boolean;
 }) {
   const flags = useWhatsAppTemplates();
-  const [busy, setBusy] = useState<Busy>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const router = useRouter();
+  const [review, setReview] = useState<Busy>(null);
 
   const askDetails = (missing?.length ?? 0) > 0;
   const interview = stage === "client_interview" && !!flags?.interview;
   const offer = stage === "offer" && !!flags?.offer;
   const opportunity = !!showOpportunity && !!flags?.opportunity;
-  if (!askDetails && !interview && !offer && !opportunity) return null;
 
-  async function post(kind: Exclude<Busy, null>) {
-    if (busy) return;
-    if (kind === "opportunity" && !window.confirm("Send this person a WhatsApp message about this role using the approved template? Meta charges per template message.")) return;
-    setBusy(kind);
-    setMsg(null);
-    try {
-      let res: Response;
-      if (kind === "details") {
-        res = await fetch("/api/whatsapp/ask-missing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId }) });
-      } else if (kind === "opportunity") {
-        res = await fetch("/api/whatsapp/role-opportunity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mandateId, candidateIds: [candidateId] }) });
-      } else {
-        res = await fetch("/api/whatsapp/stage-template", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId, mandateId, kind }) });
+  // Every send goes through the review step: the exact message is shown, and only the button sends it.
+  const REVIEW_TITLE: Record<Exclude<Busy, null>, string> = {
+    details: "Ask for missing profile details",
+    interview: "Interview request",
+    offer: "Offer follow-up",
+    opportunity: "Tell them about this role",
+  };
+
+  const call = useCallback(
+    async (kind: Exclude<Busy, null>, extra: Record<string, unknown>) => {
+      const post = (url: string, body: Record<string, unknown>) =>
+        fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(async (r) => ({ res: r, d: await r.json().catch(() => ({})) }));
+      if (kind === "details") return post("/api/whatsapp/ask-missing", { candidateId, ...extra });
+      if (kind === "opportunity") return post("/api/whatsapp/role-opportunity", { mandateId, candidateIds: [candidateId], ...extra });
+      return post("/api/whatsapp/stage-template", { candidateId, mandateId, kind, ...extra });
+    },
+    [candidateId, mandateId]
+  );
+
+  const loadPreview = useCallback(
+    async (only?: string[]) => {
+      if (!review) return { ok: false, error: "Nothing to preview." } as const;
+      const { d } = await call(review, { preview: true, ...(review === "details" ? { only } : {}) });
+      if (d.ok === false || !d.preview) return { ok: false, error: d.error ?? "Couldn't prepare the message." } as const;
+      if (review === "opportunity" && (!d.preview.recipients || d.preview.recipients < 1)) {
+        return { ok: false, error: d.alreadySent ? "Already sent in the last 30 days." : d.optedOut ? "They opted out of automatic messages." : d.noPhone ? "No usable mobile number." : "This person can't be messaged right now." } as const;
       }
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok || d.ok === false) {
-        setMsg({ ok: false, text: d.error ?? "That didn't work." });
-      } else if (kind === "opportunity") {
-        setMsg(d.sent > 0 ? { ok: true, text: "Sent on WhatsApp." } : { ok: false, text: d.alreadySent ? "Already sent in the last 30 days." : d.optedOut ? "They opted out." : d.noPhone ? "No mobile number." : (d.error ?? "Not sent.") });
-      } else if (kind === "details") {
-        setMsg({ ok: true, text: d.via === "email" ? "Window closed: emailed them a link." : d.via === "whatsapp_template" ? "Sent as a WhatsApp template." : "Asked in the WhatsApp chat." });
-      } else {
-        setMsg({ ok: true, text: "Sent on WhatsApp." });
+      return { ok: true, preview: d.preview } as const;
+    },
+    [review, call]
+  );
+
+  const sendNow = useCallback(
+    async (only?: string[]) => {
+      if (!review) return { ok: false, text: "Nothing to send." };
+      const { res, d } = await call(review, review === "details" ? { only } : {});
+      if (!res.ok || d.ok === false) return { ok: false, text: d.error ?? "That didn't work. Nothing was sent." };
+      if (review === "opportunity") {
+        return d.sent > 0 ? { ok: true, text: "Sent on WhatsApp." } : { ok: false, text: d.alreadySent ? "Already sent in the last 30 days." : d.optedOut ? "They opted out." : d.noPhone ? "No mobile number." : (d.error ?? "Not sent.") };
       }
-    } catch {
-      setMsg({ ok: false, text: "Network error." });
-    }
-    setBusy(null);
-  }
+      if (review === "details") {
+        return { ok: true, text: d.via === "email" ? "WhatsApp wasn't possible, so we emailed them a link." : d.via === "whatsapp_template" ? "Sent as the approved WhatsApp template." : "Asked in the WhatsApp chat." };
+      }
+      return { ok: true, text: "Sent on WhatsApp." };
+    },
+    [review, call]
+  );
+
+  if (!askDetails && !interview && !offer && !opportunity) return null;
 
   return (
     <div className="flex flex-col items-start gap-1">
       <div className="flex flex-wrap gap-1">
         {askDetails && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("details")} title="Automatic. Asks the candidate for the details missing from their profile: in the chat if the 24-hour window is open, otherwise with the approved profile-details template.">
-            {busy === "details" && <Loader2 className="h-3 w-3 animate-spin" />} Ask details
+          <button type="button" className={btn} onClick={() => setReview("details")} title="Automatic. Asks the candidate for the details missing from their profile: in the chat if the 24-hour window is open, otherwise with the approved profile-details template.">
+            Review &amp; ask details
           </button>
         )}
         {interview && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("interview")} title="Automatic. Sends the approved interview-coordination template now, to ask the candidate to confirm interview availability.">
-            {busy === "interview" && <Loader2 className="h-3 w-3 animate-spin" />} Interview request
+          <button type="button" className={btn} onClick={() => setReview("interview")} title="Automatic. Sends the approved interview-coordination template now, to ask the candidate to confirm interview availability.">
+            Review interview request
           </button>
         )}
         {offer && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("offer")} title="Automatic. Sends the approved offer follow-up template now, to check where the candidate stands on the offer.">
-            {busy === "offer" && <Loader2 className="h-3 w-3 animate-spin" />} Offer follow-up
+          <button type="button" className={btn} onClick={() => setReview("offer")} title="Automatic. Sends the approved offer follow-up template now, to check where the candidate stands on the offer.">
+            Review offer follow-up
           </button>
         )}
         {opportunity && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("opportunity")} title="Automatic. Sends the approved role-opportunity template now, to tell the candidate about this role and ask if they are interested.">
-            {busy === "opportunity" && <Loader2 className="h-3 w-3 animate-spin" />} WhatsApp this role
+          <button type="button" className={btn} onClick={() => setReview("opportunity")} title="Automatic. Sends the approved role-opportunity template now, to tell the candidate about this role and ask if they are interested.">
+            Review &amp; WhatsApp this role
           </button>
         )}
       </div>
       {(askDetails || interview || offer || opportunity) && (
-        <span className="text-[10.5px] leading-4 text-slate-400">Auto: sent by StaffAnchor&apos;s WhatsApp with an approved template. Meta charges per message.</span>
+        <span className="text-[10.5px] leading-4 text-slate-400">Auto: sent from StaffAnchor&apos;s WhatsApp with an approved template, only after you review the message and press Send. Meta charges per message.</span>
       )}
-      {msg && <span className={`text-[11px] ${msg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>{msg.text}</span>}
+      {review && (
+        <WhatsAppReview
+          title={REVIEW_TITLE[review]}
+          loadPreview={loadPreview}
+          send={sendNow}
+          onDone={() => router.refresh()}
+          onClose={() => setReview(null)}
+        />
+      )}
     </div>
   );
 }
