@@ -140,6 +140,9 @@ export default function WhatsAppPanel({
             placeholder="Type a reply, or generate a draft with AI first..."
             className="w-full rounded-ros-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
           />
+          <p className="mt-1.5 text-[10.5px] leading-4 text-slate-400">
+            Auto: this is sent straight away from StaffAnchor&apos;s WhatsApp Business number, as a free reply inside the 24-hour window. It is not a template.
+          </p>
           <div className="flex items-center justify-between mt-2">
             <div>
               {error && <p className="text-[11px] text-red-600">{error}</p>}

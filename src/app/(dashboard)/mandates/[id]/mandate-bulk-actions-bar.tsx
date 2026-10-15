@@ -363,20 +363,20 @@ export default function MandateBulkActionsBar({
           <button
             onClick={() => setWaOpen(true)}
             className="flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-medium"
-            title="Opens each selected candidate's WhatsApp chat with this role's message ready to send"
+            title="Manual: opens WhatsApp Web in your browser for each selected candidate with this role's message typed in. You press Send yourself. Nothing is sent automatically."
           >
             <MessageCircle className="w-3 h-3" />
-            Send WhatsApp
+            Send WhatsApp (opens browser)
           </button>
           {templates?.opportunity && (
             <button
               onClick={previewOpportunity}
               disabled={oppSending || oppPlan?.loading}
               className="flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
-              title="Tell the selected people about this role with the approved WhatsApp template. You see the count first."
+              title="Automatic: StaffAnchor's WhatsApp sends each selected person the approved role-opportunity template to ask if they are interested. You see the count first. Meta charges per message."
             >
               <MessageCircle className="w-3 h-3" />
-              WhatsApp this role (template)
+              WhatsApp this role (auto, template)
             </button>
           )}
           <button

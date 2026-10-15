@@ -64,8 +64,14 @@ function Row({ r }: { r: WebsiteMessage }) {
                   <Mail className="h-3 w-3" /> Email
                 </a>
               ) : (
-                <a href={waLink(r.contact)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-emerald-700 hover:underline">
-                  <MessageCircle className="h-3 w-3" /> WhatsApp
+                <a
+                  href={waLink(r.contact)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Manual: opens WhatsApp in your browser or phone with an empty chat. You write and send the message yourself. Nothing is sent automatically."
+                  className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
+                >
+                  <MessageCircle className="h-3 w-3" /> WhatsApp (opens browser)
                 </a>
               )}
             </div>

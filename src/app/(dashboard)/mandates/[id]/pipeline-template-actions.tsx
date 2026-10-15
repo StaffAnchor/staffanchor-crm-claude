@@ -70,26 +70,29 @@ export default function PipelineTemplateActions({
     <div className="flex flex-col items-start gap-1">
       <div className="flex flex-wrap gap-1">
         {askDetails && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("details")} title="Ask for what the profile is missing">
+          <button type="button" className={btn} disabled={!!busy} onClick={() => post("details")} title="Automatic. Asks the candidate for the details missing from their profile: in the chat if the 24-hour window is open, otherwise with the approved profile-details template.">
             {busy === "details" && <Loader2 className="h-3 w-3 animate-spin" />} Ask details
           </button>
         )}
         {interview && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("interview")} title="Send the approved interview request template">
+          <button type="button" className={btn} disabled={!!busy} onClick={() => post("interview")} title="Automatic. Sends the approved interview-coordination template now, to ask the candidate to confirm interview availability.">
             {busy === "interview" && <Loader2 className="h-3 w-3 animate-spin" />} Interview request
           </button>
         )}
         {offer && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("offer")} title="Send the approved offer follow-up template">
+          <button type="button" className={btn} disabled={!!busy} onClick={() => post("offer")} title="Automatic. Sends the approved offer follow-up template now, to check where the candidate stands on the offer.">
             {busy === "offer" && <Loader2 className="h-3 w-3 animate-spin" />} Offer follow-up
           </button>
         )}
         {opportunity && (
-          <button type="button" className={btn} disabled={!!busy} onClick={() => post("opportunity")} title="Tell them about this role with the approved template">
+          <button type="button" className={btn} disabled={!!busy} onClick={() => post("opportunity")} title="Automatic. Sends the approved role-opportunity template now, to tell the candidate about this role and ask if they are interested.">
             {busy === "opportunity" && <Loader2 className="h-3 w-3 animate-spin" />} WhatsApp this role
           </button>
         )}
       </div>
+      {(askDetails || interview || offer || opportunity) && (
+        <span className="text-[10.5px] leading-4 text-slate-400">Auto: sent by StaffAnchor&apos;s WhatsApp with an approved template. Meta charges per message.</span>
+      )}
       {msg && <span className={`text-[11px] ${msg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>{msg.text}</span>}
     </div>
   );
