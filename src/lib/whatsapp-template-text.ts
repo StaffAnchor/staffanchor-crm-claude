@@ -25,6 +25,15 @@ export function detailsPhrase(missing: { label: string }[]): string {
 export const renderDetailsMessage = (first: string, list: string, link: string) =>
   `Hi ${first}, this is StaffAnchor regarding the profile you shared with us. To present you for suitable roles we need your ${list}. You can share them in about a minute here: ${link}\n\nIf you would rather type them, just reply to this message.`;
 
+/**
+ * profile_details_request_v2 and later carry the profile link on a "Complete my profile" button, so the
+ * text has no raw link and takes only the first name and the list. Earlier versions put the link in the text.
+ */
+export const detailsTemplateUsesButton = (templateName: string | null | undefined): boolean => /_v\d+$/.test(templateName ?? "");
+
+export const renderDetailsMessageButton = (first: string, list: string) =>
+  `Dear ${first},\n\nStaffAnchor Talent Solutions is a Revenue Roles focused recruitment firm, and we are reviewing the profile you shared with us.\n\nTo present you for suitable roles, please share your ${list}. You may do so using the button below, or simply by replying to this message, and we will update your profile.\n\nThank you.\n\n[ Complete my profile ]`;
+
 export const renderOpportunityMessage = (first: string, role: string, city: string) =>
   `Hi ${first}, we have a ${role} opening in ${city} that matches your experience. Would you like us to share the details and put your profile forward?`;
 
