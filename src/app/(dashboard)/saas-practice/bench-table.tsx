@@ -624,11 +624,11 @@ export default function BenchTable({
               type="button"
               onClick={() => whatsappOpportunity(Array.from(picked))}
               disabled={waSending || picked.size === 0}
-              title="Send the selected people a WhatsApp message about this role, using the approved template"
+              title="Automatic: StaffAnchor's WhatsApp sends each selected person the approved role-opportunity template to ask if they are interested. The client is never named. Meta charges per message."
               className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 px-3 py-1.5 text-[12.5px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-50"
             >
               {waSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-              WhatsApp the opportunity
+              WhatsApp the opportunity (auto, template)
             </button>
           )}
           <button

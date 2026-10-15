@@ -1187,8 +1187,12 @@ function ContextDrawer({
             icon={sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
             className="w-full mb-2 !text-emerald-700 !bg-emerald-50 hover:!bg-emerald-100 ring-emerald-200"
           >
-            Send Update via WhatsApp
+            Send Update via WhatsApp (auto)
           </Button>
+          <p className="mb-2 text-[11px] leading-4 text-slate-400">
+            Auto: StaffAnchor&apos;s WhatsApp sends the approved template for this task straight away: interview coordination (asks them to confirm
+            the interview) or offer follow-up (checks where they stand on the offer). Meta charges per message.
+          </p>
           {sendResult && (
             <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500 dark:text-slate-400"}`}>
               {sendResult.message}

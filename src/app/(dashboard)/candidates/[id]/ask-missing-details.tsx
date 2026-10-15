@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, Loader2, MessageCircle } from "lucide-react";
+import { AutoChip } from "@/components/whatsapp-mode";
 
 // Shows what a profile is missing and lets a recruiter ask the candidate for just those details:
 // in the WhatsApp chat if the free-message window is open, by email otherwise.
@@ -48,9 +49,17 @@ export default function AskMissingDetails({ candidateId, missing }: { candidateI
           <Check className="h-3 w-3" /> {note}
         </span>
       ) : (
-        <button onClick={ask} disabled={state === "loading"} className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60">
-          {state === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />} Ask for missing details
-        </button>
+        <>
+          <button
+            onClick={ask}
+            disabled={state === "loading"}
+            title="Automatic: StaffAnchor's WhatsApp asks them in the chat if their 24-hour window is open, or sends the approved profile-details template if it is closed (Meta charges per template). If there is no WhatsApp route it emails them a link."
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+          >
+            {state === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />} Ask for missing details
+          </button>
+          <AutoChip purpose="ask for missing profile details" />
+        </>
       )}
       {error && <span className="text-rose-600">{error}</span>}
     </div>

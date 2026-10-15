@@ -1669,8 +1669,9 @@ export default function CandidatesTable({
             size="sm"
             onClick={() => setWaOpen(true)}
             icon={<MessageCircle className="w-3.5 h-3.5" />}
+            title="Manual: opens WhatsApp Web in your browser for each person with the message typed in. You press Send yourself. Nothing is sent automatically."
           >
-            Send WhatsApp
+            Send WhatsApp (opens browser)
           </Button>
           <Button
             variant="secondary"
@@ -1678,9 +1679,9 @@ export default function CandidatesTable({
             onClick={previewAsk}
             disabled={bulkBusy || askSending || askPlan?.loading}
             icon={<MessageCircle className="w-3.5 h-3.5" />}
-            title="Ask the selected people on WhatsApp for what their profile is missing"
+            title="Automatic: StaffAnchor's WhatsApp asks each selected person for what their profile is missing, in the chat if their 24-hour window is open or with the approved profile-details template if not. You see the count first. Meta charges per template message."
           >
-            Ask details on WhatsApp
+            Ask details (auto, template)
           </Button>
           <Button
             variant="secondary"
