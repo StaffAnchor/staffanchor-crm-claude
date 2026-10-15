@@ -7,7 +7,7 @@ import { startOnboarding, type Step } from "@/lib/whatsapp-bot/flow";
 import { candidatePrefill } from "@/lib/whatsapp-bot/engine";
 import { supabaseStore, type CandidateLite } from "@/lib/whatsapp-bot/store";
 import { WINDOW_MS, phoneKey } from "@/lib/whatsapp-threads";
-import { detailsPhrase, detailsTemplateUsesButton, renderDetailsMessage, renderDetailsMessageButton } from "@/lib/whatsapp-template-text";
+import { detailsPhrase, detailsTemplateUsesButton, renderDetailsFreeform, renderDetailsMessage, renderDetailsMessageButton } from "@/lib/whatsapp-template-text";
 
 // "Ask for missing details": ask one candidate for exactly what their profile lacks.
 //  - Inside WhatsApp's 24-hour window: the assistant asks the missing questions in the chat and fills
@@ -47,7 +47,7 @@ export async function planAsk(admin: SupabaseClient, candidateId: string): Promi
   const store = supabaseStore(admin);
   const cand = await store.getCandidate(candidateId);
   if (!cand) return { ok: false, skip: "no_phone", error: "Candidate not found" };
-  const missing = missingKeyDetails({ ...cand });
+  const missing = askableMissing(cand);
   if (missing.length === 0) return { ok: false, skip: "nothing_missing", error: SKIP_TEXT.nothing_missing, cand };
   if (cand.phone_hold) return { ok: false, skip: "phone_hold", error: SKIP_TEXT.phone_hold, cand };
   const key = phoneKey(cand.phone);
@@ -96,6 +96,44 @@ const STEP_FOR_KEY: Record<string, Step> = {
   current_location: "location",
 };
 
+// What to ask first. The message asks for the top few of what THIS person has not given us, in this order,
+// and the next ask picks the next ones. Details not named here come after, in their usual order.
+const ASK_PRIORITY = [
+  "current_fixed_ctc",
+  "notice_period",
+  "resume_file_url",
+  "current_location",
+  "current_employer",
+  "open_to_relocation",
+  "expected_fixed_ctc",
+  "current_job_title",
+  "total_experience_years",
+];
+const ASK_AT_A_TIME = 2;
+
+type Askable = { key: string; label: string; ask: string };
+
+/** Everything this person is missing that we can ask for, most important first. */
+function askableMissing(cand: CandidateLite): Askable[] {
+  const all: Askable[] = [...missingKeyDetails({ ...cand })];
+  if (cand.open_to_relocation === null || cand.open_to_relocation === undefined || String(cand.open_to_relocation).trim() === "") {
+    all.push({ key: "open_to_relocation", label: "Relocation preference", ask: "whether you are open to relocating" });
+  }
+  const rank = (k: string) => {
+    const i = ASK_PRIORITY.indexOf(k);
+    return i === -1 ? ASK_PRIORITY.length : i;
+  };
+  return all.map((m, idx) => ({ m, idx })).sort((a, b) => rank(a.m.key) - rank(b.m.key) || a.idx - b.idx).map((x) => x.m);
+}
+
+/** The details a request will ask for: the ticked ones if the recruiter chose, otherwise the top few. */
+function chooseDetails(all: Askable[], only?: string[]): Askable[] {
+  return only && only.length > 0 ? all.filter((m) => only.includes(m.key)) : all.slice(0, ASK_AT_A_TIME);
+}
+
+/** The chat assistant can ask these one at a time. Anything else goes as a normal message with the profile link. */
+const chatCanAsk = (chosen: Askable[]) => chosen.every((m) => m.key in STEP_FOR_KEY || m.key === "resume_file_url");
+
 function skipStepsFor(all: { key: string }[], chosen: { key: string }[]): Step[] {
   const keep = new Set(chosen.map((c) => c.key));
   return all.filter((m) => !keep.has(m.key)).map((m) => STEP_FOR_KEY[m.key]).filter((s): s is Step => !!s);
@@ -119,30 +157,49 @@ export async function previewAsk(
   const p = await planAsk(admin, candidateId);
   const cand = p.cand;
   if (!cand) return { ok: false, error: p.ok ? "Candidate not found" : p.error };
-  const missingAll = missingKeyDetails({ ...cand });
-  const chosen = only && only.length > 0 ? missingAll.filter((m) => only.includes(m.key)) : missingAll;
+  const missingAll = askableMissing(cand);
+  const chosen = chooseDetails(missingAll, only);
   if (chosen.length === 0) return { ok: false, error: "Pick at least one detail to ask for." };
   const first = oneLine((cand.full_name ?? "").trim().split(/\s+/)[0] || "there");
-  const items = (route: AskPreview["route"]) =>
-    missingAll.map((m) => ({
+  const itemList = missingAll.map((m) => ({
       key: m.key,
       label: m.label,
       selected: chosen.some((c) => c.key === m.key),
-      fixed: route === "chat" && !STEP_FOR_KEY[m.key],
+      fixed: false,
     }));
 
   const emailable = !!cand.email && !cand.email.endsWith(".invalid");
   if (!p.ok && !(p.skip === "no_template" || p.skip === "no_phone" || p.skip === "recent")) return { ok: false, error: p.error };
 
   if (p.ok && p.plan === "window") {
-    const started = startOnboarding({ prefill: candidatePrefill(cand), existingCandidateId: cand.id, hasResume: !!cand.resume_file_url, nowIso: new Date().toISOString(), recruiterAsked: true, skip: skipStepsFor(missingAll, chosen) });
+    if (!chatCanAsk(chosen)) {
+      const list = oneLine(detailsPhrase(chosen));
+      const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com"}/u/${cand.id}`;
+      return {
+        ok: true,
+        preview: {
+          route: "chat",
+          messages: [renderDetailsFreeform(first, list, link)],
+          items: itemList,
+          note: "Their 24-hour chat is open, so this goes as a normal chat message from StaffAnchor's number: free, with their profile link. (The chat assistant can't ask for everything you ticked, so it sends one message instead of questions.)",
+        },
+      };
+    }
+    const started = startOnboarding({
+      prefill: candidatePrefill(cand),
+      existingCandidateId: cand.id,
+      hasResume: !!cand.resume_file_url || !chosen.some((m) => m.key === "resume_file_url"),
+      nowIso: new Date().toISOString(),
+      recruiterAsked: true,
+      skip: skipStepsFor(missingAll, chosen),
+    });
     return {
       ok: true,
       preview: {
         route: "chat",
         messages: started.replies,
-        items: items("chat"),
-        note: "Their 24-hour chat is open, so this goes as normal chat messages from StaffAnchor's number: free, and the assistant fills their answers into the profile.",
+        items: itemList,
+        note: "Their 24-hour chat is open, so this goes as normal chat messages from StaffAnchor's number: free, and the assistant asks only what you ticked and fills their answers into the profile.",
       },
     };
   }
@@ -154,7 +211,7 @@ export async function previewAsk(
       preview: {
         route: "template",
         messages: [detailsTemplateUsesButton(profileDetailsTemplate()) ? renderDetailsMessageButton(first, list) : renderDetailsMessage(first, list, link)],
-        items: items("template"),
+        items: itemList,
         note: "Their 24-hour chat is closed, so this goes as Meta's approved profile-details template. The wording is fixed by Meta; you choose which details it asks for. Meta charges per message.",
       },
     };
@@ -166,7 +223,7 @@ export async function previewAsk(
       preview: {
         route: "email",
         messages: [`Subject: A few details to complete your StaffAnchor profile\n\nHi ${first},\n\nTo match you with the right roles, we still need ${list}. It takes about a minute: (a link to complete the profile)\n\nYou can also reply to this email.\n\nThanks,\nStaffAnchor Team`],
-        items: items("email"),
+        items: itemList,
         note: "WhatsApp can't be used for this person right now, so this goes as an email.",
       },
     };
@@ -187,8 +244,8 @@ export async function askMissingDetails(
   const p = await planAsk(admin, candidateId);
   const cand = p.cand;
   if (!cand) return { ok: false, error: p.ok ? "Candidate not found" : p.error };
-  const missingAll = missingKeyDetails({ ...cand });
-  const missing = opts.only && opts.only.length > 0 ? missingAll.filter((m) => opts.only!.includes(m.key)) : missingAll;
+  const missingAll = askableMissing(cand);
+  const missing = chooseDetails(missingAll, opts.only);
   if (missing.length === 0) return { ok: false, error: "Pick at least one detail to ask for." };
   const skipSteps = skipStepsFor(missingAll, missing);
   const key = phoneKey(cand.phone);
@@ -199,9 +256,41 @@ export async function askMissingDetails(
     return { ok: false, skip: p.skip, error: p.error };
   }
 
+  if (p.ok && p.plan === "window" && key && !chatCanAsk(missing)) {
+    // Something was ticked that the chat assistant can't ask one question at a time (company, relocation):
+    // send it as one normal message with their profile link. Free inside the 24-hour window.
+    const first = oneLine((cand.full_name ?? "").trim().split(/\s+/)[0] || "there");
+    const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com"}/u/${cand.id}`;
+    const body = renderDetailsFreeform(first, oneLine(detailsPhrase(missing)), link);
+    const res = await sendWhatsAppFreeform({ to: key, body });
+    await store.logMessage({
+      candidate_id: cand.id,
+      direction: "outbound",
+      to_phone: key,
+      body_preview: body,
+      status: res.ok ? "sent" : res.status === "not_configured" ? "not_configured" : "failed",
+      template_name: "recruiter:details_request",
+      meta_message_id: res.ok ? res.metaMessageId : null,
+      error: res.ok ? null : res.error,
+    });
+    if (!res.ok) return { ok: false, error: `WhatsApp didn't send it: ${res.error}` };
+    const contact = (await store.getContact(key)) ?? (await store.createContact(key));
+    void contact;
+    await store.updateContact(key, { kind: "jobseeker", kind_source: "manual", candidate_id: cand.id });
+    await admin.from("audit_log").insert({ actor: actorId, action: "missing_details_asked", entity: "candidate", entity_id: cand.id, detail: { via: "whatsapp_message", missing: missing.map((m) => m.key) } });
+    return { ok: true, via: "whatsapp", count: missing.length };
+  }
+
   if (p.ok && p.plan === "window" && key) {
     let contact = await store.getContact(key);
-    const started = startOnboarding({ prefill: candidatePrefill(cand), existingCandidateId: cand.id, hasResume: !!cand.resume_file_url, nowIso: new Date(nowMs).toISOString(), recruiterAsked: true, skip: skipSteps });
+    const started = startOnboarding({
+      prefill: candidatePrefill(cand),
+      existingCandidateId: cand.id,
+      hasResume: !!cand.resume_file_url || !missing.some((m) => m.key === "resume_file_url"),
+      nowIso: new Date(nowMs).toISOString(),
+      recruiterAsked: true,
+      skip: skipSteps,
+    });
     started.state.candidateId = cand.id;
     for (const text of started.replies) {
       const res = await sendWhatsAppFreeform({ to: key, body: text });

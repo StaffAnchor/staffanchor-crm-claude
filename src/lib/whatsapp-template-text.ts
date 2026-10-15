@@ -34,6 +34,10 @@ export const detailsTemplateUsesButton = (templateName: string | null | undefine
 export const renderDetailsMessageButton = (first: string, list: string) =>
   `Dear ${first},\n\nStaffAnchor Talent Solutions is a Revenue Roles focused recruitment firm, and we are reviewing the profile you shared with us.\n\nTo present you for suitable roles, please share your ${list}. You may do so using the button below, or simply by replying to this message, and we will update your profile.\n\nThank you.\n\n[ Complete my profile ]`;
 
+/** The same request as a plain chat message, for when the 24-hour window is open and no template is needed. */
+export const renderDetailsFreeform = (first: string, list: string, link: string) =>
+  `Dear ${first},\n\nStaffAnchor Talent Solutions is a Revenue Roles focused recruitment firm, and we are reviewing the profile you shared with us.\n\nTo present you for suitable roles, please share your ${list}. You may do so here: ${link}\n\nOr simply reply to this message, and we will update your profile.\n\nThank you.`;
+
 export const renderOpportunityMessage = (first: string, role: string, city: string) =>
   `Hi ${first}, we have a ${role} opening in ${city} that matches your experience. Would you like us to share the details and put your profile forward?`;
 
