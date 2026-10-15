@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendWhatsAppTemplate, templateNameForTaskType } from "@/lib/whatsapp";
+import { renderInterviewMessage, renderOfferMessage } from "@/lib/whatsapp-template-text";
 
 // Triggered by the Priority Actions Inbox's "Send Update" action (Phase 2,
 // Task 2). Runs under the caller's own session so the existing
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
-  const { inboxItemId } = await req.json();
+  const { inboxItemId, preview } = await req.json();
   if (!inboxItemId) {
     return NextResponse.json({ error: "inboxItemId is required" }, { status: 400 });
   }
@@ -113,10 +114,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (preview === true) {
+    const first = (candidate.full_name ?? "there").trim().split(/\s+/)[0] || "there";
+    const role = mandateRoleTitle ?? "the role";
+    const isOffer = item.task_type === "FOLLOW_UP_ON_OFFER";
+    return NextResponse.json({
+      ok: true,
+      preview: {
+        route: "template",
+        messages: [isOffer ? renderOfferMessage(first, role) : renderInterviewMessage(first, role)],
+        items: [],
+        note: `This goes as Meta's approved ${isOffer ? "offer follow-up" : "interview coordination"} template, sent from StaffAnchor's number. The wording is fixed by Meta. Meta charges per message.`,
+      },
+    });
+  }
+
   const result = await sendWhatsAppTemplate({
     to: candidate.phone,
     templateName,
-    bodyParams: [candidate.full_name ?? "there", mandateRoleTitle ?? "the role"],
+    bodyParams: [(candidate.full_name ?? "there").trim().split(/\s+/)[0] || "there", mandateRoleTitle ?? "the role"],
   });
 
   if (!result.ok) {

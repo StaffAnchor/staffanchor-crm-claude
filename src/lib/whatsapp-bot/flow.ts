@@ -134,11 +134,13 @@ const isCvFile = (m: Inbound): boolean => {
 const looksLikeAnotherQuery = (text: string) => text.length >= 100 || text.includes("?");
 
 /** Start asking questions. `prefill` is what we already know about someone with an incomplete profile. */
-export function startOnboarding(opts: { prefill?: Answers; existingCandidateId?: string | null; hasResume?: boolean; nowIso: string; recruiterAsked?: boolean }): StepResult {
+export function startOnboarding(opts: { prefill?: Answers; existingCandidateId?: string | null; hasResume?: boolean; nowIso: string; recruiterAsked?: boolean; skip?: Step[] }): StepResult {
   const state: BotState = {
     ...emptyState(),
     status: "active",
     answers: { ...(opts.prefill ?? {}) },
+    // Questions a recruiter chose not to ask this person.
+    skipped: [...(opts.skip ?? [])],
     existingCandidateId: opts.existingCandidateId ?? null,
     hasResume: !!opts.hasResume,
     startedAt: opts.nowIso,

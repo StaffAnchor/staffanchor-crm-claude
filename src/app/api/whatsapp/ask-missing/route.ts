@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { askMissingDetails } from "@/lib/ask-missing";
+import { askMissingDetails, previewAsk } from "@/lib/ask-missing";
 
 export const runtime = "nodejs";
 
@@ -20,10 +20,18 @@ export async function POST(req: NextRequest) {
   if (!serviceKey) return NextResponse.json({ error: "Not configured" }, { status: 503 });
   const admin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
 
-  const { candidateId } = (await req.json().catch(() => ({}))) as { candidateId?: string };
+  const body = (await req.json().catch(() => ({}))) as { candidateId?: string; preview?: boolean; only?: unknown };
+  const candidateId = body.candidateId;
   if (!candidateId) return NextResponse.json({ error: "candidateId is required" }, { status: 400 });
+  const only = Array.isArray(body.only) ? body.only.filter((x): x is string => typeof x === "string") : undefined;
 
-  const r = await askMissingDetails(admin, user.id, candidateId, { emailFallback: true });
+  // The review step: show exactly what would go out, send nothing.
+  if (body.preview === true) {
+    const pv = await previewAsk(admin, candidateId, only);
+    return NextResponse.json(pv.ok ? { ok: true, preview: pv.preview } : { ok: false, error: pv.error }, { status: 200 });
+  }
+
+  const r = await askMissingDetails(admin, user.id, candidateId, { emailFallback: true, only });
   if (!r.ok) return NextResponse.json({ ok: false, error: r.error }, { status: 200 });
   return NextResponse.json({ ok: true, via: r.via, count: r.count, note: r.note });
 }
