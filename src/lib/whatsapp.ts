@@ -37,10 +37,9 @@ export type SendTemplateResult =
   | { ok: false; status: "not_configured"; error: string }
   | { ok: false; status: "send_failed"; error: string };
 
-type TemplateComponent = {
-  type: "body";
-  parameters: { type: "text"; text: string }[];
-};
+type TemplateComponent =
+  | { type: "body"; parameters: { type: "text"; text: string }[] }
+  | { type: "button"; sub_type: "url"; index: string; parameters: { type: "text"; text: string }[] };
 
 /**
  * Sends a pre-approved WhatsApp template message via the Cloud API.
@@ -53,11 +52,14 @@ export async function sendWhatsAppTemplate({
   templateName,
   languageCode = process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? "en",
   bodyParams = [],
+  urlButtonParam,
 }: {
   to: string;
   templateName: string;
   languageCode?: string;
   bodyParams?: string[];
+  /** For a template whose first button is a dynamic URL: the text that fills its {{1}} (the end of the link). */
+  urlButtonParam?: string;
 }): Promise<SendTemplateResult> {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -79,6 +81,9 @@ export async function sendWhatsAppTemplate({
   const components: TemplateComponent[] = bodyParams.length
     ? [{ type: "body", parameters: bodyParams.map((text) => ({ type: "text", text })) }]
     : [];
+  if (urlButtonParam) {
+    components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: urlButtonParam }] });
+  }
 
   try {
     const res = await fetch(

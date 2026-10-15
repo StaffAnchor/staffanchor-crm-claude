@@ -7,7 +7,7 @@ import { startOnboarding, type Step } from "@/lib/whatsapp-bot/flow";
 import { candidatePrefill } from "@/lib/whatsapp-bot/engine";
 import { supabaseStore, type CandidateLite } from "@/lib/whatsapp-bot/store";
 import { WINDOW_MS, phoneKey } from "@/lib/whatsapp-threads";
-import { detailsPhrase, renderDetailsMessage } from "@/lib/whatsapp-template-text";
+import { detailsPhrase, detailsTemplateUsesButton, renderDetailsMessage, renderDetailsMessageButton } from "@/lib/whatsapp-template-text";
 
 // "Ask for missing details": ask one candidate for exactly what their profile lacks.
 //  - Inside WhatsApp's 24-hour window: the assistant asks the missing questions in the chat and fills
@@ -153,7 +153,7 @@ export async function previewAsk(
       ok: true,
       preview: {
         route: "template",
-        messages: [renderDetailsMessage(first, list, link)],
+        messages: [detailsTemplateUsesButton(profileDetailsTemplate()) ? renderDetailsMessageButton(first, list) : renderDetailsMessage(first, list, link)],
         items: items("template"),
         note: "Their 24-hour chat is closed, so this goes as Meta's approved profile-details template. The wording is fixed by Meta; you choose which details it asks for. Meta charges per message.",
       },
@@ -228,12 +228,15 @@ export async function askMissingDetails(
     const list = oneLine(detailsPhrase(missing));
     const first = oneLine((cand.full_name ?? "").trim().split(/\s+/)[0] || "there");
     const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com"}/u/${cand.id}`;
-    const res = await sendWhatsAppTemplate({ to: key, templateName, bodyParams: [first, list, link] });
+    const withButton = detailsTemplateUsesButton(templateName);
+    const res = await sendWhatsAppTemplate(
+      withButton ? { to: key, templateName, bodyParams: [first, list], urlButtonParam: cand.id } : { to: key, templateName, bodyParams: [first, list, link] }
+    );
     await store.logMessage({
       candidate_id: cand.id,
       direction: "outbound",
       to_phone: key,
-      body_preview: renderDetailsMessage(first, list, link),
+      body_preview: withButton ? renderDetailsMessageButton(first, list) : renderDetailsMessage(first, list, link),
       status: res.ok ? "sent" : res.status === "not_configured" ? "not_configured" : "failed",
       template_name: templateName,
       meta_message_id: res.ok ? res.metaMessageId : null,
