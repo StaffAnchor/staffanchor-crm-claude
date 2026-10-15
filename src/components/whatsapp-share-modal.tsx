@@ -136,6 +136,10 @@ export default function WhatsAppShareModal({
         </div>
 
         <div className="space-y-4 overflow-y-auto px-5 py-4">
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-[12px] leading-5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span className="font-semibold">Manual, not automatic.</span> Each name below opens WhatsApp Web in your browser with this message typed in. You
+            press Send yourself from your own WhatsApp. For an automatic send with a Meta-approved template, close this and use the Auto button.
+          </p>
           <div>
             <label className="mb-1 block text-[12px] font-medium text-slate-600 dark:text-slate-300">Which opportunity?</label>
             <select

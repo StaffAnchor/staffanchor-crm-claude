@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   if (!serviceKey) return NextResponse.json({ error: "Not configured" }, { status: 503 });
   const admin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { persistSession: false } });
 
-  const body = (await req.json().catch(() => ({}))) as { mandateId?: unknown; candidateIds?: unknown; dryRun?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { mandateId?: unknown; candidateIds?: unknown; dryRun?: unknown; preview?: unknown };
   const mandateId = typeof body.mandateId === "string" ? body.mandateId : "";
   const dryRun = body.dryRun === true;
   const all = (Array.isArray(body.candidateIds) ? body.candidateIds : []).filter((x): x is string => typeof x === "string");
@@ -82,6 +82,21 @@ export async function POST(req: NextRequest) {
   }
 
   const over = Math.max(0, all.length - ids.length);
+  if (body.preview === true) {
+    return NextResponse.json({
+      ok: true,
+      preview: {
+        route: "template",
+        messages: eligible.slice(0, 5).map((c) => renderOpportunityMessage(c.first, role, city)),
+        items: [],
+        note: "This goes as Meta's approved role-opportunity template, sent from StaffAnchor's number. The wording is fixed by Meta; only the name, role and city change, and the client is never named. Meta charges per message.",
+        recipients: eligible.length,
+      },
+      noPhone,
+      optedOut,
+      alreadySent: already,
+    });
+  }
   if (dryRun) return NextResponse.json({ ok: true, dryRun: true, willSend: eligible.length, noPhone, optedOut, alreadySent: already, over });
 
   let sent = 0;

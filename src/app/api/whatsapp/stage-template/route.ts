@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) return NextResponse.json({ error: "Not configured" }, { status: 503 });
 
-  const body = (await req.json().catch(() => ({}))) as { candidateId?: unknown; mandateId?: unknown; kind?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { candidateId?: unknown; mandateId?: unknown; kind?: unknown; preview?: unknown };
   const candidateId = typeof body.candidateId === "string" ? body.candidateId : "";
   const mandateId = typeof body.mandateId === "string" ? body.mandateId : "";
   const kind = body.kind === "interview" || body.kind === "offer" ? body.kind : null;
@@ -59,6 +59,18 @@ export async function POST(req: NextRequest) {
 
   const first = oneLine(((cand.full_name as string | null) ?? "").trim().split(/\s+/)[0] || "there");
   const role = oneLine(String(mandate.role_title ?? "the role"));
+  if (body.preview === true) {
+    return NextResponse.json({
+      ok: true,
+      preview: {
+        route: "template",
+        messages: [kind === "interview" ? renderInterviewMessage(first, role) : renderOfferMessage(first, role)],
+        items: [],
+        note: `This goes as Meta's approved ${KINDS[kind].label} template, sent from StaffAnchor's number. The wording is fixed by Meta; only the name and role change. Meta charges per message.`,
+      },
+    });
+  }
+
   const res = await sendWhatsAppTemplate({ to: key, templateName, bodyParams: [first, role] });
   await store.logMessage({
     candidate_id: candidateId,

@@ -3,7 +3,7 @@ import { sendWhatsAppFreeform, sendWhatsAppTemplate, profileDetailsTemplate, one
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { whatsappEmailLine } from "@/lib/whatsapp-entry";
 import { missingKeyDetails } from "@/lib/key-details";
-import { startOnboarding } from "@/lib/whatsapp-bot/flow";
+import { startOnboarding, type Step } from "@/lib/whatsapp-bot/flow";
 import { candidatePrefill } from "@/lib/whatsapp-bot/engine";
 import { supabaseStore, type CandidateLite } from "@/lib/whatsapp-bot/store";
 import { WINDOW_MS, phoneKey } from "@/lib/whatsapp-threads";
@@ -86,18 +86,111 @@ export async function planAsk(admin: SupabaseClient, candidateId: string): Promi
   return { ok: true, plan: "template", count: missing.length, cand };
 }
 
+// The chat assistant asks these profile details as steps. Leaving a detail out of the ask skips its step.
+const STEP_FOR_KEY: Record<string, Step> = {
+  current_job_title: "role",
+  total_experience_years: "experience",
+  current_fixed_ctc: "ctc",
+  expected_fixed_ctc: "expected",
+  notice_period: "notice",
+  current_location: "location",
+};
+
+function skipStepsFor(all: { key: string }[], chosen: { key: string }[]): Step[] {
+  const keep = new Set(chosen.map((c) => c.key));
+  return all.filter((m) => !keep.has(m.key)).map((m) => STEP_FOR_KEY[m.key]).filter((s): s is Step => !!s);
+}
+
+export type AskPreview = {
+  route: "chat" | "template" | "email";
+  /** The exact message(s) that will go out, for the review step. */
+  messages: string[];
+  /** Every detail that is missing, and whether it is currently ticked. `fixed` ones are always asked on this route. */
+  items: { key: string; label: string; selected: boolean; fixed?: boolean }[];
+  note: string;
+};
+
+/** What "Ask for missing details" would send to this candidate, without sending anything. */
+export async function previewAsk(
+  admin: SupabaseClient,
+  candidateId: string,
+  only?: string[]
+): Promise<{ ok: true; preview: AskPreview } | { ok: false; error: string }> {
+  const p = await planAsk(admin, candidateId);
+  const cand = p.cand;
+  if (!cand) return { ok: false, error: p.ok ? "Candidate not found" : p.error };
+  const missingAll = missingKeyDetails({ ...cand });
+  const chosen = only && only.length > 0 ? missingAll.filter((m) => only.includes(m.key)) : missingAll;
+  if (chosen.length === 0) return { ok: false, error: "Pick at least one detail to ask for." };
+  const first = oneLine((cand.full_name ?? "").trim().split(/\s+/)[0] || "there");
+  const items = (route: AskPreview["route"]) =>
+    missingAll.map((m) => ({
+      key: m.key,
+      label: m.label,
+      selected: chosen.some((c) => c.key === m.key),
+      fixed: route === "chat" && !STEP_FOR_KEY[m.key],
+    }));
+
+  const emailable = !!cand.email && !cand.email.endsWith(".invalid");
+  if (!p.ok && !(p.skip === "no_template" || p.skip === "no_phone" || p.skip === "recent")) return { ok: false, error: p.error };
+
+  if (p.ok && p.plan === "window") {
+    const started = startOnboarding({ prefill: candidatePrefill(cand), existingCandidateId: cand.id, hasResume: !!cand.resume_file_url, nowIso: new Date().toISOString(), recruiterAsked: true, skip: skipStepsFor(missingAll, chosen) });
+    return {
+      ok: true,
+      preview: {
+        route: "chat",
+        messages: started.replies,
+        items: items("chat"),
+        note: "Their 24-hour chat is open, so this goes as normal chat messages from StaffAnchor's number: free, and the assistant fills their answers into the profile.",
+      },
+    };
+  }
+  if (p.ok && p.plan === "template") {
+    const list = oneLine(detailsPhrase(chosen));
+    const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com"}/u/${cand.id}`;
+    return {
+      ok: true,
+      preview: {
+        route: "template",
+        messages: [renderDetailsMessage(first, list, link)],
+        items: items("template"),
+        note: "Their 24-hour chat is closed, so this goes as Meta's approved profile-details template. The wording is fixed by Meta; you choose which details it asks for. Meta charges per message.",
+      },
+    };
+  }
+  if (emailable) {
+    const list = naturalAsk(chosen.map((m) => m.ask));
+    return {
+      ok: true,
+      preview: {
+        route: "email",
+        messages: [`Subject: A few details to complete your StaffAnchor profile\n\nHi ${first},\n\nTo match you with the right roles, we still need ${list}. It takes about a minute: (a link to complete the profile)\n\nYou can also reply to this email.\n\nThanks,\nStaffAnchor Team`],
+        items: items("email"),
+        note: "WhatsApp can't be used for this person right now, so this goes as an email.",
+      },
+    };
+  }
+  return { ok: false, error: p.ok ? "Could not prepare the message." : p.error };
+}
+
+const naturalAsk = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}` : xs[0] ?? "");
+
 /** Ask one candidate. With `emailFallback`, a closed window with no template falls back to an email. */
 export async function askMissingDetails(
   admin: SupabaseClient,
   actorId: string,
   candidateId: string,
-  opts: { emailFallback: boolean }
+  opts: { emailFallback: boolean; /** Ask only for these details (profile keys). Default: everything missing. */ only?: string[] }
 ): Promise<AskResult> {
   const store = supabaseStore(admin);
   const p = await planAsk(admin, candidateId);
   const cand = p.cand;
   if (!cand) return { ok: false, error: p.ok ? "Candidate not found" : p.error };
-  const missing = missingKeyDetails({ ...cand });
+  const missingAll = missingKeyDetails({ ...cand });
+  const missing = opts.only && opts.only.length > 0 ? missingAll.filter((m) => opts.only!.includes(m.key)) : missingAll;
+  if (missing.length === 0) return { ok: false, error: "Pick at least one detail to ask for." };
+  const skipSteps = skipStepsFor(missingAll, missing);
   const key = phoneKey(cand.phone);
   const nowMs = new Date().getTime();
 
@@ -108,7 +201,7 @@ export async function askMissingDetails(
 
   if (p.ok && p.plan === "window" && key) {
     let contact = await store.getContact(key);
-    const started = startOnboarding({ prefill: candidatePrefill(cand), existingCandidateId: cand.id, hasResume: !!cand.resume_file_url, nowIso: new Date(nowMs).toISOString(), recruiterAsked: true });
+    const started = startOnboarding({ prefill: candidatePrefill(cand), existingCandidateId: cand.id, hasResume: !!cand.resume_file_url, nowIso: new Date(nowMs).toISOString(), recruiterAsked: true, skip: skipSteps });
     started.state.candidateId = cand.id;
     for (const text of started.replies) {
       const res = await sendWhatsAppFreeform({ to: key, body: text });
