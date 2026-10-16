@@ -11,6 +11,8 @@ import BenchTable, { type BenchRow } from "./bench-table";
 import type { RoleOption } from "@/lib/role-fit";
 import RunMatching from "./run-matching";
 import PoolList, { type PoolRow } from "./pool-list";
+import SuggestedList from "./suggested-list";
+import { suggestToCall } from "@/lib/pool-suggest";
 import type { PoolEntry, PoolTier } from "@/lib/talent-pool";
 import { POOL_PRACTICE } from "@/lib/talent-pool";
 
@@ -243,6 +245,13 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
       })
       .filter((r): r is PoolRow => r !== null);
   }
+  // Who to call next: strongest on paper, not in the pool, no call logged yet.
+  let suggestions: ReturnType<typeof suggestToCall> = [];
+  if (poolView) {
+    const { data: spoken } = await supabase.from("candidate_debriefs").select("candidate_id").limit(5000);
+    const exclude = new Set<string>([...poolIds, ...((spoken ?? []) as { candidate_id: string }[]).map((d) => d.candidate_id)]);
+    suggestions = suggestToCall(all, exclude, 12);
+  }
   const poolCount = poolIds.length;
   const poolTop = Object.values(poolBy).filter((e) => e.tier === "top").length;
   const poolStrong = Object.values(poolBy).filter((e) => e.tier === "strong").length;
@@ -287,6 +296,7 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
             <StatTile label="Watch" value={poolWatch} />
             <StatTile label="Going cold (60+ days)" value={poolCold} />
           </div>
+          <SuggestedList items={suggestions} />
           <PoolList rows={poolRows} />
         </div>
       ) : (

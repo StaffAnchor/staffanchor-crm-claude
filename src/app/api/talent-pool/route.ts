@@ -1,4 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { createClient as createAdmin } from "@supabase/supabase-js";
+import { generateBrief } from "@/lib/candidate-brief";
+import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 import { createClient } from "@/lib/supabase/server";
 import { POOL_PRACTICE, POOL_TAGS, isPoolTier, reasonRequired } from "@/lib/talent-pool";
 
@@ -55,6 +58,18 @@ export async function POST(req: Request) {
     note: reason || null,
     actor_id: s.userId,
   });
+  // Adding or upgrading someone refreshes their brief and checks them against open roles, without waiting.
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (key && url && (!before || before.tier !== body.tier)) {
+    const admin = createAdmin(url, key, { auth: { persistSession: false } });
+    const candidateId = body.candidateId;
+    const tier = body.tier;
+    after(async () => {
+      await generateBrief(admin, candidateId);
+      if (tier === "top" || tier === "strong") await queueProactiveMatchesForCandidate(candidateId, admin).catch(() => {});
+    });
+  }
   return NextResponse.json({ ok: true });
 }
 

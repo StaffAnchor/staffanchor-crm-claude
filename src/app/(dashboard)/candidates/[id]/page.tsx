@@ -25,6 +25,9 @@ import SendInviteButton from "./send-invite-button";
 import AskMissingDetails from "./ask-missing-details";
 import ProfileGroupControl from "./profile-group-control";
 import PoolControl from "@/components/pool-control";
+import AfterCallCard, { type PastDebrief } from "./after-call-card";
+import BriefCard from "./brief-card";
+import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
 import { missingKeyDetails } from "@/lib/key-details";
 import ResumePreview from "./resume-preview";
@@ -343,6 +346,21 @@ export default async function CandidateDetailPage({
 
   const { data: poolRaw } = await supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle();
   const poolEntry: PoolEntry | null = poolRaw ? { tier: poolRaw.tier as PoolTier, reason: poolRaw.reason, tags: (poolRaw.tags as string[] | null) ?? [], marked_at: poolRaw.marked_at } : null;
+
+  const { data: debriefRows } = await supabase
+    .from("candidate_debriefs")
+    .select("id, created_at, raw_note, structured, profiles(full_name)")
+    .eq("candidate_id", id)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const pastDebriefs: PastDebrief[] = ((debriefRows ?? []) as unknown as { id: string; created_at: string; raw_note: string; structured: { summary?: string } | null; profiles: { full_name: string | null } | { full_name: string | null }[] | null }[]).map((d) => ({
+    id: d.id,
+    created_at: d.created_at,
+    raw_note: d.raw_note,
+    summary: d.structured?.summary ?? null,
+    author: (Array.isArray(d.profiles) ? d.profiles[0]?.full_name : d.profiles?.full_name) ?? null,
+  }));
+  const { data: briefRow } = await supabase.from("candidate_briefs").select("brief, source, generated_at").eq("candidate_id", id).maybeSingle();
 
   const { data: activityRows } = await supabase
     .from("activities")
@@ -728,6 +746,21 @@ export default async function CandidateDetailPage({
       {/* --- Call companion: confirm what a CV can't tell us, on the call --- */}
       <Card className="mt-4">
         <CallCompanion candidate={candidate as never} doubts={callDoubts} recruiterName={scorerName} />
+      </Card>
+
+      <Card className="mt-4">
+        <AfterCallCard candidateId={candidate.id} history={pastDebriefs} />
+      </Card>
+
+      <Card className="mt-4">
+        <BriefCard
+          candidateId={candidate.id}
+          brief={(briefRow?.brief as Brief | undefined) ?? null}
+          generatedAt={briefRow?.generated_at ?? null}
+          fromCall={briefRow?.source === "cv+call"}
+          name={candidate.full_name}
+          employer={candidate.current_employer}
+        />
       </Card>
 
       {passportRow && <SaasPassportCard row={passportRow as unknown as PassportRow} />}
