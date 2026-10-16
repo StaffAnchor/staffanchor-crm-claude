@@ -1,5 +1,6 @@
 "use client";
 
+import { POOL_TIER_LABEL, POOL_TIER_PILL } from "@/lib/talent-pool";
 import { ProfileGroupBadge } from "./profile-group-badge";
 import { MISSING_LABEL, TIER_PILL, type ReadinessTier } from "@/lib/readiness";
 import Link from "next/link";
@@ -41,6 +42,7 @@ import {
   FolderPlus,
   Download,
   MessageCircle,
+  Star,
 } from "lucide-react";
 
 export type OpenMandate = {
@@ -1083,6 +1085,7 @@ export default function CandidatesTable({
   openMandates,
   teamMembers = [],
   mandateLinksByCandidate = {},
+  poolTiers = {},
   totalCount,
   rangeStart,
   rangeEnd,
@@ -1092,6 +1095,8 @@ export default function CandidatesTable({
   openMandates: OpenMandate[];
   teamMembers?: TeamMember[];
   mandateLinksByCandidate?: Record<string, MandateLink[]>;
+  /** Candidates on this page who are in the Talent Pool, with their tier. */
+  poolTiers?: Record<string, "top" | "strong" | "watch">;
   // When provided (server knows the real filtered total, not just this
   // page's row count), the header switches from "N candidates" to
   // "Showing A-B of N candidates" so pagination doesn't look like truncation.
@@ -1968,6 +1973,11 @@ export default function CandidatesTable({
                       </p>
                     </Link>
                     <ProfileRatingBadge row={ratings.get(c.id)} />
+                    {poolTiers[c.id] && (
+                      <span className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ring-1 ${POOL_TIER_PILL[poolTiers[c.id]]}`} title="In the Talent Pool">
+                        <Star className="h-3 w-3" /> {POOL_TIER_LABEL[poolTiers[c.id]]}
+                      </span>
+                    )}
                     {(mandateLinksByCandidate[c.id] ?? []).length > 0 && (
                       <button
                         type="button"

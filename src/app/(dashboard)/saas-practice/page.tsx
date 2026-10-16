@@ -8,11 +8,12 @@ import { StatTile } from "@/components/ui/stat-tile";
 import CandidatesSubNav from "../candidates/candidates-sub-nav";
 import { PASSPORT_COLUMNS, segmentLabel, type PassportRow } from "@/lib/saas-passport";
 import BenchTable, { type BenchRow } from "./bench-table";
-import type { RoleOption } from "@/lib/role-fit";
+import { evaluate, filtersFromRole, type RoleOption } from "@/lib/role-fit";
 import RunMatching from "./run-matching";
 import PoolList, { type PoolRow } from "./pool-list";
 import SuggestedList from "./suggested-list";
-import { suggestToCall } from "@/lib/pool-suggest";
+import { suggestToCall, type RoleFitHint, type SuggestContext, type Tenure } from "@/lib/pool-suggest";
+import TargetCompanies from "./target-companies";
 import type { PoolEntry, PoolTier } from "@/lib/talent-pool";
 import { POOL_PRACTICE } from "@/lib/talent-pool";
 
@@ -221,6 +222,50 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
       const { data: extra } = await supabase.from("saas_passport").select(PASSPORT_COLUMNS).in("candidate_id", missingIds);
       for (const r of (extra ?? []) as unknown as PassportRow[]) have.set(r.candidate_id, r);
     }
+    // Someone marked from the main candidate list may not be on the SaaS bench at all: show them from their profile.
+    const stillMissing = poolIds.filter((id) => !have.has(id));
+    if (stillMissing.length > 0) {
+      const { data: plain } = await supabase
+        .from("candidates")
+        .select("id, full_name, current_employer, current_job_title, current_location, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, phone, email, resume_file_url")
+        .in("id", stillMissing);
+      for (const c of (plain ?? []) as Record<string, unknown>[]) {
+        have.set(c.id as string, {
+          candidate_id: c.id as string,
+          full_name: (c.full_name as string | null) ?? null,
+          current_employer: (c.current_employer as string | null) ?? null,
+          current_job_title: (c.current_job_title as string | null) ?? null,
+          city: (c.current_location as string | null) ?? null,
+          total_experience_years: (c.total_experience_years as number | string | null) ?? null,
+          current_fixed_ctc: (c.current_fixed_ctc as number | string | null) ?? null,
+          expected_fixed_ctc: (c.expected_fixed_ctc as number | string | null) ?? null,
+          notice_period: (c.notice_period as string | null) ?? null,
+          notice_days_est: null,
+          readiness_score: null,
+          readiness_tier: null,
+          sub_domain: null,
+          status: null,
+          practice_fit: null,
+          segments: null,
+          role_motion: null,
+          hunter_farmer: null,
+          deal_size: null,
+          sales_cycle: null,
+          quota: null,
+          team_size: null,
+          best_achievement: null,
+          tools: null,
+          confirmed_by_profile: null,
+          passport_score: 0,
+          passport_missing: null,
+          cv_read: false,
+          phone: (c.phone as string | null) ?? null,
+          email: (c.email as string | null) ?? null,
+          has_cv: !!c.resume_file_url,
+          readiness_missing: null,
+        } as PassportRow);
+      }
+    }
     // Last contact: the latest note, call or message with each person.
     const last = new Map<string, string>();
     const bump = (id: string | null, at: string | null) => {
@@ -245,12 +290,48 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
       })
       .filter((r): r is PoolRow => r !== null);
   }
-  // Who to call next: strongest on paper, not in the pool, no call logged yet.
+  // Who to call next: strongest on paper, fits a role open today, steady in jobs, not in the pool, no call logged yet.
   let suggestions: ReturnType<typeof suggestToCall> = [];
+  let targetCompanies: string[] = [];
   if (poolView) {
     const { data: spoken } = await supabase.from("candidate_debriefs").select("candidate_id").limit(5000);
     const exclude = new Set<string>([...poolIds, ...((spoken ?? []) as { candidate_id: string }[]).map((d) => d.candidate_id)]);
-    suggestions = suggestToCall(all, exclude, 12);
+
+    const { data: targetRow } = await supabase.from("talent_pool_settings").select("value").eq("key", "target_companies").maybeSingle();
+    targetCompanies = Array.isArray(targetRow?.value) ? (targetRow.value as unknown[]).filter((x): x is string => typeof x === "string") : [];
+
+    const { data: tenureRows } = await supabase.rpc("candidate_tenure_stats", { p_ids: all.map((r) => r.candidate_id) });
+    const tenure = new Map<string, Tenure>();
+    for (const t of (tenureRows ?? []) as { candidate_id: string; avg_tenure_years: number | string | null; short_stints: number; companies: string[] | null }[]) {
+      tenure.set(t.candidate_id, { avg: t.avg_tenure_years != null ? Number(t.avg_tenure_years) : null, short: t.short_stints ?? 0, companies: t.companies ?? [] });
+    }
+
+    // Fit for roles open today: the AI's strong and possible matches, plus a plain rule check on city, experience and pay.
+    const roleFit = new Map<string, RoleFitHint>();
+    const hint = (id: string, boost: number, reason: string) => {
+      const cur = roleFit.get(id);
+      if (!cur) roleFit.set(id, { boost, reasons: [reason] });
+      else {
+        if (boost > cur.boost) cur.boost = boost;
+        if (cur.reasons.length < 2) cur.reasons.push(reason);
+      }
+    };
+    for (const m of matches) {
+      if (m.status !== "suggested") continue;
+      const title = roleTitle.get(m.mandate_id) ?? "an open role";
+      if (m.fit === "strong") hint(m.candidate_id, 35, `Strong match for ${title}`);
+      else if (m.fit === "possible") hint(m.candidate_id, 12, `Possible for ${title}`);
+    }
+    for (const ro of roleOptions.filter((x) => x.status === "open")) {
+      const f = filtersFromRole(ro);
+      for (const r of all) {
+        const checks = evaluate(r, f, relocation[r.candidate_id] ?? null);
+        if (checks.length >= 2 && checks.every((c) => c.state !== "fail") && checks.filter((c) => c.state === "unknown").length <= 1) hint(r.candidate_id, 20, `Fits ${ro.title} on paper`);
+      }
+    }
+
+    const ctx: SuggestContext = { tenure, targets: targetCompanies.map((x) => x.toLowerCase()), roleFit };
+    suggestions = suggestToCall(all, exclude, ctx, 12);
   }
   const poolCount = poolIds.length;
   const poolTop = Object.values(poolBy).filter((e) => e.tier === "top").length;
@@ -296,6 +377,7 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
             <StatTile label="Watch" value={poolWatch} />
             <StatTile label="Going cold (60+ days)" value={poolCold} />
           </div>
+          <TargetCompanies initial={targetCompanies} canEdit={me.role === "admin"} />
           <SuggestedList items={suggestions} />
           <PoolList rows={poolRows} />
         </div>

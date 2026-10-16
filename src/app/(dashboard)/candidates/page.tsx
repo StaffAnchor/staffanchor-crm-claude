@@ -716,6 +716,15 @@ export default async function CandidatesPage({
     resume_signed_url: c.resume_file_url ? resumeUrlByPath[c.resume_file_url.replace(/^resumes\//, "")] ?? null : null,
     practices: practicesByCandidateId[c.id] ?? [],
   }));
+  // Who on this page is in the Talent Pool, so the list can show it.
+  const poolTiers: Record<string, "top" | "strong" | "watch"> = {};
+  {
+    const pageIds = (candidates ?? []).map((c) => c.id as string);
+    if (pageIds.length > 0) {
+      const { data: poolRows } = await supabase.from("talent_pool_entries").select("candidate_id, tier").in("candidate_id", pageIds);
+      for (const p of (poolRows ?? []) as { candidate_id: string; tier: "top" | "strong" | "watch" }[]) poolTiers[p.candidate_id] = p.tier;
+    }
+  }
   const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
   ((linkRowsRes.data ?? []) as { candidate_id: string; mandate_id: string; mandates: unknown }[]).forEach((row) => {
     const mandate = row.mandates as unknown as { role_title: string; client_name: string } | null;
@@ -1573,6 +1582,7 @@ export default async function CandidatesPage({
         openMandates={openMandates ?? []}
         teamMembers={teamMembers ?? []}
         mandateLinksByCandidate={mandateLinksByCandidate}
+        poolTiers={poolTiers}
         totalCount={totalFiltered}
         rangeStart={rangeStart}
         rangeEnd={rangeEnd}
