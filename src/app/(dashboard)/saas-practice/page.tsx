@@ -10,6 +10,9 @@ import { PASSPORT_COLUMNS, segmentLabel, type PassportRow } from "@/lib/saas-pas
 import BenchTable, { type BenchRow } from "./bench-table";
 import type { RoleOption } from "@/lib/role-fit";
 import RunMatching from "./run-matching";
+import PoolList, { type PoolRow } from "./pool-list";
+import type { PoolEntry, PoolTier } from "@/lib/talent-pool";
+import { POOL_PRACTICE } from "@/lib/talent-pool";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +46,9 @@ function BarList({ title, items, total }: { title: string; items: [string, numbe
   );
 }
 
-export default async function SaasPracticePage() {
+export default async function SaasPracticePage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const { view } = await searchParams;
+  const poolView = view === "pool";
   const supabase = await createClient();
   const {
     data: { user },
@@ -126,6 +131,19 @@ export default async function SaasPracticePage() {
     .filter((p) => !!p.full_name)
     .map((p) => ({ id: p.id, name: p.full_name as string }));
 
+  // The Talent Pool: who has been marked, by whom, and why.
+  const staffName = new Map(((staffRows ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+  const { data: poolRaw } = await supabase
+    .from("talent_pool_entries")
+    .select("candidate_id, tier, reason, tags, marked_by, marked_at")
+    .eq("practice", POOL_PRACTICE)
+    .limit(2000);
+  const poolBy: Record<string, PoolEntry> = {};
+  for (const e of (poolRaw ?? []) as { candidate_id: string; tier: PoolTier; reason: string | null; tags: string[] | null; marked_by: string | null; marked_at: string }[]) {
+    poolBy[e.candidate_id] = { tier: e.tier, reason: e.reason, tags: e.tags ?? [], marked_by_name: e.marked_by ? staffName.get(e.marked_by) ?? null : null, marked_at: e.marked_at };
+  }
+  const poolIds = Object.keys(poolBy);
+
   // Candidates who already have an open "collect details" task.
   const { data: taskRows } = await supabase
     .from("recruiter_inbox")
@@ -193,6 +211,44 @@ export default async function SaasPracticePage() {
     owner_name: l.owner_name,
   }));
 
+  let poolRows: PoolRow[] = [];
+  if (poolView && poolIds.length > 0) {
+    const have = new Map(all.map((r) => [r.candidate_id, r]));
+    const missingIds = poolIds.filter((id) => !have.has(id));
+    if (missingIds.length > 0) {
+      const { data: extra } = await supabase.from("saas_passport").select(PASSPORT_COLUMNS).in("candidate_id", missingIds);
+      for (const r of (extra ?? []) as unknown as PassportRow[]) have.set(r.candidate_id, r);
+    }
+    // Last contact: the latest note, call or message with each person.
+    const last = new Map<string, string>();
+    const bump = (id: string | null, at: string | null) => {
+      if (id && at && (!last.get(id) || at > (last.get(id) as string))) last.set(id, at);
+    };
+    const { data: acts } = await supabase.from("activities").select("entity_id, created_at").eq("entity_type", "candidate").in("entity_id", poolIds).order("created_at", { ascending: false }).limit(5000);
+    for (const a of (acts ?? []) as { entity_id: string; created_at: string }[]) bump(a.entity_id, a.created_at);
+    const { data: msgs } = await supabase.from("whatsapp_messages").select("candidate_id, created_at").in("candidate_id", poolIds).order("created_at", { ascending: false }).limit(5000);
+    for (const m of (msgs ?? []) as { candidate_id: string | null; created_at: string }[]) bump(m.candidate_id, m.created_at);
+    const now = new Date().getTime();
+    poolRows = poolIds
+      .map((id) => {
+        const base = have.get(id);
+        if (!base) return null;
+        const at = last.get(id) ?? null;
+        return {
+          ...base,
+          pool: poolBy[id],
+          lastTouch: at ? new Date(at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" }) : null,
+          daysSinceTouch: at ? Math.floor((now - new Date(at).getTime()) / 86_400_000) : null,
+        } as PoolRow;
+      })
+      .filter((r): r is PoolRow => r !== null);
+  }
+  const poolCount = poolIds.length;
+  const poolTop = Object.values(poolBy).filter((e) => e.tier === "top").length;
+  const poolStrong = Object.values(poolBy).filter((e) => e.tier === "strong").length;
+  const poolWatch = Object.values(poolBy).filter((e) => e.tier === "watch").length;
+  const poolCold = poolRows.filter((r) => r.daysSinceTouch == null || r.daysSinceTouch >= 60).length;
+
   const tableRows: BenchRow[] = all.map((r) => ({
     ...r,
     strongRoles: strongRolesByCandidate.get(r.candidate_id) ?? [],
@@ -210,6 +266,31 @@ export default async function SaasPracticePage() {
         </p>
       </div>
 
+      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700">
+        <Link href="/saas-practice" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${!poolView ? "border-slate-900 text-slate-900 dark:border-white dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+          Bench and roles <span className="ml-1 text-slate-400">{total}</span>
+        </Link>
+        <Link href="/saas-practice?view=pool" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${poolView ? "border-amber-500 text-slate-900 dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+          Talent Pool <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-[11.5px] font-semibold text-amber-900">{poolCount}</span>
+        </Link>
+      </div>
+
+      {poolView ? (
+        <div className="space-y-5">
+          <p className="max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
+            The people you would put in front of any client. Anyone on the team can add a person after a good conversation. Call the Top talent first when a role opens.
+          </p>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            <StatTile label="In the pool" value={poolCount} />
+            <StatTile label="Top talent" value={poolTop} accent />
+            <StatTile label="Strong" value={poolStrong} />
+            <StatTile label="Watch" value={poolWatch} />
+            <StatTile label="Going cold (60+ days)" value={poolCold} />
+          </div>
+          <PoolList rows={poolRows} />
+        </div>
+      ) : (
+        <>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatTile label="On the bench" value={total} />
         <StatTile label="Ready to shortlist" value={ready} accent />
@@ -293,8 +374,10 @@ export default async function SaasPracticePage() {
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The bench</h2>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Start with &quot;Needs details&quot;: pick the gap, select the people, and send them as tasks to the recruiter who will collect them. Read any CV without leaving the page.</p>
         </div>
-        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} lists={lists} waOpportunity={!!process.env.WHATSAPP_TEMPLATE_ROLE_OPPORTUNITY} />
+        <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} lists={lists} waOpportunity={!!process.env.WHATSAPP_TEMPLATE_ROLE_OPPORTUNITY} pool={poolBy} />
       </section>
+        </>
+      )}
     </div>
   );
 }

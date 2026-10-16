@@ -24,6 +24,8 @@ import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
 import AskMissingDetails from "./ask-missing-details";
 import ProfileGroupControl from "./profile-group-control";
+import PoolControl from "@/components/pool-control";
+import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
 import { missingKeyDetails } from "@/lib/key-details";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
@@ -338,6 +340,9 @@ export default async function CandidateDetailPage({
     .eq("entity", "candidate")
     .eq("entity_id", id)
     .order("at", { ascending: false });
+
+  const { data: poolRaw } = await supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle();
+  const poolEntry: PoolEntry | null = poolRaw ? { tier: poolRaw.tier as PoolTier, reason: poolRaw.reason, tags: (poolRaw.tags as string[] | null) ?? [], marked_at: poolRaw.marked_at } : null;
 
   const { data: activityRows } = await supabase
     .from("activities")
@@ -680,7 +685,8 @@ export default async function CandidateDetailPage({
             </div>
           )}
 
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            <PoolControl candidateId={candidate.id} entry={poolEntry} />
             <QuickContactActions candidateId={candidate.id} candidateName={candidate.full_name} phone={candidate.phone} email={candidate.email} missing={missingKeyDetails(candidate).map((m) => m.key)} />
             {resumeSignedUrl && resumeFileName && (
               <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} />
