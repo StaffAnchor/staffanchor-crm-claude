@@ -1,4 +1,5 @@
 import type { PassportRow } from "@/lib/saas-passport";
+import { isAbroad } from "@/lib/abroad";
 
 // Who is most worth a call: bench people who look like pool material on paper but nobody has spoken to yet. A
 // plain scoring rule, no AI, so it is instant and can be explained line by line. It decides where recruiter time
@@ -23,6 +24,12 @@ export function suggestionFor(r: PassportRow, ctx?: SuggestContext): { score: nu
   let score = 0;
   const reasons: string[] = [];
   const cautions: string[] = [];
+
+  // 0. The roles are in India: someone clearly based abroad drops well down the list.
+  if (isAbroad(r.city)) {
+    score -= 45;
+    cautions.push(`Based abroad (${r.city})`);
+  }
 
   // 1. A role is open today and this person fits it.
   const hint = ctx?.roleFit.get(r.candidate_id);
