@@ -86,6 +86,10 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
     elsewhere.set(l.candidate_id, cur);
   }
 
+  // Talent Pool members lead their fit group and carry a badge.
+  const { data: poolRows } = shownIds.length ? await supabase.from("talent_pool_entries").select("candidate_id, tier").in("candidate_id", shownIds) : { data: [] };
+  const poolTier = new Map(((poolRows ?? []) as { candidate_id: string; tier: "top" | "strong" | "watch" }[]).map((p) => [p.candidate_id, p.tier]));
+
   const items: MatchItem[] = shown.map((m) => {
     const c = Array.isArray(m.candidates) ? m.candidates[0] : m.candidates;
     return {
@@ -109,6 +113,7 @@ export default async function AiMatchesPanel({ mandateId, fullPage = false }: { 
       checks: m.checks,
       stale: m.spec_hash !== currentSpec,
       status: m.status,
+      pool: poolTier.get(m.candidate_id) ?? null,
     };
   });
 
