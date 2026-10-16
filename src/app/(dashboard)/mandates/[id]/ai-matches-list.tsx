@@ -14,6 +14,7 @@ import type { MatchChecks, ReqCheck } from "@/lib/ai-match";
 import { BasisTag, ConfirmPanel, overlayCheck, useConfirmations } from "@/components/requirement-confirm";
 import { ProfileRatingBadge, useProfileRatings } from "@/components/profile-rating";
 import type { ProfileRatingRow } from "@/lib/profile-rating";
+import { POOL_TIER_LABEL, POOL_TIER_PILL } from "@/lib/talent-pool";
 
 export type MatchItem = {
   candidateId: string;
@@ -36,6 +37,7 @@ export type MatchItem = {
   checks: MatchChecks;
   stale: boolean;
   status: "suggested" | "added";
+  pool?: "top" | "strong" | "watch" | null;
 };
 
 const FIT_STYLE: Record<MatchItem["fit"], { label: string; cls: string }> = {
@@ -158,6 +160,7 @@ function Card({
               {m.name}
             </Link>
             <ProfileRatingBadge row={rating} />
+            {m.pool && <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-semibold ring-1 ${POOL_TIER_PILL[m.pool]}`}>Pool: {POOL_TIER_LABEL[m.pool]}</span>}
             <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-medium ${f.cls}`}>{f.label}</span>
             <span className="text-[12px] text-slate-500 dark:text-slate-400 tabular-nums">{m.score}/100</span>
             {m.stale && <span className="text-[11px] text-slate-500 dark:text-slate-400">Requirements changed, re-check</span>}
@@ -358,7 +361,8 @@ export default function AiMatchesList({
   // Weak CVs (as marked by the team) stay hidden with the weak matches; strong CVs lead within their fit.
   const isWeakCv = (i: MatchItem) => ratings.get(i.candidateId)?.rating === "weak";
   const strongRank = (i: MatchItem) => (ratings.get(i.candidateId)?.rating === "strong" ? 0 : 1);
-  const cmpBest = (a: MatchItem, b: MatchItem) => order[a.fit] - order[b.fit] || strongRank(a) - strongRank(b) || b.score - a.score;
+  const poolRank = (i: MatchItem) => (i.pool === "top" ? 0 : i.pool === "strong" ? 1 : i.pool === "watch" ? 2 : 3);
+  const cmpBest = (a: MatchItem, b: MatchItem) => order[a.fit] - order[b.fit] || poolRank(a) - poolRank(b) || strongRank(a) - strongRank(b) || b.score - a.score;
   const visible = afterCtc(suggested.filter((i) => showWeak || (i.fit !== "weak" && !isWeakCv(i)))).sort((a, b) => {
     if (sortBy === "ctc") return (a.expectedCtc ?? a.currentCtc ?? 9999) - (b.expectedCtc ?? b.currentCtc ?? 9999) || cmpBest(a, b);
     if (sortBy === "notice") return noticeDays(a.notice) - noticeDays(b.notice) || cmpBest(a, b);

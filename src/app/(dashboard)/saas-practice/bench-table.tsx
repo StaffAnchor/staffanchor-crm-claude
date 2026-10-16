@@ -16,6 +16,8 @@ import SaveShortlist from "./save-shortlist";
 import { TIER_LABEL, TIER_PILL, type ReadinessTier } from "@/lib/readiness";
 import { FIT_LABEL, HUNTER_LABEL, gapKeys, gapLabels, isIncomplete, passportTone, segmentLabel, type PassportRow } from "@/lib/saas-passport";
 import ResumeViewerInline from "../candidates/[id]/resume-viewer-inline";
+import PoolControl from "@/components/pool-control";
+import type { PoolEntry } from "@/lib/talent-pool";
 
 const PAGE = 40;
 const MAX_ASSIGN = 100;
@@ -62,6 +64,7 @@ export default function BenchTable({
   relocation,
   lists,
   waOpportunity,
+  pool,
 }: {
   rows: BenchRow[];
   segmentOptions: string[];
@@ -72,6 +75,7 @@ export default function BenchTable({
   relocation: Record<string, string>;
   lists: ShortlistSummary[];
   waOpportunity: boolean;
+  pool: Record<string, PoolEntry>;
 }) {
   const me = useMyFirstName();
   const [mode, setMode] = useState<Mode>("needs");
@@ -80,6 +84,7 @@ export default function BenchTable({
   const [segment, setSegment] = useState("all");
   const [gap, setGap] = useState("all");
   const [matchOnly, setMatchOnly] = useState(false);
+  const [poolFilter, setPoolFilter] = useState<"all" | "in" | "out">("all");
   const [sort, setSort] = useState<"gaps" | "passport" | "experience">("passport");
   const [shown, setShown] = useState(PAGE);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -123,6 +128,8 @@ export default function BenchTable({
       if (segment !== "all" && !(r.segments ?? []).includes(segment)) return false;
       if (gap !== "all" && !gapLabels(r).includes(gap)) return false;
       if (matchOnly && r.strongRoles.length === 0) return false;
+      if (poolFilter === "in" && !pool[r.candidate_id]) return false;
+      if (poolFilter === "out" && pool[r.candidate_id]) return false;
       if (needle) {
         const hay = `${r.full_name ?? ""} ${r.current_employer ?? ""} ${r.current_job_title ?? ""} ${r.city ?? ""}`.toLowerCase();
         if (!hay.includes(needle)) return false;
@@ -135,7 +142,7 @@ export default function BenchTable({
       return b.passport_score - a.passport_score;
     });
     return out;
-  }, [rows, mode, q, fit, segment, gap, matchOnly, sort]);
+  }, [rows, mode, q, fit, segment, gap, matchOnly, poolFilter, pool, sort]);
 
   const role = roles.find((r) => r.id === roleId) ?? null;
 
@@ -561,6 +568,11 @@ export default function BenchTable({
           <input type="checkbox" checked={matchOnly} onChange={(e) => setMatchOnly(e.target.checked)} />
           Strong match for an open role
         </label>
+        <select value={poolFilter} onChange={(e) => setPoolFilter(e.target.value as "all" | "in" | "out")} className={select}>
+          <option value="all">Talent Pool: all</option>
+          <option value="in">In the Talent Pool</option>
+          <option value="out">Not in the pool yet</option>
+        </select>
         {gap !== "all" && (
           <button type="button" onClick={() => setGap("all")} className="text-[12px] text-blue-600 hover:underline">
             Clear &quot;{gap}&quot;
@@ -754,6 +766,7 @@ export default function BenchTable({
                 </div>
 
                 <div className="flex shrink-0 flex-col items-stretch gap-1.5">
+                  <PoolControl candidateId={r.candidate_id} entry={pool[r.candidate_id] ?? null} compact />
                   <button
                     type="button"
                     onClick={() => openCv(r)}
