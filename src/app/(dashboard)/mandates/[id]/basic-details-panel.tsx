@@ -1,5 +1,6 @@
 "use client";
 
+import { RoleLevelSelect, RoleTypeSelect, useRoleClusters } from "@/components/role-type-fields";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -24,6 +25,7 @@ export type MandateBasicDetails = {
   // candidate_practices pools (see create-mandate-form.tsx / practices-control.tsx).
   practice_id: string | null;
   seniority_band: string | null;
+  role_cluster: string | null;
 };
 
 // "archived" is deliberately not a status value -- it's a separate
@@ -76,7 +78,9 @@ export default function BasicDetailsPanel({
     headcount: initial.headcount?.toString() ?? "1",
     practice_id: initial.practice_id ?? "",
     seniority_band: initial.seniority_band ?? "",
+    role_cluster: initial.role_cluster ?? "",
   });
+  const roleClusters = useRoleClusters();
   const [allPractices, setAllPractices] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +140,7 @@ export default function BasicDetailsPanel({
         headcount: form.headcount ? Number(form.headcount) : 1,
         practice_id: form.practice_id || null,
         seniority_band: form.seniority_band || null,
+        role_cluster: form.role_cluster || null,
       })
       .eq("id", mandateId);
     setSaving(false);
@@ -380,19 +385,16 @@ export default function BasicDetailsPanel({
           </select>
         </div>
         <div>
-          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Seniority band</label>
-          <select
-            value={form.seniority_band}
-            onChange={(e) => setForm((f) => ({ ...f, seniority_band: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-          >
-            <option value="">Not set</option>
-            <option value="ic">IC / Individual Contributor</option>
-            <option value="team_lead">Team Lead</option>
-            <option value="manager">Manager</option>
-            <option value="director">Director</option>
-            <option value="vp_plus">VP & above</option>
-          </select>
+          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+            Role type <span className="text-rose-600">*</span>
+          </label>
+          <RoleTypeSelect value={form.role_cluster} onChange={(v) => setForm((f) => ({ ...f, role_cluster: v }))} clusters={roleClusters} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+        </div>
+        <div>
+          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+            Role level <span className="text-rose-600">*</span>
+          </label>
+          <RoleLevelSelect value={form.seniority_band} onChange={(v) => setForm((f) => ({ ...f, seniority_band: v }))} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
         </div>
       </div>
 

@@ -14,11 +14,15 @@ const JOBS_SITE = process.env.NEXT_PUBLIC_JOBS_SITE_URL ?? "https://jobs.staffan
 
 const METROS = ["Bengaluru", "Mumbai", "Delhi NCR", "Hyderabad", "Pune", "Chennai"];
 const SUB_DOMAINS = ["SaaS Sales", "Inside Sales (B2B)", "Enterprise Sales (Non-SaaS)"];
+const CLUSTERS = ["sdr_bdr", "bd_exec", "account_exec", "inside_sales", "solution_eng", "customer_success", "account_mgmt", "sales_leadership"];
+const LEVELS = ["ic", "team_lead", "manager", "director", "vp_plus"];
 
 export type DraftRole = {
   role_title: string;
   city: string;
   sub_domain: string;
+  role_cluster: string;
+  seniority_band: string;
   experience_min: number;
   experience_max: number;
   work_mode: string | null;
@@ -57,10 +61,12 @@ function clean(raw: unknown): DraftRole | null {
   const city = METROS.find((m) => m.toLowerCase() === String(o.city ?? "").trim().toLowerCase());
   const sub = SUB_DOMAINS.find((s) => s.toLowerCase() === String(o.sub_domain ?? "").trim().toLowerCase()) ?? "SaaS Sales";
   const overview = String(o.overview ?? "").trim();
+  const roleCluster = CLUSTERS.includes(String(o.role_cluster)) ? String(o.role_cluster) : null;
+  const level = LEVELS.includes(String(o.seniority_band)) ? String(o.seniority_band) : null;
   const must = strList(o.must_haves, 5);
   const good = strList(o.good_to_haves, 4);
   let post = String(o.linkedin_post ?? "").trim();
-  if (!role_title || !city || !overview || must.length === 0 || good.length === 0 || !post) return null;
+  if (!role_title || !city || !overview || !roleCluster || !level || must.length === 0 || good.length === 0 || !post) return null;
   if (!post.includes("{{LINK}}")) post = `${post}\n\nApply here: {{LINK}}`;
   const min = Math.max(0, Math.min(30, Math.round(Number(o.experience_min) || 0)));
   const max = Math.max(min, Math.min(40, Math.round(Number(o.experience_max) || min + 3)));
@@ -68,6 +74,8 @@ function clean(raw: unknown): DraftRole | null {
     role_title: role_title.slice(0, 120),
     city,
     sub_domain: sub,
+    role_cluster: roleCluster,
+    seniority_band: level,
     experience_min: min,
     experience_max: max,
     work_mode: ["Hybrid", "On-site", "Remote"].find((w) => w.toLowerCase() === String(o.work_mode ?? "").toLowerCase()) ?? null,
@@ -91,6 +99,7 @@ Rules:
 - Spread the roles across these cities only: ${METROS.join(", ")}. Mix seniority from 2 to 12 years.
 - Each role must be distinct from these existing ones: ${existing.length ? existing.join("; ") : "(none yet)"}.
 - sub_domain must be one of: ${SUB_DOMAINS.join(" | ")}.
+- role_cluster must be one of: ${CLUSTERS.join(" | ")} (what the hire does). seniority_band must be one of: ${LEVELS.join(" | ")}. Decide them from the role you write: an account executive is "account_exec" and "ic"; a regional or senior sales manager is "sales_leadership" and "manager".
 - work_mode must be one of: Hybrid | On-site | Remote.
 - overview: 2 to 3 plain sentences saying what the role does and that StaffAnchor is building a shortlist for companies hiring in this space.
 - responsibilities, candidate_profile: short bullet strings.
@@ -98,7 +107,7 @@ Rules:
 - linkedin_post: under 600 characters, plain and human, no emoji spam, at most 3 hashtags. Say it is a pipeline role StaffAnchor is shortlisting for. It must contain the exact text {{LINK}} where the apply link goes.
 
 Return ONLY a JSON array, no markdown fence, no commentary:
-[{"role_title":"","city":"","sub_domain":"","experience_min":0,"experience_max":0,"work_mode":"","overview":"","responsibilities":[""],"candidate_profile":[""],"must_haves":[""],"good_to_haves":[""],"linkedin_post":""}]`;
+[{"role_title":"","city":"","sub_domain":"","role_cluster":"","seniority_band":"","experience_min":0,"experience_max":0,"work_mode":"","overview":"","responsibilities":[""],"candidate_profile":[""],"must_haves":[""],"good_to_haves":[""],"linkedin_post":""}]`;
 
   let result;
   try {
@@ -138,6 +147,8 @@ export async function publishPipelineRoles(admin: SupabaseClient, roles: DraftRo
         category: "b2b_sales",
         sub_domain: r.sub_domain,
         sub_domains: [r.sub_domain],
+        role_cluster: r.role_cluster,
+        seniority_band: r.seniority_band,
         city: r.city,
         cities: [r.city],
         experience_min: r.experience_min,

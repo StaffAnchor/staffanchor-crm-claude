@@ -39,5 +39,7 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
   const card = cleanCard(body.card, new Set((cl ?? []).map((c: { slug: string }) => c.slug)), new Set((wl ?? []).map((w: { slug: string }) => w.slug)));
   if (!card) return NextResponse.json({ ok: false, error: "That card isn't valid." }, { status: 400 });
   await s.admin.from("mandate_role_cards").upsert({ mandate_id: id, card, confirmed: true, updated_by: s.user.id, updated_at: new Date().toISOString() }, { onConflict: "mandate_id" });
+  // Role type and level live on the mandate, so a change here is a change there.
+  await s.admin.from("mandates").update({ role_cluster: card.cluster, ...(card.level !== "any" ? { seniority_band: card.level } : {}) }).eq("id", id);
   return NextResponse.json({ ok: true, card });
 }
