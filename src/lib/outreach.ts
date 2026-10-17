@@ -25,8 +25,17 @@ const PHRASE: Record<string, string> = {
 };
 const EXAMPLE: Record<string, string> = { current_ctc: "12 LPA", expected_ctc: "16 LPA", notice: "30 days" };
 
-const sig = (candidateId: string) =>
-  crypto.createHmac("sha256", process.env.SUPABASE_SERVICE_ROLE_KEY ?? "unset").update(`unsub:${candidateId}`).digest("hex").slice(0, 32);
+const sigFor = (candidateId: string, purpose: string) =>
+  crypto.createHmac("sha256", process.env.SUPABASE_SERVICE_ROLE_KEY ?? "unset").update(`${purpose}:${candidateId}`).digest("hex").slice(0, 32);
+const sig = (candidateId: string) => sigFor(candidateId, "unsub");
+
+/** A link token for one candidate and one purpose ("respond", "refer"), so a link can only do what it was made for. */
+export const signedToken = (candidateId: string, purpose: string) => sigFor(candidateId, purpose);
+export const verifySigned = (candidateId: string, purpose: string, token: string) => {
+  const a = Buffer.from(sigFor(candidateId, purpose));
+  const b = Buffer.from(token);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
 
 export const verifyUnsubscribe = (candidateId: string, token: string) => {
   const a = Buffer.from(sig(candidateId));

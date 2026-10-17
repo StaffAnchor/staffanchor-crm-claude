@@ -3,6 +3,7 @@ import { Gift } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ReferralRowActions from "./referral-row-actions";
 import CandidatesSubNav from "../candidates-sub-nav";
+import ReferralAskPanel from "./referral-ask-panel";
 
 const STATUS_LABEL: Record<string, string> = {
   referred: "Referred",
@@ -71,6 +72,8 @@ export default async function ReferralsPage() {
           </p>
         </div>
       </div>
+
+      <ReferralAskPanel />
 
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">

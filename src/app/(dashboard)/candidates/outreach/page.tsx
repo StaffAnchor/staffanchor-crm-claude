@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import CandidatesSubNav from "../candidates-sub-nav";
 import { buildOutreachEmail, dailyCap } from "@/lib/outreach";
 import OutreachView from "./outreach-view";
+import ReactivationPanel from "./reactivation-panel";
 import RepliesPanel, { type ReplyRow } from "./replies-panel";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,7 @@ export default async function OutreachPage() {
   return (
     <div className="max-w-[1100px] mx-auto px-5 py-8">
       <CandidatesSubNav />
+      <ReactivationPanel />
       <RepliesPanel mailbox={process.env.GMAIL_USER ?? null} counts={replyCounts} rows={replyRows} />
       <OutreachView
         sender={process.env.GMAIL_USER ?? null}
