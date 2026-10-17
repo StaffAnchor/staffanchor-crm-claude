@@ -28,6 +28,8 @@ export interface CandidateLite {
   phone: string | null;
   phone_hold?: boolean | null;
   open_to_relocation?: string | null;
+  /** True when neither the candidate, a recruiter nor the CV makes their role level clear. */
+  role_level_unclear?: boolean;
   status: string;
   current_job_title: string | null;
   current_employer: string | null;
@@ -204,8 +206,19 @@ export function supabaseStore(admin: SupabaseClient): Store {
       return count ?? 0;
     },
     async getCandidate(id) {
-      const { data } = await admin.from("candidates").select(CANDIDATE_COLUMNS).eq("id", id).maybeSingle();
-      return (data as CandidateLite | null) ?? null;
+      const { data } = await admin.from("candidates").select(`${CANDIDATE_COLUMNS}, segment_data`).eq("id", id).maybeSingle();
+      if (!data) return null;
+      const row = data as unknown as CandidateLite & { segment_data?: { role_level?: string } | null };
+      // Role level is "unclear" unless it was stated on the profile or the inventory could tell it from the CV.
+      const stated = typeof row.segment_data?.role_level === "string" && row.segment_data.role_level.trim() !== "";
+      let known = stated;
+      if (!known) {
+        const { data: tags } = await admin.from("candidate_role_tags").select("seniority").eq("candidate_id", id).eq("is_current", true);
+        known = ((tags ?? []) as { seniority: string }[]).some((t) => t.seniority !== "unclear");
+      }
+      const { segment_data, ...rest } = row as CandidateLite & { segment_data?: unknown };
+      void segment_data;
+      return { ...rest, role_level_unclear: !known } as CandidateLite;
     },
     async enrichFromCv(candidateId) {
       try {

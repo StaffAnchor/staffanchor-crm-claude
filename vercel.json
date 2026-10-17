@@ -74,6 +74,14 @@
     {
       "path": "/api/cron/read-email-replies",
       "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/cron/role-tags",
+      "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/cron/role-ai",
+      "schedule": "0 3 * * *"
     }
   ]
 }
