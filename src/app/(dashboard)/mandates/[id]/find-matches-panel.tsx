@@ -81,7 +81,7 @@ function ScoreBreakdownBar({ label, value }: { label: string; value: number }) {
   const barColor = value >= 75 ? "bg-emerald-500" : value >= 50 ? "bg-amber-500" : "bg-red-400";
   return (
     <div>
-      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-0.5">
         <span>{label}</span>
         <span className="tabular-nums">{value}</span>
       </div>
@@ -215,14 +215,14 @@ export default function FindMatchesPanel({
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-purple-500" /> Find matching candidates
+          <Sparkles className="w-3.5 h-3.5 text-teal-500" /> Find matching candidates
         </h2>
       </div>
       <p className="text-[12px] text-slate-400 mb-3">
         AI scans your existing candidate pool against this mandate&apos;s JD, must haves, and good to haves.
       </p>
       <p className="text-[12px] mb-3">
-        <Link href={`/candidates/search?mandate=${mandateId}`} className="font-medium text-indigo-600 hover:underline">
+        <Link href={`/candidates/search?mandate=${mandateId}`} className="font-medium text-teal-600 hover:underline">
           Search the whole database for this mandate →
         </Link>{" "}
         <span className="text-slate-400">with filters you can adjust, key facts and a tick per requirement.</span>
@@ -232,7 +232,7 @@ export default function FindMatchesPanel({
         <button
           onClick={runMatch}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium py-2 disabled:opacity-60"
         >
           {loading ? (
             <>
@@ -251,13 +251,13 @@ export default function FindMatchesPanel({
       {matches && (
         <>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400">
               {scanned > 0
                 ? `${matches.length} suggested of ${scanned} candidates scanned`
                 : `${matches.length} suggested${computedAt ? ` — auto-matched ${new Date(computedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}` : ""}`}
               {calibration && calibration.positive + calibration.negative > 0 && (
                 <span
-                  className="ml-1.5 text-purple-500"
+                  className="ml-1.5 text-teal-500"
                   title="This ranking factors in candidates you've previously shortlisted or rejected for this mandate."
                 >
                   · calibrated on {calibration.positive + calibration.negative} past decision
@@ -268,7 +268,7 @@ export default function FindMatchesPanel({
             <button
               onClick={runMatch}
               disabled={loading}
-              className="text-[11px] text-purple-600 hover:underline disabled:opacity-50"
+              className="text-xs text-teal-600 hover:underline disabled:opacity-50"
             >
               {loading ? "Re-scanning..." : "Re-run"}
             </button>
@@ -295,31 +295,31 @@ export default function FindMatchesPanel({
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
-                          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate"
+                          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate"
                         >
                           {m.full_name}
                         </Link>
                         <button
                           onClick={() => toggleScoreOpen(m.candidate_id)}
                           title="Click to see how this score was calculated"
-                          className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded hover:ring-1 hover:ring-current ${scoreColor(m.score)}`}
+                          className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded hover:ring-1 hover:ring-current ${scoreColor(m.score)}`}
                         >
                           {m.score} <Info className="w-2.5 h-2.5" />
                         </button>
                         {totalCount > 0 && (
-                          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${matchCountColor(metCount, totalCount)}`}>
+                          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${matchCountColor(metCount, totalCount)}`}>
                             {metCount}/{totalCount} must-haves
                           </span>
                         )}
                         {stability && (
-                          <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${stability.tone}`}>
+                          <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${stability.tone}`}>
                             {stability.label}
                           </span>
                         )}
                         {!m.has_ai_summary && (
                           <Link
                             href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
-                            className="inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 hover:bg-orange-100"
+                            className="inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 hover:bg-amber-100"
                             title="Open the profile to generate one"
                           >
                             <AlertTriangle className="w-2.5 h-2.5" /> Summary not generated yet
@@ -335,7 +335,7 @@ export default function FindMatchesPanel({
                           <ScoreBreakdownBar label="Experience fit (20%)" value={m.score_breakdown.experience_fit} />
                           <ScoreBreakdownBar label="Domain relevance (20%)" value={m.score_breakdown.domain_relevance} />
                           {m.score_breakdown.notes && (
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic pt-1">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 italic pt-1">
                               {m.score_breakdown.notes}
                             </p>
                           )}
@@ -351,7 +351,7 @@ export default function FindMatchesPanel({
                   </div>
 
                   {isOpen && (
-                    <div className="mt-2 space-y-1.5 text-[11px]">
+                    <div className="mt-2 space-y-1.5 text-xs">
                       {m.must_haves.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {m.must_haves.map((check, i) => (

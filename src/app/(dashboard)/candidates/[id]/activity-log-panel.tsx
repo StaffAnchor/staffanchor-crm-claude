@@ -35,9 +35,9 @@ const KIND_ICON: Record<Activity["kind"], typeof Phone> = {
 };
 
 const KIND_COLOR: Record<Activity["kind"], string> = {
-  call: "bg-blue-50 text-blue-600",
+  call: "bg-teal-50 text-teal-600",
   whatsapp: "bg-emerald-50 text-emerald-600",
-  email: "bg-violet-50 text-violet-600",
+  email: "bg-teal-50 text-teal-600",
   note: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400",
   stage_change: "bg-amber-50 text-amber-600",
 };
@@ -90,7 +90,7 @@ export default function ActivityLogPanel({
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as Activity["kind"])}
-          className="rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[12px] bg-slate-50 dark:bg-slate-800/50 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[12px] bg-slate-50 dark:bg-slate-800/50 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         >
           {KIND_OPTIONS.map((k) => (
             <option key={k} value={k}>
@@ -103,7 +103,7 @@ export default function ActivityLogPanel({
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           placeholder="What happened? e.g. Called, no answer -- will retry tomorrow"
-          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         />
         <Button onClick={handleAdd} disabled={saving}>
           Log
@@ -136,7 +136,7 @@ export default function ActivityLogPanel({
                   {a.actor_name ? ` by ${a.actor_name}` : ""}
                 </p>
                 {a.body && <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{a.body}</p>}
-                <p className="text-[11px] text-slate-400 mt-1">{new Date(a.created_at).toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-1">{new Date(a.created_at).toLocaleString()}</p>
               </div>
             </div>
           );

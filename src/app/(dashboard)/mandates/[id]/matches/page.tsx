@@ -69,7 +69,7 @@ export default async function MandateMatchesPage({
             ? ` · ${mandate.experience_min}-${mandate.experience_max} yrs`
             : ""}
         </p>
-        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
           <span className="font-medium text-slate-600 dark:text-slate-300">Requirement chips:</span>
           <span className="inline-flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Met — confirmed in their data

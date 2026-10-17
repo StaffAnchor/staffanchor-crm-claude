@@ -84,8 +84,8 @@ function initials(name: string | null | undefined) {
 // Deterministic pastel-ish avatar color from the candidate's name, so the
 // same person always gets the same color across renders/columns.
 const AVATAR_COLORS = [
-  "bg-blue-500", "bg-violet-500", "bg-rose-500", "bg-amber-500",
-  "bg-emerald-500", "bg-cyan-500", "bg-fuchsia-500", "bg-orange-500",
+  "bg-teal-500", "bg-teal-500", "bg-rose-500", "bg-amber-500",
+  "bg-emerald-500", "bg-teal-500", "bg-teal-500", "bg-amber-500",
 ];
 function avatarColor(name: string | null | undefined) {
   const key = name || "?";
@@ -397,8 +397,8 @@ export default function MandateCandidatesBoard({
         <div className="flex items-center gap-1.5 rounded-ros-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-semibold">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {counters.hired} Placed
         </div>
-        <div className="flex items-center gap-1.5 rounded-ros-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-3 py-1 text-xs font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> {counters.inPipeline} In pipeline
+        <div className="flex items-center gap-1.5 rounded-ros-full bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 px-3 py-1 text-xs font-semibold">
+          <span className="w-1.5 h-1.5 rounded-full bg-teal-500" /> {counters.inPipeline} In pipeline
         </div>
         <div className="flex items-center gap-1.5 rounded-ros-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-semibold">
           <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> {counters.dropped} Dropped
@@ -419,12 +419,12 @@ export default function MandateCandidatesBoard({
               onDragLeave={() => setDragOverStage((prev) => (prev === col.key ? null : prev))}
               onDrop={(e) => handleDrop(e, col.key)}
               className={`flex-shrink-0 w-[240px] rounded-ros-lg border transition-colors duration-150 ease-ros ${
-                isOver ? "border-blue-400 bg-blue-50/50 dark:bg-blue-900/10" : "border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30"
+                isOver ? "border-teal-400 bg-teal-50/50 dark:bg-teal-900/10" : "border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30"
               }`}
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-700">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{col.label}</span>
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 tabular-nums">{colRows.length}</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{col.label}</span>
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tabular-nums">{colRows.length}</span>
               </div>
               <div className="p-2 space-y-2 min-h-[80px]">
                 {colRows.map((row) => {
@@ -440,7 +440,7 @@ export default function MandateCandidatesBoard({
                       }}
                       onDragEnd={() => setDraggingId(null)}
                       className={`bg-white dark:bg-slate-900 rounded-ros-md border p-2.5 shadow-ros-sm cursor-grab active:cursor-grabbing transition-all duration-150 ease-ros hover:-translate-y-px hover:shadow-md ${
-                        selected.has(row.id) ? "border-blue-400 ring-1 ring-blue-300" : "border-slate-200 dark:border-slate-700"
+                        selected.has(row.id) ? "border-teal-400 ring-1 ring-teal-300" : "border-slate-200 dark:border-slate-700"
                       } ${draggingId === row.id ? "opacity-40" : ""} ${isMoving ? "opacity-60 pointer-events-none" : ""}`}
                     >
                       <div className="flex items-start gap-2">
@@ -453,7 +453,7 @@ export default function MandateCandidatesBoard({
                           className="shrink-0 mt-1"
                         />
                         <div
-                          className={`shrink-0 w-7 h-7 rounded-ros-full ${avatarColor(row.candidate.full_name)} text-white text-[10.5px] font-semibold flex items-center justify-center`}
+                          className={`shrink-0 w-7 h-7 rounded-ros-full ${avatarColor(row.candidate.full_name)} text-white text-xs font-semibold flex items-center justify-center`}
                         >
                           {initials(row.candidate.full_name)}
                         </div>
@@ -463,7 +463,7 @@ export default function MandateCandidatesBoard({
                               <Link
                                 href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
                                 onClick={() => markViewed(row.id)}
-                                className={`text-[12.5px] hover:text-blue-600 truncate block ${row.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
+                                className={`text-[12.5px] hover:text-teal-600 truncate block ${row.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
                               >
                                 {row.candidate.full_name}
                               </Link>
@@ -472,7 +472,7 @@ export default function MandateCandidatesBoard({
                             <OriginChip origin={row.origin} label={row.origin_label} />
                             {!row.viewed_at && (
                               <span
-                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
                                 title="Nobody on the team has opened this candidate for this mandate yet"
                               >
                                 New
@@ -480,7 +480,7 @@ export default function MandateCandidatesBoard({
                             )}
                             {row.is_priority && (
                               <span
-                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
                                 title="Candidate paid to flag this application as priority"
                               >
                                 <Zap className="h-2 w-2" /> Priority
@@ -488,7 +488,7 @@ export default function MandateCandidatesBoard({
                             )}
                             {row.match_score != null && (
                               <span
-                                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${
+                                className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold ${
                                   row.match_score >= 75
                                     ? "bg-emerald-50 text-emerald-700"
                                     : row.match_score >= 50
@@ -508,11 +508,11 @@ export default function MandateCandidatesBoard({
                                 staying invisible outside that link. */}
                             {row.client_feedback && (
                               <span
-                                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${
+                                className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold ${
                                   row.client_feedback === "interested"
                                     ? "bg-emerald-100 text-emerald-800"
                                     : row.client_feedback === "interview_requested"
-                                      ? "bg-blue-100 text-blue-800"
+                                      ? "bg-teal-100 text-teal-800"
                                       : "bg-rose-100 text-rose-800"
                                 }`}
                               >
@@ -524,7 +524,7 @@ export default function MandateCandidatesBoard({
                               </span>
                             )}
                           </div>
-                          <p className="text-[10.5px] text-slate-400 truncate">
+                          <p className="text-xs text-slate-400 truncate">
                             {row.candidate.sub_domain ?? "—"}
                             {row.candidate.current_employer ? ` · ${row.candidate.current_employer}` : ""}
                           </p>
@@ -540,14 +540,14 @@ export default function MandateCandidatesBoard({
                                   generateStabilityScore(row.candidate.id);
                                 }}
                                 disabled={generatingStability.has(row.candidate.id)}
-                                className="flex items-center gap-0.5 text-[9.5px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60"
+                                className="flex items-center gap-0.5 text-[9.5px] font-medium text-teal-600 dark:text-teal-300 hover:text-teal-700 disabled:opacity-60"
                               >
                                 <Sparkles className="w-2.5 h-2.5" />
                                 {generatingStability.has(row.candidate.id) ? "Generating…" : "Generate score"}
                               </button>
                             ) : (
                               <span
-                                className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold ${stabilityTone(stabilityLabelForScore(row.candidate.stability_score))}`}
+                                className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold ${stabilityTone(stabilityLabelForScore(row.candidate.stability_score))}`}
                               >
                                 {stabilityLabelForScore(row.candidate.stability_score)} · {row.candidate.stability_score}
                               </span>
@@ -579,7 +579,7 @@ export default function MandateCandidatesBoard({
                           recruiters never unknowingly work the same person
                           on this mandate. Admin can move it (e.g. covering
                           for someone on leave); everyone else sees it read-only. */}
-                      <div className="mt-1 text-[10px] text-slate-400 truncate" title={sourceCellLabel(row.candidate)}>
+                      <div className="mt-1 text-xs text-slate-400 truncate" title={sourceCellLabel(row.candidate)}>
                         {sourceCellLabel(row.candidate)}
                       </div>
 
@@ -590,7 +590,7 @@ export default function MandateCandidatesBoard({
                             disabled={reassigningId === row.candidate.id}
                             onMouseDown={(e) => e.stopPropagation()}
                             onChange={(e) => reassignOwner(row.candidate.id, e.target.value)}
-                            className="w-full text-[10px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1 py-0.5 bg-white dark:bg-slate-900"
+                            className="w-full text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1 py-0.5 bg-white dark:bg-slate-900"
                             title="Admin: reassign this candidate's owner"
                           >
                             <option value="">Unassigned</option>
@@ -601,7 +601,7 @@ export default function MandateCandidatesBoard({
                             ))}
                           </select>
                         ) : (
-                          <span className="text-[10px] text-slate-400" title="Owner -- this candidate's responsibility">
+                          <span className="text-xs text-slate-400" title="Owner -- this candidate's responsibility">
                             Owner: {ownerLabel(row.candidate.owner_id)}
                           </span>
                         )}
@@ -609,13 +609,13 @@ export default function MandateCandidatesBoard({
 
                       <div className="mt-2 flex items-center justify-between">
                         <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-medium text-white rounded-ros-full px-1.5 py-0.5 ${recommendationColor(rec)}`}
+                          className={`inline-flex items-center gap-1 text-xs font-medium text-white rounded-ros-full px-1.5 py-0.5 ${recommendationColor(rec)}`}
                           title={rec ?? "Not assessed"}
                         >
                           {rec ?? "Not assessed"}
                         </span>
                         {row.candidate.current_fixed_ctc && (
-                          <span className="text-[10.5px] text-slate-500 dark:text-slate-400 tabular-nums">₹{row.candidate.current_fixed_ctc}L</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">₹{row.candidate.current_fixed_ctc}L</span>
                         )}
                       </div>
 
@@ -663,20 +663,20 @@ export default function MandateCandidatesBoard({
                         />
                       </div>
 
-                      <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
+                      <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
                         <span title="Time in current stage">In stage: {timeAgo(row.stage_updated_at)}</span>
                         <span className="text-slate-300 dark:text-slate-600">·</span>
                         <span title="Time in pipeline since being linked to this mandate">Pipeline: {timeAgo(row.created_at)}</span>
                       </div>
 
                       {row.date_of_joining && (
-                        <p className="mt-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                           Joining {new Date(row.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
                         </p>
                       )}
                       {row.stage === "rejected" && row.rejection_category && (
                         <p
-                          className={`mt-1 text-[10px] font-medium ${row.stage_source === "recruiter" ? "text-indigo-500" : "text-amber-600"}`}
+                          className={`mt-1 text-xs font-medium ${row.stage_source === "recruiter" ? "text-teal-500" : "text-amber-600"}`}
                           title={row.rejection_reason ?? undefined}
                         >
                           {row.stage_source === "recruiter" ? "We passed" : "Client passed"} ·{" "}
@@ -686,7 +686,7 @@ export default function MandateCandidatesBoard({
                     </div>
                   );
                 })}
-                {colRows.length === 0 && <p className="text-[11px] text-slate-300 dark:text-slate-600 text-center py-4">—</p>}
+                {colRows.length === 0 && <p className="text-xs text-slate-300 dark:text-slate-600 text-center py-4">—</p>}
               </div>
             </div>
           );

@@ -113,7 +113,7 @@ export default function AlignCandidatesPanel({
         {saving ? "Linking..." : `Link ${selected.size || ""} candidate${selected.size === 1 ? "" : "s"}`}
       </button>
 
-      <Link href="/candidates/new" className="block text-center text-[12px] text-blue-600 hover:underline mt-2">
+      <Link href="/candidates/new" className="block text-center text-[12px] text-teal-600 hover:underline mt-2">
         Or create a brand new candidate profile
       </Link>
     </div>

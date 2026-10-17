@@ -51,7 +51,7 @@ export default function PracticeMatchesPanel({
         if (exact.length === 0 && near.length === 0) return null;
         return (
           <div key={cp.practice_id}>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               {practice?.name ?? "—"} · {SENIORITY_LABEL[cp.seniority_band] ?? cp.seniority_band}
             </p>
             {exact.length > 0 && (
@@ -63,7 +63,7 @@ export default function PracticeMatchesPanel({
             )}
             {near.length > 0 && (
               <div className="flex flex-wrap items-center gap-1 mt-1">
-                <span className="text-[10.5px] text-slate-400 mr-0.5">Adjacent band:</span>
+                <span className="text-xs text-slate-400 mr-0.5">Adjacent band:</span>
                 {near.map((m) => (
                   <PracticeMatchChip key={m.id} candidateId={candidateId} mandateId={m.id} roleTitle={m.role_title} clientName={m.client_name} dim />
                 ))}
@@ -72,7 +72,7 @@ export default function PracticeMatchesPanel({
           </div>
         );
       })}
-      <Link href="/candidates/inventory" className="text-[11px] text-blue-600 hover:underline">
+      <Link href="/candidates/inventory" className="text-xs text-teal-600 hover:underline">
         See the Talent Inventory →
       </Link>
     </div>

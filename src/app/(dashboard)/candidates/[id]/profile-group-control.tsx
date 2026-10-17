@@ -51,8 +51,8 @@ export default function ProfileGroupControl({
   return (
     <div className="mt-2 flex flex-wrap items-start gap-2 text-[12px]">
       <ProfileGroupBadge group={group} subgroup={subgroup} also={also} needsReview={needsReview} reason={reason} />
-      {reason && <span className="max-w-[420px] text-[11.5px] text-slate-500 dark:text-slate-400">{reason}{locked ? " (kept as set)" : ""}</span>}
-      <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-[11.5px] font-medium text-blue-600 hover:underline">
+      {reason && <span className="max-w-[420px] text-xs text-slate-500 dark:text-slate-400">{reason}{locked ? " (kept as set)" : ""}</span>}
+      <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-xs font-medium text-teal-600 hover:underline">
         <Pencil className="h-3 w-3" /> Change group
       </button>
       {open && (
@@ -74,7 +74,7 @@ export default function ProfileGroupControl({
               ))}
             </select>
           )}
-          <button onClick={() => send({ group: g, subgroup: g === "non_sales" ? s || null : null })} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
+          <button onClick={() => send({ group: g, subgroup: g === "non_sales" ? s || null : null })} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-60">
             {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save
           </button>
           {locked && (

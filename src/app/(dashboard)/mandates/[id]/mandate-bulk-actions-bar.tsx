@@ -382,7 +382,7 @@ export default function MandateBulkActionsBar({
           <button
             onClick={openJdModal}
             disabled={emailingJd}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
+            className="flex items-center gap-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
             title="Emails the JD PDF (plus any company resources you pick) to each selected candidate's email on file"
           >
             {emailingJd ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
@@ -391,7 +391,7 @@ export default function MandateBulkActionsBar({
           <button
             onClick={openEmailModal}
             disabled={contactsWithEmail.length === 0}
-            className="flex items-center gap-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
+            className="flex items-center gap-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
             title={
               contactsWithEmail.length === 0
                 ? "This client has no contact with an email on file yet -- add one from the client's page"
@@ -491,7 +491,7 @@ export default function MandateBulkActionsBar({
                 ))}
               </select>
             )}
-            <p className="text-[11px] text-slate-400 mb-1.5">or create a new one:</p>
+            <p className="text-xs text-slate-400 mb-1.5">or create a new one:</p>
             <input
               value={newGroupName}
               onChange={(e) => {
@@ -511,7 +511,7 @@ export default function MandateBulkActionsBar({
               <button
                 onClick={handleAddToGroup}
                 disabled={(!chosenGroupId && !newGroupName.trim()) || busy}
-                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
               >
                 {busy ? "Adding..." : "Add"}
               </button>
@@ -539,8 +539,8 @@ export default function MandateBulkActionsBar({
                   <input type="checkbox" checked={chosenContactIds.has(c.id)} onChange={() => toggleContact(c.id)} />
                   <span className="flex-1">
                     <span className="font-medium text-slate-800 dark:text-slate-200">{c.full_name}</span>
-                    {c.is_primary && <span className="ml-1.5 text-[10px] text-purple-600 font-medium">Primary</span>}
-                    <span className="block text-[11px] text-slate-400">{c.email}</span>
+                    {c.is_primary && <span className="ml-1.5 text-xs text-teal-600 font-medium">Primary</span>}
+                    <span className="block text-xs text-slate-400">{c.email}</span>
                   </span>
                 </label>
               ))}
@@ -555,7 +555,7 @@ export default function MandateBulkActionsBar({
               <button
                 onClick={handleSendToClient}
                 disabled={chosenContactIds.size === 0 || sendingClientEmail}
-                className="flex-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
               >
                 {sendingClientEmail ? "Sending..." : "Send"}
               </button>
@@ -584,7 +584,7 @@ export default function MandateBulkActionsBar({
                     <input type="checkbox" checked={chosenResourceIds.has(r.id)} onChange={() => toggleResource(r.id)} />
                     <span className="flex-1">
                       <span className="font-medium text-slate-800 dark:text-slate-200">{r.name}</span>
-                      <span className="ml-1.5 text-[10px] text-slate-400 uppercase">{r.kind}</span>
+                      <span className="ml-1.5 text-xs text-slate-400 uppercase">{r.kind}</span>
                     </span>
                   </label>
                 ))}
@@ -604,7 +604,7 @@ export default function MandateBulkActionsBar({
               <button
                 onClick={handleEmailJd}
                 disabled={emailingJd}
-                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
               >
                 {emailingJd ? "Sending..." : "Send"}
               </button>

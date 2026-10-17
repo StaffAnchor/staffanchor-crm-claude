@@ -87,7 +87,7 @@ export default function VerifiedFactsPanel({
         </h2>
         <button
           onClick={() => setAdding((v) => !v)}
-          className="text-[11px] text-purple-600 hover:underline flex items-center gap-0.5"
+          className="text-xs text-teal-600 hover:underline flex items-center gap-0.5"
         >
           <Plus className="w-3 h-3" /> Add
         </button>
@@ -122,7 +122,7 @@ export default function VerifiedFactsPanel({
             <button
               onClick={handleAdd}
               disabled={saving}
-              className="rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+              className="rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>

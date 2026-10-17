@@ -104,7 +104,7 @@ export default function MandateStaffingControl({
             className="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-slate-700 dark:text-slate-300"
           >
             {p.full_name ?? p.email}
-            {p.role === "freelancer" && <span className="text-[10px] uppercase text-slate-400">vendor</span>}
+            {p.role === "freelancer" && <span className="text-xs uppercase text-slate-400">vendor</span>}
             {busyId === p.id ? (
               <Loader2 className="w-3 h-3 animate-spin text-slate-400" />
             ) : (
@@ -139,7 +139,7 @@ export default function MandateStaffingControl({
               type="button"
               onClick={handleAdd}
               disabled={!pickerValue || busyId !== null}
-              className="rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-medium px-2 py-0.5 disabled:opacity-50"
+              className="rounded-md bg-teal-600 hover:bg-teal-500 text-white text-xs font-medium px-2 py-0.5 disabled:opacity-50"
             >
               Add
             </button>
@@ -149,7 +149,7 @@ export default function MandateStaffingControl({
                 setPickerOpen(false);
                 setPickerValue("");
               }}
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px]"
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs"
             >
               Cancel
             </button>
@@ -158,13 +158,13 @@ export default function MandateStaffingControl({
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 px-2 py-0.5 text-[11.5px]"
+            className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-teal-400 hover:text-teal-600 px-2 py-0.5 text-xs"
           >
             <Plus className="w-3 h-3" /> Add
           </button>
         )}
       </div>
-      {error && <p className="text-[11px] text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   );
 }

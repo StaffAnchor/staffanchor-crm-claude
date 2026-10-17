@@ -528,7 +528,7 @@ export default async function CandidateDetailPage({
                   <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {candidate.candidate_number != null && (
                     <span
-                      className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400"
+                      className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-xs font-mono text-slate-500 dark:text-slate-400"
                       title="Candidate number — reference this in internal discussions"
                     >
                       C-{String(candidate.candidate_number).padStart(6, "0")}
@@ -547,7 +547,7 @@ export default async function CandidateDetailPage({
                   const stale = days == null || days > 60;
                   return (
                     <p
-                      className={`text-[11px] mt-0.5 ${stale ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}
+                      className={`text-xs mt-0.5 ${stale ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}
                       title="The last time the candidate confirmed or updated their own details (CTC, notice period, role)"
                     >
                       {at
@@ -571,7 +571,7 @@ export default async function CandidateDetailPage({
                   const overflow = former.length - shown.length;
                   return (
                     <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                      <span className="text-[11px] text-slate-400 mr-0.5">Previously:</span>
+                      <span className="text-xs text-slate-400 mr-0.5">Previously:</span>
                       {shown.map((i) => (
                         <Badge key={i} tone="neutral" size="sm" className="normal-case tracking-normal">
                           {i}
@@ -579,7 +579,7 @@ export default async function CandidateDetailPage({
                       ))}
                       {overflow > 0 && (
                         <span
-                          className="text-[11px] text-slate-400"
+                          className="text-xs text-slate-400"
                           title={former.slice(MAX_SHOWN).join(", ")}
                         >
                           +{overflow} more
@@ -595,7 +595,7 @@ export default async function CandidateDetailPage({
                     what seniority band. */}
                 {candidatePracticeRows && candidatePracticeRows.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                    <span className="text-[11px] text-slate-400 mr-0.5">Practices:</span>
+                    <span className="text-xs text-slate-400 mr-0.5">Practices:</span>
                     {candidatePracticeRows.map((cp) => {
                       const practice = (allPracticesRows ?? []).find((p) => p.id === cp.practice_id);
                       if (!practice) return null;
@@ -675,7 +675,7 @@ export default async function CandidateDetailPage({
 
           {redFlags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mt-4">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-rose-600">
+              <span className="flex items-center gap-1 text-xs font-medium text-rose-600">
                 <AlertTriangle className="w-3.5 h-3.5" /> Risk flags:
               </span>
               {redFlags.map((flag) => (
@@ -713,7 +713,7 @@ export default async function CandidateDetailPage({
 
           {candidate.secondary_sub_domains?.length > 0 && (
             <div className="mt-4">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">Secondary sub-domains</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">Secondary sub-domains</p>
               <div className="flex flex-wrap gap-1.5">
                 {candidate.secondary_sub_domains.map((tag: string) => (
                   <Badge key={tag} tone="neutral" size="sm" className="normal-case tracking-normal">
@@ -806,7 +806,7 @@ export default async function CandidateDetailPage({
                           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                             {segmentEntries.map(([k, v]) => (
                               <div key={k}>
-                                <p className="text-[11px] text-slate-400">{humanize(k)}</p>
+                                <p className="text-xs text-slate-400">{humanize(k)}</p>
                                 <p className="text-[13px] text-slate-700 dark:text-slate-300">{formatValue(v)}</p>
                               </div>
                             ))}
@@ -819,7 +819,7 @@ export default async function CandidateDetailPage({
                           <div className="space-y-3">
                             {Object.entries(selfAssessment).map(([k, v]) => (
                               <div key={k}>
-                                <p className="text-[11px] font-medium text-slate-400 uppercase">{humanize(k)}</p>
+                                <p className="text-xs font-medium text-slate-400 uppercase">{humanize(k)}</p>
                                 <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{String(v)}</p>
                               </div>
                             ))}
@@ -898,15 +898,15 @@ export default async function CandidateDetailPage({
                 </Badge>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               Internal only, never shown to clients. Fill after a real call using the standard scorecard.
             </p>
             {scores.length > 0 && (
               <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                 {scores.map((s) => (
                   <div key={s.label} className="text-center">
-                    <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-[11px] font-normal text-slate-400">/5</span></p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
+                    <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-xs font-normal text-slate-400">/5</span></p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -929,7 +929,7 @@ export default async function CandidateDetailPage({
               first came in on. */}
           <Card className="mt-4">
             <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practices</h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               A candidate can belong to more than one practice (e.g. SaaS Sales + BFSI) if they&apos;ve genuinely worked
               both -- each practice carries its own seniority band.
             </p>
@@ -946,7 +946,7 @@ export default async function CandidateDetailPage({
               to see who else this person could be pitched to. */}
           <Card className="mt-4">
             <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practice Pool matches</h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               Other open mandates in this candidate&apos;s practice(s), based on the tags above.
             </p>
             <PracticeMatchesPanel
@@ -966,7 +966,7 @@ export default async function CandidateDetailPage({
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <p className="text-[11px] text-slate-400">{label}</p>
+      <p className="text-xs text-slate-400">{label}</p>
       <p className="text-slate-800 dark:text-slate-200 font-medium">{value || "—"}</p>
     </div>
   );
@@ -978,7 +978,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
 function StatChip({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
-      <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-slate-400 uppercase tracking-wide">{label}</p>
       <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
     </div>
   );

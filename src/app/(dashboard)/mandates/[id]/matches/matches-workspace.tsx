@@ -144,7 +144,7 @@ function StatusChip({ check, active, onClick }: { check: RequirementCheck; activ
       type="button"
       onClick={onClick}
       title={check.evidence || "Not mentioned in profile or resume — confirm on call"}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] ${tone} ${active ? "ring-2 ring-blue-400" : "hover:ring-1 hover:ring-current"}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs ${tone} ${active ? "ring-2 ring-teal-400" : "hover:ring-1 hover:ring-current"}`}
     >
       <Icon className="w-3 h-3 shrink-0" /> {check.requirement}
       {check.basis === "inferred" && <span className="italic opacity-70">(inferred)</span>}
@@ -158,7 +158,7 @@ function ScoreBreakdownBar({ label, value }: { label: string; value: number }) {
   const barColor = value >= 75 ? "bg-emerald-500" : value >= 50 ? "bg-amber-500" : "bg-red-400";
   return (
     <div>
-      <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400 mb-0.5">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-0.5">
         <span>{label}</span>
         <span className="tabular-nums">{value}</span>
       </div>
@@ -419,11 +419,11 @@ export default function MatchesWorkspace({
   return (
     <div className="mt-4">
       {proactiveMatches.length > 0 && (
-        <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 mb-4">
-          <h2 className="text-[13px] font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-1.5 mb-2">
+        <div className="bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4 mb-4">
+          <h2 className="text-[13px] font-semibold text-teal-900 dark:text-teal-200 flex items-center gap-1.5 mb-2">
             <Sparkles className="w-3.5 h-3.5" /> New since you last looked ({proactiveMatches.length})
           </h2>
-          <p className="text-[11px] text-purple-700/80 dark:text-purple-300/70 mb-3">
+          <p className="text-xs text-teal-700/80 dark:text-teal-300/70 mb-3">
             Candidates the system flagged as strong prospects for this mandate as soon as they registered/updated
             their profile — evaluated automatically, no one had to click "Find matches".
           </p>
@@ -431,28 +431,28 @@ export default function MatchesWorkspace({
             {proactiveMatches.map(({ id: rowId, parsed: m }) => (
               <div
                 key={rowId}
-                className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 rounded-lg border border-purple-100 dark:border-purple-900 px-3 py-2"
+                className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 rounded-lg border border-teal-100 dark:border-teal-900 px-3 py-2"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
                       href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
-                      className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate"
+                      className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate"
                     >
                       {m.full_name}
                     </Link>
-                    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${scoreColor(m.score)}`}>
+                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${scoreColor(m.score)}`}>
                       {m.score}
                     </span>
                     {linkedIdSet.has(m.candidate_id) && (
-                      <span className="inline-flex items-center text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                      <span className="inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded bg-teal-50 text-teal-700">
                         In pipeline
                       </span>
                     )}
                   </div>
                   <p className="text-[12px] text-slate-600 dark:text-slate-400 truncate">{m.reason}</p>
                   {registeredAt[m.candidate_id] && (
-                    <p className={`text-[11px] mt-0.5 ${registerLabelClass(registeredAt[m.candidate_id]) || "text-slate-400"}`}>
+                    <p className={`text-xs mt-0.5 ${registerLabelClass(registeredAt[m.candidate_id]) || "text-slate-400"}`}>
                       {registeredLabel(registeredAt[m.candidate_id]).text}
                     </p>
                   )}
@@ -514,7 +514,7 @@ export default function MatchesWorkspace({
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-purple-500" /> Ad hoc search
+            <Sparkles className="w-3.5 h-3.5 text-teal-500" /> Ad hoc search
           </h2>
           <p className="text-[12px] text-slate-400 mb-2">
             Add extra requirements for this search only — they won&apos;t change the mandate&apos;s saved JD.
@@ -525,12 +525,12 @@ export default function MatchesWorkspace({
             onChange={(e) => setExtraCriteria(e.target.value)}
             rows={4}
             placeholder="Type one or more extra mandatory criteria..."
-            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-2 text-[13px] resize-none focus:outline-none focus:ring-1 focus:ring-purple-500"
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-2 text-[13px] resize-none focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
           <button
             onClick={() => runMatch(true)}
             disabled={loading || extraCriteria.trim().length === 0}
-            className="w-full mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+            className="w-full mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium py-2 disabled:opacity-50"
           >
             {loading ? (
               <>
@@ -551,7 +551,7 @@ export default function MatchesWorkspace({
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Matched candidates</h2>
             <div className="flex items-center gap-3 shrink-0">
               {matches && matches.length > 0 && (
-                <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={fullMatchesOnly}
@@ -562,13 +562,13 @@ export default function MatchesWorkspace({
                 </label>
               )}
               {matches && hiddenWeakCount > 0 && (
-                <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
                   <input type="checkbox" checked={showWeakProfiles} onChange={(e) => setShowWeakProfiles(e.target.checked)} className="rounded border-slate-300" />
                   Show weak profiles ({hiddenWeakCount})
                 </label>
               )}
               {matches && matches.length > 0 && linkedIdSet.size > 0 && (
-                <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={linkedOnly}
@@ -581,7 +581,7 @@ export default function MatchesWorkspace({
               <button
                 onClick={() => runMatch(false)}
                 disabled={loading}
-                className="text-[12px] text-purple-600 hover:underline disabled:opacity-50"
+                className="text-[12px] text-teal-600 hover:underline disabled:opacity-50"
               >
                 {loading ? "Scanning..." : "Re-run instant match"}
               </button>
@@ -590,7 +590,7 @@ export default function MatchesWorkspace({
                   onClick={runAiRead}
                   disabled={aiReadLoading || loading}
                   title="Ask AI to re-judge exactly these candidates against the mandate's must-haves -- for nuanced/ad-hoc calls the instant match can't confidently make"
-                  className="flex items-center gap-1 text-[12px] font-medium text-purple-700 hover:underline disabled:opacity-50"
+                  className="flex items-center gap-1 text-[12px] font-medium text-teal-700 hover:underline disabled:opacity-50"
                 >
                   {aiReadLoading ? (
                     <>
@@ -607,20 +607,20 @@ export default function MatchesWorkspace({
           </div>
 
           {sortedMatches && (
-            <p className="text-[11px] text-slate-400 mb-3">
+            <p className="text-xs text-slate-400 mb-3">
               {scanned > 0
                 ? `${sortedMatches.length} suggested of ${scanned} candidates scanned`
                 : `${sortedMatches.length} suggested${computedAt ? ` — computed ${new Date(computedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}` : ""}`}
               {matchMethod && (
-                <span className={`ml-1.5 ${matchMethod === "ai" ? "text-purple-500" : "text-slate-400"}`}>
+                <span className={`ml-1.5 ${matchMethod === "ai" ? "text-teal-500" : "text-slate-400"}`}>
                   · {matchMethod === "ai" ? "AI-judged" : "instant match, no AI call"}
                 </span>
               )}
               {lastRunUsedExtraCriteria && (
-                <span className="ml-1.5 text-purple-500">· includes your ad hoc criteria (not saved to the mandate)</span>
+                <span className="ml-1.5 text-teal-500">· includes your ad hoc criteria (not saved to the mandate)</span>
               )}
               {calibration && calibration.positive + calibration.negative > 0 && (
-                <span className="ml-1.5 text-purple-500">
+                <span className="ml-1.5 text-teal-500">
                   · calibrated on {calibration.positive + calibration.negative} past decision
                   {calibration.positive + calibration.negative === 1 ? "" : "s"}
                 </span>
@@ -633,7 +633,7 @@ export default function MatchesWorkspace({
           {!sortedMatches && !loading && (
             <button
               onClick={() => runMatch(false)}
-              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[13px] font-medium py-2"
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium py-2"
             >
               <Sparkles className="w-3.5 h-3.5" /> Find matches
             </button>
@@ -671,7 +671,7 @@ export default function MatchesWorkspace({
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
-                          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 truncate"
+                          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate"
                         >
                           {m.full_name}
                         </Link>
@@ -679,13 +679,13 @@ export default function MatchesWorkspace({
                         <button
                           onClick={() => toggleScoreOpen(m.candidate_id)}
                           title="Click to see how this score was calculated"
-                          className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded hover:ring-1 hover:ring-current ${scoreColor(m.score)}`}
+                          className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded hover:ring-1 hover:ring-current ${scoreColor(m.score)}`}
                         >
                           {m.score} <Info className="w-2.5 h-2.5" />
                         </button>
                         {totalCount > 0 && (
                           <span
-                            className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${matchCountColor(metCount, totalCount)}`}
+                            className={`text-xs font-semibold px-1.5 py-0.5 rounded ${matchCountColor(metCount, totalCount)}`}
                           >
                             {metCount}/{totalCount} must-haves
                           </span>
@@ -693,33 +693,33 @@ export default function MatchesWorkspace({
                         {(() => {
                           const sum = summarizeMustHaves(m.must_haves);
                           if (sum.notMet > 0)
-                            return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700">{sum.notMet} contradicted</span>;
+                            return <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700">{sum.notMet} contradicted</span>;
                           if (sum.toConfirm > 0)
-                            return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">Worth a call · {sum.toConfirm} to confirm</span>;
+                            return <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">Worth a call · {sum.toConfirm} to confirm</span>;
                           return null;
                         })()}
                         {stability && (
-                          <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${stability.tone}`}>
+                          <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${stability.tone}`}>
                             {stability.label}
                           </span>
                         )}
                         {!m.has_ai_summary && (
                           <Link
                             href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
-                            className="inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 hover:bg-orange-100"
+                            className="inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 hover:bg-amber-100"
                             title="Open the profile to generate one"
                           >
                             <AlertTriangle className="w-2.5 h-2.5" /> Summary not generated yet
                           </Link>
                         )}
                         {linkedIdSet.has(m.candidate_id) && (
-                          <span className="inline-flex items-center text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                          <span className="inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded bg-teal-50 text-teal-700">
                             In pipeline
                           </span>
                         )}
                       </div>
                       {(facts.length > 0 || registeredAt[m.candidate_id]) && (
-                        <p className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1">
+                        <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1">
                           {facts.length > 0 && <span>{facts.join(" · ")}</span>}
                           {facts.length > 0 && registeredAt[m.candidate_id] && <span>·</span>}
                           {registeredAt[m.candidate_id] && (
@@ -738,14 +738,14 @@ export default function MatchesWorkspace({
                           <ScoreBreakdownBar label="Experience fit (20%)" value={m.score_breakdown.experience_fit} />
                           <ScoreBreakdownBar label="Domain relevance (20%)" value={m.score_breakdown.domain_relevance} />
                           {m.score_breakdown.notes && (
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic pt-1">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 italic pt-1">
                               {m.score_breakdown.notes}
                             </p>
                           )}
                         </div>
                       )}
                       {isScoreOpen && !m.score_breakdown && (
-                        <p className="mt-2 text-[11px] text-slate-400 italic">
+                        <p className="mt-2 text-xs text-slate-400 italic">
                           No breakdown available for this match yet — re-run the match to get one.
                         </p>
                       )}
@@ -762,7 +762,7 @@ export default function MatchesWorkspace({
                     <div className="mt-2.5 space-y-2">
                       {m.must_haves.length > 0 && (
                         <div>
-                          <p className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
                             Must haves
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -779,7 +779,7 @@ export default function MatchesWorkspace({
                       )}
                       {m.good_to_haves.length > 0 && (
                         <div>
-                          <p className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
                             Good to haves
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -809,14 +809,14 @@ export default function MatchesWorkspace({
                         ) : null;
                       })()}
                       {m.must_haves.some((c) => c.status === "unclear") ? (
-                        <p className="text-[11px] text-slate-400 italic">
+                        <p className="text-xs text-slate-400 italic">
                           Amber items weren&apos;t mentioned in the profile or resume. They&apos;re questions for the call, not
                           rejections. Click one to record the answer.
                         </p>
                       ) : (
-                        <p className="text-[11px] text-slate-400 italic">Click any requirement to see where it came from or record a call answer.</p>
+                        <p className="text-xs text-slate-400 italic">Click any requirement to see where it came from or record a call answer.</p>
                       )}
-                      <p className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-slate-400">
+                      <p className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                         Labels: <BasisTag basis="stated" /> <BasisTag basis="inferred" /> <BasisTag basis="confirmed" />
                       </p>
                     </div>

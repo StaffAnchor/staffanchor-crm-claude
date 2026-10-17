@@ -86,7 +86,7 @@ export default function FeeSchedulePanel({ mandateId, initial }: { mandateId: st
         ))}
       </div>
       <div className="flex items-center justify-between mt-2">
-        <button onClick={addTranche} className="flex items-center gap-1 text-[12px] text-blue-600 hover:underline">
+        <button onClick={addTranche} className="flex items-center gap-1 text-[12px] text-teal-600 hover:underline">
           <Plus className="w-3 h-3" /> Add tranche
         </button>
         <span className={`text-[12px] font-medium ${total === 100 ? "text-slate-400" : "text-amber-600"}`}>

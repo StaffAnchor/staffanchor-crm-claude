@@ -116,7 +116,7 @@ export default function AfterCallCard({ candidateId, history }: { candidateId: s
           <ul className="space-y-2">
             {history.map((h) => (
               <li key={h.id} className="rounded-ros-md bg-slate-50 px-3 py-2 text-[12.5px] dark:bg-slate-800/50">
-                <p className="text-[11.5px] text-slate-400">
+                <p className="text-xs text-slate-400">
                   {new Date(h.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   {h.author ? ` · ${h.author}` : ""}
                 </p>

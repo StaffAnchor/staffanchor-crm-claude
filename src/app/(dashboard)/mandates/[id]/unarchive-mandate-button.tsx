@@ -45,7 +45,7 @@ export default function UnarchiveMandateButton({ mandateId }: { mandateId: strin
         {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArchiveRestore className="w-3 h-3" />}
         Reactivate mandate
       </button>
-      {error && <p className="text-[11px] text-red-600 max-w-[260px] text-right">{error}</p>}
+      {error && <p className="text-xs text-red-600 max-w-[260px] text-right">{error}</p>}
     </div>
   );
 }

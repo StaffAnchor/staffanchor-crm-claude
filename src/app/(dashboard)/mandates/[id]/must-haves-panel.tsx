@@ -25,7 +25,7 @@ function TagEditor({
 
   return (
     <div className="mb-3">
-      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</p>
       <div className="flex flex-wrap gap-1.5 mb-1.5">
         {items.map((item, i) => (
           <span
@@ -200,7 +200,7 @@ export default function MustHavesPanel({
           <TagEditor label="Must haves *" items={mustHaves} onChange={setMustHaves} />
           <TagEditor label="Good to haves *" items={goodToHaves} onChange={setGoodToHaves} />
           {(mustHaves.length === 0 || goodToHaves.length === 0) && (
-            <p className="text-[11px] text-amber-700 mb-2">
+            <p className="text-xs text-amber-700 mb-2">
               At least one entry in each list is required before this mandate can be published.
             </p>
           )}
@@ -215,7 +215,7 @@ export default function MustHavesPanel({
       ) : (
         <div className="space-y-2">
           <div>
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Must haves</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Must haves</p>
             <div className="flex flex-wrap gap-1.5">
               {mustHaves.map((item, i) => (
                 <span key={i} className="rounded-full bg-red-50 text-red-700 text-[12px] px-2.5 py-1">
@@ -226,10 +226,10 @@ export default function MustHavesPanel({
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Good to haves</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Good to haves</p>
             <div className="flex flex-wrap gap-1.5">
               {goodToHaves.map((item, i) => (
-                <span key={i} className="rounded-full bg-blue-50 text-blue-700 text-[12px] px-2.5 py-1">
+                <span key={i} className="rounded-full bg-teal-50 text-teal-700 text-[12px] px-2.5 py-1">
                   {item}
                 </span>
               ))}
@@ -240,7 +240,7 @@ export default function MustHavesPanel({
       )}
 
       {saved && (
-        <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
+        <p className="flex items-center gap-1 text-xs text-emerald-600 mt-2">
           <Check className="w-3 h-3" /> Saved
         </p>
       )}

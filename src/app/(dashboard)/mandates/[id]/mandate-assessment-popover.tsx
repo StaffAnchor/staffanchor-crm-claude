@@ -51,13 +51,13 @@ export default function MandateAssessmentPopover({
           onReassess();
         }}
         disabled={reassessing}
-        className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
+        className="flex items-center gap-1 text-xs font-medium text-teal-600 dark:text-teal-300 hover:text-teal-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
       >
         {reassessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
         {reassessing ? "Assessing…" : "Assess for this mandate"}
       </button>
     ) : (
-      <span className="text-[11px] text-slate-300">—</span>
+      <span className="text-xs text-slate-300">—</span>
     );
   }
 
@@ -100,7 +100,7 @@ export default function MandateAssessmentPopover({
           }
         }}
         title="Hover or click for the full read"
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap cursor-help transition-colors ${RECOMMENDATION_STYLE[recommendation]}`}
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap cursor-help transition-colors ${RECOMMENDATION_STYLE[recommendation]}`}
       >
         {recommendation}
         {redFlags.length > 0 && (
@@ -120,13 +120,13 @@ export default function MandateAssessmentPopover({
         >
           <div className={`px-3.5 py-2.5 flex items-center justify-between border-b ${RECOMMENDATION_STYLE[recommendation]}`}>
             <span className="text-[12.5px] font-bold">{recommendation}</span>
-            <span className="text-[10px] font-medium opacity-70 uppercase tracking-wide">This mandate only</span>
+            <span className="text-xs font-medium opacity-70 uppercase tracking-wide">This mandate only</span>
           </div>
 
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
             {redFlags.length > 0 && (
               <div className="px-3.5 py-2.5 bg-rose-50/40 dark:bg-rose-950/10">
-                <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-rose-700 mb-1.5">
+                <p className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-rose-700 mb-1.5">
                   <ShieldAlert className="w-3 h-3" /> Red Flags
                 </p>
                 <ul className="space-y-1">
@@ -141,7 +141,7 @@ export default function MandateAssessmentPopover({
 
             {positives.length > 0 && (
               <div className="px-3.5 py-2.5 bg-emerald-50/40 dark:bg-emerald-950/10">
-                <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-emerald-700 mb-1.5">
+                <p className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-emerald-700 mb-1.5">
                   <CircleCheck className="w-3 h-3" /> Positives
                 </p>
                 <ul className="space-y-1">
@@ -156,7 +156,7 @@ export default function MandateAssessmentPopover({
 
             {missing.length > 0 && (
               <div className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/40">
-                <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300 mb-1.5">
+                <p className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300 mb-1.5">
                   <HelpCircle className="w-3 h-3" /> Missing -- confirm on a call
                 </p>
                 <ul className="space-y-1">
@@ -181,7 +181,7 @@ export default function MandateAssessmentPopover({
                 onReassess();
               }}
               disabled={reassessing}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 border-t border-slate-100 dark:border-slate-800 disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-teal-600 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30 border-t border-slate-100 dark:border-slate-800 disabled:opacity-60"
             >
               {reassessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />}
               {reassessing ? "Re-assessing…" : "Re-assess against this mandate"}

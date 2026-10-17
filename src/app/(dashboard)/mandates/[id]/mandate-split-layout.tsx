@@ -35,7 +35,7 @@ export default function MandateSplitLayout({ left, right }: { left: ReactNode; r
           <Button
             variant="ghost"
             onClick={() => setCollapsed((c) => !c)}
-            className="w-full justify-center mb-2 border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-300"
+            className="w-full justify-center mb-2 border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/40 hover:border-teal-300"
             title={collapsed ? "Show mandate details panel" : "Hide mandate details panel for more room"}
             icon={collapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
           >

@@ -32,7 +32,7 @@ function ReqChip({ c }: { c: Req }) {
         : "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200";
   const Icon = c.status === "met" ? Check : c.status === "missing" ? X : HelpCircle;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] ${cls}`} title={c.evidence ?? c.question ?? ""}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${cls}`} title={c.evidence ?? c.question ?? ""}>
       <Icon className="h-3 w-3 shrink-0" />
       <span className="max-w-[200px] truncate">{c.requirement}</span>
     </span>
@@ -65,10 +65,10 @@ function Row({ s, candidateId, onDone }: { s: RoleSuggestion; candidateId: strin
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/mandates/${s.mandateId}`} className="text-[14px] font-semibold text-blue-700 hover:underline dark:text-blue-400">
+            <Link href={`/mandates/${s.mandateId}`} className="text-[14px] font-semibold text-teal-700 hover:underline dark:text-teal-400">
               {s.roleTitle}
             </Link>
-            <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-medium ${f.cls}`}>{f.label}</span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.cls}`}>{f.label}</span>
             <span className="text-[12px] tabular-nums text-slate-500">{s.score}/100</span>
           </div>
           <p className="text-[12px] text-slate-500 dark:text-slate-400">{[s.clientName, s.where].filter(Boolean).join(" · ")}</p>
@@ -140,7 +140,7 @@ export default function SuggestedRolesList({ candidateId, items, openRoles, hasC
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
-            <Sparkles className="h-4 w-4 text-violet-600" aria-hidden /> Roles that may suit this person
+            <Sparkles className="h-4 w-4 text-teal-600" aria-hidden /> Roles that may suit this person
           </h2>
           <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
             Open roles whose must-haves are checked against this CV, with the evidence. A doubt is something to confirm with them, not a no. They are not in any pipeline until you add them.

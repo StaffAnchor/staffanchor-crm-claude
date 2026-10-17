@@ -111,24 +111,24 @@ export default function PracticeTagsPanel({
     <div className="space-y-4">
       {grouped.map(({ group, practices }) => (
         <div key={group}>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
             {GROUP_LABEL[group]}
           </p>
           <div className="space-y-1.5">
             {practices.map((p) => {
               const active = isSelected(p.id);
               return (
-                <div key={p.id} className={`rounded-ros-md border px-2.5 py-1.5 ${active ? "border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20" : "border-slate-200 dark:border-slate-700"}`}>
+                <div key={p.id} className={`rounded-ros-md border px-2.5 py-1.5 ${active ? "border-teal-300 dark:border-teal-700 bg-teal-50/50 dark:bg-teal-950/20" : "border-slate-200 dark:border-slate-700"}`}>
                   <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => toggle(p.id)}
-                      className={`text-[12.5px] text-left flex-1 ${active ? "text-blue-700 dark:text-blue-300 font-medium" : "text-slate-600 dark:text-slate-400"}`}
+                      className={`text-[12.5px] text-left flex-1 ${active ? "text-teal-700 dark:text-teal-300 font-medium" : "text-slate-600 dark:text-slate-400"}`}
                     >
                       {p.name}
                       {active && isAiTagged(p.id) && (
                         <span
-                          className="ml-1.5 text-[9.5px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400"
+                          className="ml-1.5 text-[9.5px] font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400"
                           title="Assigned by AI from the resume -- verify and Save to confirm"
                         >
                           AI
@@ -140,7 +140,7 @@ export default function PracticeTagsPanel({
                         <select
                           value={bandFor(p.id)}
                           onChange={(e) => setBand(p.id, e.target.value)}
-                          className="rounded-md border border-slate-300 dark:border-slate-700 bg-transparent text-[11px] px-1.5 py-1"
+                          className="rounded-md border border-slate-300 dark:border-slate-700 bg-transparent text-xs px-1.5 py-1"
                         >
                           {SENIORITY_BANDS.map((b) => (
                             <option key={b.value} value={b.value}>
@@ -152,9 +152,9 @@ export default function PracticeTagsPanel({
                           type="button"
                           onClick={() => setPrimary(p.id)}
                           title="Set as primary practice"
-                          className={`text-[10px] px-1.5 py-1 rounded-md border ${
+                          className={`text-xs px-1.5 py-1 rounded-md border ${
                             rows.find((r) => r.practice_id === p.id)?.is_primary
-                              ? "border-blue-500 bg-blue-600 text-white"
+                              ? "border-teal-500 bg-teal-600 text-white"
                               : "border-slate-300 dark:border-slate-700 text-slate-400"
                           }`}
                         >

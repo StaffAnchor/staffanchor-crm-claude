@@ -155,8 +155,8 @@ export default function FlagForCallButton({
         onClick={openPopover}
         className={
           existingFlag
-            ? "flex items-center gap-1 text-[11.5px] font-medium text-amber-800 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 rounded-ros-md px-2 py-1 transition-colors border border-amber-200 dark:border-amber-800"
-            : "flex items-center gap-1 text-[11.5px] font-medium text-slate-600 dark:text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-ros-md px-2 py-1 transition-colors"
+            ? "flex items-center gap-1 text-xs font-medium text-amber-800 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 rounded-ros-md px-2 py-1 transition-colors border border-amber-200 dark:border-amber-800"
+            : "flex items-center gap-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-ros-md px-2 py-1 transition-colors"
         }
         title={existingFlag ? `Flagged to ${recruiterLabel} -- click to reassign` : "Flag this candidate for a teammate to call"}
       >
@@ -211,12 +211,12 @@ export default function FlagForCallButton({
                 rows={2}
                 className="w-full text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1.5 bg-white dark:bg-slate-900 mb-2 resize-none"
               />
-              {error && <p className="text-[11px] text-red-600 mb-2">{error}</p>}
+              {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
               <button
                 type="button"
                 onClick={send}
                 disabled={!recruiterId || sending}
-                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-blue-600 hover:bg-blue-500 text-white text-[12px] font-medium px-2 py-1.5 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white text-[12px] font-medium px-2 py-1.5 disabled:opacity-50"
               >
                 {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                 {existingFlag ? "Update" : "Send"}

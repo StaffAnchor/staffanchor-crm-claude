@@ -48,28 +48,28 @@ export default async function PriorityApplicantFunnelPanel({ mandateId }: { mand
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm mt-4">
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mb-3">
-        <Zap className="w-3.5 h-3.5 text-indigo-500" /> Priority Applicant funnel
+        <Zap className="w-3.5 h-3.5 text-teal-500" /> Priority Applicant funnel
       </h2>
       <div className="grid grid-cols-4 gap-2 text-center">
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
           <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{ctaClicks}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">CTA clicked</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">CTA clicked</p>
         </div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
           <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{checkoutLanded}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Checkout landed{clickToLandedPct !== null ? ` · ${clickToLandedPct}%` : ""}
           </p>
         </div>
-        <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 py-3">
-          <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{purchases.length}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="rounded-lg bg-teal-50 dark:bg-teal-950/40 py-3">
+          <p className="text-xl font-bold text-teal-700 dark:text-teal-400">{purchases.length}</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Order started{landedToAttemptPct !== null ? ` · ${landedToAttemptPct}%` : ""}
           </p>
         </div>
         <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 py-3">
           <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{paid.length}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Paid{attemptToPaidPct !== null ? ` · ${attemptToPaidPct}%` : ""}
           </p>
         </div>
@@ -82,7 +82,7 @@ export default async function PriorityApplicantFunnelPanel({ mandateId }: { mand
           <UserX className="w-3.5 h-3.5 text-amber-500" /> {abandoned.length} tried but changed mind
         </span>
       </div>
-      <p className="mt-3 text-[11px] text-slate-400">
+      <p className="mt-3 text-xs text-slate-400">
         Full firm-wide breakdown (by placement, location, device) is on Reports → Priority Applicant.
       </p>
     </div>

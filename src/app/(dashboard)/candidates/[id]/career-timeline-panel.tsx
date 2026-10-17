@@ -60,7 +60,7 @@ import {
 const CATEGORY_OPTIONS = profileTypeOptions;
 
 const INPUT_CLS =
-  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white dark:bg-slate-900";
+  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white dark:bg-slate-900";
 
 function subDomainLabelFor(category: string): string {
   if (category === "b2b_sales") return "Practice";
@@ -154,9 +154,9 @@ function QuarterField({
 }) {
   return (
     <div className="space-y-2 rounded-ros-md border border-slate-200 dark:border-slate-700 p-2.5">
-      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</p>
       <div>
-        <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
           Quarterly Target{currencyLabel ? ` (${currencyLabel})` : ""}
         </label>
         <input
@@ -168,7 +168,7 @@ function QuarterField({
         />
       </div>
       <div>
-        <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Achieved %</label>
+        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Achieved %</label>
         <div className="flex flex-wrap gap-1">
           {achievementBandOptions.map((o) => {
             const active = achievementValue === o;
@@ -177,7 +177,7 @@ function QuarterField({
                 type="button"
                 key={o}
                 onClick={() => onAchievement(o)}
-                className={`rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors duration-200 ease-ros ${
+                className={`rounded-full border px-2 py-0.5 text-xs font-medium transition-colors duration-200 ease-ros ${
                   active
                     ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
                     : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-400"
@@ -320,9 +320,9 @@ export default function CareerTimelinePanel({
               </span>
               <div>
                 <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">
-                  {stabilityScore}<span className="text-[11px] font-normal text-slate-400">/100</span>
+                  {stabilityScore}<span className="text-xs font-normal text-slate-400">/100</span>
                 </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Stability{stabilityLabel ? ` -- ${stabilityLabel}` : ""}
                 </p>
               </div>
@@ -330,14 +330,14 @@ export default function CareerTimelinePanel({
           )}
           {domainScore != null && (
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-50 text-teal-600">
                 <ShieldCheck className="w-4 h-4" />
               </span>
               <div>
                 <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">
-                  {domainScore}<span className="text-[11px] font-normal text-slate-400">/100</span>
+                  {domainScore}<span className="text-xs font-normal text-slate-400">/100</span>
                 </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">Domain consistency</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Domain consistency</p>
               </div>
             </div>
           )}
@@ -363,7 +363,7 @@ export default function CareerTimelinePanel({
                       end_month: gap.resumeEntry.end_month,
                     })
                   }
-                  className="shrink-0 text-[11px] font-medium text-amber-700 hover:text-amber-900 underline"
+                  className="shrink-0 text-xs font-medium text-amber-700 hover:text-amber-900 underline"
                 >
                   Confirm &amp; add
                 </button>
@@ -376,7 +376,7 @@ export default function CareerTimelinePanel({
       <div className="space-y-4">
         {resumeEntries.length > 0 && (
           <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
               From resume <span className="normal-case font-normal text-slate-400">(unconfirmed)</span>
             </h3>
             <div className="space-y-1.5">
@@ -386,11 +386,11 @@ export default function CareerTimelinePanel({
                     <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
                       {e.title || "Role"} <span className="text-slate-400 font-normal">at {e.company}</span>
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-xs text-slate-400">
                       {monthLabel(e.start_month)} – {monthLabel(e.end_month)}
                     </p>
                   </div>
-                  {e.description && <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{e.description}</p>}
+                  {e.description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{e.description}</p>}
                 </div>
               ))}
             </div>
@@ -398,7 +398,7 @@ export default function CareerTimelinePanel({
         )}
 
         <div>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
             Confirmed in profile
           </h3>
           {profileEntries.length === 0 && (
@@ -416,13 +416,13 @@ export default function CareerTimelinePanel({
                       <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">
                         {e.title || "Role"} <span className="text-slate-400 font-normal">at {e.company}</span>
                       </p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-xs text-slate-400">
                         {monthLabel(e.start_month)} – {monthLabel(e.end_month)}
                         {e.sub_domain ? ` · ${e.sub_domain}` : ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => startEdit(e)} className="text-slate-400 hover:text-blue-600 p-1">
+                      <button onClick={() => startEdit(e)} className="text-slate-400 hover:text-teal-600 p-1">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => handleDelete(e.id)} className="text-slate-400 hover:text-red-600 p-1">
@@ -441,7 +441,7 @@ export default function CareerTimelinePanel({
       {!form ? (
         <button
           onClick={() => startAdd()}
-          className="mt-3 flex items-center gap-1 text-[12px] font-medium text-blue-600 hover:text-blue-700"
+          className="mt-3 flex items-center gap-1 text-[12px] font-medium text-teal-600 hover:text-teal-700"
         >
           <Plus className="w-3.5 h-3.5" /> Add a role
         </button>
@@ -449,18 +449,18 @@ export default function CareerTimelinePanel({
         <div className="mt-3 rounded-ros-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2.5">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Company</label>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Company</label>
               <input value={form.company} onChange={(e) => set("company", e.target.value)} className={INPUT_CLS} />
             </div>
             <div>
-              <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Title</label>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Title</label>
               <input value={form.title} onChange={(e) => set("title", e.target.value)} className={INPUT_CLS} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Start month</label>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Start month</label>
               <input
                 type="month"
                 value={form.start_month}
@@ -469,7 +469,7 @@ export default function CareerTimelinePanel({
               />
             </div>
             <div>
-              <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">End month</label>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">End month</label>
               <input
                 type="month"
                 value={form.end_month ?? ""}
@@ -477,7 +477,7 @@ export default function CareerTimelinePanel({
                 onChange={(e) => set("end_month", e.target.value || null)}
                 className={INPUT_CLS}
               />
-              <label className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              <label className="flex items-center gap-1.5 mt-1 text-xs text-slate-500 dark:text-slate-400">
                 <input
                   type="checkbox"
                   checked={form.end_month === null}
@@ -490,7 +490,7 @@ export default function CareerTimelinePanel({
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Profile Type</label>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Profile Type</label>
               <select
                 value={form.category}
                 onChange={(e) => set("category", e.target.value as ProfileTimelineEntry["category"])}
@@ -505,7 +505,7 @@ export default function CareerTimelinePanel({
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                 {subDomainLabelFor(form.category)}
               </label>
               <select
@@ -525,7 +525,7 @@ export default function CareerTimelinePanel({
           </div>
 
           <div>
-            <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Industry</label>
+            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Industry</label>
             <select value={form.industry} onChange={(e) => set("industry", e.target.value)} className={INPUT_CLS}>
               <option value="">Select...</option>
               {industryOptions.map((o) => (
@@ -540,7 +540,7 @@ export default function CareerTimelinePanel({
             <>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Customer segment</label>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Customer segment</label>
                   <select
                     value={form.customer_segment}
                     onChange={(e) => set("customer_segment", e.target.value)}
@@ -555,7 +555,7 @@ export default function CareerTimelinePanel({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Sales cycle</label>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Sales cycle</label>
                   <select value={form.sales_cycle} onChange={(e) => set("sales_cycle", e.target.value)} className={INPUT_CLS}>
                     <option value="">Select...</option>
                     {salesCycleOptions.map((o) => (
@@ -569,7 +569,7 @@ export default function CareerTimelinePanel({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Selling style</label>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Selling style</label>
                   <select value={form.selling_style} onChange={(e) => set("selling_style", e.target.value)} className={INPUT_CLS}>
                     <option value="">Select...</option>
                     {sellingStyleOptions.map((o) => (
@@ -580,12 +580,12 @@ export default function CareerTimelinePanel({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                     Deal size
                     <button
                       type="button"
                       onClick={() => setDealCurrency((c) => (c === "INR" ? "USD" : "INR"))}
-                      className="ml-1.5 text-blue-600"
+                      className="ml-1.5 text-teal-600"
                     >
                       ({dealCurrency})
                     </button>
@@ -603,12 +603,12 @@ export default function CareerTimelinePanel({
 
               {isIndustrial && (
                 <div className="space-y-2 rounded-ros-lg border border-dashed border-slate-200 dark:border-slate-700 p-2.5">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                     Industrial &amp; Infrastructure specifics
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Territory / Region</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Territory / Region</label>
                       <select
                         value={form.territory_region ?? ""}
                         onChange={(e) => set("territory_region", e.target.value)}
@@ -623,7 +623,7 @@ export default function CareerTimelinePanel({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Commercial route</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Commercial route</label>
                       <select
                         value={form.commercial_route ?? ""}
                         onChange={(e) => set("commercial_route", e.target.value)}
@@ -640,7 +640,7 @@ export default function CareerTimelinePanel({
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Target account type</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Target account type</label>
                       <select
                         value={form.target_account_type ?? ""}
                         onChange={(e) => set("target_account_type", e.target.value)}
@@ -655,7 +655,7 @@ export default function CareerTimelinePanel({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Product complexity</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Product complexity</label>
                       <select
                         value={form.product_complexity ?? ""}
                         onChange={(e) => set("product_complexity", e.target.value)}
@@ -675,7 +675,7 @@ export default function CareerTimelinePanel({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Sales motion</label>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Sales motion</label>
                   <select value={form.sales_motion ?? ""} onChange={(e) => set("sales_motion", e.target.value)} className={INPUT_CLS}>
                     <option value="">Select...</option>
                     {(isB2C ? b2cSalesMotionOptions : salesMotionOptions).map((o) => (
@@ -687,7 +687,7 @@ export default function CareerTimelinePanel({
                 </div>
                 {isB2B && (
                   <div>
-                    <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                    <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                       Who you sold to (decision-maker)
                     </label>
                     <select
@@ -706,7 +706,7 @@ export default function CareerTimelinePanel({
                 )}
                 {isB2C && (
                   <div>
-                    <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Customer type</label>
+                    <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Customer type</label>
                     <select
                       value={form.customer_type ?? ""}
                       onChange={(e) => set("customer_type", e.target.value)}
@@ -725,12 +725,12 @@ export default function CareerTimelinePanel({
 
               {isInsideSalesRole && (
                 <div className="rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-2.5">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Inside sales detail
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                         Average handling time (AHT)
                       </label>
                       <select value={form.aht ?? ""} onChange={(e) => set("aht", e.target.value)} className={INPUT_CLS}>
@@ -743,7 +743,7 @@ export default function CareerTimelinePanel({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Daily call target</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Daily call target</label>
                       <select
                         value={form.daily_call_target ?? ""}
                         onChange={(e) => set("daily_call_target", e.target.value)}
@@ -760,7 +760,7 @@ export default function CareerTimelinePanel({
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Daily talk time</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Daily talk time</label>
                       <select
                         value={form.daily_talk_time ?? ""}
                         onChange={(e) => set("daily_talk_time", e.target.value)}
@@ -775,7 +775,7 @@ export default function CareerTimelinePanel({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Primary lead source</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Primary lead source</label>
                       <select
                         value={form.lead_source ?? ""}
                         onChange={(e) => set("lead_source", e.target.value)}
@@ -796,7 +796,7 @@ export default function CareerTimelinePanel({
           )}
 
           <div>
-            <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Team size led (if any)</label>
+            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Team size led (if any)</label>
             <select value={form.team_size} onChange={(e) => set("team_size", e.target.value)} className={INPUT_CLS}>
               <option value="">Individual contributor / not applicable</option>
               {teamSizeOptions.map((o) => (
@@ -808,7 +808,7 @@ export default function CareerTimelinePanel({
           </div>
 
           <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
               Revenue impact{" "}
               <span className="normal-case font-normal text-slate-400">
                 {isCurrentRole
@@ -819,7 +819,7 @@ export default function CareerTimelinePanel({
 
             {!isCurrentRole && isSalesCategory && (
               <div className="mb-2 rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-2.5">
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                   Average quarterly revenue generated
                 </label>
                 <div className="grid grid-cols-[80px_1fr] gap-1.5">
@@ -847,7 +847,7 @@ export default function CareerTimelinePanel({
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   Revenue generated (total for this role)
                 </label>
                 <input
@@ -859,7 +859,7 @@ export default function CareerTimelinePanel({
               </div>
               {isCurrentRole ? (
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Quota attainment</label>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Quota attainment</label>
                   <select
                     value={form.quota_attainment_band ?? ""}
                     onChange={(e) => set("quota_attainment_band", e.target.value)}
@@ -875,7 +875,7 @@ export default function CareerTimelinePanel({
                 </div>
               ) : (
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Average quarterly target (band)</label>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Average quarterly target (band)</label>
                   <select
                     value={form.avg_quarterly_target_band ?? ""}
                     onChange={(e) => set("avg_quarterly_target_band", e.target.value)}
@@ -894,14 +894,14 @@ export default function CareerTimelinePanel({
 
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   Largest deal closed
                   <button
                     type="button"
                     onClick={() =>
                       set("largest_deal_currency", (form.largest_deal_currency === "USD" ? "INR" : "USD") as string)
                     }
-                    className="ml-1.5 text-blue-600"
+                    className="ml-1.5 text-teal-600"
                   >
                     ({form.largest_deal_currency || "INR"})
                   </button>
@@ -920,7 +920,7 @@ export default function CareerTimelinePanel({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">New logos won</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">New logos won</label>
                 <input
                   type="number"
                   min="0"
@@ -934,7 +934,7 @@ export default function CareerTimelinePanel({
 
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Renewal rate</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Renewal rate</label>
                 <select
                   value={form.renewal_rate_band ?? ""}
                   onChange={(e) => set("renewal_rate_band", e.target.value)}
@@ -949,7 +949,7 @@ export default function CareerTimelinePanel({
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Win rate</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Win rate</label>
                 <select
                   value={form.win_rate_band ?? ""}
                   onChange={(e) => set("win_rate_band", e.target.value)}
@@ -967,7 +967,7 @@ export default function CareerTimelinePanel({
 
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Reporting to</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Reporting to</label>
                 <input
                   placeholder="e.g. VP Sales"
                   value={form.reporting_to ?? ""}
@@ -976,7 +976,7 @@ export default function CareerTimelinePanel({
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Client tier</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Client tier</label>
                 <select
                   value={form.client_tier ?? ""}
                   onChange={(e) => set("client_tier", e.target.value)}
@@ -994,7 +994,7 @@ export default function CareerTimelinePanel({
 
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Geographic scope</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Geographic scope</label>
                 <select
                   value={form.geo_scope ?? ""}
                   onChange={(e) => set("geo_scope", e.target.value)}
@@ -1010,7 +1010,7 @@ export default function CareerTimelinePanel({
               </div>
               {!isCurrentRole && (
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Reason for leaving</label>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Reason for leaving</label>
                   <select
                     value={form.reason_for_leaving ?? ""}
                     onChange={(e) => set("reason_for_leaving", e.target.value)}
@@ -1030,7 +1030,7 @@ export default function CareerTimelinePanel({
 
           {isCurrentRole && isSalesCategory && (
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
                 Performance{" "}
                 <span className="normal-case font-normal text-slate-400">
                   -- real target vs. achievement for the current role
@@ -1050,7 +1050,7 @@ export default function CareerTimelinePanel({
                 )}
               </p>
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   {isTeamLead ? "Team target currency" : "Target currency"}
                 </label>
                 <select
@@ -1103,7 +1103,7 @@ export default function CareerTimelinePanel({
 
               {isTeamLead && (
                 <div className="mt-3">
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                     Does this role also carry an individual sales target?
                   </label>
                   <select
@@ -1120,11 +1120,11 @@ export default function CareerTimelinePanel({
 
               {isTeamLead && form.has_ic_target_too === "Yes" && (
                 <div className="mt-3 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-2.5">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Individual target (in addition to the team number)
                   </p>
                   <div>
-                    <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                    <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                       Individual target currency
                     </label>
                     <select
@@ -1178,7 +1178,7 @@ export default function CareerTimelinePanel({
               )}
 
               <div className="mt-3">
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   A target crushed, and how it was done
                 </label>
                 <textarea
@@ -1188,10 +1188,10 @@ export default function CareerTimelinePanel({
                   placeholder="Min. 100 characters -- what happened, and how they pulled it off."
                   className={INPUT_CLS}
                 />
-                <p className="mt-1 text-right text-[11px] text-slate-400">{(form.best_win ?? "").length} / 500 (min 100)</p>
+                <p className="mt-1 text-right text-xs text-slate-400">{(form.best_win ?? "").length} / 500 (min 100)</p>
               </div>
               <div className="mt-2">
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   A target missed, and what was learned
                 </label>
                 <textarea
@@ -1201,7 +1201,7 @@ export default function CareerTimelinePanel({
                   placeholder="Min. 100 characters -- what happened, and what changed afterward."
                   className={INPUT_CLS}
                 />
-                <p className="mt-1 text-right text-[11px] text-slate-400">{(form.tough_loss ?? "").length} / 500 (min 100)</p>
+                <p className="mt-1 text-right text-xs text-slate-400">{(form.tough_loss ?? "").length} / 500 (min 100)</p>
               </div>
             </div>
           )}

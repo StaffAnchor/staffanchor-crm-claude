@@ -110,7 +110,7 @@ export default function ConfirmDetailsModal({
 
           {candidate && (
             <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
-              <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Call details</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Call details</p>
               <CallCompanion
                 candidate={candidate as never}
                 doubts={[]}

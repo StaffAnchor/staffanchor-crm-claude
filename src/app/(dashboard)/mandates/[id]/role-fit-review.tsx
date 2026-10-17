@@ -128,7 +128,7 @@ export default function RoleFitReview({
           {req} {!required && <span className="font-normal text-slate-400">(nice to have)</span>}
         </p>
         {hint && (
-          <p className="mt-0.5 text-[11.5px] text-slate-500">
+          <p className="mt-0.5 text-xs text-slate-500">
             AI read: {hint.status === "met" ? "looks met" : hint.status === "missing" ? "looks missing" : "not sure"}
             {hint.evidence ? `, ${hint.evidence}` : hint.question ? `, ${hint.question}` : ""}
           </p>
@@ -165,14 +165,14 @@ export default function RoleFitReview({
           <p className="text-[12px] text-slate-500">The client sees this review, including anything that is not met.</p>
         </div>
         {savedAt && (
-          <span className="inline-flex items-center gap-1 text-[11.5px] text-emerald-600">
+          <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
             <Check className="h-3.5 w-3.5" /> Saved
           </span>
         )}
       </div>
 
       <div className="mt-3">
-        <p className="text-[11.5px] font-medium text-slate-600 dark:text-slate-400 mb-1.5">Is the candidate interested in this role?</p>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Is the candidate interested in this role?</p>
         <div className="flex gap-1.5">
           {(["yes", "no"] as const).map((v) => (
             <button

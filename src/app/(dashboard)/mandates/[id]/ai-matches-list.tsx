@@ -88,7 +88,7 @@ function Chip({ c }: { c: ReqCheck }) {
         ? "bg-rose-50 text-rose-800 dark:bg-rose-950/30 dark:text-rose-200"
         : "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200";
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] ${cls}`} title={c.evidence ?? c.question ?? ""}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${cls}`} title={c.evidence ?? c.question ?? ""}>
       <StatusIcon s={c.status} />
       <span className="max-w-[170px] truncate">{c.requirement}</span>
     </span>
@@ -156,14 +156,14 @@ function Card({
             {onSelect && m.status !== "added" && (
               <input type="checkbox" checked={selected} onChange={(e) => onSelect(e.target.checked)} aria-label={`Select ${m.name}`} className="h-4 w-4" />
             )}
-            <Link href={`/candidates/${m.candidateId}`} className="text-[14px] font-semibold text-blue-700 dark:text-blue-400 hover:underline">
+            <Link href={`/candidates/${m.candidateId}`} className="text-[14px] font-semibold text-teal-700 dark:text-teal-400 hover:underline">
               {m.name}
             </Link>
             <ProfileRatingBadge row={rating} />
-            {m.pool && <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-semibold ring-1 ${POOL_TIER_PILL[m.pool]}`}>Pool: {POOL_TIER_LABEL[m.pool]}</span>}
-            <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-medium ${f.cls}`}>{f.label}</span>
+            {m.pool && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[m.pool]}`}>Pool: {POOL_TIER_LABEL[m.pool]}</span>}
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.cls}`}>{f.label}</span>
             <span className="text-[12px] text-slate-500 dark:text-slate-400 tabular-nums">{m.score}/100</span>
-            {m.stale && <span className="text-[11px] text-slate-500 dark:text-slate-400">Requirements changed, re-check</span>}
+            {m.stale && <span className="text-xs text-slate-500 dark:text-slate-400">Requirements changed, re-check</span>}
           </div>
           <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">
             {[m.headline, m.years != null ? `${m.years} yrs` : null, m.location].filter(Boolean).join(" · ")}
@@ -178,7 +178,7 @@ function Card({
             {m.readiness != null && <span title="How complete this profile is"> · Profile {m.readiness}/100</span>}
           </p>
           {m.elsewhere.total > 0 && (
-            <p className="text-[12px] text-violet-700 dark:text-violet-300">
+            <p className="text-[12px] text-teal-700 dark:text-teal-300">
               Also in {m.elsewhere.total} other {m.elsewhere.total === 1 ? "pipeline" : "pipelines"}
               {m.elsewhere.rejected > 0 ? ` (rejected in ${m.elsewhere.rejected})` : ""}
             </p>
@@ -244,7 +244,7 @@ function Card({
               /* clipboard blocked: nothing to do */
             }
           }}
-          className="mt-2 mr-3 inline-flex items-center gap-1 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 hover:underline"
+          className="mt-2 mr-3 inline-flex items-center gap-1 text-[12px] font-medium text-teal-700 dark:text-teal-300 hover:underline"
         >
           {copied ? "Copied" : "Copy the questions to ask"}
         </button>
@@ -261,7 +261,7 @@ function Card({
           ] as const).map(([title, list]) =>
             list.length === 0 ? null : (
               <div key={title}>
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 mb-1">{title}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-1">{title}</p>
                 <ul className="space-y-1.5">
                   {list.map((c, i) => (
                     <li key={i} className="grid grid-cols-[16px_minmax(0,1fr)] gap-2">
@@ -463,15 +463,15 @@ export default function AiMatchesList({
         <div className="mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 p-3">
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">CTC min (lakhs)</label>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">CTC min (lakhs)</label>
               <input value={ctcMin} onChange={(e) => setCtcMin(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]" />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">CTC max (lakhs)</label>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">CTC max (lakhs)</label>
               <input value={ctcMax} onChange={(e) => setCtcMax(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]" />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Judge on</label>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Judge on</label>
               <select value={ctcBasis} onChange={(e) => setCtcBasis(e.target.value as CtcBasis)} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]">
                 <option value="expected_else_current">Expected CTC, else current</option>
                 <option value="current">Current CTC</option>

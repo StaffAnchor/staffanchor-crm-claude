@@ -114,7 +114,7 @@ export default function ScreeningQuestionsPanel({
         <button
           onClick={handleGenerate}
           disabled={generating || !context.role_title}
-          className="flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50"
+          className="flex items-center gap-1 text-xs font-medium text-teal-600 hover:text-teal-700 disabled:opacity-50"
         >
           <Sparkles className="w-3.5 h-3.5" /> {generating ? "Generating..." : "Generate with AI"}
         </button>
@@ -124,7 +124,7 @@ export default function ScreeningQuestionsPanel({
         Screen action in the candidate table below -- answers become structured, searchable profile data, not just
         notes.
       </p>
-      {genError && <p className="text-[11px] text-red-600 mb-2">{genError}</p>}
+      {genError && <p className="text-xs text-red-600 mb-2">{genError}</p>}
 
       <div className="space-y-1.5 mb-2">
         {questions.length === 0 && (
@@ -137,14 +137,14 @@ export default function ScreeningQuestionsPanel({
             key={q.id}
             className="flex items-start gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5"
           >
-            <span className="text-[11px] text-slate-400 mt-0.5">{i + 1}.</span>
+            <span className="text-xs text-slate-400 mt-0.5">{i + 1}.</span>
             <span className="flex-1 text-[13px] text-slate-700 dark:text-slate-300">{q.text}</span>
             {q.source === "ai" && (
-              <span className="shrink-0 rounded-full bg-blue-50 text-blue-600 text-[10px] font-medium px-1.5 py-0.5">AI</span>
+              <span className="shrink-0 rounded-full bg-teal-50 text-teal-600 text-xs font-medium px-1.5 py-0.5">AI</span>
             )}
             {q.source === "system" && (
               <span
-                className="shrink-0 rounded-full bg-violet-50 text-violet-600 text-[10px] font-medium px-1.5 py-0.5"
+                className="shrink-0 rounded-full bg-teal-50 text-teal-600 text-xs font-medium px-1.5 py-0.5"
                 title="Always asked automatically because it's true for this mandate -- not an AI guess."
               >
                 Auto
@@ -179,7 +179,7 @@ export default function ScreeningQuestionsPanel({
       </div>
 
       {(saving || saved) && (
-        <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
+        <p className="flex items-center gap-1 text-xs text-emerald-600 mt-2">
           {saved && <Check className="w-3 h-3" />} {saving ? "Saving..." : "Saved"}
         </p>
       )}

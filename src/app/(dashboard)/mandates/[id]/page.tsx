@@ -667,7 +667,7 @@ export default async function MandateDetailPage({
                   />
                   <Link
                     href={`/mandates/${id}/matches`}
-                    className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-[13px] font-medium py-2"
+                    className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30 text-[13px] font-medium py-2"
                   >
                     Open full matching workspace →
                   </Link>
@@ -722,9 +722,9 @@ export default async function MandateDetailPage({
         {mandate.client_id && (
           <Link
             href={`/clients/${mandate.client_id}`}
-            className="mt-6 block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:border-blue-300 hover:shadow-md transition-all text-sm text-slate-700 dark:text-slate-300"
+            className="mt-6 block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:border-teal-300 hover:shadow-md transition-all text-sm text-slate-700 dark:text-slate-300"
           >
-            <span className="font-medium text-blue-600">Manage {mandate.client_name} →</span>
+            <span className="font-medium text-teal-600">Manage {mandate.client_name} →</span>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Client details, contacts, and portal access are managed once per client, not per mandate.
             </p>

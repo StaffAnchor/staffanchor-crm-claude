@@ -16,6 +16,7 @@ const REASON_LABEL: Record<string, string> = {
   other: "Other",
 };
 
+const nowMs = () => Date.now();
 const pct = (sorted: number[], p: number) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))] : null);
 
 export default async function ScorecardPage() {
@@ -27,7 +28,7 @@ export default async function ScorecardPage() {
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (me?.role !== "admin") redirect("/today");
 
-  const since = new Date(Date.now() - 7 * 86400000).toISOString();
+  const since = new Date(nowMs() - 7 * 86400000).toISOString();
   const [timings, checks, dismissals, clusters, tagCount] = await Promise.all([
     Promise.resolve(supabase.from("page_timings").select("route, ms").gte("at", since).limit(5000)),
     Promise.resolve(supabase.from("tag_checks").select("candidate_id, verdict, tagged_cluster, correct_cluster").limit(5000)),
@@ -47,7 +48,7 @@ export default async function ScorecardPage() {
   for (const d of dismissals.data ?? []) reasons.set(d.reason, (reasons.get(d.reason) ?? 0) + 1);
 
   const total_tags = tagCount.count ?? 0;
-  const offset = total_tags > 60 ? Math.floor(Math.random() * (total_tags - 60)) : 0;
+  const offset = total_tags > 60 ? nowMs() % (total_tags - 60) : 0;
   const { data: pool } = await supabase
     .from("candidate_role_tags")
     .select("candidate_id, cluster_slug, seniority, candidates(full_name, current_job_title, current_employer)")

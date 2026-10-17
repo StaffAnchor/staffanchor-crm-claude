@@ -26,7 +26,7 @@ const CRITERIA: { key: keyof VettingScore; label: string }[] = [
 ];
 
 const SELECT_CLS =
-  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-transparent";
+  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-transparent";
 
 // The recruiter's own documented, structured judgment call -- deliberately
 // separate from the AI-generated fields (stability_score, ai_decision_flags,
@@ -108,7 +108,7 @@ export default function VettingScorePanel({
         </div>
       )}
       {form.scored_by_name && form.scored_at && (
-        <p className="text-[11px] text-slate-400">
+        <p className="text-xs text-slate-400">
           Last scored by {form.scored_by_name} on {new Date(form.scored_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
         </p>
       )}

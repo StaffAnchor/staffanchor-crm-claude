@@ -53,7 +53,7 @@ export default function RoleTypeGate({ mandateId, roleTitle, cluster, level }: {
       {(hint.cluster || hint.level) && (
         <p className="mt-2 text-[12px] text-slate-500">
           From the title &quot;{roleTitle}&quot;, it might be:{" "}
-          <button type="button" onClick={() => { if (hint.cluster) setC(hint.cluster); if (hint.level) setL(hint.level); }} className="font-medium text-blue-600 hover:underline">
+          <button type="button" onClick={() => { if (hint.cluster) setC(hint.cluster); if (hint.level) setL(hint.level); }} className="font-medium text-teal-600 hover:underline">
             {[hintCluster, hintLevel].filter(Boolean).join(", ")}
           </button>{" "}
           (press to use it, or choose your own).
