@@ -12,6 +12,7 @@ import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import AiMatchesPanel from "./ai-matches-panel";
 import BestMatchesPanel from "./best-matches-panel";
+import NextAction, { type NextActionItem } from "@/components/next-action";
 import FindMatchesPanel from "./find-matches-panel";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
@@ -305,6 +306,16 @@ export default async function MandateDetailPage({
         })
       : null;
 
+  // The one thing to do next, in order of what unblocks the mandate most.
+  const staleNames = (staleLinks ?? []).map((l) => (l.candidates as unknown as { full_name: string } | null)?.full_name).filter(Boolean);
+  let nextAction: NextActionItem | null = null;
+  if (mandate.status === "open" && !mandate.is_archived) {
+    if (assignedStaff.length === 0) nextAction = { text: "Nobody is working this mandate yet. Assign a recruiter.", href: "#staffing", cta: "Assign" };
+    else if (staleNames.length > 0) nextAction = { text: `${mandate.client_name} has not replied on ${staleNames.slice(0, 2).join(", ")}${staleNames.length > 2 ? ` and ${staleNames.length - 2} more` : ""}. Follow up.` };
+    else if (pipelineCount === 0) nextAction = { text: "No candidates yet. Review the best matches from the database and add the right ones.", href: "#best-matches", cta: "See matches" };
+    else if (submittedCount === 0) nextAction = { text: `${pipelineCount} candidate${pipelineCount === 1 ? "" : "s"} in the pipeline, none shared with the client. Shortlist and submit.` };
+  }
+
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
       <Link href={backHref} className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200">
@@ -318,7 +329,7 @@ export default async function MandateDetailPage({
             {mandate.client_name} · {mandate.city ?? "—"} ·{" "}
             {mandate.category?.replace("_", " ")} / {mandate.sub_domain}
           </p>
-          <MandateStaffingControl mandateId={id} initialAssigned={assignedStaff} allProfiles={allStaffProfiles ?? []} />
+          <div id="staffing" className="contents"><MandateStaffingControl mandateId={id} initialAssigned={assignedStaff} allProfiles={allStaffProfiles ?? []} /></div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {mandate.status === "open" && mandate.short_code && <CopyShareLinkButton shortCode={mandate.short_code} />}
@@ -403,6 +414,8 @@ export default async function MandateDetailPage({
         )}
       </p>
 
+      <NextAction item={nextAction} />
+
       {blockers.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <ShieldAlert className="h-3.5 w-3.5 text-slate-400" />
@@ -434,7 +447,7 @@ export default async function MandateDetailPage({
         <MandateCandidatesView
           aiSuggestions={
             <div className="space-y-6">
-              <BestMatchesPanel mandateId={id} />
+              <div id="best-matches"><BestMatchesPanel mandateId={id} /></div>
               <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
                 <summary className="cursor-pointer text-[13px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>
                 <div className="mt-3">

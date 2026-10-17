@@ -32,6 +32,7 @@ import BriefCard from "./brief-card";
 import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
 import { missingKeyDetails } from "@/lib/key-details";
+import NextAction, { type NextActionItem } from "@/components/next-action";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
@@ -460,6 +461,13 @@ export default async function CandidateDetailPage({
     return `/candidates/${neighbor.id}?from=${encodeURIComponent(from ?? "")}`;
   }
 
+  const missingNow = missingKeyDetails(candidate);
+  const activeLinks = (links ?? []).filter((l) => !["rejected", "pulled_back"].includes(l.stage));
+  let nextAction: NextActionItem | null = null;
+  if ((candidate as { phone_hold?: boolean }).phone_hold) nextAction = { text: "Phone number is on hold. Confirm it with the candidate before messaging." };
+  else if (missingNow.length > 0) nextAction = { text: `Missing ${missingNow.slice(0, 3).map((m) => m.label.toLowerCase()).join(", ")}${missingNow.length > 3 ? ` and ${missingNow.length - 3} more` : ""}. Ask the candidate.` };
+  else if (activeLinks.length === 0) nextAction = { text: "Not on any mandate. Check the suggested roles below." };
+
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-8">
       <div className="flex items-center justify-between">
@@ -503,8 +511,10 @@ export default async function CandidateDetailPage({
         )}
       </div>
 
+      <NextAction item={nextAction} />
+
       {/* --- Executive summary header --- */}
-      <Card className="mt-2" padded={false}>
+      <Card className="mt-3" padded={false}>
         <div className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
