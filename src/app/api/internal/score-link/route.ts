@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { scoreLinksByRoleCard } from "@/lib/role-score";
 import { matchCandidatesDeterministic, buildMatchAssessment } from "@/lib/candidate-match";
 
 export const runtime = "nodejs";
@@ -46,6 +47,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Same ranking as Best matches when the mandate has a role type, level and card; the older score is the fallback.
+    const byCard = await scoreLinksByRoleCard(admin, mandateId, [candidateId]);
+    if (byCard.ok && byCard.scored > 0) return NextResponse.json({ ok: true, scored: true, via: "role_card" });
+
     // Deterministic, not the AI-scored matchCandidatesForMandate -- this
     // trigger fires on EVERY new pipeline link (self-applies, vendor
     // submissions, manual/bulk adds), same reasoning as why Matching

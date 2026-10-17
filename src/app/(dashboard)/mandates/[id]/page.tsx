@@ -81,7 +81,7 @@ export default async function MandateDetailPage({
       supabase
         .from("candidate_mandate_links")
         .select(
-          "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, phone, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+          "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_score_breakdown, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, phone, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
         )
         .eq("mandate_id", id)
     ),
@@ -486,6 +486,7 @@ export default async function MandateDetailPage({
                 origin_label: originOf(l as never).label,
                 is_priority: l.is_priority ?? false,
                 match_score: l.match_score ?? null,
+                match_bucket: (((l.match_score_breakdown as { bucket?: string } | null)?.bucket as MandateCandidateRow["match_bucket"]) ?? null) as MandateCandidateRow["match_bucket"],
                 match_assessment: (l.match_assessment as MandateCandidateRow["match_assessment"]) ?? null,
                 viewed_at: l.viewed_at ?? null,
                 client_feedback: (l.client_feedback as MandateCandidateRow["client_feedback"]) ?? null,

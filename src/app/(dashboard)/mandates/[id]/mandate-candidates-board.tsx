@@ -495,9 +495,9 @@ export default function MandateCandidatesBoard({
                                       ? "bg-amber-50 text-amber-700"
                                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                                 }`}
-                                title="Match score at the time this candidate was added to the pipeline"
+                                title={row.match_bucket ? "Same ranking as Best matches: Perfect, Close or Stretch for this role" : "Match score at the time this candidate was added to the pipeline"}
                               >
-                                Match {row.match_score}
+                                {row.match_bucket ? `${row.match_bucket[0].toUpperCase()}${row.match_bucket.slice(1)} ` : "Match "}{row.match_score}
                               </span>
                             )}
                             {/* Client's own click on the no-login shortlist

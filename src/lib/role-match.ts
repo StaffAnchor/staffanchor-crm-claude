@@ -72,7 +72,7 @@ function noticeDays(t: string | null): number | null {
   return /month/.test(s) ? v * 30 : v;
 }
 
-export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<string, Map<string, number>>, name: (slug: string) => string): Ranked[] {
+export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<string, Map<string, number>>, name: (slug: string) => string, opts: { keepAll?: boolean } = {}): Ranked[] {
   const exact = new Set(card.exact_worlds);
   const adjacent = new Map(card.adjacent_worlds.map((a) => [a.slug, 0.6]));
   const out: Ranked[] = [];
@@ -234,7 +234,8 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     if (fn === "exact" && worldFit === "exact" && hard.length === 0) bucket = "perfect";
     else if (hard.length <= 1 && fn !== "none" && worldFit !== "none") bucket = "close";
     else bucket = "stretch";
-    if (score < 35 && bucket === "stretch") continue;
+    // Search results hide weak matches; people who already applied are always scored, however low.
+    if (score < 35 && bucket === "stretch" && !opts.keepAll) continue;
     out.push({ row, score, bucket, matched, gaps, level, metro });
   }
   return out.sort((a, b) => b.score - a.score);
