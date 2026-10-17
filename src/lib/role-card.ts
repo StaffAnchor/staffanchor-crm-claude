@@ -122,7 +122,8 @@ ${edges.map((e) => `${e.a}~${e.b}:${e.weight}`).join(", ")}
 
 Return:
 - cluster: the one role cluster the hire will do.
-- level: "any", "ic", "team_lead", "manager", "director" or "vp_plus". Say "ic" for an account executive or similar individual seller role; use the brief's wording and seniority.
+- level: "any", "ic", "team_lead", "manager", "director" or "vp_plus". Read it from the TITLE and the brief. A title with Manager, Regional, National, Zonal, Head, Director, VP, Lead or Chief is NOT "ic": use "manager" for a regional or senior sales manager, "director" for a head or director, "vp_plus" for VP or chief. Use "ic" only for hands-on seller roles such as Account Executive, Sales Executive, SDR or BDR.
+- cluster: if the hire LEADS sellers or a region (Regional Sales Manager, Sales Head, Director), choose sales_leadership. Use account_exec only for an individual who closes deals himself.
 - sells_summary: one line, what the hire will sell and to whom.
 - exact_worlds: 1 to 3 worlds the person should ideally already sell into.
 - adjacent_worlds: up to 6 further worlds that are a reasonable background, each with a short "why" (how it transfers). Do not repeat exact worlds.
