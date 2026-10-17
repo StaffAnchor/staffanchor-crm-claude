@@ -671,6 +671,14 @@ export default async function CandidateDetailPage({
               label="Registered on"
               value={candidate.created_at ? formatDateIST(candidate.created_at) : null}
             />
+            <StatChip
+              label="Came from"
+              value={
+                candidate.acquisition_source
+                  ? [candidate.acquisition_source, candidate.acquisition_campaign].filter(Boolean).join(" · ")
+                  : null
+              }
+            />
           </div>
 
           {redFlags.length > 0 && (

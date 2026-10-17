@@ -22,10 +22,13 @@ export default async function MarketingPage() {
     .limit(60);
   const ids = (mandates ?? []).map((m) => m.id);
 
-  const [{ data: posts }, { data: links }] = await Promise.all([
+  const [{ data: posts }, { data: links }, { data: sourceRows }, { data: postRows }] = await Promise.all([
     ids.length ? supabase.from("marketing_posts").select("mandate_id, body, copied_at, created_at").in("mandate_id", ids).order("created_at", { ascending: false }) : Promise.resolve({ data: [] }),
     ids.length ? supabase.from("candidate_mandate_links").select("mandate_id").in("mandate_id", ids) : Promise.resolve({ data: [] }),
+    supabase.rpc("source_funnel", { p_days: 30 }),
+    supabase.rpc("post_funnel", { p_days: 60 }),
   ]);
+  const postStats = new Map(((postRows ?? []) as { mandate_id: string; visits: number; registrations: number; applications: number }[]).map((r) => [r.mandate_id, r]));
 
   const postBy = new Map<string, { body: string; copied_at: string | null }>();
   for (const p of (posts ?? []) as { mandate_id: string; body: string; copied_at: string | null }[]) if (!postBy.has(p.mandate_id)) postBy.set(p.mandate_id, p);
@@ -44,7 +47,10 @@ export default async function MarketingPage() {
     post: postBy.get(m.id)?.body ?? null,
     copied: !!postBy.get(m.id)?.copied_at,
     applicants: applied.get(m.id) ?? 0,
+    visits: Number(postStats.get(m.id)?.visits ?? 0),
+    registrations: Number(postStats.get(m.id)?.registrations ?? 0),
+    applications: Number(postStats.get(m.id)?.applications ?? 0),
   }));
 
-  return <MarketingClient rows={rows} />;
+  return <MarketingClient rows={rows} sources={((sourceRows ?? []) as { source: string; visits: number; registrations: number; applications: number; progressed: number; placed: number }[]).map((r) => ({ ...r, visits: Number(r.visits), registrations: Number(r.registrations), applications: Number(r.applications), progressed: Number(r.progressed), placed: Number(r.placed) }))} />;
 }
