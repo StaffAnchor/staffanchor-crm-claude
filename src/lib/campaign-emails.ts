@@ -37,7 +37,7 @@ const button = (href: string, label: string, solid = true) =>
 export function respondUrl(candidateId: string, answer: "open" | "not_now") {
   return `${APP_URL}/api/outreach/respond?c=${candidateId}&t=${signedToken(candidateId, "respond")}&a=${answer}`;
 }
-export const referUrl = (candidateId: string) => `${JOBS_SITE}/refer/${candidateId}?t=${signedToken(candidateId, "refer")}`;
+export const referUrl = (candidateId: string, roleCode?: string | null) => `${JOBS_SITE}/refer/${candidateId}?t=${signedToken(candidateId, "refer")}${roleCode ? `&m=${roleCode}` : ""}`;
 
 /** "Are you open to hearing about a new role?" `role` is what we know they do, e.g. "SaaS Account Executive". */
 export function buildReactivationEmail(c: { id: string; full_name: string | null }, role: string) {
@@ -105,6 +105,39 @@ Don't want these emails? ${stop}`;
 <p style="margin:0 0 16px 0;">If there&rsquo;s a sales or revenue professional you&rsquo;d back, share their name and email in under a minute. We&rsquo;ll take it from there, and we&rsquo;ll only contact them with a relevant role.</p>
 <p style="margin:0 0 14px 0;">${button(link, "Refer someone")}</p>
 <p style="margin:0 0 20px 0;color:${SLATE};font-size:14px;">If we place them and they stay 90 days, you earn up to &#8377;10,000.</p>
+<p style="margin:0 0 4px 0;">Thank you,</p><p style="margin:0 0 6px 0;font-weight:600;">StaffAnchor Talent Solutions</p>`,
+    stop
+  );
+  return { subject, text, html, unsubscribe: stop };
+}
+
+/** "We're hiring a <role> in <city>. Know someone who'd fit?" The link opens that role and saves the referral against it. */
+export function buildRoleReferralAskEmail(c: { id: string; full_name: string | null }, role: { title: string; city: string | null; code: string }) {
+  const first = firstName(c.full_name);
+  const where = role.city ? ` in ${role.city}` : "";
+  const subject = first === "there" ? `We're hiring a ${role.title}${where}. Know someone?` : `${first}, we're hiring a ${role.title}${where}. Know someone?`;
+  const link = referUrl(c.id, role.code);
+  const stop = unsubscribeUrl(c.id);
+  const text = `Hi ${first},
+
+We're hiring a ${role.title}${where}. Do you know a strong sales professional who'd fit?
+
+See the role and refer them: ${link}
+
+We'll only contact them about relevant roles. If we place them and they stay 90 days, you earn up to \u20B910,000.
+
+Thank you,
+StaffAnchor Talent Solutions
+www.staffanchor.com
+
+Don't want these emails? ${stop}`;
+  const html = shell(
+    subject,
+    "See the role and share a name in under a minute.",
+    `<p style="margin:0 0 16px 0;">Hi ${esc(first)},</p>
+<p style="margin:0 0 16px 0;">We&rsquo;re hiring a <strong>${esc(role.title)}</strong>${esc(where)}. Do you know a strong sales professional who&rsquo;d fit?</p>
+<p style="margin:0 0 14px 0;">${button(link, "See the role and refer")}</p>
+<p style="margin:0 0 20px 0;color:${SLATE};font-size:14px;">We&rsquo;ll only contact them about relevant roles. If we place them and they stay 90 days, you earn up to &#8377;10,000.</p>
 <p style="margin:0 0 4px 0;">Thank you,</p><p style="margin:0 0 6px 0;font-weight:600;">StaffAnchor Talent Solutions</p>`,
     stop
   );

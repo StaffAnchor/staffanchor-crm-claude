@@ -54,6 +54,9 @@ export const renderReactivationMessage = (first: string, role: string) =>
 export const renderReferralAskMessage = (first: string) =>
   `Hi ${first}, thank you for being part of StaffAnchor. The best people we place often come through someone they trust. Is there a sales professional you would back? Share their name in under a minute. If we place them and they stay 90 days, you earn up to \u20B910,000.`;
 
+export const renderReferralRoleMessage = (first: string, role: string, city: string) =>
+  `Hi ${first}, we're hiring a ${role} in ${city}. Know a strong sales professional who'd fit? Tap to see the role and refer them. If we place them and they stay 90 days, you earn up to \u20B910,000.`;
+
 /** What to create in Meta's template manager, with the buttons each one needs. */
 export const CAMPAIGN_TEMPLATES = {
   reactivation: {
@@ -70,6 +73,14 @@ export const CAMPAIGN_TEMPLATES = {
     category: "Marketing",
     body: "Hi {{1}}, thank you for being part of StaffAnchor. The best people we place often come through someone they trust. Is there a sales professional you would back? Share their name in under a minute. If we place them and they stay 90 days, you earn up to \u20B910,000.",
     variables: "{{1}} first name",
+    buttons: 'First a "Visit website" button named "Refer someone" with the dynamic URL https://jobs.staffanchor.com/refer/{{1}}, then quick reply "Stop messages"',
+  },
+  referralRole: {
+    envVar: "WHATSAPP_TEMPLATE_REFERRAL_ROLE_ASK",
+    suggestedName: "referral_role_ask_v1",
+    category: "Marketing",
+    body: "Hi {{1}}, we're hiring a {{2}} in {{3}}. Know a strong sales professional who'd fit? Tap to see the role and refer them. If we place them and they stay 90 days, you earn up to \u20B910,000.",
+    variables: "{{1}} first name, {{2}} role title, {{3}} city",
     buttons: 'First a "Visit website" button named "Refer someone" with the dynamic URL https://jobs.staffanchor.com/refer/{{1}}, then quick reply "Stop messages"',
   },
 } as const;

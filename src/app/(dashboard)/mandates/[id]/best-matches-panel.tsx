@@ -7,6 +7,7 @@ import RoleTypeGate from "./role-type-gate";
 import RoleCardEditor from "./role-card-editor";
 import RankedGroups from "./ranked-groups";
 import AlsoTypesBar from "./also-types-bar";
+import ReferralAskPanel from "../../candidates/referrals/referral-ask-panel";
 import type { RoleCard } from "@/lib/role-card";
 import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 
@@ -15,7 +16,7 @@ import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 export default async function BestMatchesPanel({ mandateId }: { mandateId: string }) {
   const supabase = await createClient();
   // The mandate must say what kind of role this is and at what level. Nothing here guesses it.
-  const { data: mandateRow } = await supabase.from("mandates").select("role_title, role_cluster, seniority_band, also_clusters").eq("id", mandateId).maybeSingle();
+  const { data: mandateRow } = await supabase.from("mandates").select("role_title, role_cluster, seniority_band, also_clusters, short_code, status, is_archived, listing_kind").eq("id", mandateId).maybeSingle();
   if (!mandateRow?.role_cluster || !mandateRow?.seniority_band) {
     return <RoleTypeGate mandateId={mandateId} roleTitle={mandateRow?.role_title ?? null} cluster={mandateRow?.role_cluster ?? null} level={mandateRow?.seniority_band ?? null} />;
   }
@@ -66,6 +67,14 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
     <div className="space-y-4">
       <RoleCardEditor key={JSON.stringify(card)} mandateId={mandateId} card={card} confirmed={!!cardRow.confirmed} clusters={clusters} worlds={worlds} />
       <AlsoTypesBar mandateId={mandateId} main={mandateRow.role_cluster} initial={also} />
+      {mandateRow.status === "open" && !mandateRow.is_archived && mandateRow.listing_kind !== "pipeline" && mandateRow.short_code && (
+        <ReferralAskPanel
+          endpoint={`/api/mandates/${mandateId}/referral-ask`}
+          heading="Ask for referrals for this role"
+          blurb="People most likely to know a fit: the same kind of job, the same city, people we placed, and people rated top or strong. They see this role and refer someone; the referral is saved against it. Nobody is asked twice about the same role."
+          templateKey="referralRole"
+        />
+      )}
       <RankedGroups mandateId={mandateId} ranked={ranked.slice(0, 120)} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, or marked not a fit, is left out.
