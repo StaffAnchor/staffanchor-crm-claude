@@ -16,14 +16,28 @@ export type PipelineRow = {
   post: string | null;
   copied: boolean;
   applicants: number;
+  visits: number;
+  registrations: number;
+  applications: number;
 };
 
-export default function MarketingClient({ rows }: { rows: PipelineRow[] }) {
+export type SourceRow = { source: string; visits: number; registrations: number; applications: number; progressed: number; placed: number };
+
+export default function MarketingClient({ rows, sources }: { rows: PipelineRow[]; sources: SourceRow[] }) {
   const router = useRouter();
   const [count, setCount] = useState(6);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // A link for any post, not only role posts: pick where it lands and name the post, and it carries its source.
+  const [dest, setDest] = useState("/jobs");
+  const [camp, setCamp] = useState("");
+  const [custom, setCustom] = useState<string | null>(null);
+  function buildLink() {
+    const slug = camp.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (!slug) return setCustom(null);
+    setCustom(`https://jobs.staffanchor.com${dest}?utm_source=linkedin&utm_medium=social&utm_campaign=${slug}`);
+  }
 
   async function generate() {
     setBusy(true);
@@ -74,6 +88,65 @@ export default function MarketingClient({ rows }: { rows: PipelineRow[] }) {
       </header>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="text-sm font-semibold">Where candidates come from, last 30 days</h2>
+        <p className="mt-1 text-[13px] text-slate-500">
+          Visits are counted from when tracking went live. &quot;Untracked&quot; rows are people who registered before then, or through an import.
+        </p>
+        {sources.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">Nothing recorded yet. Visits, registrations and applications appear here as they happen.</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-slate-500">
+                  <th className="py-1 font-medium">Source</th>
+                  <th className="py-1 text-right font-medium">Visits</th>
+                  <th className="py-1 text-right font-medium">Registered</th>
+                  <th className="py-1 text-right font-medium">Applied</th>
+                  <th className="py-1 text-right font-medium">Moved forward</th>
+                  <th className="py-1 text-right font-medium">Placed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sources.map((r) => (
+                  <tr key={r.source} className="border-t border-slate-100 dark:border-slate-800">
+                    <td className="py-1.5 capitalize">{r.source}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.visits || "–"}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.registrations || "–"}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.applications || "–"}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.progressed || "–"}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.placed || "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <h3 className="text-sm font-semibold">Tracked link for any LinkedIn post</h3>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <select value={dest} onChange={(e) => setDest(e.target.value)} className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm dark:border-slate-600 dark:bg-slate-800">
+              <option value="/jobs">Jobs list</option>
+              <option value="/">Home page</option>
+              <option value="/register">Create profile</option>
+            </select>
+            <input value={camp} onChange={(e) => setCamp(e.target.value)} placeholder="Name this post, e.g. salary-pune-oct" className="h-9 min-w-[240px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-800" />
+            <button type="button" onClick={buildLink} className="h-9 rounded-lg bg-teal-600 px-3 text-sm font-semibold text-white hover:bg-teal-700">
+              Make link
+            </button>
+          </div>
+          {custom && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800">
+              <span className="break-all">{custom}</span>
+              <button type="button" onClick={() => navigator.clipboard.writeText(custom).catch(() => {})} className="inline-flex items-center gap-1 font-semibold text-teal-700 hover:underline">
+                <Copy className="h-3.5 w-3.5" /> Copy
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Sparkles className="h-4 w-4 text-teal-600" /> Generate pipeline roles
         </h2>
@@ -105,7 +178,7 @@ export default function MarketingClient({ rows }: { rows: PipelineRow[] }) {
               <div className="mr-auto min-w-0">
                 <h3 className="text-[15px] font-semibold">{r.role_title}</h3>
                 <p className="mt-0.5 text-[13px] text-slate-500">
-                  {[r.city, r.experience, r.sub_domain].filter(Boolean).join(" · ")} · {r.applicants} applied
+                  {[r.city, r.experience, r.sub_domain].filter(Boolean).join(" · ")} · {r.visits} visits · {r.registrations} registered · {r.applicants} applied
                 </p>
               </div>
               {r.link && (
