@@ -16,6 +16,16 @@ const GROUPS: { key: Ranked["bucket"]; label: string; blurb: string; tone: strin
 
 const PER_PAGE = 15;
 
+const DISMISS_REASONS = [
+  { value: "wrong_role", label: "Wrong kind of job" },
+  { value: "wrong_level", label: "Wrong level" },
+  { value: "wrong_world", label: "Sells the wrong thing" },
+  { value: "wrong_city", label: "Wrong city" },
+  { value: "pay_too_high", label: "Pay too high" },
+  { value: "not_interested", label: "Not interested" },
+  { value: "other", label: "Other" },
+];
+
 export default function RankedGroups({ mandateId, ranked }: { mandateId: string; ranked: Ranked[] }) {
   const router = useRouter();
   const counts = useMemo(() => Object.fromEntries(GROUPS.map((g) => [g.key, ranked.filter((r) => r.bucket === g.key).length])) as Record<Ranked["bucket"], number>, [ranked]);
@@ -26,8 +36,16 @@ export default function RankedGroups({ mandateId, ranked }: { mandateId: string;
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [why, setWhy] = useState<Set<string>>(new Set());
+  const [gone, setGone] = useState<Set<string>>(new Set());
 
-  const list = ranked.filter((r) => r.bucket === tab);
+  async function dismiss(candidateId: string, reason: string) {
+    if (!reason) return;
+    setGone((g) => new Set(g).add(candidateId));
+    const res = await fetch(`/api/mandates/${mandateId}/dismiss`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidate_id: candidateId, reason }) });
+    if (!res.ok) setGone((g) => new Set([...g].filter((x) => x !== candidateId)));
+  }
+
+  const list = ranked.filter((r) => r.bucket === tab && !gone.has(r.row.candidate_id));
 
   async function addPicked() {
     const chosen = ranked.filter((r) => picked.has(r.row.candidate_id));
@@ -117,7 +135,13 @@ export default function RankedGroups({ mandateId, ranked }: { mandateId: string;
                     )}
                   </div>
                 </div>
-                <div className="shrink-0">
+                <div className="shrink-0 space-y-2">
+                  <select aria-label="Not a fit" value="" onChange={(e) => dismiss(c.candidate_id, e.target.value)} className="block w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900">
+                    <option value="">Not a fit…</option>
+                    {DISMISS_REASONS.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
                   <PipelineTemplateActions candidateId={c.candidate_id} mandateId={mandateId} stage="sourced" missing={[]} showOpportunity />
                 </div>
               </div>

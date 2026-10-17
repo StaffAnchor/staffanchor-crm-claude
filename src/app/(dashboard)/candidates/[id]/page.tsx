@@ -32,6 +32,7 @@ import BriefCard from "./brief-card";
 import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
 import { missingKeyDetails } from "@/lib/key-details";
+import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
@@ -461,6 +462,7 @@ export default async function CandidateDetailPage({
     return `/candidates/${neighbor.id}?from=${encodeURIComponent(from ?? "")}`;
   }
 
+  recordTiming("candidate", renderStart);
   const missingNow = missingKeyDetails(candidate);
   const activeLinks = (links ?? []).filter((l) => !["rejected", "pulled_back"].includes(l.stage));
   let nextAction: NextActionItem | null = null;

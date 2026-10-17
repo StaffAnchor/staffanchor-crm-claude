@@ -1,5 +1,6 @@
 import CopyShareLinkButton from "./copy-share-link-button";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ShortlistLinkPanel from "./shortlist-link-panel";
@@ -12,6 +13,7 @@ import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import AiMatchesPanel from "./ai-matches-panel";
 import BestMatchesPanel from "./best-matches-panel";
+import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
 import FindMatchesPanel from "./find-matches-panel";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
@@ -306,6 +308,8 @@ export default async function MandateDetailPage({
         })
       : null;
 
+  recordTiming("mandate", renderStart);
+
   // The one thing to do next, in order of what unblocks the mandate most.
   const staleNames = (staleLinks ?? []).map((l) => (l.candidates as unknown as { full_name: string } | null)?.full_name).filter(Boolean);
   let nextAction: NextActionItem | null = null;
@@ -447,7 +451,7 @@ export default async function MandateDetailPage({
         <MandateCandidatesView
           aiSuggestions={
             <div className="space-y-6">
-              <div id="best-matches"><BestMatchesPanel mandateId={id} /></div>
+              <div id="best-matches"><Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}><BestMatchesPanel mandateId={id} /></Suspense></div>
               <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
                 <summary className="cursor-pointer text-[13px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>
                 <div className="mt-3">

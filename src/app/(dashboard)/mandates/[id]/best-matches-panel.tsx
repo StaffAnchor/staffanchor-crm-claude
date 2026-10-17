@@ -19,11 +19,12 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   if (!cardRow) return <RoleCardAuto mandateId={mandateId} />;
   const card = cardRow.card as RoleCard;
 
-  const [{ data: clusterRows }, { data: worldRows }, { data: edgeRows }, { data: linkRows }] = await Promise.all([
+  const [{ data: clusterRows }, { data: worldRows }, { data: edgeRows }, { data: linkRows }, { data: dismissedRows }] = await Promise.all([
     supabase.from("role_clusters").select("slug, name").order("sort_order"),
     supabase.from("selling_worlds").select("slug, name").order("sort_order"),
     supabase.from("selling_world_edges").select("a, b, weight"),
     supabase.from("candidate_mandate_links").select("candidate_id").eq("mandate_id", mandateId),
+    supabase.from("match_dismissals").select("candidate_id").eq("mandate_id", mandateId),
   ]);
   const clusters = (clusterRows ?? []) as { slug: string; name: string }[];
   const worlds = (worldRows ?? []) as { slug: string; name: string }[];
@@ -39,7 +40,8 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
 
   const { data: rows } = await supabase.rpc("role_match_candidates", { p_clusters: clustersFor(card), p_worlds: Array.from(want), p_limit: 900 });
   const inPipeline = new Set(((linkRows ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id));
-  const pool = ((rows ?? []) as MatchRow[]).filter((r) => !inPipeline.has(r.candidate_id));
+  const dismissed = new Set(((dismissedRows ?? []) as { candidate_id: string }[]).map((d) => d.candidate_id));
+  const pool = ((rows ?? []) as MatchRow[]).filter((r) => !inPipeline.has(r.candidate_id) && !dismissed.has(r.candidate_id));
   const nameOf = new Map(worlds.map((w) => [w.slug, w.name]));
   const ranked = rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s);
 
@@ -48,7 +50,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
       <RoleCardEditor key={JSON.stringify(card)} mandateId={mandateId} card={card} confirmed={!!cardRow.confirmed} clusters={clusters} worlds={worlds} />
       <RankedGroups mandateId={mandateId} ranked={ranked.slice(0, 120)} />
       <p className="text-[12px] text-slate-400">
-        Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline is left out.
+        Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, or marked not a fit, is left out.
       </p>
     </div>
   );
