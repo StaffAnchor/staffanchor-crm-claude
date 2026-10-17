@@ -1,4 +1,7 @@
+import { after } from "next/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { scoreLinksByRoleCard } from "@/lib/role-score";
 import RoleCardAuto from "./role-card-auto";
 import RoleTypeGate from "./role-type-gate";
 import RoleCardEditor from "./role-card-editor";
@@ -23,7 +26,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
     supabase.from("role_clusters").select("slug, name").order("sort_order"),
     supabase.from("selling_worlds").select("slug, name").order("sort_order"),
     supabase.from("selling_world_edges").select("a, b, weight"),
-    supabase.from("candidate_mandate_links").select("candidate_id").eq("mandate_id", mandateId),
+    supabase.from("candidate_mandate_links").select("candidate_id, match_source").eq("mandate_id", mandateId),
     supabase.from("match_dismissals").select("candidate_id").eq("mandate_id", mandateId),
   ]);
   const clusters = (clusterRows ?? []) as { slug: string; name: string }[];
@@ -39,7 +42,18 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   for (const ex of card.exact_worlds) for (const [w, v] of edges.get(ex) ?? []) if (v >= 0.5) want.add(w);
 
   const { data: rows } = await supabase.rpc("role_match_candidates", { p_clusters: clustersFor(card), p_worlds: Array.from(want), p_limit: 900 });
-  const inPipeline = new Set(((linkRows ?? []) as { candidate_id: string }[]).map((l) => l.candidate_id));
+  const links = (linkRows ?? []) as { candidate_id: string; match_source: string | null }[];
+  const inPipeline = new Set(links.map((l) => l.candidate_id));
+  // People already on the pipeline (applicants included) get scored by this same ranking, once, in the background.
+  const toScore = links.filter((l) => l.match_source !== "role_card").map((l) => l.candidate_id);
+  if (toScore.length > 0) {
+    after(async () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !key) return;
+      await scoreLinksByRoleCard(createServiceClient(url, key, { auth: { persistSession: false } }), mandateId, toScore).catch(() => {});
+    });
+  }
   const dismissed = new Set(((dismissedRows ?? []) as { candidate_id: string }[]).map((d) => d.candidate_id));
   const pool = ((rows ?? []) as MatchRow[]).filter((r) => !inPipeline.has(r.candidate_id) && !dismissed.has(r.candidate_id));
   const nameOf = new Map(worlds.map((w) => [w.slug, w.name]));

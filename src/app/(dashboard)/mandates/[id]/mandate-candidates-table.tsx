@@ -70,6 +70,7 @@ export type MandateCandidateRow = {
   // glance how strong a fit the system originally thought this candidate
   // was, without leaving the Table/Board for the matching workspace.
   match_score: number | null;
+  match_bucket: "perfect" | "close" | "stretch" | null;
   // Mandate-specific AI read -- see buildMatchAssessment in
   // candidate-match.ts. Lives on the LINK (not the candidate) precisely
   // because the whole point is that it changes per mandate: the same
