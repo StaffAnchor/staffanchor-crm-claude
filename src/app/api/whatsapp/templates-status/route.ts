@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { profileDetailsTemplate, roleOpportunityTemplate, templateNameForTaskType } from "@/lib/whatsapp";
+import { profileDetailsTemplate, reactivationTemplate, referralAskTemplate, roleOpportunityTemplate, templateNameForTaskType } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
@@ -15,6 +15,8 @@ export async function GET() {
   return NextResponse.json({
     details: !!profileDetailsTemplate(),
     opportunity: !!roleOpportunityTemplate(),
+    reactivation: !!reactivationTemplate(),
+    referral: !!referralAskTemplate(),
     interview: !!templateNameForTaskType("TRIGGER_INTERVIEW_COORDINATION"),
     offer: !!templateNameForTaskType("FOLLOW_UP_ON_OFFER"),
   });
