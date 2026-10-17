@@ -22,6 +22,7 @@ import {
 } from "@/lib/candidate-options";
 import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
+import { RoleLevelSelect, RoleTypeSelect, useRoleClusters } from "@/components/role-type-fields";
 import WeekOffPicker, { emptyWeekOffValue, type WeekOffValue } from "@/components/ui/week-off-picker";
 
 export type RecruiterOption = { id: string; full_name: string | null; email: string; role?: string };
@@ -89,6 +90,7 @@ export default function CreateMandateForm({
     headcount: "1",
     practice_id: "",
     seniority_band: "",
+    role_cluster: "",
     hide_client: false,
     public_client_label: "",
     jd_raw_notes: "",
@@ -132,6 +134,7 @@ export default function CreateMandateForm({
   const [jdRefineError, setJdRefineError] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
   const optionSets = useMandateOptionSets();
+  const roleClusters = useRoleClusters();
 
   const subDomainOptions = subDomainsForCategory(form.category || null);
   const isMultiSubDomain = form.category === "b2b_sales" || form.category === "b2c_sales";
@@ -245,6 +248,10 @@ export default function CreateMandateForm({
       setError("Select at least one recruiter or vendor.");
       return;
     }
+    if (!form.role_cluster || !form.seniority_band) {
+      setError("Choose the role type and the role level. Matching reads them from here, nothing is guessed.");
+      return;
+    }
     setSaving(true);
     setError("");
     const subDomains = resolvedSubDomains();
@@ -270,6 +277,7 @@ export default function CreateMandateForm({
         headcount: form.headcount ? Number(form.headcount) : 1,
         practice_id: form.practice_id || null,
         seniority_band: form.seniority_band || null,
+        role_cluster: form.role_cluster || null,
         show_client_name: !form.hide_client,
         public_client_label: form.hide_client ? form.public_client_label || null : null,
         jd_overview: form.jd_overview || null,
@@ -362,6 +370,7 @@ export default function CreateMandateForm({
       headcount: "1",
       practice_id: "",
       seniority_band: "",
+      role_cluster: "",
       hide_client: false,
       public_client_label: "",
       jd_raw_notes: "",
@@ -615,19 +624,18 @@ export default function CreateMandateForm({
           </p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Seniority band</label>
-          <select
-            value={form.seniority_band}
-            onChange={(e) => setForm((f) => ({ ...f, seniority_band: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-          >
-            <option value="">Not set</option>
-            <option value="ic">IC / Individual Contributor</option>
-            <option value="team_lead">Team Lead</option>
-            <option value="manager">Manager</option>
-            <option value="director">Director</option>
-            <option value="vp_plus">VP & above</option>
-          </select>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Role type <span className="text-rose-600">*</span>
+          </label>
+          <RoleTypeSelect value={form.role_cluster} onChange={(v) => setForm((f) => ({ ...f, role_cluster: v }))} clusters={roleClusters} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+          <p className="text-[11px] text-slate-400 mt-1">What the hire will actually do. Matching uses this, not the title.</p>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+            Role level <span className="text-rose-600">*</span>
+          </label>
+          <RoleLevelSelect value={form.seniority_band} onChange={(v) => setForm((f) => ({ ...f, seniority_band: v }))} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+          <p className="text-[11px] text-slate-400 mt-1">Decides whether to look for individual sellers or people who lead.</p>
         </div>
       </div>
 

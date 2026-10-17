@@ -118,7 +118,7 @@ export default function RoleCardEditor({
             <label className="text-slate-500">
               Level
               <select value={c.level} onChange={(e) => setC({ ...c, level: e.target.value as CardLevel })} className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                {LEVEL_VALUES.map((l) => (
+                {LEVEL_VALUES.filter((l) => l !== "any").map((l) => (
                   <option key={l} value={l}>
                     {LEVEL_LABEL[l]}
                   </option>

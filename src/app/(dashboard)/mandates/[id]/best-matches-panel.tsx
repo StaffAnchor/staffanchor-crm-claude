@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import RoleCardAuto from "./role-card-auto";
+import RoleTypeGate from "./role-type-gate";
 import RoleCardEditor from "./role-card-editor";
 import RankedGroups from "./ranked-groups";
 import type { RoleCard } from "@/lib/role-card";
@@ -9,6 +10,11 @@ import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 // mandate, then rank everyone against it, in three groups with the reasons shown.
 export default async function BestMatchesPanel({ mandateId }: { mandateId: string }) {
   const supabase = await createClient();
+  // The mandate must say what kind of role this is and at what level. Nothing here guesses it.
+  const { data: mandateRow } = await supabase.from("mandates").select("role_title, role_cluster, seniority_band").eq("id", mandateId).maybeSingle();
+  if (!mandateRow?.role_cluster || !mandateRow?.seniority_band) {
+    return <RoleTypeGate mandateId={mandateId} roleTitle={mandateRow?.role_title ?? null} cluster={mandateRow?.role_cluster ?? null} level={mandateRow?.seniority_band ?? null} />;
+  }
   const { data: cardRow } = await supabase.from("mandate_role_cards").select("card, confirmed").eq("mandate_id", mandateId).maybeSingle();
   if (!cardRow) return <RoleCardAuto mandateId={mandateId} />;
   const card = cardRow.card as RoleCard;

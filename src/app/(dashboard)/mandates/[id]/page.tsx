@@ -583,6 +583,7 @@ export default async function MandateDetailPage({
                       headcount: mandate.headcount,
                       practice_id: mandate.practice_id ?? null,
                       seniority_band: mandate.seniority_band ?? null,
+                      role_cluster: (mandate as { role_cluster?: string | null }).role_cluster ?? null,
                     }}
                     placedCount={placedCount}
                   />

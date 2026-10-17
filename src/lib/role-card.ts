@@ -75,7 +75,7 @@ export async function generateRoleCard(admin: SupabaseClient, mandateId: string)
   const [{ data: m }, { data: clusterRows }, { data: worldRows }, { data: edgeRows }] = await Promise.all([
     admin
       .from("mandates")
-      .select("role_title, client_name, public_client_label, category, sub_domain, sub_domains, city, cities, experience_min, experience_max, budget_min, budget_max, job_description, jd_overview, jd_responsibilities, jd_candidate_profile, must_haves, good_to_haves, deal_size_band, sales_cycle, selling_style, customer_profile, industries_sold_to, seniority_band")
+      .select("role_title, client_name, public_client_label, category, sub_domain, sub_domains, city, cities, experience_min, experience_max, budget_min, budget_max, job_description, jd_overview, jd_responsibilities, jd_candidate_profile, must_haves, good_to_haves, deal_size_band, sales_cycle, selling_style, customer_profile, industries_sold_to, seniority_band, role_cluster")
       .eq("id", mandateId)
       .maybeSingle(),
     admin.from("role_clusters").select("slug, name, track, hint"),
@@ -83,6 +83,8 @@ export async function generateRoleCard(admin: SupabaseClient, mandateId: string)
     admin.from("selling_world_edges").select("a, b, weight"),
   ]);
   if (!m) return { ok: false, error: "Role not found" };
+  // The mandate states what kind of job this is and at what level. They are never guessed here.
+  if (!m.role_cluster || !m.seniority_band) return { ok: false, error: "Choose the role type and level on the mandate first." };
   const clusters = (clusterRows ?? []) as { slug: string; name: string; track: string; hint: string | null }[];
   const worlds = (worldRows ?? []) as { slug: string; name: string; family: string }[];
   const edges = (edgeRows ?? []) as { a: string; b: string; weight: number }[];
@@ -122,8 +124,7 @@ ${edges.map((e) => `${e.a}~${e.b}:${e.weight}`).join(", ")}
 
 Return:
 - cluster: the one role cluster the hire will do.
-- level: "any", "ic", "team_lead", "manager", "director" or "vp_plus". Read it from the TITLE and the brief. A title with Manager, Regional, National, Zonal, Head, Director, VP, Lead or Chief is NOT "ic": use "manager" for a regional or senior sales manager, "director" for a head or director, "vp_plus" for VP or chief. Use "ic" only for hands-on seller roles such as Account Executive, Sales Executive, SDR or BDR.
-- cluster: if the hire LEADS sellers or a region (Regional Sales Manager, Sales Head, Director), choose sales_leadership. Use account_exec only for an individual who closes deals himself.
+- cluster and level: leave them as given. The recruiter has already fixed the role type as "${m.role_cluster}" and the level as "${m.seniority_band}". Do not change them.
 - sells_summary: one line, what the hire will sell and to whom.
 - exact_worlds: 1 to 3 worlds the person should ideally already sell into.
 - adjacent_worlds: up to 6 further worlds that are a reasonable background, each with a short "why" (how it transfers). Do not repeat exact worlds.
@@ -139,7 +140,10 @@ Return ONLY JSON, no markdown:
   try {
     const result = await generateTextWithFallback(prompt);
     await logAiUsage({ purpose: "role_card", refType: "mandate", refId: mandateId, result, prompt });
-    const card = cleanCard(parseObject(result.text), new Set(clusters.map((c) => c.slug)), new Set(worlds.map((w) => w.slug)));
+    const parsed = parseObject(result.text);
+    // Role type and level come from the mandate, whatever the AI wrote.
+    const fixed = parsed && typeof parsed === "object" ? { ...(parsed as Record<string, unknown>), cluster: m.role_cluster, level: m.seniority_band } : parsed;
+    const card = cleanCard(fixed, new Set(clusters.map((c) => c.slug)), new Set(worlds.map((w) => w.slug)));
     if (!card) return { ok: false, error: "The AI answer could not be read. Please try again." };
     await admin.from("mandate_role_cards").upsert({ mandate_id: mandateId, card, confirmed: false, generated_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "mandate_id" });
     return { ok: true, card };
