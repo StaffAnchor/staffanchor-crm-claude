@@ -22,6 +22,7 @@ import {
 } from "@/lib/candidate-options";
 import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
+import AlsoRoleTypes from "@/components/also-role-types";
 import { RoleLevelSelect, RoleTypeSelect, useRoleClusters } from "@/components/role-type-fields";
 import WeekOffPicker, { emptyWeekOffValue, type WeekOffValue } from "@/components/ui/week-off-picker";
 
@@ -91,6 +92,7 @@ export default function CreateMandateForm({
     practice_id: "",
     seniority_band: "",
     role_cluster: "",
+    also_clusters: [] as string[],
     hide_client: false,
     public_client_label: "",
     jd_raw_notes: "",
@@ -278,6 +280,7 @@ export default function CreateMandateForm({
         practice_id: form.practice_id || null,
         seniority_band: form.seniority_band || null,
         role_cluster: form.role_cluster || null,
+        also_clusters: form.also_clusters.filter((c) => c !== form.role_cluster),
         show_client_name: !form.hide_client,
         public_client_label: form.hide_client ? form.public_client_label || null : null,
         jd_overview: form.jd_overview || null,
@@ -371,6 +374,7 @@ export default function CreateMandateForm({
       practice_id: "",
       seniority_band: "",
       role_cluster: "",
+    also_clusters: [] as string[],
       hide_client: false,
       public_client_label: "",
       jd_raw_notes: "",
@@ -629,6 +633,8 @@ export default function CreateMandateForm({
           </label>
           <RoleTypeSelect value={form.role_cluster} onChange={(v) => setForm((f) => ({ ...f, role_cluster: v }))} clusters={roleClusters} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
           <p className="text-[11px] text-slate-400 mt-1">What the hire will actually do. Matching uses this, not the title.</p>
+          <label className="mt-2 block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Also acceptable (optional)</label>
+          <AlsoRoleTypes value={form.also_clusters} onChange={(v) => setForm((f) => ({ ...f, also_clusters: v }))} clusters={roleClusters} main={form.role_cluster} />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">

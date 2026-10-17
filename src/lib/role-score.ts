@@ -8,7 +8,7 @@ import { rankCandidates, type MatchRow } from "@/lib/role-match";
 // nothing and the caller keeps the older score.
 export async function scoreLinksByRoleCard(admin: SupabaseClient, mandateId: string, candidateIds: string[]): Promise<{ ok: boolean; scored: number; reason?: string }> {
   if (candidateIds.length === 0) return { ok: true, scored: 0 };
-  const { data: mandate } = await admin.from("mandates").select("role_cluster, seniority_band").eq("id", mandateId).maybeSingle();
+  const { data: mandate } = await admin.from("mandates").select("role_cluster, seniority_band, also_clusters").eq("id", mandateId).maybeSingle();
   if (!mandate?.role_cluster || !mandate?.seniority_band) return { ok: false, scored: 0, reason: "no role type or level" };
   const { data: cardRow } = await admin.from("mandate_role_cards").select("card").eq("mandate_id", mandateId).maybeSingle();
   if (!cardRow) return { ok: false, scored: 0, reason: "no role card" };
@@ -25,7 +25,7 @@ export async function scoreLinksByRoleCard(admin: SupabaseClient, mandateId: str
     (edges.get(e.b) ?? edges.set(e.b, new Map()).get(e.b)!).set(e.a, Number(e.weight));
   }
   const nameOf = new Map(((worldRows ?? []) as { slug: string; name: string }[]).map((w) => [w.slug, w.name]));
-  const ranked = rankCandidates(card, (rows ?? []) as MatchRow[], edges, (x) => nameOf.get(x) ?? x, { keepAll: true });
+  const ranked = rankCandidates(card, (rows ?? []) as MatchRow[], edges, (x) => nameOf.get(x) ?? x, { keepAll: true, also: (mandate.also_clusters as string[] | null) ?? [] });
 
   let scored = 0;
   for (const r of ranked) {
