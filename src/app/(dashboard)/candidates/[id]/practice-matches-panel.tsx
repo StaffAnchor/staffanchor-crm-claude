@@ -72,8 +72,8 @@ export default function PracticeMatchesPanel({
           </div>
         );
       })}
-      <Link href="/practice-pool" className="text-[11px] text-blue-600 hover:underline">
-        View full Practice Pool →
+      <Link href="/candidates/inventory" className="text-[11px] text-blue-600 hover:underline">
+        See the Talent Inventory →
       </Link>
     </div>
   );

@@ -11,6 +11,7 @@ import GoldStandardPanel from "./gold-standard-panel";
 import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import AiMatchesPanel from "./ai-matches-panel";
+import BestMatchesPanel from "./best-matches-panel";
 import FindMatchesPanel from "./find-matches-panel";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
@@ -464,7 +465,17 @@ export default async function MandateDetailPage({
       <MandateSplitLayout
         left={
         <MandateCandidatesView
-          aiSuggestions={<AiMatchesPanel mandateId={id} />}
+          aiSuggestions={
+            <div className="space-y-6">
+              <BestMatchesPanel mandateId={id} />
+              <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
+                <summary className="cursor-pointer text-[13px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>
+                <div className="mt-3">
+                  <AiMatchesPanel mandateId={id} />
+                </div>
+              </details>
+            </div>
+          }
           aiCount={aiSuggestionCount}
           initialStage={initialStage}
           rows={(links ?? [])

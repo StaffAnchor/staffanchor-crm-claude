@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
 import RecalculateButton from "./recalculate-button";
 import ClassifyButton from "./classify-button";
+import SaveShortlist from "../../saas-practice/save-shortlist";
 import { DOMAINS, LEVELS, METROS, SENIORITY_SHORT, TRACKS, inventoryHref, parseParams } from "@/lib/inventory";
 import { POOL_TIER_LABEL, POOL_TIER_PILL, type PoolTier } from "@/lib/talent-pool";
 
@@ -94,6 +95,8 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
     people = ((data ?? []) as unknown as Person[]).filter((x) => (seen.has(x.candidate_id) ? false : (seen.add(x.candidate_id), true)));
     people.sort((a, b) => Number(b.candidates?.total_experience_years ?? 0) - Number(a.candidates?.total_experience_years ?? 0));
   }
+  const { data: listRows } = await supabase.rpc("candidate_lists_with_counts");
+  const lists = ((listRows ?? []) as { id: string; name: string; n: number | string; owner_name: string | null }[]).map((l) => ({ id: l.id, name: l.name, n: Number(l.n), owner_name: l.owner_name }));
   const poolBy = new Map<string, PoolTier>();
   if (people.length > 0) {
     const { data: pool } = await supabase.from("talent_pool_entries").select("candidate_id, tier").in("candidate_id", people.map((x) => x.candidate_id));
@@ -117,7 +120,8 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         </div>
         {me.role === "admin" && (
           <div className="flex flex-wrap items-center gap-3">
-            <ClassifyButton />
+            <ClassifyButton verb="Classify" />
+            <ClassifyButton endpoint="/api/admin/inventory/selling" verb="Write selling profiles for" title="The AI writes what each sales person sells, to whom and how, from their CV facts" allowRecheck={false} />
             <RecalculateButton />
           </div>
         )}
@@ -219,6 +223,15 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
               <Link href={inventoryHref(p, { metro: null })} className="text-[12px] text-blue-600 hover:underline">
                 Show all cities
               </Link>
+            )}
+            {people.length > 0 && (
+              <SaveShortlist
+                ids={people.map((x) => x.candidate_id)}
+                label={`Save these ${Math.min(people.length, 300)} as a shortlist`}
+                defaultName={`${drillTitle} ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                description={`Made from the Talent Inventory: ${drillTitle}${p.domain ? `, ${p.domain}` : ""}${p.level !== "all" ? `, ${level.label.toLowerCase()}` : ""}.`}
+                lists={lists}
+              />
             )}
             {exportHref && (
               <a href={exportHref} className="text-[12px] font-medium text-blue-600 hover:underline">

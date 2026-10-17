@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // The Candidates area, kept to what is used every day. Inventory (what we hold, by role and city) comes first;
-// the less frequent pages sit under "More". Practice Pool is still reachable there and from the Inventory.
+// the less frequent pages sit under "More". Talent board and Practice Pool were folded into the Inventory and the
+// role matches on each mandate.
 const TABS = [
   { href: "/candidates/inventory", label: "Inventory" },
   { href: "/candidates", label: "Candidates" },
@@ -14,9 +15,7 @@ const TABS = [
 ];
 
 const MORE = [
-  { href: "/candidates/board", label: "Talent board" },
   { href: "/candidates/referrals", label: "Referrals" },
-  { href: "/practice-pool", label: "Practice Pool (fit against open roles)" },
   { href: "/candidates/files", label: "CV files" },
 ];
 

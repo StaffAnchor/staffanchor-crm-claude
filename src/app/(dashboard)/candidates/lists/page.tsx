@@ -30,11 +30,11 @@ export default async function ShortlistsPage() {
             <Bookmark className="h-5 w-5 text-slate-400" /> Shortlists
           </h1>
           <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
-            Lists the whole team can see and add to. Save people from the{" "}
-            <Link href="/candidates/board" className="font-medium text-indigo-600 hover:underline">
-              Talent board
-            </Link>{" "}
-            with the Save button on each card.
+            Lists the whole team can see and add to. Open the{" "}
+            <Link href="/candidates/inventory" className="font-medium text-indigo-600 hover:underline">
+              Inventory
+            </Link>
+            , click any number, and use &quot;Save as a shortlist&quot;.
           </p>
         </div>
         <NewListForm />
