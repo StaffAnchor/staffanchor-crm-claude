@@ -27,6 +27,7 @@ export type MatchRow = {
   team_sells: string | null;
   motion: string | null;
   pool_tier: string | null;
+  open_to_work_at?: string | null;
 };
 
 export type Ranked = {
@@ -226,6 +227,12 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       score += 4;
       matched.push(nd === 0 ? "Can join immediately" : `Notice ${nd} days`);
     } else if (nd != null && nd <= 60) score += 2;
+
+    // Said, within three months, that they would like to hear about roles.
+    if (row.open_to_work_at && new Date().getTime() - new Date(row.open_to_work_at).getTime() < 90 * 86_400_000) {
+      score += 5;
+      matched.push("Told us they're open to new roles");
+    }
 
     // 8. Verified by a recruiter.
     if (row.pool_tier === "top") score += 8;

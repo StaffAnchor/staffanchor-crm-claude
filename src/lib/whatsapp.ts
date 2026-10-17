@@ -230,6 +230,15 @@ export const profileDetailsTemplate = (): string | null => process.env.WHATSAPP_
 /** Approved (marketing) template used to tell a candidate about an opening. */
 export const roleOpportunityTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_ROLE_OPPORTUNITY || null;
 
+/** Approved (marketing) template asking people in the database whether they are open to hearing about new roles. */
+export const reactivationTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_REACTIVATION || null;
+
+/** Approved (marketing) template asking a candidate to refer a seller they would back; has a "Refer someone" link button. */
+export const referralAskTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_REFERRAL_ASK || null;
+
+/** Approved (marketing) template asking a candidate to refer someone for one specific open role; has a "Refer someone" link button. */
+export const referralRoleTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_REFERRAL_ROLE_ASK || null;
+
 /** Template variables must sit on one line: no line breaks, tabs or long runs of spaces. */
 export const oneLine = (s: string): string => s.replace(/\s+/g, " ").trim();
 

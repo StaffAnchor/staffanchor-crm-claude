@@ -115,6 +115,14 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
     await store.updateContact(key, { ...patch, needs_human: true, needs_human_reason: "Tapped Yes on a role opportunity. Send them the details." });
     return { action: "silent", kind: contact.kind, replies: [] };
   }
+  // The reactivation message: "Yes, I'm open" or "Not right now". Recorded quietly; no automatic reply.
+  const tappedPlain = tapped.replace(/[\u2018\u2019]/g, "'");
+  if (tappedPlain === "yes, i'm open" || tappedPlain === "not right now") {
+    const who = contact.candidate_id ?? identity.candidate?.id ?? null;
+    if (who) await store.recordOpenToWork?.(who, tappedPlain === "yes, i'm open").catch(() => {});
+    if (Object.keys(patch).length) await store.updateContact(key, patch);
+    return { action: "silent", kind: contact.kind, replies: [] };
+  }
   if (tapped === "not now") {
     if (contact.candidate_id) await store.recordOutreachReply?.(contact.candidate_id, "not_now").catch(() => {});
     if (Object.keys(patch).length) await store.updateContact(key, patch);

@@ -86,6 +86,8 @@ export async function updateSession(request: NextRequest) {
     /^\/api\/referrer-signup\/[^/]+$/.test(request.nextUrl.pathname) ||
     // The unsubscribe link in outreach emails: signed token, no staff cookie.
     request.nextUrl.pathname === "/api/outreach/unsubscribe" ||
+    // The one-tap "open to roles" answer in the re-engagement email: signed token, no staff cookie.
+    request.nextUrl.pathname === "/api/outreach/respond" ||
     // The unsubscribe link in the automatic profile reminders: signed token, no staff cookie. It was
     // missing from this list, so candidates who clicked it were sent to the staff login page instead.
     request.nextUrl.pathname === "/api/unsubscribe-nudge" ||

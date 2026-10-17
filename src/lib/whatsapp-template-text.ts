@@ -46,3 +46,41 @@ export const renderInterviewMessage = (first: string, role: string) =>
 
 export const renderOfferMessage = (first: string, role: string) =>
   `Hi ${first}, this is StaffAnchor following up on the ${role} role. Could you let us know where you stand on the offer discussions, and whether anything is needed from our side? A short reply is enough.`;
+
+// The two campaign templates. The wording below is what is submitted to Meta; the exact text is fixed once approved.
+export const renderReactivationMessage = (first: string, role: string) =>
+  `Hi ${first}, this is StaffAnchor. We place ${role} professionals with companies that are hiring. Would you be open to hearing about a new role if it was a good fit?`;
+
+export const renderReferralAskMessage = (first: string) =>
+  `Hi ${first}, thank you for being part of StaffAnchor. The best people we place often come through someone they trust. Is there a sales professional you would back? Share their name in under a minute. If we place them and they stay 90 days, you earn up to \u20B910,000.`;
+
+export const renderReferralRoleMessage = (first: string, role: string, city: string) =>
+  `Hi ${first}, we're hiring a ${role} in ${city}. Know a strong sales professional who'd fit? Tap to see the role and refer them. If we place them and they stay 90 days, you earn up to \u20B910,000.`;
+
+/** What to create in Meta's template manager, with the buttons each one needs. */
+export const CAMPAIGN_TEMPLATES = {
+  reactivation: {
+    envVar: "WHATSAPP_TEMPLATE_REACTIVATION",
+    suggestedName: "reactivation_open_v1",
+    category: "Marketing",
+    body: "Hi {{1}}, this is StaffAnchor. We place {{2}} professionals with companies that are hiring. Would you be open to hearing about a new role if it was a good fit?",
+    variables: "{{1}} first name, {{2}} role type, for example SaaS Account Executive",
+    buttons: 'Quick reply "Yes, I\u2019m open", quick reply "Not right now", quick reply "Stop messages"',
+  },
+  referral: {
+    envVar: "WHATSAPP_TEMPLATE_REFERRAL_ASK",
+    suggestedName: "referral_ask_v1",
+    category: "Marketing",
+    body: "Hi {{1}}, thank you for being part of StaffAnchor. The best people we place often come through someone they trust. Is there a sales professional you would back? Share their name in under a minute. If we place them and they stay 90 days, you earn up to \u20B910,000.",
+    variables: "{{1}} first name",
+    buttons: 'First a "Visit website" button named "Refer someone" with the dynamic URL https://jobs.staffanchor.com/refer/{{1}}, then quick reply "Stop messages"',
+  },
+  referralRole: {
+    envVar: "WHATSAPP_TEMPLATE_REFERRAL_ROLE_ASK",
+    suggestedName: "referral_role_ask_v1",
+    category: "Marketing",
+    body: "Hi {{1}}, we're hiring a {{2}} in {{3}}. Know a strong sales professional who'd fit? Tap to see the role and refer them. If we place them and they stay 90 days, you earn up to \u20B910,000.",
+    variables: "{{1}} first name, {{2}} role title, {{3}} city",
+    buttons: 'First a "Visit website" button named "Refer someone" with the dynamic URL https://jobs.staffanchor.com/refer/{{1}}, then quick reply "Stop messages"',
+  },
+} as const;

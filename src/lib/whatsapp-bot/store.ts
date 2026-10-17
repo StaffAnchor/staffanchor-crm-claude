@@ -85,6 +85,8 @@ export interface Store {
   hasOutboundSince(key: string, sinceIso: string): Promise<boolean>;
   /** A person answered a role-opportunity message. Records it against the role they were told about, and on "interested" puts them on that role's pipeline. */
   recordOutreachReply?(candidateId: string, answer: "interested" | "not_now"): Promise<void>;
+  /** A person answered "are you open to hearing about new roles?". Yes ranks them higher; "not right now" rests them for 90 days. */
+  recordOpenToWork?(candidateId: string, open: boolean): Promise<void>;
 }
 
 const CANDIDATE_COLUMNS =
@@ -254,6 +256,12 @@ export function supabaseStore(admin: SupabaseClient): Store {
     async hasOutboundSince(key, sinceIso) {
       const { data } = await admin.from("whatsapp_messages").select("id").eq("direction", "outbound").ilike("to_phone", `%${key}`).gte("created_at", sinceIso).limit(1);
       return !!data && data.length > 0;
+    },
+    async recordOpenToWork(candidateId, open) {
+      await admin
+        .from("candidates")
+        .update(open ? { open_to_work_at: new Date().toISOString(), not_now_until: null } : { not_now_until: new Date(Date.now() + 90 * 86_400_000).toISOString() })
+        .eq("id", candidateId);
     },
     async recordOutreachReply(candidateId, answer) {
       // The role they most recently heard about, within three weeks; an old message is not what they are answering.
