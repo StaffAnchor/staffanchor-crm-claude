@@ -37,7 +37,7 @@ export default function VendorNoteControl({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 text-[10.5px] text-amber-700 hover:text-amber-800"
+        className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800"
       >
         <MessageSquarePlus className="w-3 h-3" />
         {currentNote ? "Edit note for vendor" : "Note for vendor"}
@@ -53,17 +53,17 @@ export default function VendorNoteControl({
         onChange={(e) => setNote(e.target.value)}
         rows={2}
         placeholder="Optional feedback for the vendor..."
-        className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-[11.5px]"
+        className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
       />
       <div className="flex items-center gap-2 mt-1">
         <button
           onClick={save}
           disabled={saving}
-          className="text-[10.5px] font-medium text-teal-600 hover:text-teal-700 disabled:opacity-50"
+          className="text-xs font-medium text-teal-600 hover:text-teal-700 disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save"}
         </button>
-        <button onClick={() => setOpen(false)} className="text-[10.5px] text-slate-400 hover:text-slate-600">
+        <button onClick={() => setOpen(false)} className="text-xs text-slate-400 hover:text-slate-600">
           Cancel
         </button>
       </div>

@@ -81,7 +81,7 @@ function Chips({ value, options, onChange }: { value: string; options: string[];
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[11.5px] font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
         {label} {hint && <span className="font-normal text-slate-400">{hint}</span>}
       </p>
       {children}
@@ -266,11 +266,11 @@ export default function CallCompanion({
       <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between gap-3 text-left">
         <span className="flex items-center gap-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">
           <Phone className="w-4 h-4 text-teal-600" /> Call companion
-          <span className="text-[11.5px] font-normal text-slate-400">tap the answers during the call</span>
+          <span className="text-xs font-normal text-slate-400">tap the answers during the call</span>
         </span>
         <span className="flex items-center gap-2">
           {callConfirmed?.at && (
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">
               Confirmed on call {new Date(callConfirmed.at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}
               {callConfirmed.by ? ` by ${callConfirmed.by}` : ""}
             </span>
@@ -296,7 +296,7 @@ export default function CallCompanion({
                 ))}
               </select>
               {has(candidate.current_fixed_ctc) && (
-                <span className="ml-2 text-[11.5px] text-slate-400">current fixed: {Number(candidate.current_fixed_ctc)} LPA</span>
+                <span className="ml-2 text-xs text-slate-400">current fixed: {Number(candidate.current_fixed_ctc)} LPA</span>
               )}
             </Row>
             <Row label="Notice period / days to join">
@@ -372,7 +372,7 @@ export default function CallCompanion({
           </div>
 
           <div className="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-4 h-fit">
-            <p className="text-[11.5px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Ask about</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Ask about</p>
             {doubts.length === 0 ? (
               <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Nothing flagged from the CV.</p>
             ) : (

@@ -18,7 +18,7 @@ const ICON: Record<TimelineEvent["kind"], typeof MessageSquare> = {
 // restrained accent" palette used across the redesigned pages, rather than
 // the previous blue/violet/emerald rainbow.
 const ICON_COLOR: Record<TimelineEvent["kind"], string> = {
-  note: "bg-blue-50 text-blue-600",
+  note: "bg-teal-50 text-teal-600",
   status_change: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400",
   created: "bg-emerald-50 text-emerald-600",
 };
@@ -45,7 +45,7 @@ export default function Timeline({ events }: { events: TimelineEvent[] }) {
             <div className="pb-5">
               <p className="text-[13px] text-slate-800 dark:text-slate-200">{e.label}</p>
               {e.detail && <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{e.detail}</p>}
-              <p className="text-[11px] text-slate-400 mt-1">{new Date(e.at).toLocaleString()}</p>
+              <p className="text-xs text-slate-400 mt-1">{new Date(e.at).toLocaleString()}</p>
             </div>
           </div>
         );

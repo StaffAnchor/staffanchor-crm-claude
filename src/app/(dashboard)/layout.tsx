@@ -78,6 +78,7 @@ export default async function DashboardLayout({
           { href: "/vendors", label: "Vendors" },
           { href: "/sales-circle", label: "Sales Circle" },
           { href: "/marketing", label: "Marketing" },
+          { href: "/scorecard", label: "Scorecard" },
         ]
       : [];
 

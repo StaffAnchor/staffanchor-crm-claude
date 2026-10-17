@@ -73,28 +73,28 @@ export default async function QuickApplyFunnelPanel({ mandateId }: { mandateId: 
       <div className="grid grid-cols-4 gap-2 text-center">
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
           <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{clicks}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Clicked</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Clicked</p>
         </div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
           <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{formsOpened}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Form opened{clickToOpenPct !== null ? ` · ${clickToOpenPct}%` : ""}
           </p>
         </div>
-        <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 py-3">
-          <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{submitted}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="rounded-lg bg-teal-50 dark:bg-teal-950/40 py-3">
+          <p className="text-xl font-bold text-teal-700 dark:text-teal-400">{submitted}</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Submitted{openToSubmitPct !== null ? ` · ${openToSubmitPct}%` : ""}
           </p>
         </div>
         <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 py-3">
           <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{completed}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Built profile{submitToCompletePct !== null ? ` · ${submitToCompletePct}%` : ""}
           </p>
         </div>
       </div>
-      <p className="mt-3 text-[11px] text-slate-400">
+      <p className="mt-3 text-xs text-slate-400">
         Events exclude recruiter/admin sessions. &quot;Form opened&quot; means the candidate's apply form actually
         loaded, not just that they clicked Quick Apply. &quot;Built profile&quot; means the candidate has completed
         their full StaffAnchor profile since applying.
@@ -139,7 +139,7 @@ function BreakdownList({
   if (rows.length === 0) return null;
   return (
     <div className="rounded-lg border border-slate-100 dark:border-slate-800 p-3">
-      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-2">
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-2">
         <Icon className="w-3 h-3" /> {title}
       </p>
       <ul className="space-y-1">

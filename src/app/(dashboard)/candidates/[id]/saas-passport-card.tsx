@@ -5,7 +5,7 @@ import { FIT_LABEL, HUNTER_LABEL, passportTone, segmentLabel, type PassportRow }
 function Item({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="text-[11px] text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
       <p className={`text-[13px] ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}`}>{value || "Not known"}</p>
     </div>
   );

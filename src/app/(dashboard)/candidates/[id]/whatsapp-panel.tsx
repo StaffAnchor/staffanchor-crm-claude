@@ -101,7 +101,7 @@ export default function WhatsAppPanel({
               }`}
             >
               <p className="whitespace-pre-wrap">{m.body_preview ?? <span className="italic text-slate-400">(no text)</span>}</p>
-              <p className="text-[10.5px] text-slate-400 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 {new Date(m.created_at).toLocaleString()}
                 {m.direction === "outbound" && m.status ? ` · ${m.status}` : ""}
               </p>
@@ -113,14 +113,14 @@ export default function WhatsAppPanel({
       {!hasPhone ? (
         <p className="text-[12px] text-slate-400">This candidate has no phone number on file, so a WhatsApp reply can't be sent.</p>
       ) : (
-        <div className="rounded-ros-lg border border-dashed border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 p-3">
+        <div className="rounded-ros-lg border border-dashed border-teal-200 dark:border-teal-900/50 bg-teal-50/50 dark:bg-teal-950/20 p-3">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[11px] font-medium text-blue-700 dark:text-blue-400">Reply</p>
+            <p className="text-xs font-medium text-teal-700 dark:text-teal-400">Reply</p>
             <button
               type="button"
               onClick={handleDraftWithAi}
               disabled={drafting || messages.length === 0}
-              className="flex items-center gap-1.5 rounded-ros-md bg-blue-600 hover:bg-blue-700 text-white text-[11.5px] font-medium px-2.5 py-1 disabled:opacity-50 transition-colors duration-200 ease-ros"
+              className="flex items-center gap-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-2.5 py-1 disabled:opacity-50 transition-colors duration-200 ease-ros"
               title={messages.length === 0 ? "No conversation history to draft from yet" : undefined}
             >
               <Sparkles className="w-3.5 h-3.5" /> {drafting ? "Drafting..." : "Draft with AI"}
@@ -140,13 +140,13 @@ export default function WhatsAppPanel({
             placeholder="Type a reply, or generate a draft with AI first..."
             className="w-full rounded-ros-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
           />
-          <p className="mt-1.5 text-[10.5px] leading-4 text-slate-400">
+          <p className="mt-1.5 text-xs leading-4 text-slate-400">
             Auto: this is sent straight away from StaffAnchor&apos;s WhatsApp Business number, as a free reply inside the 24-hour window. It is not a template.
           </p>
           <div className="flex items-center justify-between mt-2">
             <div>
-              {error && <p className="text-[11px] text-red-600">{error}</p>}
-              {sentOk && !error && <p className="text-[11px] text-emerald-600">Sent.</p>}
+              {error && <p className="text-xs text-red-600">{error}</p>}
+              {sentOk && !error && <p className="text-xs text-emerald-600">Sent.</p>}
             </div>
             <button
               type="button"

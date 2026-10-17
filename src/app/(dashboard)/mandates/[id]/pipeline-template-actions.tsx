@@ -8,7 +8,7 @@ import WhatsAppReview from "@/components/whatsapp-review";
 type Busy = "details" | "interview" | "offer" | "opportunity" | null;
 
 const btn =
-  "inline-flex items-center gap-1 rounded-ros-md bg-emerald-50 px-2 py-1 text-[11.5px] font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/70";
+  "inline-flex items-center gap-1 rounded-ros-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/70";
 
 // One-click messages for a candidate on a role, sent through WhatsApp Business with the approved
 // templates (when the window is closed) or in the open chat. Each button only appears when it applies:
@@ -111,7 +111,7 @@ export default function PipelineTemplateActions({
         )}
       </div>
       {(askDetails || interview || offer || opportunity) && (
-        <span className="text-[10.5px] leading-4 text-slate-400" title="Sent from StaffAnchor's WhatsApp number with an approved template, only after you review the message and press Send. Meta charges per message.">
+        <span className="text-xs leading-4 text-slate-400" title="Sent from StaffAnchor's WhatsApp number with an approved template, only after you review the message and press Send. Meta charges per message.">
           Auto · you review first
         </span>
       )}

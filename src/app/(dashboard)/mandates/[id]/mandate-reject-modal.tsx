@@ -61,12 +61,12 @@ export default function MandateRejectModal({
             </p>
             <button
               onClick={() => setSource("recruiter")}
-              className="w-full flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 px-3.5 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-colors"
+              className="w-full flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 px-3.5 py-3 text-left hover:border-teal-300 hover:bg-teal-50/50 dark:hover:bg-teal-950/20 transition-colors"
             >
-              <UserX className="w-5 h-5 text-indigo-500 shrink-0" />
+              <UserX className="w-5 h-5 text-teal-500 shrink-0" />
               <span>
                 <span className="block text-[13px] font-semibold text-slate-800 dark:text-slate-100">We&apos;re passing</span>
-                <span className="block text-[11.5px] text-slate-500 dark:text-slate-400">Our own call -- never reached the client</span>
+                <span className="block text-xs text-slate-500 dark:text-slate-400">Our own call -- never reached the client</span>
               </span>
             </button>
             <button
@@ -76,17 +76,17 @@ export default function MandateRejectModal({
               <Building2 className="w-5 h-5 text-amber-500 shrink-0" />
               <span>
                 <span className="block text-[13px] font-semibold text-slate-800 dark:text-slate-100">Client passed</span>
-                <span className="block text-[11.5px] text-slate-500 dark:text-slate-400">Client (or their portal) made this call</span>
+                <span className="block text-xs text-slate-500 dark:text-slate-400">Client (or their portal) made this call</span>
               </span>
             </button>
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            <button onClick={() => setSource(null)} className="text-[11px] text-slate-400 hover:text-slate-600">
+            <button onClick={() => setSource(null)} className="text-xs text-slate-400 hover:text-slate-600">
               ← Change who&apos;s rejecting
             </button>
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Reason <span className="text-rose-500">*</span>
               </label>
               <select
@@ -104,7 +104,7 @@ export default function MandateRejectModal({
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Additional detail (optional)
               </label>
               <textarea
@@ -117,7 +117,7 @@ export default function MandateRejectModal({
             </div>
             {candidateId && (
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Overall, how is this CV? <span className="font-normal text-slate-400">(optional, remembered for other roles)</span>
                 </label>
                 <RatingPicker draft={rating} onChange={setRating} strongLabel="Strong, wrong for this role" averageLabel="Average / skip" />

@@ -51,7 +51,7 @@ export function CallRatingHistory({ rows }: { rows: RatingRow[] }) {
   if (rows.length === 0) return null;
   return (
     <div className="space-y-1.5">
-      <p className="text-[11.5px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Earlier call ratings</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Earlier call ratings</p>
       <ul className="space-y-1.5">
         {rows.map((r) => (
           <li key={r.id} className="text-[12px] text-slate-600 dark:text-slate-300">

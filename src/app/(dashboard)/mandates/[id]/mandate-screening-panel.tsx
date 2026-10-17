@@ -40,7 +40,7 @@ export type MandateScreeningContext = {
 };
 
 const CONTROL_CLS =
-  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white dark:bg-slate-900";
+  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white dark:bg-slate-900";
 
 function toTier2Question(q: ScreeningQuestion): MandateScreeningQuestion {
   return {
@@ -262,7 +262,7 @@ export default function MandateScreeningPanel({
                   onClick={() => toggleMultiOption(q.id, o)}
                   className={`text-[12px] px-2.5 py-1 rounded-ros-full border transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
                     selected
-                      ? "bg-blue-600 border-blue-600 text-white"
+                      ? "bg-teal-600 border-teal-600 text-white"
                       : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   }`}
                 >
@@ -290,22 +290,22 @@ export default function MandateScreeningPanel({
     <Drawer open={open} onClose={onClose} title={`Screen ${candidate.full_name}`} widthClassName="max-w-xl">
       <div className="space-y-5">
         <div className="flex items-center gap-2.5 rounded-ros-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-3 py-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700">
             <UserRound className="w-4 h-4" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 truncate">
               {mandateContext.role_title}
             </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{mandateContext.client_name}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{mandateContext.client_name}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               {answeredCount}/{allQuestions.length} answered
             </p>
             <div className="mt-1 h-1.5 w-20 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
               <div
-                className="h-full bg-blue-500 transition-all duration-300 ease-ros"
+                className="h-full bg-teal-500 transition-all duration-300 ease-ros"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -319,7 +319,7 @@ export default function MandateScreeningPanel({
               <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Worth raising on the call
               </h3>
-              <span className="rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium px-1.5 py-0.5">
+              <span className="rounded-full bg-amber-100 text-amber-700 text-xs font-medium px-1.5 py-0.5">
                 career timeline
               </span>
             </div>
@@ -343,7 +343,7 @@ export default function MandateScreeningPanel({
               <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Complete their profile
               </h3>
-              <span className="rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium px-1.5 py-0.5">
+              <span className="rounded-full bg-amber-100 text-amber-700 text-xs font-medium px-1.5 py-0.5">
                 reusable for every future mandate
               </span>
             </div>
@@ -354,7 +354,7 @@ export default function MandateScreeningPanel({
         {tier2.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+              <Sparkles className="w-3.5 h-3.5 text-teal-500" />
               <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Mandate-specific questions
               </h3>

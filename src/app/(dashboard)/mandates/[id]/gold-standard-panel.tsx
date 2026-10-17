@@ -212,25 +212,25 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
             {(initial.expectation_3_month || initial.expectation_6_month || initial.expectation_1_year) && (
               <div className="mt-2 space-y-0.5">
                 {initial.expectation_3_month && (
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     <span className="font-medium">3mo:</span> {initial.expectation_3_month}
                   </p>
                 )}
                 {initial.expectation_6_month && (
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     <span className="font-medium">6mo:</span> {initial.expectation_6_month}
                   </p>
                 )}
                 {initial.expectation_1_year && (
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     <span className="font-medium">1yr:</span> {initial.expectation_1_year}
                   </p>
                 )}
               </div>
             )}
-            <p className="text-[10.5px] text-slate-400 mt-2 italic">Recruiter-only -- never shown on the public job listing.</p>
+            <p className="text-xs text-slate-400 mt-2 italic">Recruiter-only -- never shown on the public job listing.</p>
             {saved && (
-              <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
+              <p className="flex items-center gap-1 text-xs text-emerald-600 mt-2">
                 <Check className="w-3 h-3" /> Saved
               </p>
             )}
@@ -307,7 +307,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
             ))}
           </select>
           <div>
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industries sold to / clientele</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Industries sold to / clientele</p>
             <MultiSelectChips
               options={optionSets.industries}
               selected={form.industries_sold_to}
@@ -364,7 +364,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
 
           {isB2C && (
             <div>
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Who are the end consumers? (B2C)
               </p>
               <MultiSelectChips
@@ -378,7 +378,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
 
           {isB2B && (
             <div>
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Client profile -- who do they actually sell to? (B2B)
               </p>
               <MultiSelectChips
@@ -471,7 +471,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
       />
 
       <div>
-        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Preferred candidate industries (background)</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Preferred candidate industries (background)</p>
         <MultiSelectChips
           options={optionSets.industries}
           selected={form.preferred_industries}
@@ -481,7 +481,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
       </div>
 
       <div>
-        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Languages required</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Languages required</p>
         <MultiSelectChips
           options={optionSets.languages}
           selected={form.languages_required}
@@ -490,7 +490,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         />
       </div>
 
-      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 pt-1">Realistic expectations</p>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 pt-1">Realistic expectations</p>
       <input
         placeholder="3-month expectation"
         value={form.expectation_3_month}
@@ -518,7 +518,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
       >
         {saving ? "Saving..." : "Save"}
       </button>
-      <p className="text-[11px] text-slate-400">Recruiter-only -- never shown on the public job listing.</p>
+      <p className="text-xs text-slate-400">Recruiter-only -- never shown on the public job listing.</p>
     </div>
   );
 }

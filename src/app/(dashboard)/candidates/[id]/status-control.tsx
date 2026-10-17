@@ -36,8 +36,8 @@ const LEGACY_PIPELINE_VALUES = new Set([
 const STATUS_STYLE: Record<string, string> = {
   awaiting_input: "bg-amber-50 text-amber-700 ring-amber-200/60",
   lead: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 ring-slate-200/60",
-  registered: "bg-sky-50 text-sky-700 ring-sky-200/60",
-  under_review: "bg-blue-50 text-blue-700 ring-blue-200/60",
+  registered: "bg-teal-50 text-teal-700 ring-teal-200/60",
+  under_review: "bg-teal-50 text-teal-700 ring-teal-200/60",
   alumni: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 ring-slate-200/60",
   inactive: "bg-rose-50 text-rose-600 ring-rose-200/60",
 };
@@ -90,7 +90,7 @@ export default function StatusControl({
         ))}
       </select>
       {isLegacy && (
-        <p className="text-[11px] text-amber-600 dark:text-amber-400 max-w-[220px]">
+        <p className="text-xs text-amber-600 dark:text-amber-400 max-w-[220px]">
           Pipeline stage now lives per-mandate — use the mandate panel below to update it.
         </p>
       )}

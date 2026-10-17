@@ -160,7 +160,7 @@ export default function ApplicationQuestionsPanel({
                       <Icon className="w-3 h-3 mr-1" />
                       {TYPE_META[q.answer_type].label}
                     </Badge>
-                    <label className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer">
+                    <label className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={q.is_required}
@@ -187,7 +187,7 @@ export default function ApplicationQuestionsPanel({
       )}
 
       <div className="rounded-ros-md border border-dashed border-slate-200 dark:border-slate-700 p-3">
-        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-2">Add a question</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Add a question</p>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}

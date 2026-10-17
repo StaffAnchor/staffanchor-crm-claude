@@ -72,7 +72,7 @@ export default function RoleCardEditor({
         <Sparkles className="h-4 w-4 text-teal-600" />
         <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">What this role really needs</h3>
         <span className="text-[12px] text-slate-400">{confirmed ? "Checked" : "Written by the system"}</span>
-        <button type="button" onClick={() => setOpen((o) => !o)} className="ml-auto text-[12px] font-medium text-blue-600 hover:underline">
+        <button type="button" onClick={() => setOpen((o) => !o)} className="ml-auto text-[12px] font-medium text-teal-600 hover:underline">
           {open ? "Done" : confirmed ? "Adjust" : "Check it"}
         </button>
       </div>
@@ -89,7 +89,7 @@ export default function RoleCardEditor({
           </span>
         ))}
         {c.adjacent_worlds.map((a) => (
-          <span key={a.slug} title={a.why} className={`${chip} bg-sky-100 text-sky-900 dark:bg-sky-950/50 dark:text-sky-200`}>
+          <span key={a.slug} title={a.why} className={`${chip} bg-teal-100 text-teal-900 dark:bg-teal-950/50 dark:text-teal-200`}>
             Also fine: {name(a.slug)}
           </span>
         ))}
@@ -157,7 +157,7 @@ export default function RoleCardEditor({
             <p className="mb-1 font-semibold text-slate-600 dark:text-slate-300">Also fine (a reasonable background)</p>
             <div className="flex flex-wrap gap-1.5">
               {c.adjacent_worlds.map((a) => (
-                <button key={a.slug} type="button" title={a.why} onClick={() => setC({ ...c, adjacent_worlds: c.adjacent_worlds.filter((x) => x.slug !== a.slug) })} className={`${chip} bg-sky-100 text-sky-900`}>
+                <button key={a.slug} type="button" title={a.why} onClick={() => setC({ ...c, adjacent_worlds: c.adjacent_worlds.filter((x) => x.slug !== a.slug) })} className={`${chip} bg-teal-100 text-teal-900`}>
                   {name(a.slug)} <X className="h-3 w-3" />
                 </button>
               ))}
@@ -222,7 +222,7 @@ export default function RoleCardEditor({
             <button type="button" onClick={save} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-1.5 font-semibold text-white hover:bg-teal-500 disabled:opacity-60">
               {busy === "save" && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Save and rank
             </button>
-            <button type="button" onClick={rewrite} disabled={busy !== null} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline disabled:opacity-60">
+            <button type="button" onClick={rewrite} disabled={busy !== null} className="inline-flex items-center gap-1.5 text-teal-600 hover:underline disabled:opacity-60">
               {busy === "rewrite" && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Rewrite from the mandate
             </button>
           </div>

@@ -267,18 +267,18 @@ export default function MandateLinksPanel({
               </div>
 
               {l.stage_source && l.stage_source !== "recruiter" && l.client_decision_at && (
-                <p className="mt-2 text-[11px] font-medium text-amber-700 bg-amber-50 ring-1 ring-amber-200/60 rounded-ros-md px-2 py-1 inline-block">
+                <p className="mt-2 text-xs font-medium text-amber-700 bg-amber-50 ring-1 ring-amber-200/60 rounded-ros-md px-2 py-1 inline-block">
                   {SOURCE_BADGE[l.stage_source]} {l.stage.replace(/_/g, " ")} · {new Date(l.client_decision_at).toLocaleString()}
                 </p>
               )}
 
               {l.stage === "rejected" && l.rejected_from_stage && (
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Rejected from: {l.rejected_from_stage.replace(/_/g, " ")}
                   {l.rejection_category && l.stage_source && (
                     <>
                       {" "}
-                      · <span className={l.stage_source === "recruiter" ? "text-indigo-600" : "text-amber-600"}>
+                      · <span className={l.stage_source === "recruiter" ? "text-teal-600" : "text-amber-600"}>
                         {l.stage_source === "recruiter" ? "We passed" : "Client passed"} — {rejectionReasonLabel(l.stage_source, l.rejection_category)}
                       </span>
                     </>
@@ -287,19 +287,19 @@ export default function MandateLinksPanel({
               )}
 
               {progress && (
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   Day {progress.day} of 90{progress.done ? " — guarantee period complete" : ""}
                 </p>
               )}
 
               {applicationAnswersByMandate?.[l.mandate_id]?.length ? (
                 <div className="mt-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-2.5 py-2">
-                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
                     Application answers
                   </p>
                   <dl className="space-y-1">
                     {applicationAnswersByMandate[l.mandate_id].map((a, i) => (
-                      <div key={i} className="text-[11.5px]">
+                      <div key={i} className="text-xs">
                         <dt className="text-slate-500 dark:text-slate-400">{a.question_text}</dt>
                         <dd className="text-slate-800 dark:text-slate-200 font-medium">{formatAnswer(a)}</dd>
                       </div>
@@ -309,7 +309,7 @@ export default function MandateLinksPanel({
               ) : null}
 
               {l.date_of_joining && l.stage !== "placed" && (
-                <p className="mt-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                <p className="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                   Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric", year: "numeric" })}
                 </p>
               )}
@@ -325,7 +325,7 @@ export default function MandateLinksPanel({
                     }
                     setPendingFor(l.id, { stage: next });
                   }}
-                  className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                 >
                   {STAGES.map((s) => (
                     <option key={s} value={s}>
@@ -335,7 +335,7 @@ export default function MandateLinksPanel({
                 </select>
 
                 {dirty && (
-                  <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400">
+                  <label className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
                     <input
                       type="checkbox"
                       checked={p.clientRelayed}
@@ -382,7 +382,7 @@ export default function MandateLinksPanel({
         <select
           value={selectedMandate}
           onChange={(e) => setSelectedMandate(e.target.value)}
-          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         >
           <option value="">Link to a mandate...</option>
           {availableMandates.map((m) => (

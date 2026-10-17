@@ -30,7 +30,7 @@ export default function ResumePreview({
           setOpen(true);
           onOpen?.();
         }}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+        className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         <FileText className="w-3 h-3" /> {label ?? "Preview resume"}
       </button>

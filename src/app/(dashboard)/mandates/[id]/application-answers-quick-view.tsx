@@ -95,7 +95,7 @@ export default function ApplicationAnswersQuickView({
             handleOpen();
           }
         }}
-        className="shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 hover:bg-indigo-100"
+        className="shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-500 hover:bg-teal-100"
         title={`${answers.length} application answer${answers.length === 1 ? "" : "s"}`}
       >
         <ClipboardList className="w-2.5 h-2.5" />
@@ -108,13 +108,13 @@ export default function ApplicationAnswersQuickView({
           style={{ position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left, width: POPOVER_WIDTH }}
           className="z-50 rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-3"
         >
-          <p className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
             Application answers
           </p>
           <dl className="space-y-1.5">
             {answers.map((a, i) => (
               <div key={i}>
-                <dt className="text-[11px] text-slate-500 dark:text-slate-400">{a.question_text}</dt>
+                <dt className="text-xs text-slate-500 dark:text-slate-400">{a.question_text}</dt>
                 <dd className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200">{formatAnswer(a)}</dd>
               </div>
             ))}

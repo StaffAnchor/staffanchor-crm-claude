@@ -103,7 +103,7 @@ export default function ArchiveMandateButton({
       >
         <Archive className="w-3 h-3" /> Update status
       </button>
-      {error && !open && <p className="text-[11px] text-red-600 max-w-[260px] text-right">{error}</p>}
+      {error && !open && <p className="text-xs text-red-600 max-w-[260px] text-right">{error}</p>}
 
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !saving && setOpen(false)}>
@@ -139,7 +139,7 @@ export default function ArchiveMandateButton({
 
             {canArchive && (
               <>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Reason</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Reason</label>
                 <select
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}

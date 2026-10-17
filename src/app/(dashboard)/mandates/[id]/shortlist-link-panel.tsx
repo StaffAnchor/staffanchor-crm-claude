@@ -104,7 +104,7 @@ export default function ShortlistLinkPanel({
         <button
           onClick={handleGenerate}
           disabled={creating}
-          className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 disabled:opacity-60"
+          className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 disabled:opacity-60"
         >
           {creating ? "Generating..." : "Generate shortlist link"}
         </button>

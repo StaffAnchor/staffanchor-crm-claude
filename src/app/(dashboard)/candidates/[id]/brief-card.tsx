@@ -56,7 +56,7 @@ export default function BriefCard({
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <FileText className="h-4 w-4 text-blue-600" />
+        <FileText className="h-4 w-4 text-teal-600" />
         <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Candidate brief</h3>
         <span className="text-[12px] text-slate-400">
           Written by the system{fromCall ? " from the CV and your call notes" : " from the CV"}
@@ -73,7 +73,7 @@ export default function BriefCard({
               </button>
             </>
           )}
-          <button type="button" onClick={regenerate} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-60">
+          <button type="button" onClick={regenerate} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-2.5 py-1 text-[12px] font-medium text-white hover:bg-teal-700 disabled:opacity-60">
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} {brief ? "Rewrite" : "Write the brief"}
           </button>
         </div>
@@ -91,7 +91,7 @@ export default function BriefCard({
           {brief.signals.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {brief.signals.map((s) => (
-                <span key={s} className="rounded-full bg-blue-50 px-2 py-0.5 text-[11.5px] font-medium text-blue-800 ring-1 ring-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:ring-blue-800">
+                <span key={s} className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800">
                   {s}
                 </span>
               ))}
@@ -100,13 +100,13 @@ export default function BriefCard({
           <div className="grid gap-4 md:grid-cols-2">
             {brief.selling.length > 0 && (
               <div>
-                <p className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Selling track record</p>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Selling track record</p>
                 <ul className="list-disc space-y-0.5 pl-5">{brief.selling.map((x) => <li key={x}>{x}</li>)}</ul>
               </div>
             )}
             {brief.strengths.length > 0 && (
               <div>
-                <p className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Strengths</p>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Strengths</p>
                 <ul className="list-disc space-y-0.5 pl-5">{brief.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
               </div>
             )}
@@ -118,7 +118,7 @@ export default function BriefCard({
           )}
           {brief.probe.length > 0 && (
             <div>
-              <p className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Worth testing</p>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Worth testing</p>
               <ul className="list-disc space-y-0.5 pl-5">{brief.probe.map((x) => <li key={x}>{x}</li>)}</ul>
             </div>
           )}

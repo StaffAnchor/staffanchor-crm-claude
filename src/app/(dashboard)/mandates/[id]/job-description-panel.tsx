@@ -172,8 +172,8 @@ export default function JobDescriptionPanel({
 
       {editing ? (
         <div className="space-y-3 mb-2">
-          <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-3">
-            <p className="text-[11px] font-medium text-blue-700 mb-1.5">Paste rough notes and let AI structure it</p>
+          <div className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-3">
+            <p className="text-xs font-medium text-teal-700 mb-1.5">Paste rough notes and let AI structure it</p>
             <textarea
               value={rawNotes}
               onChange={(e) => setRawNotes(e.target.value)}
@@ -185,14 +185,14 @@ export default function JobDescriptionPanel({
               type="button"
               onClick={handleGenerate}
               disabled={generating || !rawNotes.trim()}
-              className="mt-2 flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+              className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" /> {generating ? "Generating..." : "Generate with AI"}
             </button>
-            {genError && <p className="text-[11px] text-red-600 mt-1.5">{genError}</p>}
+            {genError && <p className="text-xs text-red-600 mt-1.5">{genError}</p>}
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Overview</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Overview</label>
             <textarea
               value={overview}
               onChange={(e) => setOverview(e.target.value)}
@@ -202,7 +202,7 @@ export default function JobDescriptionPanel({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Key Responsibilities (one per line)</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Key Responsibilities (one per line)</label>
             <textarea
               value={responsibilities}
               onChange={(e) => setResponsibilities(e.target.value)}
@@ -211,7 +211,7 @@ export default function JobDescriptionPanel({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Candidate Profile (one per line)</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Candidate Profile (one per line)</label>
             <textarea
               value={candidateProfile}
               onChange={(e) => setCandidateProfile(e.target.value)}
@@ -220,7 +220,7 @@ export default function JobDescriptionPanel({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Compensation &amp; Benefits (one per line)</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Compensation &amp; Benefits (one per line)</label>
             <textarea
               value={benefits}
               onChange={(e) => setBenefits(e.target.value)}
@@ -229,11 +229,11 @@ export default function JobDescriptionPanel({
             />
           </div>
           {(overview || responsibilities || candidateProfile || benefits) && (
-            <div className="rounded-lg border border-dashed border-violet-200 bg-violet-50/50 p-3">
-              <p className="text-[11px] font-medium text-violet-700 mb-1.5">
+            <div className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-3">
+              <p className="text-xs font-medium text-teal-700 mb-1.5">
                 Suggest a change instead of rewriting everything
               </p>
-              <p className="text-[10.5px] text-violet-500 mb-1.5">
+              <p className="text-xs text-teal-500 mb-1.5">
                 e.g. &quot;make the responsibilities shorter&quot;, &quot;add a requirement about SaaS experience&quot;,
                 &quot;drop the health insurance bullet&quot; -- only this change is applied, nothing else is reworded.
               </p>
@@ -248,11 +248,11 @@ export default function JobDescriptionPanel({
                 type="button"
                 onClick={handleRefine}
                 disabled={refining || !editInstruction.trim()}
-                className="mt-2 flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+                className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
               >
                 <Sparkles className="w-3.5 h-3.5" /> {refining ? "Applying..." : "Apply this edit"}
               </button>
-              {refineError && <p className="text-[11px] text-red-600 mt-1.5">{refineError}</p>}
+              {refineError && <p className="text-xs text-red-600 mt-1.5">{refineError}</p>}
             </div>
           )}
           <button
@@ -301,7 +301,7 @@ export default function JobDescriptionPanel({
       )}
 
       {saved && (
-        <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
+        <p className="flex items-center gap-1 text-xs text-emerald-600 mt-2">
           <Check className="w-3 h-3" /> Saved
         </p>
       )}

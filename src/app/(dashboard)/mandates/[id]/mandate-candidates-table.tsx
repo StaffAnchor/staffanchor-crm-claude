@@ -579,7 +579,7 @@ export default function MandateCandidatesTable({
         />
       </div>
       <table className="w-full text-sm">
-        <thead className="text-slate-400 text-[11px] uppercase tracking-wide">
+        <thead className="text-slate-400 text-xs uppercase tracking-wide">
           <tr className="border-b border-slate-100 dark:border-slate-800">
             <th className="px-4 py-2 w-8">
               <input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={toggleAll} />
@@ -604,7 +604,7 @@ export default function MandateCandidatesTable({
                     <Link
                       href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`}
                       onClick={() => markViewed(l.id)}
-                      className={`hover:text-blue-600 ${l.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
+                      className={`hover:text-teal-600 ${l.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
                     >
                       {l.candidate.full_name}
                     </Link>
@@ -613,7 +613,7 @@ export default function MandateCandidatesTable({
                   <OriginChip origin={l.origin} label={l.origin_label} />
                   {!l.viewed_at && (
                     <span
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
                       title="Nobody on the team has opened this candidate for this mandate yet"
                     >
                       New
@@ -621,7 +621,7 @@ export default function MandateCandidatesTable({
                   )}
                   {l.is_priority && (
                     <span
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
                       title="Candidate paid to flag this application as priority"
                     >
                       <Zap className="h-2.5 w-2.5" /> Priority
@@ -661,14 +661,14 @@ export default function MandateCandidatesTable({
                       ))}
                     </select>
                     {CLIENT_DECISION_STAGES.has(pickedStage) && (
-                      <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400">
+                      <label className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
                         <input type="checkbox" checked={clientRelayed} onChange={(e) => setClientRelayed(e.target.checked)} />
                         The client told us this (outside the portal)
                       </label>
                     )}
                     {JOINING_STAGES.has(pickedStage) && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-slate-400">Joining date (expected or confirmed)</label>
+                        <label className="text-xs text-slate-400">Joining date (expected or confirmed)</label>
                         <input
                           type="date"
                           value={dateOfJoining}
@@ -681,7 +681,7 @@ export default function MandateCandidatesTable({
                       <button
                         onClick={() => saveStage(l, pickedStage)}
                         disabled={savingStage}
-                        className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11.5px] font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                        className="rounded-lg bg-teal-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-teal-500 disabled:opacity-50"
                       >
                         Save stage
                       </button>
@@ -690,7 +690,7 @@ export default function MandateCandidatesTable({
                       <button
                         onClick={() => saveJoiningDate(l)}
                         disabled={savingStage || !dateOfJoining}
-                        className="text-[11px] font-medium text-blue-600 hover:text-blue-700 disabled:opacity-40 text-left"
+                        className="text-xs font-medium text-teal-600 hover:text-teal-700 disabled:opacity-40 text-left"
                       >
                         Save joining date
                       </button>
@@ -701,7 +701,7 @@ export default function MandateCandidatesTable({
                         setClientRelayed(false);
                         setDateOfJoining("");
                       }}
-                      className="text-[11px] text-slate-400 hover:text-slate-600 text-left"
+                      className="text-xs text-slate-400 hover:text-slate-600 text-left"
                     >
                       Cancel
                     </button>
@@ -724,7 +724,7 @@ export default function MandateCandidatesTable({
                         we don't log a full per-transition history. */}
                     <StageTimeline stage={l.stage} stageUpdatedAt={l.stage_updated_at} rejectedFromStage={l.rejected_from_stage} />
                     {l.date_of_joining && (
-                      <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                         Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
                       </span>
                     )}
@@ -734,7 +734,7 @@ export default function MandateCandidatesTable({
                         the client's and why, not just a bare "rejected" badge. */}
                     {l.stage === "rejected" && l.rejection_category && (
                       <span
-                        className={`text-[10.5px] font-medium whitespace-nowrap ${l.stage_source === "recruiter" ? "text-indigo-500" : "text-amber-600"}`}
+                        className={`text-xs font-medium whitespace-nowrap ${l.stage_source === "recruiter" ? "text-teal-500" : "text-amber-600"}`}
                         title={l.rejection_reason ?? undefined}
                       >
                         {l.stage_source === "recruiter" ? "We passed" : "Client passed"} · {rejectionReasonLabel(l.stage_source as "recruiter" | "client_relayed", l.rejection_category)}
@@ -760,7 +760,7 @@ export default function MandateCandidatesTable({
                   <td colSpan={5} className="px-3 pb-4 pt-1">
                     <div className="grid gap-5 md:grid-cols-3">
                       <div>
-                        <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Reach out</p>
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Reach out</p>
                         <div className="flex flex-col items-start gap-1.5">
                   {resumeSignedUrlByCandidate[l.candidate.id] ? (
                     <ResumePreview
@@ -770,7 +770,7 @@ export default function MandateCandidatesTable({
                       onOpen={() => markViewed(l.id)}
                     />
                   ) : (
-                    <span className="text-[11px] text-slate-300">—</span>
+                    <span className="text-xs text-slate-300">—</span>
                   )}
                   <PipelineWhatsApp
                     candidateId={l.candidate.id}
@@ -813,7 +813,7 @@ export default function MandateCandidatesTable({
                 </div>
                       </div>
                       <div>
-                        <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">About</p>
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">About</p>
                         <dl className="space-y-2 text-[12.5px]">
                           <div><dt className="text-slate-400">Owner</dt><dd>
                 {isAdmin ? (
@@ -858,7 +858,7 @@ export default function MandateCandidatesTable({
                       generateStabilityScore(l.candidate.id);
                     }}
                     disabled={generatingStability.has(l.candidate.id)}
-                    className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
+                    className="flex items-center gap-1 text-xs font-medium text-teal-600 dark:text-teal-300 hover:text-teal-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
                   >
                     {generatingStability.has(l.candidate.id) ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -869,7 +869,7 @@ export default function MandateCandidatesTable({
                   </button>
                 ) : (
                   <span
-                    className={`inline-block rounded px-1.5 py-0.5 text-[10.5px] font-semibold whitespace-nowrap ${stabilityTone(stabilityLabelForScore(l.candidate.stability_score))}`}
+                    className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap ${stabilityTone(stabilityLabelForScore(l.candidate.stability_score))}`}
                   >
                     {stabilityLabelForScore(l.candidate.stability_score)} · {l.candidate.stability_score}
                   </span>
@@ -881,7 +881,7 @@ export default function MandateCandidatesTable({
                         </dl>
                       </div>
                       <div>
-                        <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Client</p>
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Client</p>
                         
                 <div className="flex flex-col items-start gap-1">
                   {(() => {
@@ -889,7 +889,7 @@ export default function MandateCandidatesTable({
                       return (
                         <>
                           <span className="inline-flex rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium text-teal-800">Shared with client</span>
-                          <button onClick={() => toggleShortlist(l.id, false)} className="text-[11px] text-slate-400 underline hover:text-slate-600">
+                          <button onClick={() => toggleShortlist(l.id, false)} className="text-xs text-slate-400 underline hover:text-slate-600">
                             Pull back
                           </button>
                         </>
@@ -900,7 +900,7 @@ export default function MandateCandidatesTable({
                     if (missing.length === 0) {
                       return (
                         <>
-                          <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Ready to share</span>
+                          <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Ready to share</span>
                           <button onClick={() => shareWithClient(l)} className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-500">
                             Share with client
                           </button>
@@ -909,7 +909,7 @@ export default function MandateCandidatesTable({
                     }
                     return (
                       <>
-                        <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700" title={missing.join(", ")}>
+                        <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700" title={missing.join(", ")}>
                           {missing.length} to confirm
                         </span>
                         <button onClick={() => setConfirmRow(l)} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
@@ -923,11 +923,11 @@ export default function MandateCandidatesTable({
                       above for why this needed its own badge. */}
                   {l.client_feedback && (
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium whitespace-nowrap ${
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
                         l.client_feedback === "interested"
                           ? "bg-emerald-100 text-emerald-800"
                           : l.client_feedback === "interview_requested"
-                            ? "bg-blue-100 text-blue-800"
+                            ? "bg-teal-100 text-teal-800"
                             : "bg-rose-100 text-rose-800"
                       }`}
                     >
@@ -939,7 +939,7 @@ export default function MandateCandidatesTable({
                     </span>
                   )}
                   {l.client_feedback === "not_interested" && l.client_pass_reason && (
-                    <span className="max-w-[170px] text-[10.5px] leading-4 text-slate-500" title={l.client_pass_note ?? undefined}>
+                    <span className="max-w-[170px] text-xs leading-4 text-slate-500" title={l.client_pass_note ?? undefined}>
                       {rejectionReasonLabel("client_relayed", l.client_pass_reason)}
                       {l.client_pass_note ? `: ${l.client_pass_note}` : ""}
                     </span>

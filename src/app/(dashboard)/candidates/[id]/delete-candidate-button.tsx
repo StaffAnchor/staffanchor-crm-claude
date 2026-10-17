@@ -36,7 +36,7 @@ export default function DeleteCandidateButton({ candidateId, candidateName }: { 
         {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
         Delete profile
       </button>
-      {error && <p className="text-[11px] text-red-600 max-w-[220px] text-right">{error}</p>}
+      {error && <p className="text-xs text-red-600 max-w-[220px] text-right">{error}</p>}
     </div>
   );
 }

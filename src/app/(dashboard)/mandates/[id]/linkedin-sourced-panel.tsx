@@ -134,7 +134,7 @@ export default function LinkedInSourcedPanel({
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">LinkedIn Sourced</h2>
         <button
           onClick={() => setShowAdd((s) => !s)}
-          className="flex items-center gap-1 text-[12px] text-blue-600 hover:underline"
+          className="flex items-center gap-1 text-[12px] text-teal-600 hover:underline"
         >
           <Plus className="w-3.5 h-3.5" /> Add profile
         </button>
@@ -296,7 +296,7 @@ function SourcedRow({
           >
             {profile.full_name || "View LinkedIn"} <ExternalLink className="w-3 h-3 shrink-0" />
           </a>
-          <p className="text-[11px] text-slate-400 truncate">
+          <p className="text-xs text-slate-400 truncate">
             {[profile.current_company, profile.location].filter(Boolean).join(" · ") || " "}
           </p>
         </div>
@@ -322,7 +322,7 @@ function SourcedRow({
           >
             {profile.full_name || "View LinkedIn"} <ExternalLink className="w-3 h-3 shrink-0" />
           </a>
-          <p className="text-[11px] text-slate-400 truncate">
+          <p className="text-xs text-slate-400 truncate">
             {[profile.current_company, profile.location].filter(Boolean).join(" · ") || " "}
           </p>
         </div>
@@ -330,7 +330,7 @@ function SourcedRow({
           <select
             value={profile.outreach_status}
             onChange={(e) => onStatusChange(profile.id, e.target.value)}
-            className="text-[11px] rounded-md border border-slate-200 dark:border-slate-700 bg-transparent px-1.5 py-1"
+            className="text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-transparent px-1.5 py-1"
           >
             {Object.entries(OUTREACH_LABEL).map(([val, label]) => (
               <option key={val} value={val}>
@@ -345,7 +345,7 @@ function SourcedRow({
       </div>
 
       {!promoting ? (
-        <button onClick={() => setPromoting(true)} className="mt-1.5 text-[11.5px] text-blue-600 hover:underline">
+        <button onClick={() => setPromoting(true)} className="mt-1.5 text-xs text-teal-600 hover:underline">
           Promote to candidate (they replied &amp; shared contact details)
         </button>
       ) : (
@@ -374,7 +374,7 @@ function SourcedRow({
               accept=".pdf,.doc,.docx"
             />
           </label>
-          {error && <p className="text-[11.5px] text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex gap-2">
             <button
               onClick={handlePromote}

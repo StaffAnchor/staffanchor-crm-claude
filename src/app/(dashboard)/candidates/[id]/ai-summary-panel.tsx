@@ -125,8 +125,8 @@ export default function AiSummaryPanel({
     <div>
       <div className="flex items-center justify-between mb-2">
         <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900 dark:text-slate-100">
-          <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-          AI summary <span className="text-[11px] font-normal text-slate-400">(prose is shown to clients; flags/verdict below are internal only)</span>
+          <Sparkles className="w-3.5 h-3.5 text-teal-500" />
+          AI summary <span className="text-xs font-normal text-slate-400">(prose is shown to clients; flags/verdict below are internal only)</span>
         </h3>
         <Button variant="secondary" size="sm" onClick={handleGenerate} disabled={loading} icon={loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}>
           {summary ? "Regenerate" : "Generate"}
@@ -134,7 +134,7 @@ export default function AiSummaryPanel({
       </div>
       {error && <p className="text-[12px] text-rose-600 mb-2">{error}</p>}
       {passport?.profile_incomplete && (
-        <p className="flex items-center gap-1.5 text-[11.5px] text-amber-700 bg-amber-50 rounded-ros-md px-2.5 py-1.5 mb-2">
+        <p className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-ros-md px-2.5 py-1.5 mb-2">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           Profile incomplete — this candidate hasn&apos;t finished registering yet, so the summary below is based on
           limited information. It will regenerate automatically once they complete their profile.
@@ -148,7 +148,7 @@ export default function AiSummaryPanel({
       {hasFlags && (
         <div className="mb-3 rounded-ros-md border border-slate-200 dark:border-slate-700 p-3 space-y-2.5">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               AI read (internal — not shown to client)
             </p>
             <div className="flex items-center gap-1.5">
@@ -202,7 +202,7 @@ export default function AiSummaryPanel({
       </p>
       {passport?.resume_highlights && passport.resume_highlights.length > 0 && (
         <div className="mt-2 bg-slate-50 dark:bg-slate-800/50 rounded-ros-md p-3">
-          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
             From their resume
           </p>
           <ul className="space-y-1">
@@ -221,7 +221,7 @@ export default function AiSummaryPanel({
           matching -- see src/lib/ai-passport.ts SkillInventory comment. */}
       {hasSkillInventory && (
         <div className="mt-2 rounded-ros-md border border-slate-200 dark:border-slate-700 p-3 space-y-2">
-          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
             Skill inventory (internal — powers mandate matching)
           </p>
           {(
@@ -234,7 +234,7 @@ export default function AiSummaryPanel({
           ).map(([label, items]) =>
             items && items.length > 0 ? (
               <div key={label}>
-                <p className="text-[10px] text-slate-400 mb-1">{label}</p>
+                <p className="text-xs text-slate-400 mb-1">{label}</p>
                 <div className="flex flex-wrap gap-1">
                   {items.map((s, i) => (
                     <Badge key={i} tone="accent" size="sm">

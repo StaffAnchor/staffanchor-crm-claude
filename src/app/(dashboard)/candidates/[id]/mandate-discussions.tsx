@@ -25,7 +25,7 @@ export default function MandateDiscussions({ entries }: { entries: MandateDiscus
       <h2 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
         <MessagesSquare className="w-3.5 h-3.5 text-slate-400" /> Mandate discussions
       </h2>
-      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
         AI-structured notes from past mandate screening calls -- reusable context for any future mandate.
       </p>
       <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
@@ -35,7 +35,7 @@ export default function MandateDiscussions({ entries }: { entries: MandateDiscus
               <p className="text-[12px] font-medium text-slate-800 dark:text-slate-200 truncate">
                 {entry.role_title} <span className="text-slate-400 font-normal">· {entry.client_name}</span>
               </p>
-              <p className="text-[10px] text-slate-400 shrink-0">
+              <p className="text-xs text-slate-400 shrink-0">
                 {new Date(entry.created_at).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
               </p>
             </div>
@@ -45,7 +45,7 @@ export default function MandateDiscussions({ entries }: { entries: MandateDiscus
                 {entry.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="text-[10px] rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5"
+                    className="text-xs rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5"
                   >
                     {tag}
                   </span>

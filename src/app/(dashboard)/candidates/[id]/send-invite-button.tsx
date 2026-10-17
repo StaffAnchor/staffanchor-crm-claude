@@ -47,7 +47,7 @@ export default function SendInviteButton({ candidateId }: { candidateId: string 
         {state === "loading" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
         Request profile completion
       </button>
-      {error && <p className="text-[11px] text-rose-600 max-w-[220px] text-right">{error}</p>}
+      {error && <p className="text-xs text-rose-600 max-w-[220px] text-right">{error}</p>}
     </div>
   );
 }

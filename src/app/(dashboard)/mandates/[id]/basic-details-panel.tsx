@@ -184,7 +184,7 @@ export default function BasicDetailsPanel({
               )}
             </p>
             {saved && (
-              <p className="flex items-center gap-1 text-[11px] text-emerald-600 mt-2">
+              <p className="flex items-center gap-1 text-xs text-emerald-600 mt-2">
                 <Check className="w-3 h-3" /> Saved
               </p>
             )}
@@ -354,7 +354,7 @@ export default function BasicDetailsPanel({
 
       <div className="flex gap-2 items-center">
         <div className="w-28 shrink-0">
-          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Openings</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">Openings</label>
           <input
             type="number"
             min={1}
@@ -364,13 +364,13 @@ export default function BasicDetailsPanel({
           />
         </div>
         {Number(form.headcount) > 1 && (
-          <p className="text-[11px] text-slate-400 pt-4">{placedCount} filled so far</p>
+          <p className="text-xs text-slate-400 pt-4">{placedCount} filled so far</p>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Practice</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">Practice</label>
           <select
             value={form.practice_id}
             onChange={(e) => setForm((f) => ({ ...f, practice_id: e.target.value }))}
@@ -385,13 +385,13 @@ export default function BasicDetailsPanel({
           </select>
         </div>
         <div>
-          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">
             Role type <span className="text-rose-600">*</span>
           </label>
           <RoleTypeSelect value={form.role_cluster} onChange={(v) => setForm((f) => ({ ...f, role_cluster: v }))} clusters={roleClusters} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
         </div>
         <div>
-          <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">
             Role level <span className="text-rose-600">*</span>
           </label>
           <RoleLevelSelect value={form.seniority_band} onChange={(v) => setForm((f) => ({ ...f, seniority_band: v }))} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
@@ -418,7 +418,7 @@ export default function BasicDetailsPanel({
       >
         {saving ? "Saving..." : "Save"}
       </button>
-      <p className="text-[11px] text-slate-400">
+      <p className="text-xs text-slate-400">
         Changes save immediately to this mandate and are reflected on the public job listing right away.
       </p>
     </div>

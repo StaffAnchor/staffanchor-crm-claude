@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { askMissingDetails, planAsk, type SkipReason } from "@/lib/ask-missing";
+import { askMissingDetails, planAsk, previewAsk, type SkipReason } from "@/lib/ask-missing";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -40,14 +40,18 @@ export async function POST(req: NextRequest) {
   if (dryRun) {
     let window = 0;
     let template = 0;
+    // Each eligible person's exact message, so it can be read (and the person left out) before anything is sent.
+    const recipients: { id: string; name: string; route: string; message: string }[] = [];
     for (const id of batch) {
       const p = await planAsk(admin, id);
       if (p.ok) {
         if (p.plan === "window") window++;
         else template++;
+        const pv = await previewAsk(admin, id);
+        recipients.push({ id, name: p.cand?.full_name ?? "Unnamed", route: p.plan, message: pv.ok ? pv.preview.messages.join("\n\n") : "" });
       } else bump(p.skip);
     }
-    return NextResponse.json({ ok: true, dryRun: true, considered: batch.length, over: Math.max(0, ids.length - batch.length), window, template, skipped });
+    return NextResponse.json({ ok: true, dryRun: true, considered: batch.length, over: Math.max(0, ids.length - batch.length), window, template, skipped, recipients });
   }
 
   let sentWindow = 0;

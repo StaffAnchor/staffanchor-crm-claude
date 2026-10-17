@@ -28,7 +28,7 @@ type Assessment = {
 };
 
 const SELECT_CLS =
-  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-blue-500/30";
+  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30";
 const INPUT_CLS = SELECT_CLS;
 
 function normalize(location: string | null | undefined): string {
@@ -96,7 +96,7 @@ export default function AssessmentForm({
             onClick={() => set(key, n)}
             className={`w-7 h-7 rounded-ros-md text-xs font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
               form[key] === n
-                ? "bg-blue-600 text-white"
+                ? "bg-teal-600 text-white"
                 : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             }`}
           >
@@ -133,7 +133,7 @@ export default function AssessmentForm({
           <option value="Conditional (specific cities only)">Conditional (specific cities only)</option>
         </select>
         {sameCityMandates.length > 0 && !form.relocation_verified && (
-          <p className="text-[11px] text-blue-600 mt-1">
+          <p className="text-xs text-teal-600 mt-1">
             Candidate is already based in {sameCityMandates[0]}, same as this mandate — relocation likely doesn&apos;t apply.
           </p>
         )}

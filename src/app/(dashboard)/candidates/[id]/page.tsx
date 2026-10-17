@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { after } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import { Phone, Mail, MapPin, FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -30,6 +32,8 @@ import BriefCard from "./brief-card";
 import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
 import { missingKeyDetails } from "@/lib/key-details";
+import { recordTiming } from "@/lib/page-timing";
+import NextAction, { type NextActionItem } from "@/components/next-action";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
@@ -105,30 +109,53 @@ export default async function CandidateDetailPage({
     .single();
 
   if (!candidate) notFound();
+  const renderStart = Date.now();
 
-  const { data: allPracticesRows } = await supabase
-    .from("practices")
-    .select("id, slug, name, group_name")
-    .order("sort_order", { ascending: true });
-  const { data: candidatePracticeRows } = await supabase
-    .from("candidate_practices")
-    .select("practice_id, seniority_band, is_primary, tagged_by")
-    .eq("candidate_id", id);
+  // Everything below depends only on the candidate's id, so all of it starts at once instead of one query after another.
+  // (A query builder only sends when awaited, so each is wrapped to start now and awaited where its result is used.)
+  const q = {
+    practices: Promise.resolve(supabase.from("practices").select("id, slug, name, group_name").order("sort_order", { ascending: true })),
+    candPractices: Promise.resolve(supabase.from("candidate_practices").select("practice_id, seniority_band, is_primary, tagged_by").eq("candidate_id", id)),
+    viewer: Promise.resolve(supabase.auth.getUser()).then(async ({ data: { user } }) => (user ? { user, profile: (await supabase.from("profiles").select("full_name, email").eq("id", user.id).single()).data } : { user: null, profile: null })),
+    passport: Promise.resolve(supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle()),
+    cvFacts: Promise.resolve(supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle()),
+    notes: Promise.resolve(supabase.from("recruiter_notes").select("id, note_type, content, created_at, author_id").eq("candidate_id", id).order("created_at", { ascending: false })),
+    audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
+    pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
+    debriefs: Promise.resolve(supabase.from("candidate_debriefs").select("id, created_at, raw_note, structured, profiles(full_name)").eq("candidate_id", id).order("created_at", { ascending: false }).limit(5)),
+    brief: Promise.resolve(supabase.from("candidate_briefs").select("brief, source, generated_at").eq("candidate_id", id).maybeSingle()),
+    activities: Promise.resolve(supabase.from("activities").select("id, actor_id, kind, body, created_at, profiles(full_name)").eq("entity_type", "candidate").eq("entity_id", id).order("created_at", { ascending: false })),
+    whatsapp: Promise.resolve(supabase.from("whatsapp_messages").select("id, direction, body_preview, status, created_at").eq("candidate_id", id).order("created_at", { ascending: true }).limit(50)),
+    links: Promise.resolve(
+      supabase
+        .from("candidate_mandate_links")
+        .select("id, mandate_id, stage, in_shortlist, rejection_reason, rejection_category, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title, city, cities)")
+        .eq("candidate_id", id)
+    ),
+    openMandates: Promise.resolve(supabase.from("mandates").select("id, client_name, role_title, practice_id, seniority_band").eq("status", "open").eq("is_archived", false)),
+    answers: Promise.resolve(supabase.from("mandate_application_answers").select("mandate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)").eq("candidate_id", id)),
+    signed: candidate.resume_file_url
+      ? Promise.resolve(supabase.storage.from("resumes").createSignedUrl((candidate.resume_file_url as string).replace(/^resumes\//, ""), 60 * 60 * 12))
+      : Promise.resolve(null),
+    mandateCtx: mandateId ? Promise.resolve(supabase.from("mandates").select("role_title, client_name").eq("id", mandateId).single()) : Promise.resolve(null),
+    mandateRoster: mandateId ? Promise.resolve(supabase.from("candidate_mandate_links").select("candidate_id, created_at, candidates(id, full_name)").eq("mandate_id", mandateId).order("created_at", { ascending: true })) : Promise.resolve(null),
+    groupCtx: !mandateId && groupId ? Promise.resolve(supabase.from("candidate_groups").select("name").eq("id", groupId).single()) : Promise.resolve(null),
+    groupRoster: !mandateId && groupId ? Promise.resolve(supabase.from("candidate_group_members").select("candidate_id, added_at, candidates(id, full_name)").eq("group_id", groupId).order("added_at", { ascending: true })) : Promise.resolve(null),
+  };
+
+  const { data: allPracticesRows } = await q.practices;
+  const { data: candidatePracticeRows } = await q.candPractices;
 
   // Attributed to whoever actually saves the vetting score (vetting-score-panel.tsx),
   // same "who did this, not who owns the record" principle as profile_completed_by.
-  const {
-    data: { user: viewerUser },
-  } = await supabase.auth.getUser();
-  const { data: viewerProfile } = viewerUser
-    ? await supabase.from("profiles").select("full_name, email").eq("id", viewerUser.id).single()
-    : { data: null };
+  const { user: viewerUser, profile: viewerProfile } = await q.viewer;
+  void viewerUser;
   const scorerName = viewerProfile?.full_name ?? viewerProfile?.email ?? "Unknown";
 
   // Things worth asking on a call: the AI's watch-areas plus any honesty or gap
   // flags raised when the CV was read.
-  const { data: passportRow } = await supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle();
-  const { data: cvFactsRow } = await supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle();
+  const { data: passportRow } = await q.passport;
+  const { data: cvFactsRow } = await q.cvFacts;
   const cvFlagDetails = (((cvFactsRow?.facts as { flags?: { detail?: string }[] } | null)?.flags ?? []) as { detail?: string }[])
     .map((f) => f?.detail)
     .filter((d): d is string => typeof d === "string" && d.trim().length > 0);
@@ -152,17 +179,15 @@ export default async function CandidateDetailPage({
       new Date(candidate.recruiter_assessment_updated_at as string) >
         new Date(candidate.ai_summary_generated_at as string))
   ) {
-    const result = await generateAiPassportForCandidate(candidate.id, supabase, {
-      note: "auto_regenerated_on_view_after_assessment",
+    // Runs after the page is sent, so opening a profile never waits on the AI; the refreshed summary shows on the next view.
+    const candidateId = candidate.id;
+    after(async () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !key) return;
+      const admin = createSupabaseClient(url, key, { auth: { persistSession: false } });
+      await generateAiPassportForCandidate(candidateId, admin, { note: "auto_regenerated_on_view_after_assessment" }).catch(() => {});
     });
-    if (result.ok) {
-      candidate.ai_summary = result.summary;
-      candidate.ai_passport = result.passport;
-      candidate.ai_decision_flags = result.decisionFlags;
-      candidate.skill_inventory = result.skillInventory;
-      candidate.stability_score = result.stabilityScore;
-      candidate.resume_mismatches = result.resumeMismatches;
-    }
   }
 
   // Prev/next navigation within whatever filtered list the recruiter came
@@ -184,19 +209,11 @@ export default async function CandidateDetailPage({
   let backHref = from ? `/candidates?${from}` : "/candidates";
 
   if (mandateId) {
-    const { data: mandateRow } = await supabase
-      .from("mandates")
-      .select("role_title, client_name")
-      .eq("id", mandateId)
-      .single();
+    const { data: mandateRow } = (await q.mandateCtx) ?? { data: null };
     backHref = `/mandates/${mandateId}`;
     backLabel = mandateRow ? `← ${mandateRow.role_title} — ${mandateRow.client_name}` : "← Back to mandate";
 
-    const { data: mandateLinkRows } = await supabase
-      .from("candidate_mandate_links")
-      .select("candidate_id, created_at, candidates(id, full_name)")
-      .eq("mandate_id", mandateId)
-      .order("created_at", { ascending: true });
+    const { data: mandateLinkRows } = (await q.mandateRoster) ?? { data: null };
     if (mandateLinkRows) {
       const roster = mandateLinkRows
         .map((r) => r.candidates as unknown as { id: string; full_name: string } | null)
@@ -209,19 +226,11 @@ export default async function CandidateDetailPage({
       }
     }
   } else if (groupId) {
-    const { data: groupRow } = await supabase
-      .from("candidate_groups")
-      .select("name")
-      .eq("id", groupId)
-      .single();
+    const { data: groupRow } = (await q.groupCtx) ?? { data: null };
     backHref = `/candidates/groups/${groupId}`;
     backLabel = groupRow ? `← ${groupRow.name}` : "← Back to group";
 
-    const { data: groupMemberRows } = await supabase
-      .from("candidate_group_members")
-      .select("candidate_id, added_at, candidates(id, full_name)")
-      .eq("group_id", groupId)
-      .order("added_at", { ascending: true });
+    const { data: groupMemberRows } = (await q.groupRoster) ?? { data: null };
     if (groupMemberRows) {
       const roster = groupMemberRows
         .map((r) => r.candidates as unknown as { id: string; full_name: string } | null)
@@ -322,37 +331,23 @@ export default async function CandidateDetailPage({
     // so we always pass a path relative to the bucket itself.
     const rawPath = candidate.resume_file_url as string;
     const cleanPath = rawPath.replace(/^resumes\//, "");
-    const { data: signed, error: signError } = await supabase.storage
-      .from("resumes")
-      .createSignedUrl(cleanPath, 60 * 60 * 12);
+    const signedResult = (await q.signed) as { data: { signedUrl: string } | null; error: unknown } | null;
+    const signed = signedResult?.data ?? null;
+    const signError = signedResult?.error ?? null;
     if (!signError && signed) {
       resumeSignedUrl = signed.signedUrl;
       resumeFileName = cleanPath.split("/").pop() ?? cleanPath;
     }
   }
 
-  const { data: notes } = await supabase
-    .from("recruiter_notes")
-    .select("id, note_type, content, created_at, author_id")
-    .eq("candidate_id", id)
-    .order("created_at", { ascending: false });
+  const { data: notes } = await q.notes;
 
-  const { data: auditRows } = await supabase
-    .from("audit_log")
-    .select("id, at, action, detail")
-    .eq("entity", "candidate")
-    .eq("entity_id", id)
-    .order("at", { ascending: false });
+  const { data: auditRows } = await q.audit;
 
-  const { data: poolRaw } = await supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle();
+  const { data: poolRaw } = await q.pool;
   const poolEntry: PoolEntry | null = poolRaw ? { tier: poolRaw.tier as PoolTier, reason: poolRaw.reason, tags: (poolRaw.tags as string[] | null) ?? [], marked_at: poolRaw.marked_at } : null;
 
-  const { data: debriefRows } = await supabase
-    .from("candidate_debriefs")
-    .select("id, created_at, raw_note, structured, profiles(full_name)")
-    .eq("candidate_id", id)
-    .order("created_at", { ascending: false })
-    .limit(5);
+  const { data: debriefRows } = await q.debriefs;
   const pastDebriefs: PastDebrief[] = ((debriefRows ?? []) as unknown as { id: string; created_at: string; raw_note: string; structured: { summary?: string } | null; profiles: { full_name: string | null } | { full_name: string | null }[] | null }[]).map((d) => ({
     id: d.id,
     created_at: d.created_at,
@@ -360,14 +355,9 @@ export default async function CandidateDetailPage({
     summary: d.structured?.summary ?? null,
     author: (Array.isArray(d.profiles) ? d.profiles[0]?.full_name : d.profiles?.full_name) ?? null,
   }));
-  const { data: briefRow } = await supabase.from("candidate_briefs").select("brief, source, generated_at").eq("candidate_id", id).maybeSingle();
+  const { data: briefRow } = await q.brief;
 
-  const { data: activityRows } = await supabase
-    .from("activities")
-    .select("id, actor_id, kind, body, created_at, profiles(full_name)")
-    .eq("entity_type", "candidate")
-    .eq("entity_id", id)
-    .order("created_at", { ascending: false });
+  const { data: activityRows } = await q.activities;
 
   const activities = (activityRows ?? []).map((a) => ({
     id: a.id,
@@ -378,19 +368,9 @@ export default async function CandidateDetailPage({
     actor_name: (a.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
   })) as import("./activity-log-panel").Activity[];
 
-  const { data: whatsappRows } = await supabase
-    .from("whatsapp_messages")
-    .select("id, direction, body_preview, status, created_at")
-    .eq("candidate_id", id)
-    .order("created_at", { ascending: true })
-    .limit(50);
+  const { data: whatsappRows } = await q.whatsapp;
 
-  const { data: links } = await supabase
-    .from("candidate_mandate_links")
-    .select(
-      "id, mandate_id, stage, in_shortlist, rejection_reason, rejection_category, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title, city, cities)"
-    )
-    .eq("candidate_id", id);
+  const { data: links } = await q.links;
 
   const linkedMandateCities = Array.from(
     new Set(
@@ -401,11 +381,7 @@ export default async function CandidateDetailPage({
     )
   );
 
-  const { data: openMandates } = await supabase
-    .from("mandates")
-    .select("id, client_name, role_title, practice_id, seniority_band")
-    .eq("status", "open")
-    .eq("is_archived", false);
+  const { data: openMandates } = await q.openMandates;
 
   // Same "already linked, don't resurface" exclusion the pool-wide
   // /practice-pool page uses -- this candidate's own `links` (fetched
@@ -417,10 +393,7 @@ export default async function CandidateDetailPage({
   // application-questions-panel.tsx on the mandate page). Grouped by mandate
   // so MandateLinksPanel can show each link's answers inline instead of a
   // recruiter having to go dig through the mandate's own tab.
-  const { data: applicationAnswerRows } = await supabase
-    .from("mandate_application_answers")
-    .select("mandate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)")
-    .eq("candidate_id", id);
+  const { data: applicationAnswerRows } = await q.answers;
   const applicationAnswersByMandate: Record<
     string,
     { question_text: string; answer_type: string; answer_text: string | null; answer_number: number | null; answer_bool: boolean | null }[]
@@ -489,6 +462,14 @@ export default async function CandidateDetailPage({
     return `/candidates/${neighbor.id}?from=${encodeURIComponent(from ?? "")}`;
   }
 
+  recordTiming("candidate", renderStart);
+  const missingNow = missingKeyDetails(candidate);
+  const activeLinks = (links ?? []).filter((l) => !["rejected", "pulled_back"].includes(l.stage));
+  let nextAction: NextActionItem | null = null;
+  if ((candidate as { phone_hold?: boolean }).phone_hold) nextAction = { text: "Phone number is on hold. Confirm it with the candidate before messaging." };
+  else if (missingNow.length > 0) nextAction = { text: `Missing ${missingNow.slice(0, 3).map((m) => m.label.toLowerCase()).join(", ")}${missingNow.length > 3 ? ` and ${missingNow.length - 3} more` : ""}. Ask the candidate.` };
+  else if (activeLinks.length === 0) nextAction = { text: "Not on any mandate. Check the suggested roles below." };
+
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-8">
       <div className="flex items-center justify-between">
@@ -532,8 +513,10 @@ export default async function CandidateDetailPage({
         )}
       </div>
 
+      <NextAction item={nextAction} />
+
       {/* --- Executive summary header --- */}
-      <Card className="mt-2" padded={false}>
+      <Card className="mt-3" padded={false}>
         <div className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -545,7 +528,7 @@ export default async function CandidateDetailPage({
                   <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {candidate.candidate_number != null && (
                     <span
-                      className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400"
+                      className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-xs font-mono text-slate-500 dark:text-slate-400"
                       title="Candidate number — reference this in internal discussions"
                     >
                       C-{String(candidate.candidate_number).padStart(6, "0")}
@@ -564,7 +547,7 @@ export default async function CandidateDetailPage({
                   const stale = days == null || days > 60;
                   return (
                     <p
-                      className={`text-[11px] mt-0.5 ${stale ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}
+                      className={`text-xs mt-0.5 ${stale ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}
                       title="The last time the candidate confirmed or updated their own details (CTC, notice period, role)"
                     >
                       {at
@@ -588,7 +571,7 @@ export default async function CandidateDetailPage({
                   const overflow = former.length - shown.length;
                   return (
                     <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                      <span className="text-[11px] text-slate-400 mr-0.5">Previously:</span>
+                      <span className="text-xs text-slate-400 mr-0.5">Previously:</span>
                       {shown.map((i) => (
                         <Badge key={i} tone="neutral" size="sm" className="normal-case tracking-normal">
                           {i}
@@ -596,7 +579,7 @@ export default async function CandidateDetailPage({
                       ))}
                       {overflow > 0 && (
                         <span
-                          className="text-[11px] text-slate-400"
+                          className="text-xs text-slate-400"
                           title={former.slice(MAX_SHOWN).join(", ")}
                         >
                           +{overflow} more
@@ -612,7 +595,7 @@ export default async function CandidateDetailPage({
                     what seniority band. */}
                 {candidatePracticeRows && candidatePracticeRows.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                    <span className="text-[11px] text-slate-400 mr-0.5">Practices:</span>
+                    <span className="text-xs text-slate-400 mr-0.5">Practices:</span>
                     {candidatePracticeRows.map((cp) => {
                       const practice = (allPracticesRows ?? []).find((p) => p.id === cp.practice_id);
                       if (!practice) return null;
@@ -692,7 +675,7 @@ export default async function CandidateDetailPage({
 
           {redFlags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mt-4">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-rose-600">
+              <span className="flex items-center gap-1 text-xs font-medium text-rose-600">
                 <AlertTriangle className="w-3.5 h-3.5" /> Risk flags:
               </span>
               {redFlags.map((flag) => (
@@ -730,7 +713,7 @@ export default async function CandidateDetailPage({
 
           {candidate.secondary_sub_domains?.length > 0 && (
             <div className="mt-4">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">Secondary sub-domains</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">Secondary sub-domains</p>
               <div className="flex flex-wrap gap-1.5">
                 {candidate.secondary_sub_domains.map((tag: string) => (
                   <Badge key={tag} tone="neutral" size="sm" className="normal-case tracking-normal">
@@ -823,7 +806,7 @@ export default async function CandidateDetailPage({
                           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                             {segmentEntries.map(([k, v]) => (
                               <div key={k}>
-                                <p className="text-[11px] text-slate-400">{humanize(k)}</p>
+                                <p className="text-xs text-slate-400">{humanize(k)}</p>
                                 <p className="text-[13px] text-slate-700 dark:text-slate-300">{formatValue(v)}</p>
                               </div>
                             ))}
@@ -836,7 +819,7 @@ export default async function CandidateDetailPage({
                           <div className="space-y-3">
                             {Object.entries(selfAssessment).map(([k, v]) => (
                               <div key={k}>
-                                <p className="text-[11px] font-medium text-slate-400 uppercase">{humanize(k)}</p>
+                                <p className="text-xs font-medium text-slate-400 uppercase">{humanize(k)}</p>
                                 <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{String(v)}</p>
                               </div>
                             ))}
@@ -915,15 +898,15 @@ export default async function CandidateDetailPage({
                 </Badge>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               Internal only, never shown to clients. Fill after a real call using the standard scorecard.
             </p>
             {scores.length > 0 && (
               <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                 {scores.map((s) => (
                   <div key={s.label} className="text-center">
-                    <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-[11px] font-normal text-slate-400">/5</span></p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
+                    <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-xs font-normal text-slate-400">/5</span></p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -946,7 +929,7 @@ export default async function CandidateDetailPage({
               first came in on. */}
           <Card className="mt-4">
             <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practices</h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               A candidate can belong to more than one practice (e.g. SaaS Sales + BFSI) if they&apos;ve genuinely worked
               both -- each practice carries its own seniority band.
             </p>
@@ -963,7 +946,7 @@ export default async function CandidateDetailPage({
               to see who else this person could be pitched to. */}
           <Card className="mt-4">
             <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practice Pool matches</h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               Other open mandates in this candidate&apos;s practice(s), based on the tags above.
             </p>
             <PracticeMatchesPanel
@@ -983,7 +966,7 @@ export default async function CandidateDetailPage({
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <p className="text-[11px] text-slate-400">{label}</p>
+      <p className="text-xs text-slate-400">{label}</p>
       <p className="text-slate-800 dark:text-slate-200 font-medium">{value || "—"}</p>
     </div>
   );
@@ -995,7 +978,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
 function StatChip({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
-      <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-slate-400 uppercase tracking-wide">{label}</p>
       <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
     </div>
   );

@@ -82,17 +82,17 @@ export default function ResumeMismatchesPanel({
                   Profile says <span className="font-medium">&ldquo;{m.self_reported}&rdquo;</span> — resume says{" "}
                   <span className="font-medium">&ldquo;{m.resume_says}&rdquo;</span>
                 </p>
-                {m.note && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-1">{m.note}</p>}
+                {m.note && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{m.note}</p>}
               </div>
               {flaggedIdx.has(idx) ? (
-                <span className="flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 shrink-0 pt-0.5">
+                <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400 shrink-0 pt-0.5">
                   <ShieldCheck className="w-3 h-3" /> Flagged
                 </span>
               ) : (
                 <button
                   onClick={() => handleFlag(m, idx)}
                   disabled={flaggingIdx === idx}
-                  className="shrink-0 text-[11px] font-medium text-amber-800 dark:text-amber-300 hover:underline disabled:opacity-50"
+                  className="shrink-0 text-xs font-medium text-amber-800 dark:text-amber-300 hover:underline disabled:opacity-50"
                 >
                   {flaggingIdx === idx ? "Flagging…" : "Flag as unverified"}
                 </button>

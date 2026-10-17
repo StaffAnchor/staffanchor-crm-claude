@@ -1175,7 +1175,9 @@ export default function CandidatesTable({
     window?: number;
     template?: number;
     skipped?: Record<string, number>;
+    recipients?: { id: string; name: string; route: string; message: string }[];
   } | null>(null);
+  const [askLeftOut, setAskLeftOut] = useState<Set<string>>(new Set());
   const [askSending, setAskSending] = useState(false);
   // "Add to group" -- saved candidate segments (see /candidates/groups),
   // modeled on Ceipal's Applicant Groups. Groups are fetched lazily only
@@ -1496,20 +1498,21 @@ export default function CandidatesTable({
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) setAskPlan({ loading: false, error: d.error ?? "Could not check these candidates." });
-      else setAskPlan({ loading: false, considered: d.considered, over: d.over, window: d.window, template: d.template, skipped: d.skipped });
+      else setAskPlan({ loading: false, considered: d.considered, over: d.over, window: d.window, template: d.template, skipped: d.skipped, recipients: d.recipients });
+      setAskLeftOut(new Set());
     } catch {
       setAskPlan({ loading: false, error: "Network error. Try again." });
     }
   }
 
   async function sendAsk() {
-    if (selected.size === 0 || askSending) return;
+    if (selected.size === 0 || askSending || !askPlan?.recipients?.some((r) => !askLeftOut.has(r.id))) return;
     setAskSending(true);
     try {
       const res = await fetch("/api/whatsapp/ask-bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateIds: Array.from(selected) }),
+        body: JSON.stringify({ candidateIds: (askPlan?.recipients ?? []).filter((r) => !askLeftOut.has(r.id)).map((r) => r.id) }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) setBulkMessage(d.error ?? "That didn't work. Try again.");
@@ -1787,10 +1790,30 @@ export default function CandidatesTable({
               )}
             </p>
           )}
+          {!askPlan.loading && !askPlan.error && (askPlan.recipients?.length ?? 0) > 0 && (
+            <details className="w-full" open>
+              <summary className="cursor-pointer text-[12.5px] font-medium text-emerald-900">Review each message before it goes (untick to leave someone out)</summary>
+              <ul className="mt-2 max-h-64 space-y-2 overflow-y-auto">
+                {askPlan.recipients!.map((r) => (
+                  <li key={r.id} className="rounded-lg bg-white/70 p-2 text-[12.5px] text-slate-800">
+                    <label className="flex items-center gap-2 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={!askLeftOut.has(r.id)}
+                        onChange={() => setAskLeftOut((s) => { const n = new Set(s); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); return n; })}
+                      />
+                      {r.name} <span className="font-normal text-slate-500">· {r.route === "window" ? "open chat, free" : "approved template, charged"}</span>
+                    </label>
+                    <p className="mt-1 whitespace-pre-wrap pl-6 text-slate-600">{r.message}</p>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           <div className="flex items-center gap-2 ml-auto">
             {!askPlan.loading && !askPlan.error && (askPlan.window ?? 0) + (askPlan.template ?? 0) > 0 && (
               <Button variant="secondary" size="sm" onClick={sendAsk} disabled={askSending}>
-                {askSending ? "Sending..." : `Send ${(askPlan.window ?? 0) + (askPlan.template ?? 0)}`}
+                {askSending ? "Sending..." : `Send ${(askPlan.recipients ?? []).filter((r) => !askLeftOut.has(r.id)).length}`}
               </Button>
             )}
             <button onClick={() => setAskPlan(null)} className="text-[12px] text-emerald-800 hover:text-emerald-900">

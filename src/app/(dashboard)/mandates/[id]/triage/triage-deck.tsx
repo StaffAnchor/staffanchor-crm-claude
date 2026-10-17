@@ -274,14 +274,14 @@ export default function TriageDeck({
             ["Notice", current.notice ?? "Not stated"],
           ].map(([k, v]) => (
             <div key={k}>
-              <dt className="text-[11px] uppercase tracking-wide text-slate-400">{k}</dt>
+              <dt className="text-xs uppercase tracking-wide text-slate-400">{k}</dt>
               <dd className={`text-slate-800 dark:text-slate-200 ${v === "No CTC available" ? "text-amber-700 dark:text-amber-300" : ""}`}>{v}</dd>
             </div>
           ))}
         </dl>
 
         <div className="mt-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
-          <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">Against this role</p>
+          <p className="text-xs uppercase tracking-wide text-slate-400 mb-1.5">Against this role</p>
           {!hasMustHaves ? (
             <p className="text-[13px] text-amber-800 dark:text-amber-300">Set the must-haves on the role first, so each applicant can be checked.</p>
           ) : chk === "loading" || chk === undefined ? (
@@ -336,7 +336,7 @@ export default function TriageDeck({
 
         {current.salesChips.length > 0 && (
           <div className="mt-4">
-            <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">Sales profile from the CV</p>
+            <p className="text-xs uppercase tracking-wide text-slate-400 mb-1.5">Sales profile from the CV</p>
             <div className="flex flex-wrap gap-1.5">
               {current.salesChips.map((c) => (
                 <span key={c} className="rounded-full bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200 px-2.5 py-0.5 text-[12px]">
@@ -382,17 +382,17 @@ export default function TriageDeck({
         ) : (
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <button onClick={() => decide("shortlist")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white text-[14px] font-medium px-4 py-2.5 hover:bg-slate-800 disabled:opacity-60">
-              <UserCheck className="w-4 h-4" aria-hidden /> Shortlist <kbd className="ml-1 text-[11px] opacity-60">S</kbd>
+              <UserCheck className="w-4 h-4" aria-hidden /> Shortlist <kbd className="ml-1 text-xs opacity-60">S</kbd>
             </button>
             <button onClick={() => setRejecting(true)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-[14px] font-medium px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800">
-              <UserX className="w-4 h-4" aria-hidden /> Not a fit <kbd className="ml-1 text-[11px] opacity-50">N</kbd>
+              <UserX className="w-4 h-4" aria-hidden /> Not a fit <kbd className="ml-1 text-xs opacity-50">N</kbd>
             </button>
             <button onClick={() => decide("later")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-[14px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-              <Clock className="w-4 h-4" aria-hidden /> Later <kbd className="ml-1 text-[11px] opacity-50">L</kbd>
+              <Clock className="w-4 h-4" aria-hidden /> Later <kbd className="ml-1 text-xs opacity-50">L</kbd>
             </button>
             {history.length > 0 && (
               <button onClick={undo} disabled={busy} className="ml-auto inline-flex items-center gap-1.5 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                <Undo2 className="w-3.5 h-3.5" aria-hidden /> Undo <kbd className="text-[11px] opacity-50">U</kbd>
+                <Undo2 className="w-3.5 h-3.5" aria-hidden /> Undo <kbd className="text-xs opacity-50">U</kbd>
               </button>
             )}
           </div>

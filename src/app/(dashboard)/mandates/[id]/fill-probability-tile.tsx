@@ -47,7 +47,7 @@ export function FillProbabilityTile({ probability }: { probability: FillProbabil
       </div>
       <div className="min-w-0 leading-tight">
         <p className={cn("text-[17px] font-semibold tabular-nums", s.text)}>{probability.score}%</p>
-        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate max-w-[9rem]">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate max-w-[9rem]">
           Fill probability
         </p>
       </div>

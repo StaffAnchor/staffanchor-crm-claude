@@ -32,7 +32,7 @@ export default function PipelineWhatsApp({
     <WhatsAppMenu
       phone={phone}
       templates={pipelineTemplates(candidateName, { me, candidateId, missing: missing ?? [], role: roleTitle ?? null, stage, cities, workMode })}
-      className={className ?? "inline-flex items-center gap-1 rounded-ros-md bg-slate-100 px-2 py-1 text-[11.5px] font-medium text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}
+      className={className ?? "inline-flex items-center gap-1 rounded-ros-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}
     />
   );
 }

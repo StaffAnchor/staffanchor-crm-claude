@@ -143,7 +143,7 @@ export default function PublishMandateButton({
           <button
             onClick={runPreview}
             disabled={previewLoading}
-            className="flex items-center gap-1 text-[11px] font-medium text-amber-800 hover:text-amber-950 underline decoration-dotted disabled:opacity-60"
+            className="flex items-center gap-1 text-xs font-medium text-amber-800 hover:text-amber-950 underline decoration-dotted disabled:opacity-60"
           >
             {previewLoading ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -175,12 +175,12 @@ export default function PublishMandateButton({
               {preview.map((p) => (
                 <div key={p.candidate_id} className="flex items-start justify-between gap-2 text-[12px]">
                   <div className="min-w-0">
-                    <Link href={`/candidates/${p.candidate_id}?mandateId=${mandateId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600">
+                    <Link href={`/candidates/${p.candidate_id}?mandateId=${mandateId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-teal-600">
                       {p.full_name}
                     </Link>
                     <span className="ml-1.5 text-slate-500 dark:text-slate-400">{p.reason}</span>
                   </div>
-                  <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                  <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-semibold text-emerald-700">
                     {p.score}
                   </span>
                 </div>

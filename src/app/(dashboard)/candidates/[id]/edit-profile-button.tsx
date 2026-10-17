@@ -138,7 +138,7 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
   return true;
 };
 
-const SECTION_LABEL = "block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5";
+const SECTION_LABEL = "block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5";
 const FIELD_LABEL = "block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1";
 const INPUT_CLS = "w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm";
 // Applied to the 12 "Stage 1B" fields (the same set INCOMPLETE_PROFILE
@@ -172,7 +172,7 @@ function CheckboxGroup({
             onClick={() => onToggle(opt)}
             className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
               active
-                ? "bg-blue-600 border-blue-600 text-white"
+                ? "bg-teal-600 border-teal-600 text-white"
                 : "bg-white dark:bg-slate-900 border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             }`}
           >
@@ -374,8 +374,8 @@ export default function EditProfileButton({
     readinessScore >= 90 ? "Premium" : readinessScore >= 65 ? "Excellent" : readinessScore >= 35 ? "Good" : "Basic";
   const READINESS_BADGE: Record<typeof readinessTier, string> = {
     Basic: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-    Good: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-    Excellent: "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+    Good: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
+    Excellent: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
     Premium: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   };
 
@@ -671,7 +671,7 @@ export default function EditProfileButton({
         <Pencil className="w-3 h-3" />
         {missingRequiredCount > 0 ? "Complete Profile" : "Edit Profile"}
         {missingRequiredCount > 0 && (
-          <span className="ml-0.5 rounded-full bg-white/25 px-1.5 py-0.5 text-[10.5px] leading-none">
+          <span className="ml-0.5 rounded-full bg-white/25 px-1.5 py-0.5 text-xs leading-none">
             {missingRequiredCount} left
           </span>
         )}
@@ -707,7 +707,7 @@ export default function EditProfileButton({
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
               <div className="flex items-center gap-2">
                 <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit / Complete Profile</h3>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${READINESS_BADGE[readinessTier]}`}>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${READINESS_BADGE[readinessTier]}`}>
                   {readinessTier} · {readinessScore}%
                 </span>
               </div>
@@ -717,7 +717,7 @@ export default function EditProfileButton({
             </div>
 
             <div className="p-5 space-y-6">
-              <p className="flex items-center gap-1.5 text-[11.5px] text-rose-700 dark:text-rose-400 -mt-1">
+              <p className="flex items-center gap-1.5 text-xs text-rose-700 dark:text-rose-400 -mt-1">
                 <span className="inline-block w-2.5 h-2.5 rounded-sm border border-rose-300 bg-rose-50" /> Fields still missing to complete this profile are highlighted like this
               </p>
               {/* --- Basic Info --- */}
@@ -819,7 +819,7 @@ export default function EditProfileButton({
                         )}
                         {form.subDomain === "Other B2B" && (
                           <>
-                            <p className="mt-2 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                            <p className="mt-2 text-xs leading-snug text-slate-500 dark:text-slate-400">
                               We actively focus on Enterprise Tech and Industrial &amp; Infrastructure, but want to
                               place great candidates from every B2B background — specify which.
                             </p>
@@ -1158,13 +1158,13 @@ export default function EditProfileButton({
 
                   {isB2B && (
                     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
+                      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
                         Sales Motion Type &amp; Buyer Persona
                       </span>
                       <div className="space-y-3">
                         {b2bSalesMotionTypeGroups.map(({ group, options }) => (
                           <div key={group}>
-                            <label className="block text-[11px] font-medium text-slate-400 dark:text-slate-500 mb-1">
+                            <label className="block text-xs font-medium text-slate-400 dark:text-slate-500 mb-1">
                               {group}
                             </label>
                             <CheckboxGroup
@@ -1192,7 +1192,7 @@ export default function EditProfileButton({
                   )}
 
                   <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
+                    <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
                       Quarterly Targets &amp; Achievement (last 4 quarters)
                     </span>
                     {isTeamLead && (
@@ -1345,7 +1345,7 @@ export default function EditProfileButton({
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg px-3.5 py-1.5 disabled:opacity-60"
+                className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-teal-600 hover:bg-teal-500 rounded-lg px-3.5 py-1.5 disabled:opacity-60"
               >
                 {saving && <Loader2 className="w-3 h-3 animate-spin" />}
                 Save changes

@@ -229,7 +229,7 @@ export default function MandateCandidatesView({
               onClick={scorePipeline}
               disabled={scoring}
               title="Score every candidate already on this pipeline against this mandate"
-              className="flex items-center gap-1.5 text-[12px] text-purple-600 hover:underline disabled:opacity-50"
+              className="flex items-center gap-1.5 text-[12px] text-teal-600 hover:underline disabled:opacity-50"
             >
               {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
               {scoring ? "Scoring..." : "Score pipeline"}
@@ -310,7 +310,7 @@ export default function MandateCandidatesView({
           title="Best people from your whole database. Not in the pipeline until you add them"
           className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors ${set === "ai" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100" : "text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
         >
-          <Sparkles className="h-3.5 w-3.5 text-violet-500" /> Best matches <span className="tabular-nums text-slate-400">{aiCount}</span>
+          <Sparkles className="h-3.5 w-3.5 text-teal-500" /> Best matches <span className="tabular-nums text-slate-400">{aiCount}</span>
         </button>
       </div>
       {set === "pipeline" ? pipelineView : aiSuggestions}
