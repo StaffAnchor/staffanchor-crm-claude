@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    // Talent board and Practice Pool were folded into the Talent Inventory and the role matches on each mandate.
+    return [
+      { source: "/candidates/board", destination: "/candidates/inventory", permanent: false },
+      { source: "/practice-pool", destination: "/candidates/inventory", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

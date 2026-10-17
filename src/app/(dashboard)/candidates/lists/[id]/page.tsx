@@ -66,10 +66,10 @@ export default async function ShortlistPage({ params }: { params: Promise<{ id: 
       {cards.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[13.5px] text-slate-500 dark:border-slate-700">
           Nobody in this shortlist yet. Open the{" "}
-          <Link href="/candidates/board" className="font-medium text-indigo-600 hover:underline">
-            Talent board
-          </Link>{" "}
-          and tap Save on a card.
+          <Link href="/candidates/inventory" className="font-medium text-indigo-600 hover:underline">
+            Inventory
+          </Link>
+          , click a number and use &quot;Save as a shortlist&quot;.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
