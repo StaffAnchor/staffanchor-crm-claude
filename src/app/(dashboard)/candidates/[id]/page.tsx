@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { after } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import { Phone, Mail, MapPin, FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -105,30 +107,53 @@ export default async function CandidateDetailPage({
     .single();
 
   if (!candidate) notFound();
+  const renderStart = Date.now();
 
-  const { data: allPracticesRows } = await supabase
-    .from("practices")
-    .select("id, slug, name, group_name")
-    .order("sort_order", { ascending: true });
-  const { data: candidatePracticeRows } = await supabase
-    .from("candidate_practices")
-    .select("practice_id, seniority_band, is_primary, tagged_by")
-    .eq("candidate_id", id);
+  // Everything below depends only on the candidate's id, so all of it starts at once instead of one query after another.
+  // (A query builder only sends when awaited, so each is wrapped to start now and awaited where its result is used.)
+  const q = {
+    practices: Promise.resolve(supabase.from("practices").select("id, slug, name, group_name").order("sort_order", { ascending: true })),
+    candPractices: Promise.resolve(supabase.from("candidate_practices").select("practice_id, seniority_band, is_primary, tagged_by").eq("candidate_id", id)),
+    viewer: Promise.resolve(supabase.auth.getUser()).then(async ({ data: { user } }) => (user ? { user, profile: (await supabase.from("profiles").select("full_name, email").eq("id", user.id).single()).data } : { user: null, profile: null })),
+    passport: Promise.resolve(supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle()),
+    cvFacts: Promise.resolve(supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle()),
+    notes: Promise.resolve(supabase.from("recruiter_notes").select("id, note_type, content, created_at, author_id").eq("candidate_id", id).order("created_at", { ascending: false })),
+    audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
+    pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
+    debriefs: Promise.resolve(supabase.from("candidate_debriefs").select("id, created_at, raw_note, structured, profiles(full_name)").eq("candidate_id", id).order("created_at", { ascending: false }).limit(5)),
+    brief: Promise.resolve(supabase.from("candidate_briefs").select("brief, source, generated_at").eq("candidate_id", id).maybeSingle()),
+    activities: Promise.resolve(supabase.from("activities").select("id, actor_id, kind, body, created_at, profiles(full_name)").eq("entity_type", "candidate").eq("entity_id", id).order("created_at", { ascending: false })),
+    whatsapp: Promise.resolve(supabase.from("whatsapp_messages").select("id, direction, body_preview, status, created_at").eq("candidate_id", id).order("created_at", { ascending: true }).limit(50)),
+    links: Promise.resolve(
+      supabase
+        .from("candidate_mandate_links")
+        .select("id, mandate_id, stage, in_shortlist, rejection_reason, rejection_category, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title, city, cities)")
+        .eq("candidate_id", id)
+    ),
+    openMandates: Promise.resolve(supabase.from("mandates").select("id, client_name, role_title, practice_id, seniority_band").eq("status", "open").eq("is_archived", false)),
+    answers: Promise.resolve(supabase.from("mandate_application_answers").select("mandate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)").eq("candidate_id", id)),
+    signed: candidate.resume_file_url
+      ? Promise.resolve(supabase.storage.from("resumes").createSignedUrl((candidate.resume_file_url as string).replace(/^resumes\//, ""), 60 * 60 * 12))
+      : Promise.resolve(null),
+    mandateCtx: mandateId ? Promise.resolve(supabase.from("mandates").select("role_title, client_name").eq("id", mandateId).single()) : Promise.resolve(null),
+    mandateRoster: mandateId ? Promise.resolve(supabase.from("candidate_mandate_links").select("candidate_id, created_at, candidates(id, full_name)").eq("mandate_id", mandateId).order("created_at", { ascending: true })) : Promise.resolve(null),
+    groupCtx: !mandateId && groupId ? Promise.resolve(supabase.from("candidate_groups").select("name").eq("id", groupId).single()) : Promise.resolve(null),
+    groupRoster: !mandateId && groupId ? Promise.resolve(supabase.from("candidate_group_members").select("candidate_id, added_at, candidates(id, full_name)").eq("group_id", groupId).order("added_at", { ascending: true })) : Promise.resolve(null),
+  };
+
+  const { data: allPracticesRows } = await q.practices;
+  const { data: candidatePracticeRows } = await q.candPractices;
 
   // Attributed to whoever actually saves the vetting score (vetting-score-panel.tsx),
   // same "who did this, not who owns the record" principle as profile_completed_by.
-  const {
-    data: { user: viewerUser },
-  } = await supabase.auth.getUser();
-  const { data: viewerProfile } = viewerUser
-    ? await supabase.from("profiles").select("full_name, email").eq("id", viewerUser.id).single()
-    : { data: null };
+  const { user: viewerUser, profile: viewerProfile } = await q.viewer;
+  void viewerUser;
   const scorerName = viewerProfile?.full_name ?? viewerProfile?.email ?? "Unknown";
 
   // Things worth asking on a call: the AI's watch-areas plus any honesty or gap
   // flags raised when the CV was read.
-  const { data: passportRow } = await supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle();
-  const { data: cvFactsRow } = await supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle();
+  const { data: passportRow } = await q.passport;
+  const { data: cvFactsRow } = await q.cvFacts;
   const cvFlagDetails = (((cvFactsRow?.facts as { flags?: { detail?: string }[] } | null)?.flags ?? []) as { detail?: string }[])
     .map((f) => f?.detail)
     .filter((d): d is string => typeof d === "string" && d.trim().length > 0);
@@ -152,17 +177,15 @@ export default async function CandidateDetailPage({
       new Date(candidate.recruiter_assessment_updated_at as string) >
         new Date(candidate.ai_summary_generated_at as string))
   ) {
-    const result = await generateAiPassportForCandidate(candidate.id, supabase, {
-      note: "auto_regenerated_on_view_after_assessment",
+    // Runs after the page is sent, so opening a profile never waits on the AI; the refreshed summary shows on the next view.
+    const candidateId = candidate.id;
+    after(async () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !key) return;
+      const admin = createSupabaseClient(url, key, { auth: { persistSession: false } });
+      await generateAiPassportForCandidate(candidateId, admin, { note: "auto_regenerated_on_view_after_assessment" }).catch(() => {});
     });
-    if (result.ok) {
-      candidate.ai_summary = result.summary;
-      candidate.ai_passport = result.passport;
-      candidate.ai_decision_flags = result.decisionFlags;
-      candidate.skill_inventory = result.skillInventory;
-      candidate.stability_score = result.stabilityScore;
-      candidate.resume_mismatches = result.resumeMismatches;
-    }
   }
 
   // Prev/next navigation within whatever filtered list the recruiter came
@@ -184,19 +207,11 @@ export default async function CandidateDetailPage({
   let backHref = from ? `/candidates?${from}` : "/candidates";
 
   if (mandateId) {
-    const { data: mandateRow } = await supabase
-      .from("mandates")
-      .select("role_title, client_name")
-      .eq("id", mandateId)
-      .single();
+    const { data: mandateRow } = (await q.mandateCtx) ?? { data: null };
     backHref = `/mandates/${mandateId}`;
     backLabel = mandateRow ? `← ${mandateRow.role_title} — ${mandateRow.client_name}` : "← Back to mandate";
 
-    const { data: mandateLinkRows } = await supabase
-      .from("candidate_mandate_links")
-      .select("candidate_id, created_at, candidates(id, full_name)")
-      .eq("mandate_id", mandateId)
-      .order("created_at", { ascending: true });
+    const { data: mandateLinkRows } = (await q.mandateRoster) ?? { data: null };
     if (mandateLinkRows) {
       const roster = mandateLinkRows
         .map((r) => r.candidates as unknown as { id: string; full_name: string } | null)
@@ -209,19 +224,11 @@ export default async function CandidateDetailPage({
       }
     }
   } else if (groupId) {
-    const { data: groupRow } = await supabase
-      .from("candidate_groups")
-      .select("name")
-      .eq("id", groupId)
-      .single();
+    const { data: groupRow } = (await q.groupCtx) ?? { data: null };
     backHref = `/candidates/groups/${groupId}`;
     backLabel = groupRow ? `← ${groupRow.name}` : "← Back to group";
 
-    const { data: groupMemberRows } = await supabase
-      .from("candidate_group_members")
-      .select("candidate_id, added_at, candidates(id, full_name)")
-      .eq("group_id", groupId)
-      .order("added_at", { ascending: true });
+    const { data: groupMemberRows } = (await q.groupRoster) ?? { data: null };
     if (groupMemberRows) {
       const roster = groupMemberRows
         .map((r) => r.candidates as unknown as { id: string; full_name: string } | null)
@@ -322,37 +329,23 @@ export default async function CandidateDetailPage({
     // so we always pass a path relative to the bucket itself.
     const rawPath = candidate.resume_file_url as string;
     const cleanPath = rawPath.replace(/^resumes\//, "");
-    const { data: signed, error: signError } = await supabase.storage
-      .from("resumes")
-      .createSignedUrl(cleanPath, 60 * 60 * 12);
+    const signedResult = (await q.signed) as { data: { signedUrl: string } | null; error: unknown } | null;
+    const signed = signedResult?.data ?? null;
+    const signError = signedResult?.error ?? null;
     if (!signError && signed) {
       resumeSignedUrl = signed.signedUrl;
       resumeFileName = cleanPath.split("/").pop() ?? cleanPath;
     }
   }
 
-  const { data: notes } = await supabase
-    .from("recruiter_notes")
-    .select("id, note_type, content, created_at, author_id")
-    .eq("candidate_id", id)
-    .order("created_at", { ascending: false });
+  const { data: notes } = await q.notes;
 
-  const { data: auditRows } = await supabase
-    .from("audit_log")
-    .select("id, at, action, detail")
-    .eq("entity", "candidate")
-    .eq("entity_id", id)
-    .order("at", { ascending: false });
+  const { data: auditRows } = await q.audit;
 
-  const { data: poolRaw } = await supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle();
+  const { data: poolRaw } = await q.pool;
   const poolEntry: PoolEntry | null = poolRaw ? { tier: poolRaw.tier as PoolTier, reason: poolRaw.reason, tags: (poolRaw.tags as string[] | null) ?? [], marked_at: poolRaw.marked_at } : null;
 
-  const { data: debriefRows } = await supabase
-    .from("candidate_debriefs")
-    .select("id, created_at, raw_note, structured, profiles(full_name)")
-    .eq("candidate_id", id)
-    .order("created_at", { ascending: false })
-    .limit(5);
+  const { data: debriefRows } = await q.debriefs;
   const pastDebriefs: PastDebrief[] = ((debriefRows ?? []) as unknown as { id: string; created_at: string; raw_note: string; structured: { summary?: string } | null; profiles: { full_name: string | null } | { full_name: string | null }[] | null }[]).map((d) => ({
     id: d.id,
     created_at: d.created_at,
@@ -360,14 +353,9 @@ export default async function CandidateDetailPage({
     summary: d.structured?.summary ?? null,
     author: (Array.isArray(d.profiles) ? d.profiles[0]?.full_name : d.profiles?.full_name) ?? null,
   }));
-  const { data: briefRow } = await supabase.from("candidate_briefs").select("brief, source, generated_at").eq("candidate_id", id).maybeSingle();
+  const { data: briefRow } = await q.brief;
 
-  const { data: activityRows } = await supabase
-    .from("activities")
-    .select("id, actor_id, kind, body, created_at, profiles(full_name)")
-    .eq("entity_type", "candidate")
-    .eq("entity_id", id)
-    .order("created_at", { ascending: false });
+  const { data: activityRows } = await q.activities;
 
   const activities = (activityRows ?? []).map((a) => ({
     id: a.id,
@@ -378,19 +366,9 @@ export default async function CandidateDetailPage({
     actor_name: (a.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
   })) as import("./activity-log-panel").Activity[];
 
-  const { data: whatsappRows } = await supabase
-    .from("whatsapp_messages")
-    .select("id, direction, body_preview, status, created_at")
-    .eq("candidate_id", id)
-    .order("created_at", { ascending: true })
-    .limit(50);
+  const { data: whatsappRows } = await q.whatsapp;
 
-  const { data: links } = await supabase
-    .from("candidate_mandate_links")
-    .select(
-      "id, mandate_id, stage, in_shortlist, rejection_reason, rejection_category, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title, city, cities)"
-    )
-    .eq("candidate_id", id);
+  const { data: links } = await q.links;
 
   const linkedMandateCities = Array.from(
     new Set(
@@ -401,11 +379,7 @@ export default async function CandidateDetailPage({
     )
   );
 
-  const { data: openMandates } = await supabase
-    .from("mandates")
-    .select("id, client_name, role_title, practice_id, seniority_band")
-    .eq("status", "open")
-    .eq("is_archived", false);
+  const { data: openMandates } = await q.openMandates;
 
   // Same "already linked, don't resurface" exclusion the pool-wide
   // /practice-pool page uses -- this candidate's own `links` (fetched
@@ -417,10 +391,7 @@ export default async function CandidateDetailPage({
   // application-questions-panel.tsx on the mandate page). Grouped by mandate
   // so MandateLinksPanel can show each link's answers inline instead of a
   // recruiter having to go dig through the mandate's own tab.
-  const { data: applicationAnswerRows } = await supabase
-    .from("mandate_application_answers")
-    .select("mandate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)")
-    .eq("candidate_id", id);
+  const { data: applicationAnswerRows } = await q.answers;
   const applicationAnswersByMandate: Record<
     string,
     { question_text: string; answer_type: string; answer_text: string | null; answer_number: number | null; answer_bool: boolean | null }[]

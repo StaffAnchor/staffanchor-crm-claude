@@ -66,49 +66,59 @@ export default async function MandateDetailPage({
 
   const { data: mandate } = await supabase.from("mandates").select("*").eq("id", id).single();
   if (!mandate) notFound();
+  const renderStart = Date.now();
+
+  // Everything else on the page needs only this mandate's id (or its client), so it all starts together instead of one
+  // query after another. A query builder only sends when awaited, so each is wrapped to start now and awaited below.
+  const STALE_DAYS = 4;
+  const staleCutoff = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const q = {
+    viewer: Promise.resolve(supabase.auth.getUser()).then(async ({ data: { user } }) => (user ? (await supabase.from("profiles").select("role").eq("id", user.id).single()).data : null)),
+    links: Promise.resolve(
+      supabase
+        .from("candidate_mandate_links")
+        .select(
+          "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, phone, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+        )
+        .eq("mandate_id", id)
+    ),
+    screening: Promise.resolve(supabase.from("mandate_screening_answers").select("candidate_id").eq("mandate_id", id)),
+    questions: Promise.resolve(supabase.from("mandate_screening_questions").select("id, question_text, answer_type, is_required, display_order").eq("mandate_id", id).order("display_order")),
+    answers: Promise.resolve(supabase.from("mandate_application_answers").select("candidate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)").eq("mandate_id", id)),
+    flags: Promise.resolve(supabase.from("recruiter_inbox").select("id, candidate_id, recruiter_id, call_round, profiles(full_name, email)").eq("mandate_id", id).eq("task_type", "CANDIDATE_CALL_REQUEST").eq("status", "open")),
+    token: Promise.resolve(supabase.from("shortlist_tokens").select("token, first_opened_at, last_opened_at, open_count").eq("mandate_id", id).maybeSingle()),
+    contacts: mandate.client_id ? Promise.resolve(supabase.from("client_contacts").select("id, full_name, email, is_primary").eq("client_id", mandate.client_id).order("is_primary", { ascending: false })) : Promise.resolve({ data: [] as { id: string; full_name: string; email: string | null; is_primary: boolean }[] }),
+    resources: mandate.client_id ? Promise.resolve(supabase.from("client_resources").select("id, kind, name, url, storage_path, content_type").eq("client_id", mandate.client_id).order("created_at", { ascending: true })) : Promise.resolve({ data: [] as { id: string; kind: string; name: string; url: string | null; storage_path: string | null; content_type: string | null }[] }),
+    stale: Promise.resolve(supabase.from("candidate_mandate_links").select("stage_updated_at, candidates(full_name)").eq("mandate_id", id).eq("stage", "submitted").lt("stage_updated_at", staleCutoff)),
+    assignments: Promise.resolve(supabase.from("mandate_assignments").select("freelancer_id, profiles(id, full_name, email, role)").eq("mandate_id", id)),
+    staff: Promise.resolve(supabase.from("profiles").select("id, full_name, email, role").order("full_name")),
+    aiSuggested: Promise.resolve(supabase.from("mandate_ai_matches").select("candidate_id").eq("mandate_id", id).eq("status", "suggested")),
+    allCandidates: Promise.resolve(supabase.from("candidates").select("id, full_name, category, sub_domain, current_employer").order("created_at", { ascending: false }).limit(500)),
+    sourced: Promise.resolve(supabase.from("mandate_sourced_profiles").select("id, linkedin_url, full_name, location, current_company, outreach_status, notes, created_at, promoted_candidate_id").eq("mandate_id", id).order("created_at", { ascending: false })),
+  };
 
   // PublishMandateButton's own comment calls this a "recruiter-gated
   // publish step," but until now nothing actually enforced that -- any
   // signed-in staff role, including Partner, could flip a draft mandate
   // live behind only a plain window.confirm(). Fetched here and passed
   // down so the button can actually honor what it already claims to do.
-  const {
-    data: { user: viewerUser },
-  } = await supabase.auth.getUser();
-  const { data: viewerProfile } = viewerUser
-    ? await supabase.from("profiles").select("role").eq("id", viewerUser.id).single()
-    : { data: null };
+  const viewerProfile = await q.viewer;
   const viewerRole = viewerProfile?.role ?? null;
 
-  const { data: links } = await supabase
-    .from("candidate_mandate_links")
-    .select(
-      "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, phone, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
-    )
-    .eq("mandate_id", id);
+  const { data: links } = await q.links;
 
   // Distinct candidate IDs already screened against this mandate, so the
   // table can show an Assessed / Not Assessed badge without a separate
   // round-trip per row.
-  const { data: screeningRows } = await supabase
-    .from("mandate_screening_answers")
-    .select("candidate_id")
-    .eq("mandate_id", id);
+  const { data: screeningRows } = await q.screening;
   const screenedCandidateIds = Array.from(new Set((screeningRows ?? []).map((r) => r.candidate_id)));
 
-  const { data: applicationQuestions } = await supabase
-    .from("mandate_screening_questions")
-    .select("id, question_text, answer_type, is_required, display_order")
-    .eq("mandate_id", id)
-    .order("display_order");
+  const { data: applicationQuestions } = await q.questions;
 
   // Per-candidate answers to this mandate's Application Questions, so the
   // Board/Table views can show a quick-view popover on hover instead of
   // requiring a click into the candidate's profile just to see them.
-  const { data: applicationAnswerRows } = await supabase
-    .from("mandate_application_answers")
-    .select("candidate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)")
-    .eq("mandate_id", id);
+  const { data: applicationAnswerRows } = await q.answers;
 
   const applicationAnswersByCandidate: Record<
     string,
@@ -164,12 +174,7 @@ export default async function MandateDetailPage({
   // static label after the toast disappears -- was confusing recruiters
   // into re-flagging the same candidate because nothing on screen showed
   // it had already been sent.
-  const { data: openCallFlags } = await supabase
-    .from("recruiter_inbox")
-    .select("id, candidate_id, recruiter_id, call_round, profiles(full_name, email)")
-    .eq("mandate_id", id)
-    .eq("task_type", "CANDIDATE_CALL_REQUEST")
-    .eq("status", "open");
+  const { data: openCallFlags } = await q.flags;
   const flaggedCallByCandidate: Record<
     string,
     { flagId: string; recruiterId: string; recruiterName: string; round: string | null }
@@ -184,34 +189,18 @@ export default async function MandateDetailPage({
     };
   }
 
-  const { data: existingToken } = await supabase
-    .from("shortlist_tokens")
-    .select("token, first_opened_at, last_opened_at, open_count")
-    .eq("mandate_id", id)
-    .maybeSingle();
+  const { data: existingToken } = await q.token;
 
   // Fetched here (not lazily on the client) so the "Email to Client" bulk
   // action's contact picker opens instantly with the list already in hand,
   // same reasoning as fetching allCandidates/allStaffProfiles above.
-  const { data: clientContacts } = mandate.client_id
-    ? await supabase
-        .from("client_contacts")
-        .select("id, full_name, email, is_primary")
-        .eq("client_id", mandate.client_id)
-        .order("is_primary", { ascending: false })
-    : { data: [] };
+  const { data: clientContacts } = await q.contacts;
 
   // Client-level resource library (website, YouTube, profile PDF, etc.) --
   // shared across every mandate for this client, so it's fetched off
   // client_resources by client_id, not off the mandate itself. Surfaced as
   // a checklist in the "Email JD to candidates" flow (mandate-candidates-table.tsx).
-  const { data: clientResources } = mandate.client_id
-    ? await supabase
-        .from("client_resources")
-        .select("id, kind, name, url, storage_path, content_type")
-        .eq("client_id", mandate.client_id)
-        .order("created_at", { ascending: true })
-    : { data: [] };
+  const { data: clientResources } = await q.resources;
 
   // Same staleness check the daily email digest runs, but instant here --
   // no need to wait for cron to see it once you're already on the page.
@@ -225,30 +214,17 @@ export default async function MandateDetailPage({
   // feedback" even after the candidate had already moved to Client
   // Shortlisted, Offer, or Placed. Once stage has moved off "submitted"
   // at all, that IS the feedback.
-  const STALE_DAYS = 4;
-  const staleCutoff = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const { data: staleLinks } = await supabase
-    .from("candidate_mandate_links")
-    .select("stage_updated_at, candidates(full_name)")
-    .eq("mandate_id", id)
-    .eq("stage", "submitted")
-    .lt("stage_updated_at", staleCutoff);
+  const { data: staleLinks } = await q.stale;
 
-  const { data: assignments } = await supabase
-    .from("mandate_assignments")
-    .select("freelancer_id, profiles(id, full_name, email, role)")
-    .eq("mandate_id", id);
-  const { data: allStaffProfiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, role")
-    .order("full_name");
+  const { data: assignments } = await q.assignments;
+  const { data: allStaffProfiles } = await q.staff;
 
   const assignedStaff = (assignments ?? [])
     .map((a) => a.profiles as unknown as { id: string; full_name: string | null; email: string; role: string } | null)
     .filter((p): p is { id: string; full_name: string | null; email: string; role: string } => p !== null);
 
   // AI suggestions that are not in the pipeline yet (the second set on this page).
-  const { data: aiSuggestedRows } = await supabase.from("mandate_ai_matches").select("candidate_id").eq("mandate_id", id).eq("status", "suggested");
+  const { data: aiSuggestedRows } = await q.aiSuggested;
   const pipelineCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean) as string[]);
   const aiSuggestionCount = ((aiSuggestedRows ?? []) as { candidate_id: string }[]).filter((x) => !pipelineCandidateIds.has(x.candidate_id)).length;
 
@@ -273,21 +249,13 @@ export default async function MandateDetailPage({
   }
 
   const linkedCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean));
-  const { data: allCandidates } = await supabase
-    .from("candidates")
-    .select("id, full_name, category, sub_domain, current_employer")
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const { data: allCandidates } = await q.allCandidates;
   const availableCandidates = (allCandidates ?? []).filter((c) => !linkedCandidateIds.has(c.id));
 
   // LinkedIn-sourced profiles for this mandate -- kept in their own table
   // (mandate_sourced_profiles), deliberately separate from the real pipeline
   // (candidate_mandate_links, above) and quick-apply Applicants.
-  const { data: sourcedProfiles } = await supabase
-    .from("mandate_sourced_profiles")
-    .select("id, linkedin_url, full_name, location, current_company, outreach_status, notes, created_at, promoted_candidate_id")
-    .eq("mandate_id", id)
-    .order("created_at", { ascending: false });
+  const { data: sourcedProfiles } = await q.sourced;
 
   // Health-strip math -- the same signals the mandates list page already
   // computes per row (Needs sourcing / Aging, no submissions / stale
