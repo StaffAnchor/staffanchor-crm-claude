@@ -3,7 +3,7 @@
 import PipelineWhatsApp from "./pipeline-whatsapp";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import OriginChip from "./origin-chip";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -117,6 +117,7 @@ export type MandateCandidateRow = {
     notice_period: string | null;
     segment_data: Record<string, unknown> | null;
     current_employer: string | null;
+    current_job_title?: string | null;
     career_timeline_resume: unknown;
     career_timeline_profile: unknown;
     owner_id: string | null;
@@ -223,6 +224,9 @@ export default function MandateCandidatesTable({
     setFlagMap(flaggedCallByCandidate);
   }
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Rows opened to show everything else about a person; closed by default so the list stays calm.
+  const [openRows, setOpenRows] = useState<Set<string>>(new Set());
+  const toggleOpen = (id: string) => setOpenRows((prev) => (prev.has(id) ? new Set([...prev].filter((x) => x !== id)) : new Set(prev).add(id)));
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   // Which row is mid-edit on its stage select, and whether that edit is
   // being attributed to the client (vs. the recruiter's own call) --
@@ -575,34 +579,26 @@ export default function MandateCandidatesTable({
         />
       </div>
       <table className="w-full text-sm">
-        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
-          <tr>
-            <th className="px-4 py-2.5 w-8">
-              <input
-                type="checkbox"
-                checked={rows.length > 0 && selected.size === rows.length}
-                onChange={toggleAll}
-              />
+        <thead className="text-slate-400 text-[11px] uppercase tracking-wide">
+          <tr className="border-b border-slate-100 dark:border-slate-800">
+            <th className="px-4 py-2 w-8">
+              <input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={toggleAll} />
             </th>
-            <th className="text-left px-4 py-2.5">Candidate</th>
-            <th className="text-left px-4 py-2.5">Resume</th>
-            <th className="text-left px-4 py-2.5">Owner</th>
-            <th className="text-left px-4 py-2.5">Source</th>
-            <th className="text-left px-4 py-2.5">CTC / Notice</th>
-            <th className="text-left px-4 py-2.5">Stability</th>
-            <th className="text-left px-4 py-2.5">AI Read</th>
-            <th className="text-left px-4 py-2.5">Recommendation</th>
-            <th className="text-left px-4 py-2.5">Stage</th>
-            <th className="text-left px-4 py-2.5">Client</th>
+            <th className="text-left px-3 py-2 font-medium">Candidate</th>
+            <th className="text-left px-3 py-2 font-medium">Fit</th>
+            <th className="text-left px-3 py-2 font-medium">Pay · notice</th>
+            <th className="text-left px-3 py-2 font-medium">Stage</th>
+            <th className="px-3 py-2 w-24"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {rows.map((l) => (
-            <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
-              <td className="px-4 py-3">
+            <Fragment key={l.id}>
+              <tr className={`group hover:bg-slate-50/70 dark:hover:bg-slate-800/40 ${openRows.has(l.id) ? "bg-slate-50/60 dark:bg-slate-800/30" : ""}`}>
+                <td className="px-4 py-3 align-top">
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
-              <td className="px-4 py-3">
+                <td className="px-3 py-3 align-top">
                 <div className="flex items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link
@@ -635,137 +631,20 @@ export default function MandateCandidatesTable({
                       gave almost everyone 76 to 88 and contradicted the evidence-based
                       verdict. Triage and AI Matches show the verdict with its doubts. */}
                 </div>
-                <div className="text-xs text-slate-400">{l.candidate.sub_domain}</div>
+                <div className="text-xs text-slate-400 truncate max-w-[260px]">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
               </td>
-              <td className="px-4 py-3">
-                <div className="flex flex-col items-start gap-1">
-                  {resumeSignedUrlByCandidate[l.candidate.id] ? (
-                    <ResumePreview
-                      signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
-                      fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
-                      label="Preview"
-                      onOpen={() => markViewed(l.id)}
-                    />
-                  ) : (
-                    <span className="text-[11px] text-slate-300">—</span>
-                  )}
-                  <PipelineWhatsApp
-                    candidateId={l.candidate.id}
-                    candidateName={l.candidate.full_name}
-                    phone={l.candidate.phone}
-                    missing={l.candidate.readiness_missing}
-                    stage={l.stage}
-                    roleTitle={mandateContext.role_title ?? null}
-                    cities={(mandateContext.cities as string[] | undefined) ?? null}
-                    workMode={(mandateContext.work_mode as string | null | undefined) ?? null}
-                  />
-                  <PipelineTemplateActions
-                    candidateId={l.candidate.id}
-                    mandateId={mandateContext.mandateId}
-                    stage={l.stage}
-                    missing={l.candidate.readiness_missing}
-                    showOpportunity={l.stage === "sourced" || l.stage === "screened"}
-                  />
-                  <FlagForCallButton
-                    candidateId={l.candidate.id}
-                    candidateName={l.candidate.full_name}
-                    mandateId={mandateContext.mandateId}
-                    mandateRoleTitle={mandateContext.role_title ?? null}
-                    teamMembers={teamMembers}
-                    existingFlag={flagMap[l.candidate.id] ?? null}
-                    onFlagged={(flag) => setFlagMap((prev) => ({ ...prev, [l.candidate.id]: flag }))}
-                  />
-                  <CallDispositionControl
-                    linkId={l.id}
-                    candidateId={l.candidate.id}
-                    candidateName={l.candidate.full_name}
-                    mandateId={mandateContext.mandateId}
-                    mandateRoleTitle={mandateContext.role_title ?? null}
-                    clientName={(mandateContext.client_name as string | undefined) ?? null}
-                    currentStage={l.stage}
-                    currentDisposition={l.call_disposition}
-                    currentNote={l.call_disposition_note ?? null}
-                    onApplied={() => router.refresh()}
-                  />
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                {isAdmin ? (
-                  <select
-                    defaultValue={l.candidate.owner_id ?? ""}
-                    disabled={reassigningId === l.candidate.id}
-                    onChange={(e) => reassignOwner(l.candidate.id, e.target.value)}
-                    className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 bg-white dark:bg-slate-900 max-w-[130px]"
-                    title="Admin: reassign this candidate's owner"
-                  >
-                    <option value="">Unassigned</option>
-                    {teamMembers.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.full_name?.trim() || m.email}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="text-xs text-slate-600 dark:text-slate-400 truncate block max-w-[130px]" title="Owner -- this candidate's responsibility">
-                    {ownerLabel(l.candidate.owner_id)}
-                  </span>
-                )}
-              </td>
-              <td className="px-4 py-3">
-                <span
-                  className="text-xs text-slate-600 dark:text-slate-400 truncate block max-w-[150px]"
-                  title={sourceCellLabel(l.candidate)}
-                >
-                  {sourceCellLabel(l.candidate)}
-                </span>
-                {l.candidate.created_by === "vendor_submitted" && (
-                  <div className="mt-1">
-                    <VendorNoteControl linkId={l.id} currentNote={l.vendor_update_note ?? null} />
-                  </div>
-                )}
-              </td>
-              <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                <div>{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</div>
-                {l.candidate.notice_period && (
-                  <div className="text-[10.5px] text-slate-400">Notice: {l.candidate.notice_period}</div>
-                )}
-              </td>
-              <td className="px-4 py-3">
-                {l.candidate.stability_score === null || l.candidate.stability_score === undefined ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      generateStabilityScore(l.candidate.id);
-                    }}
-                    disabled={generatingStability.has(l.candidate.id)}
-                    className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
-                  >
-                    {generatingStability.has(l.candidate.id) ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3 h-3" />
-                    )}
-                    {generatingStability.has(l.candidate.id) ? "Generating…" : "Generate"}
-                  </button>
-                ) : (
-                  <span
-                    className={`inline-block rounded px-1.5 py-0.5 text-[10.5px] font-semibold whitespace-nowrap ${stabilityTone(stabilityLabelForScore(l.candidate.stability_score))}`}
-                  >
-                    {stabilityLabelForScore(l.candidate.stability_score)} · {l.candidate.stability_score}
-                  </span>
-                )}
-              </td>
-              <td className="px-4 py-3">
+                <td className="px-3 py-3 align-top">
                 <MandateAssessmentPopover
                   assessment={l.match_assessment}
                   onReassess={() => reassessCandidate(l.candidate.id)}
                   reassessing={reassessingIds.has(l.candidate.id)}
                 />
               </td>
-              <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}
-              </td>
-              <td className="px-4 py-3">
+                <td className="px-3 py-3 align-top text-[13px]"><div className="text-slate-700 dark:text-slate-300 tabular-nums">
+                  {l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}
+                  {l.candidate.notice_period ? <span className="text-slate-400"> · {l.candidate.notice_period}</span> : null}
+                </div></td>
+                <td className="px-3 py-3 align-top">
                 {editingStageId === l.id ? (
                   <div className="flex flex-col gap-1.5 min-w-[170px]">
                     <select
@@ -864,7 +743,146 @@ export default function MandateCandidatesTable({
                   </div>
                 )}
               </td>
-              <td className="px-4 py-3">
+                <td className="px-3 py-3 align-top text-right">
+                  <button
+                    type="button"
+                    onClick={() => toggleOpen(l.id)}
+                    aria-expanded={openRows.has(l.id)}
+                    className="rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800"
+                  >
+                    {openRows.has(l.id) ? "Close" : "More"}
+                  </button>
+                </td>
+              </tr>
+              {openRows.has(l.id) && (
+                <tr className="bg-slate-50/60 dark:bg-slate-800/30">
+                  <td></td>
+                  <td colSpan={5} className="px-3 pb-4 pt-1">
+                    <div className="grid gap-5 md:grid-cols-3">
+                      <div>
+                        <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Reach out</p>
+                        <div className="flex flex-col items-start gap-1.5">
+                  {resumeSignedUrlByCandidate[l.candidate.id] ? (
+                    <ResumePreview
+                      signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
+                      fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
+                      label="Preview"
+                      onOpen={() => markViewed(l.id)}
+                    />
+                  ) : (
+                    <span className="text-[11px] text-slate-300">—</span>
+                  )}
+                  <PipelineWhatsApp
+                    candidateId={l.candidate.id}
+                    candidateName={l.candidate.full_name}
+                    phone={l.candidate.phone}
+                    missing={l.candidate.readiness_missing}
+                    stage={l.stage}
+                    roleTitle={mandateContext.role_title ?? null}
+                    cities={(mandateContext.cities as string[] | undefined) ?? null}
+                    workMode={(mandateContext.work_mode as string | null | undefined) ?? null}
+                  />
+                  <PipelineTemplateActions
+                    candidateId={l.candidate.id}
+                    mandateId={mandateContext.mandateId}
+                    stage={l.stage}
+                    missing={l.candidate.readiness_missing}
+                    showOpportunity={l.stage === "sourced" || l.stage === "screened"}
+                  />
+                  <FlagForCallButton
+                    candidateId={l.candidate.id}
+                    candidateName={l.candidate.full_name}
+                    mandateId={mandateContext.mandateId}
+                    mandateRoleTitle={mandateContext.role_title ?? null}
+                    teamMembers={teamMembers}
+                    existingFlag={flagMap[l.candidate.id] ?? null}
+                    onFlagged={(flag) => setFlagMap((prev) => ({ ...prev, [l.candidate.id]: flag }))}
+                  />
+                  <CallDispositionControl
+                    linkId={l.id}
+                    candidateId={l.candidate.id}
+                    candidateName={l.candidate.full_name}
+                    mandateId={mandateContext.mandateId}
+                    mandateRoleTitle={mandateContext.role_title ?? null}
+                    clientName={(mandateContext.client_name as string | undefined) ?? null}
+                    currentStage={l.stage}
+                    currentDisposition={l.call_disposition}
+                    currentNote={l.call_disposition_note ?? null}
+                    onApplied={() => router.refresh()}
+                  />
+                </div>
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">About</p>
+                        <dl className="space-y-2 text-[12.5px]">
+                          <div><dt className="text-slate-400">Owner</dt><dd>
+                {isAdmin ? (
+                  <select
+                    defaultValue={l.candidate.owner_id ?? ""}
+                    disabled={reassigningId === l.candidate.id}
+                    onChange={(e) => reassignOwner(l.candidate.id, e.target.value)}
+                    className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 bg-white dark:bg-slate-900 max-w-[130px]"
+                    title="Admin: reassign this candidate's owner"
+                  >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.full_name?.trim() || m.email}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 truncate block max-w-[130px]" title="Owner -- this candidate's responsibility">
+                    {ownerLabel(l.candidate.owner_id)}
+                  </span>
+                )}
+              </dd></div>
+                          <div><dt className="text-slate-400">Source</dt><dd>
+                <span
+                  className="text-xs text-slate-600 dark:text-slate-400 truncate block max-w-[150px]"
+                  title={sourceCellLabel(l.candidate)}
+                >
+                  {sourceCellLabel(l.candidate)}
+                </span>
+                {l.candidate.created_by === "vendor_submitted" && (
+                  <div className="mt-1">
+                    <VendorNoteControl linkId={l.id} currentNote={l.vendor_update_note ?? null} />
+                  </div>
+                )}
+              </dd></div>
+                          <div><dt className="text-slate-400">Stability</dt><dd>
+                {l.candidate.stability_score === null || l.candidate.stability_score === undefined ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      generateStabilityScore(l.candidate.id);
+                    }}
+                    disabled={generatingStability.has(l.candidate.id)}
+                    className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 disabled:opacity-60 disabled:cursor-wait whitespace-nowrap"
+                  >
+                    {generatingStability.has(l.candidate.id) ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    {generatingStability.has(l.candidate.id) ? "Generating…" : "Generate"}
+                  </button>
+                ) : (
+                  <span
+                    className={`inline-block rounded px-1.5 py-0.5 text-[10.5px] font-semibold whitespace-nowrap ${stabilityTone(stabilityLabelForScore(l.candidate.stability_score))}`}
+                  >
+                    {stabilityLabelForScore(l.candidate.stability_score)} · {l.candidate.stability_score}
+                  </span>
+                )}
+              </dd></div>
+                          <div><dt className="text-slate-400">Recommendation</dt><dd>
+                {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}
+              </dd></div>
+                        </dl>
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Client</p>
+                        
                 <div className="flex flex-col items-start gap-1">
                   {(() => {
                     if (l.in_shortlist) {
@@ -927,8 +945,13 @@ export default function MandateCandidatesTable({
                     </span>
                   )}
                 </div>
-              </td>
-            </tr>
+              
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>

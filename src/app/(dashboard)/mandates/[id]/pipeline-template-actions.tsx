@@ -111,7 +111,9 @@ export default function PipelineTemplateActions({
         )}
       </div>
       {(askDetails || interview || offer || opportunity) && (
-        <span className="text-[10.5px] leading-4 text-slate-400">Auto: sent from StaffAnchor&apos;s WhatsApp with an approved template, only after you review the message and press Send. Meta charges per message.</span>
+        <span className="text-[10.5px] leading-4 text-slate-400" title="Sent from StaffAnchor's WhatsApp number with an approved template, only after you review the message and press Send. Meta charges per message.">
+          Auto · you review first
+        </span>
       )}
       {review && (
         <WhatsAppReview

@@ -83,7 +83,7 @@ export default async function MandateDetailPage({
   const { data: links } = await supabase
     .from("candidate_mandate_links")
     .select(
-      "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, phone, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+      "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, candidates(id, full_name, email, phone, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
     )
     .eq("mandate_id", id);
 
@@ -407,34 +407,33 @@ export default async function MandateDetailPage({
 
       {/* Health strip -- everything a recruiter needs to answer "is this
           mandate in trouble" without opening a single panel below. */}
-      <div
-        className={`mt-3 grid grid-cols-2 gap-2 ${
-          [true, fillProbability, mandate.headcount > 1].filter(Boolean).length >= 3 ? "sm:grid-cols-6" : fillProbability ? "sm:grid-cols-5" : "sm:grid-cols-4"
-        }`}
-      >
-        <StatTile label="Days open" value={daysOpenNum} icon={<CalendarDays className="h-4 w-4" />} accent={daysOpenNum >= 21} />
-        <StatTile label="In pipeline" value={pipelineCount} icon={<Users className="h-4 w-4" />} />
-        <StatTile label="Submitted to client" value={submittedCount} icon={<Share2 className="h-4 w-4" />} />
-        <StatTile
-          label="Screened"
-          value={pipelineCount > 0 ? `${screenedCount}/${pipelineCount}` : "—"}
-          icon={<ClipboardCheck className="h-4 w-4" />}
-        />
+      <p className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
+        <span className={daysOpenNum >= 21 ? "font-semibold text-amber-600" : ""}>
+          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{daysOpenNum}</span> days open
+        </span>
+        <span>
+          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{pipelineCount}</span> in pipeline
+        </span>
+        <span>
+          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{submittedCount}</span> sent to client
+        </span>
+        <span>
+          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{pipelineCount > 0 ? `${screenedCount}/${pipelineCount}` : "0"}</span> screened
+        </span>
         {mandate.headcount > 1 && (
-          <StatTile
-            label="Openings filled"
-            value={`${placedCount}/${mandate.headcount}`}
-            icon={<Users className="h-4 w-4" />}
-            accent={placedCount >= mandate.headcount}
-          />
+          <span>
+            <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">
+              {placedCount}/{mandate.headcount}
+            </span>{" "}
+            filled
+          </span>
         )}
-        {fillProbability && <FillProbabilityTile probability={fillProbability} />}
-      </div>
-      {fillProbability && (
-        <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
-          Fill probability driver: {fillProbability.driver}
-        </p>
-      )}
+        {fillProbability && (
+          <span title={`Driver: ${fillProbability.driver}`}>
+            <span className={`font-semibold tabular-nums ${fillProbability.bucket === "high" ? "text-emerald-600" : fillProbability.bucket === "medium" ? "text-amber-600" : "text-rose-600"}`}>{fillProbability.score}%</span> likely to fill
+          </span>
+        )}
+      </p>
 
       {blockers.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">

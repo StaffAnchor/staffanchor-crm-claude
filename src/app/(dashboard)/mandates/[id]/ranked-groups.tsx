@@ -25,6 +25,7 @@ export default function RankedGroups({ mandateId, ranked }: { mandateId: string;
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [why, setWhy] = useState<Set<string>>(new Set());
 
   const list = ranked.filter((r) => r.bucket === tab);
 
@@ -98,17 +99,22 @@ export default function RankedGroups({ mandateId, ranked }: { mandateId: string;
                     {c.expected_fixed_ctc != null ? ` · expects ${Number(c.expected_fixed_ctc)} LPA` : c.current_fixed_ctc != null ? ` · ${Number(c.current_fixed_ctc)} LPA now` : ""}
                     {c.notice_period ? ` · notice ${c.notice_period}` : ""}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {r.matched.slice(0, 5).map((m) => (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {(why.has(c.candidate_id) ? r.matched : r.matched.slice(0, 2)).map((m) => (
                       <span key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11.5px] text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800/60">
                         <Check className="h-3 w-3" /> {m}
                       </span>
                     ))}
-                    {r.gaps.map((g) => (
+                    {(why.has(c.candidate_id) ? r.gaps : r.gaps.slice(0, 1)).map((g) => (
                       <span key={g} className="rounded-full bg-amber-50 px-2 py-0.5 text-[11.5px] text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
                         ⚠ {g}
                       </span>
                     ))}
+                    {(r.matched.length > 2 || r.gaps.length > 1) && (
+                      <button type="button" onClick={() => setWhy((w) => (w.has(c.candidate_id) ? new Set([...w].filter((x) => x !== c.candidate_id)) : new Set(w).add(c.candidate_id)))} className="text-[11.5px] font-medium text-blue-600 hover:underline">
+                        {why.has(c.candidate_id) ? "Less" : `+${Math.max(0, r.matched.length - 2) + Math.max(0, r.gaps.length - 1)} more`}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="shrink-0">

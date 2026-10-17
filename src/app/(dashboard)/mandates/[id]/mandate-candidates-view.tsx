@@ -293,31 +293,24 @@ export default function MandateCandidatesView({
 
   return (
     <div>
-      <div className="mb-3 grid grid-cols-2 gap-2" role="tablist" aria-label="Candidates for this mandate">
+      <div className="mb-4 inline-flex rounded-full bg-slate-100 p-1 dark:bg-slate-800" role="tablist" aria-label="Candidates for this mandate">
         <button
           role="tab"
           aria-selected={set === "pipeline"}
           onClick={() => setSet("pipeline")}
-          className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${set === "pipeline" ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"}`}
+          title="Applied, or added by the team"
+          className={`rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors ${set === "pipeline" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100" : "text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
         >
-          <span className="flex items-center justify-between gap-2 text-[13px] font-semibold">
-            Pipeline <span className="tabular-nums">{rows.length}</span>
-          </span>
-          <span className={`block text-[11.5px] ${set === "pipeline" ? "opacity-80" : "text-slate-500 dark:text-slate-400"}`}>Applied, or added by the team</span>
+          Pipeline <span className="ml-1 tabular-nums text-slate-400">{rows.length}</span>
         </button>
         <button
           role="tab"
           aria-selected={set === "ai"}
           onClick={() => setSet("ai")}
-          className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${set === "ai" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-violet-50/60 text-violet-800 hover:bg-violet-50 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-200"}`}
+          title="Best people from your whole database. Not in the pipeline until you add them"
+          className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors ${set === "ai" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100" : "text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
         >
-          <span className="flex items-center justify-between gap-2 text-[13px] font-semibold">
-            <span className="inline-flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" /> AI suggestions
-            </span>
-            <span className="tabular-nums">{aiCount}</span>
-          </span>
-          <span className={`block text-[11.5px] ${set === "ai" ? "opacity-90" : "text-violet-700/80 dark:text-violet-300/80"}`}>Not in the pipeline until you add them</span>
+          <Sparkles className="h-3.5 w-3.5 text-violet-500" /> Best matches <span className="tabular-nums text-slate-400">{aiCount}</span>
         </button>
       </div>
       {set === "pipeline" ? pipelineView : aiSuggestions}

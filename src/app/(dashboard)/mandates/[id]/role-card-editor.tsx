@@ -28,7 +28,8 @@ export default function RoleCardEditor({
 }) {
   const router = useRouter();
   const [c, setC] = useState<RoleCard>(card);
-  const [open, setOpen] = useState(!confirmed);
+  // Closed by default: the card is a summary line until someone wants to change it.
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<"save" | "rewrite" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const name = (slug: string) => worlds.find((w) => w.slug === slug)?.name ?? slug;
@@ -70,9 +71,9 @@ export default function RoleCardEditor({
       <div className="flex flex-wrap items-center gap-2">
         <Sparkles className="h-4 w-4 text-teal-600" />
         <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">What this role really needs</h3>
-        <span className="text-[12px] text-slate-500">{confirmed ? "Checked by you" : "Written by the system. Check it, it takes a moment."}</span>
+        <span className="text-[12px] text-slate-400">{confirmed ? "Checked" : "Written by the system"}</span>
         <button type="button" onClick={() => setOpen((o) => !o)} className="ml-auto text-[12px] font-medium text-blue-600 hover:underline">
-          {open ? "Hide" : "Adjust"}
+          {open ? "Done" : confirmed ? "Adjust" : "Check it"}
         </button>
       </div>
 
