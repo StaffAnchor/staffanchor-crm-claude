@@ -11,7 +11,7 @@ import { POOL_PRACTICE, isPoolTier, type PoolTier } from "@/lib/talent-pool";
 export type Debrief = {
   verdict: { tier: PoolTier | "pass" | null; confidence: number; reason: string | null };
   ratings: CallRating;
-  facts: { notice_period: string | null; expected_fixed_ctc: number | null; current_fixed_ctc: number | null; open_to_relocation: string | null };
+  facts: { notice_period: string | null; expected_fixed_ctc: number | null; current_fixed_ctc: number | null; open_to_relocation: string | null; role_level: "ic" | "team_lead" | "manager" | "director" | "vp_plus" | null; team_size: number | null };
   strengths: string[];
   concerns: string[];
   follow_up: { when: string | null; note: string | null };
@@ -29,6 +29,9 @@ export type Applied = {
 
 const NOTICE = ["Immediate", "15 days", "30 days", "60 days", "90+ days"];
 const RELOC = ["Yes", "No", "Maybe", "Depends upon Option"];
+const LEVELS = ["ic", "team_lead", "manager", "director", "vp_plus"] as const;
+// How each level is written on the profile, so the inventory and the profile agree.
+const LEVEL_LABEL: Record<string, string> = { ic: "IC", team_lead: "Team Lead / Asst. Manager", manager: "Manager", director: "Director", vp_plus: "VP / Head" };
 const RATING_VALUES: RatingValue[] = ["good", "okay", "weak"];
 
 const text = (v: unknown, len: number): string | null => {
@@ -72,7 +75,14 @@ function normalise(raw: unknown): Debrief | null {
   return {
     verdict: { tier, confidence: Math.max(0, Math.min(1, Number(v.confidence) || 0)), reason: text(v.reason, 300) },
     ratings,
-    facts: { notice_period: notice, expected_fixed_ctc: num(f.expected_fixed_ctc), current_fixed_ctc: num(f.current_fixed_ctc), open_to_relocation: reloc },
+    facts: {
+      notice_period: notice,
+      expected_fixed_ctc: num(f.expected_fixed_ctc),
+      current_fixed_ctc: num(f.current_fixed_ctc),
+      open_to_relocation: reloc,
+      role_level: (LEVELS as readonly string[]).includes(String(f.role_level)) ? (f.role_level as (typeof LEVELS)[number]) : null,
+      team_size: typeof f.team_size === "number" && f.team_size >= 0 && f.team_size < 1000 ? Math.round(f.team_size) : null,
+    },
     strengths: list(o.strengths, 5),
     concerns: list(o.concerns, 5),
     follow_up: { when: text(fu.when, 40), note: text(fu.note, 200) },
@@ -89,7 +99,7 @@ export async function runDebrief(
 
   const { data: c } = await admin
     .from("candidates")
-    .select("full_name, current_job_title, current_employer, total_experience_years, notice_period, current_fixed_ctc, expected_fixed_ctc, open_to_relocation")
+    .select("full_name, current_job_title, current_employer, total_experience_years, notice_period, current_fixed_ctc, expected_fixed_ctc, open_to_relocation, segment_data")
     .eq("id", opts.candidateId)
     .maybeSingle();
   if (!c) return { ok: false, error: "Candidate not found" };
@@ -107,13 +117,14 @@ Rules:
 - verdict.tier: "top" only if the note clearly says the person is excellent and you would put them in front of any client; "strong" for solid and placeable; "watch" for promising or not ready; "pass" if the note says not suitable; null if the note gives no judgement. confidence is 0 to 1 and must be low when the note is vague.
 - verdict.reason: one short sentence in plain words taken from the note.
 - ratings: communication, seriousness, stability, salary_realism, skill_match, each "good", "okay", "weak" or null. Only set one if the note supports it.
+- facts.role_level: "ic" if they sell or work on their own, "team_lead", "manager", "director" or "vp_plus" only if the note says they lead people or hold that title; otherwise null. facts.team_size: how many people report to them, if the note says. Never guess either.
 - facts: notice_period must be one of "Immediate","15 days","30 days","60 days","90+ days" or null. expected_fixed_ctc and current_fixed_ctc are numbers in LPA or null. open_to_relocation is one of "Yes","No","Maybe","Depends upon Option" or null. Only what the note states.
 - strengths and concerns: short phrases from the note.
 - follow_up: when (for example "in 2 weeks") and note, or null.
 - summary: one or two sentences summing up the call.
 
 Return ONLY this JSON, no markdown:
-{"verdict":{"tier":null,"confidence":0,"reason":null},"ratings":{"communication":null,"seriousness":null,"stability":null,"salary_realism":null,"skill_match":null},"facts":{"notice_period":null,"expected_fixed_ctc":null,"current_fixed_ctc":null,"open_to_relocation":null},"strengths":[],"concerns":[],"follow_up":{"when":null,"note":null},"summary":""}`;
+{"verdict":{"tier":null,"confidence":0,"reason":null},"ratings":{"communication":null,"seriousness":null,"stability":null,"salary_realism":null,"skill_match":null},"facts":{"notice_period":null,"expected_fixed_ctc":null,"current_fixed_ctc":null,"open_to_relocation":null,"role_level":null,"team_size":null},"strengths":[],"concerns":[],"follow_up":{"when":null,"note":null},"summary":""}`;
 
   let result;
   try {
@@ -144,6 +155,18 @@ Return ONLY this JSON, no markdown:
   consider("expected_fixed_ctc", "Expected CTC", debrief.facts.expected_fixed_ctc, c.expected_fixed_ctc, `${debrief.facts.expected_fixed_ctc} LPA`);
   consider("current_fixed_ctc", "Current CTC", debrief.facts.current_fixed_ctc, c.current_fixed_ctc, `${debrief.facts.current_fixed_ctc} LPA`);
   consider("open_to_relocation", "Relocation", debrief.facts.open_to_relocation, c.open_to_relocation, debrief.facts.open_to_relocation ?? "");
+  // Role level: written to the profile (blank only) and to the inventory, where a recruiter's word counts as settled.
+  const levelNow = (c.segment_data as { role_level?: string } | null)?.role_level;
+  if (debrief.facts.role_level) {
+    const label = LEVEL_LABEL[debrief.facts.role_level];
+    if (!levelNow) {
+      updates.segment_data = { ...((c.segment_data as Record<string, unknown> | null) ?? {}), role_level: label };
+      applied.filled.push({ field: "role_level", label: "Role level", value: label });
+    } else if (levelNow !== label) {
+      applied.conflicts.push({ label: "Role level", note: label, profile: levelNow });
+    }
+    if (!levelNow) await admin.from("candidate_role_tags").update({ seniority: debrief.facts.role_level, level_source: "recruiter" }).eq("candidate_id", opts.candidateId).eq("is_current", true);
+  }
   if (Object.keys(updates).length > 0) await admin.from("candidates").update({ ...updates, updated_at: new Date().toISOString() }).eq("id", opts.candidateId);
 
   // 2. Quick ratings, when the note supports any.

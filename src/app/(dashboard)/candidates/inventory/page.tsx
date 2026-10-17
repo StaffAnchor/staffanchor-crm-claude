@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
 import RecalculateButton from "./recalculate-button";
+import ClassifyButton from "./classify-button";
 import { DOMAINS, LEVELS, METROS, SENIORITY_SHORT, TRACKS, inventoryHref, parseParams } from "@/lib/inventory";
 import { POOL_TIER_LABEL, POOL_TIER_PILL, type PoolTier } from "@/lib/talent-pool";
 
@@ -114,7 +115,12 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             What you hold, by kind of role and by city, whether or not a mandate is open. Pick a track, then click any number to see the people behind it.
           </p>
         </div>
-        {me.role === "admin" && <RecalculateButton />}
+        {me.role === "admin" && (
+          <div className="flex flex-wrap items-center gap-3">
+            <ClassifyButton />
+            <RecalculateButton />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">

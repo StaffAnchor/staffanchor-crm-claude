@@ -24,9 +24,10 @@ export const LEVELS: { key: string; label: string; senior: string[] | null }[] =
   { key: "leaders", label: "Leaders (team lead and above)", senior: ["team_lead", "manager", "director", "vp_plus"] },
   { key: "heads", label: "Heads (director and above)", senior: ["director", "vp_plus"] },
   { key: "ic", label: "Individual contributors", senior: ["ic"] },
+  { key: "unclear", label: "Level not clear", senior: ["unclear"] },
 ];
 
-export const SENIORITY_SHORT: Record<string, string> = { ic: "IC", team_lead: "Team lead", manager: "Manager", director: "Director", vp_plus: "VP and above" };
+export const SENIORITY_SHORT: Record<string, string> = { ic: "IC", team_lead: "Team lead", manager: "Manager", director: "Director", vp_plus: "VP and above", unclear: "Not clear" };
 
 export type InventoryParams = {
   track: string;

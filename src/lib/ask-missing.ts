@@ -100,6 +100,7 @@ const STEP_FOR_KEY: Record<string, Step> = {
 // and the next ask picks the next ones. Details not named here come after, in their usual order.
 const ASK_PRIORITY = [
   "current_fixed_ctc",
+  "role_level",
   "notice_period",
   "resume_file_url",
   "current_location",
@@ -118,6 +119,10 @@ function askableMissing(cand: CandidateLite): Askable[] {
   const all: Askable[] = [...missingKeyDetails({ ...cand })];
   if (cand.open_to_relocation === null || cand.open_to_relocation === undefined || String(cand.open_to_relocation).trim() === "") {
     all.push({ key: "open_to_relocation", label: "Relocation preference", ask: "whether you are open to relocating" });
+  }
+  // Role level is asked only where it is genuinely unclear, second after current CTC.
+  if (cand.role_level_unclear) {
+    all.push({ key: "role_level", label: "Role level (team size)", ask: "whether you lead a team and how many people" });
   }
   const rank = (k: string) => {
     const i = ASK_PRIORITY.indexOf(k);
