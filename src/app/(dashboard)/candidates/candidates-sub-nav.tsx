@@ -3,50 +3,57 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// The Candidates area, kept to what is used every day. Inventory (what we hold, by role and city) comes first;
+// the less frequent pages sit under "More". Practice Pool is still reachable there and from the Inventory.
 const TABS = [
+  { href: "/candidates/inventory", label: "Inventory" },
   { href: "/candidates", label: "Candidates" },
-  { href: "/candidates/board", label: "Talent board" },
-  { href: "/candidates/lists", label: "Shortlists" },
-  { href: "/candidates/referrals", label: "Referrals" },
   { href: "/saas-practice", label: "B2B SaaS" },
-  { href: "/practice-pool", label: "Practice Pool" },
+  { href: "/candidates/lists", label: "Shortlists" },
   { href: "/candidates/outreach", label: "Outreach" },
+];
+
+const MORE = [
+  { href: "/candidates/board", label: "Talent board" },
+  { href: "/candidates/referrals", label: "Referrals" },
+  { href: "/practice-pool", label: "Practice Pool (fit against open roles)" },
   { href: "/candidates/files", label: "CV files" },
 ];
 
-// Referrals used to be its own top-level nav item; folded in here (Sep
-// 2026) as a tab since it's the same underlying pool of people, just a
-// different lens (who referred whom) -- only shown on the list-level pages
-// (main list + Referrals), not the detail/new/groups/bulk-upload/search
-// sub-routes, so it's rendered inline by those two pages rather than in
-// the shared candidates/layout.tsx.
-//
-// Practice Pool (still at its own /practice-pool route, not nested under
-// /candidates -- it has its own nav-independent history and a URL
-// recruiters already have bookmarked) joined this tab strip the same way:
-// same underlying candidates, cross-referenced against open mandates by
-// practice instead of listed flat.
 export default function CandidatesSubNav() {
   const pathname = usePathname();
+  const isActive = (href: string) => (href === "/candidates" ? pathname === "/candidates" : pathname?.startsWith(href));
+  const moreActive = MORE.some((m) => isActive(m.href));
 
   return (
     <div className="flex items-center gap-1 mb-4 -mt-1">
-      {TABS.map((t) => {
-        const active = t.href === "/candidates" ? pathname === "/candidates" : pathname?.startsWith(t.href);
-        return (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
-              active
-                ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
-          >
-            {t.label}
-          </Link>
-        );
-      })}
+      {TABS.map((t) => (
+        <Link
+          key={t.href}
+          href={t.href}
+          className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
+            isActive(t.href) ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+        >
+          {t.label}
+        </Link>
+      ))}
+      <details className="relative">
+        <summary
+          className={`list-none cursor-pointer px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
+            moreActive ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+        >
+          More ▾
+        </summary>
+        <div className="absolute left-0 z-30 mt-1 w-64 rounded-ros-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          {MORE.map((m) => (
+            <Link key={m.href} href={m.href} className="block px-3 py-2 text-[12.5px] text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
+              {m.label}
+            </Link>
+          ))}
+        </div>
+      </details>
     </div>
   );
 }

@@ -67,20 +67,19 @@ export default async function DashboardLayout({
     // of thing that belongs behind the same admin-only gate as Billing/
     // Targets, not the general nav. Team/Vendors stay separate -- those are
     // admin CRUD tools (managing people/vendor accounts), not metrics.
-    ...(profile?.role === "admin"
-      ? [
-          { href: "/team", label: "Team", enabled: true },
-          { href: "/vendors", label: "Vendors", enabled: true },
-          // Sales Circle referral network admin panel (Sep 2026) --
-          // approve/reject referrer applications, move referrals through
-          // the status pipeline, manage payout slabs and mark payouts
-          // eligible/paid. Admin-only, same gate as Team/Vendors.
-          { href: "/sales-circle", label: "Sales Circle", enabled: true },
-          { href: "/analytics", label: "Analytics", enabled: true },
-          { href: "/marketing", label: "Marketing", enabled: true },
-        ]
-      : []),
+    // Analytics stays in the bar for the owner; the admin tools (Team, Vendors, Sales Circle, Marketing) moved
+    // into the account menu so the bar shows what is used every day.
+    ...(profile?.role === "admin" ? [{ href: "/analytics", label: "Analytics", enabled: true }] : []),
   ];
+  const adminLinks =
+    profile?.role === "admin"
+      ? [
+          { href: "/team", label: "Team" },
+          { href: "/vendors", label: "Vendors" },
+          { href: "/sales-circle", label: "Sales Circle" },
+          { href: "/marketing", label: "Marketing" },
+        ]
+      : [];
 
   return (
     <div className="ros-canvas min-h-screen transition-colors duration-200">
@@ -95,6 +94,7 @@ export default async function DashboardLayout({
       </a>
       <TopNav
         navLinks={navLinks}
+        adminLinks={adminLinks}
         fullName={profile?.full_name ?? null}
         email={profile?.email ?? user.email ?? ""}
         role={profile?.role ?? "recruiter"}

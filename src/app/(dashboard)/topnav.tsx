@@ -25,12 +25,15 @@ type NavLink = { href: string; label: string; enabled: boolean };
 // still with a full dark-mode variant since ThemeToggle stays.
 export default function TopNav({
   navLinks,
+  adminLinks = [],
   fullName,
   email,
   role,
   initials,
 }: {
   navLinks: NavLink[];
+  /** Admin-only tools, kept out of the main bar and shown in the account menu. */
+  adminLinks?: { href: string; label: string }[];
   fullName: string | null;
   email: string;
   role: string;
@@ -170,6 +173,21 @@ export default function TopNav({
                 {/* Lets a rep set their own outreach voice/bio (task: "per-user
                     AI outreach persona") instead of every Sales AI draft
                     claiming to be the founder regardless of who sends it. */}
+                {adminLinks.length > 0 && (
+                  <div className="border-b border-slate-100 py-1 dark:border-slate-800">
+                    <p className="px-3 pb-1 pt-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Admin</p>
+                    {adminLinks.map((a) => (
+                      <Link
+                        key={a.href}
+                        href={a.href}
+                        onClick={() => setMenuOpen(false)}
+                        className="block px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/50"
+                      >
+                        {a.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
                 <Link
                   href="/settings"
                   className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800"
