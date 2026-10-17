@@ -66,7 +66,7 @@ export function ProfileRatingBadge({ row }: { row: ProfileRatingRow | null | und
   return (
     <span
       title={detail || RATING_LABEL[row.rating]}
-      className={`inline-flex items-center gap-1 rounded px-1.5 py-px text-[10.5px] font-medium ${
+      className={`inline-flex items-center gap-1 rounded px-1.5 py-px text-xs font-medium ${
         strong
           ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
           : "bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-200"
@@ -120,7 +120,7 @@ export function RatingPicker({
                 key={r.value}
                 type="button"
                 onClick={() => onChange({ ...draft, reasons: on ? draft.reasons.filter((x) => x !== r.value) : [...draft.reasons, r.value] })}
-                className={`rounded-full border px-2 py-0.5 text-[11.5px] ${on ? "border-slate-700 bg-slate-800 text-white dark:border-slate-200 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}
+                className={`rounded-full border px-2 py-0.5 text-xs ${on ? "border-slate-700 bg-slate-800 text-white dark:border-slate-200 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}
               >
                 {r.label}
               </button>
@@ -214,7 +214,7 @@ export function ProfileRatingPanel({ candidateId }: { candidateId: string }) {
               setDraft(row ? { rating: row.rating, reasons: row.reasons, note: row.note ?? "" } : emptyDraft);
               setEditing(true);
             }}
-            className="text-[12px] font-medium text-blue-600 hover:underline"
+            className="text-[12px] font-medium text-teal-600 hover:underline"
           >
             {row ? "Change" : "Mark this CV"}
           </button>

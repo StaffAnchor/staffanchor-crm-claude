@@ -31,7 +31,7 @@ export default async function ShortlistsPage() {
           </h1>
           <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
             Lists the whole team can see and add to. Open the{" "}
-            <Link href="/candidates/inventory" className="font-medium text-indigo-600 hover:underline">
+            <Link href="/candidates/inventory" className="font-medium text-teal-600 hover:underline">
               Inventory
             </Link>
             , click any number, and use &quot;Save as a shortlist&quot;.
@@ -45,13 +45,13 @@ export default async function ShortlistsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {lists.map((l) => (
-            <Link key={l.id} href={`/candidates/lists/${l.id}`} className="rounded-xl border border-slate-200 bg-white p-4 shadow-ros-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+            <Link key={l.id} href={`/candidates/lists/${l.id}`} className="rounded-xl border border-slate-200 bg-white p-4 shadow-ros-sm transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-start justify-between gap-3">
                 <p className="truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">{l.name}</p>
-                <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">{Number(l.n)}</span>
+                <span className="shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">{Number(l.n)}</span>
               </div>
               {l.description && <p className="mt-1 line-clamp-2 text-[12.5px] text-slate-500">{l.description}</p>}
-              <p className="mt-3 text-[11.5px] text-slate-400">
+              <p className="mt-3 text-xs text-slate-400">
                 {l.owner_name ? `By ${l.owner_name} · ` : ""}Updated {when(l.updated_at)}
               </p>
             </Link>

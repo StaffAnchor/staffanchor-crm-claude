@@ -59,14 +59,14 @@ export default function WeekOffPicker({
 
   return (
     <div>
-      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">Off day(s)</p>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Off day(s)</p>
       <div className="flex gap-2 mb-2">
         <button
           type="button"
           onClick={() => setType("fixed")}
           className={`flex-1 rounded-lg border px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
             value.week_off_type === "fixed"
-              ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+              ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-300"
               : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
           }`}
         >
@@ -77,7 +77,7 @@ export default function WeekOffPicker({
           onClick={() => setType("rotational")}
           className={`flex-1 rounded-lg border px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
             value.week_off_type === "rotational"
-              ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+              ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-300"
               : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
           }`}
         >
@@ -99,14 +99,14 @@ export default function WeekOffPicker({
       {value.week_off_type === "rotational" && (
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-2.5 space-y-2.5">
           <div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">Rotational offs per week</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Rotational offs per week</p>
             <div className="flex gap-2">
               {([1, 2] as const).map((n) => (
                 <label
                   key={n}
                   className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12.5px] cursor-pointer ${
                     value.rotational_offs_per_week === n
-                      ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                      ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-300"
                       : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                   }`}
                 >
@@ -123,7 +123,7 @@ export default function WeekOffPicker({
             </div>
           </div>
           <div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Mandatory working days (optional -- days everyone must work regardless of the roster, e.g. Saturday &amp; Sunday)
             </p>
             <div className="grid grid-cols-4 gap-1.5">

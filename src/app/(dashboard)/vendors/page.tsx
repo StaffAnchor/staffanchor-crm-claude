@@ -89,7 +89,7 @@ export default async function VendorsPage() {
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 space-y-6">
       <div>
-        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Vendor agencies</h1>
+        <h1 className="ros-page-title mb-1">Vendor agencies</h1>
         <p className="text-[13px] text-slate-500 dark:text-slate-400">
           External staffing partners who submit candidates through the vendor portal, managed as companies rather
           than loose individual accounts.
@@ -138,7 +138,7 @@ export default async function VendorsPage() {
                         {a.contact_email}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusTone[a.status] ?? ""}`}>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusTone[a.status] ?? ""}`}>
                           {a.status}
                         </span>
                       </td>

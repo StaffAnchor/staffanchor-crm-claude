@@ -218,7 +218,7 @@ export default function AiHealthCard() {
   return (
     <Card className="p-4 mb-4">
       <div className="flex items-start gap-2.5 mb-3">
-        <BrainCircuit className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+        <BrainCircuit className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
         <div>
           <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200">AI system health</p>
           <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -242,21 +242,21 @@ export default function AiHealthCard() {
               Read CV → summary + stability score
             </p>
             {summaryResult && (
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
                 Backfilled {summaryResult.processed} candidates (newest first).
               </p>
             )}
             {summaryResult && summaryResult.errorSamples.length > 0 && (
-              <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                 Some failed: {summaryResult.errorSamples.join(" · ")}
               </p>
             )}
-            {summaryError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{summaryError}</p>}
+            {summaryError && <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{summaryError}</p>}
           </div>
           <button
             onClick={runSummaryBackfill}
             disabled={runningSummary}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
           >
             {runningSummary ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanSearch className="w-3.5 h-3.5" />}
             {runningSummary ? "Running…" : "Run now"}
@@ -267,21 +267,21 @@ export default function AiHealthCard() {
           <div className="min-w-0">
             <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">Embedding backfill</p>
             {embedResult && (
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
                 Backfilled {embedResult.processed} of {embedResult.candidatesConsidered} pending.
               </p>
             )}
             {embedResult && embedResult.errorSamples.length > 0 && (
-              <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                 Some failed: {embedResult.errorSamples.join(" · ")}
               </p>
             )}
-            {embedError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{embedError}</p>}
+            {embedError && <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{embedError}</p>}
           </div>
           <button
             onClick={runEmbedBackfill}
             disabled={runningEmbed}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
           >
             {runningEmbed ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             {runningEmbed ? "Running…" : "Run now"}
@@ -297,7 +297,7 @@ export default function AiHealthCard() {
       <div className="mt-2 flex items-center justify-between gap-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
         <div className="min-w-0">
           <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">Practice tagging (candidates + mandates)</p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {practiceStats ? (
               <>
                 {practiceStats.untaggedCandidates} of {practiceStats.totalCandidates} candidates untagged ·{" "}
@@ -308,21 +308,21 @@ export default function AiHealthCard() {
             )}
           </p>
           {practiceTagResult && (
-            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
               Tagged {practiceTagResult.candidatesTagged} candidates, {practiceTagResult.mandatesTagged} mandates this run.
             </p>
           )}
           {practiceTagResult && practiceTagResult.errorSamples.length > 0 && (
-            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
               Some failed: {practiceTagResult.errorSamples.join(" · ")}
             </p>
           )}
-          {practiceTagError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{practiceTagError}</p>}
+          {practiceTagError && <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{practiceTagError}</p>}
         </div>
         <button
           onClick={runPracticeTagBackfill}
           disabled={runningPracticeTags}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+          className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
         >
           {runningPracticeTags ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Tags className="w-3.5 h-3.5" />}
           {runningPracticeTags ? "Running…" : "Run now"}
@@ -341,7 +341,7 @@ export default function AiHealthCard() {
           <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">
             Talent resurfacing (full-pool mandate scans)
           </p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {resurfaceStats ? (
               <>
                 {resurfaceStats.unscannedOpenMandates} of {resurfaceStats.totalOpenMandates} open mandates never had a
@@ -352,17 +352,17 @@ export default function AiHealthCard() {
             )}
           </p>
           {resurfaceResult && (
-            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
               Scanned {resurfaceResult.mandatesScanned} mandates, found {resurfaceResult.strongHitsTotal} strong new
               match{resurfaceResult.strongHitsTotal === 1 ? "" : "es"} this run.
             </p>
           )}
-          {resurfaceError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{resurfaceError}</p>}
+          {resurfaceError && <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{resurfaceError}</p>}
         </div>
         <button
           onClick={runResurfaceBackfill}
           disabled={runningResurface}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+          className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
         >
           {runningResurface ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
           {runningResurface ? "Running…" : "Run now"}

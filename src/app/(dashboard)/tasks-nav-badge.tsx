@@ -47,7 +47,7 @@ export default function TasksNavBadge() {
   if (n <= 0) return null;
   return (
     <span
-      className={`ml-1.5 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-semibold tabular-nums ${counts.late > 0 ? "bg-rose-500 text-white" : "bg-amber-400 text-amber-950"}`}
+      className={`ml-1.5 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums ${counts.late > 0 ? "bg-rose-500 text-white" : "bg-amber-400 text-amber-950"}`}
       aria-label={`${n} ${counts.late > 0 ? "late" : "due soon"}`}
     >
       {n > 99 ? "99+" : n}

@@ -29,7 +29,7 @@ export default async function OutreachLogPage() {
         <div>
           <Link
             href="/client-acquisition/sales"
-            className="text-[11.5px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center gap-1 mb-1 transition-colors duration-200 ease-ros"
+            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center gap-1 mb-1 transition-colors duration-200 ease-ros"
           >
             <ArrowLeft className="w-3 h-3" /> Back to Sales
           </Link>

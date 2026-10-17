@@ -55,7 +55,7 @@ export default function MandateVisibilityControl({
         <button
           disabled={busy}
           onClick={() => (referralVisible ? patch({ referralVisible: false }).catch((e) => setError(e.message)) : setReviewOpen(true))}
-          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${referralVisible ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${referralVisible ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
           title={referralVisible ? "Click to take this role off the referrer board" : "Click to review and publish this role to referrers"}
         >
           {referralVisible ? "On board" : "Publish…"}
@@ -64,12 +64,12 @@ export default function MandateVisibilityControl({
           <button
             disabled={busy}
             onClick={() => setReviewOpen(true)}
-            className="text-[11px] font-medium text-slate-400 underline underline-offset-2 hover:text-slate-700"
+            className="text-xs font-medium text-slate-400 underline underline-offset-2 hover:text-slate-700"
           >
             Edit listing
           </button>
         )}
-        {error && <span className="text-[11px] text-rose-600">{error}</span>}
+        {error && <span className="text-xs text-rose-600">{error}</span>}
       </div>
       {reviewOpen && (
         <ReviewModal
@@ -169,7 +169,7 @@ function ReviewModal({
           )}
 
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
               Payout for this role (₹) <span className="text-rose-500">*</span>
             </label>
             <div className="mt-1 flex items-center gap-2">
@@ -182,19 +182,19 @@ function ReviewModal({
                 className="w-40 rounded-lg border border-slate-200 px-3 py-2 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
               {suggestedPayout != null && Number(payout.replace(/,/g, "")) !== suggestedPayout && (
-                <button type="button" onClick={() => setPayout(String(suggestedPayout))} className="text-[12px] font-medium text-blue-600 hover:underline">
+                <button type="button" onClick={() => setPayout(String(suggestedPayout))} className="text-[12px] font-medium text-teal-600 hover:underline">
                   Use slab suggestion ₹{suggestedPayout.toLocaleString("en-IN")}
                 </button>
               )}
             </div>
-            <p className="mt-1 text-[11.5px] text-slate-400">
+            <p className="mt-1 text-xs text-slate-400">
               What the referrer earns if their candidate is hired. You choose it for each role; referrers see exactly this amount
               {payoutOk ? `: ₹${payoutNum.toLocaleString("en-IN")}` : ""}.
             </p>
           </div>
 
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Notes for the AI draft (optional)</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Notes for the AI draft (optional)</label>
             <textarea
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
@@ -208,7 +208,7 @@ function ReviewModal({
           </div>
 
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
               Referrer-facing summary <span className="text-rose-500">*</span>
             </label>
             <textarea
@@ -218,7 +218,7 @@ function ReviewModal({
               placeholder="Write or generate a crisp summary for referrers. Don't name the client company."
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
-            <p className="mt-1 text-[11.5px] text-slate-400">The company name is never shown to referrers. Saving is blocked if this text mentions it.</p>
+            <p className="mt-1 text-xs text-slate-400">The company name is never shown to referrers. Saving is blocked if this text mentions it.</p>
           </div>
 
           {error && <p className="text-[12px] text-rose-600">{error}</p>}

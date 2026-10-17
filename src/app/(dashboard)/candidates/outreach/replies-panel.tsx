@@ -50,7 +50,7 @@ export default function RepliesPanel({ mailbox, counts, rows }: { mailbox: strin
             Reads the {mailbox ?? "CRM"} inbox once a day for replies to these emails, fills only blank details, and pauses addresses that bounce. Last 30 days.
           </p>
         </div>
-        <button onClick={check} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-50 disabled:opacity-60">
+        <button onClick={check} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold text-teal-700 ring-1 ring-teal-200 hover:bg-teal-50 disabled:opacity-60">
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Check replies now
         </button>
       </div>
@@ -85,8 +85,8 @@ export default function RepliesPanel({ mailbox, counts, rows }: { mailbox: strin
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="text-[11px] text-slate-400">{when(r.received_at)}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${(STATUS[r.status] ?? STATUS.not_a_reply).cls}`}>{(STATUS[r.status] ?? STATUS.not_a_reply).label}</span>
+                <span className="text-xs text-slate-400">{when(r.received_at)}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${(STATUS[r.status] ?? STATUS.not_a_reply).cls}`}>{(STATUS[r.status] ?? STATUS.not_a_reply).label}</span>
               </div>
             </li>
           ))}

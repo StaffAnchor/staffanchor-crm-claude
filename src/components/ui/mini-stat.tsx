@@ -8,20 +8,20 @@ import { cn } from "@/lib/cn";
 // of these reads as one glanceable strip.
 const TONE_CLASSES = {
   neutral: "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300",
-  accent: "border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300",
+  accent: "border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300",
   success: "border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300",
   warning: "border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300",
   danger: "border-rose-200 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300",
-  info: "border-sky-200 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300",
+  info: "border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300",
 } as const;
 
 const DOT_CLASSES = {
   neutral: "bg-slate-300 dark:bg-slate-600",
-  accent: "bg-blue-400",
+  accent: "bg-teal-400",
   success: "bg-emerald-400",
   warning: "bg-amber-400",
   danger: "bg-rose-400",
-  info: "bg-sky-400",
+  info: "bg-teal-400",
 } as const;
 
 // Each compartment's border/wash uses the same hue as its dot, just far
@@ -29,11 +29,11 @@ const DOT_CLASSES = {
 // without the boxes competing with the pills inside them for attention.
 const SECTION_CLASSES = {
   neutral: "border-slate-200/70 dark:border-slate-700/70 bg-slate-50/40 dark:bg-slate-800/20",
-  accent: "border-blue-100 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/10",
+  accent: "border-teal-100 dark:border-teal-900/40 bg-teal-50/30 dark:bg-teal-950/10",
   success: "border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10",
   warning: "border-amber-100 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/10",
   danger: "border-rose-100 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/10",
-  info: "border-sky-100 dark:border-sky-900/40 bg-sky-50/30 dark:bg-sky-950/10",
+  info: "border-teal-100 dark:border-teal-900/40 bg-teal-50/30 dark:bg-teal-950/10",
 } as const;
 
 export type MiniStatTone = keyof typeof TONE_CLASSES;
@@ -90,7 +90,7 @@ export function StatSection({
   // everything running together into one wall of pills.
   return (
     <div className={cn("h-full rounded-lg border p-3", SECTION_CLASSES[tone], className)}>
-      <p className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+      <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
         <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", DOT_CLASSES[tone])} />
         {title}
       </p>

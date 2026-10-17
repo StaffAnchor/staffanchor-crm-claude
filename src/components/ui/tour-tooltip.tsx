@@ -53,10 +53,10 @@ export function TourTooltip({
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-        <p className="text-[11.5px] text-slate-300 mt-1 leading-snug">{description}</p>
+        <p className="text-xs text-slate-300 mt-1 leading-snug">{description}</p>
         <button
           onClick={dismiss}
-          className="mt-2 text-[11px] font-medium bg-white/10 hover:bg-white/20 rounded-md px-2.5 py-1 transition-colors"
+          className="mt-2 text-xs font-medium bg-white/10 hover:bg-white/20 rounded-md px-2.5 py-1 transition-colors"
         >
           Got it
         </button>

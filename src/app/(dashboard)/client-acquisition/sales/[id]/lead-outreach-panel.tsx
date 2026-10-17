@@ -49,7 +49,7 @@ export default function LeadOutreachPanel({ leadId }: { leadId: string }) {
   return (
     <Card>
       <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-4 h-4 text-blue-500" />
+        <Sparkles className="w-4 h-4 text-teal-500" />
         <h2 className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">AI Outreach Draft</h2>
       </div>
 
@@ -58,9 +58,9 @@ export default function LeadOutreachPanel({ leadId }: { leadId: string }) {
           <button
             key={c}
             onClick={() => setChannel(c)}
-            className={`text-[11.5px] px-2.5 py-1.5 rounded-ros-md ring-1 transition-colors duration-200 ease-ros ${
+            className={`text-xs px-2.5 py-1.5 rounded-ros-md ring-1 transition-colors duration-200 ease-ros ${
               channel === c
-                ? "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-800"
+                ? "bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-800"
                 : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-700"
             }`}
           >
@@ -80,11 +80,11 @@ export default function LeadOutreachPanel({ leadId }: { leadId: string }) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={8}
-            className="w-full text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
+            className="w-full text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
           />
           <button
             onClick={copyDraft}
-            className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros"
+            className="absolute top-2 right-2 text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros"
             title="Copy to clipboard"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
@@ -92,7 +92,7 @@ export default function LeadOutreachPanel({ leadId }: { leadId: string }) {
         </div>
       ) : (
         !loading && (
-          <p className="text-[11.5px] text-slate-400">
+          <p className="text-xs text-slate-400">
             Generate a personalized draft, then edit it to taste before sending — review before every send, this is a starting point, not an auto-pilot.
           </p>
         )

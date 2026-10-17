@@ -94,7 +94,7 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
 
         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-[12.5px]">
           {row.contact_email && (
-            <a href={`mailto:${row.contact_email}`} className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros">
+            <a href={`mailto:${row.contact_email}`} className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
               <Mail className="w-3.5 h-3.5 shrink-0" /> {row.contact_email}
             </a>
           )}
@@ -108,13 +108,13 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
               href={row.company_domain.startsWith("http") ? row.company_domain : `https://${row.company_domain}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros"
             >
               <Globe className="w-3.5 h-3.5 shrink-0" /> {row.company_domain}
             </a>
           )}
           {row.linkedin_url && (
-            <a href={row.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros">
+            <a href={row.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
               <Link2 className="w-3.5 h-3.5 shrink-0" /> LinkedIn profile
             </a>
           )}

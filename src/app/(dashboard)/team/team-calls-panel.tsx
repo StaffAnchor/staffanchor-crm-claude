@@ -76,7 +76,7 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
               >
                 <span className="text-[13px] font-medium text-slate-800 dark:text-slate-200">{t.name}</span>
                 <span className="flex items-center gap-1.5">
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-1.5 text-[11px] font-semibold text-blue-700 dark:text-blue-400">
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/30 px-1.5 text-xs font-semibold text-teal-700 dark:text-teal-400">
                     {t.calls.length}
                   </span>
                   {expanded === t.id ? (
@@ -96,13 +96,13 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                         serve stale for. */}
                     <a
                       href={`/calls-flagged?recruiter=${t.id}`}
-                      className="inline-flex items-center gap-1 rounded-ros-md bg-blue-600 hover:bg-blue-500 text-white text-[11.5px] font-semibold px-2.5 py-1.5 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold px-2.5 py-1.5 transition-colors"
                     >
                       View full list as a table →
                     </a>
                     <a
                       href={`/calls-flagged?recruiter=${t.id}&status=all`}
-                      className="inline-flex items-center gap-1 rounded-ros-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11.5px] font-medium px-2.5 py-1.5 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-ros-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium px-2.5 py-1.5 transition-colors"
                     >
                       All-time history + outcomes
                     </a>
@@ -129,7 +129,7 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                             </p>
                             {c.link_stage && (
                               <span
-                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${STAGE_COLOR[c.link_stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
+                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium ${STAGE_COLOR[c.link_stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
                               >
                                 {stageLabel(c.link_stage)}
                               </span>
@@ -139,21 +139,21 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                             {roundLabel(c.call_round)}
                           </span>
                         </div>
-                        {c.candidate_sub_domain && <p className="text-[10.5px] text-slate-400 mt-0.5">{c.candidate_sub_domain}</p>}
+                        {c.candidate_sub_domain && <p className="text-xs text-slate-400 mt-0.5">{c.candidate_sub_domain}</p>}
                         {(c.mandate_role_title || c.mandate_client_name) && (
-                          <p className="text-[11px] text-blue-600 dark:text-blue-400 truncate mt-0.5">
+                          <p className="text-xs text-teal-600 dark:text-teal-400 truncate mt-0.5">
                             {c.mandate_role_title}
                             {c.mandate_client_name ? ` — ${c.mandate_client_name}` : ""}
                           </p>
                         )}
                         {(c.candidate_current_fixed_ctc || c.candidate_notice_period) && (
-                          <p className="text-[10.5px] text-slate-400 mt-0.5">
+                          <p className="text-xs text-slate-400 mt-0.5">
                             {c.candidate_current_fixed_ctc ? `₹${c.candidate_current_fixed_ctc}L` : null}
                             {c.candidate_current_fixed_ctc && c.candidate_notice_period ? " · " : ""}
                             {c.candidate_notice_period ? `Notice: ${c.candidate_notice_period}` : null}
                           </p>
                         )}
-                        <p className="text-[10px] text-slate-400 mt-0.5">{daysOpen(c.created_at)}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{daysOpen(c.created_at)}</p>
                       </Link>
                     ))}
                 </div>

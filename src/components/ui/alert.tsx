@@ -14,7 +14,7 @@ const TONE_CLASSES: Record<AlertTone, string> = {
   success: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 ring-emerald-200/60 dark:ring-emerald-800/60",
   error: "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 ring-rose-200/60 dark:ring-rose-800/60",
   warning: "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 ring-amber-200/60 dark:ring-amber-800/60",
-  info: "bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 ring-sky-200/60 dark:ring-sky-800/60",
+  info: "bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 ring-teal-200/60 dark:ring-teal-800/60",
 };
 
 const TONE_ICON: Record<AlertTone, typeof CheckCircle2> = {

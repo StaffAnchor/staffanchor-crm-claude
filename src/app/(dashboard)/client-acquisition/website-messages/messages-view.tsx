@@ -60,7 +60,7 @@ function Row({ r }: { r: WebsiteMessage }) {
             <span className="font-medium text-slate-900 dark:text-slate-100">{r.contact}</span>
             <div className="flex gap-3 text-[12px]">
               {isEmail(r.contact) ? (
-                <a href={`mailto:${r.contact}`} className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                <a href={`mailto:${r.contact}`} className="inline-flex items-center gap-1 text-teal-600 hover:underline">
                   <Mail className="h-3 w-3" /> Email
                 </a>
               ) : (

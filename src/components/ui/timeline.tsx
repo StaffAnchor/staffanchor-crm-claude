@@ -36,7 +36,7 @@ export function Timeline({ entries, className }: { entries: TimelineEntry[]; cla
               aria-hidden
               className={cn(
                 "absolute -left-4 top-1 w-2.5 h-2.5 rounded-full",
-                entry.emphasized ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"
+                entry.emphasized ? "bg-teal-600" : "bg-slate-300 dark:bg-slate-600"
               )}
             />
             <div className="flex items-baseline justify-between gap-3">

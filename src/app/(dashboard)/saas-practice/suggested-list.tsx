@@ -22,9 +22,9 @@ export default function SuggestedList({ items }: { items: Suggestion[] }) {
       </div>
       <ul className="grid gap-2 md:grid-cols-2">
         {items.map(({ row: r, reasons, cautions }) => (
-          <li key={r.candidate_id} className="flex gap-3 rounded-ros-xl border border-sky-100 bg-sky-50/40 p-3 dark:border-sky-900/40 dark:bg-sky-950/10">
+          <li key={r.candidate_id} className="flex gap-3 rounded-ros-xl border border-teal-100 bg-teal-50/40 p-3 dark:border-teal-900/40 dark:bg-teal-950/10">
             <div className="min-w-0 flex-1">
-              <Link href={`/candidates/${r.candidate_id}`} className="text-[13.5px] font-semibold text-slate-900 hover:text-blue-600 dark:text-slate-100">
+              <Link href={`/candidates/${r.candidate_id}`} className="text-[13.5px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
                 {r.full_name ?? "Unnamed"}
               </Link>
               <p className="text-[12px] text-slate-500">
@@ -33,12 +33,12 @@ export default function SuggestedList({ items }: { items: Suggestion[] }) {
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {reasons.map((x) => (
-                  <span key={x} className="rounded-full bg-white px-2 py-0.5 text-[11px] text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
+                  <span key={x} className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
                     {x}
                   </span>
                 ))}
                 {cautions.map((x) => (
-                  <span key={x} className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
+                  <span key={x} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
                     ⚠ {x}
                   </span>
                 ))}

@@ -66,7 +66,7 @@ export default function LeadActivityPanel({
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         >
           <option value="note">Note</option>
           <option value="call">Call</option>
@@ -81,7 +81,7 @@ export default function LeadActivityPanel({
             if (e.key === "Enter") handleAdd();
           }}
           placeholder="What happened / what's next..."
-          className="flex-1 text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="flex-1 text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         />
         <Button size="sm" onClick={handleAdd} disabled={saving || !detail.trim()}>
           Add
@@ -104,7 +104,7 @@ export default function LeadActivityPanel({
                     <span className="font-semibold">{TYPE_LABEL[a.activity_type] ?? a.activity_type}</span>
                     {a.detail ? ` — ${a.detail}` : ""}
                   </p>
-                  <p className="text-[10.5px] text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-400 mt-0.5">
                     {a.actor_id ? `${actorNames[a.actor_id] ?? "Unknown"} · ` : ""}
                     {new Date(a.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </p>

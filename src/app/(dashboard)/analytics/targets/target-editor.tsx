@@ -37,7 +37,7 @@ export default function TargetEditor({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-200 font-semibold tabular-nums hover:text-blue-600 dark:hover:text-blue-400"
+        className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-200 font-semibold tabular-nums hover:text-teal-600 dark:hover:text-teal-400"
         title="Click to edit target"
       >
         {currentTarget}

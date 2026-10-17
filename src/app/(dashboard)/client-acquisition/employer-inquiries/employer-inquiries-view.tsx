@@ -625,7 +625,7 @@ export default function EmployerInquiriesView({
                   : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
               }`}
             >
-              {t.label} <span className="ml-1 text-[11.5px] text-slate-400">{count}</span>
+              {t.label} <span className="ml-1 text-xs text-slate-400">{count}</span>
             </button>
           );
         })}
@@ -729,7 +729,7 @@ export default function EmployerInquiriesView({
           <section key={key}>
             <div className="sticky top-0 z-10 -mx-1 mb-2 flex items-baseline gap-2 bg-white/90 dark:bg-slate-950/90 px-1 py-1.5 backdrop-blur">
               <h2 className="text-[12.5px] font-semibold text-slate-800 dark:text-slate-100" suppressHydrationWarning>{dayHeading(key, now)}</h2>
-              <span className="text-[11.5px] text-slate-400">
+              <span className="text-xs text-slate-400">
                 {items.length} inquir{items.length === 1 ? "y" : "ies"}
               </span>
             </div>
@@ -788,7 +788,7 @@ export default function EmployerInquiriesView({
                     )}
                     <button
                       onClick={() => toggleExpanded(row.id)}
-                      className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros shrink-0"
+                      className="ml-auto flex items-center gap-0.5 text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros shrink-0"
                     >
                       {expandedIds.has(row.id) ? (
                         <>
@@ -832,7 +832,7 @@ export default function EmployerInquiriesView({
                         row.selling_style ||
                         row.languages_required?.length ||
                         row.preferred_industries?.length) && (
-                        <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                           {[
                             row.sub_domains?.length ? row.sub_domains.join(", ") : null,
                             row.sales_cycle ? `${row.sales_cycle} cycle` : null,
@@ -873,7 +873,7 @@ export default function EmployerInquiriesView({
                       {row.message}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 mt-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">
                       <Mail className="w-3 h-3" /> {row.work_email}
                     </span>
@@ -896,7 +896,7 @@ export default function EmployerInquiriesView({
                   </div>
 
                   {expandedIds.has(row.id) && (
-                    <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-4 gap-y-1 text-[11.5px]">
+                    <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                       {[
                         ["Category", row.category ? CATEGORY_LABEL[row.category] ?? row.category : null],
                         ["Sub-domains", row.sub_domains?.length ? row.sub_domains.join(", ") : null],
@@ -948,7 +948,7 @@ export default function EmployerInquiriesView({
                   )}
 
                   {errorRowId === row.id && error && (
-                    <p className="text-[11.5px] text-rose-600 dark:text-rose-400 mt-2">{error}</p>
+                    <p className="text-xs text-rose-600 dark:text-rose-400 mt-2">{error}</p>
                   )}
                   </div>
                 </div>
@@ -957,7 +957,7 @@ export default function EmployerInquiriesView({
                   <select
                     value={row.status}
                     onChange={(e) => setStatus(row.id, e.target.value as InquiryStatus)}
-                    className="text-[12px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500/30"
+                    className="text-[12px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-teal-500/30"
                   >
                     <option value="new">New</option>
                     <option value="contacted">Contacted</option>
@@ -972,7 +972,7 @@ export default function EmployerInquiriesView({
                         value={row.owner_id ?? ""}
                         onChange={(e) => assignOwner(row.id, e.target.value)}
                         disabled={assigningId === row.id}
-                        className="text-[12px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
+                        className="text-[12px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-teal-500/30 disabled:opacity-50"
                       >
                         <option value="">Assign owner...</option>
                         {specialists.length > 0 && (
@@ -1006,7 +1006,7 @@ export default function EmployerInquiriesView({
                   {row.kind === "jobseeker" && row.status === "new" && (
                     <button
                       onClick={() => setStatus(row.id, "contacted")}
-                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-blue-600 hover:bg-blue-500 text-white transition-colors duration-200 ease-ros"
+                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white transition-colors duration-200 ease-ros"
                     >
                       <Mail className="w-3 h-3" />
                       Mark replied
@@ -1017,7 +1017,7 @@ export default function EmployerInquiriesView({
                     <button
                       onClick={() => createMandate(row)}
                       disabled={busyId === row.id}
-                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
+                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
                     >
                       <Briefcase className="w-3 h-3" />
                       {row.converted_mandate_id
@@ -1032,7 +1032,7 @@ export default function EmployerInquiriesView({
                       <button
                         onClick={() => convertToClient(row)}
                         disabled={busyId === row.id}
-                        className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
+                        className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
                       >
                         <Building2 className="w-3 h-3" />
                         {row.converted_client_id
@@ -1064,7 +1064,7 @@ export default function EmployerInquiriesView({
                     </button>
                   )}
 
-                  <div className="flex flex-col items-end gap-0.5 text-[11.5px]">
+                  <div className="flex flex-col items-end gap-0.5 text-xs">
                     {(["employer", "jobseeker", "spam"] as InquiryKind[])
                       .filter((k) => k !== row.kind)
                       .map((k) => (

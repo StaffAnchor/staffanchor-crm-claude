@@ -106,7 +106,7 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
 
       {isAdmin && rows.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <button onClick={selectAll} className="text-[12.5px] font-medium text-blue-600 hover:underline">
+          <button onClick={selectAll} className="text-[12.5px] font-medium text-teal-600 hover:underline">
             Select all {rows.length}
           </button>
           {picked.size > 0 && (
@@ -133,13 +133,13 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
             {isAdmin && <input type="checkbox" checked={picked.has(f.path)} onChange={() => toggle(f.path)} aria-label={`Select ${f.file}`} />}
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-slate-800 dark:text-slate-200">{f.file}</p>
-              <p className="text-[11.5px] text-slate-400">
+              <p className="text-xs text-slate-400">
                 Uploaded {when(f.uploaded_at)} · {mb(f.size_bytes)}
                 {f.match_candidate_id && (
                   <>
                     {" "}
                     · {f.kind === "duplicate_file" ? "already on" : "looks like"}{" "}
-                    <Link href={`/candidates/${f.match_candidate_id}`} className="text-blue-600 hover:underline">
+                    <Link href={`/candidates/${f.match_candidate_id}`} className="text-teal-600 hover:underline">
                       {f.match_name}
                     </Link>
                     {f.kind === "name_match" && (f.match_has_cv ? " (already has a CV)" : " (has no CV yet)")}
@@ -147,14 +147,14 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
                 )}
               </p>
             </div>
-            <a href={`/api/candidates/files/preview?path=${encodeURIComponent(f.path)}`} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-blue-600 hover:underline">
+            <a href={`/api/candidates/files/preview?path=${encodeURIComponent(f.path)}`} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-teal-600 hover:underline">
               Preview
             </a>
             {f.kind === "name_match" && f.match_candidate_id && !f.match_has_cv && (
               <button
                 onClick={() => attach(f)}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
               >
                 {busy === f.path && <Loader2 className="h-3 w-3 animate-spin" />} Attach to {f.match_name}
               </button>

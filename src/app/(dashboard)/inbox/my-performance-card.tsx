@@ -36,40 +36,40 @@ export default function MyPerformanceCard({
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-5 mb-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">My performance</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">My performance</p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
         <div>
           <p className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{candidatesAddedWeek}</p>
-          <p className="text-[10.5px] text-slate-400">Added this week</p>
+          <p className="text-xs text-slate-400">Added this week</p>
         </div>
         <div>
           <p className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{candidatesAddedTotal}</p>
-          <p className="text-[10.5px] text-slate-400">Added all-time</p>
+          <p className="text-xs text-slate-400">Added all-time</p>
         </div>
         <div>
           <p className="text-[18px] font-semibold text-teal-700 tabular-nums">{profilesCompleted}</p>
-          <p className="text-[10.5px] text-slate-400">Profiles completed</p>
+          <p className="text-xs text-slate-400">Profiles completed</p>
         </div>
         <div className="border-l border-slate-100 dark:border-slate-800 pl-4">
           <p className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{linked}</p>
-          <p className="text-[10.5px] text-slate-400">Linked to mandates</p>
+          <p className="text-xs text-slate-400">Linked to mandates</p>
         </div>
         <div>
           <p className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{submitted}</p>
-          <p className="text-[10.5px] text-slate-400">Submitted</p>
+          <p className="text-xs text-slate-400">Submitted</p>
         </div>
         <div>
           <p className="text-[18px] font-semibold text-amber-700 tabular-nums">{interviewed}</p>
-          <p className="text-[10.5px] text-slate-400">Interviewed</p>
+          <p className="text-xs text-slate-400">Interviewed</p>
         </div>
         <div>
-          <p className="text-[18px] font-semibold text-indigo-700 tabular-nums">{offered}</p>
-          <p className="text-[10.5px] text-slate-400">Offered</p>
+          <p className="text-[18px] font-semibold text-teal-700 tabular-nums">{offered}</p>
+          <p className="text-xs text-slate-400">Offered</p>
         </div>
         <div>
           <p className="text-[18px] font-semibold text-emerald-700 tabular-nums">{placed}</p>
-          <p className="text-[10.5px] text-slate-400">
+          <p className="text-xs text-slate-400">
             Placed <span className="text-slate-300">· {conversion}%</span>
           </p>
         </div>

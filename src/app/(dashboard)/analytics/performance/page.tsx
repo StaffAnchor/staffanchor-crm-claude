@@ -65,7 +65,7 @@ export default async function PerformancePage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-8">
-      <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Performance</h1>
+      <h1 className="ros-page-title mb-1">Performance</h1>
       <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
         Client-wise, month-wise, and FY-wise revenue -- combines pre-CRM historical invoices with every placement fee tranche since.
       </p>

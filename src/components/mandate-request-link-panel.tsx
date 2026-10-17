@@ -58,7 +58,7 @@ export default function MandateRequestLinkPanel({
       </p>
       {url ? (
         <div className="space-y-2">
-          <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 break-all">
+          <div className="text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 break-all">
             {url}
           </div>
           <button
@@ -72,12 +72,12 @@ export default function MandateRequestLinkPanel({
         <button
           onClick={handleGenerate}
           disabled={creating}
-          className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+          className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium py-2 disabled:opacity-60"
         >
           {creating ? "Generating..." : "Generate link"}
         </button>
       )}
-      {error && <p className="text-[11px] text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
     </div>
   );
 }

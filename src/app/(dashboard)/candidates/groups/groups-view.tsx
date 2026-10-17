@@ -89,7 +89,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
         <button
           type="button"
           onClick={() => setCreating(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium px-3.5 py-2 shadow-sm transition-all duration-200 ease-ros"
+          className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-3.5 py-2 shadow-sm transition-all duration-200 ease-ros"
         >
           <Plus className="w-3.5 h-3.5" /> New group
         </button>
@@ -114,7 +114,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
               type="button"
               onClick={handleCreate}
               disabled={!name.trim() || busy}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-[12.5px] font-medium px-3 py-1.5"
+              className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-[12.5px] font-medium px-3 py-1.5"
             >
               {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
               Create
@@ -130,7 +130,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
               Cancel
             </button>
           </div>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-xs text-slate-400">
             Groups start empty -- add candidates to it from the Candidates table by selecting rows and choosing
             &quot;Add to group.&quot;
           </p>
@@ -178,11 +178,11 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
             ) : (
               <div key={g.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <Link href={`/candidates/groups/${g.id}`} className="min-w-0 flex-1 group">
-                  <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-blue-600 truncate">
+                  <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-teal-600 truncate">
                     {g.name} <span className="text-slate-400 font-normal">({g.count})</span>
                   </p>
                   {g.description && <p className="text-[12px] text-slate-400 truncate">{g.description}</p>}
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-400 mt-0.5">
                     {g.createdByName ? `Created by ${g.createdByName} · ` : ""}
                     {new Date(g.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                   </p>
@@ -190,7 +190,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
                 <button
                   type="button"
                   onClick={() => startRename(g)}
-                  className="text-slate-300 hover:text-blue-600 shrink-0"
+                  className="text-slate-300 hover:text-teal-600 shrink-0"
                   title="Rename group"
                 >
                   <Pencil className="w-4 h-4" />

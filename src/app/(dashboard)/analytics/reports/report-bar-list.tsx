@@ -10,7 +10,7 @@ export type BarItem = {
 
 export default function ReportBarList({
   items,
-  colorClass = "bg-blue-500/80",
+  colorClass = "bg-teal-500/80",
   emptyLabel = "No data yet.",
   highlightTop = false,
 }: {
@@ -39,9 +39,9 @@ export default function ReportBarList({
             } — click to view`}
           >
             <span
-              className={`w-[132px] shrink-0 truncate text-[11.5px] transition-colors duration-200 ease-ros ${
+              className={`w-[132px] shrink-0 truncate text-xs transition-colors duration-200 ease-ros ${
                 isTop ? "font-semibold text-slate-800" : "text-slate-600"
-              } group-hover:text-blue-600`}
+              } group-hover:text-teal-600`}
             >
               {item.label}
             </span>
@@ -53,7 +53,7 @@ export default function ReportBarList({
                 style={{ width: `${widthPct}%` }}
               />
             </div>
-            <span className="w-[52px] shrink-0 text-right text-[11.5px] tabular-nums">
+            <span className="w-[52px] shrink-0 text-right text-xs tabular-nums">
               <span className="font-semibold text-slate-700">{item.count}</span>
               {item.pct !== undefined && <span className="text-slate-400 ml-1">{item.pct}%</span>}
             </span>

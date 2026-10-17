@@ -131,7 +131,7 @@ export default function VendorApplicationsPanel({ applications }: { applications
                   </td>
                   <td className="px-2 py-3">
                     <p className="font-medium text-slate-900 dark:text-slate-100">{a.full_name}</p>
-                    <p className="text-[11px] text-slate-400">{a.email}</p>
+                    <p className="text-xs text-slate-400">{a.email}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{a.current_location ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">
@@ -148,7 +148,7 @@ export default function VendorApplicationsPanel({ applications }: { applications
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                        className="inline-flex items-center gap-1 text-teal-600 hover:underline"
                       >
                         <FileText className="w-3.5 h-3.5" /> View
                       </a>
@@ -189,7 +189,7 @@ export default function VendorApplicationsPanel({ applications }: { applications
                                 href={a.linkedin_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-0.5 text-blue-600 hover:underline"
+                                className="inline-flex items-center gap-0.5 text-teal-600 hover:underline"
                               >
                                 Profile <ExternalLink className="w-3 h-3" />
                               </a>

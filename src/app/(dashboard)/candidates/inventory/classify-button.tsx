@@ -75,7 +75,7 @@ export default function ClassifyButton({
         {busy ? "Working…" : waiting == null ? `${verb} with AI` : waiting === 0 ? "All done" : `${verb} ${waiting} with AI`}
       </button>
       {allowRecheck && !busy && waiting === 0 && (
-        <button type="button" onClick={() => run("all")} className="text-[12px] font-medium text-blue-600 hover:underline" title="Have the AI re-read everyone, replacing the keyword guesses">
+        <button type="button" onClick={() => run("all")} className="text-[12px] font-medium text-teal-600 hover:underline" title="Have the AI re-read everyone, replacing the keyword guesses">
           Re-check everyone
         </button>
       )}

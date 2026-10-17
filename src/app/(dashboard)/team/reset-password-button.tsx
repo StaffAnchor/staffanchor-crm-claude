@@ -37,7 +37,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-blue-600 hover:underline"
+        className="text-xs text-teal-600 hover:underline"
       >
         Reset password
       </button>
@@ -56,7 +56,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
             setDone(false);
             setPassword(generatePassword());
           }}
-          className="mt-1.5 text-blue-600 hover:underline"
+          className="mt-1.5 text-teal-600 hover:underline"
         >
           Close
         </button>
@@ -71,7 +71,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
         <input
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="flex-1 min-w-0 rounded border border-slate-300 px-1.5 py-1 font-mono text-[11px]"
+          className="flex-1 min-w-0 rounded border border-slate-300 px-1.5 py-1 font-mono text-xs"
         />
         <button
           type="button"
@@ -86,7 +86,7 @@ export default function ResetPasswordButton({ userId, name }: { userId: string; 
         <button
           onClick={handleReset}
           disabled={saving || password.length < 8}
-          className="rounded bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 font-medium disabled:opacity-50"
+          className="rounded bg-teal-600 hover:bg-teal-700 text-white px-2 py-1 font-medium disabled:opacity-50"
         >
           {saving ? "Setting..." : "Confirm reset"}
         </button>

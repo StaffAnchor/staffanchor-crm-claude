@@ -78,7 +78,7 @@ export default function PoolControl({
           type="button"
           onClick={() => setOpen((o) => !o)}
           title={entry.reason ? `${POOL_TIER_LABEL[entry.tier]}: ${entry.reason}` : POOL_TIER_LABEL[entry.tier]}
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ring-1 ${POOL_TIER_PILL[entry.tier]}`}
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${POOL_TIER_PILL[entry.tier]}`}
         >
           <Star className="h-3 w-3" /> {POOL_TIER_LABEL[entry.tier]}
         </button>
@@ -88,7 +88,7 @@ export default function PoolControl({
           onClick={() => setOpen((o) => !o)}
           title="Add this person to the Talent Pool"
           className={`inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200 ${
-            compact ? "px-2.5 py-1 text-[11.5px]" : "px-3 py-1.5 text-[12px]"
+            compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-[12px]"
           }`}
         >
           <Star className="h-3.5 w-3.5" /> Add to pool
@@ -110,7 +110,7 @@ export default function PoolControl({
                 <input type="radio" name={`tier-${candidateId}`} checked={tier === t} onChange={() => setTier(t)} className="mt-0.5" />
                 <span>
                   <span className="block text-[12.5px] font-semibold text-slate-800 dark:text-slate-100">{POOL_TIER_LABEL[t]}</span>
-                  <span className="block text-[11.5px] text-slate-500">{POOL_TIER_HELP[t]}</span>
+                  <span className="block text-xs text-slate-500">{POOL_TIER_HELP[t]}</span>
                 </span>
               </label>
             ))}
@@ -124,7 +124,7 @@ export default function PoolControl({
                 type="button"
                 onClick={() => toggleTag(t)}
                 aria-pressed={tags.includes(t)}
-                className={`rounded-full border px-2 py-0.5 text-[11.5px] ${
+                className={`rounded-full border px-2 py-0.5 text-xs ${
                   tags.includes(t) ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
                 }`}
               >

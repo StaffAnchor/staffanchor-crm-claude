@@ -131,7 +131,7 @@ export default function CallsFlaggedBell() {
       >
         <PhoneCall className="w-4 h-4" strokeWidth={2} />
         {calls.length > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-blue-600 px-0.5 text-[9px] font-semibold text-white">
+          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-teal-600 px-0.5 text-xs font-semibold text-white">
             {calls.length > 9 ? "9+" : calls.length}
           </span>
         )}
@@ -173,29 +173,29 @@ export default function CallsFlaggedBell() {
                         </span>
                       )}
                     </div>
-                    {c.candidate_sub_domain && <p className="text-[10.5px] text-slate-400 mt-0.5">{c.candidate_sub_domain}</p>}
+                    {c.candidate_sub_domain && <p className="text-xs text-slate-400 mt-0.5">{c.candidate_sub_domain}</p>}
                     {(c.mandate_role_title || c.mandate_client_name) && (
-                      <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 truncate mt-0.5">
+                      <p className="text-xs font-medium text-teal-600 dark:text-teal-400 truncate mt-0.5">
                         {c.mandate_role_title}
                         {c.mandate_client_name ? ` — ${c.mandate_client_name}` : ""}
                       </p>
                     )}
                     {(c.candidate_current_job_title || c.candidate_current_employer) && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         {c.candidate_current_job_title}
                         {c.candidate_current_job_title && c.candidate_current_employer ? " · " : ""}
                         {c.candidate_current_employer}
                       </p>
                     )}
                     {(c.candidate_current_fixed_ctc || c.candidate_notice_period) && (
-                      <p className="text-[10.5px] text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-400 mt-0.5">
                         {c.candidate_current_fixed_ctc ? `₹${c.candidate_current_fixed_ctc}L` : null}
                         {c.candidate_current_fixed_ctc && c.candidate_notice_period ? " · " : ""}
                         {c.candidate_notice_period ? `Notice: ${c.candidate_notice_period}` : null}
                       </p>
                     )}
-                    {c.detail && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{c.detail}</p>}
-                    <p className="text-[10px] text-slate-400 mt-1">{timeAgo(c.created_at)}</p>
+                    {c.detail && <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">{c.detail}</p>}
+                    <p className="text-xs text-slate-400 mt-1">{timeAgo(c.created_at)}</p>
                   </div>
                   <button
                     onMouseDown={(e) => e.preventDefault()}
@@ -216,7 +216,7 @@ export default function CallsFlaggedBell() {
               setOpen(false);
               router.push("/calls-flagged");
             }}
-            className="block w-full text-center px-3 py-2.5 text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-500 border-t border-slate-100 dark:border-slate-800"
+            className="block w-full text-center px-3 py-2.5 text-[12px] font-semibold text-white bg-teal-600 hover:bg-teal-500 border-t border-slate-100 dark:border-slate-800"
           >
             View full list as a table →
           </button>

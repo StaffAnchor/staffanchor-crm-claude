@@ -83,7 +83,7 @@ export function StageTimeline({
             <div
               className={`w-1.5 h-1.5 rounded-full ${
                 isCurrent
-                  ? "bg-blue-600 ring-2 ring-blue-200"
+                  ? "bg-teal-600 ring-2 ring-teal-200"
                   : reached
                     ? "bg-emerald-400"
                     : "bg-slate-200 dark:bg-slate-700"
@@ -95,15 +95,15 @@ export function StageTimeline({
       })}
       {isOffRamp && (
         <span
-          className={`ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded ${
-            stage === "rejected" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
+          className={`ml-1.5 text-xs font-medium px-1.5 py-0.5 rounded ${
+            stage === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
           }`}
         >
           {stage === "rejected" ? "Rejected" : "Pulled back"}
         </span>
       )}
       {!isOffRamp && stageUpdatedAt && (
-        <span className="ml-1.5 text-[10px] text-slate-400 whitespace-nowrap">{fmtDate(stageUpdatedAt)}</span>
+        <span className="ml-1.5 text-xs text-slate-400 whitespace-nowrap">{fmtDate(stageUpdatedAt)}</span>
       )}
       {!isOffRamp &&
         stage !== "placed" &&
@@ -113,7 +113,7 @@ export function StageTimeline({
           return aging ? (
             <span
               title={`${days} days with no stage change -- worth a status check`}
-              className={`ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${aging.tone}`}
+              className={`ml-1 text-xs font-semibold px-1.5 py-0.5 rounded-full ${aging.tone}`}
             >
               {aging.label}
             </span>

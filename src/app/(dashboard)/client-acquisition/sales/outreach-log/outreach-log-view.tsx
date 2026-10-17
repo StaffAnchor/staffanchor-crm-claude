@@ -71,8 +71,8 @@ function LogOutreachModal({ onClose }: { onClose: () => void }) {
   }
 
   const inputClass =
-    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros";
-  const labelClass = "text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1 block";
+    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
+  const labelClass = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -233,9 +233,9 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
             <button
               key={t.key}
               onClick={() => setFilter(t.key)}
-              className={`text-[11.5px] px-2.5 py-1.5 rounded-ros-md ring-1 transition-colors duration-200 ease-ros ${
+              className={`text-xs px-2.5 py-1.5 rounded-ros-md ring-1 transition-colors duration-200 ease-ros ${
                 filter === t.key
-                  ? "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-800"
+                  ? "bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-800"
                   : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-700"
               }`}
             >
@@ -298,7 +298,7 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
                         value={r.follow_up_date ?? ""}
                         onChange={(e) => updateFollowUp(r.id, e.target.value)}
                         disabled={busyId === r.id}
-                        className={`text-[11.5px] rounded-ros-md border px-2 py-1 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+                        className={`text-xs rounded-ros-md border px-2 py-1 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-400 ${
                           due ? "border-rose-300 text-rose-600 dark:border-rose-800 dark:text-rose-400" : "border-slate-200 dark:border-slate-700"
                         }`}
                       />
@@ -308,7 +308,7 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
                         value={r.status}
                         onChange={(e) => updateStatus(r.id, e.target.value)}
                         disabled={busyId === r.id}
-                        className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-teal-400"
                       >
                         {OUTREACH_STATUSES.map((s) => (
                           <option key={s.key} value={s.key}>
@@ -324,7 +324,7 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 justify-end">
                         {r.converted_lead_id ? (
-                          <a href={`/client-acquisition/sales/${r.converted_lead_id}`} className="text-blue-500 hover:text-blue-700 transition-colors duration-200 ease-ros" title="View sales lead">
+                          <a href={`/client-acquisition/sales/${r.converted_lead_id}`} className="text-teal-500 hover:text-teal-700 transition-colors duration-200 ease-ros" title="View sales lead">
                             <Link2 className="w-3.5 h-3.5" />
                           </a>
                         ) : (

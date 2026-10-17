@@ -17,9 +17,9 @@ const ACCENT: Record<
   { ring: string; text: string; soft: string }
 > = {
   b2b_sales: {
-    ring: "ring-indigo-400",
-    text: "text-indigo-700 dark:text-indigo-300",
-    soft: "from-indigo-50 to-white dark:from-indigo-950/30 dark:to-slate-900",
+    ring: "ring-teal-400",
+    text: "text-teal-700 dark:text-teal-300",
+    soft: "from-teal-50 to-white dark:from-teal-950/30 dark:to-slate-900",
   },
   b2c_sales: {
     ring: "ring-emerald-400",
@@ -87,7 +87,7 @@ export default function ProfileGroupsStrip({
         {activeGroup && (
           <Link
             href={hrefFor(undefined, undefined)}
-            className="text-[12px] font-medium text-blue-600 hover:underline"
+            className="text-[12px] font-medium text-teal-600 hover:underline"
           >
             Clear group filter
           </Link>
@@ -113,7 +113,7 @@ export default function ProfileGroupsStrip({
           ) : null,
         )}
       </div>
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
         {legend.map((g) => (
           <Link
             key={g}
@@ -127,7 +127,7 @@ export default function ProfileGroupsStrip({
       </div>
 
       {coverage && (
-        <p className="mb-3 text-[11px] text-slate-500 dark:text-slate-400">
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
           {coverage.total} profiles · {coverage.with_cv_file} with a CV file ·{" "}
           {coverage.cv_read} CVs read · {coverage.no_cv_file} without a CV file.
           The groups above count profiles, so they add up to {coverage.total}.
@@ -156,18 +156,18 @@ export default function ProfileGroupsStrip({
                     >
                       {GROUP_LABEL[g]}
                     </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {GROUP_BLURB[g]}
                     </p>
                   </div>
-                  <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+                  <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
                     {pct(n)}%
                   </span>
                 </div>
                 <p className="mt-2 text-[30px] font-bold leading-none tabular-nums tracking-tight text-slate-900 dark:text-slate-100">
                   {n}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                   {(info?.new7 ?? 0) > 0 && (
                     <span className="inline-flex items-center gap-1 font-medium text-emerald-700 dark:text-emerald-400">
                       <TrendingUp className="h-3 w-3" /> {info?.new7} new this
@@ -179,14 +179,14 @@ export default function ProfileGroupsStrip({
 
               {!isNon && inds.length > 0 && (
                 <div className="mt-3">
-                  <p className="mb-1 text-[10.5px] font-medium uppercase tracking-wide text-slate-400">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
                     Top industries
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {inds.slice(0, 4).map((i) => (
                       <span
                         key={i.name}
-                        className="rounded-full bg-white/80 px-2 py-0.5 text-[10.5px] text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-slate-700"
+                        className="rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-slate-700"
                       >
                         {i.name} · {i.n}
                       </span>
@@ -206,7 +206,7 @@ export default function ProfileGroupsStrip({
                         href={hrefFor("non_sales", s.name)}
                         className={`group rounded-md px-1.5 py-1 transition hover:bg-white/80 dark:hover:bg-slate-800/60 ${subActive ? "bg-white ring-1 ring-amber-300 dark:bg-slate-800" : ""}`}
                       >
-                        <div className="flex items-start justify-between gap-2 text-[11.5px]">
+                        <div className="flex items-start justify-between gap-2 text-xs">
                           <span className="leading-tight text-slate-700 dark:text-slate-200">
                             {s.name}
                           </span>
@@ -236,7 +236,7 @@ export default function ProfileGroupsStrip({
                 className="mt-auto pt-3"
                 title="Profiles where a read CV makes the group clear. The rest are grouped from the title and may be refined when a CV is read."
               >
-                <div className="mb-1 flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400">
+                <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                   <span>Confirmed from CV</span>
                   <span className="tabular-nums font-medium">{verified}%</span>
                 </div>
@@ -259,7 +259,7 @@ export default function ProfileGroupsStrip({
         >
           <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <AlertTriangle className="h-4 w-4 text-rose-500" /> Needs a look
-            <span className="text-[11px] text-slate-400">
+            <span className="text-xs text-slate-400">
               CV and profile disagree, or the group is unclear
             </span>
           </span>
@@ -273,7 +273,7 @@ export default function ProfileGroupsStrip({
         >
           <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <FileQuestion className="h-4 w-4 text-slate-400" /> CV not read yet
-            <span className="text-[11px] text-slate-400">
+            <span className="text-xs text-slate-400">
               has a CV; grouped from the title until it is read
             </span>
           </span>
@@ -287,7 +287,7 @@ export default function ProfileGroupsStrip({
         >
           <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <FileQuestion className="h-4 w-4 text-slate-400" /> No CV on file
-            <span className="text-[11px] text-slate-400">
+            <span className="text-xs text-slate-400">
               ask the candidate for a CV
             </span>
           </span>

@@ -57,7 +57,7 @@ export default function CreateUserForm() {
         </div>
         <button
           onClick={() => setCreated(null)}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-teal-600 hover:underline"
         >
           Add another
         </button>
@@ -115,7 +115,7 @@ export default function CreateUserForm() {
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 disabled:opacity-60"
+        className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 disabled:opacity-60"
       >
         {saving ? "Creating..." : "Create account"}
       </button>

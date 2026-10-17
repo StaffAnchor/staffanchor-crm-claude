@@ -104,7 +104,7 @@ export default function SaveShortlist({
         type="button"
         onClick={toggle}
         disabled={ids.length === 0}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700 px-3 py-1.5 text-[12.5px] font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300 dark:border-teal-700 px-3 py-1.5 text-[12.5px] font-medium text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30 disabled:opacity-50"
       >
         <Bookmark className="h-3.5 w-3.5" /> {label}
       </button>
@@ -116,7 +116,7 @@ export default function SaveShortlist({
                 <CheckCircle2 className="h-4 w-4" /> Saved {done.added} to &quot;{done.name}&quot;
               </p>
               {error && <p className="text-[12px] text-amber-700">{error}</p>}
-              <Link href={`/candidates/lists/${done.id}`} className="text-[12.5px] text-blue-600 hover:underline">
+              <Link href={`/candidates/lists/${done.id}`} className="text-[12.5px] text-teal-600 hover:underline">
                 Open the shortlist
               </Link>
             </div>
@@ -142,13 +142,13 @@ export default function SaveShortlist({
                   className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] dark:border-slate-700 dark:bg-slate-900"
                 />
               )}
-              <p className="text-[11.5px] leading-snug text-slate-500 dark:text-slate-400">{description}</p>
+              <p className="text-xs leading-snug text-slate-500 dark:text-slate-400">{description}</p>
               {error && <p className="text-[12px] text-rose-600">{error}</p>}
               <button
                 type="button"
                 onClick={save}
                 disabled={busy || count === 0 || (target === "new" && !name.trim())}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bookmark className="h-3.5 w-3.5" />} Save shortlist
               </button>

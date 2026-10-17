@@ -155,7 +155,7 @@ export default function InvoicePreviewModal({
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Preview {kind === "proforma" ? "Proforma Invoice" : "Tax Invoice"}
             </h2>
-            <p className="text-[11.5px] text-slate-400">{clientName || "Loading…"}</p>
+            <p className="text-xs text-slate-400">{clientName || "Loading…"}</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 text-sm">
             ✕
@@ -165,7 +165,7 @@ export default function InvoicePreviewModal({
         <div className="flex-1 overflow-y-auto grid grid-cols-2 gap-0">
           <div className="p-5 space-y-3 border-r border-slate-100 dark:border-slate-800">
             {missing && missing.length > 0 && (
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 px-3 py-2 text-[11.5px] text-amber-700 dark:text-amber-400">
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                 Missing: {missing.join(", ")}
               </div>
             )}
@@ -272,7 +272,7 @@ export default function InvoicePreviewModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</label>
       {children}
     </div>
   );

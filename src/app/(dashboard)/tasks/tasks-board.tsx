@@ -83,7 +83,7 @@ function PacketCard({ p }: { p: TaskPacket }) {
               ) : (
                 <>
                   {p.owners.slice(0, 3).map((o) => (
-                    <span key={o.id} className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-50 dark:bg-teal-950/40 text-[10.5px] font-semibold text-teal-800 dark:text-teal-200">
+                    <span key={o.id} className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-50 dark:bg-teal-950/40 text-xs font-semibold text-teal-800 dark:text-teal-200">
                       {initials(o.name)}
                     </span>
                   ))}

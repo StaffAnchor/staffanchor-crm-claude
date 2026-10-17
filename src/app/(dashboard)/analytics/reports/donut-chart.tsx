@@ -70,12 +70,12 @@ export default function DonutChart({ slices, totalLabel = "total" }: { slices: D
         {slices.map((s, i) => (
           <Link key={s.key} href={s.href} className="group flex items-center gap-2 text-[12px]">
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length] }} />
-            <span className="truncate text-slate-600 dark:text-slate-400 group-hover:text-blue-600 transition-colors duration-200 ease-ros">{s.label}</span>
+            <span className="truncate text-slate-600 dark:text-slate-400 group-hover:text-teal-600 transition-colors duration-200 ease-ros">{s.label}</span>
             <span className="ml-auto shrink-0 font-semibold tabular-nums text-slate-700 dark:text-slate-300">{s.count}</span>
             <span className="shrink-0 tabular-nums text-slate-400 w-9 text-right">{s.pct ?? Math.round((s.count / total) * 100)}%</span>
           </Link>
         ))}
-        <p className="text-[10.5px] text-slate-400 pt-0.5">{total} {totalLabel}</p>
+        <p className="text-xs text-slate-400 pt-0.5">{total} {totalLabel}</p>
       </div>
     </div>
   );

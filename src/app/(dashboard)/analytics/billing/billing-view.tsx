@@ -97,7 +97,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
 
   return (
     <div>
-      <p className="text-[11px] text-slate-400 mb-3">
+      <p className="text-xs text-slate-400 mb-3">
         Amounts below include 18% GST, matching the Final Billing Value shown on Placements.
       </p>
       <div className="grid grid-cols-4 gap-3 mb-4">
@@ -108,7 +108,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
           { label: "Final invoiced", value: totals.invoiced },
         ].map((t) => (
           <div key={t.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-            <p className="text-[11px] text-slate-400 uppercase tracking-wide">{t.label}</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide">{t.label}</p>
             <p className="text-[16px] font-bold text-slate-900 dark:text-slate-100 mt-0.5 tabular-nums">{inr(t.value)}</p>
           </div>
         ))}
@@ -134,7 +134,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="text-left text-[11px] text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
+              <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
                 <th className="py-2 pr-3">Candidate</th>
                 <th className="py-2 pr-3">Mandate</th>
                 <th className="py-2 pr-3">Tranche</th>
@@ -228,30 +228,30 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
       <td className="py-2 pr-3">
         <div className="flex items-center gap-2 flex-wrap">
           {row.proforma_invoice_number && (
-            <button onClick={() => download("proforma")} className="text-[11.5px] text-slate-500 hover:underline">
+            <button onClick={() => download("proforma")} className="text-xs text-slate-500 hover:underline">
               {row.proforma_invoice_number}
             </button>
           )}
           {row.final_invoice_number && (
-            <button onClick={() => download("final")} className="text-[11.5px] text-slate-500 hover:underline">
+            <button onClick={() => download("final")} className="text-xs text-slate-500 hover:underline">
               {row.final_invoice_number}
             </button>
           )}
           {NEXT_STATUS[row.status] && !row.has_client_link && docKind ? (
-            <span className="text-[11.5px] text-amber-600">Link mandate to a client first</span>
+            <span className="text-xs text-amber-600">Link mandate to a client first</span>
           ) : (
             NEXT_STATUS[row.status] && (
               <button
                 onClick={advance}
                 disabled={saving}
-                className="text-[12px] text-blue-600 hover:underline disabled:opacity-40"
+                className="text-[12px] text-teal-600 hover:underline disabled:opacity-40"
               >
                 {saving ? "..." : buttonLabel}
               </button>
             )
           )}
         </div>
-        {error && <p className="text-[11px] text-red-600 mt-1">{error}</p>}
+        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
       </td>
     </tr>
     {previewOpen && docKind && (

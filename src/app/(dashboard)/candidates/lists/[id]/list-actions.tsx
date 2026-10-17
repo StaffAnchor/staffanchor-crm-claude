@@ -77,7 +77,7 @@ export default function ListActions({ listId, name, canEdit, mandates, rows }: {
         {editing ? (
           <>
             <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && rename()} maxLength={80} className="w-56 rounded-full border border-slate-300 px-3 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
-            <button onClick={rename} disabled={busy !== null} className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-[12.5px] font-semibold text-white">
+            <button onClick={rename} disabled={busy !== null} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white">
               {busy === "rename" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save name
             </button>
           </>
@@ -108,7 +108,7 @@ export default function ListActions({ listId, name, canEdit, mandates, rows }: {
               </option>
             ))}
           </select>
-          <button onClick={addAll} disabled={!mandate || busy !== null} className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+          <button onClick={addAll} disabled={!mandate || busy !== null} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
             {busy === "mandate" && <Loader2 className="h-3 w-3 animate-spin" />} Add all ({rows.length})
           </button>
         </div>

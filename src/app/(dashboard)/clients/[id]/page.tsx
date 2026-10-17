@@ -139,7 +139,7 @@ export default async function ClientDetailPage({
                   scratch on a different page. */}
               <Link
                 href={`/mandates?newClientId=${encodeURIComponent(id)}&newClientName=${encodeURIComponent(clientRow.name)}#new-mandate`}
-                className="shrink-0 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 transition-colors"
+                className="shrink-0 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-medium px-3 py-1.5 transition-colors"
               >
                 + Create a mandate
               </Link>

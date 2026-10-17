@@ -36,7 +36,7 @@ export default function MorningBriefing({
       icon: CalendarClock,
       value: interviewsToday,
       label: interviewsToday === 1 ? "interview today" : "interviews today",
-      tint: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
+      tint: "bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
     },
     {
       icon: Clock,
@@ -77,7 +77,7 @@ export default function MorningBriefing({
                 <Icon className="w-3.5 h-3.5" />
                 <span className="text-[20px] font-bold tabular-nums leading-none">{t.value}</span>
               </div>
-              <p className="text-[11px] font-medium mt-1 leading-tight">{t.label}</p>
+              <p className="text-xs font-medium mt-1 leading-tight">{t.label}</p>
             </div>
           );
         })}

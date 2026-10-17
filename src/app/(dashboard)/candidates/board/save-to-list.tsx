@@ -92,14 +92,14 @@ export default function SaveToList({ candidateId, lists, memberOf }: { candidate
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium ring-1 transition-colors ${saved ? "bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800" : "text-slate-600 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700"}`}
+        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium ring-1 transition-colors ${saved ? "bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:ring-teal-800" : "text-slate-600 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700"}`}
         aria-expanded={open}
       >
         {saved ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />} {saved ? `Saved${member.size > 1 ? ` · ${member.size}` : ""}` : "Save"}
       </button>
       {open && (
         <div className="absolute bottom-full left-0 z-20 mb-2 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-          <p className="px-1.5 pb-1 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Save to a shortlist</p>
+          <p className="px-1.5 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Save to a shortlist</p>
           <div className="max-h-48 overflow-y-auto">
             {all.length === 0 && <p className="px-1.5 py-2 text-[12px] text-slate-400">No shortlists yet. Make the first one below.</p>}
             {all.map((l) => (
@@ -111,12 +111,12 @@ export default function SaveToList({ candidateId, lists, memberOf }: { candidate
                 className="flex w-full items-center justify-between gap-2 rounded-md px-1.5 py-1.5 text-left text-[12.5px] hover:bg-slate-50 disabled:opacity-60 dark:hover:bg-slate-800"
               >
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${member.has(l.id) ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 dark:border-slate-600"}`}>
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${member.has(l.id) ? "border-teal-600 bg-teal-600 text-white" : "border-slate-300 dark:border-slate-600"}`}>
                     {busy === l.id ? <Loader2 className="h-3 w-3 animate-spin" /> : member.has(l.id) ? <Check className="h-3 w-3" /> : null}
                   </span>
                   <span className="truncate text-slate-800 dark:text-slate-200">{l.name}</span>
                 </span>
-                <span className="shrink-0 text-[11px] tabular-nums text-slate-400">{l.n}</span>
+                <span className="shrink-0 text-xs tabular-nums text-slate-400">{l.n}</span>
               </button>
             ))}
           </div>
@@ -129,11 +129,11 @@ export default function SaveToList({ candidateId, lists, memberOf }: { candidate
               maxLength={80}
               className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1 text-[12.5px] dark:border-slate-700 dark:bg-slate-900"
             />
-            <button type="button" onClick={create} disabled={!name.trim() || busy !== null} className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2 py-1 text-[12px] font-semibold text-white disabled:opacity-50">
+            <button type="button" onClick={create} disabled={!name.trim() || busy !== null} className="inline-flex items-center gap-1 rounded-md bg-teal-600 px-2 py-1 text-[12px] font-semibold text-white disabled:opacity-50">
               {busy === "new" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} Create
             </button>
           </div>
-          {error && <p className="px-1.5 pt-1 text-[11.5px] text-rose-600">{error}</p>}
+          {error && <p className="px-1.5 pt-1 text-xs text-rose-600">{error}</p>}
         </div>
       )}
     </div>

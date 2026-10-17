@@ -33,14 +33,14 @@ function Pill({
 }) {
   const on: Record<string, string> = {
     slate: "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 ring-slate-900",
-    blue: "bg-blue-600 text-white ring-blue-600",
+    blue: "bg-teal-600 text-white ring-teal-600",
     amber: "bg-amber-500 text-white ring-amber-500",
     emerald: "bg-emerald-600 text-white ring-emerald-600",
     rose: "bg-rose-600 text-white ring-rose-600",
   };
   const off: Record<string, string> = {
     slate: "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700 dark:hover:bg-slate-800",
-    blue: "bg-white text-slate-700 ring-slate-200 hover:bg-blue-50 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700",
+    blue: "bg-white text-slate-700 ring-slate-200 hover:bg-teal-50 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700",
     amber: "bg-amber-50 text-amber-800 ring-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900",
     emerald: "bg-emerald-50 text-emerald-800 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-900",
     rose: "bg-rose-50 text-rose-800 ring-rose-200 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-900",
@@ -54,7 +54,7 @@ function Pill({
     >
       {children}
       {count !== undefined && (
-        <span className={`tabular-nums text-[11px] font-semibold ${active ? "opacity-90" : "opacity-60"}`}>{fmt(count)}</span>
+        <span className={`tabular-nums text-xs font-semibold ${active ? "opacity-90" : "opacity-60"}`}>{fmt(count)}</span>
       )}
     </Link>
   );
@@ -96,7 +96,7 @@ export default function CandidatesFilterBar({
       </Pill>
 
       <span className="mx-0.5 h-4 w-px shrink-0 bg-slate-200 dark:bg-slate-700" aria-hidden />
-      <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-400">Profile type</span>
+      <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-slate-400">Profile type</span>
       {types.map((t) => (
         <Pill key={t.value || "all"} href={hrefFor({ group: t.value || undefined, subgroup: undefined, category: undefined })} active={typeActive(t.value)} count={t.count} tone="slate">
           {t.label}
@@ -104,7 +104,7 @@ export default function CandidatesFilterBar({
       ))}
 
       <span className="mx-0.5 h-4 w-px shrink-0 bg-slate-200 dark:bg-slate-700" aria-hidden />
-      <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-400" title="How complete the profile is for a mandate: CTC, notice, CV read and so on">Readiness</span>
+      <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-slate-400" title="How complete the profile is for a mandate: CTC, notice, CV read and so on">Readiness</span>
       <Pill href={hrefFor({ ready: ready === "ready" ? undefined : "ready", missing: undefined })} active={ready === "ready"} count={c?.ready} tone="emerald">
         Ready
       </Pill>

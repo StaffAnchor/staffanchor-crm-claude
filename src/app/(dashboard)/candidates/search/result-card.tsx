@@ -46,7 +46,7 @@ const lakh = (v: number | null) => (v === null || v === undefined ? null : `${v}
 function Fact({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="min-w-[88px]">
-      <div className="text-[10.5px] uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
       {value ? <div className="text-[13px] font-medium text-slate-800 dark:text-slate-100">{value}</div> : <div className="text-[12px] text-amber-600">Not on file</div>}
     </div>
   );
@@ -80,7 +80,7 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
   const target_ = mandates.find((x) => x.id === target);
 
   return (
-    <Card className="p-4 transition-colors duration-200 hover:border-indigo-300 dark:hover:border-indigo-700">
+    <Card className="p-4 transition-colors duration-200 hover:border-teal-300 dark:hover:border-teal-700">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <Link href={`/candidates/${m.candidate_id}`} className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -108,13 +108,13 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
         <div className="mt-2.5">
           <div className="flex flex-wrap gap-1.5">
             {m.checks.map((c) => (
-              <span key={c.key} title={c.evidence} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-medium ring-1 ${STATUS_STYLE[c.status].cls}`}>
+              <span key={c.key} title={c.evidence} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${STATUS_STYLE[c.status].cls}`}>
                 {STATUS_STYLE[c.status].icon}
                 {c.label}
               </span>
             ))}
           </div>
-          <button onClick={() => setOpen(!open)} className="mt-1.5 text-[11.5px] font-medium text-indigo-600 hover:underline">
+          <button onClick={() => setOpen(!open)} className="mt-1.5 text-xs font-medium text-teal-600 hover:underline">
             {open ? "Hide the evidence" : "Show the evidence"}
           </button>
           {open && (
@@ -162,7 +162,7 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
                   ))}
                 </select>
               )}
-              <button onClick={add} disabled={!target || state === "adding"} className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+              <button onClick={add} disabled={!target || state === "adding"} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
                 <Plus className="h-3 w-3" /> {state === "adding" ? "Adding…" : mandateId ? `Add to ${target_?.role_title ?? "mandate"}` : "Add"}
               </button>
               {state === "error" && <span className="text-[12px] text-rose-600">Couldn&apos;t add. Try again.</span>}

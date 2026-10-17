@@ -47,9 +47,9 @@
   --ros-tone-neutral-text: #475569;
   --ros-tone-neutral-ring: #e2e8f0;
 
-  --ros-tone-accent-bg: #eff6ff;
-  --ros-tone-accent-text: #1d4ed8;
-  --ros-tone-accent-ring: #bfdbfe;
+  --ros-tone-accent-bg: #f0fdfa;
+  --ros-tone-accent-text: #0f766e;
+  --ros-tone-accent-ring: #99f6e4;
 
   --ros-tone-success-bg: #ecfdf5;
   --ros-tone-success-text: #047857;
@@ -73,8 +73,8 @@
      scattered per-component today (47 instances of text-[12px] alone
      on the Candidates page). Each step also carries its own
      line-height so components stop re-deriving one by hand. */
-  --ros-text-caption: 11px;
-  --ros-text-caption--line-height: 14px;
+  --ros-text-caption: 12px;
+  --ros-text-caption--line-height: 16px;
   --ros-text-body-sm: 12px;
   --ros-text-body-sm--line-height: 16px;
   --ros-text-body: 14px;
@@ -266,4 +266,16 @@ body {
     radial-gradient(1200px 600px at 15% -10%, rgb(20 184 166 / 0.06), transparent 60%),
     radial-gradient(1000px 500px at 100% 0%, rgb(59 130 246 / 0.05), transparent 55%),
     var(--background);
+}
+
+/* One page title everywhere: Apple's "large title" -- big, quiet, tight. */
+.ros-page-title {
+  font-size: var(--ros-text-display);
+  line-height: var(--ros-text-display--line-height);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: rgb(15 23 42);
+}
+.dark .ros-page-title {
+  color: rgb(241 245 249);
 }

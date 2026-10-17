@@ -100,10 +100,10 @@ export function BasisTag({ basis }: { basis: EvidenceBasis | null | undefined })
     basis === "confirmed"
       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
       : basis === "inferred"
-        ? "bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-200"
+        ? "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-200"
         : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
   return (
-    <span className={`inline-flex items-center gap-1 rounded px-1.5 py-px text-[10.5px] font-medium ${cls}`}>
+    <span className={`inline-flex items-center gap-1 rounded px-1.5 py-px text-xs font-medium ${cls}`}>
       {basis === "confirmed" && <BadgeCheck className="h-3 w-3" />}
       {BASIS_LABEL[basis]}
     </span>
@@ -170,7 +170,7 @@ export function ConfirmPanel({
           <X className="h-3 w-3" /> Doesn&apos;t have it
         </button>
         {basis === "confirmed" && (
-          <button disabled={busy} onClick={() => run(() => confirmations.clear(candidateId, requirement))} className="text-[11.5px] text-slate-500 underline hover:text-slate-700">
+          <button disabled={busy} onClick={() => run(() => confirmations.clear(candidateId, requirement))} className="text-xs text-slate-500 underline hover:text-slate-700">
             Undo
           </button>
         )}

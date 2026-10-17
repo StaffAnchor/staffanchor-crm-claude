@@ -55,7 +55,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   SALES_LEAD_STALE: {
     icon: Flame,
     label: "Gone quiet",
-    tint: "bg-orange-50 text-orange-700 ring-orange-200",
+    tint: "bg-amber-50 text-amber-700 ring-amber-200",
   },
   SALES_REFERRAL_ASK: {
     icon: Gift,
@@ -65,7 +65,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   SALES_CLIENT_CHECKIN: {
     icon: RefreshCcw,
     label: "Client check-in",
-    tint: "bg-sky-50 text-sky-700 ring-sky-200",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
 };
 
@@ -127,7 +127,7 @@ export default function SalesBriefingPanel({
         className="w-full flex items-center justify-between px-5 py-3.5"
       >
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-500" />
+          <Sparkles className="w-4 h-4 text-teal-500" />
           <h2 className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">Today&apos;s Briefing</h2>
           {open.length > 0 && (
             <Badge tone="accent" size="sm">
@@ -162,7 +162,7 @@ export default function SalesBriefingPanel({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200">
                         {item.lead_id ? (
-                          <Link href={`/client-acquisition/sales/${item.lead_id}`} className="hover:text-blue-600 transition-colors duration-200 ease-ros">
+                          <Link href={`/client-acquisition/sales/${item.lead_id}`} className="hover:text-teal-600 transition-colors duration-200 ease-ros">
                             {item.title}
                           </Link>
                         ) : (
@@ -175,7 +175,7 @@ export default function SalesBriefingPanel({
                         </Badge>
                       )}
                     </div>
-                    {item.detail && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">{item.detail}</p>}
+                    {item.detail && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{item.detail}</p>}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Button variant="ghost" size="sm" disabled={busyId === item.id} onClick={() => snooze(item.id)}>

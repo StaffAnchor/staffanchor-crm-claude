@@ -136,7 +136,7 @@ export default function WhatsAppReview({
 
           {preview && !result && (
             <>
-              <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800">
                   <Zap className="h-3 w-3" /> Auto · sent from StaffAnchor&apos;s number
                 </span>

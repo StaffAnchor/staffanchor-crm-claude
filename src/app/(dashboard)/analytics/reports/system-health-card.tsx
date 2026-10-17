@@ -114,7 +114,7 @@ export default function SystemHealthCard() {
             </div>
           )}
           <div>
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">Scheduled jobs</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Scheduled jobs</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
               {metrics.crons.map((c) => (
                 <div key={c.jobName} className="flex items-center justify-between text-[12px] py-0.5">

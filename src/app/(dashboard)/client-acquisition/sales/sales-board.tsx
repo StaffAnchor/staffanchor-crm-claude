@@ -108,7 +108,7 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
     >
       <Link href={`/client-acquisition/sales/${lead.id}`} className="block group">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
+          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-teal-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             {lead.company_name}
           </p>
@@ -120,13 +120,13 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
           </Badge>
         </div>
         {(lead.contact_name || lead.contact_title) && (
-          <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
             {lead.contact_name}
             {lead.contact_name && lead.contact_title ? " · " : ""}
             {lead.contact_title}
           </p>
         )}
-        {ownerName && <p className="text-[10.5px] text-slate-400 mt-0.5 truncate">Owner: {ownerName}</p>}
+        {ownerName && <p className="text-xs text-slate-400 mt-0.5 truncate">Owner: {ownerName}</p>}
       </Link>
 
       <div className="flex items-center gap-1.5 flex-wrap mt-2">
@@ -139,14 +139,14 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
           </Badge>
         )}
         {lead.linkedin_url && (
-          <a href={lead.linkedin_url} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros">
+          <a href={lead.linkedin_url} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
             <Link2 className="w-3.5 h-3.5" />
           </a>
         )}
       </div>
 
       {lead.next_follow_up_date && (
-        <p className={`flex items-center gap-1 text-[11px] mt-2 ${isOverdue(lead.next_follow_up_date) ? "text-rose-500 font-medium" : "text-slate-400"}`}>
+        <p className={`flex items-center gap-1 text-xs mt-2 ${isOverdue(lead.next_follow_up_date) ? "text-rose-500 font-medium" : "text-slate-400"}`}>
           <CalendarClock className="w-3 h-3" />
           Follow up {new Date(lead.next_follow_up_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })}
         </p>
@@ -161,7 +161,7 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
           setBusy(false);
           if (ok) router.refresh();
         }}
-        className="mt-2.5 w-full text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 px-2 py-1.5 text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros disabled:opacity-50"
+        className="mt-2.5 w-full text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 px-2 py-1.5 text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros disabled:opacity-50"
       >
         {STAGES.map((s) => (
           <option key={s.key} value={s.key}>
@@ -190,18 +190,18 @@ function StageColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`min-w-[200px] rounded-ros-lg transition-colors duration-150 ${isOver ? "bg-blue-50/60 dark:bg-blue-950/20 ring-1 ring-blue-300 dark:ring-blue-800" : ""}`}
+      className={`min-w-[200px] rounded-ros-lg transition-colors duration-150 ${isOver ? "bg-teal-50/60 dark:bg-teal-950/20 ring-1 ring-teal-300 dark:ring-teal-800" : ""}`}
     >
       <div className="flex items-center justify-between mb-2 px-1 pt-1">
-        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
-        <span className="text-[11px] font-semibold text-slate-400 tabular-nums">{leads.length}</span>
+        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
+        <span className="text-xs font-semibold text-slate-400 tabular-nums">{leads.length}</span>
       </div>
-      {stageValue > 0 && <p className="text-[10.5px] text-slate-400 px-1 mb-2 -mt-1">{formatDealValue(stageValue, "INR")}</p>}
+      {stageValue > 0 && <p className="text-xs text-slate-400 px-1 mb-2 -mt-1">{formatDealValue(stageValue, "INR")}</p>}
       <div className="space-y-2 px-1 pb-2 min-h-[40px]">
         {leads.map((lead) => (
           <LeadCard key={lead.id} lead={lead} ownerName={lead.owner_id ? ownerNames[lead.owner_id] : undefined} />
         ))}
-        {leads.length === 0 && <p className="text-[11px] text-slate-300 dark:text-slate-700">—</p>}
+        {leads.length === 0 && <p className="text-xs text-slate-300 dark:text-slate-700">—</p>}
       </div>
     </div>
   );
@@ -322,8 +322,8 @@ function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existin
   }
 
   const inputClass =
-    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros";
-  const labelClass = "text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1 block";
+    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
+  const labelClass = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -346,13 +346,13 @@ function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existin
 
           {duplicates.length > 0 && (
             <div className="rounded-ros-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5">
-              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-amber-800 dark:text-amber-300">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                 Possible duplicate{duplicates.length > 1 ? "s" : ""} found
               </p>
               <ul className="mt-1.5 space-y-1">
                 {duplicates.map((d) => (
-                  <li key={`${d.kind}-${d.id}`} className="text-[11.5px] text-amber-700 dark:text-amber-400">
+                  <li key={`${d.kind}-${d.id}`} className="text-xs text-amber-700 dark:text-amber-400">
                     <Link
                       href={d.kind === "lead" ? `/client-acquisition/sales/${d.id}` : `/clients/${d.id}`}
                       target="_blank"
@@ -365,7 +365,7 @@ function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existin
                   </li>
                 ))}
               </ul>
-              <p className="text-[10.5px] text-amber-600 dark:text-amber-500 mt-1.5">
+              <p className="text-xs text-amber-600 dark:text-amber-500 mt-1.5">
                 You can still add this lead — a repeat opportunity with a past client is often legitimate.
               </p>
             </div>
@@ -529,12 +529,12 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
           value={q}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search company or contact..."
-          className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-teal-400"
         />
         <select
           value={sourceFilter}
           onChange={(e) => setSourceFilter(e.target.value)}
-          className="text-[12.5px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="text-[12.5px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-400"
         >
           <option value="all">All sources</option>
           {SOURCES.map((s) => (
@@ -543,7 +543,7 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
             </option>
           ))}
         </select>
-        <p className="text-[11.5px] text-slate-400 flex-1">Click a card for full details, notes, and activity history.</p>
+        <p className="text-xs text-slate-400 flex-1">Click a card for full details, notes, and activity history.</p>
         <Button
           variant={sortByPriority ? "primary" : "secondary"}
           size="sm"

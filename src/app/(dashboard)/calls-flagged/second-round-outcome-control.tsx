@@ -133,10 +133,10 @@ export default function SecondRoundOutcomeControl({
         ref={buttonRef}
         type="button"
         onClick={() => (open ? setOpen(false) : openPopover())}
-        className={`flex items-center gap-1 text-[11.5px] font-medium rounded-ros-md px-2 py-1 transition-colors ${
+        className={`flex items-center gap-1 text-xs font-medium rounded-ros-md px-2 py-1 transition-colors ${
           currentOutcome
             ? SECOND_ROUND_OUTCOME_COLOR[currentOutcome as SecondRoundOutcome] ?? "bg-slate-100 text-slate-600"
-            : "text-slate-600 dark:text-slate-400 hover:text-blue-700 hover:bg-blue-50"
+            : "text-slate-600 dark:text-slate-400 hover:text-teal-700 hover:bg-teal-50"
         }`}
         title="Record the outcome of this 2nd/final round call"
       >
@@ -152,7 +152,7 @@ export default function SecondRoundOutcomeControl({
             className="z-50 w-60 rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-ros-xl p-2"
           >
             <div className="flex items-center justify-between mb-1 px-1">
-              <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300">How did the call go?</p>
+              <p className="text-xs font-medium text-slate-700 dark:text-slate-300">How did the call go?</p>
               <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -162,7 +162,7 @@ export default function SecondRoundOutcomeControl({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Optional note -- e.g. why, so whoever flagged this can see the reason"
               rows={2}
-              className="w-full text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1.5 bg-white dark:bg-slate-900 mb-1.5 resize-none"
+              className="w-full text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1.5 bg-white dark:bg-slate-900 mb-1.5 resize-none"
             />
             <div className="flex flex-col gap-1">
               {SECOND_ROUND_OUTCOMES.map((o) => (
@@ -171,14 +171,14 @@ export default function SecondRoundOutcomeControl({
                   type="button"
                   disabled={saving}
                   onClick={() => choose(o.value)}
-                  className={`text-left text-[11.5px] rounded-ros-md px-2 py-1.5 hover:opacity-80 disabled:opacity-50 ${SECOND_ROUND_OUTCOME_COLOR[o.value]}`}
+                  className={`text-left text-xs rounded-ros-md px-2 py-1.5 hover:opacity-80 disabled:opacity-50 ${SECOND_ROUND_OUTCOME_COLOR[o.value]}`}
                 >
                   {saving ? <Loader2 className="w-3 h-3 inline animate-spin mr-1" /> : null}
                   {o.label}
                 </button>
               ))}
             </div>
-            {error && <p className="text-[11px] text-red-600 mt-1 px-1">{error}</p>}
+            {error && <p className="text-xs text-red-600 mt-1 px-1">{error}</p>}
           </div>,
           document.body
         )}

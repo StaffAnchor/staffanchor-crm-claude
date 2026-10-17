@@ -59,7 +59,7 @@ export default async function TargetsPage() {
   if (months.length === 0) {
     return (
       <div className="max-w-[1200px] mx-auto px-5 py-8">
-        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">FY Targets</h1>
+        <h1 className="ros-page-title">FY Targets</h1>
         <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-2">No targets configured yet.</p>
       </div>
     );
@@ -184,26 +184,26 @@ export default async function TargetsPage() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-5 py-8">
-      <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">FY Targets</h1>
+      <h1 className="ros-page-title mb-1">FY Targets</h1>
       <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-6">
         Placement targets for the remaining months of FY2026-27 ({monthLabel(fyStart)} – {monthLabel(months[months.length - 1].month_start as string)}), tracked weekly. Admin-only.
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Card className="p-4">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">FY Target</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">FY Target</p>
           <p className="text-[22px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums mt-1">{totalTarget}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Placed So Far</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Placed So Far</p>
           <p className="text-[22px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums mt-1">{totalActual}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">% Complete</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">% Complete</p>
           <p className="text-[22px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums mt-1">{pctComplete}%</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pace</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pace</p>
           <Badge tone={fyPaceTone} className="mt-1.5">{fyPace}</Badge>
         </Card>
       </div>
@@ -213,7 +213,7 @@ export default async function TargetsPage() {
           <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Clients onboarded (FY to date)</h2>
           <span className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{totalClients}</span>
         </div>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400">No fixed target set for client onboarding -- tracked for visibility alongside placements.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">No fixed target set for client onboarding -- tracked for visibility alongside placements.</p>
       </Card>
 
       <Card className="mb-6" padded={false}>
@@ -267,7 +267,7 @@ export default async function TargetsPage() {
       <Card padded={false}>
         <div className="p-4 pb-2">
           <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Weekly breakdown</h2>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Each week is grouped under the month its Monday falls in.
           </p>
         </div>

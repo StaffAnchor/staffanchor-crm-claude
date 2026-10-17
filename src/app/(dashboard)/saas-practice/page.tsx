@@ -350,7 +350,7 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
     <div className="max-w-[1500px] mx-auto px-5 py-6 space-y-8">
       <CandidatesSubNav />
       <div>
-        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">B2B SaaS and tech sales</h1>
+        <h1 className="ros-page-title">B2B SaaS and tech sales</h1>
         <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
           The practice at a glance: who you hold, what each person has actually sold, and which open roles they could fill. A candidate is counted here when their CV or profile shows software, SaaS or tech sales.
         </p>
@@ -361,7 +361,7 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
           Bench and roles <span className="ml-1 text-slate-400">{total}</span>
         </Link>
         <Link href="/saas-practice?view=pool" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${poolView ? "border-amber-500 text-slate-900 dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
-          Talent Pool <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-[11.5px] font-semibold text-amber-900">{poolCount}</span>
+          Talent Pool <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-900">{poolCount}</span>
         </Link>
       </div>
 
@@ -422,7 +422,7 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
                 return (
                   <tr key={r.id} className="border-b border-slate-50 dark:border-slate-800/60 last:border-0">
                     <td className="px-4 py-2.5">
-                      <Link href={`/mandates/${r.id}`} className="font-medium text-blue-600 hover:underline">
+                      <Link href={`/mandates/${r.id}`} className="font-medium text-teal-600 hover:underline">
                         {r.role_title ?? "Role"}
                       </Link>
                       {r.client_name && <span className="text-slate-500"> · {r.client_name}</span>}

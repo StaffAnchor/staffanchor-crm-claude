@@ -67,7 +67,7 @@ export default function PracticesControl({
         <div className="absolute z-20 mt-1 w-72 max-h-80 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-ros-xl p-3 space-y-3">
           {grouped.map(({ group, practices }) => (
             <div key={group}>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
                 {GROUP_LABEL[group]}
               </p>
               <div className="flex flex-wrap gap-1">
@@ -79,9 +79,9 @@ export default function PracticesControl({
                       key={p.id}
                       disabled={saving}
                       onClick={() => toggle(p.id)}
-                      className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                      className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                         active
-                          ? "bg-blue-600 border-blue-600 text-white"
+                          ? "bg-teal-600 border-teal-600 text-white"
                           : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                       }`}
                     >
@@ -95,7 +95,7 @@ export default function PracticesControl({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="w-full text-center text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800"
+            className="w-full text-center text-xs text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800"
           >
             Close
           </button>

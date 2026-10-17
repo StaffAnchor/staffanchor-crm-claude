@@ -84,7 +84,7 @@ export default function PayoutSlabsPanel({ slabs }: { slabs: Slab[] }) {
                   <button
                     disabled={busyId === s.id}
                     onClick={() => toggleActive(s.id, !s.active)}
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       s.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
                     }`}
                   >
@@ -126,7 +126,7 @@ export default function PayoutSlabsPanel({ slabs }: { slabs: Slab[] }) {
           <button
             disabled={busyId === "new"}
             onClick={addSlab}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-teal-600 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
           >
             Save slab
           </button>
@@ -136,7 +136,7 @@ export default function PayoutSlabsPanel({ slabs }: { slabs: Slab[] }) {
           {error && <p className="w-full text-[12px] text-rose-600">{error}</p>}
         </div>
       ) : (
-        <button onClick={() => setShowForm(true)} className="text-[12px] font-medium text-blue-600">
+        <button onClick={() => setShowForm(true)} className="text-[12px] font-medium text-teal-600">
           + Add slab
         </button>
       )}

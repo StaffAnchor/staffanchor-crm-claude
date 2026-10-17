@@ -51,8 +51,8 @@ function chipsOf(spec: SearchSpec): Chip[] {
 }
 
 const CHIP_CLS = {
-  hard: "bg-indigo-50 text-indigo-800 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-200 dark:ring-indigo-800",
-  must: "bg-sky-50 text-sky-800 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-800",
+  hard: "bg-teal-50 text-teal-800 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800",
+  must: "bg-teal-50 text-teal-800 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800",
   nice: "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
 };
 
@@ -133,14 +133,14 @@ function PromptSearch() {
 
       <div className="mb-4">
         <h1 className="flex items-center gap-2 text-[20px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          <Sparkles className="h-5 w-5 text-indigo-600" /> Prompt search
+          <Sparkles className="h-5 w-5 text-teal-600" /> Prompt search
         </h1>
         <p className="mt-0.5 text-[12.5px] text-slate-500 dark:text-slate-400">Describe who you need in plain English, or start from one of your open mandates. Searches the whole candidate database.</p>
       </div>
 
       <Card className="mb-4 p-4">
         <div className="mb-2.5 flex flex-wrap items-center gap-2">
-          <label className="shrink-0 text-[11.5px] text-slate-500 dark:text-slate-400">Search for a mandate:</label>
+          <label className="shrink-0 text-xs text-slate-500 dark:text-slate-400">Search for a mandate:</label>
           <select
             value={mandateId}
             onChange={(e) => {
@@ -167,10 +167,10 @@ function PromptSearch() {
           }}
           placeholder="e.g. B2B SaaS Account Executives in Bangalore, 4-7 years, currently hunting not farming"
           rows={3}
-          className="w-full resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13.5px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-indigo-800"
+          className="w-full resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13.5px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-teal-800"
         />
         <div className="mb-2 mt-2.5 flex items-center gap-2">
-          <label className="shrink-0 text-[11.5px] text-slate-500 dark:text-slate-400">Restrict to practice:</label>
+          <label className="shrink-0 text-xs text-slate-500 dark:text-slate-400">Restrict to practice:</label>
           <select value={practiceId} onChange={(e) => setPracticeId(e.target.value)} className="rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[12px] dark:border-slate-700">
             <option value="">All practices</option>
             {allPractices.map((p) => (
@@ -183,7 +183,7 @@ function PromptSearch() {
         <div className="mt-2.5 flex items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-1.5">
             {EXAMPLES.map((ex) => (
-              <button key={ex} onClick={() => setPrompt(ex)} className="rounded-ros-full bg-slate-100 px-2.5 py-1 text-[11.5px] text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
+              <button key={ex} onClick={() => setPrompt(ex)} className="rounded-ros-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700">
                 {ex.length > 46 ? `${ex.slice(0, 46)}…` : ex}
               </button>
             ))}
@@ -191,7 +191,7 @@ function PromptSearch() {
           <button
             onClick={() => run({ text: prompt, mandate: mandateId })}
             disabled={loading || (!prompt.trim() && !mandateId)}
-            className="flex shrink-0 items-center gap-1.5 rounded-ros-md bg-indigo-600 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-ros-md bg-teal-600 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
             {loading ? "Searching…" : "Search"}

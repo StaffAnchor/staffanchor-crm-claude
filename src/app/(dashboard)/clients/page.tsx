@@ -145,7 +145,7 @@ export default async function ClientsPage({
       <div className="col-span-2">
         <div className="flex items-baseline justify-between mb-5">
           <div>
-            <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Clients</h1>
+            <h1 className="ros-page-title">Clients</h1>
             <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
               {(clients ?? []).length} client{(clients ?? []).length === 1 ? "" : "s"}
               {isPartnerView ? " you brought in" : " in your database"}
@@ -173,7 +173,7 @@ export default async function ClientsPage({
             name="q"
             defaultValue={q}
             placeholder="Search clients by name…"
-            className="w-full rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[13px] outline-none transition-colors duration-200 ease-ros focus:ring-2 focus:ring-blue-500/30 focus:border-blue-300 shadow-ros-sm"
+            className="w-full rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[13px] outline-none transition-colors duration-200 ease-ros focus:ring-2 focus:ring-teal-500/30 focus:border-teal-300 shadow-ros-sm"
           />
         </form>
 
@@ -200,7 +200,7 @@ export default async function ClientsPage({
                     )}
                   </div>
                   {c.owner_id && ownerNames[c.owner_id] && (
-                    <p className="text-[11px] text-slate-400 mb-2 -mt-1">Owner: {ownerNames[c.owner_id]}</p>
+                    <p className="text-xs text-slate-400 mb-2 -mt-1">Owner: {ownerNames[c.owner_id]}</p>
                   )}
                   <div className="flex items-center gap-4 text-[12px] text-slate-500 dark:text-slate-400 mb-3">
                     {c.hq_city && (
@@ -217,7 +217,7 @@ export default async function ClientsPage({
                   </div>
 
                   {funnel.submittedPlus > 0 && (
-                    <div className="flex items-center gap-4 text-[11.5px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800">
                       <span>
                         <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{pct(funnel.subToInterviewRate)}</span>{" "}
                         sub → interview

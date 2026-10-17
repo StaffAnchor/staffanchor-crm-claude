@@ -79,7 +79,7 @@ export default function EditCommissionControl({
       <button onClick={() => setEditing(false)} className="text-slate-400 hover:text-slate-600">
         <X className="w-3.5 h-3.5" />
       </button>
-      {error && <span className="text-[11px] text-red-600 ml-1">{error}</span>}
+      {error && <span className="text-xs text-red-600 ml-1">{error}</span>}
     </div>
   );
 }

@@ -83,6 +83,8 @@ export interface Store {
   /** Keep a file someone sent (a JD, say) and tie it to the message it came in. */
   saveAttachment(metaMessageId: string, path: string, bytes: Uint8Array, name: string | null, contentType: string | null): Promise<boolean>;
   hasOutboundSince(key: string, sinceIso: string): Promise<boolean>;
+  /** A person answered a role-opportunity message. Records it against the role they were told about, and on "interested" puts them on that role's pipeline. */
+  recordOutreachReply?(candidateId: string, answer: "interested" | "not_now"): Promise<void>;
 }
 
 const CANDIDATE_COLUMNS =
@@ -252,6 +254,31 @@ export function supabaseStore(admin: SupabaseClient): Store {
     async hasOutboundSince(key, sinceIso) {
       const { data } = await admin.from("whatsapp_messages").select("id").eq("direction", "outbound").ilike("to_phone", `%${key}`).gte("created_at", sinceIso).limit(1);
       return !!data && data.length > 0;
+    },
+    async recordOutreachReply(candidateId, answer) {
+      // The role they most recently heard about, within three weeks; an old message is not what they are answering.
+      const since = new Date(Date.now() - 21 * 86_400_000).toISOString();
+      const { data } = await admin
+        .from("mandate_outreach")
+        .select("mandate_id, sent_by")
+        .eq("candidate_id", candidateId)
+        .eq("status", "sent")
+        .gte("sent_at", since)
+        .order("sent_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!data) return;
+      await admin.from("mandate_outreach").update({ status: answer, replied_at: new Date().toISOString() }).eq("mandate_id", data.mandate_id).eq("candidate_id", candidateId);
+      if (answer === "interested") {
+        // Duplicates are fine: they may already be on the pipeline.
+        await admin.from("candidate_mandate_links").insert({
+          candidate_id: candidateId,
+          mandate_id: data.mandate_id,
+          added_by: data.sent_by,
+          match_source: "whatsapp_interest",
+          matched_at: new Date().toISOString(),
+        });
+      }
     },
   };
 }

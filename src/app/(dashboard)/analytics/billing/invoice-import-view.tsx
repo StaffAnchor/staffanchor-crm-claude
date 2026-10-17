@@ -148,9 +148,9 @@ export default function InvoiceImportView() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {annual.map((y) => (
               <div key={y.year} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-                <p className="text-[11px] text-slate-400">{y.year} · {y.count} invoices</p>
+                <p className="text-xs text-slate-400">{y.year} · {y.count} invoices</p>
                 <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mt-0.5">{fmt(y.gross)}</p>
-                <p className="text-[11px] text-slate-500">net {fmt(y.net)}</p>
+                <p className="text-xs text-slate-500">net {fmt(y.net)}</p>
               </div>
             ))}
           </div>
@@ -163,7 +163,7 @@ export default function InvoiceImportView() {
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="text-left text-[11px] text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
+                <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
                   <th className="py-2 pr-3">Month</th>
                   <th className="py-2 pr-3">Invoices</th>
                   <th className="py-2 pr-3">Gross</th>
@@ -193,7 +193,7 @@ export default function InvoiceImportView() {
           {reviewRows.length > 0 && (
             <button
               onClick={() => setShowOnlyReview((v) => !v)}
-              className="text-[12px] text-blue-600 hover:underline"
+              className="text-[12px] text-teal-600 hover:underline"
             >
               {showOnlyReview ? "Show all" : "Show only needs-review"}
             </button>
@@ -207,7 +207,7 @@ export default function InvoiceImportView() {
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="text-left text-[11px] text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
+                <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
                   <th className="py-2 pr-3">Client</th>
                   <th className="py-2 pr-3">Invoice #</th>
                   <th className="py-2 pr-3">Date</th>
@@ -290,7 +290,7 @@ function InvoiceLine({
               });
               setEditing(false);
             }}
-            className="text-[12px] text-blue-600 hover:underline mr-2"
+            className="text-[12px] text-teal-600 hover:underline mr-2"
           >
             Save
           </button>
@@ -324,7 +324,7 @@ function InvoiceLine({
       <td className="py-1.5 pr-3 text-slate-500 tabular-nums">{fmt(row.net_amount)}</td>
       <td className="py-1.5 pr-3 text-slate-400 truncate max-w-[140px]">{row.original_filename ?? "—"}</td>
       <td className="py-1.5 pr-3">
-        <button onClick={() => setEditing(true)} className="text-[12px] text-blue-600 hover:underline">
+        <button onClick={() => setEditing(true)} className="text-[12px] text-teal-600 hover:underline">
           Edit
         </button>
       </td>

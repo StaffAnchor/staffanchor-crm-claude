@@ -102,7 +102,7 @@ export default function NotificationBell() {
       >
         <Bell className="w-4 h-4" strokeWidth={2} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-semibold text-white">
+          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-xs font-semibold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -118,7 +118,7 @@ export default function NotificationBell() {
               <button
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={markAllRead}
-                className="text-[11px] text-blue-600 hover:text-blue-500"
+                className="text-xs text-teal-600 hover:text-teal-500"
               >
                 Mark all read
               </button>
@@ -135,17 +135,17 @@ export default function NotificationBell() {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleClick(n)}
                 className={`block w-full text-left px-3 py-2.5 border-b border-slate-50 dark:border-slate-800/60 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-                  !n.read_at ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
+                  !n.read_at ? "bg-teal-50/50 dark:bg-teal-900/10" : ""
                 }`}
               >
                 <div className="flex items-start gap-1.5">
-                  {!n.read_at && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />}
+                  {!n.read_at && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" />}
                   <div className="min-w-0 flex-1">
                     <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{n.title}</p>
                     {n.body && (
-                      <p className="text-[11.5px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">{n.body}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">{n.body}</p>
                     )}
-                    <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.created_at)}</p>
+                    <p className="text-xs text-slate-400 mt-1">{timeAgo(n.created_at)}</p>
                   </div>
                 </div>
               </button>

@@ -124,7 +124,7 @@ export function MultiSelectFilter({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={`Search ${label.toLowerCase()}...`}
-                  className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 py-1 pl-6 pr-2 text-ros-body-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 py-1 pl-6 pr-2 text-ros-body-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                 />
               </div>
             </div>
@@ -148,7 +148,7 @@ export function MultiSelectFilter({
                     className={cn(
                       "flex items-center gap-2 px-1.5 py-1 rounded-md text-ros-body-sm cursor-pointer",
                       active
-                        ? "text-blue-700 dark:text-blue-300"
+                        ? "text-teal-700 dark:text-teal-300"
                         : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
                     )}
                   >
@@ -156,7 +156,7 @@ export function MultiSelectFilter({
                       type="checkbox"
                       checked={active}
                       onChange={() => toggle(opt)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/30"
                     />
                     {labels?.[opt] ?? opt}
                   </label>

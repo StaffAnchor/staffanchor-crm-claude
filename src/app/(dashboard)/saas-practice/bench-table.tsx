@@ -39,7 +39,7 @@ function initials(name: string | null) {
 function Fact({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="min-w-[96px]">
-      <p className="text-[10.5px] uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
       <p className={`text-[12.5px] ${value ? "text-slate-800 dark:text-slate-200" : "text-slate-300 dark:text-slate-600"}`}>{value || "Not known"}</p>
     </div>
   );
@@ -377,7 +377,7 @@ export default function BenchTable({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-ros-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/40 dark:bg-blue-950/20 p-4 space-y-3">
+      <div className="rounded-ros-xl border border-teal-100 dark:border-teal-900/50 bg-teal-50/40 dark:bg-teal-950/20 p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200">Find people for a role</p>
           <select value={roleId} onChange={(e) => pickRole(e.target.value)} className={`${select} min-w-[260px]`}>
@@ -392,7 +392,7 @@ export default function BenchTable({
           </select>
           {role && (
             <>
-              <button type="button" onClick={() => pickRole(role.id)} className="text-[12px] text-blue-600 hover:underline">
+              <button type="button" onClick={() => pickRole(role.id)} className="text-[12px] text-teal-600 hover:underline">
                 Reset to the role
               </button>
               <button type="button" onClick={() => pickRole("")} className="text-[12px] text-slate-500 hover:underline">
@@ -406,23 +406,23 @@ export default function BenchTable({
         </div>
         {role && (
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-2">
-            <label className="col-span-2 text-[11px] text-slate-500">
+            <label className="col-span-2 text-xs text-slate-500">
               Cities (comma separated)
               <input value={rf.cities} onChange={(e) => setRf({ ...rf, cities: e.target.value })} className={`${select} w-full mt-0.5`} placeholder="Noida, Gurgaon" />
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Experience from (yrs)
               <input value={rf.expMin} onChange={(e) => setRf({ ...rf, expMin: e.target.value })} inputMode="decimal" className={`${select} w-full mt-0.5`} />
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Experience to (yrs)
               <input value={rf.expMax} onChange={(e) => setRf({ ...rf, expMax: e.target.value })} inputMode="decimal" className={`${select} w-full mt-0.5`} />
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Current CTC up to (LPA)
               <input value={rf.ctcMax} onChange={(e) => setRf({ ...rf, ctcMax: e.target.value })} inputMode="decimal" className={`${select} w-full mt-0.5`} />
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Notice up to
               <select value={rf.noticeMax} onChange={(e) => setRf({ ...rf, noticeMax: e.target.value })} className={`${select} w-full mt-0.5`}>
                 <option value="">Any</option>
@@ -433,7 +433,7 @@ export default function BenchTable({
                 ))}
               </select>
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Deal size at least
               <select value={rf.deal} onChange={(e) => setRf({ ...rf, deal: e.target.value })} className={`${select} w-full mt-0.5`}>
                 <option value="">Any</option>
@@ -448,7 +448,7 @@ export default function BenchTable({
                 ))}
               </select>
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Sales cycle at least
               <select value={rf.cycle} onChange={(e) => setRf({ ...rf, cycle: e.target.value })} className={`${select} w-full mt-0.5`}>
                 <option value="">Any</option>
@@ -459,7 +459,7 @@ export default function BenchTable({
                 ))}
               </select>
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Hunter or farmer
               <select value={rf.hunter} onChange={(e) => setRf({ ...rf, hunter: e.target.value })} className={`${select} w-full mt-0.5`}>
                 <option value="">Any</option>
@@ -467,7 +467,7 @@ export default function BenchTable({
                 <option value="farmer">Farmer</option>
               </select>
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Readiness
               <select value={rf.ready} onChange={(e) => setRf({ ...rf, ready: e.target.value as RoleFilters["ready"] })} className={`${select} w-full mt-0.5`}>
                 <option value="any">Any</option>
@@ -497,7 +497,7 @@ export default function BenchTable({
             >
               Miss one requirement <span className="opacity-70">{roleClose.length}</span>
             </button>
-            <span className="text-[11.5px] text-slate-500 ml-2">&quot;?&quot; means the profile has no answer yet. Those people are not ruled out.</span>
+            <span className="text-xs text-slate-500 ml-2">&quot;?&quot; means the profile has no answer yet. Those people are not ruled out.</span>
           </div>
         )}
         {addMsg && (
@@ -574,7 +574,7 @@ export default function BenchTable({
           <option value="out">Not in the pool yet</option>
         </select>
         {gap !== "all" && (
-          <button type="button" onClick={() => setGap("all")} className="text-[12px] text-blue-600 hover:underline">
+          <button type="button" onClick={() => setGap("all")} className="text-[12px] text-teal-600 hover:underline">
             Clear &quot;{gap}&quot;
           </button>
         )}
@@ -590,7 +590,7 @@ export default function BenchTable({
         <span className="text-[12.5px] text-slate-600 dark:text-slate-300">
           <span className="font-medium">{picked.size}</span> selected
         </span>
-        <button type="button" onClick={pickAllFiltered} className="text-[12px] text-blue-600 hover:underline">
+        <button type="button" onClick={pickAllFiltered} className="text-[12px] text-teal-600 hover:underline">
           Select the {Math.min(listRows.filter((r) => !r.openTask && !assigned.has(r.candidate_id)).length, MAX_ASSIGN)} shown by the filters
         </button>
         {picked.size > 0 && (
@@ -625,7 +625,7 @@ export default function BenchTable({
               type="button"
               onClick={() => addToRole(Array.from(picked))}
               disabled={adding || picked.size === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-teal-700 disabled:opacity-50"
             >
               {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
               Add {picked.size || ""} to this role
@@ -701,11 +701,11 @@ export default function BenchTable({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600">
+                    <Link href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 hover:text-teal-600">
                       {r.full_name ?? "Unnamed"}
                     </Link>
                     {r.practice_fit && <Badge tone="accent">{FIT_LABEL[r.practice_fit]}</Badge>}
-                    {tier && <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] ring-1 ${TIER_PILL[tier]}`}>{TIER_LABEL[tier]}</span>}
+                    {tier && <span className={`inline-block rounded-full px-2 py-0.5 text-xs ring-1 ${TIER_PILL[tier]}`}>{TIER_LABEL[tier]}</span>}
                     <Badge tone={passportTone(r.passport_score)}>Passport {r.passport_score}%</Badge>
                     {taskSent && <Badge tone="info">Details requested</Badge>}
                     {askedOn && <Badge tone="neutral">Emailed {askedOn}</Badge>}
@@ -728,9 +728,9 @@ export default function BenchTable({
 
                   {gaps.length > 0 && (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11.5px] text-slate-500">Ask for:</span>
+                      <span className="text-xs text-slate-500">Ask for:</span>
                       {gaps.map((g) => (
-                        <span key={g} className="rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 ring-1 ring-amber-200/70 dark:ring-amber-800/60 px-2 py-0.5 text-[11.5px]">
+                        <span key={g} className="rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 ring-1 ring-amber-200/70 dark:ring-amber-800/60 px-2 py-0.5 text-xs">
                           {g}
                         </span>
                       ))}
@@ -747,7 +747,7 @@ export default function BenchTable({
                         <span
                           key={c.key}
                           title={c.detail}
-                          className={`rounded-full px-2 py-0.5 text-[11.5px] ring-1 ${
+                          className={`rounded-full px-2 py-0.5 text-xs ring-1 ${
                             c.state === "pass"
                               ? "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800"
                               : c.state === "fail"
@@ -772,7 +772,7 @@ export default function BenchTable({
                     onClick={() => openCv(r)}
                     disabled={!r.has_cv}
                     title={r.has_cv ? "Read the CV here" : "No CV on file"}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-[12px] font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-40 dark:bg-blue-950/40 dark:text-blue-300"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-[12px] font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-40 dark:bg-teal-950/40 dark:text-teal-300"
                   >
                     <FileText className="h-3.5 w-3.5" /> CV
                   </button>
@@ -786,7 +786,7 @@ export default function BenchTable({
                       const info = roleInfo.get(r.candidate_id);
                       const inRole = info?.stage ?? (addedLocal.has(`${role.id}:${r.candidate_id}`) ? "added" : null);
                       return inRole ? (
-                        <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-[11.5px] text-slate-600 dark:text-slate-300">
+                        <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300">
                           In pipeline{inRole !== "added" ? `: ${inRole.replace(/_/g, " ")}` : ""}
                         </span>
                       ) : (
@@ -794,7 +794,7 @@ export default function BenchTable({
                           type="button"
                           onClick={() => addToRole([r.candidate_id])}
                           disabled={adding}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-teal-700 disabled:opacity-50"
                         >
                           <UserPlus className="h-3.5 w-3.5" /> Add to role
                         </button>
