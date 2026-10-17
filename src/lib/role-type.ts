@@ -29,7 +29,8 @@ export function suggestFromTitle(title: string | null | undefined): { level: Man
   else if (/(solution|pre-?sales|sales engineer)/.test(t)) cluster = "solution_eng";
   else if (/customer success/.test(t)) cluster = "customer_success";
   else if (/(key account|account manager)/.test(t)) cluster = "account_mgmt";
-  else if (/(head|director|vp|regional|national|zonal).*(sales|business|revenue)|sales (head|director)/.test(t)) cluster = "sales_leadership";
+  else if (/(head|director|vp|vice president|chief|cro)\b.*(sales|business|revenue)|sales (head|director)|\bcro\b/.test(t)) cluster = "sales_leadership";
+  else if (/(regional|national|zonal|area|cluster|senior|sr\.?|assistant|asst\.?|team lead|general)\b.*(sales|business|revenue)|sales (manager|lead|team lead)/.test(t)) cluster = "sales_manager";
   else if (/(account executive|\bae\b|sales executive)/.test(t)) cluster = "account_exec";
   else if (/inside sales/.test(t)) cluster = "inside_sales";
   else if (/business development/.test(t)) cluster = "bd_exec";
