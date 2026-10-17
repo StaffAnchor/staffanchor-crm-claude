@@ -88,7 +88,7 @@ export async function classifyBatch(admin: SupabaseClient, mode: "missing" | "un
 Choose from these role clusters (use the slug exactly):
 ${listFor(kind)}
 
-For each person return up to 2 clusters, the first being the best fit for their CURRENT role. Judge from what they sell, to whom, how, and for whom they work, not from the title alone. If they lead sellers, you may add sales_leadership as the second cluster.
+For each person return up to 2 clusters, the first being the best fit for their CURRENT role. Judge from what they sell, to whom, how, and for whom they work, not from the title alone. If they lead sellers, you may add a second cluster: sales_manager for a team lead, assistant manager, manager, senior manager or general manager (middle management), or sales_leadership only for a director, senior director, VP or CXO.
 
 Level (seniority): one of "ic", "team_lead", "manager", "director", "vp_plus", "unclear".
 - Say "manager" or above only if the facts show people reporting to them (a team size, "leads a team") or an explicit head-of / director / VP / chief title.

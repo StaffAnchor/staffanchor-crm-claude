@@ -14,7 +14,7 @@ const JOBS_SITE = process.env.NEXT_PUBLIC_JOBS_SITE_URL ?? "https://jobs.staffan
 
 const METROS = ["Bengaluru", "Mumbai", "Delhi NCR", "Hyderabad", "Pune", "Chennai"];
 const SUB_DOMAINS = ["SaaS Sales", "Inside Sales (B2B)", "Enterprise Sales (Non-SaaS)"];
-const CLUSTERS = ["sdr_bdr", "bd_exec", "account_exec", "inside_sales", "solution_eng", "customer_success", "account_mgmt", "sales_leadership"];
+const CLUSTERS = ["sdr_bdr", "bd_exec", "account_exec", "inside_sales", "solution_eng", "customer_success", "account_mgmt", "sales_manager", "sales_leadership"];
 const LEVELS = ["ic", "team_lead", "manager", "director", "vp_plus"];
 
 export type DraftRole = {
@@ -99,7 +99,7 @@ Rules:
 - Spread the roles across these cities only: ${METROS.join(", ")}. Mix seniority from 2 to 12 years.
 - Each role must be distinct from these existing ones: ${existing.length ? existing.join("; ") : "(none yet)"}.
 - sub_domain must be one of: ${SUB_DOMAINS.join(" | ")}.
-- role_cluster must be one of: ${CLUSTERS.join(" | ")} (what the hire does). seniority_band must be one of: ${LEVELS.join(" | ")}. Decide them from the role you write: an account executive is "account_exec" and "ic"; a regional or senior sales manager is "sales_leadership" and "manager".
+- role_cluster must be one of: ${CLUSTERS.join(" | ")} (what the hire does). seniority_band must be one of: ${LEVELS.join(" | ")}. Decide them from the role you write: an account executive is "account_exec" and "ic"; a regional or senior sales manager is "sales_manager" and "manager"; only a director, VP or head of sales is "sales_leadership".
 - work_mode must be one of: Hybrid | On-site | Remote.
 - overview: 2 to 3 plain sentences saying what the role does and that StaffAnchor is building a shortlist for companies hiring in this space.
 - responsibilities, candidate_profile: short bullet strings.
