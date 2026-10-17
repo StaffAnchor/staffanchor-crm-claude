@@ -6,6 +6,7 @@ import RoleCardAuto from "./role-card-auto";
 import RoleTypeGate from "./role-type-gate";
 import RoleCardEditor from "./role-card-editor";
 import RankedGroups from "./ranked-groups";
+import AlsoTypesBar from "./also-types-bar";
 import type { RoleCard } from "@/lib/role-card";
 import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 
@@ -14,13 +15,14 @@ import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 export default async function BestMatchesPanel({ mandateId }: { mandateId: string }) {
   const supabase = await createClient();
   // The mandate must say what kind of role this is and at what level. Nothing here guesses it.
-  const { data: mandateRow } = await supabase.from("mandates").select("role_title, role_cluster, seniority_band").eq("id", mandateId).maybeSingle();
+  const { data: mandateRow } = await supabase.from("mandates").select("role_title, role_cluster, seniority_band, also_clusters").eq("id", mandateId).maybeSingle();
   if (!mandateRow?.role_cluster || !mandateRow?.seniority_band) {
     return <RoleTypeGate mandateId={mandateId} roleTitle={mandateRow?.role_title ?? null} cluster={mandateRow?.role_cluster ?? null} level={mandateRow?.seniority_band ?? null} />;
   }
   const { data: cardRow } = await supabase.from("mandate_role_cards").select("card, confirmed").eq("mandate_id", mandateId).maybeSingle();
   if (!cardRow) return <RoleCardAuto mandateId={mandateId} />;
   const card = cardRow.card as RoleCard;
+  const also = ((mandateRow.also_clusters as string[] | null) ?? []).filter((c) => c !== mandateRow.role_cluster);
 
   const [{ data: clusterRows }, { data: worldRows }, { data: edgeRows }, { data: linkRows }, { data: dismissedRows }] = await Promise.all([
     supabase.from("role_clusters").select("slug, name").order("sort_order"),
@@ -41,7 +43,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const want = new Set<string>([...card.exact_worlds, ...card.adjacent_worlds.map((a) => a.slug)]);
   for (const ex of card.exact_worlds) for (const [w, v] of edges.get(ex) ?? []) if (v >= 0.5) want.add(w);
 
-  const { data: rows } = await supabase.rpc("role_match_candidates", { p_clusters: clustersFor(card), p_worlds: Array.from(want), p_limit: 900 });
+  const { data: rows } = await supabase.rpc("role_match_candidates", { p_clusters: clustersFor(card, also), p_worlds: Array.from(want), p_limit: 900 });
   const links = (linkRows ?? []) as { candidate_id: string; match_source: string | null }[];
   const inPipeline = new Set(links.map((l) => l.candidate_id));
   // People already on the pipeline (applicants included) get scored by this same ranking, once, in the background.
@@ -57,11 +59,12 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const dismissed = new Set(((dismissedRows ?? []) as { candidate_id: string }[]).map((d) => d.candidate_id));
   const pool = ((rows ?? []) as MatchRow[]).filter((r) => !inPipeline.has(r.candidate_id) && !dismissed.has(r.candidate_id));
   const nameOf = new Map(worlds.map((w) => [w.slug, w.name]));
-  const ranked = rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s);
+  const ranked = rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s, { also });
 
   return (
     <div className="space-y-4">
       <RoleCardEditor key={JSON.stringify(card)} mandateId={mandateId} card={card} confirmed={!!cardRow.confirmed} clusters={clusters} worlds={worlds} />
+      <AlsoTypesBar mandateId={mandateId} main={mandateRow.role_cluster} initial={also} />
       <RankedGroups mandateId={mandateId} ranked={ranked.slice(0, 120)} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, or marked not a fit, is left out.

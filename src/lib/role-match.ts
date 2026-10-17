@@ -55,8 +55,9 @@ const NEAR: Record<string, Record<string, number>> = {
 };
 
 /** Clusters worth fetching for a role: the wanted one and everything near it. */
-export function clustersFor(card: RoleCard): string[] {
-  return [card.cluster, ...Object.keys(NEAR[card.cluster] ?? {})];
+export function clustersFor(card: RoleCard, also: string[] = []): string[] {
+  const main = [card.cluster, ...also];
+  return Array.from(new Set([...main, ...main.flatMap((c) => Object.keys(NEAR[c] ?? {}))]));
 }
 
 const LEVEL_ORDER = ["ic", "team_lead", "manager", "director", "vp_plus"];
@@ -72,8 +73,10 @@ function noticeDays(t: string | null): number | null {
   return /month/.test(s) ? v * 30 : v;
 }
 
-export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<string, Map<string, number>>, name: (slug: string) => string, opts: { keepAll?: boolean } = {}): Ranked[] {
+export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<string, Map<string, number>>, name: (slug: string) => string, opts: { keepAll?: boolean; also?: string[] } = {}): Ranked[] {
   const exact = new Set(card.exact_worlds);
+  // The main role type, plus any the mandate also accepts as a full fit.
+  const wanted = new Set([card.cluster, ...(opts.also ?? [])]);
   const adjacent = new Map(card.adjacent_worlds.map((a) => [a.slug, 0.6]));
   const out: Ranked[] = [];
 
@@ -84,8 +87,8 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
 
     // 1. What they do.
     const cur = row.tags.filter((t) => t.current);
-    const exactNow = cur.find((t) => t.slug === card.cluster);
-    const exactPast = row.tags.find((t) => t.slug === card.cluster && !t.current);
+    const exactNow = cur.find((t) => wanted.has(t.slug));
+    const exactPast = row.tags.find((t) => wanted.has(t.slug) && !t.current);
     let fn: "exact" | "near" | "past" | "none" = "none";
     let levelTag = exactNow ?? exactPast ?? null;
     if (exactNow) {
