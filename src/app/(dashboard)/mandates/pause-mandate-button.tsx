@@ -73,7 +73,7 @@ export default function PauseMandateButton({ mandateId, status, roleTitle }: { m
         >
           {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />} Resume
         </button>
-        {error && <span className="text-[11px] text-red-600 max-w-[160px]">{error}</span>}
+        {error && <span className="text-xs text-red-600 max-w-[160px]">{error}</span>}
       </div>
     );
   }
@@ -93,7 +93,7 @@ export default function PauseMandateButton({ mandateId, status, roleTitle }: { m
             <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
               {roleTitle} will be hidden from the jobs site, stop taking applications and drop out of matching, alerts and Today. Nothing is deleted, and Resume brings it back.
             </p>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Reason</label>
+            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Reason</label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}

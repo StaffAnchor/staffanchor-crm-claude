@@ -72,7 +72,7 @@ const COLUMN_DEFS: ColumnDef[] = [
           {m.staffNames.join(", ")}
         </span>
       ) : (
-        <span className="text-[11px] text-amber-600">Unassigned</span>
+        <span className="text-xs text-amber-600">Unassigned</span>
       ),
   },
   {
@@ -81,7 +81,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (m) => (
       <div>
         <span className="text-slate-700 dark:text-slate-300">{m.category ? CATEGORY_LABEL[m.category] ?? m.category : "—"}</span>
-        {m.sub_domain && <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{m.sub_domain}</div>}
+        {m.sub_domain && <div className="text-xs text-slate-400 truncate max-w-[140px]">{m.sub_domain}</div>}
       </div>
     ),
   },
@@ -122,7 +122,7 @@ const COLUMN_DEFS: ColumnDef[] = [
       ) : (
         <Link
           href={`/candidates?mandate=${m.id}`}
-          className="text-blue-700 dark:text-blue-400 hover:underline tabular-nums font-medium"
+          className="text-teal-700 dark:text-teal-400 hover:underline tabular-nums font-medium"
           title={`View ${m.linked} candidate${m.linked === 1 ? "" : "s"} linked to this mandate`}
         >
           {m.linked}
@@ -168,7 +168,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Health",
     render: (m) =>
       m.signals.length === 0 ? (
-        <span className="text-[11px] text-slate-300">—</span>
+        <span className="text-xs text-slate-300">—</span>
       ) : (
         <div className="flex flex-wrap gap-1">
           {m.signals.map((s) => (
@@ -184,10 +184,10 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Top AI Match",
     render: (m) =>
       !m.topMatch ? (
-        <span className="text-[11px] text-slate-300">—</span>
+        <span className="text-xs text-slate-300">—</span>
       ) : (
         <div className="flex items-center gap-1.5 min-w-0">
-          <Sparkles className="w-3 h-3 text-indigo-500 shrink-0" />
+          <Sparkles className="w-3 h-3 text-teal-500 shrink-0" />
           <span className="truncate max-w-[110px] text-slate-700 dark:text-slate-300">{m.topMatch.name}</span>
           <Badge tone="accent" size="sm" className="normal-case tracking-normal shrink-0">
             {m.topMatch.score}%
@@ -387,7 +387,7 @@ export default function MandatesTable({
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-ros-lg overflow-visible shadow-ros-sm">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 relative">
-        <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
           {mandates.length === 0
             ? "0 mandates"
             : `Showing ${rangeStart}–${rangeEnd} of ${typeof totalCount === "number" ? totalCount : mandates.length} mandate${
@@ -411,7 +411,7 @@ export default function MandatesTable({
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 mb-2">Show/hide and reorder — saved to this browser only.</p>
+              <p className="text-xs text-slate-400 mb-2">Show/hide and reorder — saved to this browser only.</p>
               <div className="max-h-80 overflow-y-auto space-y-0.5">
                 {order.map((key, i) => {
                   const col = columnsByKey.get(key);
@@ -456,7 +456,7 @@ export default function MandatesTable({
               </div>
               <button
                 onClick={resetDefaults}
-                className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 w-full"
+                className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 w-full"
               >
                 <RotateCcw className="w-3 h-3" /> Reset to default
               </button>
@@ -466,8 +466,8 @@ export default function MandatesTable({
       </div>
 
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-blue-50 border-b border-blue-100">
-          <p className="text-[12px] font-semibold text-blue-800">{selected.size} selected</p>
+        <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
+          <p className="text-[12px] font-semibold text-teal-800">{selected.size} selected</p>
           <Button variant="secondary" size="sm" onClick={() => setStatusModalOpen(true)} disabled={bulkBusy}>
             Set status
           </Button>
@@ -521,7 +521,7 @@ export default function MandatesTable({
               <button
                 onClick={handleBulkStatus}
                 disabled={!chosenStatus || bulkBusy}
-                className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
               >
                 {bulkBusy ? "Updating..." : "Apply"}
               </button>
@@ -532,14 +532,14 @@ export default function MandatesTable({
 
       <div className="overflow-auto max-h-[calc(100vh-13rem)]">
         <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-semibold uppercase tracking-wider">
             <tr>
               <th className="px-4 py-2.5 w-8 sticky left-0 top-0 z-30 bg-slate-50 dark:bg-slate-800/50">
                 <input
                   type="checkbox"
                   checked={pagedMandates.length > 0 && pagedMandates.every((m) => selected.has(m.id))}
                   onChange={toggleAll}
-                  className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
+                  className="rounded accent-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
                 />
               </th>
               <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
@@ -558,23 +558,23 @@ export default function MandatesTable({
               <tr
                 key={m.id}
                 className={`group hover:bg-slate-50/70 dark:hover:bg-slate-800/70 transition-all duration-200 ease-ros ${
-                  selected.has(m.id) ? "bg-blue-50/50 ring-1 ring-inset ring-blue-500/20" : ""
+                  selected.has(m.id) ? "bg-teal-50/50 ring-1 ring-inset ring-teal-500/20" : ""
                 }`}
               >
-                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(m.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
+                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(m.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
                   <input
                     type="checkbox"
                     checked={selected.has(m.id)}
                     onChange={() => toggleRow(m.id)}
-                    className="rounded accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
+                    className="rounded accent-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
                   />
                 </td>
                 <td
                   className={`px-4 py-3 sticky left-[52px] z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${
-                    selected.has(m.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"
+                    selected.has(m.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"
                   }`}
                 >
-                  <Link href={`/mandates/${m.id}`} className="font-medium text-blue-700 dark:text-blue-400 hover:underline truncate block max-w-[220px]">
+                  <Link href={`/mandates/${m.id}`} className="font-medium text-teal-700 dark:text-teal-400 hover:underline truncate block max-w-[220px]">
                     {m.role_title}
                   </Link>
                 </td>
@@ -585,7 +585,7 @@ export default function MandatesTable({
                 ))}
                 <td
                   className={`px-4 py-3 sticky right-0 z-10 ${
-                    selected.has(m.id) ? "bg-blue-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"
+                    selected.has(m.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"
                   }`}
                 >
                   <PauseMandateButton mandateId={m.id} status={m.status} roleTitle={m.role_title} />
@@ -602,7 +602,7 @@ export default function MandatesTable({
 
       {mandates.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-[11.5px] text-slate-400">
+          <p className="text-xs text-slate-400">
             Page {safePageNum} of {totalPages}
           </p>
           <div className="flex items-center gap-1">
@@ -631,7 +631,7 @@ export default function MandatesTable({
                     onClick={() => setPageNum(p)}
                     className={`text-[12px] font-medium rounded-lg px-2.5 py-1 tabular-nums ${
                       p === safePageNum
-                        ? "bg-blue-600 text-white"
+                        ? "bg-teal-600 text-white"
                         : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900"
                     }`}
                   >

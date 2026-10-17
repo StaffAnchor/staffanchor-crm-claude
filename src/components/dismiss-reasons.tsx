@@ -20,7 +20,7 @@ export default function DismissReasons({
   }
   return (
     <div className="mt-3 space-y-2">
-      <p className="text-[11.5px] text-slate-500 dark:text-slate-400">Why not? Optional. It helps the AI get better.</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">Why not? Optional. It helps the AI get better.</p>
       <div className="flex flex-wrap gap-1.5">
         {DISMISS_REASON_CHIPS.map((r) => {
           const on = value.includes(r.code);
@@ -50,7 +50,7 @@ export default function DismissReasons({
         >
           {busy ? "Saving..." : value.length ? "Dismiss" : "Dismiss without a reason"}
         </button>
-        <span className="text-[11.5px] text-slate-500">They stay in the bank for other roles.</span>
+        <span className="text-xs text-slate-500">They stay in the bank for other roles.</span>
       </div>
     </div>
   );

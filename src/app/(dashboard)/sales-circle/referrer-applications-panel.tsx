@@ -82,7 +82,7 @@ export default function ReferrerApplicationsPanel({ applications }: { applicatio
                 <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">
                   {a.full_name}
                   {a.linkedin_url && (
-                    <a href={a.linkedin_url} target="_blank" rel="noreferrer" className="block text-[11px] text-blue-600">
+                    <a href={a.linkedin_url} target="_blank" rel="noreferrer" className="block text-xs text-teal-600">
                       LinkedIn
                     </a>
                   )}

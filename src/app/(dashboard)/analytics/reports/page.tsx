@@ -907,7 +907,7 @@ export default async function ReportsPage({
     <div className="max-w-[1500px] mx-auto px-5 py-8">
       <div className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Reports</h1>
+          <h1 className="ros-page-title">Reports</h1>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             Portfolio risk, pipeline conversion, and recruiter productivity — the numbers that change a decision, not
             just describe the database. Click any bar or tile to see the matching records.
@@ -918,7 +918,7 @@ export default async function ReportsPage({
             <Link
               key={r.key}
               href={`/analytics/reports?range=${r.key}`}
-              className={`text-[11.5px] font-medium px-2.5 py-1 rounded-ros-full transition-colors duration-200 ease-ros ${
+              className={`text-xs font-medium px-2.5 py-1 rounded-ros-full transition-colors duration-200 ease-ros ${
                 range === r.key ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
@@ -979,17 +979,17 @@ export default async function ReportsPage({
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <Card>
                     <div className="flex items-center gap-2 mb-3">
-                      <GitBranch className="w-4 h-4 text-blue-500" />
+                      <GitBranch className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Pipeline funnel</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">all-time snapshot</span>
+                      <span className="text-xs text-slate-400 ml-auto">all-time snapshot</span>
                     </div>
                     <FunnelChart stages={funnelStages} />
                   </Card>
                   <Card>
                     <div className="flex items-center gap-2 mb-3">
-                      <Layers className="w-4 h-4 text-violet-500" />
+                      <Layers className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Candidate mix</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">by function</span>
+                      <span className="text-xs text-slate-400 ml-auto">by function</span>
                     </div>
                     <DonutChart slices={categoryItems} totalLabel="candidates" />
                   </Card>
@@ -1002,7 +1002,7 @@ export default async function ReportsPage({
                   <div className="flex items-center gap-2 mb-3">
                     <CalendarClock className="w-4 h-4 text-emerald-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Joining follow-ups</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">next 60 days, and last 7 days for confirmation</span>
+                    <span className="text-xs text-slate-400 ml-auto">next 60 days, and last 7 days for confirmation</span>
                   </div>
                   {upcomingJoiners.length === 0 ? (
                     <p className="text-[13px] text-slate-400">No joining dates recorded in this window.</p>
@@ -1015,17 +1015,17 @@ export default async function ReportsPage({
                           className="group flex items-center justify-between gap-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 -mx-1 px-1 rounded-ros-md transition-colors duration-200 ease-ros"
                         >
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-blue-600 truncate">
+                            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-teal-600 truncate">
                               {j.candidateName}
                             </p>
-                            <p className="text-[11px] text-slate-400 truncate">{j.mandateLabel}</p>
+                            <p className="text-xs text-slate-400 truncate">{j.mandateLabel}</p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-[12.5px] font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
                               {new Date(j.dateOfJoining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
                             </p>
                             <p
-                              className={`text-[10.5px] font-medium ${
+                              className={`text-xs font-medium ${
                                 j.daysUntil < 0
                                   ? j.stage === "placed"
                                     ? "text-emerald-600"
@@ -1057,7 +1057,7 @@ export default async function ReportsPage({
                   <div className="flex items-center gap-2 mb-1">
                     <ShieldCheck className={`w-4 h-4 ${totalAttentionItems > 0 ? "text-amber-500" : "text-emerald-500"}`} />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Needs attention</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">across mandates, candidates & interviews</span>
+                    <span className="text-xs text-slate-400 ml-auto">across mandates, candidates & interviews</span>
                   </div>
                   <div className="grid grid-cols-5 gap-2 mt-3">
                     {attentionSignals.map((s) => {
@@ -1075,7 +1075,7 @@ export default async function ReportsPage({
                               {s.value === 0 ? "Clear" : s.value}
                             </Badge>
                           </div>
-                          <p className="text-[11.5px] font-medium text-slate-600 dark:text-slate-400 group-hover:text-blue-600 transition-colors duration-200 ease-ros leading-snug">
+                          <p className="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-teal-600 transition-colors duration-200 ease-ros leading-snug">
                             {s.label}
                           </p>
                         </Link>
@@ -1092,7 +1092,7 @@ export default async function ReportsPage({
                   <div className="flex items-center gap-2 mb-3">
                     <Gauge className="w-4 h-4 text-amber-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Fill-risk across open mandates</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">
+                    <span className="text-xs text-slate-400 ml-auto">
                       {openMandates.length} open mandate{openMandates.length === 1 ? "" : "s"} scored
                     </span>
                   </div>
@@ -1102,21 +1102,21 @@ export default async function ReportsPage({
                       className="rounded-ros-lg border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 hover:shadow-ros-sm transition-all duration-200 ease-ros"
                     >
                       <p className="text-[22px] font-semibold text-emerald-700 dark:text-emerald-300 tabular-nums leading-none">{highFillCount}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">High probability of filling</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">High probability of filling</p>
                     </Link>
                     <Link
                       href="/mandates"
                       className="rounded-ros-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 p-3 hover:shadow-ros-sm transition-all duration-200 ease-ros"
                     >
                       <p className="text-[22px] font-semibold text-amber-700 dark:text-amber-300 tabular-nums leading-none">{mediumFillCount}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">Medium — needs a push</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Medium — needs a push</p>
                     </Link>
                     <Link
                       href="/mandates"
                       className="rounded-ros-lg border border-rose-100 dark:border-rose-900/40 bg-rose-50/40 dark:bg-rose-950/20 p-3 hover:shadow-ros-sm transition-all duration-200 ease-ros"
                     >
                       <p className="text-[22px] font-semibold text-rose-700 dark:text-rose-300 tabular-nums leading-none">{lowFillCount}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">Low — likely to miss without action</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Low — likely to miss without action</p>
                     </Link>
                   </div>
                 </Card>
@@ -1124,14 +1124,14 @@ export default async function ReportsPage({
                 <Card>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-indigo-500" />
+                      <TrendingUp className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Candidate inflow</h2>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-xs text-slate-400">
                         {inflowTotal} registered (organic) · {currentRangeLabel}
                       </span>
                       {inflowDeltaPct !== null && (
                         <span
-                          className={`text-[11px] font-medium flex items-center gap-0.5 ${
+                          className={`text-xs font-medium flex items-center gap-0.5 ${
                             inflowDeltaPct > 0 ? "text-emerald-600" : inflowDeltaPct < 0 ? "text-rose-500" : "text-slate-400"
                           }`}
                         >
@@ -1155,9 +1155,9 @@ export default async function ReportsPage({
               <>
                 <Card className="mb-4">
                   <div className="flex items-center gap-2 mb-4">
-                    <GitBranch className="w-4 h-4 text-blue-500" />
+                    <GitBranch className="w-4 h-4 text-teal-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Firm-wide pipeline funnel</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">
+                    <span className="text-xs text-slate-400 ml-auto">
                       all-time snapshot · {firmFunnel.total} candidate-mandate links · same math as the per-client funnel
                     </span>
                   </div>
@@ -1168,43 +1168,43 @@ export default async function ReportsPage({
                       const widthPct = count > 0 ? Math.max((count / max) * 100, 4) : 0;
                       return (
                         <div key={s} className="flex items-center gap-2.5">
-                          <span className="w-[112px] shrink-0 text-[11.5px] text-slate-600 dark:text-slate-400">{STAGE_LABELS[s]}</span>
+                          <span className="w-[112px] shrink-0 text-xs text-slate-600 dark:text-slate-400">{STAGE_LABELS[s]}</span>
                           <div className="flex-1 h-2 rounded-ros-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                            <div className="h-full rounded-ros-full bg-blue-500/80" style={{ width: `${widthPct}%` }} />
+                            <div className="h-full rounded-ros-full bg-teal-500/80" style={{ width: `${widthPct}%` }} />
                           </div>
-                          <span className="w-[40px] shrink-0 text-right text-[11.5px] font-semibold tabular-nums text-slate-700 dark:text-slate-300">{count}</span>
+                          <span className="w-[40px] shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-300">{count}</span>
                         </div>
                       );
                     })}
                     {firmFunnel.rejected > 0 && (
                       <div className="flex items-center gap-2.5">
-                        <span className="w-[112px] shrink-0 text-[11.5px] text-rose-500">Rejected</span>
+                        <span className="w-[112px] shrink-0 text-xs text-rose-500">Rejected</span>
                         <div className="flex-1 h-2 rounded-ros-full bg-rose-50 dark:bg-rose-950/30 overflow-hidden">
                           <div
                             className="h-full rounded-ros-full bg-rose-400/80"
                             style={{ width: `${Math.max((firmFunnel.rejected / Math.max(1, firmFunnel.total)) * 100, 4)}%` }}
                           />
                         </div>
-                        <span className="w-[40px] shrink-0 text-right text-[11.5px] font-semibold tabular-nums text-rose-600">{firmFunnel.rejected}</span>
+                        <span className="w-[40px] shrink-0 text-right text-xs font-semibold tabular-nums text-rose-600">{firmFunnel.rejected}</span>
                       </div>
                     )}
                   </div>
                   <div className="grid grid-cols-4 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                     <div>
                       <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">{pctRate(firmFunnel.subToInterviewRate)}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Submitted → Interview</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Submitted → Interview</p>
                     </div>
                     <div>
                       <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">{pctRate(firmFunnel.interviewToOfferRate)}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Interview → Offer</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Interview → Offer</p>
                     </div>
                     <div>
                       <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">{pctRate(firmFunnel.offerToPlacedRate)}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Offer → Joined</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Offer → Joined</p>
                     </div>
                     <div>
                       <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none">{pctRate(firmFunnel.subToPlacedRate)}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Submitted → Placed</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Submitted → Placed</p>
                     </div>
                   </div>
                 </Card>
@@ -1213,7 +1213,7 @@ export default async function ReportsPage({
                   <div className="flex items-center gap-2 mb-4">
                     <TrendingUp className="w-4 h-4 text-teal-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Stage movement</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">
+                    <span className="text-xs text-slate-400 ml-auto">
                       candidates that moved stage during {currentRangeLabel.toLowerCase()} · velocity, not a snapshot
                     </span>
                   </div>
@@ -1224,21 +1224,21 @@ export default async function ReportsPage({
                   <div className="flex items-center gap-2 mb-1">
                     <XCircle className="w-4 h-4 text-rose-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Rejection reasons</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">{currentRangeLabel}</span>
+                    <span className="text-xs text-slate-400 ml-auto">{currentRangeLabel}</span>
                   </div>
-                  <p className="text-[11.5px] text-slate-400 mb-4">
+                  <p className="text-xs text-slate-400 mb-4">
                     Split by who actually made the call -- &quot;We&apos;re passing&quot; (our own screening) vs &quot;Client passed&quot; (their
                     feedback, relayed or via portal) -- so a pattern here is a real coaching or JD signal, not a guess.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500 mb-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-teal-500 mb-2">
                         We passed ({recruiterRejectionTotal})
                       </p>
-                      <ReportBarList items={recruiterRejectionItems} colorClass="bg-indigo-500/80" emptyLabel="No internal rejections in this window." highlightTop />
+                      <ReportBarList items={recruiterRejectionItems} colorClass="bg-teal-500/80" emptyLabel="No internal rejections in this window." highlightTop />
                     </div>
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 mb-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-600 mb-2">
                         Client passed ({clientRejectionTotal})
                       </p>
                       <ReportBarList items={clientRejectionItems} colorClass="bg-amber-500/80" emptyLabel="No client rejections in this window." highlightTop />
@@ -1250,10 +1250,10 @@ export default async function ReportsPage({
                   <Wallet className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">No revenue/commercial report exists yet</span> — there is
-                    no fee, commission, or placement-value field anywhere on <code className="text-[11px]">mandates</code> or{" "}
-                    <code className="text-[11px]">clients</code> today, so revenue-per-placement, pipeline value, or margin cannot be reported
-                    without a schema change. Recommend adding a <code className="text-[11px]">placement_fee</code> /{" "}
-                    <code className="text-[11px]">fee_percentage</code> field at mandate creation to unlock this — flagging explicitly rather
+                    no fee, commission, or placement-value field anywhere on <code className="text-xs">mandates</code> or{" "}
+                    <code className="text-xs">clients</code> today, so revenue-per-placement, pipeline value, or margin cannot be reported
+                    without a schema change. Recommend adding a <code className="text-xs">placement_fee</code> /{" "}
+                    <code className="text-xs">fee_percentage</code> field at mandate creation to unlock this — flagging explicitly rather
                     than omitting it silently.
                   </p>
                 </Card>
@@ -1269,7 +1269,7 @@ export default async function ReportsPage({
                 <div className="flex items-center gap-2 mb-4">
                   <Users2 className="w-4 h-4 text-rose-500" />
                   <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Recruiter &amp; vendor productivity</h2>
-                  <span className="text-[10.5px] text-slate-400 ml-auto">
+                  <span className="text-xs text-slate-400 ml-auto">
                     all-time · full funnel per person, not just linked → placed · {totalPlaced} total placements
                   </span>
                 </div>
@@ -1277,7 +1277,7 @@ export default async function ReportsPage({
                   <p className="text-[13px] text-slate-400">No recruiter activity recorded yet -- no candidates added, linked, or completed.</p>
                 ) : (
                   <div>
-                    <div className="grid grid-cols-[1fr_55px_65px_55px_70px_70px_60px_60px_60px] gap-2 px-1 pb-2 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
+                    <div className="grid grid-cols-[1fr_55px_65px_55px_70px_70px_60px_60px_60px] gap-2 px-1 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
                       <span>Recruiter</span>
                       <span className="text-right">Added</span>
                       <span className="text-right">Completed</span>
@@ -1296,11 +1296,11 @@ export default async function ReportsPage({
                             <span className="truncate">{r.name}</span>
                             {r.isVendor && <span className="text-[9.5px] uppercase text-slate-400 shrink-0">vendor</span>}
                           </p>
-                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros">
+                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
                             {r.candidatesAdded}
                           </Link>
                           <span className="text-[12px] text-right tabular-nums text-teal-700">{r.profilesCompleted}</span>
-                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros">
+                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
                             {r.linked}
                           </Link>
                           <span className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400">{r.submitted}</span>
@@ -1326,34 +1326,34 @@ export default async function ReportsPage({
             icon: <Layers className="w-3.5 h-3.5" />,
             content: (
               <>
-                <p className="text-[11.5px] text-slate-400 mb-3">
+                <p className="text-xs text-slate-400 mb-3">
                   Total talent-pool composition, all-time — includes the historical Zoho import batch, so this reflects the whole database, not
                   current sourcing mix (see Overview / Pipeline tabs for that).
                 </p>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <Card>
                     <div className="flex items-center gap-2 mb-4">
-                      <Layers className="w-4 h-4 text-blue-500" />
+                      <Layers className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Primary domain</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
+                      <span className="text-xs text-slate-400 ml-auto">% of total candidates</span>
                     </div>
-                    <ReportBarList items={primaryDomainItems} colorClass="bg-blue-500/80" highlightTop />
+                    <ReportBarList items={primaryDomainItems} colorClass="bg-teal-500/80" highlightTop />
                   </Card>
 
                   <Card>
                     <div className="flex items-center gap-2 mb-4">
-                      <BarChart3 className="w-4 h-4 text-violet-500" />
+                      <BarChart3 className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Segment</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
+                      <span className="text-xs text-slate-400 ml-auto">% of total candidates</span>
                     </div>
-                    <ReportBarList items={categoryItems} colorClass="bg-violet-500/80" highlightTop />
+                    <ReportBarList items={categoryItems} colorClass="bg-teal-500/80" highlightTop />
                   </Card>
 
                   <Card>
                     <div className="flex items-center gap-2 mb-4">
                       <Layers className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Secondary domain</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">candidates can have multiple</span>
+                      <span className="text-xs text-slate-400 ml-auto">candidates can have multiple</span>
                     </div>
                     <ReportBarList items={secondaryDomainItems} colorClass="bg-teal-500/80" />
                   </Card>
@@ -1362,25 +1362,25 @@ export default async function ReportsPage({
                     <div className="flex items-center gap-2 mb-4">
                       <Wallet className="w-4 h-4 text-emerald-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Current fixed CTC</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
+                      <span className="text-xs text-slate-400 ml-auto">% of total candidates</span>
                     </div>
                     <ReportBarList items={ctcItems} colorClass="bg-emerald-500/80" highlightTop />
                   </Card>
 
                   <Card>
                     <div className="flex items-center gap-2 mb-4">
-                      <Radar className="w-4 h-4 text-indigo-500" />
+                      <Radar className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Source channel</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">how candidates entered the system</span>
+                      <span className="text-xs text-slate-400 ml-auto">how candidates entered the system</span>
                     </div>
-                    <ReportBarList items={sourceItems} colorClass="bg-indigo-500/80" highlightTop />
+                    <ReportBarList items={sourceItems} colorClass="bg-teal-500/80" highlightTop />
                   </Card>
 
                   <Card>
                     <div className="flex items-center gap-2 mb-4">
                       <MapPin className="w-4 h-4 text-amber-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Location</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">% of total candidates</span>
+                      <span className="text-xs text-slate-400 ml-auto">% of total candidates</span>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6">
                       <ReportBarList items={locationItems.slice(0, Math.ceil(locationItems.length / 2))} colorClass="bg-amber-500/80" highlightTop />
@@ -1391,9 +1391,9 @@ export default async function ReportsPage({
 
                 <Card>
                   <div className="flex items-center gap-2 mb-1">
-                    <Mail className="w-4 h-4 text-blue-500" />
+                    <Mail className="w-4 h-4 text-teal-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Profile-completion email conversion</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">
+                    <span className="text-xs text-slate-400 ml-auto">
                       {totalInvitesSent} email{totalInvitesSent === 1 ? "" : "s"} sent · {totalCandidatesInvited} candidate
                       {totalCandidatesInvited === 1 ? "" : "s"} invited
                     </span>
@@ -1406,7 +1406,7 @@ export default async function ReportsPage({
                         {inviteConversionPct}%
                         <span className="text-[12px] font-normal text-slate-400 ml-2">conversion rate</span>
                       </p>
-                      <ReportBarList items={inviteConversionItems} colorClass="bg-blue-500/80" />
+                      <ReportBarList items={inviteConversionItems} colorClass="bg-teal-500/80" />
                     </>
                   )}
                 </Card>
@@ -1450,9 +1450,9 @@ export default async function ReportsPage({
 
                 <Card className="mb-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-indigo-500" />
+                    <TrendingUp className="w-4 h-4 text-teal-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Minutes saved, by day</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">{currentRangeLabel}</span>
+                    <span className="text-xs text-slate-400 ml-auto">{currentRangeLabel}</span>
                   </div>
                   <InflowTrend points={timeSavedTrend} />
                 </Card>
@@ -1460,17 +1460,17 @@ export default async function ReportsPage({
                 <div className="grid grid-cols-2 gap-4">
                   <Card>
                     <div className="flex items-center gap-2 mb-4">
-                      <GitBranch className="w-4 h-4 text-blue-500" />
+                      <GitBranch className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">By automation type</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">all-time, minutes</span>
+                      <span className="text-xs text-slate-400 ml-auto">all-time, minutes</span>
                     </div>
-                    <ReportBarList items={timeSavedByActionItems} colorClass="bg-blue-500/80" emptyLabel="No automated actions logged yet." highlightTop />
+                    <ReportBarList items={timeSavedByActionItems} colorClass="bg-teal-500/80" emptyLabel="No automated actions logged yet." highlightTop />
                   </Card>
                   <Card>
                     <div className="flex items-center gap-2 mb-4">
                       <Users2 className="w-4 h-4 text-rose-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">By recruiter</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">all-time, minutes · top 10</span>
+                      <span className="text-xs text-slate-400 ml-auto">all-time, minutes · top 10</span>
                     </div>
                     <ReportBarList items={timeSavedByRecruiterItems} colorClass="bg-rose-500/80" emptyLabel="No automated actions attributed to a recruiter yet." highlightTop />
                   </Card>
@@ -1485,7 +1485,7 @@ export default async function ReportsPage({
             content: (
               <>
                 <Card className="mb-4 flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">
-                  <Zap className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                  <Zap className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
                   <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">Funnel:</span> saw a Priority
                     Applicant CTA (clicked) → landed on the checkout page → started a Razorpay order → paid. Everything
@@ -1497,30 +1497,30 @@ export default async function ReportsPage({
 
                 <Card className="mb-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-indigo-500" />
+                    <TrendingUp className="w-4 h-4 text-teal-500" />
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Priority Applicant funnel</h2>
-                    <span className="text-[10.5px] text-slate-400 ml-auto">{currentRangeLabel}</span>
+                    <span className="text-xs text-slate-400 ml-auto">{currentRangeLabel}</span>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center">
                     <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
                       <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{priorityCtaClicks}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">CTA clicked</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">CTA clicked</p>
                     </div>
                     <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
                       <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{priorityCheckoutLanded}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                         Checkout landed{priorityClickToLandedPct !== null ? ` · ${priorityClickToLandedPct}%` : ""}
                       </p>
                     </div>
-                    <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 py-3">
-                      <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{priorityCheckoutAttempts}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <div className="rounded-lg bg-teal-50 dark:bg-teal-950/40 py-3">
+                      <p className="text-xl font-bold text-teal-700 dark:text-teal-400">{priorityCheckoutAttempts}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                         Order started{priorityLandedToAttemptPct !== null ? ` · ${priorityLandedToAttemptPct}%` : ""}
                       </p>
                     </div>
                     <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 py-3">
                       <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{priorityPaid.length}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                         Paid{priorityAttemptToPaidPct !== null ? ` · ${priorityAttemptToPaidPct}%` : ""}
                       </p>
                     </div>
@@ -1541,17 +1541,17 @@ export default async function ReportsPage({
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <Card>
                     <div className="flex items-center gap-2 mb-3">
-                      <GitBranch className="w-4 h-4 text-blue-500" />
+                      <GitBranch className="w-4 h-4 text-teal-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Clicks by placement</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">{currentRangeLabel}</span>
+                      <span className="text-xs text-slate-400 ml-auto">{currentRangeLabel}</span>
                     </div>
-                    <ReportBarList items={priorityPlacementItems} colorClass="bg-indigo-500/80" emptyLabel="No Priority Applicant clicks in this range." highlightTop />
+                    <ReportBarList items={priorityPlacementItems} colorClass="bg-teal-500/80" emptyLabel="No Priority Applicant clicks in this range." highlightTop />
                   </Card>
                   <Card>
                     <div className="flex items-center gap-2 mb-3">
                       <UserX className="w-4 h-4 text-amber-500" />
                       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tried but changed mind</h2>
-                      <span className="text-[10.5px] text-slate-400 ml-auto">order started, never completed</span>
+                      <span className="text-xs text-slate-400 ml-auto">order started, never completed</span>
                     </div>
                     {priorityAbandoned.length === 0 ? (
                       <p className="text-[13px] text-slate-400">No abandoned Priority Applicant orders in this range.</p>

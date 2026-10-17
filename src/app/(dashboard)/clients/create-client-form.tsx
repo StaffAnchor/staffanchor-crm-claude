@@ -49,7 +49,7 @@ export default function CreateClientForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Client name *</label>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Client name *</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -59,7 +59,7 @@ export default function CreateClientForm() {
         />
       </div>
       <div>
-        <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industry</label>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Industry</label>
         <input
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
@@ -68,7 +68,7 @@ export default function CreateClientForm() {
         />
       </div>
       <div>
-        <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">HQ city</label>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">HQ city</label>
         <input
           value={hqCity}
           onChange={(e) => setHqCity(e.target.value)}
@@ -77,7 +77,7 @@ export default function CreateClientForm() {
         />
       </div>
       <div>
-        <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Website</label>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Website</label>
         <input
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
@@ -89,7 +89,7 @@ export default function CreateClientForm() {
       <button
         type="submit"
         disabled={saving || !name.trim()}
-        className="w-full rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium py-2 transition-colors"
+        className="w-full rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-sm font-medium py-2 transition-colors"
       >
         {saving ? "Creating…" : "+ Add client"}
       </button>

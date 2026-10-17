@@ -85,11 +85,11 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
                 <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                   <div className={`h-full rounded-full ${ready.ready ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${ready.percent}%` }} />
                 </div>
-                <span className="text-[11.5px] font-medium text-slate-500">{ready.percent}% complete</span>
+                <span className="text-xs font-medium text-slate-500">{ready.percent}% complete</span>
                 {ready.ready ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />}
               </div>
               {!ready.ready && (
-                <p className="mt-1 text-[11.5px] text-amber-700 dark:text-amber-400">
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
                   Missing: {ready.missingCore.join(", ")}.{" "}
                   <Link href={`/mandates/${r.id}`} className="font-medium underline underline-offset-2">
                     Fill in
@@ -99,7 +99,7 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
             </div>
 
             <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-              <button onClick={() => setPreviewId(r.id)} className="inline-flex items-center gap-1 text-[11.5px] font-medium text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200">
+              <button onClick={() => setPreviewId(r.id)} className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200">
                 <Eye className="h-3.5 w-3.5" /> Preview as referrer
               </button>
               <MandateVisibilityControl

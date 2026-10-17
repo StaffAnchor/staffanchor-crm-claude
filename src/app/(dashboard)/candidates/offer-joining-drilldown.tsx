@@ -81,7 +81,7 @@ export default function OfferJoiningDrilldown({
               <p className="text-[13px] text-slate-400">No candidates in this bucket.</p>
             ) : (
               <table className="w-full text-sm">
-                <thead className="text-slate-500 dark:text-slate-400 text-[10.5px] uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
+                <thead className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
                   <tr>
                     <th className="text-left pb-2">Candidate</th>
                     <th className="text-left pb-2">Client</th>
@@ -94,7 +94,7 @@ export default function OfferJoiningDrilldown({
                       <td className="py-2 pr-2">
                         <Link
                           href={`/candidates/${r.candidateId}`}
-                          className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                          className="font-medium text-teal-600 dark:text-teal-400 hover:underline"
                         >
                           {r.candidateName}
                         </Link>

@@ -41,7 +41,7 @@ export default async function ShortlistPage({ params }: { params: Promise<{ id: 
   return (
     <div className="mx-auto max-w-[1500px] px-5 py-8">
       <CandidatesSubNav />
-      <Link href="/candidates/lists" className="mb-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-indigo-600 hover:underline">
+      <Link href="/candidates/lists" className="mb-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-teal-600 hover:underline">
         <ArrowLeft className="h-3.5 w-3.5" /> All shortlists
       </Link>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -66,7 +66,7 @@ export default async function ShortlistPage({ params }: { params: Promise<{ id: 
       {cards.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[13.5px] text-slate-500 dark:border-slate-700">
           Nobody in this shortlist yet. Open the{" "}
-          <Link href="/candidates/inventory" className="font-medium text-indigo-600 hover:underline">
+          <Link href="/candidates/inventory" className="font-medium text-teal-600 hover:underline">
             Inventory
           </Link>
           , click a number and use &quot;Save as a shortlist&quot;.
@@ -76,7 +76,7 @@ export default async function ShortlistPage({ params }: { params: Promise<{ id: 
           {cards.map((c) => (
             <div key={c.id}>
               <TalentCard c={c} mandates={mandates} lists={allLists} memberOf={[id]} />
-              {addedBy.get(c.id) && <p className="mt-1 px-1 text-[11px] text-slate-400">Added by {addedBy.get(c.id)}</p>}
+              {addedBy.get(c.id) && <p className="mt-1 px-1 text-xs text-slate-400">Added by {addedBy.get(c.id)}</p>}
             </div>
           ))}
         </div>

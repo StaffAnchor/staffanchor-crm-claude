@@ -95,22 +95,22 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
   }
 
   const inputClass =
-    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros";
-  const labelClass = "text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1 block";
+    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
+  const labelClass = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-ros-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-ros-md p-5">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-blue-500" />
+            <Sparkles className="w-4 h-4 text-teal-500" />
             Generate outreach
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-[11.5px] text-slate-400 mb-4">
+        <p className="text-xs text-slate-400 mb-4">
           Founder-led message, written in the first person around your 16 years leading B2B/Enterprise SaaS sales &amp; revenue teams. For a company you've found on LinkedIn — not saved as a lead yet.
         </p>
 
@@ -153,9 +153,9 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
               <button
                 key={c}
                 onClick={() => setChannel(c)}
-                className={`text-[11.5px] px-2.5 py-1.5 rounded-ros-md ring-1 transition-colors duration-200 ease-ros ${
+                className={`text-xs px-2.5 py-1.5 rounded-ros-md ring-1 transition-colors duration-200 ease-ros ${
                   channel === c
-                    ? "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-800"
+                    ? "bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-800"
                     : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-700"
                 }`}
               >
@@ -175,11 +175,11 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
-                className="w-full text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-shadow duration-200 ease-ros"
+                className="w-full text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
               />
               <button
                 onClick={copyDraft}
-                className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 transition-colors duration-200 ease-ros"
+                className="absolute top-2 right-2 text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros"
                 title="Copy to clipboard"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}

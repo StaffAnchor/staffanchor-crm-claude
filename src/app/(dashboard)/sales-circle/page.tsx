@@ -153,9 +153,9 @@ export default async function SalesCirclePage() {
             href={k.href}
             className={`rounded-xl border bg-white p-4 transition-shadow hover:shadow-sm dark:bg-slate-900 ${k.tone === "alert" ? "border-amber-300 dark:border-amber-700" : "border-slate-200 dark:border-slate-700"}`}
           >
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{k.label}</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">{k.label}</div>
             <div className="mt-1 text-[24px] font-bold leading-none text-slate-900 dark:text-slate-100">{k.value}</div>
-            <div className={`mt-1.5 text-[11.5px] ${k.tone === "alert" ? "font-medium text-amber-700 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>{k.sub}</div>
+            <div className={`mt-1.5 text-xs ${k.tone === "alert" ? "font-medium text-amber-700 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>{k.sub}</div>
           </a>
         ))}
       </div>

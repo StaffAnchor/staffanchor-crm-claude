@@ -14,6 +14,16 @@ import WhatsAppNavBadge from "./whatsapp-nav-badge";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
+// `also` lists pages that belong to a group but have no tab of their own, so the right heading still lights up.
+const NAV_GROUPS: { id: string; label: string; items: string[]; also?: string[] }[] = [
+  { id: "today", label: "Today", items: ["/today"] },
+  { id: "pipeline", label: "Pipeline", items: ["/mandates", "/candidates", "/interviews"], also: ["/saas-practice", "/referrals"] },
+  { id: "clients", label: "Clients", items: ["/clients", "/client-acquisition"], also: ["/employer-inquiries", "/sales"] },
+  { id: "placements", label: "Placements", items: ["/placements"], also: ["/retention"] },
+  { id: "inbox", label: "Inbox", items: ["/tasks", "/whatsapp"] },
+  { id: "analytics", label: "Analytics", items: ["/analytics"] },
+];
+
 // Redesigned per direct feedback (Aug 2026): the old header was dark navy
 // with a search box, a live clock, and a date -- all of which ate up
 // horizontal room that should've gone to nav tabs, and none of which
@@ -40,6 +50,13 @@ export default function TopNav({
   initials: string;
 }) {
   const pathname = usePathname();
+  // Five places, not ten: related pages live together under one heading, and the pages inside show as a quiet row below.
+  const present = new Map(navLinks.filter((l) => l.enabled).map((l) => [l.href, l]));
+  const groups = NAV_GROUPS.map((g) => {
+    const items = g.items.map((h) => present.get(h)).filter((x): x is NavLink => !!x);
+    return { id: g.id, label: g.label, items, href: items[0]?.href ?? "/today", also: g.also ?? [] };
+  }).filter((g) => g.items.length > 0);
+  const activeGroup = groups.find((g) => [...g.items.map((i) => i.href), ...g.also].some((h) => pathname.startsWith(h))) ?? null;
   const [menuOpen, setMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const createRef = useRef<HTMLDivElement>(null);
@@ -75,32 +92,25 @@ export default function TopNav({
         </Link>
 
         <nav className="flex items-center gap-1 text-[13px] min-w-0 shrink overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {navLinks.map((link) => {
-            const active = link.enabled && pathname.startsWith(link.href);
-            if (!link.enabled) {
-              return (
-                <span
-                  key={link.label}
-                  className="px-3.5 py-1.5 rounded-full whitespace-nowrap text-slate-300 dark:text-slate-600 cursor-not-allowed select-none"
-                  title="Coming soon"
-                >
-                  {link.label}
-                </span>
-              );
-            }
+          {groups.map((g) => {
+            const active = g.id === activeGroup?.id;
             return (
               <Link
-                key={link.href}
-                href={link.href}
+                key={g.id}
+                href={g.href}
                 className={`px-4 py-2 rounded-full whitespace-nowrap font-medium tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   active
                     ? "bg-teal-600 text-white shadow-ros-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-teal-50/80 dark:hover:bg-slate-800/80 hover:text-teal-700 dark:hover:text-white"
                 }`}
               >
-                {link.label}
-                {link.href === "/tasks" && !active ? <TasksNavBadge /> : null}
-                {link.href === "/whatsapp" ? <WhatsAppNavBadge /> : null}
+                {g.label}
+                {g.id === "inbox" && !active ? (
+                  <>
+                    <TasksNavBadge />
+                    <WhatsAppNavBadge />
+                  </>
+                ) : null}
               </Link>
             );
           })}
@@ -157,7 +167,7 @@ export default function TopNav({
               aria-haspopup="menu"
               aria-expanded={menuOpen}
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-[11px] font-semibold text-white">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-xs font-semibold text-white">
                 {initials}
               </div>
             </button>
@@ -168,14 +178,14 @@ export default function TopNav({
               >
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100">{fullName ?? email}</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">{role}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{role}</p>
                 </div>
                 {/* Lets a rep set their own outreach voice/bio (task: "per-user
                     AI outreach persona") instead of every Sales AI draft
                     claiming to be the founder regardless of who sends it. */}
                 {adminLinks.length > 0 && (
                   <div className="border-b border-slate-100 py-1 dark:border-slate-800">
-                    <p className="px-3 pb-1 pt-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Admin</p>
+                    <p className="px-3 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Admin</p>
                     {adminLinks.map((a) => (
                       <Link
                         key={a.href}
@@ -203,6 +213,24 @@ export default function TopNav({
           </div>
         </div>
       </div>
+      {activeGroup && activeGroup.items.length > 1 && (
+        <div className="max-w-[1500px] mx-auto px-5 pb-2 -mt-1 flex items-center gap-1 text-[13px]">
+          {activeGroup.items.map((i) => {
+            const on = pathname.startsWith(i.href);
+            return (
+              <Link
+                key={i.href}
+                href={i.href}
+                className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${on ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"}`}
+              >
+                {i.label}
+                {i.href === "/tasks" && !on ? <TasksNavBadge /> : null}
+                {i.href === "/whatsapp" ? <WhatsAppNavBadge /> : null}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </header>
   );
 }

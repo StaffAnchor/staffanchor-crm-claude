@@ -124,7 +124,7 @@ export default async function InterviewsPage() {
     <div className="max-w-[1400px] mx-auto px-5 py-8">
       <div className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Interviews</h1>
+          <h1 className="ros-page-title">Interviews</h1>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             Every candidate currently at the client-interview stage, across all mandates.
           </p>
@@ -157,11 +157,11 @@ export default async function InterviewsPage() {
           later this week" instead of one flat undifferentiated list. */}
       <Card className="mb-4">
         <div className="flex items-center gap-2 mb-1">
-          <CalendarClock className="w-4 h-4 text-blue-500" />
+          <CalendarClock className="w-4 h-4 text-teal-500" />
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Daily agenda</h2>
-          <span className="text-[10.5px] text-slate-400 ml-auto">{upcoming.length}</span>
+          <span className="text-xs text-slate-400 ml-auto">{upcoming.length}</span>
         </div>
-        <p className="text-[11.5px] text-slate-400 mb-4">Confirmed interviews, grouped by day.</p>
+        <p className="text-xs text-slate-400 mb-4">Confirmed interviews, grouped by day.</p>
 
         {agendaGroups.length === 0 ? (
           <p className="text-[13px] text-slate-400">No confirmed upcoming interviews.</p>
@@ -169,7 +169,7 @@ export default async function InterviewsPage() {
           <div className="space-y-5">
             {agendaGroups.map((g) => (
               <div key={g.key}>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
                   {g.label} <span className="font-normal normal-case text-slate-400">· {g.rows.length}</span>
                 </p>
                 <div className="divide-y divide-slate-100">
@@ -200,13 +200,13 @@ function InterviewListRow({ row }: { row: InterviewRow }) {
       <div className="min-w-0">
         <Link
           href={`/candidates/${row.candidate_id}?mandateId=${row.mandate_id}`}
-          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 transition-colors duration-200 ease-ros truncate"
+          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 transition-colors duration-200 ease-ros truncate"
         >
           {row.candidate_name}
         </Link>
-        <p className="text-[11.5px] text-slate-500 dark:text-slate-400 truncate">
+        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
           {row.role_title} ·{" "}
-          <Link href={`/mandates/${row.mandate_id}`} className="hover:text-blue-600 transition-colors duration-200 ease-ros">
+          <Link href={`/mandates/${row.mandate_id}`} className="hover:text-teal-600 transition-colors duration-200 ease-ros">
             {row.client_name}
           </Link>{" "}
           · {row.recruiter_name}
@@ -235,9 +235,9 @@ function SimpleSection({
       <div className="flex items-center gap-2 mb-1">
         {icon}
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-        <span className="text-[10.5px] text-slate-400 ml-auto">{rows.length}</span>
+        <span className="text-xs text-slate-400 ml-auto">{rows.length}</span>
       </div>
-      <p className="text-[11.5px] text-slate-400 mb-4">{subtitle}</p>
+      <p className="text-xs text-slate-400 mb-4">{subtitle}</p>
       {rows.length === 0 ? (
         <EmptyState title={emptyLabel} className="py-8" />
       ) : (

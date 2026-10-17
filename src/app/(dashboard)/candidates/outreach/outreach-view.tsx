@@ -66,7 +66,7 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
         ].map(([label, n]) => (
           <div key={label as string} className="rounded-lg border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <div className="text-[22px] font-bold tabular-nums text-slate-900 dark:text-slate-100">{n}</div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">{label}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{label}</div>
           </div>
         ))}
       </div>
@@ -88,7 +88,7 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
           <button
             onClick={send}
             disabled={busy || !configured || room <= 0 || stats.eligible === 0}
-            className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Send
           </button>
@@ -110,7 +110,7 @@ export default function OutreachView({ sender, configured, stats, cap, next, pre
                 <span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">{n.name}</span> <span className="text-slate-400">{n.emailHint}</span>
                 </span>
-                <span className="text-[11.5px] text-slate-500">{n.asks.map((a) => MISSING_LABEL[a] ?? a).join(", ")}</span>
+                <span className="text-xs text-slate-500">{n.asks.map((a) => MISSING_LABEL[a] ?? a).join(", ")}</span>
               </li>
             ))}
           </ul>

@@ -3,7 +3,7 @@ import { Building2, Check, MapPin, Sparkles } from "lucide-react";
 import { categoryLabel, inr, locationText, roleFacts, type RoleCardData } from "@/lib/sales-circle";
 
 const ACCENT: Record<string, { bar: string; pill: string }> = {
-  b2b_sales: { bar: "bg-indigo-500", pill: "bg-indigo-50 text-indigo-700" },
+  b2b_sales: { bar: "bg-teal-500", pill: "bg-teal-50 text-teal-700" },
   b2c_sales: { bar: "bg-teal-500", pill: "bg-teal-50 text-teal-700" },
   non_sales: { bar: "bg-slate-400", pill: "bg-slate-100 text-slate-600" },
 };
@@ -36,15 +36,15 @@ export default function RoleCard({
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[17px] font-semibold leading-snug tracking-tight text-slate-900">{role.role_title}</h2>
               {isNew && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                   <Sparkles className="h-3 w-3" /> New
                 </span>
               )}
               {role.category && (
-                <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${accent.pill}`}>{categoryLabel(role.category)}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${accent.pill}`}>{categoryLabel(role.category)}</span>
               )}
               {!!role.my_referral_count && (
-                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10.5px] font-semibold text-amber-700">
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
                   You&apos;ve referred {role.my_referral_count}
                 </span>
               )}
@@ -64,13 +64,13 @@ export default function RoleCard({
 
           {payout != null ? (
             <div className="shrink-0 rounded-xl bg-emerald-50 px-4 py-2.5 text-right ring-1 ring-emerald-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700/70">You earn</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700/70">You earn</div>
               <div className="text-[20px] font-bold leading-tight text-emerald-700">{inr(payout)}</div>
-              <div className="text-[10.5px] text-emerald-700/70">per successful hire</div>
+              <div className="text-xs text-emerald-700/70">per successful hire</div>
             </div>
           ) : (
             <div className="shrink-0 rounded-xl bg-slate-50 px-4 py-2.5 text-right ring-1 ring-slate-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Payout</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Payout</div>
               <div className="text-[13px] font-medium text-slate-500">To be confirmed</div>
             </div>
           )}
@@ -79,7 +79,7 @@ export default function RoleCard({
         <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {facts.map((f) => (
             <div key={f.label} className="rounded-lg bg-slate-50 px-3 py-2">
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{f.label}</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">{f.label}</dt>
               <dd className={`mt-0.5 text-[13px] font-medium ${f.muted ? "text-slate-400" : "text-slate-800"}`}>{f.value}</dd>
             </div>
           ))}
@@ -89,7 +89,7 @@ export default function RoleCard({
 
         {mustHaves.length > 0 && (
           <div className="mt-4">
-            <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Must have</div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Must have</div>
             <ul className="flex flex-wrap gap-1.5">
               {mustHaves.map((m) => (
                 <li key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] text-emerald-800">
@@ -101,7 +101,7 @@ export default function RoleCard({
         )}
         {niceToHaves.length > 0 && (
           <div className="mt-3">
-            <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">Nice to have</div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Nice to have</div>
             <ul className="flex flex-wrap gap-1.5">
               {niceToHaves.map((m) => (
                 <li key={m} className="rounded-full bg-slate-100 px-2.5 py-1 text-[12px] text-slate-600">

@@ -60,14 +60,14 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
           const widthPct = (count / maxCount) * 100;
           return (
             <div key={s} className="flex items-center gap-2.5">
-              <span className="w-[72px] shrink-0 text-[11px] text-slate-500 dark:text-slate-400">{STAGE_LABELS[s]}</span>
+              <span className="w-[72px] shrink-0 text-xs text-slate-500 dark:text-slate-400">{STAGE_LABELS[s]}</span>
               <div className="flex-1 h-2 rounded-ros-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full rounded-ros-full bg-blue-500/80 transition-all duration-300 ease-ros"
+                  className="h-full rounded-ros-full bg-teal-500/80 transition-all duration-300 ease-ros"
                   style={{ width: `${count > 0 ? Math.max(widthPct, 4) : 0}%` }}
                 />
               </div>
-              <span className="w-5 shrink-0 text-right text-[11px] font-medium text-slate-700 dark:text-slate-300">{count}</span>
+              <span className="w-5 shrink-0 text-right text-xs font-medium text-slate-700 dark:text-slate-300">{count}</span>
             </div>
           );
         })}
@@ -78,10 +78,10 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
           <div key={r.label} className="rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/50 p-3">
             <div className="flex items-center gap-1.5 text-slate-400 mb-1">
               <r.icon className="w-3.5 h-3.5" />
-              <span className="text-[10.5px] font-medium uppercase tracking-wide">{r.label}</span>
+              <span className="text-xs font-medium uppercase tracking-wide">{r.label}</span>
             </div>
             <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 leading-none">{pct(r.value)}</p>
-            <p className="text-[11px] text-slate-400 mt-1">{r.sub}</p>
+            <p className="text-xs text-slate-400 mt-1">{r.sub}</p>
           </div>
         ))}
       </div>

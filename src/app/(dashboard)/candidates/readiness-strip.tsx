@@ -37,7 +37,7 @@ export default function ReadinessStrip({
           </p>
         </div>
         {(activeTier || activeMissing) && (
-          <Link href={hrefFor(undefined, undefined)} className="text-[12px] font-medium text-blue-600 hover:underline">
+          <Link href={hrefFor(undefined, undefined)} className="text-[12px] font-medium text-teal-600 hover:underline">
             Clear readiness filter
           </Link>
         )}
@@ -54,12 +54,12 @@ export default function ReadinessStrip({
             href={hrefFor(t, undefined)}
             className={`rounded-lg border px-3 py-2 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeTier === t ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
           >
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               <span className={`h-2 w-2 rounded-full ${TIER_BAR[t]}`} /> {TIER_LABEL[t]}
             </div>
             <div className="mt-0.5 flex items-baseline justify-between">
               <span className="text-[22px] font-bold tabular-nums leading-tight text-slate-900 dark:text-slate-100">{n(t)}</span>
-              <span className="text-[11px] text-slate-400">{TIER_BLURB[t]}</span>
+              <span className="text-xs text-slate-400">{TIER_BLURB[t]}</span>
             </div>
           </Link>
         ))}
@@ -67,13 +67,13 @@ export default function ReadinessStrip({
 
       {fixNext.length > 0 && (
         <div className="mt-3">
-          <p className="mb-1 text-[10.5px] font-medium uppercase tracking-wide text-slate-400">Fix next: profiles missing</p>
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">Fix next: profiles missing</p>
           <div className="flex flex-wrap gap-1.5">
             {fixNext.map(([k, c]) => (
               <Link
                 key={k}
                 href={hrefFor(undefined, k)}
-                className={`rounded-full px-2.5 py-1 text-[11.5px] ring-1 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeMissing === k ? "bg-slate-100 font-semibold text-slate-900 ring-slate-400 dark:bg-slate-800 dark:text-slate-100" : "text-slate-600 ring-slate-200 dark:text-slate-300 dark:ring-slate-700"}`}
+                className={`rounded-full px-2.5 py-1 text-xs ring-1 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeMissing === k ? "bg-slate-100 font-semibold text-slate-900 ring-slate-400 dark:bg-slate-800 dark:text-slate-100" : "text-slate-600 ring-slate-200 dark:text-slate-300 dark:ring-slate-700"}`}
               >
                 {MISSING_LABEL[k]} <span className="tabular-nums text-slate-400">· {c}</span>
               </Link>

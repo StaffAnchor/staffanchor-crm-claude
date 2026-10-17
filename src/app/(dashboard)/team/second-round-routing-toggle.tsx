@@ -29,7 +29,7 @@ export default function SecondRoundRoutingToggle({ userId, initialChecked }: { u
   }
 
   return (
-    <label className="flex items-center gap-1.5 text-[11.5px] text-slate-600 dark:text-slate-400 cursor-pointer">
+    <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
       <input type="checkbox" checked={checked} disabled={saving} onChange={toggle} className="rounded" />
       2nd round calls
     </label>

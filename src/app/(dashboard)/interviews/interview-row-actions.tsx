@@ -143,11 +143,11 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
   return (
     <div className="shrink-0 flex flex-col items-end gap-1.5">
       {confirmedLabel ? (
-        <span className="text-[11.5px] font-medium text-slate-700 dark:text-slate-300">{confirmedLabel}</span>
+        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{confirmedLabel}</span>
       ) : requestedLabel ? (
-        <span className="text-[11.5px] text-amber-600">Client proposed {requestedLabel}</span>
+        <span className="text-xs text-amber-600">Client proposed {requestedLabel}</span>
       ) : (
-        <span className="text-[11.5px] text-slate-400">No time proposed yet</span>
+        <span className="text-xs text-slate-400">No time proposed yet</span>
       )}
 
       <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setLoggingOutcome(false);
             setSendingLink(false);
           }}
-          className="text-[11.5px] font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 ease-ros"
+          className="text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors duration-200 ease-ros"
         >
           {row.confirmed_interview_at ? "Reschedule" : "Confirm time"}
         </button>
@@ -167,7 +167,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setScheduling(false);
             setLoggingOutcome(false);
           }}
-          className="text-[11.5px] font-medium text-purple-600 hover:text-purple-700 transition-colors duration-200 ease-ros"
+          className="text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors duration-200 ease-ros"
         >
           Let candidate pick
         </button>
@@ -177,7 +177,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setScheduling(false);
             setSendingLink(false);
           }}
-          className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros"
+          className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros"
         >
           Log outcome
         </button>
@@ -185,7 +185,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
 
       {sendingLink && (
         <div className="flex flex-col gap-1.5 mt-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-ros-md p-2 w-64">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Offer a few times -- the candidate picks one via a no-login link.
           </p>
           {slotInputs.map((s, i) => (
@@ -194,18 +194,18 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
                 type="date"
                 value={s.date}
                 onChange={(e) => updateSlotInput(i, "date", e.target.value)}
-                className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 flex-1"
+                className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 flex-1"
               />
               <input
                 type="time"
                 value={s.time}
                 onChange={(e) => updateSlotInput(i, "time", e.target.value)}
-                className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
+                className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
               />
               {slotInputs.length > 1 && (
                 <button
                   onClick={() => setSlotInputs((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="text-slate-400 hover:text-red-500 text-[11px]"
+                  className="text-slate-400 hover:text-red-500 text-xs"
                 >
                   ✕
                 </button>
@@ -214,16 +214,16 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
           ))}
           <button
             onClick={() => setSlotInputs((prev) => [...prev, { date: "", time: "" }])}
-            className="self-start text-[11px] text-purple-600 hover:text-purple-700"
+            className="self-start text-xs text-teal-600 hover:text-teal-700"
           >
             + Add another time
           </button>
-          {linkError && <p className="text-[11px] text-red-600">{linkError}</p>}
+          {linkError && <p className="text-xs text-red-600">{linkError}</p>}
           {!generatedUrl ? (
             <button
               onClick={generateSchedulingLink}
               disabled={generating}
-              className="text-[11.5px] font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
+              className="text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
             >
               {generating ? "Creating link…" : "Create scheduling link"}
             </button>
@@ -233,11 +233,11 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
                 readOnly
                 value={generatedUrl}
                 onFocus={(e) => e.currentTarget.select()}
-                className="text-[11px] flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 bg-white dark:bg-slate-900"
+                className="text-xs flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1 bg-white dark:bg-slate-900"
               />
               <button
                 onClick={copyLink}
-                className="text-[11px] font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-ros-md px-2 py-1 transition-all duration-200 ease-ros"
+                className="text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white rounded-ros-md px-2 py-1 transition-all duration-200 ease-ros"
               >
                 {copied ? "Copied" : "Copy"}
               </button>
@@ -252,18 +252,18 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
+            className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
           />
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
+            className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
           />
           <button
             onClick={confirmSlot}
             disabled={busy}
-            className="text-[11.5px] font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
+            className="text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
           >
             Save
           </button>
@@ -276,14 +276,14 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             <button
               onClick={() => logOutcome("offer")}
               disabled={busy}
-              className="text-[11.5px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
+              className="text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
             >
               Moved to offer
             </button>
             <button
               onClick={() => logOutcome("rejected")}
               disabled={busy}
-              className="text-[11.5px] font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
+              className="text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-ros-md px-2 py-1 disabled:opacity-60 transition-all duration-200 ease-ros"
             >
               Rejected
             </button>
@@ -292,7 +292,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Rejection reason (optional)"
-            className="text-[11.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
+            className="text-xs rounded-ros-md border border-slate-200 dark:border-slate-700 px-1.5 py-1"
           />
         </div>
       )}

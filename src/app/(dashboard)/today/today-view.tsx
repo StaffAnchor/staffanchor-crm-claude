@@ -77,7 +77,7 @@ function RoleLine({ r }: { r: RoleRow }) {
           <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">{r.role}</p>
           <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">
             {r.client} · open {r.daysOpen}d
-            {r.setupNote ? <span className="sm:hidden text-violet-700 dark:text-violet-300"> · {r.setupNote}</span> : null}
+            {r.setupNote ? <span className="sm:hidden text-teal-700 dark:text-teal-300"> · {r.setupNote}</span> : null}
           </p>
         </div>
         <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.inPipeline}</div>
@@ -86,8 +86,8 @@ function RoleLine({ r }: { r: RoleRow }) {
         <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.interviewing}</div>
         <div className="justify-self-end sm:justify-self-start">
           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-medium ${h.cls}`}>{h.label}</span>
-          <p className="hidden sm:block mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">{r.healthNote}</p>
-          {r.setupNote ? <p className="hidden sm:block text-[11px] font-medium text-violet-700 dark:text-violet-300 truncate">{r.setupNote}</p> : null}
+          <p className="hidden sm:block mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">{r.healthNote}</p>
+          {r.setupNote ? <p className="hidden sm:block text-xs font-medium text-teal-700 dark:text-teal-300 truncate">{r.setupNote}</p> : null}
         </div>
       </Link>
     </li>
@@ -168,7 +168,7 @@ export default function TodayView({ desk }: { desk: TodayDesk }) {
               <p className="px-4 py-6 border-t border-slate-100 dark:border-slate-800 text-[14px] text-slate-600 dark:text-slate-300">No open roles.</p>
             ) : (
               <>
-                <div className="hidden sm:grid grid-cols-[minmax(0,1.8fr)_repeat(4,minmax(0,0.5fr))_minmax(0,1fr)] gap-x-3 px-4 py-2 border-t border-slate-100 dark:border-slate-800 text-[11px] uppercase tracking-wide text-slate-400">
+                <div className="hidden sm:grid grid-cols-[minmax(0,1.8fr)_repeat(4,minmax(0,0.5fr))_minmax(0,1fr)] gap-x-3 px-4 py-2 border-t border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wide text-slate-400">
                   <span>Role</span>
                   <span>Pipeline</span>
                   <span>Unseen</span>

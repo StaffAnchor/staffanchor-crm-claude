@@ -233,7 +233,7 @@ export default function CopilotPalette({ role }: { role: string }) {
         aria-label="Command palette"
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-          <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
+          <Sparkles className="w-4 h-4 text-teal-500 shrink-0" />
           <input
             ref={inputRef}
             value={query}
@@ -244,7 +244,7 @@ export default function CopilotPalette({ role }: { role: string }) {
             className="flex-1 text-[14px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-transparent text-slate-900 dark:text-slate-100"
           />
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 shrink-0" />}
-          <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-slate-400 shrink-0">
+          <kbd className="hidden sm:inline text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-slate-400 shrink-0">
             esc
           </kbd>
         </div>
@@ -268,18 +268,18 @@ export default function CopilotPalette({ role }: { role: string }) {
                   onClick={() => go(cmd.href)}
                   onMouseEnter={() => setActiveIdx(idx)}
                   className={`ros-focusable w-full text-left flex items-center gap-3 px-4 py-2.5 border-b border-slate-50 dark:border-slate-800 last:border-b-0 transition-colors ${
-                    idx === activeIdx ? "bg-blue-50/70 dark:bg-blue-950/40" : ""
+                    idx === activeIdx ? "bg-teal-50/70 dark:bg-teal-950/40" : ""
                   }`}
                 >
                   <Icon className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="flex-1 text-[13px] font-medium text-slate-800 dark:text-slate-200 dark:text-slate-200">{cmd.label}</span>
                   {isCurrent && (
-                    <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-200 dark:ring-blue-800/60 rounded-full px-1.5 py-0.5">
+                    <span className="text-xs font-semibold text-teal-600 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 ring-1 ring-teal-200 dark:ring-teal-800/60 rounded-full px-1.5 py-0.5">
                       current
                     </span>
                   )}
                   {cmd.hint && (
-                    <span className="text-[10px] text-slate-400 font-mono shrink-0">{cmd.hint}</span>
+                    <span className="text-xs text-slate-400 font-mono shrink-0">{cmd.hint}</span>
                   )}
                 </button>
               );
@@ -292,22 +292,22 @@ export default function CopilotPalette({ role }: { role: string }) {
                 onClick={() => openResult(r)}
                 onMouseEnter={() => setActiveIdx(idx)}
                 className={`ros-focusable w-full text-left flex items-start gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800 last:border-b-0 transition-colors ${
-                  idx === activeIdx ? "bg-blue-50/70 dark:bg-blue-950/40" : ""
+                  idx === activeIdx ? "bg-teal-50/70 dark:bg-teal-950/40" : ""
                 }`}
               >
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">{r.full_name}</span>
-                    <span className="text-[10px] shrink-0 font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-200 dark:ring-emerald-800/60 rounded-full px-1.5 py-0.5">
+                    <span className="text-xs shrink-0 font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-200 dark:ring-emerald-800/60 rounded-full px-1.5 py-0.5">
                       {Math.round(r.similarity * 100)}% match
                     </span>
                   </span>
-                  <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                  <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                     {[r.current_job_title, r.current_employer].filter(Boolean).join(" @ ") || "—"}
                     {r.category ? ` · ${[r.category, r.sub_domain].filter(Boolean).join(" - ")}` : ""}
                   </span>
                   {r.ai_summary && (
-                    <span className="block text-[11px] text-slate-400 mt-0.5 truncate">{r.ai_summary}</span>
+                    <span className="block text-xs text-slate-400 mt-0.5 truncate">{r.ai_summary}</span>
                   )}
                 </span>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0 mt-0.5" />
@@ -315,7 +315,7 @@ export default function CopilotPalette({ role }: { role: string }) {
             ))}
         </div>
 
-        <div className="flex items-center gap-3 px-4 py-2 border-t border-slate-100 dark:border-slate-800 dark:border-slate-700 text-[10px] text-slate-400">
+        <div className="flex items-center gap-3 px-4 py-2 border-t border-slate-100 dark:border-slate-800 dark:border-slate-700 text-xs text-slate-400">
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">↑</kbd>
             <kbd className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">↓</kbd> navigate

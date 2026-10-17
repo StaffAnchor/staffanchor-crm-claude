@@ -21,12 +21,12 @@ export function ProfileGroupBadge({
   const label = GROUP_LABEL[g] ?? GROUP_LABEL.unclear;
   return (
     <div className="flex flex-col items-start gap-0.5" title={reason ?? undefined}>
-      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${GROUP_BADGE[g] ?? GROUP_BADGE.unclear}`}>
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${GROUP_BADGE[g] ?? GROUP_BADGE.unclear}`}>
         {label}
         {needsReview && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" aria-label="Worth a second look" />}
       </span>
-      {!compact && subgroup && g === "non_sales" && <span className="max-w-[160px] truncate text-[11px] text-slate-500 dark:text-slate-400">{subgroup}</span>}
-      {!compact && also && <span className="text-[10.5px] italic text-slate-400">{also}</span>}
+      {!compact && subgroup && g === "non_sales" && <span className="max-w-[160px] truncate text-xs text-slate-500 dark:text-slate-400">{subgroup}</span>}
+      {!compact && also && <span className="text-xs italic text-slate-400">{also}</span>}
     </div>
   );
 }

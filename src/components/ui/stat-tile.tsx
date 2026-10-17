@@ -29,7 +29,7 @@ export function StatTile({
         "flex items-center gap-2.5 rounded-ros-xl border bg-white dark:bg-slate-900 px-3.5 py-3 transition-all duration-200 ease-ros",
         "hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
         accent
-          ? "border-blue-100 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/30"
+          ? "border-teal-100 dark:border-teal-900 bg-teal-50/40 dark:bg-teal-950/30"
           : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-ros-md",
         className
       )}
@@ -38,7 +38,7 @@ export function StatTile({
         <div
           className={cn(
             "flex h-9 w-9 shrink-0 items-center justify-center rounded-ros-lg",
-            accent ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+            accent ? "bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
           )}
         >
           {icon}
@@ -48,12 +48,12 @@ export function StatTile({
         <p
           className={cn(
             "text-[17px] font-semibold tabular-nums",
-            accent ? "text-blue-700 dark:text-blue-300" : "text-slate-900 dark:text-slate-100"
+            accent ? "text-teal-700 dark:text-teal-300" : "text-slate-900 dark:text-slate-100"
           )}
         >
           {value}
         </p>
-        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</p>
       </div>
     </div>
   );

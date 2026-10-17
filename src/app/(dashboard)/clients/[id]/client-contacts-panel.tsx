@@ -80,7 +80,7 @@ export default function ClientContactsPanel({
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Contacts</h2>
         <button
           onClick={() => setFormOpen((v) => !v)}
-          className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
+          className="text-[12px] font-medium text-teal-600 hover:text-teal-700"
         >
           {formOpen ? "Cancel" : "+ Add contact"}
         </button>

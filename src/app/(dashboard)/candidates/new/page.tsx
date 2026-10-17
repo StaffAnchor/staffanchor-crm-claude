@@ -548,7 +548,7 @@ export default function NewCandidatePage() {
               if (!visibleOptions.length) return null;
               return (
                 <div key={group}>
-                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{group}</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{group}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {visibleOptions.map((o) => {
                       const active = form.secondary_sub_domains.includes(o);
@@ -1182,7 +1182,7 @@ export default function NewCandidatePage() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 disabled:opacity-60"
+          className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 disabled:opacity-60"
         >
           {saving ? "Creating..." : "Create candidate"}
         </button>

@@ -74,7 +74,7 @@ export default function ReassignCallControl({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-ros-md px-1.5 py-1 transition-colors"
+        className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-ros-md px-1.5 py-1 transition-colors"
         title="Reassign this call (e.g. if it was marked done by mistake)"
       >
         <UserPlus className="w-3 h-3" /> Reassign
@@ -108,12 +108,12 @@ export default function ReassignCallControl({
                   </option>
                 ))}
               </select>
-              {error && <p className="text-[11px] text-red-600 mb-2">{error}</p>}
+              {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
               <button
                 type="button"
                 onClick={send}
                 disabled={!recruiterId || sending}
-                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-blue-600 hover:bg-blue-500 text-white text-[12px] font-medium px-2 py-1.5 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white text-[12px] font-medium px-2 py-1.5 disabled:opacity-50"
               >
                 {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                 Reassign

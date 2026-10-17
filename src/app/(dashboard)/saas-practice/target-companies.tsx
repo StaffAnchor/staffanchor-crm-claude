@@ -34,7 +34,7 @@ export default function TargetCompanies({ initial, canEdit }: { initial: string[
       <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 text-left text-[13px] font-semibold text-slate-800 dark:text-slate-100">
         <Building2 className="h-4 w-4 text-slate-500" /> Companies you rate
         <span className="font-normal text-slate-400">{initial.length > 0 ? `${initial.length} listed` : "none yet, add some to lift people who came from them"}</span>
-        <span className="ml-auto text-[12px] font-medium text-blue-600">{open ? "Hide" : canEdit ? "Edit" : "View"}</span>
+        <span className="ml-auto text-[12px] font-medium text-teal-600">{open ? "Hide" : canEdit ? "Edit" : "View"}</span>
       </button>
       {open && (
         <div className="mt-3 space-y-2">
@@ -46,7 +46,7 @@ export default function TargetCompanies({ initial, canEdit }: { initial: string[
             placeholder={"One company per line, e.g.\nFreshworks\nZoho\nSalesforce"}
             className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-[12.5px] dark:border-slate-700 dark:bg-slate-900"
           />
-          <p className="text-[11.5px] text-slate-500">Anyone who works or has worked at one of these gets a lift on the &quot;Speak to these next&quot; list. Matches ignore capitals and part-names, so &quot;Zoho&quot; also finds &quot;Zoho Corporation&quot;.</p>
+          <p className="text-xs text-slate-500">Anyone who works or has worked at one of these gets a lift on the &quot;Speak to these next&quot; list. Matches ignore capitals and part-names, so &quot;Zoho&quot; also finds &quot;Zoho Corporation&quot;.</p>
           {canEdit ? (
             <div className="flex items-center gap-3">
               <button type="button" onClick={save} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-60 dark:bg-white dark:text-slate-900">
@@ -55,7 +55,7 @@ export default function TargetCompanies({ initial, canEdit }: { initial: string[
               {msg && <span className="text-[12px] text-slate-600 dark:text-slate-300">{msg}</span>}
             </div>
           ) : (
-            <p className="text-[11.5px] text-slate-400">Only an admin can change this list.</p>
+            <p className="text-xs text-slate-400">Only an admin can change this list.</p>
           )}
         </div>
       )}

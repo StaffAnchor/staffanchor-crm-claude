@@ -23,7 +23,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="max-w-xl mx-auto px-5 py-8">
-      <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Settings</h1>
+      <h1 className="ros-page-title mb-1">Settings</h1>
       <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
         {profile?.full_name ?? profile?.email ?? "Your account"}
       </p>

@@ -40,9 +40,9 @@ export default function SpecialtiesControl({
       {SPECIALTY_OPTIONS.map((o) => (
         <label
           key={o.value}
-          className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] cursor-pointer transition-colors ${
+          className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs cursor-pointer transition-colors ${
             selected.includes(o.value)
-              ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+              ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-300"
               : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
           } ${saving ? "opacity-60" : ""}`}
         >

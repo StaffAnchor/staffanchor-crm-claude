@@ -117,7 +117,7 @@ export default async function TeamPage() {
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
       <div className="col-span-2">
-        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-1">Team</h1>
+        <h1 className="ros-page-title mb-1">Team</h1>
         <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
           Recruiters, admins, and freelancers who can access this CRM.
         </p>

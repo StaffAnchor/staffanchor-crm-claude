@@ -16,9 +16,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   referred: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400",
-  registered: "bg-blue-100 text-blue-700",
-  submitted: "bg-indigo-100 text-indigo-700",
-  interviewing: "bg-cyan-100 text-cyan-700",
+  registered: "bg-teal-100 text-teal-700",
+  submitted: "bg-teal-100 text-teal-700",
+  interviewing: "bg-teal-100 text-teal-700",
   placed: "bg-amber-100 text-amber-700",
   paid: "bg-emerald-100 text-emerald-700",
   not_selected: "bg-red-100 text-red-600",
@@ -65,7 +65,7 @@ export default async function ReferralsPage() {
       <CandidatesSubNav />
       <div className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Referrals</h1>
+          <h1 className="ros-page-title">Referrals</h1>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             Candidates referring candidates — refer & earn up to ₹10,000 per placement retained 90 days.
           </p>
@@ -75,15 +75,15 @@ export default async function ReferralsPage() {
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{rows.length}</p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Total referrals</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Total referrals</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-amber-600 tabular-nums">{pendingPayout}</p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Placed — payout pending</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Placed — payout pending</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-sm">
           <p className="text-lg font-semibold text-emerald-600 tabular-nums">₹{totalPaid.toLocaleString("en-IN")}</p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Paid out to date</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Paid out to date</p>
         </div>
       </div>
 
@@ -115,7 +115,7 @@ export default async function ReferralsPage() {
                   <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 align-top">
                     <td className="px-4 py-3">
                       {referrer ? (
-                        <Link href={`/candidates/${referrer.id}`} className="text-blue-600 hover:underline font-medium">
+                        <Link href={`/candidates/${referrer.id}`} className="text-teal-600 hover:underline font-medium">
                           {referrer.full_name || referrer.email}
                         </Link>
                       ) : (
@@ -125,7 +125,7 @@ export default async function ReferralsPage() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900 dark:text-slate-100">{r.referred_name}</p>
                       {referred ? (
-                        <Link href={`/candidates/${referred.id}`} className="text-xs text-blue-600 hover:underline">
+                        <Link href={`/candidates/${referred.id}`} className="text-xs text-teal-600 hover:underline">
                           View profile ({referred.status})
                         </Link>
                       ) : (
@@ -142,7 +142,7 @@ export default async function ReferralsPage() {
                             <Link
                               key={m.id}
                               href={`/mandates/${m.id}`}
-                              className="block text-xs text-blue-600 hover:underline"
+                              className="block text-xs text-teal-600 hover:underline"
                             >
                               {m.role_title}
                               {m.status !== "open" && (
@@ -160,7 +160,7 @@ export default async function ReferralsPage() {
                     <td className="px-4 py-3">
                       <ReferralRowActions referralId={r.id} currentStatus={r.status} currentReward={r.reward_amount} />
                       <span
-                        className={`inline-block mt-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                        className={`inline-block mt-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${
                           STATUS_STYLE[r.status] ?? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >

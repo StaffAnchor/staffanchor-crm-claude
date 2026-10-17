@@ -249,23 +249,23 @@ export default function PlacementsView({
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Total placed</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Total placed</p>
           <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">{totals.total}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Awaiting confirmation</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Awaiting confirmation</p>
           <p className="text-lg font-bold text-amber-600 mt-0.5">{totals.awaiting}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Final billing value (incl. 18% GST)</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Final billing value (incl. 18% GST)</p>
           <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">{inr(totals.finalBilling)}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Missing CTC / billing % </p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Missing CTC / billing % </p>
           <p className="text-lg font-bold text-rose-600 mt-0.5">{totals.missingBillingInputs}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Overdue check-ins</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Overdue check-ins</p>
           <p className="text-lg font-bold text-rose-600 mt-0.5">{totals.overdueCheckins}</p>
         </div>
       </div>
@@ -283,7 +283,7 @@ export default function PlacementsView({
           <button
             key={f.key}
             onClick={() => setStatusFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11.5px] font-medium border transition-colors ${
+            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
               statusFilter === f.key
                 ? "bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900"
                 : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -296,7 +296,7 @@ export default function PlacementsView({
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[10.5px] uppercase tracking-wide">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
             <tr>
               <th className="w-8 px-2 py-2"></th>
               <th className="text-left px-3 py-2">Candidate</th>
@@ -334,7 +334,7 @@ export default function PlacementsView({
                     </button>
                   </td>
                   <td className="px-3 py-2.5">
-                    <Link href={`/candidates/${row.candidateId}`} className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                    <Link href={`/candidates/${row.candidateId}`} className="font-medium text-teal-600 dark:text-teal-400 hover:underline">
                       {row.candidateName}
                     </Link>
                     {overdueForRow > 0 && (
@@ -348,11 +348,11 @@ export default function PlacementsView({
                   <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                     {row.clientName}
                     {!row.hasClientLink && (
-                      <div className="text-[10.5px] text-rose-500 mt-0.5">Mandate not linked to a client record — billing can&apos;t compute</div>
+                      <div className="text-xs text-rose-500 mt-0.5">Mandate not linked to a client record — billing can&apos;t compute</div>
                     )}
                   </td>
                   <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                    <Link href={`/mandates/${row.mandateId}`} className="hover:text-blue-600 hover:underline">
+                    <Link href={`/mandates/${row.mandateId}`} className="hover:text-teal-600 hover:underline">
                       {row.roleTitle}
                     </Link>
                   </td>
@@ -368,7 +368,7 @@ export default function PlacementsView({
                         <button
                           onClick={() => saveJoiningDate(row)}
                           disabled={savingId === row.linkId}
-                          className="text-[11px] font-medium text-blue-600 hover:underline disabled:opacity-40"
+                          className="text-xs font-medium text-teal-600 hover:underline disabled:opacity-40"
                         >
                           Save
                         </button>
@@ -380,7 +380,7 @@ export default function PlacementsView({
                       value={row.joinStatus ?? ""}
                       onChange={(e) => saveJoinStatus(row, e.target.value)}
                       disabled={savingId === row.linkId}
-                      className={`rounded-full text-[11.5px] font-medium px-2 py-1 border-0 disabled:opacity-40 ${
+                      className={`rounded-full text-xs font-medium px-2 py-1 border-0 disabled:opacity-40 ${
                         row.joinStatus ? JOIN_STATUS_TONE[row.joinStatus] : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                       }`}
                     >
@@ -405,7 +405,7 @@ export default function PlacementsView({
                           <button
                             onClick={() => saveOfferedCtc(row)}
                             disabled={savingId === row.linkId}
-                            className="text-[11px] font-medium text-blue-600 hover:underline disabled:opacity-40"
+                            className="text-xs font-medium text-teal-600 hover:underline disabled:opacity-40"
                           >
                             Save
                           </button>
@@ -417,7 +417,7 @@ export default function PlacementsView({
                       </span>
                     )}
                     {isAdmin && usingFallbackCtc && (
-                      <div className="text-[10.5px] text-amber-600 mt-0.5">Not set — using candidate&apos;s expected CTC as estimate</div>
+                      <div className="text-xs text-amber-600 mt-0.5">Not set — using candidate&apos;s expected CTC as estimate</div>
                     )}
                   </td>
                   <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
@@ -513,14 +513,14 @@ function RetentionCheckinRow({
           </Badge>
         )}
       </div>
-      <p className="text-[11px] text-slate-400">Due {new Date(checkin.due_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+      <p className="text-xs text-slate-400">Due {new Date(checkin.due_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
 
       {!checkin.completed_at ? (
         <div className="flex items-center gap-1.5 flex-wrap ml-auto">
           <select
             value={outcome}
             onChange={(e) => setOutcome(e.target.value)}
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-[11.5px]"
+            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-xs"
           >
             <option value="">Log outcome...</option>
             {Object.entries(RETENTION_OUTCOME_LABEL).map(([val, label]) => (
@@ -533,18 +533,18 @@ function RetentionCheckinRow({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Notes (optional)"
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-[11.5px] w-40"
+            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-xs w-40"
           />
           <button
             onClick={() => onSave(outcome, notes)}
             disabled={!outcome || saving}
-            className="rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-[11.5px] font-medium px-2.5 py-1"
+            className="rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs font-medium px-2.5 py-1"
           >
             {saving ? "Saving..." : "Save"}
           </button>
         </div>
       ) : (
-        checkin.notes && <p className="ml-auto text-[11.5px] text-slate-500 dark:text-slate-400">{checkin.notes}</p>
+        checkin.notes && <p className="ml-auto text-xs text-slate-500 dark:text-slate-400">{checkin.notes}</p>
       )}
     </div>
   );

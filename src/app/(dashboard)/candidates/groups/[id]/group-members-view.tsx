@@ -32,8 +32,8 @@ type Member = {
 // batch-generated server-side (see page.tsx), so this is a pure render with
 // no per-row Storage API call.
 function ResumeCell({ resumeFileUrl, resumeSignedUrl }: { resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
-  if (!resumeFileUrl) return <span className="text-[11px] text-slate-300">—</span>;
-  if (!resumeSignedUrl) return <span className="text-[11px] text-red-500">Not found</span>;
+  if (!resumeFileUrl) return <span className="text-xs text-slate-300">—</span>;
+  if (!resumeSignedUrl) return <span className="text-xs text-red-500">Not found</span>;
   return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
 }
 
@@ -94,7 +94,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
         <Users className="w-6 h-6 text-slate-300 mx-auto mb-2" />
         <p className="text-[13px] text-slate-500">
           No candidates in this group yet. Add some from the{" "}
-          <Link href="/candidates" className="text-blue-600 underline">
+          <Link href="/candidates" className="text-teal-600 underline">
             Candidates table
           </Link>{" "}
           -- select rows, then choose &quot;Add to group.&quot;
@@ -104,7 +104,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
   }
 
   const selectClass =
-    "text-[12px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400";
+    "text-[12px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-400";
 
   return (
     <div>
@@ -113,7 +113,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search name, email, mobile, employer..."
-          className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-teal-400"
         />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClass}>
           <option value="">All statuses</option>
@@ -150,16 +150,16 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
           value={minExp}
           onChange={(e) => setMinExp(e.target.value)}
           placeholder="Min exp (yrs)"
-          className="text-[12.5px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-28 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="text-[12.5px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-28 focus:outline-none focus:ring-1 focus:ring-teal-400"
         />
-        <span className="text-[11.5px] text-slate-400">
+        <span className="text-xs text-slate-400">
           {filtered.length} of {members.length}
         </span>
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg shadow-ros-sm overflow-x-auto">
         <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-semibold uppercase tracking-wider">
             <tr>
               <th className="text-left px-4 py-2.5 whitespace-nowrap">Name</th>
               <th className="text-left px-3 py-2.5 whitespace-nowrap">Email</th>
@@ -182,10 +182,10 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
             {filtered.map((m) => (
               <tr key={m.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70">
                 <td className="px-4 py-2.5 whitespace-nowrap">
-                  <Link href={`/candidates/${m.id}?groupId=${groupId}`} className="font-medium text-slate-800 dark:text-slate-100 hover:text-blue-600">
+                  <Link href={`/candidates/${m.id}?groupId=${groupId}`} className="font-medium text-slate-800 dark:text-slate-100 hover:text-teal-600">
                     {m.full_name || "Unnamed"}
                   </Link>
-                  {m.candidate_number ? <span className="text-slate-400 text-[11px] ml-1">#{m.candidate_number}</span> : null}
+                  {m.candidate_number ? <span className="text-slate-400 text-xs ml-1">#{m.candidate_number}</span> : null}
                 </td>
                 <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{m.email}</td>
                 <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{m.phone ?? "—"}</td>

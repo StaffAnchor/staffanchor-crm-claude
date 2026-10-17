@@ -180,7 +180,7 @@ export default function WhatsAppShareModal({
                 Message <span className="font-normal text-slate-400">({"{name}"} becomes each person&apos;s first name)</span>
               </label>
               {custom !== null && (
-                <button onClick={() => setCustom(null)} className="text-[11.5px] text-blue-600 hover:underline">
+                <button onClick={() => setCustom(null)} className="text-xs text-teal-600 hover:underline">
                   Reset to suggested
                 </button>
               )}
@@ -191,7 +191,7 @@ export default function WhatsAppShareModal({
               rows={5}
               className="w-full rounded-ros-md border border-slate-200 bg-white px-2.5 py-2 text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-900"
             />
-            <p className="mt-1 text-[11.5px] text-slate-400">
+            <p className="mt-1 text-xs text-slate-400">
               {sender ? `Sent as ${sender}.` : "Sent as StaffAnchor."} You can still edit the text in WhatsApp before pressing Send.
             </p>
           </div>
@@ -211,7 +211,7 @@ export default function WhatsAppShareModal({
                     <li key={r.id} className="flex items-center justify-between gap-3 px-3 py-2">
                       <div className="min-w-0">
                         <p className="truncate text-[13px] font-medium text-slate-800 dark:text-slate-100">{r.full_name}</p>
-                        <p className="text-[11.5px] text-slate-400">{r.phone || "No phone number on file"}</p>
+                        <p className="text-xs text-slate-400">{r.phone || "No phone number on file"}</p>
                       </div>
                       {href ? (
                         <a
@@ -227,7 +227,7 @@ export default function WhatsAppShareModal({
                           {done ? "Opened, open again" : "Open WhatsApp"}
                         </a>
                       ) : (
-                        <span className="text-[11.5px] text-slate-400">Can&apos;t send</span>
+                        <span className="text-xs text-slate-400">Can&apos;t send</span>
                       )}
                     </li>
                   );

@@ -186,7 +186,7 @@ export default async function FlowPage() {
               {flow.stuck.map((s) => (
                 <tr key={s.link_id} className="border-b border-slate-50 dark:border-slate-800/60 last:border-0">
                   <td className="px-4 py-2.5">
-                    <Link href={`/candidates/${s.candidate_id}`} className="text-blue-600 hover:underline">
+                    <Link href={`/candidates/${s.candidate_id}`} className="text-teal-600 hover:underline">
                       {s.candidate_name ?? "Unnamed"}
                     </Link>
                   </td>

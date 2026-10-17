@@ -103,7 +103,7 @@ export default function PerformanceView({ rows }: { rows: RevenueRow[] }) {
         <div className="flex items-center gap-2 text-[12.5px]">
           <span className="text-slate-500 dark:text-slate-400">Filtered to</span>
           <span className="font-medium text-slate-800 dark:text-slate-200">{filteredClientName}</span>
-          <button onClick={() => setClientFilter(null)} className="text-blue-600 hover:underline">
+          <button onClick={() => setClientFilter(null)} className="text-teal-600 hover:underline">
             Clear
           </button>
         </div>
@@ -129,7 +129,7 @@ export default function PerformanceView({ rows }: { rows: RevenueRow[] }) {
         <Table
           head={["Client", "Invoices", "Gross (incl. GST)", "Net", "Last billed"]}
           rows={byClient.map((c) => [
-            <button key="name" onClick={() => setClientFilter(c.clientId)} className="text-left text-blue-600 hover:underline">
+            <button key="name" onClick={() => setClientFilter(c.clientId)} className="text-left text-teal-600 hover:underline">
               {c.clientName}
             </button>,
             String(c.count),
@@ -157,7 +157,7 @@ export default function PerformanceView({ rows }: { rows: RevenueRow[] }) {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-      <p className="text-[11px] text-slate-400">{label}</p>
+      <p className="text-xs text-slate-400">{label}</p>
       <p className="text-[16px] font-bold text-slate-900 dark:text-slate-100 mt-0.5">{value}</p>
     </div>
   );
@@ -171,7 +171,7 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-[13px]">
         <thead>
-          <tr className="text-left text-[11px] text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
+          <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
             {head.map((h) => (
               <th key={h} className="py-2 pr-3">
                 {h}

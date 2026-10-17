@@ -55,7 +55,7 @@ export default function WhatsAppMenu({
       </button>
       {open && (
         <div role="menu" className="absolute left-0 z-30 mt-1 w-72 rounded-ros-md border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-          <p className="mb-1 rounded bg-slate-50 px-2.5 py-2 text-[11.5px] leading-4 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <p className="mb-1 rounded bg-slate-50 px-2.5 py-2 text-xs leading-4 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <span className="font-semibold">Manual.</span> These are drafts. Picking one opens WhatsApp Web in your browser with the text typed in, and
             you press Send yourself. Nothing goes out automatically. For an automatic, approved-template message, use the Auto buttons.
           </p>
@@ -92,7 +92,7 @@ export default function WhatsAppMenu({
                 type="button"
                 onClick={() => copy(t.key, t.text)}
                 title="Copy this message"
-                className="mr-1 inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-slate-500 hover:bg-white hover:text-slate-800 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+                className="mr-1 inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-1 text-xs font-medium text-slate-500 hover:bg-white hover:text-slate-800 dark:hover:bg-slate-700 dark:hover:text-slate-100"
               >
                 {copied === t.key ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />} {copied === t.key ? "Copied" : "Copy"}
               </button>

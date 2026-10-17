@@ -603,7 +603,7 @@ export default function CreateMandateForm({
           onChange={(e) => setForm((f) => ({ ...f, headcount: e.target.value }))}
           className="w-32 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
         />
-        <p className="text-[11px] text-slate-400 mt-1">
+        <p className="text-xs text-slate-400 mt-1">
           How many hires this mandate needs -- e.g. 3 if the client wants 3 BDRs. Defaults to 1.
         </p>
       </div>
@@ -623,7 +623,7 @@ export default function CreateMandateForm({
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Matches this mandate against recruiters/candidates in the same practice pool.
           </p>
         </div>
@@ -632,7 +632,7 @@ export default function CreateMandateForm({
             Role type <span className="text-rose-600">*</span>
           </label>
           <RoleTypeSelect value={form.role_cluster} onChange={(v) => setForm((f) => ({ ...f, role_cluster: v }))} clusters={roleClusters} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
-          <p className="text-[11px] text-slate-400 mt-1">What the hire will actually do. Matching uses this, not the title.</p>
+          <p className="text-xs text-slate-400 mt-1">What the hire will actually do. Matching uses this, not the title.</p>
           <label className="mt-2 block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Also acceptable (optional)</label>
           <AlsoRoleTypes value={form.also_clusters} onChange={(v) => setForm((f) => ({ ...f, also_clusters: v }))} clusters={roleClusters} main={form.role_cluster} />
         </div>
@@ -641,7 +641,7 @@ export default function CreateMandateForm({
             Role level <span className="text-rose-600">*</span>
           </label>
           <RoleLevelSelect value={form.seniority_band} onChange={(v) => setForm((f) => ({ ...f, seniority_band: v }))} className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
-          <p className="text-[11px] text-slate-400 mt-1">Decides whether to look for individual sellers or people who lead.</p>
+          <p className="text-xs text-slate-400 mt-1">Decides whether to look for individual sellers or people who lead.</p>
         </div>
       </div>
 
@@ -668,8 +668,8 @@ export default function CreateMandateForm({
       <div>
         <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Job description (shown to candidates on the public listing)</p>
 
-        <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-3 mb-2">
-          <p className="text-[11px] font-medium text-blue-700 mb-1.5">Paste rough notes and let AI structure it</p>
+        <div className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-3 mb-2">
+          <p className="text-xs font-medium text-teal-700 mb-1.5">Paste rough notes and let AI structure it</p>
           <textarea
             placeholder="Paste a rough JD, bullet notes, or a client email -- AI will turn it into a clean Overview / Key Responsibilities / Candidate Profile / Compensation & Benefits format below."
             value={form.jd_raw_notes}
@@ -681,11 +681,11 @@ export default function CreateMandateForm({
             type="button"
             onClick={handleGenerateJd}
             disabled={generatingJd || !form.jd_raw_notes.trim()}
-            className="mt-2 flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+            className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
           >
             <Sparkles className="w-3.5 h-3.5" /> {generatingJd ? "Generating..." : "Generate with AI"}
           </button>
-          {jdError && <p className="text-[11px] text-red-600 mt-1.5">{jdError}</p>}
+          {jdError && <p className="text-xs text-red-600 mt-1.5">{jdError}</p>}
         </div>
 
         <div className="space-y-2">
@@ -720,11 +720,11 @@ export default function CreateMandateForm({
         </div>
 
         {(form.jd_overview || form.jd_responsibilities || form.jd_candidate_profile || form.jd_compensation_benefits) && (
-          <div className="rounded-lg border border-dashed border-violet-200 bg-violet-50/50 p-3 mt-2">
-            <p className="text-[11px] font-medium text-violet-700 mb-1.5">
+          <div className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-3 mt-2">
+            <p className="text-xs font-medium text-teal-700 mb-1.5">
               Suggest a change instead of rewriting everything
             </p>
-            <p className="text-[10.5px] text-violet-500 mb-1.5">
+            <p className="text-xs text-teal-500 mb-1.5">
               e.g. &quot;make the responsibilities shorter&quot;, &quot;add a requirement about SaaS experience&quot; -- only this
               change is applied, nothing else is reworded.
             </p>
@@ -739,11 +739,11 @@ export default function CreateMandateForm({
               type="button"
               onClick={handleRefineJd}
               disabled={refiningJd || !jdEditInstruction.trim()}
-              className="mt-2 flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+              className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" /> {refiningJd ? "Applying..." : "Apply this edit"}
             </button>
-            {jdRefineError && <p className="text-[11px] text-red-600 mt-1.5">{jdRefineError}</p>}
+            {jdRefineError && <p className="text-xs text-red-600 mt-1.5">{jdRefineError}</p>}
           </div>
         )}
       </div>
@@ -817,7 +817,7 @@ export default function CreateMandateForm({
                   ))}
                 </select>
                 <div>
-                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industries sold to / clientele</p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Industries sold to / clientele</p>
                   <MultiSelectChips
                     options={optionSets.industries}
                     selected={form.industries_sold_to}
@@ -874,7 +874,7 @@ export default function CreateMandateForm({
 
                 {isB2C && (
                   <div>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                       Who are the end consumers? (B2C)
                     </p>
                     <MultiSelectChips
@@ -888,7 +888,7 @@ export default function CreateMandateForm({
 
                 {isB2B && (
                   <div>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                       Client profile -- who do they actually sell to? (B2B)
                     </p>
                     <MultiSelectChips
@@ -980,7 +980,7 @@ export default function CreateMandateForm({
               className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
             />
 
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 pt-1">Realistic expectations (for candidate conversations, not published)</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 pt-1">Realistic expectations (for candidate conversations, not published)</p>
             <input
               placeholder="3-month expectation"
               value={form.expectation_3_month}
@@ -1021,7 +1021,7 @@ export default function CreateMandateForm({
             className="w-full mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
           />
         )}
-        <p className="text-[11px] text-slate-400 mt-1.5">
+        <p className="text-xs text-slate-400 mt-1.5">
           {form.hide_client
             ? "Candidates will see this text instead of the real client name."
             : "The real client name will be visible on the public job listing."}
@@ -1033,7 +1033,7 @@ export default function CreateMandateForm({
         type="submit"
         disabled={saving || form.recruiterIds.length === 0}
         title={form.recruiterIds.length === 0 ? "Select at least one recruiter or vendor above" : undefined}
-        className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 disabled:opacity-60"
+        className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 disabled:opacity-60"
       >
         {saving ? "Creating..." : "Create mandate"}
       </button>

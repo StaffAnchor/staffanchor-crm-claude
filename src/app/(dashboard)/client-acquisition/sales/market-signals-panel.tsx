@@ -47,8 +47,8 @@ export type MarketSignalRow = {
 
 const SIGNAL_META: Record<MarketSignalRow["signal_type"], { icon: typeof Newspaper; label: string; tint: string }> = {
   funding: { icon: TrendingUp, label: "Funding raised", tint: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  hiring: { icon: Users, label: "Hiring", tint: "bg-sky-50 text-sky-700 ring-sky-200" },
-  sales_hiring: { icon: Briefcase, label: "Hiring sales roles", tint: "bg-blue-50 text-blue-700 ring-blue-200" },
+  hiring: { icon: Users, label: "Hiring", tint: "bg-teal-50 text-teal-700 ring-teal-200" },
+  sales_hiring: { icon: Briefcase, label: "Hiring sales roles", tint: "bg-teal-50 text-teal-700 ring-teal-200" },
 };
 
 const CATEGORY_LABEL: Record<CompanyCategory, string> = {
@@ -161,7 +161,7 @@ export default function MarketSignalsPanel({
         <div className="flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-teal-600" />
           <h2 className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">Market Signals</h2>
-          <span className="text-[11px] text-slate-400 font-normal">India funding &amp; hiring news, scanned daily</span>
+          <span className="text-xs text-slate-400 font-normal">India funding &amp; hiring news, scanned daily</span>
           {open.length > 0 && (
             <Badge tone="accent" size="sm">
               {open.length} new
@@ -209,20 +209,20 @@ export default function MarketSignalsPanel({
                         </Badge>
                       )}
                       {signal.founder_name && (
-                        <span className="text-[11px] text-slate-400">Founder: {signal.founder_name}</span>
+                        <span className="text-xs text-slate-400">Founder: {signal.founder_name}</span>
                       )}
                     </div>
                     <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{signal.headline}</p>
-                    {signal.summary && <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">{signal.summary}</p>}
+                    {signal.summary && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{signal.summary}</p>}
                     {signal.fit_reason && (
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 italic">{signal.fit_reason}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 italic">{signal.fit_reason}</p>
                     )}
                     {signal.source_url && (
                       <a
                         href={signal.source_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 mt-1"
+                        className="inline-flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 mt-1"
                       >
                         <ExternalLink className="w-3 h-3" /> Source
                       </a>

@@ -112,7 +112,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
       <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">GST registrations</h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">Used on generated Proforma/Tax Invoices. Add one per billing office.</p>
+          <p className="text-xs text-slate-400 mt-0.5">Used on generated Proforma/Tax Invoices. Add one per billing office.</p>
         </div>
         {editingId === null && (
           <button onClick={startAdd} className="flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
@@ -136,7 +136,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
                   <div className="flex items-center gap-1.5">
                     <span className="font-medium text-slate-800 dark:text-slate-200">{r.label}</span>
                     {r.is_default && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600">
+                      <span className="inline-flex items-center gap-0.5 text-xs text-amber-600">
                         <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" /> Default
                       </span>
                     )}
@@ -228,7 +228,7 @@ function RegistrationForm({
         rows={2}
         className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
       />
-      {error && <p className="text-[11px] text-red-600">{error}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button onClick={onSave} disabled={saving} className="rounded-md bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-[12px] font-medium px-2.5 py-1.5">
           {saving ? "Saving…" : "Save"}

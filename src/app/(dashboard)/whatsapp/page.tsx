@@ -81,7 +81,7 @@ export default async function WhatsAppPage() {
   return (
     <div className="mx-auto max-w-[1300px] px-5 py-8">
       <div className="mb-5">
-        <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">WhatsApp</h1>
+        <h1 className="ros-page-title">WhatsApp</h1>
         <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
           People who message StaffAnchor on WhatsApp, and your replies. You can reply freely for 24 hours after someone writes.
         </p>

@@ -322,10 +322,10 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-4 shadow-ros-sm space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Current profile type <span className="text-red-500">*</span>
               </label>
-              <p className="text-[11px] text-slate-400 mb-1.5">
+              <p className="text-xs text-slate-400 mb-1.5">
                 Applies to every resume in this batch. Not sure about older CVs? Leave it on &ldquo;read it from each CV&rdquo;.
               </p>
               <select
@@ -346,16 +346,16 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               </select>
             </div>
             {profileType === "auto" && (
-              <p className="self-end text-[11.5px] text-slate-400 pb-1.5">
+              <p className="self-end text-xs text-slate-400 pb-1.5">
                 Profile type, what they sell, level, industries, tools and skills will be read from each CV. You can correct them before saving.
               </p>
             )}
             {(profileType === "b2b_sales" || profileType === "b2c_sales") && (
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   What do they sell? <span className="font-normal text-slate-400">(optional)</span>
                 </label>
-                <p className="text-[11px] text-slate-400 mb-1.5">Also applies to the whole batch. Leave on &ldquo;read it from each CV&rdquo; if unsure.</p>
+                <p className="text-xs text-slate-400 mb-1.5">Also applies to the whole batch. Leave on &ldquo;read it from each CV&rdquo; if unsure.</p>
                 <select
                   value={subDomain}
                   onChange={(e) => setSubDomain(e.target.value)}
@@ -376,10 +376,10 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             )}
             {profileType === "non_sales" && subDomainOptions.length > 0 && (
               <div>
-                <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Function <span className="font-normal text-slate-400">(optional)</span>
                 </label>
-                <p className="text-[11px] text-slate-400 mb-1.5">Also applies to the whole batch.</p>
+                <p className="text-xs text-slate-400 mb-1.5">Also applies to the whole batch.</p>
                 <select
                   value={subDomain}
                   onChange={(e) => {
@@ -406,10 +406,10 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               </div>
             )}
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Source <span className="text-red-500">*</span>
               </label>
-              <p className="text-[11px] text-slate-400 mb-1.5">Where these CVs were downloaded from.</p>
+              <p className="text-xs text-slate-400 mb-1.5">Where these CVs were downloaded from.</p>
               <select
                 value={sourceChannel}
                 onChange={(e) => setSourceChannel(e.target.value)}
@@ -425,13 +425,13 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             </div>
           </div>
 
-          <label className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 px-4 py-8 cursor-pointer hover:border-blue-300 hover:bg-blue-50/40 transition-colors">
+          <label className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 px-4 py-8 cursor-pointer hover:border-teal-300 hover:bg-teal-50/40 transition-colors">
             <UploadCloud className="w-6 h-6 text-slate-400" />
             <span className="text-[13px] font-medium text-slate-600 dark:text-slate-300">
               Click to choose resumes, or drag them here
             </span>
-            <span className="text-[11px] text-slate-400">PDF or DOCX -- up to {MAX_FILES} files at a time</span>
-            <span className="text-[11px] text-slate-400">Tip: name a file like Priya_Sharma_12L.pdf and 12 is filled in as current CTC (LPA)</span>
+            <span className="text-xs text-slate-400">PDF or DOCX -- up to {MAX_FILES} files at a time</span>
+            <span className="text-xs text-slate-400">Tip: name a file like Priya_Sharma_12L.pdf and 12 is filled in as current CTC (LPA)</span>
             <input
               ref={fileInputRef}
               type="file"
@@ -458,7 +458,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                   </button>
                 </div>
               ))}
-              <p className="text-[11px] text-slate-400">
+              <p className="text-xs text-slate-400">
                 {files.length} of {MAX_FILES} selected
               </p>
             </div>
@@ -474,7 +474,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             type="button"
             onClick={handleExtract}
             disabled={files.length === 0 || !profileType || !sourceChannel || extracting}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
+            className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
           >
             {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
             {extracting ? `Reading resumes (${extractProgress}/${files.length})...` : "Extract & review"}
@@ -521,7 +521,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               <button
                 type="button"
                 onClick={() => setRows((prev) => (prev ? prev.map((r) => ({ ...r, mandate_id: bulkMandateId })) : prev))}
-                className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
+                className="text-[12px] font-medium text-teal-600 hover:text-teal-700"
               >
                 Apply to all
               </button>
@@ -658,7 +658,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                   />
                   {mandates.length > 0 && (
                     <div>
-                      <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+                      <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">
                         Mandate (optional)
                       </label>
                       <select
@@ -677,7 +677,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     </div>
                   )}
                   <div>
-                    <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">
                       Languages known
                     </label>
                     <select
@@ -701,7 +701,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
 
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 border-t border-slate-100 dark:border-slate-800 pt-3">
                 <div>
-                  <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Profile type</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">Profile type</label>
                   <select
                     value={row.category}
                     onChange={(e) => updateRow(row.fileName, { category: e.target.value, sells_now: [], sells_before: [], customer_segments: [] })}
@@ -717,7 +717,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Role level</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">Role level</label>
                   <select
                     value={row.role_level}
                     onChange={(e) => updateRow(row.fileName, { role_level: e.target.value, team_size: "" })}
@@ -734,7 +734,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 </div>
                 {(row.category === "b2b_sales" || row.category === "b2c_sales") && (
                   <div>
-                    <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Add what they sell</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">Add what they sell</label>
                     <select
                       value=""
                       onChange={(e) => e.target.value && updateRow(row.fileName, { sells_now: [...row.sells_now, e.target.value].slice(0, 3) })}
@@ -784,7 +784,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               type="button"
               onClick={handleCreateAll}
               disabled={creating || includedCount === 0}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
+              className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
             >
               {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               {creating
@@ -841,7 +841,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">{label}</label>
+      <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -849,7 +849,7 @@ function Field({
         inputMode={inputMode}
         className={`w-full rounded-lg border px-2 py-1 text-[12.5px] ${invalid ? "border-rose-300" : "border-slate-200 dark:border-slate-700"}`}
       />
-      {invalid && <p className="mt-0.5 text-[10.5px] text-rose-600">Enter a number in lakhs, like 18 or 18.5</p>}
+      {invalid && <p className="mt-0.5 text-xs text-rose-600">Enter a number in lakhs, like 18 or 18.5</p>}
     </div>
   );
 }
@@ -859,9 +859,9 @@ function ChipList({ label, items, onRemove }: { label: string; items: string[]; 
   if (items.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mr-0.5">{label}:</span>
+      <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-0.5">{label}:</span>
       {items.map((t) => (
-        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11.5px] text-slate-700 dark:text-slate-200">
+        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-700 dark:text-slate-200">
           {t}
           <button type="button" onClick={() => onRemove(t)} aria-label={`Remove ${t}`} className="text-slate-400 hover:text-slate-700">
             ×

@@ -100,7 +100,7 @@ export default function ClientInfoPanel({
             <dt className="text-slate-400 text-[12px]">Website</dt>
             <dd className="text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px]">
               {initialWebsite ? (
-                <a href={initialWebsite} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                <a href={initialWebsite} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline">
                   {initialWebsite}
                 </a>
               ) : (
@@ -128,7 +128,7 @@ export default function ClientInfoPanel({
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Edit client details</h2>
       <div className="space-y-3">
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Owner (Partner)</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Owner (Partner)</label>
           <select
             value={ownerId}
             onChange={(e) => setOwnerId(e.target.value)}
@@ -143,7 +143,7 @@ export default function ClientInfoPanel({
           </select>
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Industry</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Industry</label>
           <input
             value={industry}
             onChange={(e) => setIndustry(e.target.value)}
@@ -151,7 +151,7 @@ export default function ClientInfoPanel({
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">HQ city</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">HQ city</label>
           <input
             value={hqCity}
             onChange={(e) => setHqCity(e.target.value)}
@@ -159,7 +159,7 @@ export default function ClientInfoPanel({
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Website</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Website</label>
           <input
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
@@ -167,7 +167,7 @@ export default function ClientInfoPanel({
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Placement fee (% of candidate CTC)
           </label>
           <input
@@ -180,12 +180,12 @@ export default function ClientInfoPanel({
             placeholder="8.33"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-500"
           />
-          <p className="text-[11px] text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Drives the Morning Briefing&apos;s billing forecast. Defaults to 8.33% (one month&apos;s CTC) if left blank.
           </p>
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Notes</label>
+          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

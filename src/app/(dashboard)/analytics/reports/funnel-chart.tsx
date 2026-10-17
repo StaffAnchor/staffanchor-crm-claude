@@ -34,7 +34,7 @@ export default function FunnelChart({ stages }: { stages: FunnelStage[] }) {
           <Link
             key={s.key}
             href={s.href}
-            className="group flex items-center justify-center h-8 text-white text-[11px] font-semibold transition-all duration-200 ease-ros hover:opacity-90 hover:-translate-y-px active:translate-y-0 active:scale-[0.99]"
+            className="group flex items-center justify-center h-8 text-white text-xs font-semibold transition-all duration-200 ease-ros hover:opacity-90 hover:-translate-y-px active:translate-y-0 active:scale-[0.99]"
             style={{
               width: `${widthPct}%`,
               minWidth: "30%",

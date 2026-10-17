@@ -72,7 +72,7 @@ export default async function EmployerInquiriesPage() {
     <div className="max-w-5xl mx-auto px-6 py-8">
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Employer Inquiries</h1>
+          <h1 className="ros-page-title">Employer Inquiries</h1>
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
             Genuine hiring enquiries from staffanchor.com. Jobseeker queries and spam are filed in their own tabs
           </p>

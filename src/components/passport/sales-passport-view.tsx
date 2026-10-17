@@ -68,7 +68,7 @@ export type SalesPassportProps = {
 function Stat({ label, value, title }: { label: string; value?: string | number | null; title?: string }) {
   return (
     <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2" title={title}>
-      <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-slate-400 uppercase tracking-wide">{label}</p>
       <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
     </div>
   );
@@ -167,7 +167,7 @@ export function SalesPassportView(props: SalesPassportProps) {
       <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Sales Passport</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-teal-600">Sales Passport</p>
             <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{fullName}</h1>
             <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
               {currentJobTitle}
@@ -247,16 +247,16 @@ export function SalesPassportView(props: SalesPassportProps) {
       {viewer === "recruiter" && ((scores && scores.length > 0) || (redFlags && redFlags.length > 0)) && (
         <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
           <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Recruiter assessment</p>
-          <p className="text-[11px] text-slate-400 mb-4">Internal only, never shown to clients.</p>
+          <p className="text-xs text-slate-400 mb-4">Internal only, never shown to clients.</p>
           {scores && scores.length > 0 && (
             <div className="flex items-center gap-6 mb-4">
               {scores.map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                     {s.value}
-                    <span className="text-[11px] font-normal text-slate-400">/5</span>
+                    <span className="text-xs font-normal text-slate-400">/5</span>
                   </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -280,7 +280,7 @@ export function SalesPassportView(props: SalesPassportProps) {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
             {segmentEntries.map(([label, v]) => (
               <div key={label}>
-                <p className="text-[11px] text-slate-400">{label}</p>
+                <p className="text-xs text-slate-400">{label}</p>
                 <p className="text-[13px] text-slate-700 dark:text-slate-300">
                   {Array.isArray(v) ? v.join(", ") : String(v)}
                 </p>
@@ -304,11 +304,11 @@ export function SalesPassportView(props: SalesPassportProps) {
               if (!target && !achieved) return null;
               return (
                 <div key={q} className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-2 py-2.5">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide">{q.toUpperCase()}</p>
+                  <p className="text-xs text-slate-400 uppercase tracking-wide">{q.toUpperCase()}</p>
                   <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mt-1">
                     {achieved || "—"}
                   </p>
-                  <p className="text-[10px] text-slate-400">of {target || "—"} target</p>
+                  <p className="text-xs text-slate-400">of {target || "—"} target</p>
                 </div>
               );
             })}
@@ -317,13 +317,13 @@ export function SalesPassportView(props: SalesPassportProps) {
             <div className="grid sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
               {currentRole.best_win && (
                 <div>
-                  <p className="text-[11px] font-medium text-emerald-600 uppercase tracking-wide mb-1">Best win</p>
+                  <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide mb-1">Best win</p>
                   <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{currentRole.best_win}</p>
                 </div>
               )}
               {currentRole.tough_loss && (
                 <div>
-                  <p className="text-[11px] font-medium text-amber-600 uppercase tracking-wide mb-1">Tough loss</p>
+                  <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Tough loss</p>
                   <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{currentRole.tough_loss}</p>
                 </div>
               )}
@@ -333,7 +333,7 @@ export function SalesPassportView(props: SalesPassportProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
               {revenueDetailFields.map(([label, value]) => (
                 <div key={label}>
-                  <p className="text-[11px] text-slate-400">{label}</p>
+                  <p className="text-xs text-slate-400">{label}</p>
                   <p className="text-[13px] text-slate-700 dark:text-slate-300">{value}</p>
                 </div>
               ))}
@@ -356,7 +356,7 @@ export function SalesPassportView(props: SalesPassportProps) {
           </div>
           <Timeline entries={timelineEntries} />
           {viewer === "recruiter" && typeof domainConsistencyScore === "number" && (
-            <p className="text-[11px] text-slate-400 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-xs text-slate-400 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
               Domain consistency score: <span className="font-medium text-slate-600 dark:text-slate-300">{domainConsistencyScore}/100</span>
             </p>
           )}

@@ -44,7 +44,7 @@ function roundLabel(round: string | null) {
 function flagStatusBadge(status?: string) {
   if (status === "done") return { label: "Done", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
   if (status === "snoozed") return { label: "Snoozed", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
-  return { label: "Open", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" };
+  return { label: "Open", className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" };
 }
 
 function timeAgo(iso: string) {
@@ -136,16 +136,16 @@ export default function CallsFlaggedTable({
           {rows.map((r) => (
             <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
               <td className="px-4 py-3">
-                <Link href={candidateHref(r)} className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600">
+                <Link href={candidateHref(r)} className="font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600">
                   {r.candidate_name ?? "Candidate"}
                 </Link>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   {r.stage && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${STAGE_COLOR[r.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}>
+                    <span className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${STAGE_COLOR[r.stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}>
                       {stageLabel(r.stage)}
                     </span>
                   )}
-                  <span className="text-[11px] text-slate-400">{r.candidate_sub_domain}</span>
+                  <span className="text-xs text-slate-400">{r.candidate_sub_domain}</span>
                 </div>
               </td>
               <td className="px-4 py-3">
@@ -156,12 +156,12 @@ export default function CallsFlaggedTable({
                     label="Preview"
                   />
                 ) : (
-                  <span className="text-[11px] text-slate-300">—</span>
+                  <span className="text-xs text-slate-300">—</span>
                 )}
               </td>
               <td className="px-4 py-3">
                 {r.mandate_id ? (
-                  <Link href={`/mandates/${r.mandate_id}`} className="text-[12.5px] font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                  <Link href={`/mandates/${r.mandate_id}`} className="text-[12.5px] font-medium text-teal-600 dark:text-teal-400 hover:underline">
                     {r.mandate_role_title}
                     {r.mandate_client_name ? ` — ${r.mandate_client_name}` : ""}
                   </Link>
@@ -171,19 +171,19 @@ export default function CallsFlaggedTable({
               </td>
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-[12.5px]">
                 <div>{r.candidate_current_fixed_ctc ? `₹${r.candidate_current_fixed_ctc}L` : "—"}</div>
-                {r.candidate_notice_period && <div className="text-[10.5px] text-slate-400">Notice: {r.candidate_notice_period}</div>}
+                {r.candidate_notice_period && <div className="text-xs text-slate-400">Notice: {r.candidate_notice_period}</div>}
               </td>
               <td className="px-4 py-3">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
                   {roundLabel(r.call_round)}
                 </span>
-                <div className="text-[10px] text-slate-400 mt-1">{timeAgo(r.created_at)}</div>
+                <div className="text-xs text-slate-400 mt-1">{timeAgo(r.created_at)}</div>
               </td>
               <td className="px-4 py-3 max-w-[220px]">
                 {r.detail ? (
-                  <p className="text-[11.5px] text-slate-500 dark:text-slate-400 line-clamp-2">{r.detail}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{r.detail}</p>
                 ) : (
-                  <span className="text-[11px] text-slate-300">—</span>
+                  <span className="text-xs text-slate-300">—</span>
                 )}
               </td>
               <td className="px-4 py-3">
@@ -232,7 +232,7 @@ export default function CallsFlaggedTable({
                         }}
                       />
                       {r.second_round_outcome_note && (
-                        <p className="text-[10.5px] text-slate-400 dark:text-slate-500 italic mt-1 max-w-[180px]" title={r.second_round_outcome_note}>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 italic mt-1 max-w-[180px]" title={r.second_round_outcome_note}>
                           &ldquo;{r.second_round_outcome_note}&rdquo;
                         </p>
                       )}
@@ -281,14 +281,14 @@ export default function CallsFlaggedTable({
                         }}
                       />
                       {r.call_disposition_note && (
-                        <p className="text-[10.5px] text-slate-400 dark:text-slate-500 italic mt-1 max-w-[180px]" title={r.call_disposition_note}>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 italic mt-1 max-w-[180px]" title={r.call_disposition_note}>
                           &ldquo;{r.call_disposition_note}&rdquo;
                         </p>
                       )}
                     </>
                   )
                 ) : (
-                  <span className="text-[11px] text-slate-300">—</span>
+                  <span className="text-xs text-slate-300">—</span>
                 )}
               </td>
               <td className="px-4 py-3">
@@ -296,8 +296,8 @@ export default function CallsFlaggedTable({
                   const badge = flagStatusBadge(r.flag_status);
                   return (
                     <div>
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.className}`}>{badge.label}</span>
-                      {r.resolved_at && <div className="text-[10px] text-slate-400 mt-1">{timeAgo(r.resolved_at)}</div>}
+                      <span className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${badge.className}`}>{badge.label}</span>
+                      {r.resolved_at && <div className="text-xs text-slate-400 mt-1">{timeAgo(r.resolved_at)}</div>}
                       {showAll && r.candidate_id && (
                         <div className="mt-1">
                           <ReassignCallControl

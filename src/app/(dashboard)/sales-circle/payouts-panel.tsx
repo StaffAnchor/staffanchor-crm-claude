@@ -109,7 +109,7 @@ export default function PayoutsPanel({ payouts }: { payouts: Payout[] }) {
                   </select>
                 </td>
                 <td className="px-3 py-2 text-right space-x-2">
-                  <button disabled={busy} onClick={() => save(p.id)} className="rounded-md bg-blue-600 px-2.5 py-1 text-[12px] font-medium text-white disabled:opacity-50">
+                  <button disabled={busy} onClick={() => save(p.id)} className="rounded-md bg-teal-600 px-2.5 py-1 text-[12px] font-medium text-white disabled:opacity-50">
                     Save
                   </button>
                   <button onClick={() => setEditingId(null)} className="text-[12px] text-slate-500">
@@ -125,12 +125,12 @@ export default function PayoutsPanel({ payouts }: { payouts: Payout[] }) {
                 <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.computed_payout_amount != null ? `₹${p.computed_payout_amount.toLocaleString("en-IN")}` : "—"}</td>
                 <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.tds_amount != null ? `₹${p.tds_amount.toLocaleString("en-IN")}` : "—"}</td>
                 <td className="px-3 py-2">
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_TONE[p.status] ?? "bg-slate-100 text-slate-500"}`}>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_TONE[p.status] ?? "bg-slate-100 text-slate-500"}`}>
                     {p.status}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <button onClick={() => startEdit(p)} className="text-[12px] font-medium text-blue-600">
+                  <button onClick={() => startEdit(p)} className="text-[12px] font-medium text-teal-600">
                     Edit
                   </button>
                 </td>

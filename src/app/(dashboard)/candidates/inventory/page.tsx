@@ -113,7 +113,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <CandidatesSubNav />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Talent inventory</h1>
+          <h1 className="ros-page-title">Talent inventory</h1>
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
             What you hold, by kind of role and by city, whether or not a mandate is open. Pick a track, then click any number to see the people behind it.
           </p>
@@ -167,7 +167,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             <tr className="border-b border-slate-100 text-left text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <th className="sticky left-0 z-10 bg-white px-4 py-2.5 font-medium dark:bg-slate-900">Kind of role</th>
               {METROS.map((m) => (
-                <th key={m} className="px-2 py-2.5 text-center text-[11.5px] font-medium">
+                <th key={m} className="px-2 py-2.5 text-center text-xs font-medium">
                   {m}
                 </th>
               ))}
@@ -207,7 +207,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <p className="text-[12px] text-slate-500 dark:text-slate-400">
         A person can appear in more than one row (for example someone who is both an Account Executive and a Solution Engineer), so totals are counts of roles, not people.{" "}
         {unclassifiedCount > 0 && (
-          <Link href={inventoryHref(p, { cluster: "none", metro: null })} className="font-medium text-blue-600 hover:underline">
+          <Link href={inventoryHref(p, { cluster: "none", metro: null })} className="font-medium text-teal-600 hover:underline">
             {unclassifiedCount} in {TRACKS.find((t) => t.value === p.track)?.label} have a current role the rules don&apos;t recognise yet. See who.
           </Link>
         )}
@@ -220,7 +220,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
               {drillTitle} <span className="font-normal text-slate-400">({people.length}{people.length >= 400 ? "+" : ""})</span>
             </h2>
             {p.metro && (
-              <Link href={inventoryHref(p, { metro: null })} className="text-[12px] text-blue-600 hover:underline">
+              <Link href={inventoryHref(p, { metro: null })} className="text-[12px] text-teal-600 hover:underline">
                 Show all cities
               </Link>
             )}
@@ -234,7 +234,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
               />
             )}
             {exportHref && (
-              <a href={exportHref} className="text-[12px] font-medium text-blue-600 hover:underline">
+              <a href={exportHref} className="text-[12px] font-medium text-teal-600 hover:underline">
                 Download as CSV
               </a>
             )}
@@ -262,10 +262,10 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                   return (
                     <tr key={x.candidate_id} className="border-b border-slate-50 last:border-0 dark:border-slate-800/60">
                       <td className="px-4 py-2">
-                        <Link href={`/candidates/${x.candidate_id}`} className="font-medium text-blue-700 hover:underline dark:text-blue-400">
+                        <Link href={`/candidates/${x.candidate_id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">
                           {c?.full_name ?? "Unnamed"}
                         </Link>
-                        {tier && <span className={`ml-2 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ring-1 ${POOL_TIER_PILL[tier]}`}>{POOL_TIER_LABEL[tier]}</span>}
+                        {tier && <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[tier]}`}>{POOL_TIER_LABEL[tier]}</span>}
                       </td>
                       <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{[x.matched_title ?? c?.current_job_title, c?.current_employer].filter(Boolean).join(" at ") || "Not known"}</td>
                       <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{SENIORITY_SHORT[x.seniority] ?? x.seniority}</td>
@@ -298,14 +298,14 @@ function FamilyBlock({ family, rows, p, max }: { family: string; rows: { slug: s
   return (
     <>
       <tr className="bg-slate-50/70 dark:bg-slate-800/30">
-        <td colSpan={METROS.length + 2} className="sticky left-0 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <td colSpan={METROS.length + 2} className="sticky left-0 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
           {family}
         </td>
       </tr>
       {rows.map((r) => (
         <tr key={r.slug} className={`border-b border-slate-50 last:border-0 dark:border-slate-800/60 ${p.cluster === r.slug ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}`}>
           <td className="sticky left-0 z-10 bg-white px-4 py-2 dark:bg-slate-900">
-            <Link href={inventoryHref(p, { cluster: r.slug, metro: null })} className="font-medium text-slate-800 hover:text-blue-600 dark:text-slate-100">
+            <Link href={inventoryHref(p, { cluster: r.slug, metro: null })} className="font-medium text-slate-800 hover:text-teal-600 dark:text-slate-100">
               {r.name}
             </Link>
           </td>

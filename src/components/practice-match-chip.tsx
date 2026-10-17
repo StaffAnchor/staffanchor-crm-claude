@@ -51,7 +51,7 @@ export function PracticeMatchChip({
     : "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300";
 
   return (
-    <div className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full border ${toneClass}`}>
+    <div className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${toneClass}`}>
       <Link href={`/mandates/${mandateId}?tab=candidates`} className="hover:underline">
         {roleTitle} — {clientName}
       </Link>

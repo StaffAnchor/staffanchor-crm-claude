@@ -46,7 +46,7 @@ export default function InviteAgencyForm() {
             <p className="text-xs mt-2 font-mono break-all text-slate-800 dark:text-slate-200">{result.signupUrl}</p>
           )}
         </div>
-        <button onClick={() => setResult(null)} className="text-sm text-blue-600 hover:underline">
+        <button onClick={() => setResult(null)} className="text-sm text-teal-600 hover:underline">
           Invite another
         </button>
       </div>
@@ -80,7 +80,7 @@ export default function InviteAgencyForm() {
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 disabled:opacity-60"
+        className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 disabled:opacity-60"
       >
         {saving ? "Sending..." : "Send invite"}
       </button>

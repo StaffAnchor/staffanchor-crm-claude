@@ -21,7 +21,7 @@ function initials(name: string | null) {
 function Fact({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="min-w-[96px]">
-      <p className="text-[10.5px] uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
       <p className={`text-[12.5px] ${value ? "text-slate-800 dark:text-slate-200" : "text-slate-300 dark:text-slate-600"}`}>{value || "Not known"}</p>
     </div>
   );
@@ -117,12 +117,12 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[12px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{initials(r.full_name)}</div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-blue-600 dark:text-slate-100">
+                  <Link href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
                     {r.full_name ?? "Unnamed"}
                   </Link>
                   <PoolControl candidateId={r.candidate_id} entry={r.pool} compact />
                   {(r.daysSinceTouch == null || r.daysSinceTouch >= COLD_DAYS) && (
-                    <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-800 ring-1 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:ring-sky-800">
+                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800">
                       {r.daysSinceTouch == null ? "Not contacted yet" : `${r.daysSinceTouch} days since contact`}
                     </span>
                   )}
@@ -136,7 +136,7 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
                 {(r.pool.tags ?? []).length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {r.pool.tags.map((t) => (
-                      <span key={t} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11.5px] text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800/60">
+                      <span key={t} className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800/60">
                         {t}
                       </span>
                     ))}
@@ -150,7 +150,7 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
                   <Fact label="CTC" value={ctc(r)} />
                   <Fact label="Notice" value={r.notice_period} />
                 </div>
-                <p className="mt-2 text-[11.5px] text-slate-400">
+                <p className="mt-2 text-xs text-slate-400">
                   Added{r.pool.marked_by_name ? ` by ${r.pool.marked_by_name}` : ""}
                   {r.pool.marked_at ? ` on ${new Date(r.pool.marked_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}
                   {r.lastTouch ? ` · last contact ${r.lastTouch}` : ""}

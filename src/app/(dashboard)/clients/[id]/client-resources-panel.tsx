@@ -122,7 +122,7 @@ export default function ClientResourcesPanel({
               )}
               <span className="font-medium text-slate-700 dark:text-slate-300 truncate">{r.name}</span>
               {r.kind === "link" && r.url && (
-                <a href={r.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate">
+                <a href={r.url} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline truncate">
                   {r.url}
                 </a>
               )}
@@ -139,11 +139,11 @@ export default function ClientResourcesPanel({
       <div className="flex items-center gap-2">
         <button
           onClick={() => setLinkFormOpen((v) => !v)}
-          className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+          className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
         >
           <Plus className="w-3 h-3" /> Add link
         </button>
-        <label className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 cursor-pointer">
+        <label className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1 cursor-pointer">
           <Upload className="w-3 h-3" /> {uploading ? "Uploading..." : "Upload PDF/Word"}
           <input
             type="file"

@@ -47,7 +47,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
           <Trophy className="w-4 h-4 text-amber-500" />
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Client performance</h2>
         </div>
-        <span className="text-[11px] text-slate-400">
+        <span className="text-xs text-slate-400">
           Ranked by submitted → interview conversion · {ranked.length} client{ranked.length === 1 ? "" : "s"} with data
           {withoutData > 0 ? `, ${withoutData} awaiting first submission` : ""}
         </span>
@@ -55,7 +55,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
 
       <div className={`grid gap-4 ${bottom.length ? "grid-cols-2" : "grid-cols-1"}`}>
         <div>
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-emerald-600 mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600 mb-2">
             Best converting
           </p>
           <div className="space-y-2">
@@ -67,7 +67,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
 
         {bottom.length > 0 && (
           <div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-rose-500 mb-2 flex items-center gap-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mb-2 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" /> Needs attention
             </p>
             <div className="space-y-2">
@@ -90,13 +90,13 @@ function LeaderRow({ row, rank, positive }: { row: ClientLeaderRow; rank?: numbe
     >
       <div className="flex items-center gap-2.5 min-w-0">
         {rank && (
-          <span className="w-5 h-5 shrink-0 rounded-ros-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-semibold flex items-center justify-center">
+          <span className="w-5 h-5 shrink-0 rounded-ros-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-semibold flex items-center justify-center">
             {rank}
           </span>
         )}
         <div className="min-w-0">
           <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">{row.name}</p>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-xs text-slate-400">
             {row.stats.submittedPlus} submitted · {row.stats.placed} placed
           </p>
         </div>

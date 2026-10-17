@@ -91,7 +91,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   FOLLOW_UP_ON_OFFER: {
     icon: ArrowRight,
     label: "Offer follow-up",
-    tint: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
   INTERVIEW_REMINDER: {
     icon: CalendarCheck2,
@@ -101,12 +101,12 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   STALE_CANDIDATE: {
     icon: Clock,
     label: "No movement",
-    tint: "bg-orange-50 text-orange-700 ring-orange-200",
+    tint: "bg-amber-50 text-amber-700 ring-amber-200",
   },
   MISSING_ASSESSMENT: {
     icon: ClipboardList,
     label: "Missing assessment",
-    tint: "bg-sky-50 text-sky-700 ring-sky-200",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
   STALE_MANDATE: {
     icon: Compass,
@@ -121,7 +121,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   CLIENT_FEEDBACK_OVERDUE: {
     icon: MessageSquareWarning,
     label: "Client feedback overdue",
-    tint: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
   // A client explicitly clicked Interested / Not interested / Schedule
   // interview on their no-login shortlist link -- see
@@ -141,7 +141,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   INCOMPLETE_PROFILE: {
     icon: UserCog,
     label: "Incomplete profile",
-    tint: "bg-cyan-50 text-cyan-700 ring-cyan-200",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
   // Talent resurfacing (api/lib/talent-resurface.ts): a full-candidate-pool
   // scan found strong "silver medalist" matches already in the database
@@ -151,7 +151,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   RESURFACED_MATCHES: {
     icon: Sparkles,
     label: "New matches found",
-    tint: "bg-violet-50 text-violet-700 ring-violet-200",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
   // A teammate (often an admin who opened the profile but wasn't sure about
   // fit) explicitly asked this recruiter to call a specific candidate --
@@ -162,7 +162,7 @@ const TASK_META: Record<string, { icon: typeof Flame; label: string; tint: strin
   CANDIDATE_CALL_REQUEST: {
     icon: PhoneCall,
     label: "Call requested",
-    tint: "bg-blue-50 text-blue-700 ring-blue-200",
+    tint: "bg-teal-50 text-teal-700 ring-teal-200",
   },
   // The other half of CANDIDATE_CALL_REQUEST's round=2nd/final flow (see
   // applySecondRoundOutcome in mandate-stage.ts): once whoever took that
@@ -240,7 +240,7 @@ const BOX_META: Record<BoxKey, { label: string; description: string; icon: typeo
     label: "Mandate Tasks",
     description: "Interviews, client feedback, stale candidates -- everything tied to a live mandate.",
     icon: Briefcase,
-    tint: "border-blue-200 bg-blue-50/60 text-blue-900",
+    tint: "border-teal-200 bg-teal-50/60 text-teal-900",
   },
   pipeline: {
     label: "Build Pipeline",
@@ -583,7 +583,7 @@ export default function InboxView({
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-            <Flame className="w-6 h-6 text-orange-500" />
+            <Flame className="w-6 h-6 text-amber-500" />
             My Desk
           </h1>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
@@ -592,7 +592,7 @@ export default function InboxView({
               : `${recruiterScopedItems.length} open item${recruiterScopedItems.length === 1 ? "" : "s"} across the three boxes below`}
           </p>
         </div>
-        <div className="text-[11px] text-slate-400 hidden md:flex items-center gap-3">
+        <div className="text-xs text-slate-400 hidden md:flex items-center gap-3">
           <span>
             <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">J</kbd>{" "}
             <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">K</kbd> navigate
@@ -647,7 +647,7 @@ export default function InboxView({
                   {count}
                 </span>
               </div>
-              <p className={`text-[11.5px] ${active ? "opacity-80" : "text-slate-400"}`}>{meta.description}</p>
+              <p className={`text-xs ${active ? "opacity-80" : "text-slate-400"}`}>{meta.description}</p>
             </button>
           );
         })}
@@ -778,16 +778,16 @@ export default function InboxView({
                       }`}
                     >
                       <GroupIcon className="w-3 h-3 text-slate-400" />
-                      <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         {GROUP_META[group].label}
                       </span>
-                      <span className="text-[10px] text-slate-400">· {groupCounts.get(group) ?? 0}</span>
+                      <span className="text-xs text-slate-400">· {groupCounts.get(group) ?? 0}</span>
                     </div>
                   )}
                   <button
                     onClick={() => setFocusedIdx(idx)}
                     className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 last:border-b-0 transition-colors ${
-                      isFocused ? "bg-blue-50/70" : "hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
+                      isFocused ? "bg-teal-50/70" : "hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
                     }`}
                   >
                     <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ring-1 ${meta.tint}`}>
@@ -814,29 +814,29 @@ export default function InboxView({
                       {item.task_type === "INCOMPLETE_PROFILE" ? (
                         <span className="flex flex-wrap items-center gap-1 mt-1">
                           {item.candidate_category && (
-                            <span className="inline-flex items-center rounded-md bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 text-[10.5px] font-medium px-1.5 py-0.5">
+                            <span className="inline-flex items-center rounded-md bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-xs font-medium px-1.5 py-0.5">
                               {CATEGORY_LABEL[item.candidate_category] ?? item.candidate_category}
                             </span>
                           )}
                           {item.candidate_sub_domain && (
-                            <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-medium px-1.5 py-0.5">
+                            <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium px-1.5 py-0.5">
                               {item.candidate_sub_domain}
                             </span>
                           )}
                           {item.candidate_experience_years != null && (
-                            <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-medium px-1.5 py-0.5">
+                            <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium px-1.5 py-0.5">
                               {item.candidate_experience_years} yrs exp
                             </span>
                           )}
                           {(item.candidate_current_job_title || item.candidate_current_employer) && (
-                            <span className="text-[10.5px] text-slate-400 truncate">
+                            <span className="text-xs text-slate-400 truncate">
                               {[item.candidate_current_job_title, item.candidate_current_employer].filter(Boolean).join(" @ ")}
                             </span>
                           )}
-                          <span className="text-[10.5px] text-slate-300">· {timeAgo(item.created_at)}</span>
+                          <span className="text-xs text-slate-300">· {timeAgo(item.created_at)}</span>
                         </span>
                       ) : (
-                        <span className="block text-[11px] text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
+                        <span className="block text-xs text-slate-400 mt-0.5">{timeAgo(item.created_at)}</span>
                       )}
                     </span>
                     {isResolving ? (
@@ -1042,7 +1042,7 @@ function ContextDrawer({
           <Icon className="w-5 h-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
             {meta.label}
             {item.is_unassigned ? (
               <Badge tone="success" size="sm" icon={<Users className="w-2.5 h-2.5" />}>
@@ -1061,10 +1061,10 @@ function ContextDrawer({
       {item.task_type === "INCOMPLETE_PROFILE" &&
         (item.candidate_category || item.candidate_sub_domain || item.candidate_experience_years != null || item.candidate_current_job_title) && (
           <div className="rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2.5 mb-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">At a glance</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1.5">At a glance</p>
             <div className="flex flex-wrap items-center gap-1.5">
               {item.candidate_category && (
-                <Badge tone="neutral" size="sm" className="!bg-cyan-50 !text-cyan-700 dark:!bg-cyan-950/40 dark:!text-cyan-300 normal-case tracking-normal">
+                <Badge tone="neutral" size="sm" className="!bg-teal-50 !text-teal-700 dark:!bg-teal-950/40 dark:!text-teal-300 normal-case tracking-normal">
                   {CATEGORY_LABEL[item.candidate_category] ?? item.candidate_category}
                 </Badge>
               )}
@@ -1117,8 +1117,8 @@ function ContextDrawer({
       {/* AI take: why this specific task matters + what to do, generated
           automatically on open (see aiInsightCache above) -- a sharper,
           situation-specific gloss on top of the rule-computed task. */}
-      <div className="flex items-start gap-2 rounded-ros-md bg-indigo-50/70 border border-indigo-100 px-3 py-2.5 mb-4">
-        <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-2 rounded-ros-md bg-teal-50/70 border border-teal-100 px-3 py-2.5 mb-4">
+        <Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0 mt-0.5" />
         {!aiInsight || aiInsight.status === "loading" ? (
           <span className="text-[12px] text-slate-400 italic">Thinking...</span>
         ) : aiInsight.status === "error" ? (
@@ -1213,12 +1213,12 @@ function ContextDrawer({
               onClose={() => setReviewing(false)}
             />
           )}
-          <p className="mb-2 text-[11px] leading-4 text-slate-400">
+          <p className="mb-2 text-xs leading-4 text-slate-400">
             Auto: StaffAnchor&apos;s WhatsApp sends the approved template for this task (interview coordination or offer follow-up) once you review the
             message and press Send. Meta charges per message.
           </p>
           {sendResult && (
-            <p className={`text-[11px] mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500 dark:text-slate-400"}`}>
+            <p className={`text-xs mb-3 ${sendResult.ok ? "text-emerald-600" : "text-slate-500 dark:text-slate-400"}`}>
               {sendResult.message}
             </p>
           )}
@@ -1235,7 +1235,7 @@ function ContextDrawer({
           className="flex-1 !bg-emerald-600 hover:!bg-emerald-500"
         >
           Mark done
-          <kbd className="ml-1 text-[10px] opacity-70 font-mono">D</kbd>
+          <kbd className="ml-1 text-xs opacity-70 font-mono">D</kbd>
         </Button>
         <SnoozeMenu onSnooze={(until) => onSnooze(item.id, until)} disabled={resolving} />
         <Button
@@ -1246,7 +1246,7 @@ function ContextDrawer({
           icon={<X className="w-3.5 h-3.5" />}
         >
           Dismiss
-          <kbd className="ml-1 text-[10px] opacity-70 font-mono">X</kbd>
+          <kbd className="ml-1 text-xs opacity-70 font-mono">X</kbd>
         </Button>
       </div>
     </div>

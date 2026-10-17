@@ -26,7 +26,7 @@ export default async function DeletedMandatesPage() {
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-ros-lg overflow-hidden shadow-ros-sm">
         <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-semibold uppercase tracking-wider">
             <tr>
               <th className="text-left px-4 py-2.5">Role</th>
               <th className="text-left px-3 py-2.5">Client</th>
@@ -53,7 +53,7 @@ export default async function DeletedMandatesPage() {
                   <td className="px-3 py-2.5 text-slate-400 text-[12px]">{new Date(d.deleted_at).toLocaleString()}</td>
                   <td className="px-3 py-2.5 text-right">
                     {d.restored_at ? (
-                      <span className="text-[11.5px] text-emerald-600">Restored</span>
+                      <span className="text-xs text-emerald-600">Restored</span>
                     ) : (
                       <RestoreMandateButton trashId={d.id} roleTitle={d.role_title ?? "this mandate"} />
                     )}

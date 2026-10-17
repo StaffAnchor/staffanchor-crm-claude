@@ -33,7 +33,7 @@ export default function ReferralDetailsToggle({ details }: { details: ReferralDe
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="text-[11px] font-medium text-slate-500 hover:text-slate-900 underline underline-offset-2"
+        className="text-xs font-medium text-slate-500 hover:text-slate-900 underline underline-offset-2"
       >
         {open ? "Hide details" : "View details"}
       </button>
@@ -74,7 +74,7 @@ export default function ReferralDetailsToggle({ details }: { details: ReferralDe
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
       <div className="text-slate-700 font-medium">{value}</div>
     </div>
   );

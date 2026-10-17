@@ -35,7 +35,7 @@ export default function RestoreMandateButton({ trashId, roleTitle }: { trashId: 
         {restoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
         Restore
       </button>
-      {error && <p className="text-[11px] text-red-600 max-w-[220px] text-right">{error}</p>}
+      {error && <p className="text-xs text-red-600 max-w-[220px] text-right">{error}</p>}
     </div>
   );
 }

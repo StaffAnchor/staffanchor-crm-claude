@@ -301,18 +301,18 @@ export default async function MandatesPage({
       <aside className="w-[188px] shrink-0 hidden lg:block">
         <div className="sticky top-20 space-y-5">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Filter by</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Filter by</p>
             {hasAnyFilter && (
-              <Link href="/mandates" className="text-[11px] text-blue-600 hover:underline">
+              <Link href="/mandates" className="text-xs text-teal-600 hover:underline">
                 Clear all
               </Link>
             )}
           </div>
           {filterGroups.map((group) => (
             <div key={group.key}>
-              <p className="text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 mb-1.5">{group.label}</p>
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">{group.label}</p>
               {group.values.length === 0 ? (
-                <p className="text-[11.5px] text-slate-300">No data yet</p>
+                <p className="text-xs text-slate-300">No data yet</p>
               ) : (
                 <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
                   {group.values.map((v) => {
@@ -323,7 +323,7 @@ export default async function MandatesPage({
                         href={filterHref(group.key as "category" | "city" | "client" | "recruiter", v.value)}
                         className={`block truncate text-[12px] rounded-md px-2 py-1 transition-colors duration-150 ease-ros ${
                           isActive
-                            ? "bg-blue-50 text-blue-700 font-medium"
+                            ? "bg-teal-50 text-teal-700 font-medium"
                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800"
                         }`}
                         title={v.label}
@@ -342,7 +342,7 @@ export default async function MandatesPage({
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between mb-5">
           <div>
-            <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">Mandates</h1>
+            <h1 className="ros-page-title">Mandates</h1>
             <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
               {(mandates ?? []).length} client role{(mandates ?? []).length === 1 ? "" : "s"}
               {hasAnyFilter ? " matching current filters" : ""}
@@ -358,7 +358,7 @@ export default async function MandatesPage({
                 href={recruiter === currentUser.id ? "/mandates" : filterHref("recruiter", currentUser.id)}
                 className={`flex items-center gap-1.5 text-[12px] font-semibold rounded-lg px-2.5 py-1.5 transition-colors ${
                   recruiter === currentUser.id
-                    ? "bg-blue-600 text-white"
+                    ? "bg-teal-600 text-white"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
