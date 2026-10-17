@@ -24,12 +24,13 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const card = cardRow.card as RoleCard;
   const also = ((mandateRow.also_clusters as string[] | null) ?? []).filter((c) => c !== mandateRow.role_cluster);
 
-  const [{ data: clusterRows }, { data: worldRows }, { data: edgeRows }, { data: linkRows }, { data: dismissedRows }] = await Promise.all([
+  const [{ data: clusterRows }, { data: worldRows }, { data: edgeRows }, { data: linkRows }, { data: dismissedRows }, { data: outreachRows }] = await Promise.all([
     supabase.from("role_clusters").select("slug, name").order("sort_order"),
     supabase.from("selling_worlds").select("slug, name").order("sort_order"),
     supabase.from("selling_world_edges").select("a, b, weight"),
     supabase.from("candidate_mandate_links").select("candidate_id, match_source").eq("mandate_id", mandateId),
     supabase.from("match_dismissals").select("candidate_id").eq("mandate_id", mandateId),
+    supabase.from("mandate_outreach").select("candidate_id, status, sent_at").eq("mandate_id", mandateId),
   ]);
   const clusters = (clusterRows ?? []) as { slug: string; name: string }[];
   const worlds = (worldRows ?? []) as { slug: string; name: string }[];
@@ -65,7 +66,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
     <div className="space-y-4">
       <RoleCardEditor key={JSON.stringify(card)} mandateId={mandateId} card={card} confirmed={!!cardRow.confirmed} clusters={clusters} worlds={worlds} />
       <AlsoTypesBar mandateId={mandateId} main={mandateRow.role_cluster} initial={also} />
-      <RankedGroups mandateId={mandateId} ranked={ranked.slice(0, 120)} />
+      <RankedGroups mandateId={mandateId} ranked={ranked.slice(0, 120)} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, or marked not a fit, is left out.
       </p>

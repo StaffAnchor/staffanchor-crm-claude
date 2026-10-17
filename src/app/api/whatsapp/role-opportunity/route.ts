@@ -116,6 +116,7 @@ export async function POST(req: NextRequest) {
     });
     if (res.ok) {
       sent++;
+      await admin.from("mandate_outreach").upsert({ mandate_id: mandateId, candidate_id: c.id, channel: "whatsapp", status: "sent", sent_by: user.id, sent_at: new Date().toISOString(), replied_at: null }, { onConflict: "mandate_id,candidate_id" });
       const contact = (await store.getContact(c.key)) ?? (await store.createContact(c.key));
       void contact;
       await store.updateContact(c.key, { kind: "jobseeker", kind_source: "manual", candidate_id: c.id });

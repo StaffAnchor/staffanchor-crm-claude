@@ -111,10 +111,12 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   // start questioning someone who just said they are interested); "Not now" is recorded and left alone.
   const tapped = m.type === "button" && m.text !== null ? m.text.trim().toLowerCase() : "";
   if (tapped === "yes, share details" || tapped === "yes share details") {
+    if (contact.candidate_id) await store.recordOutreachReply?.(contact.candidate_id, "interested").catch(() => {});
     await store.updateContact(key, { ...patch, needs_human: true, needs_human_reason: "Tapped Yes on a role opportunity. Send them the details." });
     return { action: "silent", kind: contact.kind, replies: [] };
   }
   if (tapped === "not now") {
+    if (contact.candidate_id) await store.recordOutreachReply?.(contact.candidate_id, "not_now").catch(() => {});
     if (Object.keys(patch).length) await store.updateContact(key, patch);
     return { action: "silent", kind: contact.kind, replies: [] };
   }
