@@ -4,8 +4,7 @@ import {
   GROUP_BAR,
   GROUP_BLURB,
   GROUP_LABEL,
-  OTHER_SUBGROUP,
-  SUBGROUPS,
+  SUBGROUPS_BY_GROUP,
   type GroupOverview,
   type CvCoverage,
   type ProfileGroup,
@@ -56,12 +55,12 @@ export default function ProfileGroupsStrip({
   const total = Math.max(1, overview.total);
   const count = (g: ProfileGroup) => overview.groups[g]?.n ?? 0;
   const pct = (n: number) => Math.round((n / total) * 100);
-  const nonSalesTotal = count("non_sales");
-  const subRows = [...SUBGROUPS, OTHER_SUBGROUP]
-    .map((name) => ({ name, n: overview.subgroups[name] ?? 0 }))
-    .filter((s) => s.n > 0)
-    .sort((a, b) => b.n - a.n);
-  const maxSub = Math.max(1, ...subRows.map((s) => s.n));
+  // Each group's sub-groups, biggest first. Names come from one fixed list shared with the sorting in the database.
+  const subRowsFor = (g: ProfileGroup) =>
+    (SUBGROUPS_BY_GROUP[g as keyof typeof SUBGROUPS_BY_GROUP] ?? [])
+      .map((name) => ({ name, n: overview.subgroups[name] ?? 0 }))
+      .filter((s) => s.n > 0)
+      .sort((a, b) => b.n - a.n);
   const legend: ProfileGroup[] = [
     "b2b_sales",
     "b2c_sales",
@@ -139,7 +138,6 @@ export default function ProfileGroupsStrip({
           const info = overview.groups[g];
           const n = info?.n ?? 0;
           const active = activeGroup === g && !activeSubgroup;
-          const inds = overview.industries[g] ?? [];
           const verified =
             n > 0 ? Math.round(((info?.high ?? 0) / n) * 100) : 0;
           const isNon = g === "non_sales";
@@ -177,61 +175,33 @@ export default function ProfileGroupsStrip({
                 </div>
               </Link>
 
-              {!isNon && inds.length > 0 && (
-                <div className="mt-3">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Top industries
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {inds.slice(0, 4).map((i) => (
-                      <span
-                        key={i.name}
-                        className="rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-slate-700"
-                      >
-                        {i.name} · {i.n}
-                      </span>
-                    ))}
+              {(() => {
+                const rows = subRowsFor(g);
+                const maxSub = Math.max(1, ...rows.map((r) => r.n));
+                return (
+                  <div className={`mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 ${isNon ? "sm:grid-cols-2" : ""}`}>
+                    {rows.map((sRow) => {
+                      const subActive = activeGroup === g && activeSubgroup === sRow.name;
+                      return (
+                        <Link
+                          key={sRow.name}
+                          href={hrefFor(g, sRow.name)}
+                          className={`group rounded-md px-1.5 py-1 transition hover:bg-white/80 dark:hover:bg-slate-800/60 ${subActive ? "bg-white ring-1 ring-slate-300 dark:bg-slate-800" : ""}`}
+                        >
+                          <div className="flex items-start justify-between gap-2 text-xs">
+                            <span className="leading-tight text-slate-700 dark:text-slate-200">{sRow.name}</span>
+                            <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{sRow.n}</span>
+                          </div>
+                          <div className="mt-0.5 h-1 rounded-full bg-white/70 dark:bg-slate-800/60">
+                            <div className={`h-1 rounded-full ${GROUP_BAR[g]}`} style={{ width: `${Math.max(6, (sRow.n / maxSub) * 100)}%` }} />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                    {rows.length === 0 && <p className="text-[12px] text-slate-400">Nothing sorted here yet.</p>}
                   </div>
-                </div>
-              )}
-
-              {isNon && (
-                <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
-                  {subRows.map((s) => {
-                    const subActive =
-                      activeGroup === "non_sales" && activeSubgroup === s.name;
-                    return (
-                      <Link
-                        key={s.name}
-                        href={hrefFor("non_sales", s.name)}
-                        className={`group rounded-md px-1.5 py-1 transition hover:bg-white/80 dark:hover:bg-slate-800/60 ${subActive ? "bg-white ring-1 ring-amber-300 dark:bg-slate-800" : ""}`}
-                      >
-                        <div className="flex items-start justify-between gap-2 text-xs">
-                          <span className="leading-tight text-slate-700 dark:text-slate-200">
-                            {s.name}
-                          </span>
-                          <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">
-                            {s.n}
-                          </span>
-                        </div>
-                        <div className="mt-0.5 h-1 rounded-full bg-amber-100 dark:bg-amber-950/40">
-                          <div
-                            className="h-1 rounded-full bg-amber-400"
-                            style={{
-                              width: `${Math.max(6, (s.n / maxSub) * 100)}%`,
-                            }}
-                          />
-                        </div>
-                      </Link>
-                    );
-                  })}
-                  {nonSalesTotal === 0 && (
-                    <p className="text-[12px] text-slate-400">
-                      No non-sales profiles yet.
-                    </p>
-                  )}
-                </div>
-              )}
+                );
+              })()}
               <div
                 className="mt-auto pt-3"
                 title="Profiles where a read CV makes the group clear. The rest are grouped from the title and may be refined when a CV is read."

@@ -685,7 +685,7 @@ export default async function CandidateDetailPage({
             />
           </div>
 
-          <ProfileChecklist candidateId={candidate.id} candidate={candidate} roleLevelKnown={roleLevelKnown} group={(candidate.profile_group as string | null) ?? null} subGroup={(candidate.sub_group as string | null) ?? null} />
+          <ProfileChecklist candidate={candidate} roleLevelKnown={roleLevelKnown} group={(candidate.profile_group as string | null) ?? null} subGroup={(candidate.profile_subgroup as string | null) ?? null} />
 
           {redFlags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mt-4">

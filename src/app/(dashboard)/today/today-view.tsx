@@ -43,6 +43,8 @@ function DecisionRow({ d }: { d: Decision }) {
       </div>
       <Link
         href={d.href}
+        target="_blank"
+        rel="noopener noreferrer"
         className="shrink-0 self-start sm:self-auto ml-5 sm:ml-0 inline-flex items-center gap-1.5 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] font-medium text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 ros-focusable"
       >
         {d.actionLabel}
@@ -55,7 +57,7 @@ function DecisionRow({ d }: { d: Decision }) {
 function NextUpRow({ t }: { t: NextUp }) {
   return (
     <li className="border-t border-slate-100 dark:border-slate-800 first:border-t-0">
-      <Link href={t.href} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ros-focusable">
+      <Link href={t.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ros-focusable">
         <span className={`h-2 w-2 rounded-full shrink-0 ${t.priority === "high" ? "bg-rose-500" : "bg-slate-400"}`} aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">{t.title}</p>
@@ -73,6 +75,8 @@ function RoleLine({ r }: { r: RoleRow }) {
     <li className="border-t border-slate-100 dark:border-slate-800 first:border-t-0">
       <Link
         href={`/mandates/${r.mandateId}`}
+        target="_blank"
+        rel="noopener noreferrer"
         className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1.8fr)_repeat(4,minmax(0,0.5fr))_minmax(0,1fr)] gap-x-3 gap-y-1 items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ros-focusable"
       >
         <div className="min-w-0">

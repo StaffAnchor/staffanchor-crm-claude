@@ -83,7 +83,7 @@ export default function FocusStack({ cards, greeting, firstName, fees }: { cards
             {current.candidate?.phone && current.kind !== "chat" && (
               <CallButton candidateId={current.candidate.id} mandateId={current.mandateId} phone={current.candidate.phone} className="inline-flex min-h-[46px] items-center gap-2 rounded-full bg-teal-600 px-6 text-[15px] font-semibold text-white hover:bg-teal-500" />
             )}
-            <Link href={current.href} className={`inline-flex min-h-[46px] items-center gap-2 rounded-full px-6 text-[15px] font-semibold ${current.candidate?.phone && current.kind !== "chat" ? "border border-slate-300 text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800" : "bg-teal-600 text-white hover:bg-teal-500"}`}>
+            <Link href={current.href} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-[46px] items-center gap-2 rounded-full px-6 text-[15px] font-semibold ${current.candidate?.phone && current.kind !== "chat" ? "border border-slate-300 text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800" : "bg-teal-600 text-white hover:bg-teal-500"}`}>
               {current.kind === "chat" ? <MessageCircle className="h-4 w-4" /> : null}
               {current.actionLabel}
               {current.kind !== "chat" && <ArrowRight className="h-4 w-4" />}

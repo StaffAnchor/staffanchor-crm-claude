@@ -17,5 +17,5 @@ export const profileLabel = (group: string | null | undefined, subGroup: string 
 export const SUB_GROUPS: Record<string, string[]> = {
   b2b_sales: ["SaaS and Software", "Enterprise Tech and IT Services", "Industrial and Manufacturing", "BFSI and Fintech", "EdTech (institutions)", "Channel and Partnerships", "Inside Sales (B2B)", "Other B2B"],
   b2c_sales: ["Inside Sales (B2C)", "Retail Sales", "EdTech (counselling)", "Insurance and Loans", "Real Estate and Auto", "FMCG and Consumer", "Telecom", "Other B2C"],
-  non_sales: ["Finance (CA)", "Finance and Accounts", "HR and Talent", "Marketing", "Operations and Supply Chain", "Customer Support", "Product and Tech", "Design (Interior, UX)", "Legal", "Other non-sales"],
+  non_sales: ["Finance (CA)", "Finance and Accounts", "HR and Talent", "Marketing", "Operations and Supply Chain", "Customer Support", "Product and Tech", "Design (Interior, UX)", "Media and Content", "Legal", "Healthcare and Pharma", "Strategy and General Management", "Other non-sales"],
 };
