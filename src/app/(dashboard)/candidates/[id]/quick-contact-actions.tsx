@@ -7,6 +7,7 @@ import WhatsAppMenu from "@/components/whatsapp-menu";
 import { candidateTemplates } from "@/lib/whatsapp-link";
 import { useMyFirstName } from "@/lib/use-my-name";
 import { createClient } from "@/lib/supabase/client";
+import { startCall } from "@/lib/calls";
 
 // Wraps the header's Call / WhatsApp / Email links so each click also
 // fire-and-forgets a row into `activities` -- the same table the Activity
@@ -51,9 +52,16 @@ export default function QuickContactActions({
   return (
     <>
       {phone && (
-        <a href={`tel:${phone}`} className={linkClass} onClick={() => logActivity(candidateId, "call")}>
+        <button
+          type="button"
+          className={linkClass}
+          onClick={() => {
+            logActivity(candidateId, "call");
+            void startCall({ candidateId, phone });
+          }}
+        >
           <Phone className="w-3 h-3" /> Call
-        </a>
+        </button>
       )}
       <WhatsAppMenu
         phone={phone}

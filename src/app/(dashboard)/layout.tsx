@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TopNav from "./topnav";
 import CopilotPalette from "@/components/copilot-palette";
+import CallSheet from "@/components/call-sheet";
 
 export default async function DashboardLayout({
   children,
@@ -103,6 +104,7 @@ export default async function DashboardLayout({
       />
       <CopilotPalette role={profile?.role ?? "recruiter"} />
       <main id="main-content">{children}</main>
+      <CallSheet />
     </div>
   );
 }

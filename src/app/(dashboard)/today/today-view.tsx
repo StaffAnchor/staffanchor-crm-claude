@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CalendarClock, Hourglass, Handshake, Trophy, CheckCircle2, ListChecks } from "lucide-react";
+import FocusStack from "./focus-stack";
+import type { FocusData } from "@/lib/today-focus";
 import type { Decision, NextUp, RoleHealth, RoleRow, TodayDesk, Tone } from "@/lib/today-desk";
 
 const card = "rounded-ros-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm";
@@ -94,22 +96,16 @@ function RoleLine({ r }: { r: RoleRow }) {
   );
 }
 
-export default function TodayView({ desk }: { desk: TodayDesk }) {
+export default function TodayView({ desk, focus }: { desk: TodayDesk; focus: FocusData }) {
   const { metrics } = desk;
   const needCount = desk.decisions.length + desk.moreDecisions;
   const placements = metrics.placements;
 
   return (
     <div className="max-w-[1200px] mx-auto px-5 py-8">
-      <div className="mb-6">
-        <h1 className="text-[24px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {desk.greeting}, {desk.firstName}.
-        </h1>
-        <p className="mt-1 text-[14px] text-slate-500 dark:text-slate-400">
-          {needCount === 0 ? "Nothing needs a decision from you right now." : `${needCount} ${needCount === 1 ? "thing needs" : "things need"} you today.`}
-        </p>
-      </div>
+      <FocusStack cards={focus.cards} greeting={desk.greeting} firstName={desk.firstName} fees={focus.feesInPlay} />
 
+      <p className="mb-3 text-[12px] font-medium uppercase tracking-wide text-slate-400">The wider picture</p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Tile
           icon={CalendarClock}
