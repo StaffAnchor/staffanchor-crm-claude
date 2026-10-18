@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 // the less frequent pages sit under "More". Talent board and Practice Pool were folded into the Inventory and the
 // role matches on each mandate.
 const TABS = [
+  { href: "/candidates/pipeline", label: "Pipeline" },
   { href: "/candidates/inventory", label: "Inventory" },
   { href: "/candidates", label: "Candidates" },
   { href: "/saas-practice", label: "B2B SaaS" },

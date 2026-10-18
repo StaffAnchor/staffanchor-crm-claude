@@ -33,6 +33,7 @@ import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
 import { missingKeyDetails } from "@/lib/key-details";
 import { recordTiming } from "@/lib/page-timing";
+import ProfileChecklist from "@/components/profile-checklist";
 import NextAction, { type NextActionItem } from "@/components/next-action";
 import ResumePreview from "./resume-preview";
 import DeleteCandidateButton from "./delete-candidate-button";
@@ -119,6 +120,7 @@ export default async function CandidateDetailPage({
     viewer: Promise.resolve(supabase.auth.getUser()).then(async ({ data: { user } }) => (user ? { user, profile: (await supabase.from("profiles").select("full_name, email").eq("id", user.id).single()).data } : { user: null, profile: null })),
     passport: Promise.resolve(supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle()),
     cvFacts: Promise.resolve(supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle()),
+    levelTags: Promise.resolve(supabase.from("candidate_role_tags").select("seniority").eq("candidate_id", id).eq("is_current", true)),
     notes: Promise.resolve(supabase.from("recruiter_notes").select("id, note_type, content, created_at, author_id").eq("candidate_id", id).order("created_at", { ascending: false })),
     audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
     pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
@@ -463,6 +465,8 @@ export default async function CandidateDetailPage({
   }
 
   recordTiming("candidate", renderStart);
+  const { data: levelRows } = await q.levelTags;
+  const roleLevelKnown = ((levelRows ?? []) as { seniority: string }[]).some((r) => r.seniority && r.seniority !== "unclear");
   const missingNow = missingKeyDetails(candidate);
   const activeLinks = (links ?? []).filter((l) => !["rejected", "pulled_back"].includes(l.stage));
   let nextAction: NextActionItem | null = null;
@@ -680,6 +684,8 @@ export default async function CandidateDetailPage({
               }
             />
           </div>
+
+          <ProfileChecklist candidateId={candidate.id} candidate={candidate} roleLevelKnown={roleLevelKnown} group={(candidate.profile_group as string | null) ?? null} subGroup={(candidate.sub_group as string | null) ?? null} />
 
           {redFlags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mt-4">
