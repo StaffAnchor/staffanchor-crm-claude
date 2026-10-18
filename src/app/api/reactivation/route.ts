@@ -31,11 +31,15 @@ export async function POST(req: NextRequest) {
   const channel = body.channel === "email" ? "email" : "whatsapp";
   const cluster = typeof body.cluster === "string" ? body.cluster : "";
   if (!cluster) return NextResponse.json({ error: "Choose a role type." }, { status: 400 });
-  const { data: cl } = await admin.from("role_clusters").select("name").eq("slug", cluster).maybeSingle();
+  const { data: cl } = await admin.from("role_clusters").select("name, track").eq("slug", cluster).maybeSingle();
   if (!cl) return NextResponse.json({ error: "Unknown role type." }, { status: 400 });
   // "SDR / BDR / ADR (outbound prospecting)" reads better as "SDR / BDR / ADR" inside a sentence.
   const role = oneLine(String(cl.name).replace(/\s*\(.*\)\s*$/, ""));
 
+  // The approved WhatsApp message talks about "new sales roles", so it is only for people in sales. Email is wording-free.
+  if (channel === "whatsapp" && cl.track === "non_sales") {
+    return NextResponse.json({ ok: false, error: "The WhatsApp message is about sales roles, so it can't go to non-sales people. Use email for this group." });
+  }
   const template = reactivationTemplate();
   if (channel === "whatsapp" && !template) return NextResponse.json({ ok: false, needsTemplate: true, error: "The WhatsApp template for this isn't set up yet." });
   if (channel === "email" && (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD)) return NextResponse.json({ error: "Email sending isn't configured." }, { status: 503 });
@@ -56,7 +60,7 @@ export async function POST(req: NextRequest) {
         template!,
         chosen.map((c) => {
           const first = oneLine((c.full_name ?? "").trim().split(/\s+/)[0] || "there");
-          return { id: c.id, first, phone: c.phone ?? null, bodyParams: [first, role], preview: renderReactivationMessage(first, role) };
+          return { id: c.id, first, phone: c.phone ?? null, bodyParams: [first], preview: renderReactivationMessage(first) };
         })
       );
     } else {
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   const people = all.slice(0, 60).map((r) => ({ id: r.id, name: r.full_name ?? "Unnamed", line: [r.current_job_title, r.current_employer].filter(Boolean).join(" at "), metro: r.metro, level: r.seniority, tier: r.pool_tier }));
   if (channel === "whatsapp") {
-    return NextResponse.json({ ok: true, channel, total: all.length, perPress: WA_MAX_PER_PRESS, role, people, sample: { text: renderReactivationMessage(oneLine((all[0]?.full_name ?? "Priya").trim().split(/\s+/)[0] || "there"), role) } });
+    return NextResponse.json({ ok: true, channel, total: all.length, perPress: WA_MAX_PER_PRESS, role, people, sample: { text: renderReactivationMessage(oneLine((all[0]?.full_name ?? "Priya").trim().split(/\s+/)[0] || "there")) } });
   }
   const { cap, room } = await emailRoom(admin);
   const sample = buildReactivationEmail({ id: "00000000-0000-0000-0000-000000000000", full_name: all[0]?.full_name ?? "Priya Sharma" }, role);
