@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, Paperclip, Send, UserPlus } from "lucide-react";
+import { AlertCircle, Archive, ArchiveRestore, Bot, Check, CheckCheck, Clock, MessageCircle, MoreHorizontal, Paperclip, Send, UserPlus } from "lucide-react";
 import { thankYouMessage } from "@/lib/missing-message";
 import AskMissingDetails from "../candidates/[id]/ask-missing-details";
 import { WINDOW_MS, formatPhone, type WaConversation } from "@/lib/whatsapp-threads";
+import { STATE_META, ago, statusOf, type WaState, type WaStatus } from "@/lib/whatsapp-status";
 
 type Kind = "unsorted" | "jobseeker" | "employer" | "referrer" | "other";
 export type ContactInfo = {
@@ -21,23 +22,14 @@ export type ContactInfo = {
   botStep: string | null;
   displayName: string | null;
 };
-type Tab = "jobseeker" | "employer" | "other" | "unsorted" | "archived";
+type View = WaState | "all";
+type Who = "all" | "jobseeker" | "employer" | "other";
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: "jobseeker", label: "Jobseekers" },
-  { key: "employer", label: "Employers" },
-  { key: "other", label: "Referrers & other" },
-  { key: "unsorted", label: "Unsorted" },
-  { key: "archived", label: "Archived" },
-];
 const KIND_LABEL: Record<Kind, string> = { unsorted: "Unsorted", jobseeker: "Jobseeker", employer: "Employer", referrer: "Referrer", other: "Other" };
-const tabOf = (info: ContactInfo | undefined): Tab => {
-  if (info?.archived) return "archived";
+const whoOf = (info: ContactInfo | undefined): Who => {
   const k = info?.kind ?? "unsorted";
-  return k === "referrer" || k === "other" ? "other" : k;
+  return k === "jobseeker" ? "jobseeker" : k === "employer" ? "employer" : "other";
 };
-
-type Filter = "needs" | "all";
 
 const QUICK_REPLIES = [
   "Thanks for reaching out to StaffAnchor! Could you share your current CTC, expected CTC and notice period?",
@@ -48,13 +40,14 @@ const QUICK_REPLIES = [
 
 const clock = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-function ago(iso: string, now: number) {
-  const m = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
-  if (m < 1) return "now";
-  if (m < 60) return `${m}m`;
-  if (m < 1440) return `${Math.round(m / 60)}h`;
-  return `${Math.round(m / 1440)}d`;
-}
+const TONE: Record<string, { tile: string; dot: string; banner: string }> = {
+  rose: { tile: "border-rose-200 bg-rose-50/70 dark:border-rose-900 dark:bg-rose-950/20", dot: "bg-rose-500", banner: "border-rose-100 bg-rose-50 text-rose-900 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-200" },
+  teal: { tile: "border-teal-200 bg-teal-50/70 dark:border-teal-900 dark:bg-teal-950/20", dot: "bg-teal-500", banner: "border-teal-100 bg-teal-50 text-teal-900 dark:border-teal-900 dark:bg-teal-950/20 dark:text-teal-200" },
+  slate: { tile: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900", dot: "bg-slate-400", banner: "border-slate-100 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300" },
+  amber: { tile: "border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/20", dot: "bg-amber-500", banner: "border-amber-100 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200" },
+};
+
+const TILES: WaState[] = ["needs_you", "assistant", "waiting", "failed"];
 
 export default function WhatsAppInbox({
   conversations,
@@ -72,8 +65,8 @@ export default function WhatsAppInbox({
   suggestions?: Record<string, { candidateId: string; name: string; phone: string | null }>;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("jobseeker");
-  const [filter, setFilter] = useState<Filter>("needs");
+  const [view, setView] = useState<View>("needs_you");
+  const [who, setWho] = useState<Who>("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -98,16 +91,40 @@ export default function WhatsAppInbox({
   }, [router]);
 
   const nameOf = (c: WaConversation) => (c.candidateId && names[c.candidateId]) || contacts[c.key]?.displayName || formatPhone(c.phone);
-  const inTab = useMemo(() => {
-    const m: Record<Tab, WaConversation[]> = { jobseeker: [], employer: [], other: [], unsorted: [], archived: [] };
-    for (const c of conversations) m[tabOf(contacts[c.key])].push(c);
+
+  // Every conversation gets one state. The page is organised by that: what needs me, what is the assistant doing, who
+  // are we waiting on. "Who they are" (jobseeker, employer) is a small filter, not the main structure.
+  const statuses = useMemo(() => {
+    const m = new Map<string, WaStatus>();
+    for (const c of conversations) m.set(c.key, statusOf(c, contacts[c.key], now));
     return m;
-  }, [conversations, contacts]);
-  const tabCounts = (t: Tab) => inTab[t].filter((c) => c.needsReply || contacts[c.key]?.needsHuman).length;
-  const pool = inTab[tab];
-  const shown = pool.filter((c) => (filter === "needs" && tab !== "archived" ? c.needsReply || contacts[c.key]?.needsHuman : true));
+  }, [conversations, contacts, now]);
+  const counts = useMemo(() => {
+    const n: Record<WaState, number> = { needs_you: 0, assistant: 0, waiting: 0, failed: 0, archived: 0 };
+    for (const c of conversations) {
+      if (who !== "all" && whoOf(contacts[c.key]) !== who) continue;
+      n[statuses.get(c.key)!.state]++;
+    }
+    return n;
+  }, [conversations, contacts, statuses, who]);
+  const shown = useMemo(() => {
+    const list = conversations.filter((c) => {
+      const st = statuses.get(c.key)!;
+      if (who !== "all" && whoOf(contacts[c.key]) !== who) return false;
+      if (view === "all") return st.state !== "archived";
+      return st.state === view;
+    });
+    // Waiting for you: longest wait first, so nothing ages out of sight. Everything else: newest first.
+    return view === "needs_you" ? list.sort((a, b) => statuses.get(b.key)!.waitingMs - statuses.get(a.key)!.waitingMs) : list;
+  }, [conversations, contacts, statuses, view, who]);
   const active = shown.find((c) => c.key === selected) ?? shown[0] ?? null;
   const info = active ? contacts[active.key] : undefined;
+  const status = active ? statuses.get(active.key) ?? null : null;
+  const whoCounts = useMemo(() => {
+    const n: Record<Who, number> = { all: conversations.length, jobseeker: 0, employer: 0, other: 0 };
+    for (const c of conversations) n[whoOf(contacts[c.key])]++;
+    return n;
+  }, [conversations, contacts]);
 
   // Turn a CV someone sent into a profile: the number is from the chat, the rest is read from the CV.
   async function createProfile(messageId: string) {
@@ -223,48 +240,52 @@ export default function WhatsAppInbox({
     }
   }
 
-  const chips: { key: Filter; label: string }[] = [
-    { key: "needs", label: "Needs attention" },
-    { key: "all", label: "All" },
-  ];
 
   const windowLeft = active?.lastInboundAt ? WINDOW_MS - (now - new Date(active.lastInboundAt).getTime()) : 0;
 
   return (
     <div>
-      <div className="mb-2 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
-        {TABS.map((t) => {
-          const n = tabCounts(t.key);
+      {/* What is going on, at a glance. Each tile is a view of the list below. */}
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {TILES.map((st) => {
+          const meta = STATE_META[st];
+          const tone = TONE[meta.tone];
+          const on = view === st;
           return (
             <button
-              key={t.key}
+              key={st}
+              type="button"
+              title={meta.blurb}
               onClick={() => {
-                setTab(t.key);
+                setView(st);
                 setSelected(null);
               }}
-              className={`-mb-px border-b-2 px-3 py-2 text-[13px] font-medium ${tab === t.key ? "border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
+              className={`rounded-xl border px-4 py-3 text-left transition ${tone.tile} ${on ? "ring-2 ring-slate-900/70 dark:ring-slate-100/70" : "hover:shadow-sm"}`}
             >
-              {t.label} <span className="text-slate-400">{inTab[t.key].length}</span>
-              {n > 0 && t.key !== "archived" && <span className="ml-1 rounded-full bg-emerald-500 px-1.5 py-px text-xs font-semibold text-white">{n}</span>}
+              <span className="flex items-center gap-2 text-[12px] font-medium text-slate-600 dark:text-slate-300">
+                <span className={`h-2 w-2 rounded-full ${tone.dot}`} /> {meta.label}
+              </span>
+              <span className="mt-1 block text-[26px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{counts[st]}</span>
             </button>
           );
         })}
       </div>
-      {tab !== "archived" && (
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {chips.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => setFilter(c.key)}
-              className={`rounded-full border px-3 py-1 text-[12px] font-medium ${
-                filter === c.key ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
-              }`}
-            >
-              {c.label}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
+        <span className="text-slate-500">{view === "all" ? "Every open conversation, newest first." : STATE_META[view].blurb}</span>
+        <span className="ml-auto flex flex-wrap items-center gap-1">
+          {(["all", "jobseeker", "employer", "other"] as Who[]).map((w) => (
+            <button key={w} type="button" onClick={() => { setWho(w); setSelected(null); }} className={`rounded-full border px-2.5 py-1 font-medium ${who === w ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"}`}>
+              {w === "all" ? "Everyone" : w === "jobseeker" ? "Jobseekers" : w === "employer" ? "Employers" : "Other"} <span className="opacity-60">{whoCounts[w]}</span>
             </button>
           ))}
-        </div>
-      )}
+          <button type="button" onClick={() => { setView(view === "all" ? "needs_you" : "all"); setSelected(null); }} className="ml-1 rounded-full px-2.5 py-1 font-medium text-teal-700 hover:underline dark:text-teal-300">
+            {view === "all" ? "Back to what needs you" : "Show all"}
+          </button>
+          <button type="button" onClick={() => { setView("archived"); setSelected(null); }} className={`rounded-full px-2.5 py-1 font-medium ${view === "archived" ? "text-slate-900 underline dark:text-slate-100" : "text-slate-500 hover:underline"}`}>
+            Archived {counts.archived}
+          </button>
+        </span>
+      </div>
 
       {conversations.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
@@ -273,12 +294,19 @@ export default function WhatsAppInbox({
           <p className="mx-auto mt-1 max-w-md text-[12.5px] text-slate-400">When someone taps &ldquo;Message us on WhatsApp&rdquo; on the jobs site, the website or an email, their message appears here.</p>
         </div>
       ) : (
-        <div className="grid min-h-[560px] gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="grid min-h-[560px] gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
           <div className="max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-            {shown.length === 0 && <p className="px-4 py-8 text-center text-[13px] text-slate-400">Nothing in this view.</p>}
+            {shown.length === 0 && (
+              <div className="px-4 py-10 text-center">
+                <Check className="mx-auto h-6 w-6 text-emerald-500" />
+                <p className="mt-2 text-[13px] font-medium text-slate-700 dark:text-slate-200">{view === "needs_you" ? "You're all caught up" : "Nothing here"}</p>
+                <p className="mt-0.5 text-[12px] text-slate-400">{view === "needs_you" ? "No one is waiting on a person right now." : "Try another view above."}</p>
+              </div>
+            )}
             {shown.map((c) => {
-              const last = c.messages[c.messages.length - 1];
+              const st = statuses.get(c.key)!;
               const isActive = active?.key === c.key;
+              const initials = nameOf(c).split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "#";
               return (
                 <button
                   key={c.key}
@@ -286,37 +314,36 @@ export default function WhatsAppInbox({
                     setSelected(c.key);
                     setError(null);
                   }}
-                  className={`block w-full border-b border-slate-100 px-4 py-3 text-left last:border-b-0 dark:border-slate-800 ${isActive ? "bg-slate-50 dark:bg-slate-800/60" : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"}`}
+                  className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 dark:border-slate-800 ${isActive ? "bg-slate-50 dark:bg-slate-800/60" : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"}`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1.5">
-                      {c.needsReply && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-label="Needs reply" />}
-                      <span className={`truncate text-[13.5px] ${c.needsReply ? "font-semibold" : "font-medium"} text-slate-900 dark:text-slate-100`}>{nameOf(c)}</span>
+                  <span className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[12px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    {initials}
+                    {st.state === "needs_you" && <span className={`absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 ${st.urgency === "late" ? "bg-rose-500" : st.urgency === "soon" ? "bg-amber-500" : "bg-emerald-500"}`} />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className={`truncate text-[13.5px] ${st.state === "needs_you" ? "font-semibold" : "font-medium"} text-slate-900 dark:text-slate-100`}>{nameOf(c)}</span>
+                      <span className="shrink-0 text-xs text-slate-400" suppressHydrationWarning>{ago(Math.max(0, now - new Date(c.lastAt).getTime()))}</span>
                     </span>
-                    <span className="shrink-0 text-xs text-slate-400" suppressHydrationWarning>
-                      {ago(c.lastAt, now)}
+                    <span className={`mt-0.5 block truncate text-[12px] ${st.state === "needs_you" ? "text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{st.why}</span>
+                    <span className="mt-1 flex flex-wrap items-center gap-1">
+                      {!c.candidateId && <span className="rounded bg-amber-50 px-1.5 py-px text-xs font-medium text-amber-700">Not in database</span>}
+                      {st.state === "needs_you" && st.windowHoursLeft !== null && st.windowHoursLeft <= 6 && <span className="rounded bg-amber-50 px-1.5 py-px text-xs font-medium text-amber-700">Free reply closes in {st.windowHoursLeft}h</span>}
+                      {st.state === "needs_you" && st.urgency === "late" && <span className="rounded bg-rose-50 px-1.5 py-px text-xs font-medium text-rose-700">Waiting {ago(st.waitingMs)}</span>}
+                      {view === "all" && st.state !== "needs_you" && <span className="rounded bg-slate-100 px-1.5 py-px text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{STATE_META[st.state].label}</span>}
                     </span>
-                  </div>
-                  <p className="mt-0.5 truncate text-[12px] text-slate-500 dark:text-slate-400">
-                    {last.direction === "outbound" ? "You: " : ""}
-                    {last.body_preview || (last.template_name ? `Template: ${last.template_name}` : "Message")}
-                  </p>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {!c.candidateId && <span className="inline-block rounded bg-amber-50 px-1.5 py-px text-xs font-medium text-amber-700">Not in database</span>}
-                    {contacts[c.key]?.needsHuman && <span className="inline-block rounded bg-rose-50 px-1.5 py-px text-xs font-medium text-rose-700">Needs a person</span>}
-                    {contacts[c.key]?.botStatus === "active" && !contacts[c.key]?.botPaused && <span className="inline-block rounded bg-teal-50 px-1.5 py-px text-xs font-medium text-teal-700">Collecting profile</span>}
-                  </div>
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          {active ? (
+          {active && status ? (
             <div className="flex max-h-[70vh] flex-col rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                 <div className="min-w-0">
                   <div className="truncate text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{nameOf(active)}</div>
-                  <div className="text-[12px] text-slate-400">{formatPhone(active.phone)}</div>
+                  <div className="text-[12px] text-slate-400">{formatPhone(active.phone)} · {KIND_LABEL[info?.kind ?? "unsorted"]}</div>
                 </div>
                 <div className="flex items-center gap-3 text-[12px]">
                   {active.candidateId ? (
@@ -330,9 +357,60 @@ export default function WhatsAppInbox({
                   )}
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${windowLeft > 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`} suppressHydrationWarning>
                     <Clock className="h-3 w-3" />
-                    {windowLeft > 0 ? `Reply window open · ${Math.max(1, Math.floor(windowLeft / 3_600_000))}h left` : "Reply window closed"}
+                    {windowLeft > 0 ? `Free reply open · ${Math.max(1, Math.floor(windowLeft / 3_600_000))}h left` : "Free reply closed"}
                   </span>
+                  <details className="relative">
+                    <summary className="flex cursor-pointer list-none items-center rounded-full p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Manage this chat">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </summary>
+                    <div className="absolute right-0 z-30 mt-1 w-64 space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-[12px] shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                      <label className="flex items-center justify-between gap-2 text-slate-500">
+                        Type
+                        <select value={info?.kind ?? "unsorted"} onChange={(e) => control("set_kind", e.target.value)} className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] dark:border-slate-700 dark:bg-slate-900">
+                          {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
+                            <option key={k} value={k}>{KIND_LABEL[k]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <p className="flex items-center gap-1 text-slate-500">
+                        <Bot className="h-3.5 w-3.5" />
+                        {info?.optedOut ? "Opted out of automatic messages" : info?.botPaused ? "Assistant paused" : info?.botStatus === "active" ? "Assistant collecting profile" : "Assistant idle"}
+                      </p>
+                      {info && !info.optedOut && (
+                        <button onClick={() => control(info.botPaused ? "resume_bot" : "pause_bot")} className="block font-medium text-teal-600 hover:underline">
+                          {info.botPaused ? "Resume the assistant" : "Pause the assistant"}
+                        </button>
+                      )}
+                      {info?.archived ? (
+                        <button onClick={() => control("unarchive")} className="flex items-center gap-1 font-medium text-teal-600 hover:underline">
+                          <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
+                        </button>
+                      ) : (
+                        <>
+                          <button onClick={() => control("archive")} className="flex items-center gap-1 font-medium text-slate-700 hover:underline dark:text-slate-200">
+                            <Archive className="h-3.5 w-3.5" /> Archive
+                          </button>
+                          <button onClick={() => control("archive_mute")} title="Archive, and stay archived even if they message again" className="block font-medium text-slate-700 hover:underline dark:text-slate-200">
+                            Archive and mute
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </details>
                 </div>
+              </div>
+
+              {/* Why this chat is here, and the one thing to do. */}
+              <div className={`flex flex-wrap items-center gap-3 border-b px-4 py-2.5 text-[12.5px] ${TONE[STATE_META[status.state].tone].banner}`}>
+                <span className="font-semibold">{STATE_META[status.state].label}</span>
+                <span className="min-w-0 flex-1">{status.why}</span>
+                {info?.needsHuman && (
+                  <button onClick={() => control("mark_handled")} className="rounded-full bg-white/80 px-3 py-1 font-semibold text-slate-800 ring-1 ring-black/10 hover:bg-white dark:bg-slate-800 dark:text-slate-100">
+                    Mark as handled
+                  </button>
+                )}
+                {status.state === "waiting" && <span className="text-xs opacity-80">Nothing to do yet. {windowLeft > 0 ? "You can still write to them." : "Wait for them, or follow up with a template."}</span>}
+                {status.state === "assistant" && <span className="text-xs opacity-80">It will hand over if it gets stuck.</span>}
               </div>
 
               {!active.candidateId && suggestions[active.key] && (
@@ -370,48 +448,6 @@ export default function WhatsAppInbox({
               )}
               {linkMessage && <p className="border-b border-slate-100 bg-emerald-50 px-4 py-1.5 text-[12px] text-emerald-800">{linkMessage}</p>}
 
-              <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-2 text-[12px] dark:border-slate-800">
-                <label className="inline-flex items-center gap-1 text-slate-500">
-                  Type
-                  <select value={info?.kind ?? "unsorted"} onChange={(e) => control("set_kind", e.target.value)} className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] dark:border-slate-700 dark:bg-slate-900">
-                    {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
-                      <option key={k} value={k}>
-                        {KIND_LABEL[k]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span className="inline-flex items-center gap-1 text-slate-500">
-                  <Bot className="h-3.5 w-3.5" />
-                  {info?.optedOut ? "Opted out of automatic messages" : info?.botPaused ? "Assistant paused" : info?.botStatus === "active" ? `Assistant collecting profile${info.botStep ? ` (${info.botStep})` : ""}` : "Assistant idle"}
-                </span>
-                {info && !info.optedOut && (
-                  <button onClick={() => control(info.botPaused ? "resume_bot" : "pause_bot")} className="font-medium text-teal-600 hover:underline">
-                    {info.botPaused ? "Resume assistant" : "Pause assistant"}
-                  </button>
-                )}
-                {info?.needsHuman && (
-                  <button onClick={() => control("mark_handled")} className="font-medium text-teal-600 hover:underline">
-                    Mark handled
-                  </button>
-                )}
-                <span className="ml-auto flex items-center gap-3">
-                  {info?.archived ? (
-                    <button onClick={() => control("unarchive")} className="inline-flex items-center gap-1 font-medium text-teal-600 hover:underline">
-                      <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
-                    </button>
-                  ) : (
-                    <>
-                      <button onClick={() => control("archive")} className="inline-flex items-center gap-1 font-medium text-slate-600 hover:underline dark:text-slate-300">
-                        <Archive className="h-3.5 w-3.5" /> Archive
-                      </button>
-                      <button onClick={() => control("archive_mute")} title="Archive, and stay archived even if they message again" className="font-medium text-slate-600 hover:underline dark:text-slate-300">
-                        Archive &amp; mute
-                      </button>
-                    </>
-                  )}
-                </span>
-              </div>
               {active.candidateId && (missing[active.candidateId]?.length ?? 0) > 0 && (
                 <div className="border-b border-slate-100 px-4 pb-2 dark:border-slate-800">
                   <div className="flex flex-wrap items-center gap-x-3">
@@ -430,7 +466,6 @@ export default function WhatsAppInbox({
                   </div>
                 </div>
               )}
-              {info?.needsHuman && info.reason && <p className="border-b border-rose-100 bg-rose-50 px-4 py-1.5 text-[12px] text-rose-700">{info.reason}</p>}
 
               <div className="flex-1 space-y-2 overflow-y-auto bg-slate-50/60 px-4 py-4 dark:bg-slate-950/30">
                 {active.messages.map((m) => {
