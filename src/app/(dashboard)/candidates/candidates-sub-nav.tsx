@@ -17,6 +17,7 @@ const TABS = [
 const MORE = [
   { href: "/candidates/referrals", label: "Referrals" },
   { href: "/candidates/files", label: "CV files" },
+  { href: "/candidates/duplicates", label: "Duplicates (admin)" },
 ];
 
 export default function CandidatesSubNav() {

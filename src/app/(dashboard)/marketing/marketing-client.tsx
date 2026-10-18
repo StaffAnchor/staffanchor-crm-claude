@@ -21,14 +21,23 @@ export type PipelineRow = {
   applications: number;
 };
 
+export type SalaryRow = { cluster: string; title: string; metro: string; n: number; p25: number; median: number; p75: number; published: boolean };
+
 export type SourceRow = { source: string; visits: number; registrations: number; applications: number; progressed: number; placed: number };
 
-export default function MarketingClient({ rows, sources }: { rows: PipelineRow[]; sources: SourceRow[] }) {
+export default function MarketingClient({ rows, sources, salary }: { rows: PipelineRow[]; sources: SourceRow[]; salary: SalaryRow[] }) {
   const router = useRouter();
   const [count, setCount] = useState(6);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [savingSalary, setSavingSalary] = useState<string | null>(null);
+  async function toggleSalary(r: SalaryRow) {
+    setSavingSalary(`${r.cluster}|${r.metro}`);
+    await fetch("/api/admin/benchmarks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cluster: r.cluster, metro: r.metro, published: !r.published }) });
+    setSavingSalary(null);
+    router.refresh();
+  }
   // A link for any post, not only role posts: pick where it lands and name the post, and it carries its source.
   const [dest, setDest] = useState("/jobs");
   const [camp, setCamp] = useState("");
@@ -86,6 +95,47 @@ export default function MarketingClient({ rows, sources }: { rows: PipelineRow[]
           <p className="text-sm text-slate-500">Pipeline roles and LinkedIn posts. Only you can see this page.</p>
         </div>
       </header>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="text-sm font-semibold">Salary pages for search</h2>
+        <p className="mt-1 text-[13px] text-slate-500">
+          Public pages like &quot;Sales Manager salary in Delhi NCR&quot; bring in employed sellers who are not job hunting. Only role-and-city groups with at least 20 profiles are listed, and a page shows only the typical figure and the middle range, never a person. Figures are self-reported fixed pay in LPA, so check each one looks right before publishing it.
+        </p>
+        {salary.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">No role-and-city group has 20 profiles with pay yet.</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-slate-500">
+                  <th className="py-1 font-medium">Role</th>
+                  <th className="py-1 font-medium">City</th>
+                  <th className="py-1 text-right font-medium">Profiles</th>
+                  <th className="py-1 text-right font-medium">Typical</th>
+                  <th className="py-1 text-right font-medium">Middle range</th>
+                  <th className="py-1 text-right font-medium">Page</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salary.map((r) => (
+                  <tr key={`${r.cluster}|${r.metro}`} className="border-t border-slate-100 dark:border-slate-800">
+                    <td className="py-1.5">{r.title}</td>
+                    <td className="py-1.5">{r.metro}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.n}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.median} LPA</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.p25}-{r.p75} LPA</td>
+                    <td className="py-1.5 text-right">
+                      <button type="button" disabled={savingSalary === `${r.cluster}|${r.metro}`} onClick={() => toggleSalary(r)} className={`rounded-full px-3 py-1 text-xs font-semibold ${r.published ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "border border-slate-300 text-slate-600 hover:bg-slate-50 dark:border-slate-600"}`}>
+                        {r.published ? "Published" : "Publish"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <h2 className="text-sm font-semibold">Where candidates come from, last 30 days</h2>
