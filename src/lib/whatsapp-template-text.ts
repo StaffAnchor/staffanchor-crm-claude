@@ -48,8 +48,9 @@ export const renderOfferMessage = (first: string, role: string) =>
   `Hi ${first}, this is StaffAnchor following up on the ${role} role. Could you let us know where you stand on the offer discussions, and whether anything is needed from our side? A short reply is enough.`;
 
 // The two campaign templates. The wording below is what is submitted to Meta; the exact text is fixed once approved.
-export const renderReactivationMessage = (first: string, role: string) =>
-  `Hi ${first}, this is StaffAnchor. We place ${role} professionals with companies that are hiring. Would you be open to hearing about a new role if it was a good fit?`;
+// The approved "still_open_check" template: one variable (the first name), two reply buttons ("Yes, I'm open", "Not looking").
+export const renderReactivationMessage = (first: string) =>
+  `Hi ${first}, quick check from StaffAnchor: are you still open to new sales roles? Please reply with your current CTC, expected CTC and notice period.`;
 
 export const renderReferralAskMessage = (first: string) =>
   `Hi ${first}, thank you for being part of StaffAnchor. The best people we place often come through someone they trust. Is there a sales professional you would back? Share their name in under a minute. If we place them and they stay 90 days, you earn up to \u20B910,000.`;
@@ -64,11 +65,11 @@ export const renderFollowUpMessage = (first: string) =>
 export const CAMPAIGN_TEMPLATES = {
   reactivation: {
     envVar: "WHATSAPP_TEMPLATE_REACTIVATION",
-    suggestedName: "reactivation_open_v1",
+    suggestedName: "still_open_check",
     category: "Marketing",
-    body: "Hi {{1}}, this is StaffAnchor. We place {{2}} professionals with companies that are hiring. Would you be open to hearing about a new role if it was a good fit?",
-    variables: "{{1}} first name, {{2}} role type, for example SaaS Account Executive",
-    buttons: 'Quick reply "Yes, I\u2019m open", quick reply "Not right now", quick reply "Stop messages"',
+    body: "Hi {{1}}, quick check from StaffAnchor: are you still open to new sales roles? Please reply with your current CTC, expected CTC and notice period.",
+    variables: "{{1}} first name",
+    buttons: 'Quick reply "Yes, I\u2019m open", quick reply "Not looking"',
   },
   referral: {
     envVar: "WHATSAPP_TEMPLATE_REFERRAL_ASK",

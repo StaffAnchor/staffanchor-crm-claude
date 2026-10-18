@@ -118,7 +118,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   }
   // The reactivation message: "Yes, I'm open" or "Not right now". Recorded quietly; no automatic reply.
   const tappedPlain = tapped.replace(/[\u2018\u2019]/g, "'");
-  if (tappedPlain === "yes, i'm open" || tappedPlain === "not right now") {
+  if (tappedPlain === "yes, i'm open" || tappedPlain === "not right now" || tappedPlain === "not looking") {
     const who = contact.candidate_id ?? identity.candidate?.id ?? null;
     if (who) await store.recordOpenToWork?.(who, tappedPlain === "yes, i'm open").catch(() => {});
     if (Object.keys(patch).length) await store.updateContact(key, patch);
