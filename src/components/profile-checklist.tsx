@@ -1,10 +1,9 @@
 import { Check, Circle } from "lucide-react";
 import { profileChecklist, type ChecklistInput } from "@/lib/profile-checklist";
 import { profileLabel } from "@/lib/sub-group";
-import SubGroupEditor from "@/components/sub-group-editor";
 
 /** The plain answer to "how complete is this profile, and what is missing": the label, then a tick or a gap per detail. */
-export default function ProfileChecklist({ candidate, roleLevelKnown, group, subGroup, candidateId }: { candidate: ChecklistInput; roleLevelKnown: boolean; group: string | null; subGroup: string | null; candidateId?: string }) {
+export default function ProfileChecklist({ candidate, roleLevelKnown, group, subGroup }: { candidate: ChecklistInput; roleLevelKnown: boolean; group: string | null; subGroup: string | null }) {
   const items = profileChecklist(candidate, roleLevelKnown);
   const have = items.filter((i) => i.have).length;
   const label = profileLabel(group, subGroup);
@@ -12,7 +11,6 @@ export default function ProfileChecklist({ candidate, roleLevelKnown, group, sub
     <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 dark:border-slate-700 dark:bg-slate-800/30">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {label && <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">{label}</span>}
-        {candidateId && <SubGroupEditor candidateId={candidateId} group={group} subGroup={subGroup} />}
         <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-200">
           {have} of {items.length} details{have === items.length ? ". Complete." : ""}
         </span>

@@ -31,19 +31,8 @@ export const GROUP_BAR: Record<ProfileGroup, string> = {
   unclear: "bg-slate-300 dark:bg-slate-600",
 };
 
-export const SUBGROUPS = [
-  "Marketing & Brand",
-  "Operations & Supply Chain",
-  "Customer Support & Success",
-  "HR & Talent",
-  "Finance & Accounts",
-  "Product & Technology",
-  "Design & Architecture",
-  "Media & Content",
-  "Legal & Compliance",
-  "Healthcare & Pharma",
-  "Strategy & General Management",
-] as const;
+// One fixed list of sub-groups per group, shared with the sorting in the database. The same names show on every list.
+export { SUB_GROUPS as SUBGROUPS_BY_GROUP } from "@/lib/sub-group";
 
 export const OTHER_SUBGROUP = "Other / unspecified";
 

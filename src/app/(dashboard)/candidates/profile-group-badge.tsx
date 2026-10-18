@@ -25,7 +25,7 @@ export function ProfileGroupBadge({
         {label}
         {needsReview && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" aria-label="Worth a second look" />}
       </span>
-      {!compact && subgroup && g === "non_sales" && <span className="max-w-[160px] truncate text-xs text-slate-500 dark:text-slate-400">{subgroup}</span>}
+      {!compact && subgroup && g !== "unclear" && <span className="max-w-[160px] truncate text-xs text-slate-500 dark:text-slate-400">{subgroup}</span>}
       {!compact && also && <span className="text-xs italic text-slate-400">{also}</span>}
     </div>
   );

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { SUBGROUPS } from "@/lib/profile-groups";
+import { SUB_GROUPS } from "@/lib/sub-group";
 
 export const runtime = "nodejs";
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (!body.candidateId) return NextResponse.json({ error: "candidateId is required" }, { status: 400 });
 
   if (body.reset) {
-    const { error } = await supabase.from("candidates").update({ profile_group_locked: false }).eq("id", body.candidateId);
+    const { error } = await supabase.from("candidates").update({ profile_group_locked: false, sub_group_locked: false }).eq("id", body.candidateId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const { error: rpcErr } = await supabase.rpc("classify_candidate", { p_id: body.candidateId });
     if (rpcErr) return NextResponse.json({ error: rpcErr.message }, { status: 500 });
@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
   const group = body.group;
   if (!group || !["b2b_sales", "b2c_sales", "non_sales"].includes(group)) return NextResponse.json({ error: "Pick B2B, B2C or Non-Sales." }, { status: 400 });
   let sub: string | null = null;
-  if (group === "non_sales" && body.subgroup) {
-    if (!(SUBGROUPS as readonly string[]).includes(body.subgroup)) return NextResponse.json({ error: "Unknown sub-group." }, { status: 400 });
+  if (body.subgroup) {
+    if (!SUB_GROUPS[group].includes(body.subgroup)) return NextResponse.json({ error: "Unknown sub-group." }, { status: 400 });
     sub = body.subgroup;
   }
   const { error } = await supabase
@@ -37,6 +37,8 @@ export async function POST(req: NextRequest) {
     .update({
       profile_group: group,
       profile_subgroup: sub,
+      sub_group: sub,
+      sub_group_locked: true,
       profile_group_locked: true,
       profile_group_source: "manual",
       profile_group_confidence: "high",

@@ -686,12 +686,19 @@ const COLUMN_DEFS: ColumnDef[] = [
         return <span className="text-xs text-slate-300">Not tagged</span>;
       }
       return (
-        <div className="flex flex-wrap gap-1 max-w-[180px]">
-          {c.practices.map((p) => (
-            <Badge key={p.name} tone={p.is_primary ? "accent" : "neutral"} size="sm" className="normal-case tracking-normal">
-              {p.name} · {PRACTICE_SENIORITY_LABEL[p.seniority_band] ?? p.seniority_band}
-            </Badge>
-          ))}
+        <div className="flex max-w-[190px] flex-col items-start gap-1">
+          {c.practices.map((p) => {
+            const text = `${p.name} · ${PRACTICE_SENIORITY_LABEL[p.seniority_band] ?? p.seniority_band}`;
+            return (
+              <span
+                key={p.name}
+                title={text}
+                className={`block max-w-full truncate rounded-full px-2 py-0.5 text-xs font-medium ${p.is_primary ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}
+              >
+                {text}
+              </span>
+            );
+          })}
         </div>
       );
     },
@@ -1938,8 +1945,8 @@ export default function CandidatesTable({
                   className="rounded accent-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
                 />
               </th>
-              <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50">ID</th>
-              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[116px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
+              <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 w-[92px] min-w-[92px] max-w-[92px] bg-slate-50 dark:bg-slate-800/50">ID</th>
+              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[144px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -1968,12 +1975,12 @@ export default function CandidatesTable({
                   />
                 </td>
                 <td
-                  className={`px-3 py-3 sticky left-[52px] z-10 whitespace-nowrap text-[12px] font-mono text-slate-400 dark:text-slate-500 ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}
+                  className={`px-3 py-3 sticky left-[52px] z-10 w-[92px] min-w-[92px] max-w-[92px] whitespace-nowrap text-[12px] font-mono text-slate-400 dark:text-slate-500 ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}
                   title="Candidate number — reference this in internal discussions"
                 >
                   {c.candidate_number != null ? `C-${String(c.candidate_number).padStart(6, "0")}` : "—"}
                 </td>
-                <td className={`px-4 py-3 sticky left-[116px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
+                <td className={`px-4 py-3 sticky left-[144px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
                   <div
                     className="relative"
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}

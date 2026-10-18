@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Pencil } from "lucide-react";
 import { ProfileGroupBadge } from "../profile-group-badge";
-import { GROUP_LABEL, SUBGROUPS, type ProfileGroup } from "@/lib/profile-groups";
+import { GROUP_LABEL, type ProfileGroup } from "@/lib/profile-groups";
+import { SUB_GROUPS } from "@/lib/sub-group";
 
 // Shows which group this profile sits in and why, and lets a recruiter correct it. A manual choice is
 // kept from then on; "Back to automatic" returns it to the CV-based group.
@@ -57,24 +58,22 @@ export default function ProfileGroupControl({
       </button>
       {open && (
         <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-2 dark:border-slate-700 dark:bg-slate-800/40">
-          <select value={g} onChange={(e) => setG(e.target.value)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-600 dark:bg-slate-900">
+          <select value={g} onChange={(e) => { setG(e.target.value); setS(""); }} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-600 dark:bg-slate-900">
             {(["b2b_sales", "b2c_sales", "non_sales"] as ProfileGroup[]).map((x) => (
               <option key={x} value={x}>
                 {GROUP_LABEL[x]}
               </option>
             ))}
           </select>
-          {g === "non_sales" && (
-            <select value={s} onChange={(e) => setS(e.target.value)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-600 dark:bg-slate-900">
-              <option value="">Other / unspecified</option>
-              {SUBGROUPS.map((x) => (
-                <option key={x} value={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
-          )}
-          <button onClick={() => send({ group: g, subgroup: g === "non_sales" ? s || null : null })} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-60">
+          <select value={s} onChange={(e) => setS(e.target.value)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-600 dark:bg-slate-900">
+            <option value="">Sub-group (optional)</option>
+            {(SUB_GROUPS[g] ?? []).map((x) => (
+              <option key={x} value={x}>
+                {x}
+              </option>
+            ))}
+          </select>
+          <button onClick={() => send({ group: g, subgroup: s || null })} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-60">
             {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save
           </button>
           {locked && (
