@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type TemplateFlags = { details: boolean; opportunity: boolean; interview: boolean; offer: boolean; reactivation: boolean; referral: boolean; referralRole: boolean };
+export type TemplateFlags = { details: boolean; opportunity: boolean; interview: boolean; offer: boolean; reactivation: boolean; referral: boolean; referralRole: boolean; followUp: boolean };
 
 let cached: TemplateFlags | undefined;
 let inflight: Promise<TemplateFlags | null> | null = null;

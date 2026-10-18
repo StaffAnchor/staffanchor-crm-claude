@@ -8,6 +8,9 @@ import { thankYouMessage } from "@/lib/missing-message";
 import AskMissingDetails from "../candidates/[id]/ask-missing-details";
 import { WINDOW_MS, formatPhone, type WaConversation } from "@/lib/whatsapp-threads";
 import { STATE_META, ago, statusOf, type WaState, type WaStatus } from "@/lib/whatsapp-status";
+import WhatsAppReview from "@/components/whatsapp-review";
+import { TemplateSetup } from "@/components/channel-toggle";
+import { useWhatsAppTemplates } from "@/lib/use-whatsapp-templates";
 
 type Kind = "unsorted" | "jobseeker" | "employer" | "referrer" | "other";
 export type ContactInfo = {
@@ -65,7 +68,13 @@ export default function WhatsAppInbox({
   suggestions?: Record<string, { candidateId: string; name: string; phone: string | null }>;
 }) {
   const router = useRouter();
-  const [view, setView] = useState<View>("needs_you");
+  // Opens on what needs you; if nothing does, on the chats waiting for a reply, so what you sent is never hidden.
+  const [view, setView] = useState<View>(() => {
+    const t = Date.now();
+    return conversations.some((c) => statusOf(c, contacts[c.key], t).state === "needs_you") ? "needs_you" : "waiting";
+  });
+  const templateFlags = useWhatsAppTemplates();
+  const [followUp, setFollowUp] = useState(false);
   const [who, setWho] = useState<Who>("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -326,8 +335,14 @@ export default function WhatsAppInbox({
                       <span className="shrink-0 text-xs text-slate-400" suppressHydrationWarning>{ago(Math.max(0, now - new Date(c.lastAt).getTime()))}</span>
                     </span>
                     <span className={`mt-0.5 block truncate text-[12px] ${st.state === "needs_you" ? "text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{st.why}</span>
+                    {st.state !== "needs_you" && (() => {
+                      const last = c.messages[c.messages.length - 1];
+                      const text = (last.body_preview ?? "").replace(/\s+/g, " ").trim();
+                      return text ? <span className="mt-0.5 block truncate text-xs text-slate-400">{last.direction === "outbound" ? "You: " : ""}{text}</span> : null;
+                    })()}
                     <span className="mt-1 flex flex-wrap items-center gap-1">
                       {!c.candidateId && <span className="rounded bg-amber-50 px-1.5 py-px text-xs font-medium text-amber-700">Not in database</span>}
+                      {st.state === "needs_you" && st.windowHoursLeft === null && <span className="rounded bg-slate-100 px-1.5 py-px text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">Needs a template to reply</span>}
                       {st.state === "needs_you" && st.windowHoursLeft !== null && st.windowHoursLeft <= 6 && <span className="rounded bg-amber-50 px-1.5 py-px text-xs font-medium text-amber-700">Free reply closes in {st.windowHoursLeft}h</span>}
                       {st.state === "needs_you" && st.urgency === "late" && <span className="rounded bg-rose-50 px-1.5 py-px text-xs font-medium text-rose-700">Waiting {ago(st.waitingMs)}</span>}
                       {view === "all" && st.state !== "needs_you" && <span className="rounded bg-slate-100 px-1.5 py-px text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{STATE_META[st.state].label}</span>}
@@ -539,9 +554,16 @@ export default function WhatsAppInbox({
                 ) : (
                   <div>
                     <p className="text-[12.5px] text-slate-500">
-                      The 24-hour reply window has closed. WhatsApp allows a free message only within 24 hours of their last message. They can message again, or use an approved template.
-                      {active.candidateId ? " You can email the candidate instead." : ""}
+                      Their 24-hour free-reply window has closed. WhatsApp now allows only an approved template. Send a short follow-up asking them to reply, and when they do, the chat reopens and you can write freely.
+                      {active.candidateId ? " Or email the candidate instead." : ""}
                     </p>
+                    {templateFlags?.followUp ? (
+                      <button type="button" onClick={() => setFollowUp(true)} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-emerald-500">
+                        <MessageCircle className="h-4 w-4" /> Review and send a follow-up
+                      </button>
+                    ) : templateFlags ? (
+                      <TemplateSetup which="followUp" />
+                    ) : null}
                     {active.candidateId && draft && (
                       <div className="mt-2 flex items-end gap-2">
                         <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} className="flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
@@ -605,6 +627,25 @@ export default function WhatsAppInbox({
             <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[13px] text-slate-400 dark:border-slate-700">Select a conversation.</div>
           )}
         </div>
+      )}
+      {followUp && active && (
+        <WhatsAppReview
+          title="Reopen the chat with a follow-up"
+          recipient={nameOf(active)}
+          loadPreview={async () => {
+            const res = await fetch("/api/whatsapp/follow-up", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: active.phone, candidateId: active.candidateId, preview: true }) });
+            const d = (await res.json().catch(() => ({}))) as { ok?: boolean; preview?: never; error?: string };
+            if (!res.ok || d.ok === false || !d.preview) return { ok: false, error: d.error ?? "Couldn't prepare the message." } as const;
+            return { ok: true, preview: d.preview } as const;
+          }}
+          send={async () => {
+            const res = await fetch("/api/whatsapp/follow-up", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: active.phone, candidateId: active.candidateId }) });
+            const d = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+            return res.ok && d.ok !== false ? { ok: true, text: "Sent. When they reply, you can write to them freely for 24 hours." } : { ok: false, text: d.error ?? "That didn't work. Nothing was sent." };
+          }}
+          onDone={() => router.refresh()}
+          onClose={() => setFollowUp(false)}
+        />
       )}
     </div>
   );

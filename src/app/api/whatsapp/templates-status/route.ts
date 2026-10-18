@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { profileDetailsTemplate, reactivationTemplate, referralAskTemplate, referralRoleTemplate, roleOpportunityTemplate, templateNameForTaskType } from "@/lib/whatsapp";
+import { profileDetailsTemplate, reactivationTemplate, referralAskTemplate, referralRoleTemplate, followUpTemplate, roleOpportunityTemplate, templateNameForTaskType } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
@@ -18,6 +18,7 @@ export async function GET() {
     reactivation: !!reactivationTemplate(),
     referral: !!referralAskTemplate(),
     referralRole: !!referralRoleTemplate(),
+    followUp: !!followUpTemplate(),
     interview: !!templateNameForTaskType("TRIGGER_INTERVIEW_COORDINATION"),
     offer: !!templateNameForTaskType("FOLLOW_UP_ON_OFFER"),
   });
