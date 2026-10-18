@@ -57,6 +57,9 @@ export const renderReferralAskMessage = (first: string) =>
 export const renderReferralRoleMessage = (first: string, role: string, city: string) =>
   `Hi ${first}, we're hiring a ${role} in ${city}. Know a strong sales professional who'd fit? Tap to see the role and refer them. If we place them and they stay 90 days, you earn up to \u20B910,000.`;
 
+export const renderFollowUpMessage = (first: string) =>
+  `Hi ${first}, thank you for your message to StaffAnchor, and sorry for the delay. Please reply to this message and a recruiter will continue the conversation with you here.`;
+
 /** What to create in Meta's template manager, with the buttons each one needs. */
 export const CAMPAIGN_TEMPLATES = {
   reactivation: {
@@ -82,5 +85,13 @@ export const CAMPAIGN_TEMPLATES = {
     body: "Hi {{1}}, we're hiring a {{2}} in {{3}}. Know a strong sales professional who'd fit? Tap to see the role and refer them. If we place them and they stay 90 days, you earn up to \u20B910,000.",
     variables: "{{1}} first name, {{2}} role title, {{3}} city",
     buttons: 'First a "Visit website" button named "Refer someone" with the dynamic URL https://jobs.staffanchor.com/refer/{{1}}, then quick reply "Stop messages"',
+  },
+  followUp: {
+    envVar: "WHATSAPP_TEMPLATE_FOLLOW_UP",
+    suggestedName: "conversation_followup_v1",
+    category: "Utility",
+    body: "Hi {{1}}, thank you for your message to StaffAnchor, and sorry for the delay. Please reply to this message and a recruiter will continue the conversation with you here.",
+    variables: "{{1}} first name",
+    buttons: 'Quick reply "Continue"',
   },
 } as const;
