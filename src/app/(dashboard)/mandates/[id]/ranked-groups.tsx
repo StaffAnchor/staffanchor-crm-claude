@@ -28,6 +28,9 @@ const DISMISS_REASONS = [
   { value: "other", label: "Other" },
 ];
 
+const MISSING_LABEL: Record<string, string> = { current_ctc: "current pay", expected_ctc: "expected pay", notice: "notice period", industries: "industries", cv_unread: "CV not read", current_employer: "company", relocation: "relocation", city: "city" };
+const missingText = (m: string[] | null | undefined) => (m ?? []).slice(0, 3).map((k) => MISSING_LABEL[k] ?? k.replace(/_/g, " ")).join(", ");
+
 const REACHED_LABEL: Record<string, string> = { sent: "Messaged", interested: "Said yes", not_now: "Not now" };
 const REACHED_STYLE: Record<string, string> = {
   sent: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
@@ -146,6 +149,12 @@ export default function RankedGroups({ mandateId, ranked, reached = {} }: { mand
                     </Link>
                     {c.pool_tier && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[c.pool_tier as PoolTier]}`}>Pool: {POOL_TIER_LABEL[c.pool_tier as PoolTier]}</span>}
                     <span className="text-[12px] tabular-nums text-slate-400">{r.score}</span>
+                    {c.sub_group && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{c.sub_group}</span>}
+                    {c.readiness_tier && c.readiness_tier !== "ready" && (c.readiness_missing?.length ?? 0) > 0 && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300" title="Not yet confirmed. Worth checking on the call.">
+                        To confirm: {missingText(c.readiness_missing)}
+                      </span>
+                    )}
                     {reached[c.candidate_id] && (
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${REACHED_STYLE[reached[c.candidate_id].status] ?? REACHED_STYLE.sent}`}>
                         {REACHED_LABEL[reached[c.candidate_id].status] ?? "Messaged"}

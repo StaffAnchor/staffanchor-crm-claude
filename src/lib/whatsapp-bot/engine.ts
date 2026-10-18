@@ -1,6 +1,7 @@
 import { classifyText, parseMenuChoice, type ContactKind } from "./classify";
 import { askCompany, emptyState, startOnboarding, step, type Answers, type BotState, type Effect, type Inbound, type StepResult } from "./flow";
 import { isMenu, isStop } from "./parse";
+import { isQuestion } from "./faq";
 import { firstEmail, introducedName, saysNew } from "./identity";
 import * as T from "./texts";
 import type { CandidateLite, Contact, Store } from "./store";
@@ -241,7 +242,15 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
     flow = "verify";
   };
 
-  if ((m.type === "text" || m.type === "button") && m.text !== null && isMenu(m.text)) {
+  // A question a recruiter has already answered once: answer it the same way, without a person. Anything not clearly the
+  // same question goes on as before, and is kept for a person to answer.
+  const asked = m.type === "text" && m.text !== null && isQuestion(m.text) ? m.text : null;
+  const faq = asked && kind !== "unsorted" ? await store.findFaqAnswer?.(asked).catch(() => null) : null;
+
+  if (faq) {
+    flow = "faq";
+    replies = [faq.answer];
+  } else if ((m.type === "text" || m.type === "button") && m.text !== null && isMenu(m.text)) {
     // "Wrong option": start again from the menu, whoever we thought they were.
     kind = "unsorted";
     patch.kind = "unsorted";
@@ -362,6 +371,11 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
       state = ask.state;
       replies = replies.filter((r) => !r.startsWith(T.DONE_PREFIX)).concat(ask.replies);
     }
+  }
+
+  // The assistant is handing over on something that was a question: keep it, so it can be taught once.
+  if (patch.needs_human && !faq && m.type === "text" && m.text && (isQuestion(m.text) || m.text.trim().length >= 40)) {
+    await store.logUnansweredQuestion?.(key, state.candidateId ?? contact.candidate_id ?? null, m.text, patch.needs_human_reason ?? null).catch(() => {});
   }
 
   // Send, then remember. If the first message cannot be sent, the conversation does not move on.

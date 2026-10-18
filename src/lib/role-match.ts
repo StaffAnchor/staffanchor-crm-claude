@@ -28,6 +28,9 @@ export type MatchRow = {
   motion: string | null;
   pool_tier: string | null;
   open_to_work_at?: string | null;
+  readiness_tier?: string | null;
+  readiness_missing?: string[] | null;
+  sub_group?: string | null;
 };
 
 export type Ranked = {

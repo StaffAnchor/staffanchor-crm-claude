@@ -86,6 +86,7 @@ export default async function WhatsAppPage() {
           Every WhatsApp conversation, sorted by what needs you. You can reply freely for 24 hours after someone writes.
         </p>
       </div>
+      <p className="mb-3 text-[12.5px]"><a href="/whatsapp/training" className="font-medium text-teal-700 hover:underline dark:text-teal-300">Teach the assistant</a><span className="text-slate-400"> · questions it couldn&apos;t answer, answered once for everyone</span></p>
       <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} drafts={drafts} suggestions={suggestions} />
     </div>
   );

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ContactKind } from "./classify";
 import type { Answers, BotState } from "./flow";
+import { bestAnswer, normalizeQuestion, type FaqAnswer } from "./faq";
 
 // Everything the engine reads and writes, behind one small interface, so the rules can be
 // tested against an in-memory copy and run in production against the database.
@@ -87,6 +88,10 @@ export interface Store {
   recordOutreachReply?(candidateId: string, answer: "interested" | "not_now"): Promise<void>;
   /** A person answered "are you open to hearing about new roles?". Yes ranks them higher; "not right now" rests them for 90 days. */
   recordOpenToWork?(candidateId: string, open: boolean): Promise<void>;
+  /** The best answer a recruiter has taught for this question, if it is clearly the same question. */
+  findFaqAnswer?(text: string): Promise<{ id: string; answer: string } | null>;
+  /** A question the assistant could not answer, kept so a person can answer it once for everyone. */
+  logUnansweredQuestion?(phoneKey: string, candidateId: string | null, text: string, reason: string | null): Promise<void>;
 }
 
 const CANDIDATE_COLUMNS =
@@ -256,6 +261,19 @@ export function supabaseStore(admin: SupabaseClient): Store {
     async hasOutboundSince(key, sinceIso) {
       const { data } = await admin.from("whatsapp_messages").select("id").eq("direction", "outbound").ilike("to_phone", `%${key}`).gte("created_at", sinceIso).limit(1);
       return !!data && data.length > 0;
+    },
+    async findFaqAnswer(text) {
+      const { data } = await admin.from("bot_answers").select("id, question, keywords, answer").eq("active", true).limit(500);
+      const hit = bestAnswer(text, (data ?? []) as FaqAnswer[]);
+      if (!hit) return null;
+      const { data: row } = await admin.from("bot_answers").select("uses").eq("id", hit.id).maybeSingle();
+      await admin.from("bot_answers").update({ uses: Number(row?.uses ?? 0) + 1, last_used_at: new Date().toISOString() }).eq("id", hit.id);
+      return { id: hit.id, answer: hit.answer };
+    },
+    async logUnansweredQuestion(phoneKey, candidateId, text, reason) {
+      const clean = text.trim().slice(0, 500);
+      if (!clean) return;
+      await admin.from("bot_questions").insert({ phone_key: phoneKey, candidate_id: candidateId, text: clean, norm: normalizeQuestion(clean).slice(0, 300), reason });
     },
     async recordOpenToWork(candidateId, open) {
       await admin
