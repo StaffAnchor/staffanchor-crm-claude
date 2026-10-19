@@ -15,6 +15,9 @@ export type InvoiceOverrides = {
   dateOfJoining?: string | null;
   billingAmount?: number;
   registrationId?: string;
+  description?: string;
+  commissionPct?: number;
+  annualCtc?: number;
 };
 
 export type ResolvedGstRegistration = {
@@ -22,6 +25,7 @@ export type ResolvedGstRegistration = {
   label: string;
   gstin: string;
   state_code: string;
+  state_name: string | null;
   billing_address: string | null;
   is_default: boolean;
 };
@@ -32,6 +36,9 @@ export type InvoiceItem = {
   location: string | null;
   dateOfJoining: string | null;
   billingAmount: number;
+  description: string | null;
+  commissionPct: number | null;
+  annualCtc: number | null;
 };
 
 export type ResolveResult =
@@ -44,13 +51,13 @@ export type ResolveResult =
       ok: false;
       error: string;
       status: number;
-      client?: { id: string; name: string };
+      client?: { id: string; name: string; fee_percentage?: number | string | null };
       item?: InvoiceItem;
       registrations?: ResolvedGstRegistration[];
     }
   | {
       ok: true;
-      client: { id: string; name: string };
+      client: { id: string; name: string; fee_percentage?: number | string | null };
       registrations: ResolvedGstRegistration[];
       registration: ResolvedGstRegistration;
       item: InvoiceItem;
@@ -64,7 +71,7 @@ export async function resolveTrancheInvoiceData(
   const { data: tranche, error: trancheError } = await supabase
     .from("placement_fee_tranches")
     .select(
-      "id, label, amount_lakhs, mandate_id, link_id, mandates(role_title, client_name, city, client_id), candidate_mandate_links(candidates(full_name), date_of_joining)"
+      "id, label, amount_lakhs, split_pct, mandate_id, link_id, mandates(role_title, client_name, city, client_id), candidate_mandate_links(candidates(full_name), date_of_joining, offered_fixed_ctc)"
     )
     .eq("id", trancheId)
     .single();
@@ -74,13 +81,13 @@ export async function resolveTrancheInvoiceData(
   }
 
   const mandate = tranche.mandates as unknown as { role_title: string; client_name: string; city: string | null; client_id: string | null } | null;
-  const link = tranche.candidate_mandate_links as unknown as { candidates: { full_name: string } | null; date_of_joining: string | null } | null;
+  const link = tranche.candidate_mandate_links as unknown as { candidates: { full_name: string } | null; date_of_joining: string | null; offered_fixed_ctc: number | string | null } | null;
 
   if (!mandate?.client_id) {
     return { ok: false, error: "This tranche's mandate has no linked client record -- link it before generating an invoice.", status: 400 };
   }
 
-  const { data: client, error: clientError } = await supabase.from("clients").select("id, name").eq("id", mandate.client_id).single();
+  const { data: client, error: clientError } = await supabase.from("clients").select("id, name, fee_percentage").eq("id", mandate.client_id).single();
   if (clientError || !client) {
     return { ok: false, error: clientError?.message ?? "Client not found", status: 404 };
   }
@@ -97,6 +104,12 @@ export async function resolveTrancheInvoiceData(
     location: overrides.location ?? mandate.city,
     dateOfJoining: overrides.dateOfJoining !== undefined ? overrides.dateOfJoining : (link?.date_of_joining ?? null),
     billingAmount: billingAmountRaw ?? 0,
+    description: overrides.description?.trim() ? overrides.description.trim() : null,
+    // Effective commission on this invoice = client fee % x this tranche's share.
+    commissionPct:
+      overrides.commissionPct ??
+      (client.fee_percentage != null ? Number(client.fee_percentage) * (Number(tranche.split_pct ?? 100) / 100) : null),
+    annualCtc: overrides.annualCtc ?? (link?.offered_fixed_ctc != null ? Number(link.offered_fixed_ctc) : null),
   };
 
   if (billingAmountRaw == null || !Number.isFinite(billingAmountRaw)) {
@@ -105,7 +118,7 @@ export async function resolveTrancheInvoiceData(
 
   const { data: registrations } = await supabase
     .from("client_gst_registrations")
-    .select("id, label, gstin, state_code, billing_address, is_default")
+    .select("id, label, gstin, state_code, state_name, billing_address, is_default")
     .eq("client_id", mandate.client_id);
 
   if (!registrations || registrations.length === 0) {
@@ -130,4 +143,19 @@ export async function resolveTrancheInvoiceData(
     registrations[0];
 
   return { ok: true, client, registrations, registration, item };
+}
+
+// For a Tax Invoice raised against an earlier proforma: the proforma's
+// number and date, so the invoice can say "Against Proforma ...".
+export async function proformaReference(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  trancheId: string
+): Promise<{ number: string; date: Date | null } | null> {
+  const { data } = await supabase
+    .from("placement_fee_tranches")
+    .select("proforma_invoice_number, proforma_sent_at")
+    .eq("id", trancheId)
+    .single();
+  if (!data?.proforma_invoice_number) return null;
+  return { number: data.proforma_invoice_number, date: data.proforma_sent_at ? new Date(data.proforma_sent_at) : null };
 }

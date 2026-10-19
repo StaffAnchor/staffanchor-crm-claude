@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { parseGstin } from "@/lib/gst";
 
 // Some clients bill from more than one GST-registered office (People
 // Interactive: Ahmedabad + Delhi, on the two tax invoices we already have on
@@ -33,8 +34,31 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lookup, setLookup] = useState<{ legalName: string | null; tradeName: string | null; status: string | null; address: string | null } | null>(null);
+  const [looking, setLooking] = useState(false);
+
+  async function fetchOnline() {
+    setLooking(true);
+    setLookup(null);
+    setError(null);
+    const res = await fetch(`/api/admin/gst-lookup?gstin=${encodeURIComponent(draft.gstin)}`);
+    const json = await res.json().catch(() => ({ ok: false, error: "Lookup failed" }));
+    setLooking(false);
+    if (!json.ok) {
+      setError(json.error ?? "Lookup failed");
+      return;
+    }
+    setLookup(json);
+  }
+
+  function useLookup() {
+    if (!lookup) return;
+    setDraft((d) => ({ ...d, billing_address: lookup.address ?? d.billing_address, label: d.label || lookup.tradeName || lookup.legalName || "" }));
+    setLookup(null);
+  }
 
   function startAdd() {
+    setLookup(null);
     setDraft(EMPTY_DRAFT);
     setEditingId("new");
     setError(null);
@@ -54,8 +78,13 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
   }
 
   async function handleSave() {
-    if (!draft.label.trim() || !draft.gstin.trim() || !draft.state_code.trim()) {
-      setError("Label, GSTIN, and state code are required.");
+    if (!draft.label.trim() || !draft.gstin.trim()) {
+      setError("Label and GSTIN are required.");
+      return;
+    }
+    const parsed = parseGstin(draft.gstin);
+    if (!parsed.ok) {
+      setError(parsed.error);
       return;
     }
     setSaving(true);
@@ -63,9 +92,9 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
     const payload = {
       client_id: clientId,
       label: draft.label.trim(),
-      gstin: draft.gstin.trim().toUpperCase(),
-      state_code: draft.state_code.trim(),
-      state_name: draft.state_name.trim() || null,
+      gstin: parsed.gstin,
+      state_code: parsed.stateCode,
+      state_name: parsed.stateName,
       billing_address: draft.billing_address.trim() || null,
       contact_phone: draft.contact_phone.trim() || null,
     };
@@ -128,7 +157,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
       <div className="space-y-2">
         {registrations.map((r) =>
           editingId === r.id ? (
-            <RegistrationForm key={r.id} draft={draft} setDraft={setDraft} error={error} saving={saving} onSave={handleSave} onCancel={() => setEditingId(null)} />
+            <RegistrationForm key={r.id} draft={draft} setDraft={setDraft} error={error} saving={saving} onSave={handleSave} lookup={lookup} looking={looking} onFetch={fetchOnline} onUseLookup={useLookup} onCancel={() => setEditingId(null)} />
           ) : (
             <div key={r.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-[12.5px]">
               <div className="flex items-start justify-between gap-2">
@@ -165,7 +194,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
           )
         )}
         {editingId === "new" && (
-          <RegistrationForm draft={draft} setDraft={setDraft} error={error} saving={saving} onSave={handleSave} onCancel={() => setEditingId(null)} />
+          <RegistrationForm draft={draft} setDraft={setDraft} error={error} saving={saving} onSave={handleSave} lookup={lookup} looking={looking} onFetch={fetchOnline} onUseLookup={useLookup} onCancel={() => setEditingId(null)} />
         )}
       </div>
     </div>
@@ -179,6 +208,10 @@ function RegistrationForm({
   saving,
   onSave,
   onCancel,
+  lookup,
+  looking,
+  onFetch,
+  onUseLookup,
 }: {
   draft: typeof EMPTY_DRAFT;
   setDraft: (d: typeof EMPTY_DRAFT) => void;
@@ -186,6 +219,10 @@ function RegistrationForm({
   saving: boolean;
   onSave: () => void;
   onCancel: () => void;
+  lookup: { legalName: string | null; tradeName: string | null; status: string | null; address: string | null } | null;
+  looking: boolean;
+  onFetch: () => void;
+  onUseLookup: () => void;
 }) {
   return (
     <div className="rounded-lg border border-slate-300 dark:border-slate-600 p-3 space-y-2">
@@ -198,8 +235,12 @@ function RegistrationForm({
         />
         <input
           value={draft.gstin}
-          onChange={(e) => setDraft({ ...draft, gstin: e.target.value })}
-          placeholder="GSTIN"
+          onChange={(e) => {
+            const gstin = e.target.value.toUpperCase().replace(/\s/g, "");
+            const p = gstin.length === 15 ? parseGstin(gstin) : null;
+            setDraft(p?.ok ? { ...draft, gstin, state_code: p.stateCode, state_name: p.stateName } : { ...draft, gstin });
+          }}
+          placeholder="GSTIN (state fills in automatically)"
           className="rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
         />
         <input
@@ -215,6 +256,30 @@ function RegistrationForm({
           className="rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
         />
       </div>
+      {draft.gstin.length === 15 && (() => {
+        const p = parseGstin(draft.gstin);
+        return p.ok ? (
+          <p className="text-[11.5px] text-emerald-600">Valid GSTIN · {p.stateName} ({p.stateCode}) · PAN {p.pan}</p>
+        ) : (
+          <p className="text-[11.5px] text-red-600">{p.error}</p>
+        );
+      })()}
+      {draft.gstin.length === 15 && parseGstin(draft.gstin).ok && (
+        <button type="button" onClick={onFetch} disabled={looking} className="text-[12px] text-teal-600 hover:underline disabled:opacity-50">
+          {looking ? "Fetching…" : "Fetch name & address online"}
+        </button>
+      )}
+      {lookup && (
+        <div className="rounded-md border border-teal-200 bg-teal-50 dark:bg-teal-950/20 dark:border-teal-900 p-2.5 text-[12px] space-y-0.5">
+          <div className="font-medium text-slate-800 dark:text-slate-100">{lookup.legalName ?? "—"}</div>
+          {lookup.tradeName && lookup.tradeName !== lookup.legalName && <div className="text-slate-500">Trade name: {lookup.tradeName}</div>}
+          {lookup.status && <div className="text-slate-500">Status: {lookup.status}</div>}
+          <div className="text-slate-600 dark:text-slate-300">{lookup.address ?? "No address returned"}</div>
+          <button type="button" onClick={onUseLookup} className="mt-1 rounded-md bg-teal-600 text-white text-[12px] px-2 py-1">
+            Looks right, use this
+          </button>
+        </div>
+      )}
       <input
         value={draft.contact_phone}
         onChange={(e) => setDraft({ ...draft, contact_phone: e.target.value })}

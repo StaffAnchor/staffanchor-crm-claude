@@ -24,8 +24,19 @@ type FormState = {
   location: string;
   dateOfJoining: string; // yyyy-mm-dd or ""
   billingAmount: string;
+  annualCtc: string;
+  commissionPct: string;
   registrationId: string;
+  description: string;
 };
+
+// Fee = CTC x commission %; recalculated whenever either changes.
+function withFee(f: FormState): FormState {
+  const ctc = Number(f.annualCtc);
+  const pct = Number(f.commissionPct);
+  if (ctc > 0 && pct > 0) return { ...f, billingAmount: String(Math.round(ctc * pct) / 100) };
+  return f;
+}
 
 export default function InvoicePreviewModal({
   trancheId,
@@ -55,7 +66,10 @@ export default function InvoicePreviewModal({
       location: "",
       dateOfJoining: "",
       billingAmount: "",
+      annualCtc: "",
+      commissionPct: "",
       registrationId: "",
+      description: "",
     };
     const next = { ...base, ...overrides };
     const res = await fetch(`/api/admin/tranches/${trancheId}/preview-invoice`, {
@@ -69,7 +83,10 @@ export default function InvoicePreviewModal({
           location: next.location || undefined,
           dateOfJoining: next.dateOfJoining || null,
           billingAmount: next.billingAmount ? Number(next.billingAmount) : undefined,
+          annualCtc: next.annualCtc ? Number(next.annualCtc) : undefined,
+          commissionPct: next.commissionPct ? Number(next.commissionPct) : undefined,
           registrationId: next.registrationId || undefined,
+          description: next.description || undefined,
         },
       }),
     });
@@ -91,7 +108,10 @@ export default function InvoicePreviewModal({
         location: json.item.location ?? "",
         dateOfJoining: json.item.dateOfJoining ?? "",
         billingAmount: json.item.billingAmount ? String(json.item.billingAmount) : "",
+        annualCtc: form?.annualCtc ?? (json.item.annualCtc ? String(json.item.annualCtc) : ""),
+        commissionPct: form?.commissionPct ?? (json.item.commissionPct ? String(Number(json.item.commissionPct.toFixed(2))) : ""),
         registrationId: json.selectedRegistrationId ?? "",
+        description: form?.description ?? "",
       });
     }
     if (!json.ok) {
@@ -122,7 +142,10 @@ export default function InvoicePreviewModal({
           location: form.location || undefined,
           dateOfJoining: form.dateOfJoining || null,
           billingAmount: form.billingAmount ? Number(form.billingAmount) : undefined,
+          annualCtc: form.annualCtc ? Number(form.annualCtc) : undefined,
+          commissionPct: form.commissionPct ? Number(form.commissionPct) : undefined,
           registrationId: form.registrationId || undefined,
+          description: form.description || undefined,
         },
       }),
     });
@@ -198,10 +221,42 @@ export default function InvoicePreviewModal({
                 className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
               />
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Annual CTC (₹)">
+                <input
+                  value={form?.annualCtc ?? ""}
+                  onChange={(e) => setForm((f) => (f ? withFee({ ...f, annualCtc: e.target.value }) : f))}
+                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                />
+              </Field>
+              <Field label="Commission %">
+                <input
+                  value={form?.commissionPct ?? ""}
+                  onChange={(e) => setForm((f) => (f ? withFee({ ...f, commissionPct: e.target.value }) : f))}
+                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                />
+              </Field>
+            </div>
+            <p className="text-[11.5px] text-slate-400 -mt-1">
+              Fee = CTC × commission %. GST 18% is added on top
+              {form?.billingAmount && Number(form.billingAmount) > 0
+                ? ` → ₹${Math.round(Number(form.billingAmount) * 1.18).toLocaleString("en-IN")} payable`
+                : ""}
+              .
+            </p>
             <Field label="Billing amount (pre-GST, ₹)">
               <input
                 value={form?.billingAmount ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, billingAmount: e.target.value } : f))}
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+              />
+            </Field>
+            <Field label="Line text (leave blank for the standard wording)">
+              <textarea
+                rows={2}
+                value={form?.description ?? ""}
+                onChange={(e) => setForm((f) => (f ? { ...f, description: e.target.value } : f))}
+                placeholder="Name (Hired for Full-time role) - Commission of x% of the Annual CTC - Joined on date"
                 className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
               />
             </Field>
