@@ -26,11 +26,13 @@ const INPUT = "w-full rounded-md border border-slate-300 dark:border-slate-700 b
 export default function InvoiceEmailModal({
   trancheId,
   kind,
+  reminder = false,
   onClose,
   onSent,
 }: {
   trancheId: string;
   kind: "proforma" | "final";
+  reminder?: boolean;
   onClose: () => void;
   onSent: () => void;
 }) {
@@ -45,7 +47,7 @@ export default function InvoiceEmailModal({
 
   useEffect(() => {
     (async () => {
-      const res = await fetch(`/api/admin/tranches/${trancheId}/email-invoice?kind=${kind}`);
+      const res = await fetch(`/api/admin/tranches/${trancheId}/email-invoice?kind=${kind}${reminder ? "&reminder=1" : ""}`);
       const json = await res.json();
       if (!json.ok) {
         setError(json.error ?? "Couldn't prepare the email");
@@ -57,16 +59,16 @@ export default function InvoiceEmailModal({
       setSubject(json.subject);
       setBody(json.body);
     })();
-  }, [trancheId, kind]);
+  }, [trancheId, kind, reminder]);
 
   async function send(test: boolean) {
-    if (!test && draft?.emailedAt && !confirm(`This was already emailed to ${draft.emailedTo}. Send it again?`)) return;
+    if (!test && draft?.emailedAt && !confirm(reminder ? `A reminder already went out on ${new Date(draft.emailedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}. Send another?` : `This was already emailed to ${draft.emailedTo}. Send it again?`)) return;
     setBusy(test ? "test" : "send");
     setError(null);
     const res = await fetch(`/api/admin/tranches/${trancheId}/email-invoice`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, to, cc, subject, body, test }),
+      body: JSON.stringify({ kind, reminder, to, cc, subject, body, test }),
     });
     const json = await res.json().catch(() => ({ ok: false, error: "Send failed" }));
     setBusy(null);
@@ -91,7 +93,7 @@ export default function InvoiceEmailModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Email {docName}{draft ? ` ${draft.number}` : ""}</h2>
+          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{reminder ? "Payment reminder" : "Email"} {docName}{draft ? ` ${draft.number}` : ""}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 text-sm">✕</button>
         </div>
 
@@ -102,7 +104,7 @@ export default function InvoiceEmailModal({
           <div className="p-5 space-y-3">
             {draft.emailedAt && (
               <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-                Already emailed on {new Date(draft.emailedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })} to {draft.emailedTo}.
+                {reminder ? "Last reminder sent" : "Already emailed"} on {new Date(draft.emailedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}{reminder ? "" : ` to ${draft.emailedTo}`}.
               </div>
             )}
             <Row label="From">
@@ -149,7 +151,7 @@ export default function InvoiceEmailModal({
                 disabled={busy !== null || !!done}
                 className="rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[12.5px] font-medium px-3 py-1.5"
               >
-                {busy === "send" ? "Sending…" : "Send to client"}
+                {busy === "send" ? "Sending…" : reminder ? "Send reminder" : "Send to client"}
               </button>
               <button
                 onClick={() => send(true)}
