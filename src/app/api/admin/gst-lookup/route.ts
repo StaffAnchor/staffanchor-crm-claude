@@ -38,6 +38,14 @@ export async function GET(req: NextRequest) {
         pradr?: { adr?: string; addr?: Record<string, string> };
       };
     };
+    // Free/sandbox keys return a made-up taxpayer with a note about paid
+    // credits -- never show that as a real client's details.
+    if (/credit|sandbox/i.test(json.message ?? "")) {
+      return NextResponse.json(
+        { ok: false, error: "The GST lookup key is on test credits, which return dummy data. Buy credits at Appyflow to switch on real lookups." },
+        { status: 402 }
+      );
+    }
     if (json.error || !json.taxpayerInfo) {
       return NextResponse.json({ ok: false, error: json.message || "GSTIN not found" }, { status: 404 });
     }
