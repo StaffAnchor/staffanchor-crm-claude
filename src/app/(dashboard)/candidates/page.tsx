@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ReadinessStrip from "./readiness-strip";
+import TopTierCard from "./top-tier-card";
 import CandidatesFilterBar, { type HeaderCounts } from "./candidates-filter-bar";
 import type { ReadinessOverview } from "@/lib/readiness";
 import ProfileGroupsStrip from "./profile-groups-strip";
@@ -174,8 +175,16 @@ const JOB_STABILITY_OPTIONS = ["Stable", "Some Movement", "Frequent Job-Hopper"]
 const RELOCATION_VERIFIED_OPTIONS = ["Yes", "No", "Conditional"];
 const SCORE_OPTIONS = [1, 2, 3, 4, 5];
 
+// 90 days back, as an ISO timestamp. A helper so the date read stays out of the render body.
+function topTierCutoffIso(): string {
+  return new Date(Date.now() - 90 * 86400000).toISOString();
+}
+
+const SALES_GROUPS = ["b2b_sales", "b2c_sales"];
+
 type SearchParams = {
   q?: string;
+  top?: string;
   ready?: string;
   missing?: string;
   category?: string;
@@ -485,6 +494,11 @@ export default async function CandidatesPage({
       }
     }
     if (params.category) qq = qq.eq("category", params.category);
+    // Top tier: complete sales profiles; "open" also needs a recent open-to-work confirmation.
+    if (params.top === "open" || params.top === "ready") {
+      qq = qq.eq("readiness_tier", "ready").in("profile_group", SALES_GROUPS);
+      if (params.top === "open") qq = qq.gte("open_to_work_at", topTierCutoffIso());
+    }
     if (params.ready && ["ready", "almost", "needs_work"].includes(params.ready)) qq = qq.eq("readiness_tier", params.ready);
     if (params.missing && /^[a-z_]+$/.test(params.missing)) qq = qq.contains("readiness_missing", [params.missing]);
     if (params.group === "review") qq = qq.eq("profile_group_needs_review", true);
@@ -615,6 +629,7 @@ export default async function CandidatesPage({
     .select(
       "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, city_canonical, employer_canonical, readiness_score, readiness_tier, readiness_missing, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
     )
+    .order(params.top === "open" ? "open_to_work_at" : "created_at", { ascending: false })
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);
   const query = applyFilters(baseQuery);
@@ -1018,6 +1033,17 @@ export default async function CandidatesPage({
   const coverageRaw = coverageRes?.data ?? null;
   const cvCoverage = (coverageRaw ?? null) as CvCoverage | null;
   const readinessHref = (ready?: string, missing?: string) => qs({ ready, missing });
+  const topHref = (top?: string) => qs({ top, ready: undefined, missing: undefined, group: undefined, subgroup: undefined });
+
+  const [topCountRes, readySalesRes] = await Promise.all([
+    supabase
+      .from("candidates")
+      .select("id", { count: "exact", head: true })
+      .eq("readiness_tier", "ready")
+      .in("profile_group", SALES_GROUPS)
+      .gte("open_to_work_at", topTierCutoffIso()),
+    supabase.from("candidates").select("id", { count: "exact", head: true }).eq("readiness_tier", "ready").in("profile_group", SALES_GROUPS),
+  ]);
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
@@ -1071,6 +1097,7 @@ export default async function CandidatesPage({
           is everyone in the client pipeline right now. Fixed column spans
           (not flex-wrap) so the boxes line up into a real grid instead of
           drifting to whatever width their content happens to need. */}
+      <TopTierCard topCount={topCountRes.count ?? 0} readySalesCount={readySalesRes.count ?? 0} active={params.top} hrefFor={topHref} />
       {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} coverage={cvCoverage} />}
       {readinessOverview && <ReadinessStrip overview={readinessOverview} activeTier={params.ready} activeMissing={params.missing} hrefFor={readinessHref} />}
 
