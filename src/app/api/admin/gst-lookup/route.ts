@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
       tradeName: t.tradeNam ?? null,
       status: t.sts ?? null,
       address: address || null,
+      city: a.dst || a.loc || null,
     });
   } catch {
     return NextResponse.json({ ok: false, error: "The GST lookup service didn't respond. Try again, or type the details." }, { status: 502 });
