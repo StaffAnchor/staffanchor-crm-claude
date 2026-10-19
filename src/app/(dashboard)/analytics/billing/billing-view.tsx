@@ -49,9 +49,9 @@ function withGst(amount: number | null): number | null {
 // state.
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pending",
-  proforma_sent: "Proforma sent",
+  proforma_sent: "Proforma issued",
   payment_received: "Payment received",
-  final_invoiced: "Final invoice issued",
+  final_invoiced: "Tax Invoice issued",
   cancelled: "Cancelled",
 };
 const STATUS_TONE: Record<string, BadgeTone> = {
@@ -69,9 +69,9 @@ const NEXT_STATUS: Record<string, string | null> = {
   cancelled: null,
 };
 const ADVANCE_LABEL: Record<string, string> = {
-  pending: "Mark proforma sent",
+  pending: "Mark proforma issued",
   proforma_sent: "Mark payment received",
-  payment_received: "Mark final invoice issued",
+  payment_received: "Mark Tax Invoice issued",
 };
 
 export default function BillingView({ initialRows, fetchError }: { initialRows: TrancheRow[]; fetchError: string | null }) {
@@ -105,7 +105,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
           { label: "Total (incl. GST)", value: totals.total },
           { label: "Pending", value: totals.pending },
           { label: "Proforma / Payment", value: totals.inProgress },
-          { label: "Final invoiced", value: totals.invoiced },
+          { label: "Tax invoiced", value: totals.invoiced },
         ].map((t) => (
           <div key={t.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
             <p className="text-xs text-slate-400 uppercase tracking-wide">{t.label}</p>

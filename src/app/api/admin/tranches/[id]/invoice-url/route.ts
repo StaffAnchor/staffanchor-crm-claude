@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { invoiceFileNameForTranche } from "@/lib/invoice-generation";
 
 // Signed download links for already-generated invoice PDFs -- the 'invoices'
 // storage bucket is private (per the historical-import feature), so the
@@ -23,7 +24,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const filePath = (tranche as unknown as Record<string, string | null>)[col];
   if (!filePath) return NextResponse.json({ ok: false, error: "No invoice generated yet" }, { status: 404 });
 
-  const { data: signed, error: signError } = await supabase.storage.from("invoices").createSignedUrl(filePath, 60 * 15);
+  const { data: signed, error: signError } = await supabase.storage.from("invoices").createSignedUrl(filePath, 60 * 15, {
+    download: (await invoiceFileNameForTranche(supabase, id, kind)) ?? true,
+  });
   if (signError || !signed) return NextResponse.json({ ok: false, error: signError?.message ?? "Could not sign URL" }, { status: 500 });
 
   return NextResponse.json({ ok: true, url: signed.signedUrl });
