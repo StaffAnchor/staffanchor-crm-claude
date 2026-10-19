@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { renderInvoicePdf, invoicePrefix, fyShort } from "@/lib/invoice-pdf";
-import { resolveTrancheInvoiceData, proformaReference, type InvoiceOverrides } from "@/lib/invoice-generation";
+import { resolveTrancheInvoiceData, proformaReference, invoiceFileName, type InvoiceOverrides } from "@/lib/invoice-generation";
 
 // Generates the system's own Proforma or Tax (final) Invoice PDF for a
 // placement_fee_tranche and advances its lifecycle in one step -- "Mark
@@ -125,7 +125,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, error: updateError.message }, { status: 500 });
   }
 
-  const { data: signed } = await supabase.storage.from("invoices").createSignedUrl(storagePath, 60 * 60);
+  const { data: signed } = await supabase.storage.from("invoices").createSignedUrl(storagePath, 60 * 60, {
+    download: invoiceFileName(kind, invoiceNumber, client.name, item.candidateName),
+  });
 
   return NextResponse.json({ ok: true, invoiceNumber, filePath: storagePath, url: signed?.signedUrl ?? null });
 }

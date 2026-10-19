@@ -159,3 +159,29 @@ export async function proformaReference(
   if (!data?.proforma_invoice_number) return null;
   return { number: data.proforma_invoice_number, date: data.proforma_sent_at ? new Date(data.proforma_sent_at) : null };
 }
+
+// "Proforma Invoice SAPI-26-27-002 - Kiwi Kisan Window - Vikash Gurung.pdf"
+export function invoiceFileName(kind: "proforma" | "final", number: string, clientName: string | null, candidateName: string | null): string {
+  const clean = (t: string) => t.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim();
+  const parts = [`${kind === "proforma" ? "Proforma Invoice" : "Tax Invoice"} ${clean(number)}`];
+  if (clientName) parts.push(clean(clientName));
+  if (candidateName) parts.push(clean(candidateName));
+  return `${parts.join(" - ")}.pdf`;
+}
+
+export async function invoiceFileNameForTranche(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  trancheId: string,
+  kind: "proforma" | "final"
+): Promise<string | undefined> {
+  const { data } = await supabase
+    .from("placement_fee_tranches")
+    .select("proforma_invoice_number, final_invoice_number, mandates(client_name), candidate_mandate_links(candidates(full_name))")
+    .eq("id", trancheId)
+    .single();
+  const number = kind === "proforma" ? data?.proforma_invoice_number : data?.final_invoice_number;
+  if (!data || !number) return undefined;
+  const m = data.mandates as unknown as { client_name: string | null } | null;
+  const l = data.candidate_mandate_links as unknown as { candidates: { full_name: string | null } | null } | null;
+  return invoiceFileName(kind, number, m?.client_name ?? null, l?.candidates?.full_name ?? null);
+}
