@@ -86,6 +86,10 @@
     {
       "path": "/api/cron/selling-profile",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/readiness-snapshot",
+      "schedule": "0 17 * * *"
     }
   ]
 }
