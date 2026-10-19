@@ -29,8 +29,11 @@ type NextMoves = {
   sales_needs_work: number;
   sales_no_phone: number;
   unclassified: number;
+  sales_total: number;
+  sales_with_ctc: number;
+  sales_no_ctc_with_phone: number;
 };
-type SourceRow = { source: string; n: number; ready: number; top_missing: string | null };
+type SourceRow = { source: string; n: number; ready: number; with_ctc: number; top_missing: string | null };
 type Daily = { day: string; total: number; ready: number; almost: number; needs_work: number; ready_sales: number; new_candidates: number; avg_score: number | null };
 type EventRow = {
   id: string;
@@ -52,6 +55,8 @@ const CAUSE_LABEL: Record<string, string> = {
 
 const SOURCE_LABEL: Record<string, string> = {
   generic_registration: "Registration form",
+  bulk_cv_upload: "CVs bulk-uploaded by the team",
+  zoho_recruit_import: "Zoho import",
   job_listing_quick_apply: "Job quick-apply",
   naukri_resdex_export: "Naukri export",
   onboarding_progressive_save: "Onboarding (WhatsApp)",
@@ -140,10 +145,17 @@ export default async function DatabaseHealthPage({ searchParams }: { searchParam
   const bigWeak = sources.filter((s) => s.n >= 30 && pct(s.ready, s.n) < 30).sort((a, b) => b.n - a.n)[0];
   const strong = sources.filter((s) => s.n >= 30 && pct(s.ready, s.n) >= 60).sort((a, b) => pct(b.ready, b.n) - pct(a.ready, a.n))[0];
   if (bigWeak) {
-    levers.push({
-      title: `Fix the ${SOURCE_LABEL[bigWeak.source] ?? bigWeak.source} intake`,
-      body: `${bigWeak.n} profiles came in over the last 30 days and only ${pct(bigWeak.ready, bigWeak.n)}% were complete. The most common gap is ${bigWeak.top_missing ? label(bigWeak.top_missing).toLowerCase() : "unknown"}. Making it required on the form stops the gap at the door${strong ? `, as ${SOURCE_LABEL[strong.source] ?? strong.source} does (${pct(strong.ready, strong.n)}% complete)` : ""}.`,
-    });
+    if (bigWeak.source === "bulk_cv_upload") {
+      levers.push({
+        title: "Collect current CTC after every bulk upload",
+        body: `${bigWeak.n} CVs were bulk-uploaded in the last 30 days and only ${pct(bigWeak.with_ctc, bigWeak.n)}% have a current CTC, because CVs rarely state it. The daily ask batch now puts people missing it first; sending the profile link right after an upload would close the gap sooner.`,
+      });
+    } else {
+      levers.push({
+        title: `Fix the ${SOURCE_LABEL[bigWeak.source] ?? bigWeak.source} intake`,
+        body: `${bigWeak.n} profiles came in over the last 30 days and only ${pct(bigWeak.ready, bigWeak.n)}% were complete. The most common gap is ${bigWeak.top_missing ? label(bigWeak.top_missing).toLowerCase() : "unknown"}. Making it required on the form stops the gap at the door${strong ? `, as ${SOURCE_LABEL[strong.source] ?? strong.source} does (${pct(strong.ready, strong.n)}% complete)` : ""}.`,
+      });
+    }
   }
   if (wa && wa.asked >= 10) {
     levers.push({
@@ -197,6 +209,21 @@ export default async function DatabaseHealthPage({ searchParams }: { searchParam
           <Stat label="Registered today" value={today.new_candidates} />
         </div>
       )}
+
+      {next.sales_total ? (
+        <Card title="Current CTC" sub="The detail most decisions rest on. It is now required for a profile to count as Ready.">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Stat label="Sales profiles with current CTC" value={`${pct(next.sales_with_ctc ?? 0, next.sales_total)}%`} note={`${next.sales_with_ctc} of ${next.sales_total}`} />
+            <Stat label="Missing current CTC" value={next.sales_total - (next.sales_with_ctc ?? 0)} />
+            <Stat label="Reachable on WhatsApp" value={next.sales_no_ctc_with_phone ?? 0} note="have a valid mobile number" />
+            <div className="flex items-center">
+              <Link href="/candidates/pipeline" className="text-[13px] font-medium text-teal-600 hover:underline">
+                Send the next ask batch: people missing current CTC come first →
+              </Link>
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       <Card
         title="What moved"
@@ -313,6 +340,7 @@ export default async function DatabaseHealthPage({ searchParams }: { searchParam
                 <th className="py-1.5 pr-3 font-medium">Source</th>
                 <th className="py-1.5 pr-3 font-medium">New profiles</th>
                 <th className="py-1.5 pr-3 font-medium">Complete (Ready)</th>
+                <th className="py-1.5 pr-3 font-medium">Has current CTC</th>
                 <th className="py-1.5 font-medium">Most common gap</th>
               </tr>
             </thead>
@@ -324,6 +352,7 @@ export default async function DatabaseHealthPage({ searchParams }: { searchParam
                   <td className="py-2 pr-3 tabular-nums">
                     {pct(s.ready, s.n)}% <span className="text-slate-400">({s.ready})</span>
                   </td>
+                  <td className="py-2 pr-3 tabular-nums">{pct(s.with_ctc, s.n)}%</td>
                   <td className="py-2 text-slate-600 dark:text-slate-400">{s.top_missing ? label(s.top_missing) : "—"}</td>
                 </tr>
               ))}
