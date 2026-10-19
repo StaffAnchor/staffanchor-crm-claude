@@ -1097,7 +1097,7 @@ export default async function CandidatesPage({
           is everyone in the client pipeline right now. Fixed column spans
           (not flex-wrap) so the boxes line up into a real grid instead of
           drifting to whatever width their content happens to need. */}
-      <TopTierCard topCount={topCountRes.count ?? 0} readySalesCount={readySalesRes.count ?? 0} active={params.top} hrefFor={topHref} />
+      <TopTierCard topCount={topCountRes.count ?? 0} readySalesCount={readySalesRes.count ?? 0} active={params.top} hrefFor={topHref} founderCalls={isAdmin} />
       {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} coverage={cvCoverage} />}
       {readinessOverview && <ReadinessStrip overview={readinessOverview} activeTier={params.ready} activeMissing={params.missing} hrefFor={readinessHref} />}
 
