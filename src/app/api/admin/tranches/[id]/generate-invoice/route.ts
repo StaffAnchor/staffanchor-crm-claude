@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { renderInvoicePdf, invoicePrefix } from "@/lib/invoice-pdf";
+import { renderInvoicePdf, invoicePrefix, fyShort } from "@/lib/invoice-pdf";
 import { resolveTrancheInvoiceData, proformaReference, type InvoiceOverrides } from "@/lib/invoice-generation";
 
 // Generates the system's own Proforma or Tax (final) Invoice PDF for a
 // placement_fee_tranche and advances its lifecycle in one step -- "Mark
 // proforma sent" now actually produces the proforma PDF rather than just
 // flipping a status flag, per "You can start generating both from this
-// system only and track it." Numbering is auto-sequential per financial
-// year (SA/PI/2026-27/001 / SA/INV/2026-27/001), picked by scanning existing
-// numbers with the current FY's prefix and incrementing the max -- fine at
-// this firm's volume (a handful of tranches a month), no separate counter
-// table needed.
+// system only and track it." Numbering is a gapless-per-kind counter per financial year
+// (SAPI/26-27/002, SAINV/26-27/001; within GST's 16-character limit), allocated
+// atomically in the database and stored on the tranche, so a document keeps
+// its number however many times it is downloaded.
 //
 // `overrides` (candidate name, designation, location, DOJ, billing amount,
 // registrationId) come from the preview/confirm modal -- see
@@ -30,21 +29,16 @@ async function requireAdmin() {
   return { supabase, userId: user.id };
 }
 
+// Allocated by an atomic counter in the database (next_invoice_number), so a
+// number is never reused or handed out twice, even on a double click.
 async function nextInvoiceNumber(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  kind: "proforma" | "final"
-): Promise<string> {
-  const prefix = invoicePrefix(kind);
-  const col = kind === "proforma" ? "proforma_invoice_number" : "final_invoice_number";
-  const { data } = await supabase.from("placement_fee_tranches").select(col).like(col, `${prefix}%`);
-  let max = 0;
-  for (const row of (data ?? []) as unknown as Record<string, string | null>[]) {
-    const val = row[col];
-    if (!val) continue;
-    const seq = parseInt(val.slice(prefix.length), 10);
-    if (Number.isFinite(seq) && seq > max) max = seq;
-  }
-  return `${prefix}${String(max + 1).padStart(3, "0")}`;
+  kind: "proforma" | "final",
+  date: Date
+): Promise<string | null> {
+  const { data, error } = await supabase.rpc("next_invoice_number", { p_kind: kind, p_fy: fyShort(date) });
+  if (error || typeof data !== "number") return null;
+  return `${invoicePrefix(kind, date)}${String(data).padStart(3, "0")}`;
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -65,15 +59,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: existing } = await supabase
     .from("placement_fee_tranches")
-    .select("status, payment_received_at, final_invoice_number")
+    .select("status, payment_received_at, final_invoice_number, proforma_invoice_number")
     .eq("id", id)
     .single();
   if (kind === "final" && existing?.final_invoice_number) {
     return NextResponse.json({ ok: false, error: `A Tax Invoice (${existing.final_invoice_number}) already exists for this tranche.` }, { status: 409 });
   }
 
-  const invoiceNumber = await nextInvoiceNumber(supabase, kind);
+  // One number per document per placement, forever: a second request returns
+  // the existing one instead of issuing a new number.
+  if (kind === "proforma" && existing?.proforma_invoice_number) {
+    return NextResponse.json({ ok: false, error: `Proforma ${existing.proforma_invoice_number} already exists for this tranche. Download it from Billing.` }, { status: 409 });
+  }
+
   const invoiceDate = new Date();
+  const invoiceNumber = await nextInvoiceNumber(supabase, kind, invoiceDate);
+  if (!invoiceNumber) {
+    return NextResponse.json({ ok: false, error: "Couldn't allocate an invoice number. Try again." }, { status: 500 });
+  }
   const proformaRef = kind === "final" ? await proformaReference(supabase, id) : null;
 
   const pdfBuffer = await renderInvoicePdf({

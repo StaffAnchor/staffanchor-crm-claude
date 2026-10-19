@@ -52,9 +52,14 @@ export function financialYearLabel(d: Date = new Date()): string {
   return `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 }
 
+// Short financial-year tag, e.g. 9 Sep 2026 -> "26-27". Invoice numbers stay
+// within GST's 16-character limit: SAPI/26-27/002, SAINV/26-27/001.
+export function fyShort(d: Date = new Date()): string {
+  return financialYearLabel(d).replace(/^20/, "");
+}
+
 export function invoicePrefix(kind: "proforma" | "final", d: Date = new Date()): string {
-  const infix = kind === "proforma" ? "PI" : "INV";
-  return `SA/${infix}/${financialYearLabel(d)}/`;
+  return `${kind === "proforma" ? "SAPI" : "SAINV"}/${fyShort(d)}/`;
 }
 
 const FONT_DIR = path.join(process.cwd(), "public", "fonts");
