@@ -25,6 +25,7 @@ type FormState = {
   dateOfJoining: string; // yyyy-mm-dd or ""
   billingAmount: string;
   registrationId: string;
+  description: string;
 };
 
 export default function InvoicePreviewModal({
@@ -56,6 +57,7 @@ export default function InvoicePreviewModal({
       dateOfJoining: "",
       billingAmount: "",
       registrationId: "",
+      description: "",
     };
     const next = { ...base, ...overrides };
     const res = await fetch(`/api/admin/tranches/${trancheId}/preview-invoice`, {
@@ -70,6 +72,7 @@ export default function InvoicePreviewModal({
           dateOfJoining: next.dateOfJoining || null,
           billingAmount: next.billingAmount ? Number(next.billingAmount) : undefined,
           registrationId: next.registrationId || undefined,
+          description: next.description || undefined,
         },
       }),
     });
@@ -92,6 +95,7 @@ export default function InvoicePreviewModal({
         dateOfJoining: json.item.dateOfJoining ?? "",
         billingAmount: json.item.billingAmount ? String(json.item.billingAmount) : "",
         registrationId: json.selectedRegistrationId ?? "",
+        description: form?.description ?? "",
       });
     }
     if (!json.ok) {
@@ -123,6 +127,7 @@ export default function InvoicePreviewModal({
           dateOfJoining: form.dateOfJoining || null,
           billingAmount: form.billingAmount ? Number(form.billingAmount) : undefined,
           registrationId: form.registrationId || undefined,
+          description: form.description || undefined,
         },
       }),
     });
@@ -202,6 +207,15 @@ export default function InvoicePreviewModal({
               <input
                 value={form?.billingAmount ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, billingAmount: e.target.value } : f))}
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+              />
+            </Field>
+            <Field label="Line text (leave blank for the standard wording)">
+              <textarea
+                rows={2}
+                value={form?.description ?? ""}
+                onChange={(e) => setForm((f) => (f ? { ...f, description: e.target.value } : f))}
+                placeholder="Name (Hired for Full-time role) - Commission of x% of the Annual CTC - Joined on date"
                 className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
               />
             </Field>

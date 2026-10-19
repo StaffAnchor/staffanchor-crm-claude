@@ -1,5 +1,6 @@
 import path from "path";
-import { Document, Page, Text, View, Font, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Page, Text, View, Image, Font, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { GST_STATES } from "@/lib/gst";
 
 // StaffAnchor's own system-generated Proforma / Tax Invoice, modelled on the
 // "black-box grid" template the firm already uses for client People
@@ -13,6 +14,7 @@ import { Document, Page, Text, View, Font, StyleSheet, renderToBuffer } from "@r
 // code 09) -> CGST 9% + SGST 9%; different state -> IGST 18% single line.
 
 export const GST_RATE = 0.18;
+export const SAC = "998512"; // recruitment / placement services
 export const STAFFANCHOR = {
   name: "StaffAnchor Talent Solutions Private Limited",
   address: "PLOT NO 21 and 21A MR-1 AltF Sector 142, Noida, Uttar Pradesh 201304",
@@ -73,53 +75,52 @@ function ensureFonts() {
 }
 
 const INK = "#0F172A";
-const BORDER = "#000000";
+const MUTED = "#64748B";
+const LINE = "#CBD5E1";
+const BRAND = "#1E4FA8";
+const LOGO = path.join(process.cwd(), "public", "staffanchor-logo-pdf.png");
+const STAMP = path.join(process.cwd(), "public", "invoice-stamp-signature.png");
 
 const styles = StyleSheet.create({
-  page: { fontSize: 8.6, fontFamily: "Inter", color: INK, padding: 24 },
-  outer: { borderWidth: 1, borderColor: BORDER },
-  titleBar: { borderBottomWidth: 1, borderColor: BORDER, paddingVertical: 6, alignItems: "center" },
-  titleText: { fontSize: 13, fontWeight: 700, letterSpacing: 1 },
+  page: { fontSize: 8.6, fontFamily: "Inter", color: INK, padding: 34, paddingBottom: 40 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 10, borderBottomWidth: 1.5, borderColor: BRAND },
+  logo: { width: 92, height: 54, objectFit: "contain" },
+  co: { fontSize: 12, fontWeight: 700 },
+  coLine: { fontSize: 8, color: "#334155", lineHeight: 1.5 },
+  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 12 },
+  title: { fontSize: 20, fontWeight: 700, color: BRAND },
+  note: { fontSize: 7.4, color: MUTED, marginTop: 2 },
+  metaBox: { alignItems: "flex-end" },
+  metaLine: { fontSize: 8.4, lineHeight: 1.6 },
+  metaKey: { color: MUTED },
+  billRow: { flexDirection: "row", marginTop: 14, gap: 18 },
+  billCol: { flex: 1 },
+  sectionLabel: { fontSize: 7.2, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4 },
+  party: { fontSize: 10, fontWeight: 700, marginBottom: 2 },
+  text: { fontSize: 8.4, lineHeight: 1.5, color: "#1E293B" },
 
-  row: { flexDirection: "row" },
-  colBorderRight: { borderRightWidth: 1, borderColor: BORDER },
-  cellBorderBottom: { borderBottomWidth: 1, borderColor: BORDER },
-  pad: { padding: 6 },
+  table: { marginTop: 16, borderWidth: 1, borderColor: LINE },
+  thRow: { flexDirection: "row", backgroundColor: "#EEF3FB", borderBottomWidth: 1, borderColor: LINE },
+  trRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: LINE },
+  th: { fontSize: 7.4, fontWeight: 700, padding: 6, color: BRAND },
+  td: { fontSize: 8.4, padding: 6 },
+  desc: { fontSize: 8.4, fontWeight: 600, lineHeight: 1.4 },
+  descSub: { fontSize: 7.6, color: MUTED, marginTop: 2, lineHeight: 1.4 },
 
-  partyCol: { flex: 1.4 },
-  metaCol: { flex: 1 },
+  lower: { flexDirection: "row", marginTop: 12, gap: 20 },
+  lowerLeft: { flex: 1.1 },
+  totals: { flex: 1 },
+  tRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 3.5, paddingHorizontal: 6 },
+  tGrand: { backgroundColor: BRAND, marginTop: 3, borderRadius: 2 },
+  tGrandText: { color: "#FFFFFF", fontWeight: 700, fontSize: 10 },
+  words: { fontSize: 8.6, fontWeight: 600, marginTop: 2, lineHeight: 1.4 },
 
-  label: { fontSize: 7.4, fontWeight: 600, color: "#334155", marginBottom: 2 },
-  companyName: { fontSize: 10, fontWeight: 700, marginBottom: 3 },
-  bodyText: { fontSize: 8.4, lineHeight: 1.45 },
-  smallText: { fontSize: 7.6, lineHeight: 1.4, color: "#1E293B" },
-
-  metaRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: BORDER },
-  metaCell: { flex: 1, padding: 5, borderRightWidth: 1, borderColor: BORDER },
-  metaCellLast: { flex: 1, padding: 5 },
-  metaLabel: { fontSize: 6.8, color: "#475569", marginBottom: 2, textTransform: "uppercase" },
-  metaValue: { fontSize: 8.2, fontWeight: 600 },
-
-  table: { borderTopWidth: 1, borderColor: BORDER },
-  thRow: { flexDirection: "row", backgroundColor: "#EEF1F5", borderBottomWidth: 1, borderColor: BORDER },
-  trRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: BORDER, minHeight: 20 },
-  th: { fontSize: 7.2, fontWeight: 700, padding: 5, borderRightWidth: 1, borderColor: BORDER },
-  td: { fontSize: 8, padding: 5, borderRightWidth: 1, borderColor: BORDER },
-
-  totalsBlock: { alignSelf: "flex-end", width: 240, marginTop: 0 },
-  totalsRow: { flexDirection: "row", borderTopWidth: 1, borderColor: BORDER },
-  totalsLabel: { flex: 1, fontSize: 8, padding: 5, fontWeight: 600, borderRightWidth: 1, borderColor: BORDER },
-  totalsValue: { width: 90, fontSize: 8, padding: 5, textAlign: "right" },
-  grandRow: { backgroundColor: "#EEF1F5" },
-  grandText: { fontWeight: 700 },
-
-  footerRow: { flexDirection: "row", borderTopWidth: 1, borderColor: BORDER },
-  footerCol: { flex: 1, padding: 8 },
-  footerColBorder: { borderRightWidth: 1, borderColor: BORDER },
-  footerHeading: { fontSize: 7.6, fontWeight: 700, marginBottom: 5, textTransform: "uppercase" },
-  amountWords: { padding: 6, borderTopWidth: 1, borderColor: BORDER, fontSize: 8, fontWeight: 600 },
-  signBlock: { marginTop: 26, alignItems: "center" },
-  signLine: { fontSize: 7.6, color: "#475569" },
+  foot: { flexDirection: "row", marginTop: 18, gap: 20, borderTopWidth: 1, borderColor: LINE, paddingTop: 12 },
+  footCol: { flex: 1 },
+  sign: { alignItems: "center" },
+  stamp: { width: 120, height: 98, objectFit: "contain", marginTop: 2 },
+  signLine: { fontSize: 7.8, color: "#334155", fontWeight: 600 },
+  paid: { marginTop: 6, fontSize: 8.4, fontWeight: 700, color: "#15803D" },
 });
 
 // Basic Indian-numbering amount-in-words (rupees only, no paise), enough
@@ -159,6 +160,7 @@ export type InvoicePdfClient = {
   gstin: string | null;
   billingAddress: string | null;
   stateCode: string | null;
+  stateName?: string | null;
 };
 
 export type InvoicePdfLineItem = {
@@ -167,12 +169,17 @@ export type InvoicePdfLineItem = {
   location: string | null;
   dateOfJoining: string | null; // ISO
   billingAmount: number; // pre-GST
+  description?: string | null; // overrides the auto line text
+  commissionPct?: number | null;
+  annualCtc?: number | null; // rupees
 };
 
 export type InvoicePdfInput = {
   kind: "proforma" | "final";
   invoiceNumber: string;
   invoiceDate: Date;
+  dueDate?: Date | null; // proforma only
+  proformaRef?: { number: string; date: Date | null } | null; // tax invoice raised against a proforma
   client: InvoicePdfClient;
   item: InvoicePdfLineItem;
 };
@@ -184,126 +191,143 @@ function fmtDate(d: string | Date | null): string {
   return date.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" });
 }
 
+function inLakhs(n: number): string {
+  const l = n / 100000;
+  return `${Number.isInteger(l) ? l : l.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")}L`;
+}
+
+// Same wording the firm's Zoho invoices use: name, hired for a full-time
+// role, commission % of annual CTC, joining date.
+export function defaultLineText(item: InvoicePdfLineItem): { title: string; sub: string } {
+  if (item.description && item.description.trim()) return { title: item.description.trim(), sub: "" };
+  const bits = [`${item.candidateName} (Hired for Full-time role)`];
+  if (item.commissionPct) {
+    bits.push(`Commission of ${Number(item.commissionPct.toFixed(2))}% of the Annual CTC${item.annualCtc ? ` (${inLakhs(item.annualCtc)})` : ""}`);
+  }
+  if (item.dateOfJoining) bits.push(`Joined on ${fmtDate(item.dateOfJoining)}`);
+  const sub = [item.designation, item.location].filter(Boolean).join(" · ");
+  return { title: bits.join(" - "), sub };
+}
+
 function InvoiceDocument({ input }: { input: InvoicePdfInput }) {
   ensureFonts();
-  const { kind, invoiceNumber, invoiceDate, client, item } = input;
+  const { kind, invoiceNumber, invoiceDate, dueDate, proformaRef, client, item } = input;
   const taxable = item.billingAmount;
   const { cgst, sgst, igst, gstTotal } = gstSplit(taxable, client.stateCode);
-  const total = round2(taxable + gstTotal);
-  const title = kind === "proforma" ? "PROFORMA INVOICE" : "TAX INVOICE";
+  const exact = round2(taxable + gstTotal);
+  const total = Math.round(exact);
+  const rounding = round2(total - exact);
+  const title = kind === "proforma" ? "Proforma Invoice" : "Tax Invoice";
+  const supply = client.stateCode ? `${client.stateName ?? GST_STATES[client.stateCode] ?? ""} (${client.stateCode})`.trim() : "—";
+  const intra = !!client.stateCode && client.stateCode === STAFFANCHOR.stateCode;
+  const line = defaultLineText(item);
+  const taxLabel = intra ? "CGST 9% + SGST 9%" : "IGST 18%";
 
   return (
     <Document title={`${title} ${invoiceNumber} - ${client.name}`}>
       <Page size="A4" style={styles.page}>
-        <View style={styles.outer}>
-          <View style={styles.titleBar}>
-            <Text style={styles.titleText}>{title}</Text>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.co}>StaffAnchor Talent Solutions</Text>
+            <Text style={styles.coLine}>{STAFFANCHOR.name}</Text>
+            <Text style={styles.coLine}>{STAFFANCHOR.address}</Text>
+            <Text style={styles.coLine}>GSTIN {STAFFANCHOR.gstin} · PAN {STAFFANCHOR.pan}</Text>
+            <Text style={styles.coLine}>{STAFFANCHOR.email} · {STAFFANCHOR.phone}</Text>
           </View>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={LOGO} style={styles.logo} />
+        </View>
 
-          {/* Meta strip: invoice no / date / place of supply */}
-          <View style={styles.metaRow}>
-            <View style={styles.metaCell}>
-              <Text style={styles.metaLabel}>Invoice No.</Text>
-              <Text style={styles.metaValue}>{invoiceNumber}</Text>
-            </View>
-            <View style={styles.metaCell}>
-              <Text style={styles.metaLabel}>Invoice Date</Text>
-              <Text style={styles.metaValue}>{fmtDate(invoiceDate)}</Text>
-            </View>
-            <View style={styles.metaCellLast}>
-              <Text style={styles.metaLabel}>Place of Supply</Text>
-              <Text style={styles.metaValue}>{client.stateCode === STAFFANCHOR.stateCode ? "Uttar Pradesh (09)" : "Out of State"}</Text>
-            </View>
-          </View>
-
-          {/* Vendor / Recipient two-column block */}
-          <View style={[styles.row, styles.cellBorderBottom]}>
-            <View style={[styles.partyCol, styles.colBorderRight, styles.pad]}>
-              <Text style={styles.label}>Vendor / Supplier Details</Text>
-              <Text style={styles.companyName}>{STAFFANCHOR.name}</Text>
-              <Text style={styles.smallText}>{STAFFANCHOR.address}</Text>
-              <Text style={styles.smallText}>Phone: {STAFFANCHOR.phone} | Email: {STAFFANCHOR.email}</Text>
-              <Text style={styles.smallText}>GSTIN: {STAFFANCHOR.gstin}</Text>
-              <Text style={styles.smallText}>PAN: {STAFFANCHOR.pan}</Text>
-            </View>
-            <View style={[styles.partyCol, styles.pad]}>
-              <Text style={styles.label}>Recipient Details</Text>
-              <Text style={styles.companyName}>{client.name}</Text>
-              {client.billingAddress ? <Text style={styles.smallText}>{client.billingAddress}</Text> : null}
-              <Text style={styles.smallText}>GSTIN: {client.gstin ?? "—"}</Text>
-            </View>
-          </View>
-
-          {/* Line-item table */}
-          <View style={styles.table}>
-            <View style={styles.thRow}>
-              <Text style={[styles.th, { width: 26 }]}>Sr.</Text>
-              <Text style={[styles.th, { flex: 1.6 }]}>Candidate Full Name</Text>
-              <Text style={[styles.th, { flex: 1.3 }]}>Designation</Text>
-              <Text style={[styles.th, { width: 68 }]}>Date of Joining</Text>
-              <Text style={[styles.th, { flex: 1 }]}>Location</Text>
-              <Text style={[styles.th, { width: 80, borderRightWidth: 0 }]}>Billing Amount</Text>
-            </View>
-            <View style={styles.trRow}>
-              <Text style={[styles.td, { width: 26 }]}>1</Text>
-              <Text style={[styles.td, { flex: 1.6 }]}>{item.candidateName}</Text>
-              <Text style={[styles.td, { flex: 1.3 }]}>{item.designation}</Text>
-              <Text style={[styles.td, { width: 68 }]}>{fmtDate(item.dateOfJoining)}</Text>
-              <Text style={[styles.td, { flex: 1 }]}>{item.location ?? "—"}</Text>
-              <Text style={[styles.td, { width: 80, borderRightWidth: 0, textAlign: "right" }]}>{inr(taxable)}</Text>
-            </View>
-          </View>
-
-          {/* Totals */}
-          <View style={styles.totalsBlock}>
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>Total Before Tax</Text>
-              <Text style={styles.totalsValue}>{inr(taxable)}</Text>
-            </View>
-            {cgst > 0 && (
-              <View style={styles.totalsRow}>
-                <Text style={styles.totalsLabel}>CGST @ 9%</Text>
-                <Text style={styles.totalsValue}>{inr(cgst)}</Text>
-              </View>
+        <View style={styles.titleRow}>
+          <View>
+            <Text style={styles.title}>{title}</Text>
+            {kind === "proforma" && <Text style={styles.note}>Not a tax invoice. A Tax Invoice is issued once payment is received.</Text>}
+            {kind === "final" && proformaRef && (
+              <Text style={styles.note}>Against Proforma Invoice {proformaRef.number}{proformaRef.date ? ` dated ${fmtDate(proformaRef.date)}` : ""}</Text>
             )}
-            {sgst > 0 && (
-              <View style={styles.totalsRow}>
-                <Text style={styles.totalsLabel}>SGST @ 9%</Text>
-                <Text style={styles.totalsValue}>{inr(sgst)}</Text>
-              </View>
-            )}
-            {igst > 0 && (
-              <View style={styles.totalsRow}>
-                <Text style={styles.totalsLabel}>IGST @ 18%</Text>
-                <Text style={styles.totalsValue}>{inr(igst)}</Text>
-              </View>
-            )}
-            <View style={[styles.totalsRow, styles.grandRow]}>
-              <Text style={[styles.totalsLabel, styles.grandText]}>Total After Tax</Text>
-              <Text style={[styles.totalsValue, styles.grandText]}>{inr(total)}</Text>
-            </View>
           </View>
-
-          <View style={styles.amountWords}>
-            <Text>Amount in Words: {amountInWords(total)}</Text>
+          <View style={styles.metaBox}>
+            <Text style={styles.metaLine}><Text style={styles.metaKey}>Invoice No.  </Text><Text style={{ fontWeight: 700 }}>{invoiceNumber}</Text></Text>
+            <Text style={styles.metaLine}><Text style={styles.metaKey}>Date  </Text>{fmtDate(invoiceDate)}</Text>
+            {kind === "proforma" && dueDate && <Text style={styles.metaLine}><Text style={styles.metaKey}>Due by  </Text>{fmtDate(dueDate)}</Text>}
+            <Text style={styles.metaLine}><Text style={styles.metaKey}>Place of supply  </Text>{supply}</Text>
           </View>
+        </View>
 
-          {/* Bank details vs signature */}
-          <View style={styles.footerRow}>
-            <View style={[styles.footerCol, styles.footerColBorder]}>
-              <Text style={styles.footerHeading}>Bank Details</Text>
-              <Text style={styles.smallText}>Bank: {STAFFANCHOR.bank.name}</Text>
-              <Text style={styles.smallText}>Account Name: {STAFFANCHOR.bank.accountHolder}</Text>
-              <Text style={styles.smallText}>Account No.: {STAFFANCHOR.bank.accountNo}</Text>
-              <Text style={styles.smallText}>IFSC: {STAFFANCHOR.bank.ifsc}</Text>
-              {kind === "final" && <Text style={[styles.smallText, { marginTop: 5 }]}>Payment Status: Received</Text>}
+        <View style={styles.billRow}>
+          <View style={styles.billCol}>
+            <Text style={styles.sectionLabel}>Bill to</Text>
+            <Text style={styles.party}>{client.name}</Text>
+            {client.billingAddress ? <Text style={styles.text}>{client.billingAddress}</Text> : null}
+            <Text style={styles.text}>GSTIN {client.gstin ?? "—"}</Text>
+            {client.stateCode ? <Text style={styles.text}>State: {supply}</Text> : null}
+          </View>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.thRow}>
+            <Text style={[styles.th, { width: 24 }]}>#</Text>
+            <Text style={[styles.th, { flex: 1 }]}>Item &amp; description</Text>
+            <Text style={[styles.th, { width: 50 }]}>HSN/SAC</Text>
+            <Text style={[styles.th, { width: 28, textAlign: "right" }]}>Qty</Text>
+            <Text style={[styles.th, { width: 66, textAlign: "right" }]}>Rate</Text>
+            <Text style={[styles.th, { width: 70, textAlign: "right" }]}>Amount</Text>
+          </View>
+          <View style={[styles.trRow, { borderBottomWidth: 0 }]}>
+            <Text style={[styles.td, { width: 24 }]}>1</Text>
+            <View style={[styles.td, { flex: 1 }]}>
+              <Text style={styles.desc}>{line.title}</Text>
+              {line.sub ? <Text style={styles.descSub}>{line.sub}</Text> : null}
             </View>
-            <View style={[styles.footerCol, { alignItems: "center" }]}>
-              <Text style={styles.footerHeading}>For {STAFFANCHOR.name}</Text>
-              <View style={styles.signBlock}>
-                <Text style={styles.signLine}>Authorized Signatory</Text>
-              </View>
-            </View>
+            <Text style={[styles.td, { width: 50 }]}>{SAC}</Text>
+            <Text style={[styles.td, { width: 28, textAlign: "right" }]}>1</Text>
+            <Text style={[styles.td, { width: 66, textAlign: "right" }]}>{inr(taxable)}</Text>
+            <Text style={[styles.td, { width: 70, textAlign: "right" }]}>{inr(taxable)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.lower}>
+          <View style={styles.lowerLeft}>
+            <Text style={styles.sectionLabel}>Total in words</Text>
+            <Text style={styles.words}>{amountInWords(total)}</Text>
+            <Text style={[styles.sectionLabel, { marginTop: 12 }]}>Notes</Text>
+            <Text style={styles.text}>
+              {kind === "proforma"
+                ? `Please pay ${dueDate ? "by " + fmtDate(dueDate) : "within 7 days"} to the account below, quoting ${invoiceNumber}.`
+                : "Thank you for your business."}
+            </Text>
+          </View>
+          <View style={styles.totals}>
+            <View style={styles.tRow}><Text>Sub total</Text><Text>{inr(taxable)}</Text></View>
+            {cgst > 0 && <View style={styles.tRow}><Text>CGST (9%)</Text><Text>{inr(cgst)}</Text></View>}
+            {sgst > 0 && <View style={styles.tRow}><Text>SGST (9%)</Text><Text>{inr(sgst)}</Text></View>}
+            {igst > 0 && <View style={styles.tRow}><Text>IGST (18%)</Text><Text>{inr(igst)}</Text></View>}
+            {rounding !== 0 && <View style={styles.tRow}><Text>Rounding</Text><Text>{inr(rounding)}</Text></View>}
+            <View style={[styles.tRow, styles.tGrand]}><Text style={styles.tGrandText}>Total</Text><Text style={styles.tGrandText}>₹{inr(total)}</Text></View>
+            {kind === "final" && (
+              <>
+                <View style={styles.tRow}><Text>Payment received</Text><Text>₹{inr(total)}</Text></View>
+                <View style={styles.tRow}><Text style={{ fontWeight: 700 }}>Balance due</Text><Text style={{ fontWeight: 700 }}>₹0.00</Text></View>
+              </>
+            )}
+            <Text style={[styles.note, { textAlign: "right", marginTop: 4 }]}>{taxLabel} on SAC {SAC}</Text>
+          </View>
+        </View>
+
+        <View style={styles.foot} wrap={false}>
+          <View style={styles.footCol}>
+            <Text style={styles.sectionLabel}>Pay to</Text>
+            <Text style={styles.text}>{STAFFANCHOR.bank.accountHolder}</Text>
+            <Text style={styles.text}>{STAFFANCHOR.bank.name}</Text>
+            <Text style={styles.text}>A/C {STAFFANCHOR.bank.accountNo}</Text>
+            <Text style={styles.text}>IFSC {STAFFANCHOR.bank.ifsc}</Text>
+            {kind === "final" && <Text style={styles.paid}>PAID</Text>}
+          </View>
+          <View style={[styles.footCol, styles.sign]}>
+            <Text style={styles.signLine}>For {STAFFANCHOR.name}</Text>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <Image src={STAMP} style={styles.stamp} />
+            <Text style={styles.signLine}>Authorized Signatory</Text>
           </View>
         </View>
       </Page>

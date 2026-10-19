@@ -173,7 +173,7 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   const supabase = createClient();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [modalKind, setModalKind] = useState<"proforma" | "final" | null>(null);
 
   async function advance() {
     const next = NEXT_STATUS[row.status];
@@ -184,7 +184,7 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
       // firing straight off -- lets the admin fill in anything missing
       // (DOJ, location, a corrected amount) or pick a different GST office
       // before a numbered invoice actually gets minted.
-      setPreviewOpen(true);
+      setModalKind(docKind);
       return;
     }
     setError(null);
@@ -205,6 +205,10 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   const gross = withGst(row.amount_lakhs);
   const docKind = GENERATES_DOC[row.status];
   const buttonLabel = docKind === "proforma" ? "Preview & generate Proforma" : docKind === "final" ? "Preview & generate Tax Invoice" : ADVANCE_LABEL[row.status];
+  // Straight to a Tax Invoice (no proforma) when still pending, or the
+  // moment a proforma is paid -- the invoice copies the tranche's details.
+  const canGoDirect = row.has_client_link && row.status === "pending";
+  const canConvert = row.has_client_link && row.status === "proforma_sent";
 
   return (
     <>
@@ -250,17 +254,27 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
               </button>
             )
           )}
+          {canGoDirect && (
+            <button onClick={() => setModalKind("final")} className="text-[12px] text-teal-600 hover:underline">
+              Tax Invoice directly
+            </button>
+          )}
+          {canConvert && (
+            <button onClick={() => setModalKind("final")} className="text-[12px] font-medium text-teal-700 hover:underline">
+              Payment received → Tax Invoice
+            </button>
+          )}
         </div>
         {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
       </td>
     </tr>
-    {previewOpen && docKind && (
+    {modalKind && (
       <InvoicePreviewModal
         trancheId={row.id}
-        kind={docKind}
-        onClose={() => setPreviewOpen(false)}
+        kind={modalKind}
+        onClose={() => setModalKind(null)}
         onGenerated={() => {
-          setPreviewOpen(false);
+          setModalKind(null);
           router.refresh();
         }}
       />
