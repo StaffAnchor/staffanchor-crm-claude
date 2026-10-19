@@ -208,6 +208,7 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   // Straight to a Tax Invoice (no proforma) when still pending, or the
   // moment a proforma is paid -- the invoice copies the tranche's details.
   const canGoDirect = row.has_client_link && row.status === "pending";
+  const canMarkPaid = row.status === "final_invoiced" && !row.payment_received_at;
   const canConvert = row.has_client_link && row.status === "proforma_sent";
 
   return (
@@ -257,6 +258,17 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
           {canGoDirect && (
             <button onClick={() => setModalKind("final")} className="text-[12px] text-teal-600 hover:underline">
               Tax Invoice directly
+            </button>
+          )}
+          {canMarkPaid && (
+            <button
+              onClick={async () => {
+                await supabase.from("placement_fee_tranches").update({ payment_received_at: new Date().toISOString() }).eq("id", row.id);
+                router.refresh();
+              }}
+              className="text-[12px] text-teal-600 hover:underline"
+            >
+              Mark paid
             </button>
           )}
           {canConvert && (

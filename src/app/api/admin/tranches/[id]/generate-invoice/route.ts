@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { renderInvoicePdf, invoicePrefix } from "@/lib/invoice-pdf";
-import { resolveTrancheInvoiceData, proformaReference, dueDateFrom, type InvoiceOverrides } from "@/lib/invoice-generation";
+import { resolveTrancheInvoiceData, proformaReference, type InvoiceOverrides } from "@/lib/invoice-generation";
 
 // Generates the system's own Proforma or Tax (final) Invoice PDF for a
 // placement_fee_tranche and advances its lifecycle in one step -- "Mark
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     kind,
     invoiceNumber,
     invoiceDate,
-    dueDate: kind === "proforma" ? dueDateFrom(invoiceDate) : null,
+    paid: kind === "final" && (!!existing?.payment_received_at || existing?.status === "proforma_sent"),
     proformaRef,
     client: {
       name: client.name,
@@ -101,11 +101,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, error: `Upload failed: ${uploadError.message}` }, { status: 500 });
   }
 
+  // Paid when payment was already logged or we're converting a proforma the client has now paid; a direct tax invoice stays unpaid (Credit) until marked paid.
   const paymentAlreadyRecorded = !!existing?.payment_received_at;
+  const settlesNow = !paymentAlreadyRecorded && existing?.status === "proforma_sent";
   const patch: Record<string, string> =
     kind === "proforma"
       ? { status: "proforma_sent", proforma_sent_at: new Date().toISOString(), proforma_invoice_number: invoiceNumber, proforma_file_path: storagePath }
-      : { status: "final_invoiced", ...(paymentAlreadyRecorded ? {} : { payment_received_at: new Date().toISOString() }), final_invoiced_at: new Date().toISOString(), final_invoice_number: invoiceNumber, final_invoice_file_path: storagePath };
+      : { status: "final_invoiced", ...(settlesNow ? { payment_received_at: new Date().toISOString() } : {}), final_invoiced_at: new Date().toISOString(), final_invoice_number: invoiceNumber, final_invoice_file_path: storagePath };
 
   // Billing-amount corrections made in the preview modal should stick on
   // the tranche itself too, not just this one document -- otherwise the

@@ -16,6 +16,8 @@ export type InvoiceOverrides = {
   billingAmount?: number;
   registrationId?: string;
   description?: string;
+  commissionPct?: number;
+  annualCtc?: number;
 };
 
 export type ResolvedGstRegistration = {
@@ -105,8 +107,9 @@ export async function resolveTrancheInvoiceData(
     description: overrides.description?.trim() ? overrides.description.trim() : null,
     // Effective commission on this invoice = client fee % x this tranche's share.
     commissionPct:
-      client.fee_percentage != null ? Number(client.fee_percentage) * (Number(tranche.split_pct ?? 100) / 100) : null,
-    annualCtc: link?.offered_fixed_ctc != null ? Number(link.offered_fixed_ctc) : null,
+      overrides.commissionPct ??
+      (client.fee_percentage != null ? Number(client.fee_percentage) * (Number(tranche.split_pct ?? 100) / 100) : null),
+    annualCtc: overrides.annualCtc ?? (link?.offered_fixed_ctc != null ? Number(link.offered_fixed_ctc) : null),
   };
 
   if (billingAmountRaw == null || !Number.isFinite(billingAmountRaw)) {
@@ -155,9 +158,4 @@ export async function proformaReference(
     .single();
   if (!data?.proforma_invoice_number) return null;
   return { number: data.proforma_invoice_number, date: data.proforma_sent_at ? new Date(data.proforma_sent_at) : null };
-}
-
-export const PROFORMA_DUE_DAYS = 7;
-export function dueDateFrom(d: Date): Date {
-  return new Date(d.getTime() + PROFORMA_DUE_DAYS * 86400000);
 }

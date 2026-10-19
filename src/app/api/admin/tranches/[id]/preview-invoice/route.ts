@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
-import { resolveTrancheInvoiceData, proformaReference, dueDateFrom, type InvoiceOverrides } from "@/lib/invoice-generation";
+import { resolveTrancheInvoiceData, proformaReference, type InvoiceOverrides } from "@/lib/invoice-generation";
 
 // Renders the exact same document generate-invoice/route.ts would produce,
 // but mints nothing: no invoice number allocated, nothing uploaded to
@@ -56,7 +56,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     kind,
     invoiceNumber: `DRAFT/${kind === "proforma" ? "PI" : "INV"}`,
     invoiceDate: new Date(),
-    dueDate: kind === "proforma" ? dueDateFrom(new Date()) : null,
     proformaRef: kind === "final" ? await proformaReference(supabase, id) : null,
     client: {
       name: client.name,

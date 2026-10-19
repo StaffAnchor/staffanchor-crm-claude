@@ -71,56 +71,56 @@ function ensureFonts() {
       { src: path.join(FONT_DIR, "Inter-Bold.woff"), fontWeight: 700 },
     ],
   });
+  // Hind carries the rupee sign (Inter's subset doesn't) and is close to the
+  // look of the firm's existing invoices.
+  Font.register({
+    family: "Hind",
+    fonts: [
+      { src: path.join(FONT_DIR, "Hind-Regular.ttf"), fontWeight: 400 },
+      { src: path.join(FONT_DIR, "Hind-Medium.ttf"), fontWeight: 500 },
+      { src: path.join(FONT_DIR, "Hind-SemiBold.ttf"), fontWeight: 600 },
+      { src: path.join(FONT_DIR, "Hind-Bold.ttf"), fontWeight: 700 },
+    ],
+  });
   Font.registerHyphenationCallback((word) => [word]);
 }
 
-const INK = "#0F172A";
-const MUTED = "#64748B";
-const LINE = "#CBD5E1";
-const BRAND = "#1E4FA8";
+const INK = "#111111";
+const PURPLE = "#9B8FE6";
 const LOGO = path.join(process.cwd(), "public", "staffanchor-logo-pdf.png");
 const STAMP = path.join(process.cwd(), "public", "invoice-stamp-signature.png");
 
+// Layout copied from the firm's existing Proforma / Tax Invoice PDFs
+// (purple header band, company block + logo, Bill To / Invoice Details,
+// Pay To + signature).
 const styles = StyleSheet.create({
-  page: { fontSize: 8.6, fontFamily: "Inter", color: INK, padding: 34, paddingBottom: 40 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 10, borderBottomWidth: 1.5, borderColor: BRAND },
-  logo: { width: 92, height: 54, objectFit: "contain" },
-  co: { fontSize: 12, fontWeight: 700 },
-  coLine: { fontSize: 8, color: "#334155", lineHeight: 1.5 },
-  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 12 },
-  title: { fontSize: 20, fontWeight: 700, color: BRAND },
-  note: { fontSize: 7.4, color: MUTED, marginTop: 2 },
-  metaBox: { alignItems: "flex-end" },
-  metaLine: { fontSize: 8.4, lineHeight: 1.6 },
-  metaKey: { color: MUTED },
-  billRow: { flexDirection: "row", marginTop: 14, gap: 18 },
-  billCol: { flex: 1 },
-  sectionLabel: { fontSize: 7.2, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4 },
-  party: { fontSize: 10, fontWeight: 700, marginBottom: 2 },
-  text: { fontSize: 8.4, lineHeight: 1.5, color: "#1E293B" },
+  page: { fontSize: 9.6, fontFamily: "Hind", color: INK, paddingTop: 34, paddingHorizontal: 33, paddingBottom: 34 },
+  head: { flexDirection: "row", justifyContent: "space-between", borderBottomWidth: 1, borderColor: PURPLE, paddingBottom: 8 },
+  co: { fontSize: 15, fontWeight: 700, marginBottom: 4 },
+  coLine: { fontSize: 9, lineHeight: 1.55 },
+  logo: { width: 78, height: 46, objectFit: "contain", marginTop: 8 },
+  title: { textAlign: "center", color: PURPLE, fontSize: 18, fontWeight: 700, marginTop: 12, marginBottom: 14 },
+  two: { flexDirection: "row", justifyContent: "space-between" },
+  bold: { fontWeight: 700, fontSize: 9.4 },
+  lineText: { fontSize: 9.4, lineHeight: 1.5 },
+  right: { textAlign: "right" },
 
-  table: { marginTop: 16, borderWidth: 1, borderColor: LINE },
-  thRow: { flexDirection: "row", backgroundColor: "#EEF3FB", borderBottomWidth: 1, borderColor: LINE },
-  trRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: LINE },
-  th: { fontSize: 7.4, fontWeight: 700, padding: 6, color: BRAND },
-  td: { fontSize: 8.4, padding: 6 },
-  desc: { fontSize: 8.4, fontWeight: 600, lineHeight: 1.4 },
-  descSub: { fontSize: 7.6, color: MUTED, marginTop: 2, lineHeight: 1.4 },
+  thRow: { flexDirection: "row", backgroundColor: PURPLE, marginTop: 8 },
+  th: { color: "#FFFFFF", fontWeight: 700, fontSize: 9, paddingVertical: 4, paddingHorizontal: 5 },
+  tr: { flexDirection: "row", paddingVertical: 6 },
+  td: { fontSize: 9, paddingHorizontal: 5 },
+  totalRow: { flexDirection: "row", borderTopWidth: 1, borderBottomWidth: 1, borderColor: "#888888", paddingVertical: 4 },
 
-  lower: { flexDirection: "row", marginTop: 12, gap: 20 },
-  lowerLeft: { flex: 1.1 },
-  totals: { flex: 1 },
-  tRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 3.5, paddingHorizontal: 6 },
-  tGrand: { backgroundColor: BRAND, marginTop: 3, borderRadius: 2 },
-  tGrandText: { color: "#FFFFFF", fontWeight: 700, fontSize: 10 },
-  words: { fontSize: 8.6, fontWeight: 600, marginTop: 2, lineHeight: 1.4 },
-
-  foot: { flexDirection: "row", marginTop: 18, gap: 20, borderTopWidth: 1, borderColor: LINE, paddingTop: 12 },
-  footCol: { flex: 1 },
-  sign: { alignItems: "center" },
-  stamp: { width: 120, height: 98, objectFit: "contain", marginTop: 2 },
-  signLine: { fontSize: 7.8, color: "#334155", fontWeight: 600 },
-  paid: { marginTop: 6, fontSize: 8.4, fontWeight: 700, color: "#15803D" },
+  lower: { flexDirection: "row", justifyContent: "space-between", marginTop: 16 },
+  lowerL: { width: 250 },
+  lowerR: { width: 235 },
+  h: { fontWeight: 700, fontSize: 9, marginBottom: 4 },
+  sRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, paddingHorizontal: 5 },
+  sGrand: { backgroundColor: PURPLE },
+  sGrandT: { color: "#FFFFFF", fontWeight: 700 },
+  sLine: { borderBottomWidth: 1, borderColor: "#888888" },
+  foot: { flexDirection: "row", justifyContent: "space-between", marginTop: 22 },
+  stamp: { width: 96, height: 78, objectFit: "contain", marginTop: 4, alignSelf: "center" },
 });
 
 // Basic Indian-numbering amount-in-words (rupees only, no paise), enough
@@ -178,7 +178,7 @@ export type InvoicePdfInput = {
   kind: "proforma" | "final";
   invoiceNumber: string;
   invoiceDate: Date;
-  dueDate?: Date | null; // proforma only
+  paid?: boolean; // tax invoice: payment already received
   proformaRef?: { number: string; date: Date | null } | null; // tax invoice raised against a proforma
   client: InvoicePdfClient;
   item: InvoicePdfLineItem;
@@ -191,9 +191,14 @@ function fmtDate(d: string | Date | null): string {
   return date.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" });
 }
 
+function fmtDateDMY(d: Date): string {
+  const p = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+  return p.replace(/\//g, "-");
+}
+
 function inLakhs(n: number): string {
   const l = n / 100000;
-  return `${Number.isInteger(l) ? l : l.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")}L`;
+  return `${Number.isInteger(l) ? l : l.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")}LPA`;
 }
 
 // Same wording the firm's Zoho invoices use: name, hired for a full-time
@@ -211,123 +216,126 @@ export function defaultLineText(item: InvoicePdfLineItem): { title: string; sub:
 
 function InvoiceDocument({ input }: { input: InvoicePdfInput }) {
   ensureFonts();
-  const { kind, invoiceNumber, invoiceDate, dueDate, proformaRef, client, item } = input;
+  const { kind, invoiceNumber, invoiceDate, proformaRef, client, item } = input;
   const taxable = item.billingAmount;
   const { cgst, sgst, igst, gstTotal } = gstSplit(taxable, client.stateCode);
   const exact = round2(taxable + gstTotal);
   const total = Math.round(exact);
   const rounding = round2(total - exact);
-  const title = kind === "proforma" ? "Proforma Invoice" : "Tax Invoice";
-  const supply = client.stateCode ? `${client.stateName ?? GST_STATES[client.stateCode] ?? ""} (${client.stateCode})`.trim() : "—";
-  const intra = !!client.stateCode && client.stateCode === STAFFANCHOR.stateCode;
+  const isProforma = kind === "proforma";
+  const title = isProforma ? "Proforma Invoice" : "Tax Invoice";
+  const stateName = client.stateName ?? (client.stateCode ? GST_STATES[client.stateCode] : "") ?? "";
+  const supply = client.stateCode ? `${client.stateCode}-${stateName}` : "—";
   const line = defaultLineText(item);
-  const taxLabel = intra ? "CGST 9% + SGST 9%" : "IGST 18%";
+  const received = !isProforma && input.paid ? total : 0;
+  const addrLines = (client.billingAddress ?? "").split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const W = { n: 24, name: 180, sac: 62, qty: 46, price: 70, gst: 66 };
 
   return (
     <Document title={`${title} ${invoiceNumber} - ${client.name}`}>
       <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
+        <View style={styles.head}>
           <View>
             <Text style={styles.co}>StaffAnchor Talent Solutions</Text>
-            <Text style={styles.coLine}>{STAFFANCHOR.name}</Text>
-            <Text style={styles.coLine}>{STAFFANCHOR.address}</Text>
-            <Text style={styles.coLine}>GSTIN {STAFFANCHOR.gstin} · PAN {STAFFANCHOR.pan}</Text>
-            <Text style={styles.coLine}>{STAFFANCHOR.email} · {STAFFANCHOR.phone}</Text>
+            <Text style={styles.coLine}>{STAFFANCHOR.address.replace(/,? ?Noida.*$/, "")}, Noida</Text>
+            <Text style={styles.coLine}>Phone no. : {STAFFANCHOR.phone}</Text>
+            <Text style={styles.coLine}>Email : {STAFFANCHOR.email}</Text>
+            <Text style={styles.coLine}>GSTIN : {STAFFANCHOR.gstin}</Text>
+            <Text style={styles.coLine}>State: 09-Uttar Pradesh</Text>
           </View>
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={LOGO} style={styles.logo} />
         </View>
 
-        <View style={styles.titleRow}>
-          <View>
-            <Text style={styles.title}>{title}</Text>
-            {kind === "proforma" && <Text style={styles.note}>Not a tax invoice. A Tax Invoice is issued once payment is received.</Text>}
-            {kind === "final" && proformaRef && (
-              <Text style={styles.note}>Against Proforma Invoice {proformaRef.number}{proformaRef.date ? ` dated ${fmtDate(proformaRef.date)}` : ""}</Text>
-            )}
+        <Text style={styles.title}>{title}</Text>
+
+        <View style={styles.two}>
+          <View style={{ flex: 1, paddingRight: 20 }}>
+            <Text style={[styles.bold, { marginBottom: 8 }]}>{isProforma ? "Proforma Invoice For" : "Bill To"}</Text>
+            <Text style={[styles.bold, { marginBottom: 5 }]}>{client.name}</Text>
+            {addrLines.map((l, i) => (
+              <Text key={i} style={styles.lineText}>{l}</Text>
+            ))}
+            <Text style={[styles.lineText, { marginTop: 6 }]}>GSTIN : {client.gstin ?? "—"}</Text>
+            {client.stateCode ? <Text style={[styles.lineText, { marginTop: 6 }]}>State: {supply}</Text> : null}
           </View>
-          <View style={styles.metaBox}>
-            <Text style={styles.metaLine}><Text style={styles.metaKey}>Invoice No.  </Text><Text style={{ fontWeight: 700 }}>{invoiceNumber}</Text></Text>
-            <Text style={styles.metaLine}><Text style={styles.metaKey}>Date  </Text>{fmtDate(invoiceDate)}</Text>
-            {kind === "proforma" && dueDate && <Text style={styles.metaLine}><Text style={styles.metaKey}>Due by  </Text>{fmtDate(dueDate)}</Text>}
-            <Text style={styles.metaLine}><Text style={styles.metaKey}>Place of supply  </Text>{supply}</Text>
+          <View style={{ width: 210 }}>
+            <Text style={[styles.bold, styles.right, { marginBottom: 8 }]}>{isProforma ? "Proforma Invoice Details" : "Invoice Details"}</Text>
+            <Text style={[styles.lineText, styles.right]}>{isProforma ? "Proforma Invoice No." : "Invoice No."} : {invoiceNumber}</Text>
+            <Text style={[styles.lineText, styles.right]}>Date : {fmtDateDMY(invoiceDate)}</Text>
+            <Text style={[styles.lineText, styles.right]}>Place of supply: {supply}</Text>
+            {!isProforma && proformaRef ? (
+              <Text style={[styles.lineText, styles.right]}>Against Proforma : {proformaRef.number}</Text>
+            ) : null}
           </View>
         </View>
 
-        <View style={styles.billRow}>
-          <View style={styles.billCol}>
-            <Text style={styles.sectionLabel}>Bill to</Text>
-            <Text style={styles.party}>{client.name}</Text>
-            {client.billingAddress ? <Text style={styles.text}>{client.billingAddress}</Text> : null}
-            <Text style={styles.text}>GSTIN {client.gstin ?? "—"}</Text>
-            {client.stateCode ? <Text style={styles.text}>State: {supply}</Text> : null}
+        <View style={styles.thRow}>
+          <Text style={[styles.th, { width: W.n }]}>#</Text>
+          <Text style={[styles.th, { width: W.name }]}>Item name</Text>
+          <Text style={[styles.th, { width: W.sac }]}>HSN/ SAC</Text>
+          <Text style={[styles.th, { width: W.qty, textAlign: "right" }]}>Quantity</Text>
+          <Text style={[styles.th, { width: W.price, textAlign: "right" }]}>Price/ Unit</Text>
+          <Text style={[styles.th, { width: W.gst, textAlign: "right" }]}>GST</Text>
+          <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Amount</Text>
+        </View>
+        <View style={styles.tr}>
+          <Text style={[styles.td, { width: W.n }]}>1</Text>
+          <View style={[styles.td, { width: W.name }]}>
+            <Text style={{ fontWeight: 700 }}>{line.title}</Text>
           </View>
+          <Text style={[styles.td, { width: W.sac }]}>{SAC}</Text>
+          <Text style={[styles.td, { width: W.qty, textAlign: "right" }]}>1</Text>
+          <Text style={[styles.td, { width: W.price, textAlign: "right" }]}>₹ {inr(taxable)}</Text>
+          <View style={[styles.td, { width: W.gst, alignItems: "flex-end" }]}>
+            <Text>₹ {inr(gstTotal)}</Text>
+            <Text style={{ fontSize: 8, color: "#444444" }}>(18%)</Text>
+          </View>
+          <Text style={[styles.td, { flex: 1, textAlign: "right" }]}>₹ {inr(exact)}</Text>
+        </View>
+        <View style={styles.totalRow}>
+          <Text style={[styles.td, { width: W.n + W.name + W.sac + W.qty + W.price, fontWeight: 700 }]}>Total</Text>
+          <Text style={[styles.td, { width: W.gst, textAlign: "right", fontWeight: 700 }]}>₹ {inr(gstTotal)}</Text>
+          <Text style={[styles.td, { flex: 1, textAlign: "right", fontWeight: 700 }]}>₹ {inr(exact)}</Text>
         </View>
 
-        <View style={styles.table}>
-          <View style={styles.thRow}>
-            <Text style={[styles.th, { width: 24 }]}>#</Text>
-            <Text style={[styles.th, { flex: 1 }]}>Item &amp; description</Text>
-            <Text style={[styles.th, { width: 50 }]}>HSN/SAC</Text>
-            <Text style={[styles.th, { width: 28, textAlign: "right" }]}>Qty</Text>
-            <Text style={[styles.th, { width: 66, textAlign: "right" }]}>Rate</Text>
-            <Text style={[styles.th, { width: 70, textAlign: "right" }]}>Amount</Text>
+        <View style={styles.lower} wrap={false}>
+          <View style={styles.lowerL}>
+            <Text style={styles.h}>{isProforma ? "Proforma Invoice" : "Invoice"} Amount In Words</Text>
+            <Text style={styles.lineText}>{amountInWords(total).replace(" Only", " only")}</Text>
+            <Text style={[styles.h, { marginTop: 16 }]}>Terms and Conditions</Text>
+            <Text style={styles.lineText}>Thanks for doing business with us!</Text>
           </View>
-          <View style={[styles.trRow, { borderBottomWidth: 0 }]}>
-            <Text style={[styles.td, { width: 24 }]}>1</Text>
-            <View style={[styles.td, { flex: 1 }]}>
-              <Text style={styles.desc}>{line.title}</Text>
-              {line.sub ? <Text style={styles.descSub}>{line.sub}</Text> : null}
-            </View>
-            <Text style={[styles.td, { width: 50 }]}>{SAC}</Text>
-            <Text style={[styles.td, { width: 28, textAlign: "right" }]}>1</Text>
-            <Text style={[styles.td, { width: 66, textAlign: "right" }]}>{inr(taxable)}</Text>
-            <Text style={[styles.td, { width: 70, textAlign: "right" }]}>{inr(taxable)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.lower}>
-          <View style={styles.lowerLeft}>
-            <Text style={styles.sectionLabel}>Total in words</Text>
-            <Text style={styles.words}>{amountInWords(total)}</Text>
-            <Text style={[styles.sectionLabel, { marginTop: 12 }]}>Notes</Text>
-            <Text style={styles.text}>
-              {kind === "proforma"
-                ? `Please pay ${dueDate ? "by " + fmtDate(dueDate) : "within 7 days"} to the account below, quoting ${invoiceNumber}.`
-                : "Thank you for your business."}
-            </Text>
-          </View>
-          <View style={styles.totals}>
-            <View style={styles.tRow}><Text>Sub total</Text><Text>{inr(taxable)}</Text></View>
-            {cgst > 0 && <View style={styles.tRow}><Text>CGST (9%)</Text><Text>{inr(cgst)}</Text></View>}
-            {sgst > 0 && <View style={styles.tRow}><Text>SGST (9%)</Text><Text>{inr(sgst)}</Text></View>}
-            {igst > 0 && <View style={styles.tRow}><Text>IGST (18%)</Text><Text>{inr(igst)}</Text></View>}
-            {rounding !== 0 && <View style={styles.tRow}><Text>Rounding</Text><Text>{inr(rounding)}</Text></View>}
-            <View style={[styles.tRow, styles.tGrand]}><Text style={styles.tGrandText}>Total</Text><Text style={styles.tGrandText}>₹{inr(total)}</Text></View>
-            {kind === "final" && (
+          <View style={styles.lowerR}>
+            <View style={styles.sRow}><Text>Sub Total</Text><Text>₹ {inr(taxable)}</Text></View>
+            {cgst > 0 && <View style={styles.sRow}><Text>CGST@9%</Text><Text>₹ {inr(cgst)}</Text></View>}
+            {sgst > 0 && <View style={styles.sRow}><Text>SGST@9%</Text><Text>₹ {inr(sgst)}</Text></View>}
+            {igst > 0 && <View style={styles.sRow}><Text>IGST@18%</Text><Text>₹ {inr(igst)}</Text></View>}
+            {rounding !== 0 && <View style={styles.sRow}><Text>{isProforma ? "Round off" : "Round off"}</Text><Text>₹ {inr(Math.abs(rounding))}</Text></View>}
+            <View style={[styles.sRow, styles.sGrand]}><Text style={styles.sGrandT}>Total</Text><Text style={styles.sGrandT}>₹ {inr(total)}</Text></View>
+            {!isProforma && (
               <>
-                <View style={styles.tRow}><Text>Payment received</Text><Text>₹{inr(total)}</Text></View>
-                <View style={styles.tRow}><Text style={{ fontWeight: 700 }}>Balance due</Text><Text style={{ fontWeight: 700 }}>₹0.00</Text></View>
+                <View style={styles.sRow}><Text>Received</Text><Text>₹ {inr(received)}</Text></View>
+                <View style={styles.sRow}><Text>Balance</Text><Text>₹ {inr(total - received)}</Text></View>
+                <View style={[styles.sRow, styles.sLine]}><Text>Payment mode</Text><Text>{input.paid ? "Bank transfer" : "Credit"}</Text></View>
               </>
             )}
-            <Text style={[styles.note, { textAlign: "right", marginTop: 4 }]}>{taxLabel} on SAC {SAC}</Text>
           </View>
         </View>
 
         <View style={styles.foot} wrap={false}>
-          <View style={styles.footCol}>
-            <Text style={styles.sectionLabel}>Pay to</Text>
-            <Text style={styles.text}>{STAFFANCHOR.bank.accountHolder}</Text>
-            <Text style={styles.text}>{STAFFANCHOR.bank.name}</Text>
-            <Text style={styles.text}>A/C {STAFFANCHOR.bank.accountNo}</Text>
-            <Text style={styles.text}>IFSC {STAFFANCHOR.bank.ifsc}</Text>
-            {kind === "final" && <Text style={styles.paid}>PAID</Text>}
+          <View style={{ width: 260 }}>
+            <Text style={styles.h}>Pay To:</Text>
+            <Text style={styles.lineText}>Bank Name : {STAFFANCHOR.bank.name}</Text>
+            <Text style={styles.lineText}>Bank Account No. : {STAFFANCHOR.bank.accountNo}</Text>
+            <Text style={styles.lineText}>Bank IFSC code : {STAFFANCHOR.bank.ifsc}</Text>
+            <Text style={styles.lineText}>Account holder&apos;s name : {STAFFANCHOR.bank.accountHolder}</Text>
           </View>
-          <View style={[styles.footCol, styles.sign]}>
-            <Text style={styles.signLine}>For {STAFFANCHOR.name}</Text>
+          <View style={{ width: 200, alignItems: "center" }}>
+            <Text style={styles.lineText}>For :StaffAnchor Talent Solutions</Text>
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image src={STAMP} style={styles.stamp} />
-            <Text style={styles.signLine}>Authorized Signatory</Text>
+            <Text style={styles.bold}>Authorized Signatory</Text>
           </View>
         </View>
       </Page>
