@@ -293,7 +293,7 @@ export default function InvoicePreviewModal({
                 disabled={generating || loading}
                 className="rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[12.5px] font-medium px-3 py-1.5"
               >
-                {generating ? "Generating…" : `Generate & ${kind === "proforma" ? "mark sent" : "mark issued"}`}
+                {generating ? "Generating…" : kind === "proforma" ? "Generate Proforma" : "Generate Tax Invoice"}
               </button>
               <button
                 onClick={onClose}

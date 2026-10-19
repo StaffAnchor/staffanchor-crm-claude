@@ -83,6 +83,9 @@ export async function sendEmail({
   text,
   attachments,
   fromName = "StaffAnchor",
+  fromEmail,
+  cc,
+  replyTo,
   plain = false,
   headers,
 }: {
@@ -92,6 +95,11 @@ export async function sendEmail({
   text?: string;
   attachments?: MailAttachment[];
   fromName?: string;
+  // Show this address as the sender (Gmail only honours addresses set up under
+  // "Send mail as"; otherwise it substitutes the signed-in account).
+  fromEmail?: string;
+  cc?: string | string[];
+  replyTo?: string;
   // Plain personal-looking mail (no logo attachment), which is what lands in the inbox for outreach.
   plain?: boolean;
   headers?: Record<string, string>;
@@ -111,9 +119,11 @@ export async function sendEmail({
     auth: { user: gmailUser, pass: gmailPass },
   });
 
-  await transporter.sendMail({
-    from: `"${fromName}" <${gmailUser}>`,
+  const info = await transporter.sendMail({
+    from: `"${fromName}" <${fromEmail ?? gmailUser}>`,
     to,
+    cc,
+    replyTo,
     subject,
     text,
     html,
@@ -124,4 +134,6 @@ export async function sendEmail({
     headers,
     attachments: plain ? attachments : [{ filename: "staffanchor-logo.png", path: LOGO_PATH, cid: LOGO_CID }, ...(attachments ?? [])],
   });
+  // The account that actually authenticated, which is what Gmail may show as the sender.
+  return { sentVia: gmailUser, messageId: info.messageId as string | undefined };
 }
