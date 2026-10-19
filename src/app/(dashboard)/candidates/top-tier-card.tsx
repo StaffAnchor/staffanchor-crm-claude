@@ -9,11 +9,13 @@ export default function TopTierCard({
   readySalesCount,
   active,
   hrefFor,
+  founderCalls = false,
 }: {
   topCount: number;
   readySalesCount: number;
   active?: string;
   hrefFor: (top?: string) => string;
+  founderCalls?: boolean;
 }) {
   const unconfirmed = Math.max(0, readySalesCount - topCount);
   return (
@@ -55,6 +57,14 @@ export default function TopTierCard({
           </div>
         </Link>
       </div>
+      {founderCalls && (
+        <p className="mt-2 text-[12px] text-slate-600 dark:text-slate-300">
+          <Link href="/candidates/founder-calls" className="font-medium text-teal-600 hover:underline">
+            Founder calls →
+          </Link>{" "}
+          your daily 4 senior profiles to speak to personally.
+        </p>
+      )}
       {unconfirmed > 0 && (
         <p className="mt-2 text-[12px] text-slate-600 dark:text-slate-300">
           {unconfirmed} ready sales profiles haven&apos;t confirmed they&apos;re open yet.{" "}

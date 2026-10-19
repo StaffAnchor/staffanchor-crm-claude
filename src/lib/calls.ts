@@ -9,7 +9,7 @@ export const dialNumber = (phone: string | null | undefined): string | null => {
 };
 
 /** Records the call as started, then hands over to the phone's dialer. Never blocks the call if recording fails. */
-export async function startCall(opts: { candidateId: string; mandateId?: string | null; phone: string | null | undefined }) {
+export async function startCall(opts: { candidateId: string; mandateId?: string | null; phone: string | null | undefined; source?: string }) {
   const number = dialNumber(opts.phone);
   if (!number) {
     // Not a number we can tidy up: still let the phone try it.
@@ -17,7 +17,7 @@ export async function startCall(opts: { candidateId: string; mandateId?: string 
     return false;
   }
   try {
-    await fetch("/api/calls/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: opts.candidateId, mandateId: opts.mandateId ?? null }), keepalive: true });
+    await fetch("/api/calls/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: opts.candidateId, mandateId: opts.mandateId ?? null, source: opts.source }), keepalive: true });
     window.dispatchEvent(new Event("sa-call-started"));
   } catch {
     // The call still goes ahead; the sheet just won't be waiting afterwards.

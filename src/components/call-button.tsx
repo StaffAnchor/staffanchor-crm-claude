@@ -11,6 +11,7 @@ export default function CallButton({
   label = "Call",
   className = "",
   onStarted,
+  source,
 }: {
   candidateId: string;
   mandateId?: string | null;
@@ -18,6 +19,7 @@ export default function CallButton({
   label?: string;
   className?: string;
   onStarted?: () => void;
+  source?: string;
 }) {
   if (!phone) return null;
   return (
@@ -25,7 +27,7 @@ export default function CallButton({
       type="button"
       onClick={() => {
         onStarted?.();
-        void startCall({ candidateId, mandateId, phone });
+        void startCall({ candidateId, mandateId, phone, source });
       }}
       className={className || "inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500"}
     >
