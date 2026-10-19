@@ -21,10 +21,11 @@ export type GstRegistration = {
   state_name: string | null;
   billing_address: string | null;
   contact_phone: string | null;
+  billing_email: string | null;
   is_default: boolean;
 };
 
-const EMPTY_DRAFT = { label: "", gstin: "", state_code: "", state_name: "", billing_address: "", contact_phone: "" };
+const EMPTY_DRAFT = { label: "", gstin: "", state_code: "", state_name: "", billing_address: "", contact_phone: "", billing_email: "" };
 
 export default function ClientGstPanel({ clientId, initial }: { clientId: string; initial: GstRegistration[] }) {
   const router = useRouter();
@@ -72,6 +73,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
       state_name: r.state_name ?? "",
       billing_address: r.billing_address ?? "",
       contact_phone: r.contact_phone ?? "",
+      billing_email: r.billing_email ?? "",
     });
     setEditingId(r.id);
     setError(null);
@@ -97,6 +99,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
       state_name: parsed.stateName,
       billing_address: draft.billing_address.trim() || null,
       contact_phone: draft.contact_phone.trim() || null,
+      billing_email: draft.billing_email.trim() || null,
     };
     const isNew = editingId === "new";
     const { data, error: saveError } = isNew
@@ -174,6 +177,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
                   <div className="text-slate-500 dark:text-slate-400">
                     {r.state_name ? `${r.state_name} (${r.state_code})` : r.state_code}
                   </div>
+                  {r.billing_email && <div className="text-slate-500 dark:text-slate-400">Invoices to: {r.billing_email}</div>}
                   {r.billing_address && <div className="text-slate-400 mt-0.5">{r.billing_address}</div>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -284,6 +288,12 @@ function RegistrationForm({
         value={draft.contact_phone}
         onChange={(e) => setDraft({ ...draft, contact_phone: e.target.value })}
         placeholder="Contact phone (optional)"
+        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+      />
+      <input
+        value={draft.billing_email}
+        onChange={(e) => setDraft({ ...draft, billing_email: e.target.value })}
+        placeholder="Billing email for invoices (optional)"
         className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
       />
       <textarea

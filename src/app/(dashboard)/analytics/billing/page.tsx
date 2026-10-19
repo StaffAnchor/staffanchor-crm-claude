@@ -18,7 +18,7 @@ export default async function BillingPage() {
   const { data, error } = await supabase
     .from("placement_fee_tranches")
     .select(
-      "id, label, split_pct, amount_lakhs, due_date, status, proforma_sent_at, payment_received_at, final_invoiced_at, proforma_invoice_number, final_invoice_number, mandates(role_title, client_name, client_id), candidate_mandate_links(candidates(full_name))"
+      "id, label, split_pct, amount_lakhs, due_date, status, proforma_sent_at, payment_received_at, final_invoiced_at, proforma_invoice_number, final_invoice_number, proforma_emailed_at, proforma_emailed_to, final_emailed_at, final_emailed_to, mandates(role_title, client_name, client_id), candidate_mandate_links(candidates(full_name))"
     )
     // Cancelled tranches are placements that fell through after the tranche
     // was generated (did_not_join / stage moved off placed, see
@@ -42,6 +42,10 @@ export default async function BillingPage() {
       final_invoiced_at: r.final_invoiced_at,
       proforma_invoice_number: r.proforma_invoice_number,
       final_invoice_number: r.final_invoice_number,
+      proforma_emailed_at: r.proforma_emailed_at,
+      proforma_emailed_to: r.proforma_emailed_to,
+      final_emailed_at: r.final_emailed_at,
+      final_emailed_to: r.final_emailed_to,
       role_title: mandate?.role_title ?? "—",
       client_name: mandate?.client_name ?? "—",
       has_client_link: Boolean(mandate?.client_id),

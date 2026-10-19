@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import InvoicePreviewModal from "./invoice-preview-modal";
+import InvoiceEmailModal from "./invoice-email-modal";
 
 export type TrancheRow = {
   id: string;
@@ -18,6 +19,10 @@ export type TrancheRow = {
   final_invoiced_at: string | null;
   proforma_invoice_number: string | null;
   final_invoice_number: string | null;
+  proforma_emailed_at: string | null;
+  proforma_emailed_to: string | null;
+  final_emailed_at: string | null;
+  final_emailed_to: string | null;
   role_title: string;
   client_name: string;
   has_client_link: boolean;
@@ -97,6 +102,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
 
   return (
     <div>
+      <SampleEmailButton />
       <p className="text-xs text-slate-400 mb-3">
         Amounts below include 18% GST, matching the Final Billing Value shown on Placements.
       </p>
@@ -174,6 +180,7 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalKind, setModalKind] = useState<"proforma" | "final" | null>(null);
+  const [emailKind, setEmailKind] = useState<"proforma" | "final" | null>(null);
 
   async function advance() {
     const next = NEXT_STATUS[row.status];
@@ -242,6 +249,16 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
               {row.final_invoice_number}
             </button>
           )}
+          {row.proforma_invoice_number && (
+            <button onClick={() => setEmailKind("proforma")} className="text-[12px] text-teal-600 hover:underline">
+              {row.proforma_emailed_at ? "Re-email Proforma" : "Email Proforma"}
+            </button>
+          )}
+          {row.final_invoice_number && (
+            <button onClick={() => setEmailKind("final")} className="text-[12px] text-teal-600 hover:underline">
+              {row.final_emailed_at ? "Re-email Tax Invoice" : "Email Tax Invoice"}
+            </button>
+          )}
           {NEXT_STATUS[row.status] && !row.has_client_link && docKind ? (
             <span className="text-xs text-amber-600">Link mandate to a client first</span>
           ) : (
@@ -277,9 +294,23 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
             </button>
           )}
         </div>
+        {(row.proforma_emailed_at || row.final_emailed_at) && (
+          <p className="text-[11px] text-slate-400 mt-1">
+            {row.proforma_emailed_at && <>Proforma emailed {new Date(row.proforma_emailed_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })} to {row.proforma_emailed_to}. </>}
+            {row.final_emailed_at && <>Tax Invoice emailed {new Date(row.final_emailed_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })} to {row.final_emailed_to}.</>}
+          </p>
+        )}
         {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
       </td>
     </tr>
+    {emailKind && (
+      <InvoiceEmailModal
+        trancheId={row.id}
+        kind={emailKind}
+        onClose={() => setEmailKind(null)}
+        onSent={() => router.refresh()}
+      />
+    )}
     {modalKind && (
       <InvoicePreviewModal
         trancheId={row.id}
@@ -292,5 +323,36 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
       />
     )}
     </>
+  );
+}
+
+// Sends a clearly-marked sample invoice email to the owner's CC address only,
+// to see which sender address it arrives from. Uses no invoice number.
+function SampleEmailButton() {
+  const [state, setState] = useState<"idle" | "sending">("idle");
+  const [msg, setMsg] = useState<string | null>(null);
+  async function send() {
+    setState("sending");
+    setMsg(null);
+    const res = await fetch("/api/admin/invoice-email-test", { method: "POST" });
+    const json = await res.json().catch(() => ({ ok: false, error: "Send failed" }));
+    setState("idle");
+    setMsg(
+      json.ok
+        ? `Sample sent to ${json.to}. Check which address it came from (intended: ${json.intendedFrom}; mailbox used: ${json.sentVia}).`
+        : json.error ?? "Send failed"
+    );
+  }
+  return (
+    <div className="mb-3 flex items-center gap-3 flex-wrap">
+      <button
+        onClick={send}
+        disabled={state === "sending"}
+        className="text-[12px] text-teal-600 hover:underline disabled:opacity-50"
+      >
+        {state === "sending" ? "Sending…" : "Send a sample invoice email to me"}
+      </button>
+      {msg && <span className="text-[12px] text-slate-500">{msg}</span>}
+    </div>
   );
 }

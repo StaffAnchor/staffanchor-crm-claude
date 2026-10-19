@@ -112,7 +112,7 @@ export default async function ClientDetailPage({
 
   const { data: gstRegistrations } = await supabase
     .from("client_gst_registrations")
-    .select("id, label, gstin, state_code, state_name, billing_address, contact_phone, is_default")
+    .select("id, label, gstin, state_code, state_name, billing_address, contact_phone, billing_email, is_default")
     .eq("client_id", id)
     .order("is_default", { ascending: false })
     .order("label");
