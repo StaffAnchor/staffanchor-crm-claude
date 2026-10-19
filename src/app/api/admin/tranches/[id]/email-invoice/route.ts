@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/mail";
 import { invoiceFileName } from "@/lib/invoice-generation";
-import { INVOICE_CC, INVOICE_FROM, defaultInvoiceEmail, invoiceEmailHtml, parseEmailList } from "@/lib/invoice-email";
+import { INVOICE_CC, INVOICE_FROM, defaultInvoiceEmail, defaultReminderEmail, invoiceEmailHtml, parseEmailList } from "@/lib/invoice-email";
 
 // Emails an already-generated Proforma / Tax Invoice PDF to the client.
 // GET returns the draft (To from the client's billing email or primary
@@ -30,6 +30,9 @@ type Joined = {
   final_emailed_at: string | null;
   final_emailed_to: string | null;
   amount_lakhs: number | string | null;
+  proforma_sent_at: string | null;
+  proforma_reminder_count: number;
+  proforma_last_reminder_at: string | null;
   mandates: { role_title: string; client_name: string; client_id: string | null } | null;
   candidate_mandate_links: { candidates: { full_name: string } | null } | null;
 };
@@ -38,7 +41,7 @@ async function load(supabase: Awaited<ReturnType<typeof createClient>>, id: stri
   const { data } = await supabase
     .from("placement_fee_tranches")
     .select(
-      "proforma_invoice_number, final_invoice_number, proforma_file_path, final_invoice_file_path, proforma_emailed_at, proforma_emailed_to, final_emailed_at, final_emailed_to, amount_lakhs, mandates(role_title, client_name, client_id), candidate_mandate_links(candidates(full_name))"
+      "proforma_invoice_number, final_invoice_number, proforma_file_path, final_invoice_file_path, proforma_emailed_at, proforma_emailed_to, final_emailed_at, final_emailed_to, amount_lakhs, proforma_sent_at, proforma_reminder_count, proforma_last_reminder_at, mandates(role_title, client_name, client_id), candidate_mandate_links(candidates(full_name))"
     )
     .eq("id", id)
     .single();
@@ -50,7 +53,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if ("error" in auth) return auth.error;
   const { supabase } = auth;
   const { id } = await params;
-  const kind: "proforma" | "final" = req.nextUrl.searchParams.get("kind") === "final" ? "final" : "proforma";
+  const reminder = req.nextUrl.searchParams.get("reminder") === "1";
+  const kind: "proforma" | "final" = reminder ? "proforma" : req.nextUrl.searchParams.get("kind") === "final" ? "final" : "proforma";
 
   const t = await load(supabase, id);
   if (!t) return NextResponse.json({ ok: false, error: "Tranche not found" }, { status: 404 });
@@ -74,11 +78,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .map((c) => ({ name: c.full_name, email: c.email as string }));
   }
 
-  // Billing email wins; otherwise the primary contact, then any contact with an email.
-  const to = billingEmail ?? contacts[0]?.email ?? "";
+  // A reminder goes to whoever the proforma was emailed to; otherwise the
+  // billing email, then the primary contact, then any contact with an email.
+  const to = (reminder && t.proforma_emailed_to) || (billingEmail ?? contacts[0]?.email ?? "");
   const contactName = contacts.find((c) => c.email.toLowerCase() === to.toLowerCase())?.name ?? null;
   const totalInr = Math.round(Number(t.amount_lakhs ?? 0) * 1.18);
-  const draft = defaultInvoiceEmail({
+  const draft = reminder
+    ? defaultReminderEmail({
+        number,
+        raisedOn: t.proforma_sent_at
+          ? new Date(t.proforma_sent_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })
+          : "",
+        contactName,
+        clientName: t.mandates?.client_name ?? "",
+        candidateName: t.candidate_mandate_links?.candidates?.full_name ?? "the candidate",
+        totalInr,
+      })
+    : defaultInvoiceEmail({
     kind,
     number,
     contactName,
@@ -100,8 +116,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     body: draft.body,
     fileName,
     number,
-    emailedAt: kind === "proforma" ? t.proforma_emailed_at : t.final_emailed_at,
+    emailedAt: reminder ? t.proforma_last_reminder_at : kind === "proforma" ? t.proforma_emailed_at : t.final_emailed_at,
     emailedTo: kind === "proforma" ? t.proforma_emailed_to : t.final_emailed_to,
+    reminderCount: t.proforma_reminder_count,
   });
 }
 
@@ -112,7 +129,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
 
   const body = await req.json().catch(() => ({}));
-  const kind: "proforma" | "final" = body.kind === "final" ? "final" : "proforma";
+  const reminder = body.reminder === true;
+  const kind: "proforma" | "final" = reminder ? "proforma" : body.kind === "final" ? "final" : "proforma";
   const subject = String(body.subject ?? "").trim();
   const text = String(body.body ?? "").trim();
   const test = body.test === true;
@@ -153,7 +171,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       replyTo: INVOICE_FROM,
       attachments: [{ filename: fileName, content: pdf, contentType: "application/pdf" }],
     });
-    if (!test) {
+    if (!test && reminder) {
+      await supabase
+        .from("placement_fee_tranches")
+        .update({ proforma_reminder_count: (t.proforma_reminder_count ?? 0) + 1, proforma_last_reminder_at: new Date().toISOString() })
+        .eq("id", id);
+    } else if (!test) {
       const stamp =
         kind === "proforma"
           ? { proforma_emailed_at: new Date().toISOString(), proforma_emailed_to: to.ok.join(", ") }

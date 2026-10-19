@@ -63,3 +63,26 @@ export function defaultInvoiceEmail(opts: {
     ].join("\n\n"),
   };
 }
+
+// Manual nudge for a proforma that is still unpaid a week or more after it was
+// raised. Same editable-draft flow as the invoice email itself.
+export function defaultReminderEmail(opts: {
+  number: string;
+  raisedOn: string; // e.g. "19 Oct 2026"
+  contactName: string | null;
+  clientName: string;
+  candidateName: string;
+  totalInr: number;
+}): { subject: string; body: string } {
+  const first = opts.contactName?.trim().split(/\s+/)[0];
+  const amount = `₹${opts.totalInr.toLocaleString("en-IN")}`;
+  return {
+    subject: `Reminder: Proforma Invoice ${opts.number} | ${opts.clientName} | payment pending`,
+    body: [
+      `Hi ${first || "Team"},`,
+      `A gentle reminder that Proforma Invoice ${opts.number} dated ${opts.raisedOn} for ${opts.candidateName}, ${amount} including GST, is still pending payment. The invoice is attached again for your convenience.`,
+      "Please arrange the payment to the bank account on the invoice and share the payment confirmation with us. If it has already been paid, kindly send us the transaction reference so we can update our records and issue the Tax Invoice.",
+      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+    ].join("\n\n"),
+  };
+}

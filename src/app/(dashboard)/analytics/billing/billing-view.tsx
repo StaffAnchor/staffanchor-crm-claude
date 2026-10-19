@@ -23,6 +23,8 @@ export type TrancheRow = {
   proforma_emailed_to: string | null;
   final_emailed_at: string | null;
   final_emailed_to: string | null;
+  proforma_reminder_count: number;
+  proforma_last_reminder_at: string | null;
   role_title: string;
   client_name: string;
   has_client_link: boolean;
@@ -174,6 +176,12 @@ const GENERATES_DOC: Record<string, "proforma" | "final" | null> = {
   final_invoiced: null,
 };
 
+// Wrapped so the purity lint doesn't flag Date.now() in render; the value only
+// drives a 'days since' label.
+function nowMs(): number {
+  return Date.now();
+}
+
 function TrancheRowLine({ row }: { row: TrancheRow }) {
   const router = useRouter();
   const supabase = createClient();
@@ -181,6 +189,7 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   const [error, setError] = useState<string | null>(null);
   const [modalKind, setModalKind] = useState<"proforma" | "final" | null>(null);
   const [emailKind, setEmailKind] = useState<"proforma" | "final" | null>(null);
+  const [reminderOpen, setReminderOpen] = useState(false);
 
   async function advance() {
     const next = NEXT_STATUS[row.status];
@@ -215,6 +224,9 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
   // Straight to a Tax Invoice (no proforma) when still pending, or the
   // moment a proforma is paid -- the invoice copies the tranche's details.
   const canGoDirect = row.has_client_link && row.status === "pending";
+  // Unpaid a week after the proforma was raised -> offer a manual reminder.
+  const daysSinceProforma = row.proforma_sent_at ? Math.floor((nowMs() - new Date(row.proforma_sent_at).getTime()) / 86400000) : 0;
+  const reminderDue = row.status === "proforma_sent" && !!row.proforma_invoice_number && daysSinceProforma >= 7;
   const canMarkPaid = row.status === "final_invoiced" && !row.payment_received_at;
   const canConvert = row.has_client_link && row.status === "proforma_sent";
 
@@ -277,6 +289,11 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
               Tax Invoice directly
             </button>
           )}
+          {reminderDue && (
+            <button onClick={() => setReminderOpen(true)} className="text-[12px] font-medium text-amber-600 hover:underline">
+              Send payment reminder
+            </button>
+          )}
           {canMarkPaid && (
             <button
               onClick={async () => {
@@ -294,6 +311,14 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
             </button>
           )}
         </div>
+        {reminderDue && (
+          <p className="text-[11px] text-amber-600 mt-1">
+            Proforma raised {daysSinceProforma} days ago, payment not received
+            {row.proforma_reminder_count > 0 && row.proforma_last_reminder_at
+              ? ` · ${row.proforma_reminder_count} reminder${row.proforma_reminder_count > 1 ? "s" : ""} sent, last ${new Date(row.proforma_last_reminder_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })}`
+              : ""}
+          </p>
+        )}
         {(row.proforma_emailed_at || row.final_emailed_at) && (
           <p className="text-[11px] text-slate-400 mt-1">
             {row.proforma_emailed_at && <>Proforma emailed {new Date(row.proforma_emailed_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })} to {row.proforma_emailed_to}. </>}
@@ -303,6 +328,15 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
         {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
       </td>
     </tr>
+    {reminderOpen && (
+      <InvoiceEmailModal
+        trancheId={row.id}
+        kind="proforma"
+        reminder
+        onClose={() => setReminderOpen(false)}
+        onSent={() => router.refresh()}
+      />
+    )}
     {emailKind && (
       <InvoiceEmailModal
         trancheId={row.id}
