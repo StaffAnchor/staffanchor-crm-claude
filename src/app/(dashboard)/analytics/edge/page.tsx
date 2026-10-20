@@ -61,8 +61,8 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
   return (
     <div className="mx-auto max-w-[1100px] space-y-5 px-5 py-8">
       <div>
-        <h1 className="ros-page-title">Pro Sessions</h1>
-        <p className="mt-1 text-[13px] text-slate-500">Paid 1:1 sessions for jobseekers: what is booked, when you are free, and replies to LinkedIn requests.</p>
+        <h1 className="ros-page-title">StaffAnchor Edge</h1>
+        <p className="mt-1 text-[13px] text-slate-500">Paid 1:1 sessions for jobseekers (mock interview, job search strategy, resume): what is booked, when you are free, and replies to LinkedIn requests.</p>
       </div>
       {sp.gcal && <p className="rounded-lg bg-slate-100 px-3 py-2 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{GCAL_MSG[sp.gcal] ?? sp.gcal}</p>}
 
@@ -88,12 +88,12 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
         </Card>
       </div>
 
-      <Card title="Booking pages" sub="Share these. The website Pro Sessions pages link to the same ones.">
+      <Card title="Booking pages" sub="Share these. The StaffAnchor Edge pages on both websites link to the same ones.">
         <ul className="space-y-1 text-[13px]">
           {(services ?? []).map((s: { slug: string; title: string; duration_min: number; price_inr: number }) => (
             <li key={s.slug}>
               <span className="font-medium">{s.title}</span> · {s.duration_min} min · {inr(s.price_inr)} ·{" "}
-              <a className="text-teal-600 hover:underline" href={`https://jobs.staffanchor.com/pro-sessions/book/${s.slug}`} target="_blank">jobs.staffanchor.com/pro-sessions/book/{s.slug}</a>
+              <a className="text-teal-600 hover:underline" href={`https://jobs.staffanchor.com/edge/book/${s.slug}`} target="_blank">jobs.staffanchor.com/edge/book/{s.slug}</a>
             </li>
           ))}
         </ul>

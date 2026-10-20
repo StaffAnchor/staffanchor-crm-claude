@@ -53,7 +53,7 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
     } else {
       const ev = await createMeetEvent(token, {
         summary: `${service.title} | ${booking.name}`,
-        description: `Pro Session booked on staffanchor.com.\n\n${booking.name}\n${booking.email}\n${booking.phone}\nTarget role: ${booking.target_role ?? "—"}`,
+        description: `StaffAnchor Edge session booked online.\n\n${booking.name}\n${booking.email}\n${booking.phone}\nTarget role: ${booking.target_role ?? "—"}`,
         start: new Date(booking.slot_start),
         end: new Date(booking.slot_end),
         attendeeEmail: booking.email,

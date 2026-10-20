@@ -8,7 +8,7 @@ const TABS = [
   { href: "/analytics/scoreboard", label: "Scoreboard", icon: Gauge },
   { href: "/analytics/adoption", label: "Adoption", icon: HeartHandshake },
   { href: "/analytics/database", label: "Database", icon: Database },
-  { href: "/analytics/pro-sessions", label: "Pro Sessions", icon: Video },
+  { href: "/analytics/edge", label: "StaffAnchor Edge", icon: Video },
   { href: "/analytics/reports", label: "Reports", icon: BarChart3 },
   { href: "/analytics/flow", label: "Flow & AI", icon: Activity },
   { href: "/analytics/billing", label: "Billing", icon: Wallet },

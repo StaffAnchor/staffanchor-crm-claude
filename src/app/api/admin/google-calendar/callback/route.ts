@@ -6,7 +6,7 @@ import { exchangeCode } from "@/lib/pro-sessions/google";
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
-  const back = (q: string) => NextResponse.redirect(new URL(`/analytics/pro-sessions?${q}`, req.url));
+  const back = (q: string) => NextResponse.redirect(new URL(`/analytics/edge?${q}`, req.url));
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   if (!code || !state || state !== req.cookies.get("pro_gcal_state")?.value) return back("gcal=failed");

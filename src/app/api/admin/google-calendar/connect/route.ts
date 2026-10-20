@@ -7,7 +7,7 @@ import { GOOGLE_SCOPES, googleConfigured } from "@/lib/pro-sessions/google";
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
-  if (!googleConfigured()) return NextResponse.redirect(new URL("/analytics/pro-sessions?gcal=notconfigured", req.url));
+  if (!googleConfigured()) return NextResponse.redirect(new URL("/analytics/edge?gcal=notconfigured", req.url));
   const state = crypto.randomBytes(16).toString("hex");
   const redirectUri = `${req.nextUrl.origin}/api/admin/google-calendar/callback`;
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");

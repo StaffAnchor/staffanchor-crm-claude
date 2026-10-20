@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// Pro Sessions: paid 1:1 sessions for jobseekers, booked on the CRM's public /book/<service> page and linked from
+// StaffAnchor Edge: paid 1:1 sessions for jobseekers, booked booked on jobs.staffanchor.com/edge and linked from
 // both websites. All times are Indian Standard Time (no daylight saving), so plain offsets are enough.
 
 export const PRO_FROM = process.env.PRO_EMAIL_FROM || "info@staffanchor.com";
