@@ -3,6 +3,7 @@ import { PRO_CC, PRO_FROM, formatIst, inr, type ProService } from "./core";
 import { createMeetEvent, getAccessToken } from "./google";
 import { sendEmail } from "@/lib/mail";
 import { invoiceEmailHtml } from "@/lib/invoice-email";
+import { ensureServiceInvoice } from "@/lib/service-invoices";
 
 type Booking = {
   id: string;
@@ -70,6 +71,13 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
     if (calendarError) await db.from("pro_bookings").update({ calendar_error: calendarError }).eq("id", bookingId);
   }
 
+  // Tax invoice, made now and kept. It is emailed only when someone asks for it.
+  try {
+    await ensureServiceInvoice(db, "edge", bookingId);
+  } catch (e) {
+    console.error("session invoice failed", e);
+  }
+
   // Confirmation email: From info@, copy to the owner.
   try {
     const when = formatIst(new Date(booking.slot_start));
@@ -79,7 +87,7 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
       `${service.title}\n${when} IST, ${service.duration_min} minutes, video meeting\nPaid: ${inr(booking.amount_inr)}`,
       meet ? `Join here: ${meet}` : "Your joining link will follow by email shortly.",
       PREP[booking.service_slug] ?? "",
-      "If you need to move the session, just reply to this email.",
+      "If you need to move the session, just reply to this email. Need a GST invoice? Reply and we will send it.",
       "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
     ].filter(Boolean).join("\n\n");
     await sendEmail({
