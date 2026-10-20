@@ -5,7 +5,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export const PRO_FROM = process.env.PRO_EMAIL_FROM || "info@staffanchor.com";
 export const PRO_CC = process.env.PRO_EMAIL_CC || "gagan@staffanchor.com";
-export const BOOKING_ORIGIN = "https://clients.staffanchor.com";
+export const BOOKING_ORIGIN = "https://jobs.staffanchor.com";
 export const HOLD_MINUTES = 15;
 
 const IST_MS = 5.5 * 3600 * 1000;

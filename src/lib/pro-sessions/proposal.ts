@@ -13,7 +13,7 @@ export function offers(services: { slug: string; title: string; duration_min: nu
     title: s.title,
     duration_min: s.duration_min,
     price: inr(s.price_inr),
-    link: `https://clients.staffanchor.com/book/${s.slug}?src=linkedin_proposal`,
+    link: `https://jobs.staffanchor.com/pro-sessions/book/${s.slug}?src=linkedin_proposal`,
     what:
       s.slug === "mock-interview"
         ? "a full mock interview loop for the role you are targeting, then a plain debrief on where you would have been screened out and how to fix it"

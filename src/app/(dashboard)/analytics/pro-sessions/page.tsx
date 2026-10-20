@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { adminDb, formatIst, inr } from "@/lib/pro-sessions/core";
 import { googleConfigured } from "@/lib/pro-sessions/google";
-import { razorpayConfigured } from "@/lib/pro-sessions/razorpay";
 import AvailabilityEditor from "./availability-editor";
 import ProposalHelper from "./proposal-helper";
 
@@ -56,7 +55,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
   const win = windows && windows.length ? windows : db ? ((await db.from("pro_availability").select("weekday, start_time, end_time").order("weekday")).data ?? []) : [];
   const rows = (bookings ?? []) as Booking[];
   const paid = rows.filter((b) => b.status === "paid");
-  const rz = razorpayConfigured();
+  const linked = !!process.env.PRO_INTERNAL_SECRET;
   const gc = googleConfigured();
 
   return (
@@ -79,8 +78,8 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
           </Link>
         </Card>
         <Card title="Payments (Razorpay)">
-          <p className={`text-[13px] ${rz ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
-            {rz ? "Switched on. Bookings take payment on the page." : "Not switched on. The booking page shows 'payments aren't on yet' until the Razorpay keys are added."}
+          <p className={`text-[13px] ${linked ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+            {linked ? "Payments are taken on jobs.staffanchor.com with your existing Razorpay account, then confirmed here." : "The link to jobs.staffanchor.com isn't set up yet (PRO_INTERNAL_SECRET is missing)."}
           </p>
         </Card>
         <Card title="Bookings">
@@ -94,7 +93,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
           {(services ?? []).map((s: { slug: string; title: string; duration_min: number; price_inr: number }) => (
             <li key={s.slug}>
               <span className="font-medium">{s.title}</span> · {s.duration_min} min · {inr(s.price_inr)} ·{" "}
-              <a className="text-teal-600 hover:underline" href={`/book/${s.slug}`} target="_blank">clients.staffanchor.com/book/{s.slug}</a>
+              <a className="text-teal-600 hover:underline" href={`https://jobs.staffanchor.com/pro-sessions/book/${s.slug}`} target="_blank">jobs.staffanchor.com/pro-sessions/book/{s.slug}</a>
             </li>
           ))}
         </ul>
