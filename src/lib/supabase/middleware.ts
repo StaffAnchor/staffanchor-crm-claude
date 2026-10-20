@@ -105,6 +105,9 @@ export async function updateSession(request: NextRequest) {
     // The website message box: a public page shown in an iframe on the two public sites and the
     // public endpoint behind it, which protects itself (rate limit, size cap, honeypot).
     request.nextUrl.pathname.startsWith("/embed/") ||
+    // Pro Sessions: the public booking page and its payment and slot endpoints.
+    request.nextUrl.pathname.startsWith("/book/") ||
+    request.nextUrl.pathname.startsWith("/api/pro/") ||
     request.nextUrl.pathname === "/api/public/assist" ||
     // Same class again: a would-be vendor has no account yet, so there's no
     // session to check -- the invite token itself is the credential.
