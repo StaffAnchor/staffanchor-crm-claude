@@ -13,6 +13,18 @@ export const TIERS: Record<TierKey, { label: string; band: string; price: number
 /** The plan, and so the price, depends on years of experience only: 0-5, 6-12, 13 and above. */
 export const tierForYears = (years: number): TierKey => (years <= 5 ? "early" : years <= 12 ? "mid" : "senior");
 
+// Job Strategy + Resume Rebuild: the 45-minute strategy session (999) plus Resume Writing for the experience band, less 20%.
+export const COMBO_STRATEGY_PRICE = 999;
+export const COMBO_DISCOUNT_PCT = 20;
+
+export function comboPrice(years: number) {
+  const tier = tierForYears(years);
+  const resume = TIERS[tier].price;
+  const subtotal = COMBO_STRATEGY_PRICE + resume;
+  const total = Math.round((subtotal * (100 - COMBO_DISCOUNT_PCT)) / 100);
+  return { tier, strategy: COMBO_STRATEGY_PRICE, resume, subtotal, discount: subtotal - total, total };
+}
+
 export const isTier = (t: unknown): t is TierKey => t === "early" || t === "mid" || t === "senior";
 
 export const newToken = () => crypto.randomBytes(18).toString("base64url");

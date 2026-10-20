@@ -19,5 +19,5 @@ export async function POST(req: NextRequest) {
   if (!row || (b.bookingId && row.id !== b.bookingId)) return NextResponse.json({ ok: false, error: "Booking doesn't match the payment." }, { status: 400 });
   const r = await finalizeBooking(db, row.id, b.paymentId);
   if (!r.ok || !r.booking) return NextResponse.json({ ok: false, error: r.error ?? "Couldn't confirm the booking." }, { status: 500 });
-  return NextResponse.json({ ok: true, start: r.booking.slot_start, meetLink: r.booking.meet_link });
+  return NextResponse.json({ ok: true, start: r.booking.slot_start, meetLink: r.booking.meet_link, intakeToken: r.intakeToken ?? null });
 }
