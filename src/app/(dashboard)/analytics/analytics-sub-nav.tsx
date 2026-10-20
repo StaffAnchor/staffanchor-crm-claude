@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Wallet, Target, Users, TrendingUp, Activity, Gauge, HeartHandshake, Database, Video } from "lucide-react";
+import { BarChart3, Wallet, Target, Users, TrendingUp, Activity, Gauge, HeartHandshake, Database, Video, FileText } from "lucide-react";
 
 const TABS = [
   { href: "/analytics/scoreboard", label: "Scoreboard", icon: Gauge },
   { href: "/analytics/adoption", label: "Adoption", icon: HeartHandshake },
   { href: "/analytics/database", label: "Database", icon: Database },
   { href: "/analytics/edge", label: "StaffAnchor Edge", icon: Video },
+  { href: "/analytics/resume-orders", label: "Resume orders", icon: FileText },
   { href: "/analytics/reports", label: "Reports", icon: BarChart3 },
   { href: "/analytics/flow", label: "Flow & AI", icon: Activity },
   { href: "/analytics/billing", label: "Billing", icon: Wallet },
