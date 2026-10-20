@@ -23,7 +23,7 @@ export function offers(services: { slug: string; title: string; duration_min: nu
     slug: "resume-writing",
     title: "Resume Writing",
     duration_min: null,
-    price: "from Rs 999",
+    price: "from Rs 1,199",
     link: "https://www.staffanchor.com/resume-writing",
     what: "a professionally written, ATS-friendly resume delivered as Word and PDF",
   });
