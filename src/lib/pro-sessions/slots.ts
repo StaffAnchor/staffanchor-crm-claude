@@ -25,13 +25,14 @@ export async function computeSlots(db: SupabaseClient, durationMin: number, from
   const rangeStart = fromIst(fromDate, "00:00");
   const rangeEnd = fromIst(addDays(fromDate, span), "00:00");
 
+  // Booking stays closed until the owner's Google Calendar is connected, so no one can pay for a time that
+  // has not been checked against it.
   const token = await getAccessToken(db);
+  if (!token) return { ok: false, calendarConnected: false, days: {}, error: "Booking opens very soon. Please check back shortly." };
   let busy: { start: Date; end: Date }[] = [];
-  if (token) {
-    const b = await busyPeriods(token, rangeStart, rangeEnd);
-    if (b === null) return { ok: false, calendarConnected: true, days: {}, error: "Availability is temporarily unavailable. Please try again in a few minutes." };
-    busy = b;
-  }
+  const b = await busyPeriods(token, rangeStart, rangeEnd);
+  if (b === null) return { ok: false, calendarConnected: true, days: {}, error: "Availability is temporarily unavailable. Please try again in a few minutes." };
+  busy = b;
   const holdFrom = new Date(now.getTime() - HOLD_MINUTES * 60000).toISOString();
   const { data: taken } = await db
     .from("pro_bookings")
