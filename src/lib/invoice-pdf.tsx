@@ -18,7 +18,7 @@ export const SAC = "998512"; // recruitment / placement services
 export const STAFFANCHOR = {
   name: "StaffAnchor Talent Solutions Private Limited",
   address: "PLOT NO 21 and 21A MR-1 AltF Sector 142, Noida, Uttar Pradesh 201304",
-  phone: "9818881142",
+  phone: "7273000088",
   email: "info@staffanchor.com",
   gstin: "09ABNCS7867A1ZU",
   pan: "ABNCS7867A",
