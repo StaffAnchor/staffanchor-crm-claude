@@ -114,7 +114,7 @@ export async function sendServiceInvoice(db: SupabaseClient, invoiceId: string, 
   const text = [
     `Hi ${(inv.customer_name ?? "").split(/\s+/)[0] || "there"},`,
     `Please find your tax invoice ${inv.invoice_number} attached, for ₹${inv.amount_inr.toLocaleString("en-IN")} (GST included).`,
-    "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+    "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
   ].join("\n\n");
   try {
     await sendEmail({

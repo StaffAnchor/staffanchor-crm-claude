@@ -59,7 +59,7 @@ export function defaultInvoiceEmail(opts: {
       `Hi ${first || "Team"},`,
       `Please find attached ${doc} ${opts.number} for ${opts.candidateName} (${opts.designation}) placed with ${opts.clientName}. The total is ${amount} including GST.`,
       ask,
-      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
     ].join("\n\n"),
   };
 }
@@ -82,7 +82,7 @@ export function defaultReminderEmail(opts: {
       `Hi ${first || "Team"},`,
       `A gentle reminder that Proforma Invoice ${opts.number} dated ${opts.raisedOn} for ${opts.candidateName}, ${amount} including GST, is still pending payment. The invoice is attached again for your convenience.`,
       "Please arrange the payment to the bank account on the invoice and share the payment confirmation with us. If it has already been paid, kindly send us the transaction reference so we can update our records and issue the Tax Invoice.",
-      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
     ].join("\n\n"),
   };
 }

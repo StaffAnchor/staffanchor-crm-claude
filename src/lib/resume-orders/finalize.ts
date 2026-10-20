@@ -34,7 +34,7 @@ export async function finalizeResumeOrder(db: SupabaseClient, razorpayOrderId: s
       `Next step: tell us about your career so far. It takes about 15 minutes, and you can attach your current resume.\n${link}`,
       `Your first draft is delivered ${FIRST_DRAFT_DAYS} working days after we receive this form (working days are Monday to Saturday). The final resume follows in ${t.finalDelivery}, with ${t.revisions} revision round${t.revisions > 1 ? "s" : ""} included, as Word and PDF.`,
       "Need a GST invoice? Reply to this email and we will send it.",
-      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
     ].join("\n\n");
     await sendEmail({ to: o.email, cc: PRO_CC, subject: `Order confirmed: ${t.label} | next step`, text, html: invoiceEmailHtml(text), fromName: "StaffAnchor", fromEmail: PRO_FROM, replyTo: PRO_FROM });
   } catch (e) {
