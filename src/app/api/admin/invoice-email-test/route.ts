@@ -28,7 +28,7 @@ export async function POST() {
     "Hi,",
     "This is a sample of how invoice emails will arrive. It has a sample Proforma Invoice attached. No real invoice or number was used.",
     `Intended sender: ${INVOICE_FROM}\nCC on real invoices: ${INVOICE_CC}`,
-    "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+    "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
   ].join("\n\n");
 
   try {

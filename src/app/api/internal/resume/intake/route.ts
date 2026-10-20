@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       first ? "Thank you, we have your details." : "Thank you, we have received your updated details.",
       first ? `Your first draft will reach you by ${dueText}.` : "",
       "If you think of anything to add, just reply to this email.",
-      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
     ].filter(Boolean).join("\n\n");
     await sendEmail({ to: o.email, cc: PRO_CC, subject: `We have your details | ${t.label}`, text: toCustomer, html: invoiceEmailHtml(toCustomer), fromName: "StaffAnchor", fromEmail: PRO_FROM, replyTo: PRO_FROM });
   } catch (e) {

@@ -88,7 +88,7 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
       meet ? `Join here: ${meet}` : "Your joining link will follow by email shortly.",
       PREP[booking.service_slug] ?? "",
       "If you need to move the session, just reply to this email. Need a GST invoice? Reply and we will send it.",
-      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
     ].filter(Boolean).join("\n\n");
     await sendEmail({
       to: booking.email,
