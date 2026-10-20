@@ -6,25 +6,27 @@ import { generateTextWithFallback } from "@/lib/ai-providers";
 export const PROPOSAL_MAX = 1500;
 export type Offer = { slug: string; title: string; duration_min: number | null; price: string; link: string; what: string };
 
-export function offers(services: { slug: string; title: string; duration_min: number; price_inr: number }[]): Offer[] {
+export function offers(services: { slug: string; title: string; duration_min: number; price_inr: number; price_by_experience?: boolean }[]): Offer[] {
   const inr = (n: number) => `Rs ${n.toLocaleString("en-IN")}`;
   const list: Offer[] = services.map((s) => ({
     slug: s.slug,
     title: s.title,
     duration_min: s.duration_min,
-    price: inr(s.price_inr),
+    price: s.price_by_experience ? `starts at ${inr(s.price_inr)} and depends on years of experience: ${inr(s.price_inr)} for 0-5 years, Rs 2,238 for 6-12 years, Rs 2,798 for 13+ years, including GST` : inr(s.price_inr),
     link: `https://jobs.staffanchor.com/edge/book/${s.slug}?src=linkedin_proposal`,
     what:
       s.slug === "mock-interview"
         ? "a full mock interview loop for the role you are targeting, then a plain debrief on where you would have been screened out and how to fix it"
-        : "a line-by-line resume rewrite, a sharper LinkedIn headline and About, and a map of where your next role actually comes from",
+        : s.price_by_experience
+          ? "a 45-minute 1:1 strategy session on where your next role actually comes from and a sharper LinkedIn headline and About, plus a professionally written resume (Word and PDF), at 20% off when taken together"
+          : "a line-by-line resume rewrite, a sharper LinkedIn headline and About, and a map of where your next role actually comes from",
   }));
   list.push({
     slug: "resume-writing",
     title: "Resume Writing",
     duration_min: null,
-    price: "from Rs 1,199",
-    link: "https://www.staffanchor.com/resume-writing",
+    price: "from Rs 1,199 depending on years of experience",
+    link: "https://jobs.staffanchor.com/resume-writing?src=linkedin_proposal",
     what: "a professionally written, ATS-friendly resume delivered as Word and PDF",
   });
   return list;
@@ -37,7 +39,7 @@ function strip(text: string): string {
 export function templateProposal(o: Offer, firstName: string): string {
   const hi = firstName ? `Hi ${firstName},` : "Hi,";
   const len = o.duration_min ? `${o.duration_min}-minute video session` : "service";
-  return `${hi}\n\nThank you for reaching out. Based on what you have shared, the best fit is my ${o.title} (${len}, ${o.price}).\n\nIt covers ${o.what}.\n\nI lead StaffAnchor, a recruitment firm focused on sales and revenue roles, so the guidance comes from how hiring managers actually screen.\n\nYou can pick a time and book here: ${o.link}\n\nHappy to answer any questions before you book.\n\nGagan Sharma\nStaffAnchor`;
+  return `${hi}\n\nThank you for reaching out. Based on what you have shared, the best fit is my ${o.title} (${len}, ${o.price.startsWith("starts") || o.price.startsWith("from") ? o.price : o.price}).\n\nIt covers ${o.what}.\n\nI lead StaffAnchor, a recruitment firm focused on sales and revenue roles, so the guidance comes from how hiring managers actually screen.\n\nYou can pick a time and book here: ${o.link}\n\nHappy to answer any questions before you book.\n\nGagan Sharma\nStaffAnchor`;
 }
 
 export type ProposalResult = { ok: true; slug: string; proposal: string; fit: "good" | "partial" | "poor"; fitNote: string; ai: boolean } | { ok: false; error: string };
@@ -67,7 +69,7 @@ Rules for the proposal:
 - 600 to 1,100 characters. Plain text, short paragraphs, no markdown, no emojis, no bullet symbols.
 - Start with "Hi ${firstName || "there"},". Do not use the person's surname or repeat personal details.
 - Address what THEY asked for, in their own terms. Pick the single best-fit session and say what happens in it in two or three short sentences.
-- Give the price and duration, then one clear next step using that session's exact link.
+- Never quote a single price for a session whose price depends on experience: say it starts at the lowest figure and varies with years of experience (the exact price is shown once they enter it on the booking page). Give the price and duration, then one clear next step using that session's exact link.
 - Be honest. Never invent results, testimonials, client counts or guarantees. Never promise a job.
 - Sessions are built for sales and revenue professionals. If the person is clearly outside sales, set fit to "poor" or "partial" and say honestly in the proposal what the sessions are and are not suited for, without being dismissive.
 - Sign off "Gagan Sharma, StaffAnchor".`;
