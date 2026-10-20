@@ -4,6 +4,8 @@ import { adminDb, formatIst, inr } from "@/lib/pro-sessions/core";
 import { googleConfigured } from "@/lib/pro-sessions/google";
 import AvailabilityEditor from "./availability-editor";
 import ProposalHelper from "./proposal-helper";
+import InvoiceControls, { type InvoiceInfo } from "../invoice-controls";
+import { signedInvoiceUrl } from "@/lib/service-invoices";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +56,13 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
   // pro_availability has no read policy for staff, so fall back to the service client for the editor.
   const win = windows && windows.length ? windows : db ? ((await db.from("pro_availability").select("weekday, start_time, end_time").order("weekday")).data ?? []) : [];
   const rows = (bookings ?? []) as Booking[];
+  const invoices: Record<string, InvoiceInfo> = {};
+  if (db && rows.length) {
+    const { data: inv } = await db.from("service_invoices").select("*").eq("kind", "edge").in("ref_id", rows.map((r) => r.id));
+    for (const i of inv ?? []) {
+      invoices[i.ref_id as string] = { id: i.id, number: i.invoice_number, url: await signedInvoiceUrl(db, i.pdf_path), sentAt: i.sent_at, sentTo: i.sent_to, email: i.customer_email };
+    }
+  }
   const paid = rows.filter((b) => b.status === "paid");
   const linked = !!process.env.PRO_INTERNAL_SECRET;
   const gc = googleConfigured();
@@ -139,6 +148,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
                       <span className={b.status === "paid" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}>{b.status === "paid" ? "Paid" : b.status === "pending_payment" ? "Awaiting payment" : b.status}</span>
                       {b.meet_link && <div><a className="text-xs text-teal-600 hover:underline" href={b.meet_link} target="_blank">Meet link</a></div>}
                       {b.calendar_error && <div className="text-xs text-amber-700">{b.calendar_error}</div>}
+                      {b.status === "paid" && <div className="mt-1.5"><InvoiceControls kind="edge" refId={b.id} invoice={invoices[b.id] ?? null} /></div>}
                     </td>
                     <td className="py-2 text-xs text-slate-500">{b.source ?? "—"}</td>
                   </tr>

@@ -184,6 +184,7 @@ export type InvoicePdfInput = {
   invoiceNumber: string;
   invoiceDate: Date;
   paid?: boolean; // tax invoice: payment already received
+  paymentMode?: string; // shown on a paid tax invoice, for example "Online (Razorpay)"
   proformaRef?: { number: string; date: Date | null } | null; // tax invoice raised against a proforma
   client: InvoicePdfClient;
   item: InvoicePdfLineItem;
@@ -261,7 +262,7 @@ function InvoiceDocument({ input }: { input: InvoicePdfInput }) {
             {addrLines.map((l, i) => (
               <Text key={i} style={styles.lineText}>{l}</Text>
             ))}
-            <Text style={[styles.lineText, { marginTop: 6 }]}>GSTIN : {client.gstin ?? "—"}</Text>
+            {client.gstin ? <Text style={[styles.lineText, { marginTop: 6 }]}>GSTIN : {client.gstin}</Text> : null}
             {client.stateCode ? <Text style={[styles.lineText, { marginTop: 6 }]}>State: {supply}</Text> : null}
           </View>
           <View style={{ width: 210 }}>
@@ -322,7 +323,7 @@ function InvoiceDocument({ input }: { input: InvoicePdfInput }) {
               <>
                 <View style={styles.sRow}><Text>Received</Text><Text>₹ {inr(received)}</Text></View>
                 <View style={styles.sRow}><Text>Balance</Text><Text>₹ {inr(total - received)}</Text></View>
-                <View style={[styles.sRow, styles.sLine]}><Text>Payment mode</Text><Text>{input.paid ? "Bank transfer" : "Credit"}</Text></View>
+                <View style={[styles.sRow, styles.sLine]}><Text>Payment mode</Text><Text>{input.paid ? input.paymentMode ?? "Bank transfer" : "Credit"}</Text></View>
               </>
             )}
           </View>

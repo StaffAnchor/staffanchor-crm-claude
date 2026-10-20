@@ -1,6 +1,8 @@
 import { adminDb, inr } from "@/lib/pro-sessions/core";
 import { TIERS, type TierKey } from "@/lib/resume-orders/core";
 import OrderActions from "./order-actions";
+import InvoiceControls, { type InvoiceInfo } from "../invoice-controls";
+import { signedInvoiceUrl } from "@/lib/service-invoices";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +66,13 @@ export default async function ResumeOrdersPage() {
         const { data: s } = await db.storage.from("resume-orders").createSignedUrl(o.cv_path, 3600);
         if (s?.signedUrl) cvUrl[o.id] = s.signedUrl;
       }
+    }
+  }
+  const invoices: Record<string, InvoiceInfo> = {};
+  if (db && orders.length) {
+    const { data: inv } = await db.from("service_invoices").select("*").eq("kind", "resume").in("ref_id", orders.map((o) => o.id));
+    for (const i of inv ?? []) {
+      invoices[i.ref_id as string] = { id: i.id, number: i.invoice_number, url: await signedInvoiceUrl(db, i.pdf_path), sentAt: i.sent_at, sentTo: i.sent_to, email: i.customer_email };
     }
   }
   const count = (f: (o: Order) => boolean) => orders.filter(f).length;
@@ -134,6 +143,7 @@ export default async function ResumeOrdersPage() {
                     {cvUrl[o.id] && (
                       <a href={cvUrl[o.id]} target="_blank" className="text-teal-600 hover:underline">Download their current resume</a>
                     )}
+                    {o.status !== "pending_payment" && <InvoiceControls kind="resume" refId={o.id} invoice={invoices[o.id] ?? null} />}
                     <OrderActions id={o.id} status={o.status} revisionsUsed={o.revisions_used} revisionsAllowed={t.revisions} />
                   </div>
                 </details>
