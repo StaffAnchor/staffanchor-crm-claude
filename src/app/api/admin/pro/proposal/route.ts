@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const db = adminDb();
   if (!db) return NextResponse.json({ error: "Not configured" }, { status: 503 });
   const b = (await req.json().catch(() => ({}))) as { requestText?: string; firstName?: string; serviceSlug?: string };
-  const { data: services } = await db.from("pro_services").select("slug, title, duration_min, price_inr").eq("active", true).order("sort");
+  const { data: services } = await db.from("pro_services").select("slug, title, duration_min, price_inr, price_by_experience").eq("active", true).order("sort");
   const r = await draftProposal({
     requestText: typeof b.requestText === "string" ? b.requestText : "",
     firstName: typeof b.firstName === "string" ? b.firstName.trim().slice(0, 40) : "",
