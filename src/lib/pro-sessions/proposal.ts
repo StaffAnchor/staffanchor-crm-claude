@@ -39,7 +39,7 @@ function strip(text: string): string {
 export function templateProposal(o: Offer, firstName: string): string {
   const hi = firstName ? `Hi ${firstName},` : "Hi,";
   const len = o.duration_min ? `${o.duration_min}-minute video session` : "service";
-  return `${hi}\n\nThank you for reaching out. Based on what you have shared, the best fit is my ${o.title} (${len}, ${o.price.startsWith("starts") || o.price.startsWith("from") ? o.price : o.price}).\n\nIt covers ${o.what}.\n\nI lead StaffAnchor, a recruitment firm focused on sales and revenue roles, so the guidance comes from how hiring managers actually screen.\n\nYou can pick a time and book here: ${o.link}\n\nHappy to answer any questions before you book.\n\nGagan Sharma\nStaffAnchor`;
+  return `${hi}\n\nThank you for reaching out. Based on what you have shared, the best fit is my ${o.title} (${len}, ${o.price}).\n\nIt covers ${o.what}.\n\nI lead StaffAnchor, a recruitment firm focused on sales and revenue roles, so the guidance comes from how hiring managers actually screen.\n\nYou can pick a time and book here: ${o.link}\n\nHappy to answer any questions before you book.\n\nGagan Sharma\nStaffAnchor`;
 }
 
 export type ProposalResult = { ok: true; slug: string; proposal: string; fit: "good" | "partial" | "poor"; fitNote: string; ai: boolean } | { ok: false; error: string };
