@@ -4,6 +4,8 @@ import { createMeetEvent, getAccessToken } from "./google";
 import { sendEmail } from "@/lib/mail";
 import { invoiceEmailHtml } from "@/lib/invoice-email";
 import { ensureServiceInvoice } from "@/lib/service-invoices";
+import { FIRST_DRAFT_DAYS, TIERS, isTier, newToken, type TierKey } from "@/lib/resume-orders/core";
+import { INTAKE_BASE } from "@/lib/resume-orders/finalize";
 
 type Booking = {
   id: string;
@@ -18,6 +20,9 @@ type Booking = {
   status: string;
   calendar_event_id: string | null;
   meet_link: string | null;
+  resume_tier: string | null;
+  experience_years: number | null;
+  source: string | null;
 };
 
 // What to do before the session, per service. Taken from the session descriptions.
@@ -30,11 +35,11 @@ const PREP: Record<string, string> = {
  * Called once a payment is confirmed, from the browser callback or the webhook (whichever arrives first). Safe to
  * call twice: a booking already confirmed is returned as it is.
  */
-export async function finalizeBooking(db: SupabaseClient, bookingId: string, paymentId: string): Promise<{ ok: boolean; booking?: Booking; error?: string }> {
+export async function finalizeBooking(db: SupabaseClient, bookingId: string, paymentId: string): Promise<{ ok: boolean; booking?: Booking; intakeToken?: string | null; error?: string }> {
   const { data: b } = await db.from("pro_bookings").select("*").eq("id", bookingId).maybeSingle();
   if (!b) return { ok: false, error: "Booking not found." };
   let booking = b as Booking;
-  if (booking.status === "paid" && (booking.calendar_event_id || booking.meet_link)) return { ok: true, booking };
+  if (booking.status === "paid" && (booking.calendar_event_id || booking.meet_link)) return { ok: true, booking, intakeToken: await comboOrderToken(db, booking) };
 
   if (booking.status !== "paid") {
     await db.from("pro_bookings").update({ status: "paid", razorpay_payment_id: paymentId, paid_at: new Date().toISOString() }).eq("id", bookingId);
@@ -71,6 +76,9 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
     if (calendarError) await db.from("pro_bookings").update({ calendar_error: calendarError }).eq("id", bookingId);
   }
 
+  // The strategy + resume combo also carries a Resume Writing order, which starts at the intake form.
+  const intakeToken = await comboOrderToken(db, booking);
+
   // Tax invoice, made now and kept. It is emailed only when someone asks for it.
   try {
     await ensureServiceInvoice(db, "edge", bookingId);
@@ -87,8 +95,11 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
       `${service.title}\n${when} IST, ${service.duration_min} minutes, video meeting\nPaid: ${inr(booking.amount_inr)}`,
       meet ? `Join here: ${meet}` : "Your joining link will follow by email shortly.",
       PREP[booking.service_slug] ?? "",
+      intakeToken && isTier(booking.resume_tier)
+        ? `Your resume: the Resume Writing part of this package (${TIERS[booking.resume_tier].label}) starts with a short form about your career, about 15 minutes, where you can attach your current resume.\n${INTAKE_BASE}/${intakeToken}\nYour first draft is delivered ${FIRST_DRAFT_DAYS} working days after we receive the form (Monday to Saturday), and the final resume follows in ${TIERS[booking.resume_tier].finalDelivery}, with ${TIERS[booking.resume_tier].revisions} revision round${TIERS[booking.resume_tier].revisions > 1 ? "s" : ""} included, as Word and PDF.`
+        : "",
       "If you need to move the session, just reply to this email. Need a GST invoice? Reply and we will send it.",
-      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 9818881142",
+      "Regards,\nStaffAnchor Talent Solutions\ninfo@staffanchor.com | 7273000088",
     ].filter(Boolean).join("\n\n");
     await sendEmail({
       to: booking.email,
@@ -103,5 +114,29 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
   } catch (e) {
     console.error("pro session confirmation email failed", e);
   }
-  return { ok: true, booking: { ...booking, meet_link: meet } };
+  return { ok: true, booking: { ...booking, meet_link: meet }, intakeToken };
+}
+
+/**
+ * For the combo, makes the paid Resume Writing order that belongs to this booking (once) and returns its intake
+ * token. Its value is the resume share of the combo price; the single invoice sits on the booking.
+ */
+async function comboOrderToken(db: SupabaseClient, booking: Booking): Promise<string | null> {
+  if (!isTier(booking.resume_tier)) return null;
+  const { data: existing } = await db.from("resume_orders").select("intake_token").eq("booking_id", booking.id).maybeSingle();
+  if (existing) return (existing as { intake_token: string }).intake_token;
+  const tier: TierKey = booking.resume_tier;
+  const resumeShare = Math.round(TIERS[tier].price * (booking.amount_inr / (999 + TIERS[tier].price)));
+  const token = newToken();
+  const { error } = await db.from("resume_orders").insert({
+    tier, amount_inr: resumeShare, name: booking.name, email: booking.email, phone: booking.phone,
+    status: "paid", paid_at: new Date().toISOString(), intake_token: token, booking_id: booking.id,
+    experience_years: booking.experience_years, source: booking.source, notes: "Part of the Job Strategy + Resume Rebuild package; one invoice, on the booking.",
+  });
+  if (error) {
+    // Lost a race with the other confirmation path: the order exists now.
+    const { data: again } = await db.from("resume_orders").select("intake_token").eq("booking_id", booking.id).maybeSingle();
+    return (again as { intake_token: string } | null)?.intake_token ?? null;
+  }
+  return token;
 }

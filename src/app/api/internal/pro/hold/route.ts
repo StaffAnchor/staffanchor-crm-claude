@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { EMAIL_RE, HOLD_MINUTES, adminDb, cleanPhone, istDate } from "@/lib/pro-sessions/core";
 import { computeSlots } from "@/lib/pro-sessions/slots";
+import { comboPrice } from "@/lib/resume-orders/core";
 import { requireInternal } from "@/lib/pro-sessions/internal-auth";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +26,21 @@ export async function POST(req: NextRequest) {
   if (!phone) return NextResponse.json({ ok: false, error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
   if (isNaN(slotStart.getTime())) return NextResponse.json({ ok: false, error: "Please pick a time." }, { status: 400 });
 
-  const { data: svc } = await db.from("pro_services").select("slug, title, duration_min, price_inr").eq("slug", slug).eq("active", true).maybeSingle();
+  const { data: svc } = await db.from("pro_services").select("slug, title, duration_min, price_inr, price_by_experience").eq("slug", slug).eq("active", true).maybeSingle();
   if (!svc) return NextResponse.json({ ok: false, error: "Unknown service." }, { status: 404 });
+
+  // Some services (the strategy + resume combo) are priced by years of experience; the price is worked out here.
+  let amount = svc.price_inr as number;
+  let years: number | null = null;
+  let resumeTier: string | null = null;
+  if (svc.price_by_experience) {
+    const y = Number(b.experienceYears);
+    if (!Number.isFinite(y) || y < 0 || y > 60) return NextResponse.json({ ok: false, error: "Please enter your years of experience." }, { status: 400 });
+    years = Math.floor(y);
+    const c = comboPrice(years);
+    amount = c.total;
+    resumeTier = c.tier;
+  }
 
   // The chosen time must still be free, checked now and not trusted from the browser.
   const free = await computeSlots(db, svc.duration_min, istDate(slotStart), 2);
@@ -48,11 +62,11 @@ export async function POST(req: NextRequest) {
       notes: str("notes", 1000) || null,
       slot_start: slotStart.toISOString(),
       slot_end: new Date(slotStart.getTime() + svc.duration_min * 60000).toISOString(),
-      amount_inr: svc.price_inr, status: "pending_payment",
+      amount_inr: amount, experience_years: years, resume_tier: resumeTier, status: "pending_payment",
       source: str("src", 60) || null,
     })
     .select("id")
     .single();
   if (error || !row) return NextResponse.json({ ok: false, error: "Couldn't hold that time. Please try again." }, { status: 500 });
-  return NextResponse.json({ ok: true, bookingId: row.id, amountInr: svc.price_inr, title: svc.title });
+  return NextResponse.json({ ok: true, bookingId: row.id, amountInr: amount, title: svc.title });
 }
