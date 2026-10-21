@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/pro-sessions/admin-auth";
 import { adminDb, EMAIL_RE, PRO_FROM } from "@/lib/pro-sessions/core";
 import { SESSION_TITLES } from "@/lib/lab/data";
+import { SCORECARD_DEFAULT } from "@/lib/lab/calc";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +60,26 @@ export async function POST(req: NextRequest) {
     case "set_attendance": {
       const present = b.present === true;
       await db.from("lab_attendance").upsert({ session_id: s("sessionId"), member_id: s("memberId"), present }, { onConflict: "session_id,member_id" });
+      return NextResponse.json({ ok: true });
+    }
+    case "set_scorecard": {
+      // Weights are agreed with the sales head before the baseline, then locked so before and after stay comparable.
+      const { data: c } = await db.from("lab_cohorts").select("config").eq("id", s("cohortId")).maybeSingle();
+      if (!c) return bad("Cohort not found.");
+      const cfg = (c.config ?? {}) as Record<string, unknown>;
+      const wasLocked = cfg.scorecard_locked === true;
+      const lock = b.locked === true;
+      const incoming = (b.weights ?? {}) as Record<string, unknown>;
+      const weights: Record<string, number> = {};
+      for (const k of SCORECARD_DEFAULT) {
+        const v = Number(incoming[k.key]);
+        if (!Number.isInteger(v) || v < 0 || v > 100) return bad(`Weight for ${k.label} must be a whole number from 0 to 100.`);
+        weights[k.key] = v;
+      }
+      const changed = SCORECARD_DEFAULT.some((k) => weights[k.key] !== ((cfg.scorecard_weights as Record<string, number> | undefined)?.[k.key] ?? k.weight));
+      if (wasLocked && lock && changed) return bad("The weights are locked. Unlock them first if you really need to change them.");
+      if (Object.values(weights).reduce((a, x) => a + x, 0) !== 100) return bad("The weights must add up to 100.");
+      await db.from("lab_cohorts").update({ config: { ...cfg, scorecard_weights: weights, scorecard_locked: lock } }).eq("id", s("cohortId"));
       return NextResponse.json({ ok: true });
     }
     case "invite": {

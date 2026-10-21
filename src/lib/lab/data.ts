@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AUDIT_CHECKS, MEASURES, auditSummary, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
+import { AUDIT_CHECKS, MEASURES, auditSummary, callSummary, weightsFor, type Weights, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
 import type { LabCohort, LabMember } from "./auth";
 
 export const SESSION_TITLES = [
@@ -14,6 +14,7 @@ export type MemberMetrics = {
   attended: number; assignmentsDone: number;
   improved: number; progress: number;
   audit: ReturnType<typeof auditSummary>;
+  calls: ReturnType<typeof callSummary>;
 };
 
 export type CohortData = {
@@ -25,6 +26,8 @@ export type CohortData = {
   rollup: ReturnType<typeof cohortRollup>;
   kpis: { managers: number; avgProgress: number | null; attendancePct: number | null; baselinePct: number | null; endlinePct: number | null; assignmentsPct: number | null; improvingOn3Plus: number };
   attendance: { session_id: string; member_id: string; present: boolean }[];
+  weights: Weights;
+  callStats: { managersScoring: number; calls: number; avgScore: number | null; perCriterion: { key: string; label: string; avgRating: number | null }[]; weakestKey: string | null };
   audit: { managersAudited: number; avgScore: number | null; noPct: (number | null)[]; weakestIndex: number | null };
 };
 
@@ -41,12 +44,14 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
   const ses = (sessions ?? []) as CohortData["sessions"];
   const ids = mem.map((m) => m.id);
   const sesIds = ses.map((s) => s.id);
-  const [{ data: vals }, { data: att }, { data: asg }, { data: auditRows }] = await Promise.all([
+  const [{ data: vals }, { data: att }, { data: asg }, { data: auditRows }, { data: callRows }] = await Promise.all([
     ids.length ? db.from("lab_measure_values").select("member_id, measure_key, phase, value").in("member_id", ids) : Promise.resolve({ data: [] }),
     sesIds.length ? db.from("lab_attendance").select("session_id, member_id, present").in("session_id", sesIds) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_assignments").select("member_id, session_n, done").in("member_id", ids) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_audit_deals").select("member_id, deal_ref, answers").in("member_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? db.from("lab_call_scores").select("member_id, rep_ref, ratings").in("member_id", ids) : Promise.resolve({ data: [] }),
   ]);
+  const weights = weightsFor(cohort.config as Record<string, unknown>);
   // A session counts as held once its date is today or earlier, or once attendance has been marked for it.
   const marked = new Set(((att ?? []) as { session_id: string }[]).map((a) => a.session_id));
   const heldSessions = ses.filter((s) => (s.held_on && s.held_on <= today()) || marked.has(s.id));
@@ -65,8 +70,9 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     const attended = ((att ?? []) as { session_id: string; member_id: string; present: boolean }[]).filter((a) => a.member_id === m.id && a.present && heldIds.has(a.session_id)).length;
     const assignmentsDone = ((asg ?? []) as { member_id: string; session_n: number; done: boolean }[]).filter((a) => a.member_id === m.id && a.done && heldNs.has(a.session_n)).length;
     const audit = auditSummary(((auditRows ?? []) as { member_id: string; deal_ref: string | null; answers: (boolean | null)[] }[]).filter((a) => a.member_id === m.id).map((a) => ({ dealRef: a.deal_ref, answers: a.answers })));
+    const calls = callSummary(((callRows ?? []) as { member_id: string; rep_ref: string; ratings: Record<string, number> }[]).filter((c) => c.member_id === m.id).map((c) => ({ repRef: c.rep_ref, ratings: c.ratings })), weights);
     return {
-      member: m, audit, values, baselineEntered, endlineEntered, attended, assignmentsDone,
+      member: m, audit, calls, values, baselineEntered, endlineEntered, attended, assignmentsDone,
       improved: measuresImproved(values),
       progress: progressPct({ profileDone: !!m.profile_done_at, baselineEntered, endlineEntered, sessionsHeld: heldSessions.length, attended, assignmentsDone }),
     };
@@ -95,7 +101,11 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     noPct,
     weakestIndex: maxNo > 0 ? noPct.indexOf(maxNo) : null,
   };
-  return { cohort: cohort as LabCohort, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
+  // Cohort view of call quality: every scored call across the cohort, so the averages weight each call equally.
+  const allCalls = ((callRows ?? []) as { rep_ref: string; ratings: Record<string, number> }[]).map((c) => ({ repRef: c.rep_ref, ratings: c.ratings }));
+  const cohortCalls = callSummary(allCalls, weights);
+  const callStats = { managersScoring: managers.filter((m) => m.calls.calls > 0).length, calls: cohortCalls.calls, avgScore: cohortCalls.avgScore, perCriterion: cohortCalls.perCriterion, weakestKey: cohortCalls.weakestKey };
+  return { cohort: cohort as LabCohort, weights, callStats, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
 }
 
 export { resultOf, change };

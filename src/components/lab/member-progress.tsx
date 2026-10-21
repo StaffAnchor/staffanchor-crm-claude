@@ -66,6 +66,14 @@ export default function MemberProgress({ m, data, assignments }: { m: MemberMetr
         </section>
       )}
 
+      {m.calls.calls > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Call quality</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{m.calls.calls} call{m.calls.calls === 1 ? "" : "s"} scored across {m.calls.reps} rep{m.calls.reps === 1 ? "" : "s"}. Average score {m.calls.avgScore ?? "–"} of 100.</p>
+          {m.calls.weakestKey && <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">Lowest-rated criterion: <b>{m.calls.perCriterion.find((c) => c.key === m.calls.weakestKey)?.label}</b> ({m.calls.perCriterion.find((c) => c.key === m.calls.weakestKey)?.avgRating} of 5).</p>}
+        </section>
+      )}
+
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Sessions</h2>
         <ul className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">

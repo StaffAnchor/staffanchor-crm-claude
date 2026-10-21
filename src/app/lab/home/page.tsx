@@ -16,7 +16,7 @@ const TOOLS: { name: string; when: string; live?: boolean; href?: string }[] = [
   { name: "Baseline & Endline", when: "Before session 1 and at session 6", live: true },
   { name: "Pipeline Audit", when: "Session 1", live: true, href: "/lab/tools/pipeline-audit" }, { name: "Follow-up Cadence", when: "Session 2" }, { name: "Forecast Tracker", when: "Session 3" },
   { name: "Review Meeting Prep", when: "Session 3" }, { name: "One-on-One Agenda", when: "Sessions 3 and 4" }, { name: "Coaching Prep", when: "Session 4" },
-  { name: "Call Quality Scorecard", when: "Session 4" }, { name: "Calibration", when: "Session 4" }, { name: "Rep Banding", when: "Session 5" },
+  { name: "Call Quality Scorecard", when: "Session 4", live: true, href: "/lab/tools/call-scorecard" }, { name: "Calibration", when: "Session 4" }, { name: "Rep Banding", when: "Session 5" },
   { name: "Performance Plan", when: "Session 5" }, { name: "Onboarding 30-60-90", when: "Session 5" }, { name: "90-Day Charter", when: "Session 6" }, { name: "Weekly Reflection", when: "Every week" },
 ];
 
@@ -86,7 +86,7 @@ export default async function LabHome({ searchParams }: { searchParams: Promise<
         </section>
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-base font-semibold">Your toolkit</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Baseline &amp; Endline and the Pipeline Audit are open now. The other tools are being added to this page one by one.</p>
+          <p className="mt-0.5 text-xs text-slate-500">Baseline &amp; Endline, the Pipeline Audit and the Call Quality Scorecard are open now. The other tools are being added to this page one by one.</p>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {TOOLS.map((t) => (
               <li key={t.name} className={`rounded-xl px-3 py-2 text-sm ${t.live ? "bg-teal-50 text-teal-900 ring-1 ring-teal-200" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50"}`}>
