@@ -67,6 +67,32 @@ export function forecastRead(acc: number | null, band = FORECAST_BAND): "Over-ca
   return acc < band.low ? "Over-called" : acc > band.high ? "Under-called" : "Accurate";
 }
 
+export type Band = { low: number; high: number };
+/** The cohort's accuracy band: 95 to 105 unless the facilitator set another for this cohort. */
+export function bandFor(config: Record<string, unknown> | null | undefined): Band {
+  const b = (config?.forecast_band ?? {}) as Record<string, unknown>;
+  const low = typeof b.low === "number" ? b.low : FORECAST_BAND.low;
+  const high = typeof b.high === "number" ? b.high : FORECAST_BAND.high;
+  return low > 0 && high >= low ? { low, high } : FORECAST_BAND;
+}
+
+export type ForecastMonth = { month: string; commit: number | null; bestCase?: number | null; actual: number | null };
+/** One manager's forecast record: average accuracy, months inside the band, and whether they tend to over- or under-call. */
+export function forecastSummary(months: ForecastMonth[], band: Band = FORECAST_BAND) {
+  const rows = months
+    .map((m) => ({ ...m, accuracy: m.commit != null && m.actual != null ? forecastAccuracy(m.commit, m.actual) : null }))
+    .map((m) => ({ ...m, read: forecastRead(m.accuracy, band) }));
+  const done = rows.filter((r) => r.accuracy != null);
+  return {
+    rows,
+    months: done.length,
+    avgAccuracy: done.length ? Math.round(done.reduce((s2, r) => s2 + (r.accuracy as number), 0) / done.length) : null,
+    withinBand: done.filter((r) => r.read === "Accurate").length,
+    over: done.filter((r) => r.read === "Over-called").length,
+    under: done.filter((r) => r.read === "Under-called").length,
+  };
+}
+
 // ---- Pipeline Audit (nine yes/no checks) ----
 export const AUDIT_CHECKS = [
   "Stage matches buyer action", "Dated next step", "Decision maker known", "Need confirmed", "Last contact within cadence",

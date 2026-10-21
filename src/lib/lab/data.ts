@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AUDIT_CHECKS, MEASURES, auditSummary, calibrationSummary, callSummary, weightsFor, type Weights, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
+import { AUDIT_CHECKS, MEASURES, auditSummary, bandFor, calibrationSummary, callSummary, forecastSummary, weightsFor, type Band, type Weights, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
 import type { LabCohort, LabMember } from "./auth";
 
 export const SESSION_TITLES = [
@@ -14,6 +14,7 @@ export type MemberMetrics = {
   attended: number; assignmentsDone: number;
   improved: number; progress: number;
   audit: ReturnType<typeof auditSummary>;
+  forecast: ReturnType<typeof forecastSummary>;
   calls: ReturnType<typeof callSummary>;
 };
 
@@ -27,6 +28,8 @@ export type CohortData = {
   kpis: { managers: number; avgProgress: number | null; attendancePct: number | null; baselinePct: number | null; endlinePct: number | null; assignmentsPct: number | null; improvingOn3Plus: number };
   attendance: { session_id: string; member_id: string; present: boolean }[];
   weights: Weights;
+  band: Band;
+  forecastStats: { managers: number; months: number; avgAccuracy: number | null; withinBandPct: number | null; overPct: number | null; underPct: number | null };
   calibration: ReturnType<typeof calibrationSummary> & { started: number };
   callStats: { managersScoring: number; calls: number; avgScore: number | null; perCriterion: { key: string; label: string; avgRating: number | null }[]; weakestKey: string | null };
   audit: { managersAudited: number; avgScore: number | null; noPct: (number | null)[]; weakestIndex: number | null };
@@ -45,13 +48,15 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
   const ses = (sessions ?? []) as CohortData["sessions"];
   const ids = mem.map((m) => m.id);
   const sesIds = ses.map((s) => s.id);
-  const [{ data: vals }, { data: att }, { data: asg }, { data: auditRows }, { data: callRows }] = await Promise.all([
+  const [{ data: vals }, { data: att }, { data: asg }, { data: auditRows }, { data: callRows }, { data: fcRows }] = await Promise.all([
     ids.length ? db.from("lab_measure_values").select("member_id, measure_key, phase, value").in("member_id", ids) : Promise.resolve({ data: [] }),
     sesIds.length ? db.from("lab_attendance").select("session_id, member_id, present").in("session_id", sesIds) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_assignments").select("member_id, session_n, done").in("member_id", ids) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_audit_deals").select("member_id, deal_ref, answers").in("member_id", ids) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_call_scores").select("member_id, rep_ref, ratings").in("member_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? db.from("lab_forecast_months").select("member_id, month, commit, actual").in("member_id", ids) : Promise.resolve({ data: [] }),
   ]);
+  const band = bandFor(cohort.config as Record<string, unknown>);
   const weights = weightsFor(cohort.config as Record<string, unknown>);
   // A session counts as held once its date is today or earlier, or once attendance has been marked for it.
   const marked = new Set(((att ?? []) as { session_id: string }[]).map((a) => a.session_id));
@@ -73,7 +78,8 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     const audit = auditSummary(((auditRows ?? []) as { member_id: string; deal_ref: string | null; answers: (boolean | null)[] }[]).filter((a) => a.member_id === m.id).map((a) => ({ dealRef: a.deal_ref, answers: a.answers })));
     const calls = callSummary(((callRows ?? []) as { member_id: string; rep_ref: string; ratings: Record<string, number> }[]).filter((c) => c.member_id === m.id).map((c) => ({ repRef: c.rep_ref, ratings: c.ratings })), weights);
     return {
-      member: m, audit, calls, values, baselineEntered, endlineEntered, attended, assignmentsDone,
+      member: m, audit, calls,
+      forecast: forecastSummary(((fcRows ?? []) as { member_id: string; month: string; commit: number | null; actual: number | null }[]).filter((f) => f.member_id === m.id).map((f) => ({ month: f.month, commit: f.commit == null ? null : Number(f.commit), actual: f.actual == null ? null : Number(f.actual) })), band), values, baselineEntered, endlineEntered, attended, assignmentsDone,
       improved: measuresImproved(values),
       progress: progressPct({ profileDone: !!m.profile_done_at, baselineEntered, endlineEntered, sessionsHeld: heldSessions.length, attended, assignmentsDone }),
     };
@@ -116,7 +122,18 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     return a && b ? [{ a, b }] : [];
   });
   const calib = { ...calibrationSummary(pairs), started: (cals ?? []).length };
-  return { cohort: cohort as LabCohort, weights, calibration: calib, callStats, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
+  // Cohort view of forecasting: every month with a commit and an actual, across all managers.
+  const fm = managers.flatMap((m) => m.forecast.rows).filter((r) => r.accuracy != null);
+  const fpct = (x: number) => (fm.length ? Math.round((x / fm.length) * 100) : null);
+  const forecastStats = {
+    managers: managers.filter((m) => m.forecast.months > 0).length,
+    months: fm.length,
+    avgAccuracy: fm.length ? Math.round(fm.reduce((s2, r) => s2 + (r.accuracy as number), 0) / fm.length) : null,
+    withinBandPct: fpct(fm.filter((r) => r.read === "Accurate").length),
+    overPct: fpct(fm.filter((r) => r.read === "Over-called").length),
+    underPct: fpct(fm.filter((r) => r.read === "Under-called").length),
+  };
+  return { cohort: cohort as LabCohort, weights, band, forecastStats, calibration: calib, callStats, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
 }
 
 export { resultOf, change };

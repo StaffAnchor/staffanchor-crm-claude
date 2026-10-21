@@ -66,6 +66,13 @@ export default function MemberProgress({ m, data, assignments }: { m: MemberMetr
         </section>
       )}
 
+      {m.forecast.months > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Forecast accuracy</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{m.forecast.months} month{m.forecast.months === 1 ? "" : "s"} tracked. Average accuracy {m.forecast.avgAccuracy}%. {m.forecast.withinBand} within the band, {m.forecast.over} over-called, {m.forecast.under} under-called.</p>
+        </section>
+      )}
+
       {m.calls.calls > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Call quality</h2>
