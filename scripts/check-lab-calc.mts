@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Run: node scripts/check-lab-calc.mts   (checks every calculated figure in the Sales Leaders Lab against the workbook examples)
 import * as c from "../src/lib/lab/calc.ts";
 const eq = (a: unknown, b: unknown, m: string) => { if (JSON.stringify(a) !== JSON.stringify(b)) { console.log("FAIL", m, a, b); process.exitCode = 1; } else console.log("ok", m); };
