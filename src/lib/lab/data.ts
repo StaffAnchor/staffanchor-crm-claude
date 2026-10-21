@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AUDIT_CHECKS, MEASURES, auditSummary, bandFor, calibrationSummary, callSummary, coachingSummary, forecastSummary, oneOnOneSummary, reviewSummary, weightsFor, type Band, type Weights, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
+import { AUDIT_CHECKS, MEASURES, auditSummary, bandFor, bandReps, bandingFor, type BandingSetup, calibrationSummary, callSummary, coachingSummary, forecastSummary, oneOnOneSummary, reviewSummary, weightsFor, type Band, type Weights, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
 import type { LabCohort, LabMember } from "./auth";
 
 export const SESSION_TITLES = [
@@ -18,6 +18,7 @@ export type MemberMetrics = {
   reviews: ReturnType<typeof reviewSummary>;
   coaching: ReturnType<typeof coachingSummary>;
   oneOnOnes: ReturnType<typeof oneOnOneSummary>;
+  banding: ReturnType<typeof bandReps>;
   calls: ReturnType<typeof callSummary>;
 };
 
@@ -32,6 +33,8 @@ export type CohortData = {
   attendance: { session_id: string; member_id: string; present: boolean }[];
   weights: Weights;
   band: Band;
+  bandingSetup: BandingSetup;
+  bandingStats: { managers: number; reps: number; diagnose: number; stretch: number; learn: number; rated: number };
   oneOnOneStats: { managers: number; total: number; reps: number; commitments: number; answered: number; doneOnTimePct: number | null; overdueOpen: number };
   coachingStats: { managers: number; total: number; reps: number; gaps: Record<string, number>; systemSharePct: number | null; overdue: number; followUps: number; followedUp: number };
   reviewStats: { managers: number; total: number; actionLoggedPct: number | null; causes: Record<string, number>; overdue: number; followUps: number; followedUp: number };
@@ -54,7 +57,7 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
   const ses = (sessions ?? []) as CohortData["sessions"];
   const ids = mem.map((m) => m.id);
   const sesIds = ses.map((s) => s.id);
-  const [{ data: vals }, { data: att }, { data: asg }, { data: auditRows }, { data: callRows }, { data: fcRows }, { data: rvRows }, { data: cpRows }, { data: ooRows }] = await Promise.all([
+  const [{ data: vals }, { data: att }, { data: asg }, { data: auditRows }, { data: callRows }, { data: fcRows }, { data: rvRows }, { data: cpRows }, { data: ooRows }, { data: repRows }] = await Promise.all([
     ids.length ? db.from("lab_measure_values").select("member_id, measure_key, phase, value").in("member_id", ids) : Promise.resolve({ data: [] }),
     sesIds.length ? db.from("lab_attendance").select("session_id, member_id, present").in("session_id", sesIds) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_assignments").select("member_id, session_n, done").in("member_id", ids) : Promise.resolve({ data: [] }),
@@ -64,7 +67,10 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     ids.length ? db.from("lab_review_preps").select("member_id, root_cause, action_logged, follow_up_on, followed_up").in("member_id", ids) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_coaching_preps").select("member_id, rep_ref, gap, follow_up_on, followed_up").in("member_id", ids) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_oneonones").select("member_id, rep_ref, commitment, due_on, done").in("member_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? db.from("lab_reps").select("member_id, rep_ref, tenure_months, output").in("member_id", ids) : Promise.resolve({ data: [] }),
   ]);
+  const bandingSetup = bandingFor(cohort.config as Record<string, unknown>);
+  const repAll = ((repRows ?? []) as { member_id: string; rep_ref: string; tenure_months: number; output: number | null }[]);
   const ooAll = ((ooRows ?? []) as { member_id: string; rep_ref: string; commitment: string | null; due_on: string | null; done: boolean | null }[]).map((r) => ({ memberId: r.member_id, repRef: r.rep_ref, commitment: r.commitment, dueOn: r.due_on, done: r.done }));
   const cpAll = ((cpRows ?? []) as { member_id: string; rep_ref: string; gap: string | null; follow_up_on: string | null; followed_up: boolean }[]).map((r) => ({ memberId: r.member_id, repRef: r.rep_ref, gap: r.gap as "skill" | "will" | "system" | "unclear" | null, followUpOn: r.follow_up_on, followedUp: r.followed_up }));
   const rvAll = ((rvRows ?? []) as { member_id: string; root_cause: string | null; action_logged: boolean | null; follow_up_on: string | null; followed_up: boolean }[]).map((r) => ({ memberId: r.member_id, rootCause: r.root_cause as "skill" | "will" | "system" | "unclear" | null, actionLogged: r.action_logged, followUpOn: r.follow_up_on, followedUp: r.followed_up }));
@@ -90,7 +96,7 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     const audit = auditSummary(((auditRows ?? []) as { member_id: string; deal_ref: string | null; answers: (boolean | null)[] }[]).filter((a) => a.member_id === m.id).map((a) => ({ dealRef: a.deal_ref, answers: a.answers })));
     const calls = callSummary(((callRows ?? []) as { member_id: string; rep_ref: string; ratings: Record<string, number> }[]).filter((c) => c.member_id === m.id).map((c) => ({ repRef: c.rep_ref, ratings: c.ratings })), weights);
     return {
-      member: m, audit, calls, oneOnOnes: oneOnOneSummary(ooAll.filter((r) => r.memberId === m.id)), coaching: coachingSummary(cpAll.filter((r) => r.memberId === m.id)), reviews: reviewSummary(rvAll.filter((r) => r.memberId === m.id)),
+      member: m, audit, calls, banding: bandReps(repAll.filter((r) => r.member_id === m.id).map((r) => ({ repRef: r.rep_ref, tenureMonths: Number(r.tenure_months), output: r.output == null ? null : Number(r.output) })), bandingSetup), oneOnOnes: oneOnOneSummary(ooAll.filter((r) => r.memberId === m.id)), coaching: coachingSummary(cpAll.filter((r) => r.memberId === m.id)), reviews: reviewSummary(rvAll.filter((r) => r.memberId === m.id)),
       forecast: forecastSummary(((fcRows ?? []) as { member_id: string; month: string; commit: number | null; actual: number | null }[]).filter((f) => f.member_id === m.id).map((f) => ({ month: f.month, commit: f.commit == null ? null : Number(f.commit), actual: f.actual == null ? null : Number(f.actual) })), band), values, baselineEntered, endlineEntered, attended, assignmentsDone,
       improved: measuresImproved(values),
       progress: progressPct({ profileDone: !!m.profile_done_at, baselineEntered, endlineEntered, sessionsHeld: heldSessions.length, attended, assignmentsDone }),
@@ -152,7 +158,16 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
   const coachingStats = { managers: managers.filter((m) => m.coaching.total > 0).length, total: cp.total, reps: managers.reduce((s2, m) => s2 + m.coaching.reps, 0), gaps: cp.gaps as Record<string, number>, systemSharePct: cp.systemSharePct, overdue: cp.overdue, followUps: cp.followUps, followedUp: cp.followedUp };
   const oo = oneOnOneSummary(ooAll.filter((r) => managersRaw.some((m) => m.id === r.memberId)));
   const oneOnOneStats = { managers: managers.filter((m) => m.oneOnOnes.total > 0).length, total: oo.total, reps: managers.reduce((s2, m) => s2 + m.oneOnOnes.reps, 0), commitments: oo.commitments, answered: oo.answered, doneOnTimePct: oo.doneOnTimePct, overdueOpen: oo.overdueOpen };
-  return { cohort: cohort as LabCohort, weights, band, oneOnOneStats, coachingStats, reviewStats, forecastStats, calibration: calib, callStats, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
+  // Cohort view of banding: each manager is banded within their own team, then the focus counts are added up.
+  const bandingStats = {
+    managers: managers.filter((m) => m.banding.total > 0).length,
+    reps: managers.reduce((s2, m) => s2 + m.banding.total, 0),
+    diagnose: managers.reduce((s2, m) => s2 + m.banding.diagnose, 0),
+    stretch: managers.reduce((s2, m) => s2 + m.banding.stretch, 0),
+    learn: managers.reduce((s2, m) => s2 + m.banding.learn, 0),
+    rated: managers.reduce((s2, m) => s2 + m.banding.diagnose + m.banding.stretch + m.banding.learn, 0),
+  };
+  return { cohort: cohort as LabCohort, weights, band, bandingSetup, bandingStats, oneOnOneStats, coachingStats, reviewStats, forecastStats, calibration: calib, callStats, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
 }
 
 export { resultOf, change };

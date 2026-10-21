@@ -119,3 +119,29 @@ eq(oo.overdueOpen, 1, "one-on-ones: one open commitment is overdue");
 eq(c.oneOnOneSummary([]).doneOnTimePct, null, "one-on-ones: nothing entered");
 eq(c.ONE_ON_ONE_SEGMENTS.length, 5, "one-on-ones: five segments in 30 minutes");
 eq(c.doneOnTimePct([true, true, true, false]), 75, "done on time: 3 of 4 is 75%");
+
+const reps = c.bandReps([
+  { repRef: "R1", tenureMonths: 8, output: 60 },
+  { repRef: "R2", tenureMonths: 10, output: 100 },
+  { repRef: "R3", tenureMonths: 6, output: 80 },
+  { repRef: "R4", tenureMonths: 2, output: 30 },
+  { repRef: "R5", tenureMonths: 24, output: 150 },
+  { repRef: "R6", tenureMonths: 30, output: 200 },
+  { repRef: "R7", tenureMonths: 36, output: 250 },
+]);
+const rep = (id: string) => reps.rows.find((r) => r.repRef === id)!;
+eq(rep("R1").band, "Developing", "banding: 8 months is Developing");
+eq(rep("R1").bandAvg, 80, "banding: developing average of 60, 100 and 80 is 80");
+eq(rep("R1").pct, 75, "banding: R1 at 60 against 80 is 75%");
+eq(rep("R1").focus, "diagnose", "banding: below 80 means diagnose");
+eq(rep("R2").focus, "learn", "banding: 100 against 80 is 125%, above 120, so learn");
+eq(rep("R3").focus, "stretch", "banding: 100% is in band");
+eq(rep("R4").alone, true, "banding: a rep alone in a band has nothing to compare with");
+eq(rep("R4").focus, null, "banding: no focus for a rep alone in a band");
+eq(rep("R5").focus, "diagnose", "banding: established R5 at 150 against 200 is 75%");
+eq([reps.diagnose, reps.stretch, reps.learn], [2, 2, 2], "banding: two of each focus");
+eq(c.bandingFocus(100), "In band: stretch", "banding: focus label");
+eq(c.bandingFor(null), { limits: { rampUpTo: 3, developingUpTo: 12 }, cut: { low: 80, high: 120 } }, "banding: defaults");
+eq(c.bandingFor({ banding: { rampUpTo: 6, developingUpTo: 18, low: 70, high: 130 } }).limits.developingUpTo, 18, "banding: cohort override");
+eq(c.bandingFor({ banding: { rampUpTo: 12, developingUpTo: 6 } }).limits.rampUpTo, 3, "banding: bad limits fall back to the defaults");
+eq(c.bandReps([{ repRef: "A", tenureMonths: 8, output: 60 }, { repRef: "B", tenureMonths: 8, output: 100 }], { limits: { rampUpTo: 3, developingUpTo: 12 }, cut: { low: 70, high: 130 } }).rows[0].focus, "stretch", "banding: 75% is in band when the low cut-off is 70");

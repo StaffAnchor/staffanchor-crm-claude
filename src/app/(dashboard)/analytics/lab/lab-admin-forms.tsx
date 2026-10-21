@@ -193,3 +193,25 @@ export function ForecastBand({ cohortId, low, high }: { cohortId: string; low: n
     </div>
   );
 }
+
+export function BandingSettings({ cohortId, value }: { cohortId: string; value: { limits: { rampUpTo: number; developingUpTo: number }; cut: { low: number; high: number } } }) {
+  const router = useRouter();
+  const [v, setV] = useState({ rampUpTo: String(value.limits.rampUpTo), developingUpTo: String(value.limits.developingUpTo), low: String(value.cut.low), high: String(value.cut.high) });
+  const [msg, setMsg] = useState<string | null>(null);
+  const num = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement>) => setV({ ...v, [k]: e.target.value.replace(/\D/g, "") });
+  async function save() {
+    const r = await act({ action: "set_banding", cohortId, ...Object.fromEntries(Object.entries(v).map(([k, x]) => [k, Number(x)])) } as Record<string, unknown>);
+    setMsg(r.ok ? "Saved." : r.error ?? "Couldn't save.");
+    if (r.ok) router.refresh();
+  }
+  return (
+    <div className="flex flex-wrap items-end gap-3 text-sm">
+      <label className="text-xs text-slate-500">Ramp up to (months)<br /><input className={`${input} w-24`} inputMode="numeric" value={v.rampUpTo} onChange={num("rampUpTo")} /></label>
+      <label className="text-xs text-slate-500">Developing up to (months)<br /><input className={`${input} w-24`} inputMode="numeric" value={v.developingUpTo} onChange={num("developingUpTo")} /></label>
+      <label className="text-xs text-slate-500">Diagnose below (%)<br /><input className={`${input} w-24`} inputMode="numeric" value={v.low} onChange={num("low")} /></label>
+      <label className="text-xs text-slate-500">Learn from above (%)<br /><input className={`${input} w-24`} inputMode="numeric" value={v.high} onChange={num("high")} /></label>
+      <button onClick={save} className={btn}>Save banding</button>
+      {msg && <span className="text-slate-600">{msg}</span>}
+    </div>
+  );
+}
