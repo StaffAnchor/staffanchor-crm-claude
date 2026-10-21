@@ -26,6 +26,7 @@ import UnarchiveMandateButton from "./unarchive-mandate-button";
 import MandateStaffingControl from "./mandate-staffing-control";
 import DownloadJdButton from "./download-jd-button";
 import CopyForLinkedinButton from "./copy-for-linkedin-button";
+import LinkedinPostButton from "./linkedin-post-button";
 import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
 import PriorityApplicantFunnelPanel from "./priority-applicant-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
@@ -339,6 +340,7 @@ export default async function MandateDetailPage({
         <div className="flex items-center gap-2 shrink-0">
           {mandate.status === "open" && mandate.short_code && <CopyShareLinkButton shortCode={mandate.short_code} />}
           <CopyForLinkedinButton mandate={mandate} />
+          <LinkedinPostButton mandateId={id} />
           <DownloadJdButton mandateId={id} />
           {mandate.is_archived ? (
             <UnarchiveMandateButton mandateId={id} />
