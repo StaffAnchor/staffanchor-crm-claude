@@ -1,4 +1,4 @@
-import { MEASURES, PROGRESS_WEIGHTS, change, resultOf } from "@/lib/lab/calc";
+import { AUDIT_CHECKS, MEASURES, PROGRESS_WEIGHTS, change, resultOf } from "@/lib/lab/calc";
 import type { CohortData, MemberMetrics } from "@/lib/lab/data";
 import { Bar, ResultPill, signed, toneFor } from "./ui";
 
@@ -57,6 +57,14 @@ export default function MemberProgress({ m, data, assignments }: { m: MemberMetr
         </div>
         {m.endlineEntered === MEASURES.length && <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">Improved on <b>{m.improved} of {MEASURES.length}</b> measures.</p>}
       </section>
+
+      {m.audit.started > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pipeline audit</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{m.audit.completed} deal{m.audit.completed === 1 ? "" : "s"} audited{m.audit.started > m.audit.completed ? `, ${m.audit.started - m.audit.completed} half-filled` : ""}. Average score {m.audit.avgScore ?? "–"} of 9.</p>
+          {m.audit.weakestIndex != null && <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">Habit to fix first: <b>{AUDIT_CHECKS[m.audit.weakestIndex]}</b> ({m.audit.noCounts[m.audit.weakestIndex]} of {m.audit.completed} deals).</p>}
+        </section>
+      )}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Sessions</h2>

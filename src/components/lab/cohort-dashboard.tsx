@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MEASURES } from "@/lib/lab/calc";
+import { AUDIT_CHECKS, MEASURES } from "@/lib/lab/calc";
 import type { CohortData } from "@/lib/lab/data";
 import { Bar, Kpi, StatusChip, signed, toneFor } from "./ui";
 
@@ -49,6 +49,23 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         </div>
       </section>
 
+      {data.audit.managersAudited > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pipeline audit</h2><p className="mt-0.5 text-xs text-slate-500">{data.audit.managersAudited} of {k.managers} managers have audited their open deals. The longest bar is the pipeline habit the cohort should fix first.</p></div>
+            <p className="text-sm text-slate-600">Average score <b className="text-slate-900 dark:text-slate-100">{data.audit.avgScore ?? "–"} of 9</b></p>
+          </div>
+          <ul className="mt-4 space-y-2.5">
+            {AUDIT_CHECKS.map((label, i) => (
+              <li key={label} className="text-sm">
+                <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">{i + 1}. {label}</span><span className="tabular-nums text-slate-500">{data.audit.noPct[i] ?? 0}% No</span></div>
+                <div className="mt-1"><Bar pct={data.audit.noPct[i] ?? 0} tone={i === data.audit.weakestIndex ? "rose" : "slate"} /></div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Attendance by session</h2>
@@ -80,10 +97,10 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Progress by manager</h2>
         <p className="mt-0.5 text-xs text-slate-500">Lowest progress first. Progress combines details added, baseline, attendance, assignments and endline.</p>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[780px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                <th className="py-2 pr-3 font-medium">Manager</th><th className="px-3 font-medium">Progress</th><th className="px-3 font-medium">Attended</th><th className="px-3 font-medium">Assignments</th><th className="px-3 font-medium">Baseline</th><th className="px-3 font-medium">Improved</th><th className="px-3 font-medium">Status</th>
+                <th className="py-2 pr-3 font-medium">Manager</th><th className="px-3 font-medium">Progress</th><th className="px-3 font-medium">Attended</th><th className="px-3 font-medium">Assignments</th><th className="px-3 font-medium">Baseline</th><th className="px-3 font-medium">Audit</th><th className="px-3 font-medium">Improved</th><th className="px-3 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -97,11 +114,12 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
                   <td className="px-3 tabular-nums text-slate-600">{data.sessionsHeld ? `${m.attended} of ${data.sessionsHeld}` : "–"}</td>
                   <td className="px-3 tabular-nums text-slate-600">{data.sessionsHeld ? `${m.assignmentsDone} of ${data.sessionsHeld}` : "–"}</td>
                   <td className="px-3 tabular-nums text-slate-600">{m.baselineEntered} of {MEASURES.length}</td>
+                  <td className="px-3 tabular-nums text-slate-600">{m.audit.avgScore != null ? `${m.audit.avgScore} of 9` : "–"}</td>
                   <td className="px-3 tabular-nums text-slate-600">{m.endlineEntered ? `${m.improved} of ${MEASURES.length}` : "–"}</td>
                   <td className="px-3"><StatusChip progress={m.progress} started={started} /></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-slate-500">No managers in the cohort yet.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={8} className="py-6 text-center text-slate-500">No managers in the cohort yet.</td></tr>}
             </tbody>
           </table>
         </div>

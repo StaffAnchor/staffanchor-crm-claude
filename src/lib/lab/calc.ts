@@ -74,6 +74,24 @@ export const AUDIT_CHECKS = [
 ];
 export const auditScore = (answers: (boolean | null)[]): number => answers.filter((a) => a === true).length;
 
+export type AuditDeal = { dealRef?: string | null; answers: (boolean | null)[] };
+/** A deal counts once all nine checks are answered; a half-filled deal is shown but left out of the averages. */
+export const auditComplete = (answers: (boolean | null)[]): boolean => answers.length === AUDIT_CHECKS.length && answers.every((a) => a === true || a === false);
+
+/** Summary of one manager's audit: average score out of 9, and how often each check was a No (the weakest is the habit to fix first). */
+export function auditSummary(deals: AuditDeal[]) {
+  const done = deals.filter((d) => auditComplete(d.answers));
+  const noCounts = AUDIT_CHECKS.map((_, i) => done.filter((d) => d.answers[i] === false).length);
+  const max = Math.max(0, ...noCounts);
+  return {
+    started: deals.filter((d) => (d.dealRef ?? "").trim() || d.answers.some((a) => a !== null)).length,
+    completed: done.length,
+    avgScore: done.length ? Math.round((done.reduce((s, d) => s + auditScore(d.answers), 0) / done.length) * 10) / 10 : null,
+    noCounts,
+    weakestIndex: max > 0 ? noCounts.indexOf(max) : null,
+  };
+}
+
 // ---- Follow-up check ----
 export const onTimePct = (sampled: number, withNextStep: number): number | null => (sampled > 0 ? Math.round((withNextStep / sampled) * 100) : null);
 

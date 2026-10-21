@@ -22,3 +22,13 @@ eq(c.weightedScore({ opening: 3, discovery: 3, listening: 3, objections: 3, valu
 eq(c.calibration({ a: 4, b: 2, c: 3 }, { a: 2, b: 2, c: 5 }, ["a","b","c"]).bigGaps, 2, "calibration gaps of 2+");
 eq(c.attritionCost(3, 150000), 450000, "attrition cost");
 eq(c.progressPct({ profileDone: true, baselineEntered: 4, endlineEntered: 0, sessionsHeld: 2, attended: 2, assignmentsDone: 1 }), 10+25+25+10, "progress");
+
+const dealA = { answers: [true,true,false,true,false,false,true,true,true] };
+const dealB = { answers: [true,false,false,true,true,true,true,true,true] };
+const sum = c.auditSummary([dealA, dealB, { answers: [true, null, null, null, null, null, null, null, null] }]);
+eq(sum.completed, 2, "audit: two complete deals, the half-filled one is left out");
+eq(sum.avgScore, 6.5, "audit: average of 6 and 7 is 6.5");
+eq(sum.noCounts, [0,1,2,0,1,1,0,0,0], "audit: counts of No per check");
+eq(sum.weakestIndex, 2, "audit: weakest check is number 3 (decision maker known)");
+eq(c.auditSummary([]).avgScore, null, "audit: nothing entered");
+eq(c.auditComplete([true,true,true,true,true,true,true,true,null]), false, "audit: incomplete");
