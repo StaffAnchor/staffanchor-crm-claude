@@ -66,6 +66,13 @@ export default function MemberProgress({ m, data, assignments }: { m: MemberMetr
         </section>
       )}
 
+      {m.coaching.total > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Coaching</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{m.coaching.total} conversation{m.coaching.total === 1 ? "" : "s"} prepared across {m.coaching.reps} rep{m.coaching.reps === 1 ? "" : "s"}. Skill {m.coaching.gaps.skill}, will {m.coaching.gaps.will}, system {m.coaching.gaps.system}. {m.coaching.followUps > 0 ? `Follow-ups done ${m.coaching.followedUp} of ${m.coaching.followUps}${m.coaching.overdue ? `, ${m.coaching.overdue} overdue` : ""}.` : ""}</p>
+        </section>
+      )}
+
       {m.reviews.total > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Review meetings</h2>
