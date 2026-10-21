@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { MEASURES, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
+import { AUDIT_CHECKS, MEASURES, auditSummary, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
 import type { LabCohort, LabMember } from "./auth";
 
 export const SESSION_TITLES = [
@@ -13,6 +13,7 @@ export type MemberMetrics = {
   baselineEntered: number; endlineEntered: number;
   attended: number; assignmentsDone: number;
   improved: number; progress: number;
+  audit: ReturnType<typeof auditSummary>;
 };
 
 export type CohortData = {
@@ -24,6 +25,7 @@ export type CohortData = {
   rollup: ReturnType<typeof cohortRollup>;
   kpis: { managers: number; avgProgress: number | null; attendancePct: number | null; baselinePct: number | null; endlinePct: number | null; assignmentsPct: number | null; improvingOn3Plus: number };
   attendance: { session_id: string; member_id: string; present: boolean }[];
+  audit: { managersAudited: number; avgScore: number | null; noPct: (number | null)[]; weakestIndex: number | null };
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -39,10 +41,11 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
   const ses = (sessions ?? []) as CohortData["sessions"];
   const ids = mem.map((m) => m.id);
   const sesIds = ses.map((s) => s.id);
-  const [{ data: vals }, { data: att }, { data: asg }] = await Promise.all([
+  const [{ data: vals }, { data: att }, { data: asg }, { data: auditRows }] = await Promise.all([
     ids.length ? db.from("lab_measure_values").select("member_id, measure_key, phase, value").in("member_id", ids) : Promise.resolve({ data: [] }),
     sesIds.length ? db.from("lab_attendance").select("session_id, member_id, present").in("session_id", sesIds) : Promise.resolve({ data: [] }),
     ids.length ? db.from("lab_assignments").select("member_id, session_n, done").in("member_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? db.from("lab_audit_deals").select("member_id, deal_ref, answers").in("member_id", ids) : Promise.resolve({ data: [] }),
   ]);
   // A session counts as held once its date is today or earlier, or once attendance has been marked for it.
   const marked = new Set(((att ?? []) as { session_id: string }[]).map((a) => a.session_id));
@@ -61,8 +64,9 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     const endlineEntered = MEASURES.filter((x) => values[x.key]!.endline != null).length;
     const attended = ((att ?? []) as { session_id: string; member_id: string; present: boolean }[]).filter((a) => a.member_id === m.id && a.present && heldIds.has(a.session_id)).length;
     const assignmentsDone = ((asg ?? []) as { member_id: string; session_n: number; done: boolean }[]).filter((a) => a.member_id === m.id && a.done && heldNs.has(a.session_n)).length;
+    const audit = auditSummary(((auditRows ?? []) as { member_id: string; deal_ref: string | null; answers: (boolean | null)[] }[]).filter((a) => a.member_id === m.id).map((a) => ({ dealRef: a.deal_ref, answers: a.answers })));
     return {
-      member: m, values, baselineEntered, endlineEntered, attended, assignmentsDone,
+      member: m, audit, values, baselineEntered, endlineEntered, attended, assignmentsDone,
       improved: measuresImproved(values),
       progress: progressPct({ profileDone: !!m.profile_done_at, baselineEntered, endlineEntered, sessionsHeld: heldSessions.length, attended, assignmentsDone }),
     };
@@ -80,7 +84,18 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
     assignmentsPct: pct(managers.reduce((s, m) => s + m.assignmentsDone, 0), n * heldSessions.length),
     improvingOn3Plus: rollup.improvingOn3Plus,
   };
-  return { cohort: cohort as LabCohort, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
+  // Cohort view of the audit: how many managers have audited, the average score, and how often each check was a No.
+  const audited = managers.filter((m) => m.audit.completed > 0);
+  const totalDeals = audited.reduce((s, m) => s + m.audit.completed, 0);
+  const noPct = AUDIT_CHECKS.map((_, i) => (totalDeals ? Math.round((audited.reduce((s, m) => s + m.audit.noCounts[i], 0) / totalDeals) * 100) : null));
+  const maxNo = Math.max(0, ...noPct.map((x) => x ?? 0));
+  const auditStats = {
+    managersAudited: audited.length,
+    avgScore: audited.length ? Math.round((audited.reduce((s, m) => s + (m.audit.avgScore ?? 0), 0) / audited.length) * 10) / 10 : null,
+    noPct,
+    weakestIndex: maxNo > 0 ? noPct.indexOf(maxNo) : null,
+  };
+  return { cohort: cohort as LabCohort, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
 }
 
 export { resultOf, change };
