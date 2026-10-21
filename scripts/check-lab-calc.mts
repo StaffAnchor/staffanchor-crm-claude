@@ -90,3 +90,16 @@ eq(rs.causes, { skill: 1, will: 0, system: 2, unclear: 0 }, "reviews: root-cause
 eq([rs.followUps, rs.followedUp, rs.overdue], [3, 1, 1], "reviews: follow-ups, done, and one overdue");
 eq(c.reviewSummary([]).actionLoggedPct, null, "reviews: nothing entered");
 eq(c.REVIEW_QUESTIONS.length, 5, "reviews: five standard questions");
+
+const cp = c.coachingSummary([
+  { repRef: "R1", gap: "skill", followUpOn: "2026-03-13", followedUp: true },
+  { repRef: "r1", gap: "will", followUpOn: "2026-03-20", followedUp: false },
+  { repRef: "R2", gap: "system", followUpOn: "2026-12-01", followedUp: false },
+  { repRef: "R3", gap: null },
+], "2026-06-01");
+eq(cp.total, 4, "coaching: four conversations");
+eq(cp.reps, 3, "coaching: R1 and r1 are the same rep, so three reps");
+eq(cp.gaps, { skill: 1, will: 1, system: 1, unclear: 0 }, "coaching: gap mix");
+eq(cp.systemSharePct, 33, "coaching: one of three classified gaps was a system gap");
+eq([cp.followUps, cp.followedUp, cp.overdue], [3, 1, 1], "coaching: follow-ups, done, one overdue");
+eq(c.coachingSummary([]).systemSharePct, null, "coaching: nothing entered");

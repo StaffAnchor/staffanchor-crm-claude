@@ -123,6 +123,22 @@ export function reviewSummary(rows: ReviewPrep[], today = new Date().toISOString
   };
 }
 
+export type CoachingPrep = { repRef: string; gap: RootCause | null; followUpOn?: string | null; followedUp?: boolean };
+/** One manager's coaching: conversations, reps coached, the skill / will / system mix, and whether follow-ups happened. */
+export function coachingSummary(rows: CoachingPrep[], today = new Date().toISOString().slice(0, 10)) {
+  const withFollowUp = rows.filter((r) => r.followUpOn);
+  const gaps = rows.filter((r) => r.gap != null);
+  return {
+    total: rows.length,
+    reps: new Set(rows.map((r) => r.repRef.trim().toLowerCase()).filter(Boolean)).size,
+    gaps: { skill: rows.filter((r) => r.gap === "skill").length, will: rows.filter((r) => r.gap === "will").length, system: rows.filter((r) => r.gap === "system").length, unclear: rows.filter((r) => r.gap === "unclear").length },
+    systemSharePct: gaps.length ? Math.round((rows.filter((r) => r.gap === "system").length / gaps.length) * 100) : null,
+    followUps: withFollowUp.length,
+    followedUp: withFollowUp.filter((r) => r.followedUp).length,
+    overdue: withFollowUp.filter((r) => !r.followedUp && (r.followUpOn as string) < today).length,
+  };
+}
+
 // ---- Pipeline Audit (nine yes/no checks) ----
 export const AUDIT_CHECKS = [
   "Stage matches buyer action", "Dated next step", "Decision maker known", "Need confirmed", "Last contact within cadence",

@@ -114,6 +114,26 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         </section>
       )}
 
+      {data.coachingStats.total > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Coaching</h2><p className="mt-0.5 text-xs text-slate-500">{data.coachingStats.total} coaching conversations prepared by {data.coachingStats.managers} of {k.managers} managers, covering {data.coachingStats.reps} reps. What managers find behind the gaps they coach on.</p></div>
+            <div className="text-right text-sm text-slate-600">{data.coachingStats.systemSharePct != null && <p>System gaps <b className="text-slate-900 dark:text-slate-100">{data.coachingStats.systemSharePct}%</b></p>}{data.coachingStats.followUps > 0 && <p className="text-xs">Follow-ups done {data.coachingStats.followedUp} of {data.coachingStats.followUps}{data.coachingStats.overdue > 0 ? ` · ${data.coachingStats.overdue} overdue` : ""}</p>}</div>
+          </div>
+          <ul className="mt-4 space-y-2.5">
+            {ROOT_CAUSES.map((c) => {
+              const n = data.coachingStats.gaps[c.key] ?? 0;
+              return (
+                <li key={c.key} className="text-sm">
+                  <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">{c.label} <span className="text-xs text-slate-400">· {c.hint}</span></span><span className="tabular-nums text-slate-500">{n} of {data.coachingStats.total}</span></div>
+                  <div className="mt-1"><Bar pct={(n / data.coachingStats.total) * 100} tone={c.key === "system" ? "teal" : "slate"} /></div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {data.reviewStats.total > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-end justify-between gap-2">
