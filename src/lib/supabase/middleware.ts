@@ -121,6 +121,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/vendor-apply") ||
     // Sales Circle referrer application + no-account-yet signup -- same
     // class as the vendor pair immediately above.
+    // Sales Leaders Lab portal: participants sign in with an emailed code and their own signed cookie (checked
+    // in the pages and /api/lab routes), not a staff session.
+    request.nextUrl.pathname === "/lab" ||
+    request.nextUrl.pathname.startsWith("/lab/") ||
+    request.nextUrl.pathname.startsWith("/api/lab/") ||
     request.nextUrl.pathname.startsWith("/referrer-signup") ||
     request.nextUrl.pathname.startsWith("/referrer-apply") ||
     request.nextUrl.pathname.startsWith("/api/referrer-apply");

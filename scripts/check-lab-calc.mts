@@ -1,0 +1,24 @@
+// @ts-nocheck
+// Run: node scripts/check-lab-calc.mts   (checks every calculated figure in the Sales Leaders Lab against the workbook examples)
+import * as c from "../src/lib/lab/calc.ts";
+const eq = (a: unknown, b: unknown, m: string) => { if (JSON.stringify(a) !== JSON.stringify(b)) { console.log("FAIL", m, a, b); process.exitCode = 1; } else console.log("ok", m); };
+const row = { follow_up_ontime: { baseline: 60, endline: 78 }, review_freq: { baseline: 50, endline: 80 }, call_quality: { baseline: 62, endline: 74 }, forecast_accuracy: { baseline: 70, endline: 82 } };
+eq(c.measuresImproved(row), 4, "cohort row improves 4 measures");
+eq(c.cohortRollup([{ memberId: "a", values: row }, { memberId: "b", values: { follow_up_ontime: { baseline: 60, endline: 50 } } }]).improvingOn3Plus, 1, "roll-up counts 3+ improvers");
+eq(c.resultOf({ baseline: 5, endline: 5 }), "No change", "no change");
+eq(c.resultOf({ baseline: 5, endline: 4 }), "Slipped", "slipped");
+eq(c.auditScore([true,true,false,true,false,false,true,true,true]), 6, "pipeline audit Y,Y,N,Y,N,N,Y,Y,Y = 6");
+eq(c.forecastAccuracy(100, 88), 88, "forecast accuracy 88");
+eq(c.forecastRead(88), "Over-called", "88 over-called");
+eq(c.forecastRead(100), "Accurate", "100 accurate");
+eq(c.forecastRead(110), "Under-called", "110 under-called");
+eq(c.onTimePct(10, 8), 80, "8 of 10 = 80%");
+eq(c.bandOf(8), "Developing", "8 months developing");
+eq(c.bandOf(2), "Ramp up", "2 months ramp up");
+eq(c.bandOf(20), "Established", "20 months established");
+eq(c.bandingFocus(70), "Diagnose: skill, will or system", "below 80");
+eq(c.weightedScore({ opening: 5, discovery: 5, listening: 5, objections: 5, value: 5, next_step: 5, compliance: 5 }), 100, "all fives = 100");
+eq(c.weightedScore({ opening: 3, discovery: 3, listening: 3, objections: 3, value: 3, next_step: 3, compliance: 3 }), 60, "all threes = 60");
+eq(c.calibration({ a: 4, b: 2, c: 3 }, { a: 2, b: 2, c: 5 }, ["a","b","c"]).bigGaps, 2, "calibration gaps of 2+");
+eq(c.attritionCost(3, 150000), 450000, "attrition cost");
+eq(c.progressPct({ profileDone: true, baselineEntered: 4, endlineEntered: 0, sessionsHeld: 2, attended: 2, assignmentsDone: 1 }), 10+25+25+10, "progress");
