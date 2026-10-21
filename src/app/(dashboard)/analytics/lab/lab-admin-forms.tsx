@@ -173,3 +173,23 @@ export function ScorecardWeights({ cohortId, weights, locked }: { cohortId: stri
     </div>
   );
 }
+
+export function ForecastBand({ cohortId, low, high }: { cohortId: string; low: number; high: number }) {
+  const router = useRouter();
+  const [l, setL] = useState(String(low));
+  const [h, setH] = useState(String(high));
+  const [msg, setMsg] = useState<string | null>(null);
+  async function save() {
+    const r = await act({ action: "set_forecast_band", cohortId, low: Number(l), high: Number(h) } as Record<string, unknown>);
+    setMsg(r.ok ? "Saved." : r.error ?? "Couldn't save.");
+    if (r.ok) router.refresh();
+  }
+  return (
+    <div className="flex flex-wrap items-end gap-3 text-sm">
+      <label className="text-xs text-slate-500">Accurate from<br /><input className={`${input} w-24`} inputMode="numeric" value={l} onChange={(e) => setL(e.target.value.replace(/\D/g, ""))} /></label>
+      <label className="text-xs text-slate-500">to<br /><input className={`${input} w-24`} inputMode="numeric" value={h} onChange={(e) => setH(e.target.value.replace(/\D/g, ""))} /></label>
+      <button onClick={save} className={btn}>Save band</button>
+      {msg && <span className="text-slate-600">{msg}</span>}
+    </div>
+  );
+}

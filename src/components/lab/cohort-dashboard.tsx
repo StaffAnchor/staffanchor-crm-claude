@@ -100,6 +100,20 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         </section>
       )}
 
+      {data.forecastStats.months > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Forecast accuracy</h2><p className="mt-0.5 text-xs text-slate-500">{data.forecastStats.months} manager-months from {data.forecastStats.managers} of {k.managers} managers. Accurate means actual landed within {data.band.low} to {data.band.high}% of the month-start commit.</p></div>
+            <p className="text-sm text-slate-600">Average accuracy <b className="text-slate-900 dark:text-slate-100">{data.forecastStats.avgAccuracy ?? "–"}%</b></p>
+          </div>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            <li><div className="flex justify-between"><span>Accurate</span><span className="tabular-nums text-slate-500">{data.forecastStats.withinBandPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.withinBandPct ?? 0} tone="teal" /></div></li>
+            <li><div className="flex justify-between"><span>Over-called (actual below the commit)</span><span className="tabular-nums text-slate-500">{data.forecastStats.overPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.overPct ?? 0} tone="rose" /></div></li>
+            <li><div className="flex justify-between"><span>Under-called (actual above the commit)</span><span className="tabular-nums text-slate-500">{data.forecastStats.underPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.underPct ?? 0} tone="amber" /></div></li>
+          </ul>
+        </section>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Attendance by session</h2>
@@ -131,10 +145,10 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Progress by manager</h2>
         <p className="mt-0.5 text-xs text-slate-500">Lowest progress first. Progress combines details added, baseline, attendance, assignments and endline.</p>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[840px] text-sm">
+          <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                <th className="py-2 pr-3 font-medium">Manager</th><th className="px-3 font-medium">Progress</th><th className="px-3 font-medium">Attended</th><th className="px-3 font-medium">Assignments</th><th className="px-3 font-medium">Baseline</th><th className="px-3 font-medium">Audit</th><th className="px-3 font-medium">Call score</th><th className="px-3 font-medium">Improved</th><th className="px-3 font-medium">Status</th>
+                <th className="py-2 pr-3 font-medium">Manager</th><th className="px-3 font-medium">Progress</th><th className="px-3 font-medium">Attended</th><th className="px-3 font-medium">Assignments</th><th className="px-3 font-medium">Baseline</th><th className="px-3 font-medium">Audit</th><th className="px-3 font-medium">Call score</th><th className="px-3 font-medium">Forecast</th><th className="px-3 font-medium">Improved</th><th className="px-3 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -149,12 +163,13 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
                   <td className="px-3 tabular-nums text-slate-600">{data.sessionsHeld ? `${m.assignmentsDone} of ${data.sessionsHeld}` : "–"}</td>
                   <td className="px-3 tabular-nums text-slate-600">{m.baselineEntered} of {MEASURES.length}</td>
                   <td className="px-3 tabular-nums text-slate-600">{m.calls.avgScore ?? "–"}</td>
+                  <td className="px-3 tabular-nums text-slate-600">{m.forecast.avgAccuracy != null ? `${m.forecast.avgAccuracy}%` : "–"}</td>
                   <td className="px-3 tabular-nums text-slate-600">{m.audit.avgScore != null ? `${m.audit.avgScore} of 9` : "–"}</td>
                   <td className="px-3 tabular-nums text-slate-600">{m.endlineEntered ? `${m.improved} of ${MEASURES.length}` : "–"}</td>
                   <td className="px-3"><StatusChip progress={m.progress} started={started} /></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={9} className="py-6 text-center text-slate-500">No managers in the cohort yet.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={10} className="py-6 text-center text-slate-500">No managers in the cohort yet.</td></tr>}
             </tbody>
           </table>
         </div>

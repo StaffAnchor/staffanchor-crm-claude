@@ -82,6 +82,14 @@ export async function POST(req: NextRequest) {
       await db.from("lab_cohorts").update({ config: { ...cfg, scorecard_weights: weights, scorecard_locked: lock } }).eq("id", s("cohortId"));
       return NextResponse.json({ ok: true });
     }
+    case "set_forecast_band": {
+      const low = Number(b.low), high = Number(b.high);
+      if (!Number.isFinite(low) || !Number.isFinite(high) || low < 50 || high > 150 || low >= high) return bad("Enter a band such as 95 to 105 (low between 50 and 150, and below the high).");
+      const { data: c } = await db.from("lab_cohorts").select("config").eq("id", s("cohortId")).maybeSingle();
+      if (!c) return bad("Cohort not found.");
+      await db.from("lab_cohorts").update({ config: { ...((c.config ?? {}) as Record<string, unknown>), forecast_band: { low, high } } }).eq("id", s("cohortId"));
+      return NextResponse.json({ ok: true });
+    }
     case "invite": {
       const ids = Array.isArray(b.memberIds) ? (b.memberIds as unknown[]).filter((x): x is string => typeof x === "string") : [];
       const { data: people } = await db.from("lab_members").select("id, email, full_name, role, cohort_id, lab_cohorts(company_name, name)").in("id", ids).eq("active", true);

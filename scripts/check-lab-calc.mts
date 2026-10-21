@@ -61,3 +61,19 @@ eq(cs2.avgGap, 0.4, "calibration summary: average of 0.7 and 0 is 0.4 (rounded)"
 eq(cs2.per.find((x) => x.key === "discovery")?.bigGapPct, 50, "calibration summary: discovery 2+ apart on half the calls");
 eq(cs2.mostDisagreedKey === "discovery" || cs2.mostDisagreedKey === "objections", true, "calibration summary: most disagreed criterion found");
 eq(c.calibrationSummary([]).avgGap, null, "calibration summary: nothing compared");
+
+const fs = c.forecastSummary([
+  { month: "2026-03-01", commit: 100, actual: 88 },
+  { month: "2026-04-01", commit: 100, actual: 100 },
+  { month: "2026-05-01", commit: 100, actual: 110 },
+  { month: "2026-06-01", commit: 100, actual: null },
+  { month: "2026-07-01", commit: 0, actual: 50 },
+]);
+eq(fs.months, 3, "forecast: months with commit and actual (a future month and a zero commit are left out)");
+eq(fs.avgAccuracy, 99, "forecast: average of 88, 100 and 110 is 99");
+eq(fs.withinBand, 1, "forecast: one month within 95 to 105");
+eq([fs.over, fs.under], [1, 1], "forecast: one over-called, one under-called");
+eq(c.forecastSummary([{ month: "m", commit: 100, actual: 108 }], { low: 90, high: 110 }).withinBand, 1, "forecast: a wider band counts 108 as accurate");
+eq(c.bandFor({ forecast_band: { low: 90, high: 110 } }), { low: 90, high: 110 }, "forecast: cohort band override");
+eq(c.bandFor(null), { low: 95, high: 105 }, "forecast: default band");
+eq(c.bandFor({ forecast_band: { low: 120, high: 100 } }), { low: 95, high: 105 }, "forecast: an inverted band falls back to the default");

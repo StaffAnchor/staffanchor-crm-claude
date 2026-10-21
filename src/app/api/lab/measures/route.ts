@@ -19,7 +19,8 @@ export async function PUT(req: NextRequest) {
     if (!v) continue;
     const raw = v.value === "" || v.value == null ? null : Number(v.value);
     if (raw != null && (!Number.isFinite(raw) || raw < 0 || raw > 100000)) return NextResponse.json({ ok: false, error: `Check the number for ${m.label}.` }, { status: 400 });
-    if (m.unit !== "" && raw != null && raw > 100) return NextResponse.json({ ok: false, error: `${m.label} can't be more than 100.` }, { status: 400 });
+    const cap = m.key === "forecast_accuracy" ? 300 : 100; // accuracy above 100 means the actual beat the commit
+    if (raw != null && raw > cap) return NextResponse.json({ ok: false, error: `${m.label} can't be more than ${cap}.` }, { status: 400 });
     const text = (x: unknown, n: number) => (typeof x === "string" ? x.trim().slice(0, n) : "") || null;
     rows.push({ member_id: me.member.id, measure_key: m.key, phase: b.phase, value: raw, period: text(v.period, 60), source: text(v.source, 120), note: text(v.note, 300), updated_at: new Date().toISOString() });
   }
