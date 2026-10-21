@@ -27,21 +27,23 @@ function facts(m: M) {
   return { cities, client, exp, comp };
 }
 
-// Used when the AI draft fails: a plain post from the mandate's own facts.
+const tag = (w: string) => "#" + w.replace(/[^a-zA-Z0-9]/g, "");
+
+// Used when the AI draft fails: the same short layout, from the mandate's own facts.
 function templatePost(m: M): string {
   const f = facts(m);
-  const bullets = [f.cities.length ? `Location: ${f.cities.join(", ")}` : null, f.exp ? `Experience: ${f.exp}` : null, f.comp ? `Compensation: ${f.comp}` : null, m.work_mode ? `Work mode: ${m.work_mode}` : null].filter(Boolean);
-  const first = lines(m.jd_responsibilities).slice(0, 2).map((x) => `• ${x}`);
+  const role = tag(m.role_title.split(/[\/,(]/)[0].trim().split(/\s+/).map((w) => w[0]?.toUpperCase() + w.slice(1)).join(""));
   return [
-    `We are hiring: ${m.role_title}${f.client ? ` at ${f.client}` : ""}.`,
-    m.jd_overview?.trim() ? m.jd_overview.trim().split(/(?<=[.!?])\s+/)[0] : "",
-    bullets.map((b) => `• ${b}`).join("\n"),
-    first.length ? `What you will do:\n${first.join("\n")}` : "",
-    "Know someone who fits? Tag them or share this post.",
-  ].filter(Boolean).join("\n\n");
+    `📢 We're Hiring | ${m.role_title} for a leading company!`,
+    [f.cities.length ? `📍 Location: ${f.cities.join(" & ")}` : "", f.exp ? `Experience: ${f.exp}` : "", "Compensation: As per industry standards"].filter(Boolean).join("\n"),
+    "Candidates with relevant experience are encouraged to apply.",
+    "🔗 Apply through the link in the comments.",
+    `#Hiring ${role} #JobOpportunity`,
+  ].join("\n\n");
 }
 
-// A short LinkedIn feed post for one role, ready to paste. The job link is added here, never left to the AI.
+// A very short LinkedIn hiring post for one role. The job link goes in a separate first comment (LinkedIn shows posts
+// with links in the body to fewer people), and is built here, never left to the AI.
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -60,38 +62,45 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const link = m.status === "open" && !m.is_archived && m.short_code ? `${JOBS_SITE}/j/${m.short_code}?utm_source=linkedin&utm_medium=post` : null;
   const f = facts(m);
 
-  const prompt = `Write a short LinkedIn feed post (350 to 700 characters) announcing this open role, for Gagan Sharma, founder of StaffAnchor, a recruitment firm for sales and revenue roles.
+  const prompt = `Write a very short LinkedIn hiring post for StaffAnchor (a recruitment firm for sales and revenue roles), in exactly this layout:
 
-Facts you may use (nothing else):
+📢 We're Hiring | <Role> for <a short description of the hiring company>!
+
+📍 Location: <cities, joined with " & ">
+Experience: <range, with an en dash, e.g. 3–8 years>
+Compensation: As per industry standards
+
+<one short sentence on who should apply>
+
+🔗 Apply through the link in the comments.
+
+<three or four hashtags>
+
+Facts (use nothing else):
 - Role: ${m.role_title}
-- Hiring company: ${f.client ?? "not named, call it a confidential client or leave it out"}
+- Hiring company: ${f.client ?? "not named"}
+- What the company does (from the role description): ${m.jd_overview?.trim() || "not stated"}
 - Location: ${f.cities.join(", ") || "not stated"}
 - Experience: ${f.exp ?? "not stated"}
-- Compensation: ${f.comp ?? "not stated"}
-- Work mode: ${m.work_mode ?? "not stated"}
-- About the role: ${m.jd_overview?.trim() || "not stated"}
-- Responsibilities: ${lines(m.jd_responsibilities).slice(0, 5).join("; ") || "not stated"}
-- Who fits: ${lines(m.jd_candidate_profile).slice(0, 4).join("; ") || "not stated"}
-- Must have: ${(m.must_haves ?? []).slice(0, 5).join("; ") || "not stated"}
+- Who fits: ${lines(m.jd_candidate_profile).slice(0, 3).join("; ") || lines(m.jd_responsibilities).slice(0, 3).join("; ") || "not stated"}
 
 Rules:
-- First line is a clear hook that names the role. Plain text, short lines, a blank line between parts, at most four "•" bullets of the key facts.
-- No emojis, no hashtags, no markdown, no links (the link is added afterwards).
-- Never invent facts, numbers, perks or promises. Skip anything marked "not stated". Do not say "confidential" unless the company is not named.
-- End with one line asking people to apply or share with someone who fits.
-Return ONLY the post text.`;
+- Keep the layout and the emojis shown. Never write the actual compensation figure; the line says "As per industry standards".
+- Company description: if the company is not named, use "a leading" plus the kind of business the facts support (for example "a leading automotive marketplace"); never guess a business the facts do not support. If the company is named in the facts, you may name it.
+- Skip the Location or Experience line if it is "not stated".
+- The who-should-apply sentence is at most 20 words and uses only the facts.
+- Hashtags: #Hiring first, then the role and the industry. No other text, no link, no markdown.
+Return ONLY the post.`;
 
   let text = "";
   let ai = true;
   try {
     const { text: raw } = await generateTextWithFallback(prompt);
     text = raw.trim().replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").replace(/https?:\/\/\S+/g, "").replace(/\*\*/g, "").trim();
-    if (text.length < 120) throw new Error("too short");
-    if (text.length > 1000) text = text.slice(0, 1000).replace(/\s+\S*$/, "");
+    if (text.length < 80 || text.length > 700 || !text.includes("link in the comments")) throw new Error("bad shape");
   } catch {
     text = templatePost(m);
     ai = false;
   }
-  const post = link ? `${text}\n\nSee the role and apply: ${link}` : text;
-  return NextResponse.json({ ok: true, post, ai, link, hasLink: !!link });
+  return NextResponse.json({ ok: true, post: text, comment: link ? `Apply here: ${link}` : null, ai, hasLink: !!link });
 }
