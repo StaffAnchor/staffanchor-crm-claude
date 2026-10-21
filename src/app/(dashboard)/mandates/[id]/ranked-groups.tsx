@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, MessageCircle, UserPlus } from "lucide-react";
+import LazyCvPreview from "./lazy-cv-preview";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import WhatsAppReview from "@/components/whatsapp-review";
 import { useWhatsAppTemplates } from "@/lib/use-whatsapp-templates";
@@ -193,6 +194,7 @@ export default function RankedGroups({ mandateId, ranked, reached = {} }: { mand
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
                   </select>
+                  <LazyCvPreview candidateId={c.candidate_id} name={c.full_name} />
                   <PipelineTemplateActions candidateId={c.candidate_id} mandateId={mandateId} stage="sourced" missing={[]} showOpportunity />
                 </div>
               </div>
