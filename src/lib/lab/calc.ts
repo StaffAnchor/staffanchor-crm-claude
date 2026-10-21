@@ -139,6 +139,29 @@ export function coachingSummary(rows: CoachingPrep[], today = new Date().toISOSt
   };
 }
 
+export const ONE_ON_ONE_SEGMENTS: { key: string; minutes: string; label: string; what: string }[] = [
+  { key: "open", minutes: "0-5", label: "Open", what: "Ask how the week went. Listen. Do not start with numbers." },
+  { key: "theirs", minutes: "5-12", label: "Their agenda", what: "The rep chooses the topic. Note what they raise first." },
+  { key: "performance", minutes: "12-22", label: "Performance and one deal", what: "Review one deal or call using facts. Ask, then tell." },
+  { key: "coaching", minutes: "22-27", label: "Coaching", what: "Agree one behaviour to practise. Use skill, will or system to decide the help." },
+  { key: "commit", minutes: "27-30", label: "Commit", what: "The rep states the commitment and the date. You note your own follow-up." },
+];
+
+export type OneOnOne = { repRef: string; commitment?: string | null; dueOn?: string | null; done?: boolean | null };
+/** One manager's one-on-ones: how many, reps covered, and the share of commitments done by the agreed date. */
+export function oneOnOneSummary(rows: OneOnOne[], today = new Date().toISOString().slice(0, 10)) {
+  const made = rows.filter((r) => (r.commitment ?? "").trim());
+  const answered = made.filter((r) => r.done === true || r.done === false);
+  return {
+    total: rows.length,
+    reps: new Set(rows.map((r) => r.repRef.trim().toLowerCase()).filter(Boolean)).size,
+    commitments: made.length,
+    answered: answered.length,
+    doneOnTimePct: doneOnTimePct(answered.map((r) => r.done === true)),
+    overdueOpen: made.filter((r) => r.done == null && r.dueOn && r.dueOn < today).length,
+  };
+}
+
 // ---- Pipeline Audit (nine yes/no checks) ----
 export const AUDIT_CHECKS = [
   "Stage matches buyer action", "Dated next step", "Decision maker known", "Need confirmed", "Last contact within cadence",
