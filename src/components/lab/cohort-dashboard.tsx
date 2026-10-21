@@ -83,6 +83,23 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         </section>
       )}
 
+      {data.calibration.compared > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Calibration</h2><p className="mt-0.5 text-xs text-slate-500">{data.calibration.compared} call{data.calibration.compared === 1 ? "" : "s"} scored by two managers. This shows where managers disagree about what good looks like: the share of calls on which two managers were 2 or more points apart.</p></div>
+            <p className="text-sm text-slate-600">Average gap <b className="text-slate-900 dark:text-slate-100">{data.calibration.avgGap ?? "–"}</b></p>
+          </div>
+          <ul className="mt-4 space-y-2.5">
+            {data.calibration.per.map((c) => (
+              <li key={c.key} className="text-sm">
+                <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">{c.label}</span><span className="tabular-nums text-slate-500">{c.bigGapPct ?? 0}% of calls 2+ apart</span></div>
+                <div className="mt-1"><Bar pct={c.bigGapPct ?? 0} tone={c.key === data.calibration.mostDisagreedKey ? "rose" : "slate"} /></div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Attendance by session</h2>

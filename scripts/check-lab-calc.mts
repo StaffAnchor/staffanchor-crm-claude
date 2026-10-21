@@ -49,3 +49,15 @@ eq(c.weightsFor({ scorecard_weights: { discovery: 25, opening: 5 } }).find((x) =
 eq(c.weightsValid(c.weightsFor(null)), true, "weights: defaults add to 100");
 eq(c.weightsValid(c.weightsFor({ scorecard_weights: { discovery: 25 } })), false, "weights: must add to 100");
 eq(c.weightedScore(five, c.weightsFor({ scorecard_weights: { discovery: 25, opening: 5 } })), 100, "weights: all fives still 100 with custom weights");
+
+const ca = { opening: 4, discovery: 2, listening: 3, objections: 4, value: 3, next_step: 5, compliance: 4 };
+const cb = { opening: 4, discovery: 4, listening: 3, objections: 2, value: 3, next_step: 4, compliance: 4 };
+const cal = c.calibration(ca, cb);
+eq(cal.bigGaps, 2, "calibration: discovery and objections differ by 2");
+eq(cal.avgGap, 0.7, "calibration: average gap is 5 over 7, 0.7");
+const cs2 = c.calibrationSummary([{ a: ca, b: cb }, { a: three, b: three }]);
+eq(cs2.compared, 2, "calibration summary: two compared calls");
+eq(cs2.avgGap, 0.4, "calibration summary: average of 0.7 and 0 is 0.4 (rounded)");
+eq(cs2.per.find((x) => x.key === "discovery")?.bigGapPct, 50, "calibration summary: discovery 2+ apart on half the calls");
+eq(cs2.mostDisagreedKey === "discovery" || cs2.mostDisagreedKey === "objections", true, "calibration summary: most disagreed criterion found");
+eq(c.calibrationSummary([]).avgGap, null, "calibration summary: nothing compared");
