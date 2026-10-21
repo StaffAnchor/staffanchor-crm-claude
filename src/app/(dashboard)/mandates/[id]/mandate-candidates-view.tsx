@@ -27,11 +27,9 @@ export default function MandateCandidatesView({
   resumeSignedUrlByCandidate = {},
   flaggedCallByCandidate = {},
   aiSuggestions = null,
-  aiCount = 0,
 }: {
   // The AI-suggested people for this role, rendered on the server and shown in the second set.
   aiSuggestions?: React.ReactNode;
-  aiCount?: number;
   // Opened from Today with ?stage=shortlisted and similar, so the list lands
   // on the right pile instead of all 149 rows.
   initialStage?: string;
@@ -310,7 +308,7 @@ export default function MandateCandidatesView({
           title="Best people from your whole database. Not in the pipeline until you add them"
           className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors ${set === "ai" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100" : "text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
         >
-          <Sparkles className="h-3.5 w-3.5 text-teal-500" /> Best matches <span className="tabular-nums text-slate-400">{aiCount}</span>
+          <Sparkles className="h-3.5 w-3.5 text-teal-500" /> Best matches
         </button>
       </div>
       {set === "pipeline" ? pipelineView : aiSuggestions}

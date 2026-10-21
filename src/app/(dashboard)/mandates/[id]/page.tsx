@@ -97,7 +97,6 @@ export default async function MandateDetailPage({
     stale: Promise.resolve(supabase.from("candidate_mandate_links").select("stage_updated_at, candidates(full_name)").eq("mandate_id", id).eq("stage", "submitted").lt("stage_updated_at", staleCutoff)),
     assignments: Promise.resolve(supabase.from("mandate_assignments").select("freelancer_id, profiles(id, full_name, email, role)").eq("mandate_id", id)),
     staff: Promise.resolve(supabase.from("profiles").select("id, full_name, email, role").order("full_name")),
-    aiSuggested: Promise.resolve(supabase.from("mandate_ai_matches").select("candidate_id").eq("mandate_id", id).eq("status", "suggested")),
     allCandidates: Promise.resolve(supabase.from("candidates").select("id, full_name, category, sub_domain, current_employer").order("created_at", { ascending: false }).limit(500)),
     sourced: Promise.resolve(supabase.from("mandate_sourced_profiles").select("id, linkedin_url, full_name, location, current_company, outreach_status, notes, created_at, promoted_candidate_id").eq("mandate_id", id).order("created_at", { ascending: false })),
   };
@@ -228,10 +227,6 @@ export default async function MandateDetailPage({
     .map((a) => a.profiles as unknown as { id: string; full_name: string | null; email: string; role: string } | null)
     .filter((p): p is { id: string; full_name: string | null; email: string; role: string } => p !== null);
 
-  // AI suggestions that are not in the pipeline yet (the second set on this page).
-  const { data: aiSuggestedRows } = await q.aiSuggested;
-  const pipelineCandidateIds = new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter(Boolean) as string[]);
-  const aiSuggestionCount = ((aiSuggestedRows ?? []) as { candidate_id: string }[]).filter((x) => !pipelineCandidateIds.has(x.candidate_id)).length;
 
   // How each person got into the pipeline. Applied = they came in through the job link or form (they
   // answered this role's application questions, spent a priority credit, or registered/applied on the
@@ -464,7 +459,6 @@ export default async function MandateDetailPage({
               </details>
             </div>
           }
-          aiCount={aiSuggestionCount}
           initialStage={initialStage}
           rows={(links ?? [])
             .map((l) => {
