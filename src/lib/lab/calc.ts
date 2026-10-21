@@ -270,9 +270,50 @@ export function calibrationSummary(pairs: CalibrationPair[], criteria = SCORECAR
 // ---- Rep Banding ----
 export const BAND_DEFAULT = { rampUpTo: 3, developingUpTo: 12 };
 export const bandOf = (tenureMonths: number, b = BAND_DEFAULT): "Ramp up" | "Developing" | "Established" => (tenureMonths <= b.rampUpTo ? "Ramp up" : tenureMonths <= b.developingUpTo ? "Developing" : "Established");
-export function bandingFocus(pctOfBandAverage: number | null): string | null {
+export const BAND_CUTOFFS = { low: 80, high: 120 };
+export type Focus = "diagnose" | "stretch" | "learn";
+export const FOCUS_LABEL: Record<Focus, string> = { diagnose: "Diagnose: skill, will or system", stretch: "In band: stretch", learn: "Learn from them and retain them" };
+export function focusOf(pctOfBandAverage: number | null, cut = BAND_CUTOFFS): Focus | null {
   if (pctOfBandAverage == null) return null;
-  return pctOfBandAverage < 80 ? "Diagnose: skill, will or system" : pctOfBandAverage > 120 ? "Learn from them and retain them" : "In band: stretch";
+  return pctOfBandAverage < cut.low ? "diagnose" : pctOfBandAverage > cut.high ? "learn" : "stretch";
+}
+export function bandingFocus(pctOfBandAverage: number | null, cut = BAND_CUTOFFS): string | null {
+  const f = focusOf(pctOfBandAverage, cut);
+  return f ? FOCUS_LABEL[f] : null;
+}
+
+export type BandingSetup = { limits: { rampUpTo: number; developingUpTo: number }; cut: { low: number; high: number } };
+/** The cohort's tenure band limits and the 80 / 120 cut-offs, with any change the facilitator made for this cohort. */
+export function bandingFor(config: Record<string, unknown> | null | undefined): BandingSetup {
+  const b = (config?.banding ?? {}) as Record<string, unknown>;
+  const n = (k: string, d: number) => (typeof b[k] === "number" ? (b[k] as number) : d);
+  const limits = { rampUpTo: n("rampUpTo", BAND_DEFAULT.rampUpTo), developingUpTo: n("developingUpTo", BAND_DEFAULT.developingUpTo) };
+  const cut = { low: n("low", BAND_CUTOFFS.low), high: n("high", BAND_CUTOFFS.high) };
+  const ok = limits.rampUpTo >= 1 && limits.developingUpTo > limits.rampUpTo && cut.low > 0 && cut.high > cut.low;
+  return ok ? { limits, cut } : { limits: { ...BAND_DEFAULT }, cut: { ...BAND_CUTOFFS } };
+}
+
+export type RepIn = { repRef: string; tenureMonths: number; output: number | null };
+/** Group reps by tenure and compare each with the average of their own band. Used to decide where coaching time goes, never to rank or reward. */
+export function bandReps(reps: RepIn[], setup: BandingSetup = { limits: BAND_DEFAULT, cut: BAND_CUTOFFS }) {
+  const names = ["Ramp up", "Developing", "Established"] as const;
+  const withBand = reps.map((r) => ({ ...r, band: bandOf(r.tenureMonths, setup.limits) }));
+  const avgOf = new Map<string, number | null>();
+  for (const band of names) {
+    const o = withBand.filter((r) => r.band === band && r.output != null).map((r) => r.output as number);
+    avgOf.set(band, o.length ? o.reduce((a, x) => a + x, 0) / o.length : null);
+  }
+  const rows = withBand.map((r) => {
+    const avg = avgOf.get(r.band) ?? null;
+    const alone = withBand.filter((x) => x.band === r.band && x.output != null).length < 2;
+    const pct = r.output != null && avg ? Math.round((r.output / avg) * 100) : null;
+    return { ...r, bandAvg: avg == null ? null : Math.round(avg * 10) / 10, pct, alone, focus: alone ? null : focusOf(pct, setup.cut) };
+  });
+  const count = (f: Focus) => rows.filter((r) => r.focus === f).length;
+  return {
+    rows, total: rows.length, diagnose: count("diagnose"), stretch: count("stretch"), learn: count("learn"),
+    perBand: names.map((b) => ({ band: b as string, reps: rows.filter((r) => r.band === b).length, avg: avgOf.get(b) == null ? null : Math.round((avgOf.get(b) as number) * 10) / 10 })),
+  };
 }
 
 // ---- One-on-one commitments ----

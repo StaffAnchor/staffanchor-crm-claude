@@ -114,6 +114,21 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         </section>
       )}
 
+      {data.bandingStats.reps > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Where coaching time should go</h2><p className="mt-0.5 text-xs text-slate-500">{data.bandingStats.reps} reps banded by {data.bandingStats.managers} of {k.managers} managers. Each rep is compared with their own tenure band, and the focus is split three ways. This is for deciding where coaching goes, not for ranking people.</p></div>
+          </div>
+          {data.bandingStats.rated > 0 ? (
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li><div className="flex justify-between"><span>Below {data.bandingSetup.cut.low}% of band average: diagnose skill, will or system</span><span className="tabular-nums text-slate-500">{data.bandingStats.diagnose} of {data.bandingStats.rated}</span></div><div className="mt-1"><Bar pct={(data.bandingStats.diagnose / data.bandingStats.rated) * 100} tone="amber" /></div></li>
+              <li><div className="flex justify-between"><span>{data.bandingSetup.cut.low} to {data.bandingSetup.cut.high}%: in band, stretch</span><span className="tabular-nums text-slate-500">{data.bandingStats.stretch} of {data.bandingStats.rated}</span></div><div className="mt-1"><Bar pct={(data.bandingStats.stretch / data.bandingStats.rated) * 100} tone="slate" /></div></li>
+              <li><div className="flex justify-between"><span>Above {data.bandingSetup.cut.high}%: learn from them and retain them</span><span className="tabular-nums text-slate-500">{data.bandingStats.learn} of {data.bandingStats.rated}</span></div><div className="mt-1"><Bar pct={(data.bandingStats.learn / data.bandingStats.rated) * 100} tone="teal" /></div></li>
+            </ul>
+          ) : <p className="mt-3 text-sm text-slate-500">Reps are listed but there is not yet enough output data to compare within a band.</p>}
+        </section>
+      )}
+
       {data.oneOnOneStats.total > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-end justify-between gap-2">

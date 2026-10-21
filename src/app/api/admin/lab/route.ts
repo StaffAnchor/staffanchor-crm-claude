@@ -90,6 +90,16 @@ export async function POST(req: NextRequest) {
       await db.from("lab_cohorts").update({ config: { ...((c.config ?? {}) as Record<string, unknown>), forecast_band: { low, high } } }).eq("id", s("cohortId"));
       return NextResponse.json({ ok: true });
     }
+    case "set_banding": {
+      const v = { rampUpTo: Number(b.rampUpTo), developingUpTo: Number(b.developingUpTo), low: Number(b.low), high: Number(b.high) };
+      if (![v.rampUpTo, v.developingUpTo, v.low, v.high].every(Number.isFinite)) return bad("Enter numbers in every box.");
+      if (v.rampUpTo < 1 || v.developingUpTo <= v.rampUpTo || v.developingUpTo > 60) return bad("Developing must end after ramp-up, within 60 months.");
+      if (v.low < 30 || v.low >= 100 || v.high <= 100 || v.high > 300) return bad("The low cut-off must be under 100 and the high one over 100.");
+      const { data: c } = await db.from("lab_cohorts").select("config").eq("id", s("cohortId")).maybeSingle();
+      if (!c) return bad("Cohort not found.");
+      await db.from("lab_cohorts").update({ config: { ...((c.config ?? {}) as Record<string, unknown>), banding: v } }).eq("id", s("cohortId"));
+      return NextResponse.json({ ok: true });
+    }
     case "invite": {
       const ids = Array.isArray(b.memberIds) ? (b.memberIds as unknown[]).filter((x): x is string => typeof x === "string") : [];
       const { data: people } = await db.from("lab_members").select("id, email, full_name, role, cohort_id, lab_cohorts(company_name, name)").in("id", ids).eq("active", true);
