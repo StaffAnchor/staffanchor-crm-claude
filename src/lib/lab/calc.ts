@@ -93,6 +93,36 @@ export function forecastSummary(months: ForecastMonth[], band: Band = FORECAST_B
   };
 }
 
+export type RootCause = "skill" | "will" | "system" | "unclear";
+export const ROOT_CAUSES: { key: RootCause; label: string; hint: string }[] = [
+  { key: "skill", label: "Skill", hint: "They do not know how" },
+  { key: "will", label: "Will", hint: "They know but do not want to" },
+  { key: "system", label: "System", hint: "The process, tool or target gets in the way. Fix this first" },
+  { key: "unclear", label: "Not sure yet", hint: "Find out before acting" },
+];
+export const REVIEW_QUESTIONS = [
+  "What has changed on this deal since last week?",
+  "What is the buyer's next step, and by when?",
+  "Who else is involved in the decision?",
+  "What is the one thing that could stop this closing?",
+  "What do you need from me this week?",
+];
+
+export type ReviewPrep = { rootCause: RootCause | null; actionLogged: boolean | null; followUpOn?: string | null; followedUp?: boolean };
+/** One manager's review preparation: how many, how many actions were logged in the company system, the root-cause mix, and follow-through. */
+export function reviewSummary(rows: ReviewPrep[], today = new Date().toISOString().slice(0, 10)) {
+  const logged = rows.filter((r) => r.actionLogged != null);
+  const withFollowUp = rows.filter((r) => r.followUpOn);
+  return {
+    total: rows.length,
+    actionLoggedPct: logged.length ? Math.round((logged.filter((r) => r.actionLogged === true).length / logged.length) * 100) : null,
+    causes: { skill: rows.filter((r) => r.rootCause === "skill").length, will: rows.filter((r) => r.rootCause === "will").length, system: rows.filter((r) => r.rootCause === "system").length, unclear: rows.filter((r) => r.rootCause === "unclear").length },
+    followUps: withFollowUp.length,
+    followedUp: withFollowUp.filter((r) => r.followedUp).length,
+    overdue: withFollowUp.filter((r) => !r.followedUp && (r.followUpOn as string) < today).length,
+  };
+}
+
 // ---- Pipeline Audit (nine yes/no checks) ----
 export const AUDIT_CHECKS = [
   "Stage matches buyer action", "Dated next step", "Decision maker known", "Need confirmed", "Last contact within cadence",

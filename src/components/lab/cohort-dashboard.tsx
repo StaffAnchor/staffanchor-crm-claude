@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AUDIT_CHECKS, MEASURES } from "@/lib/lab/calc";
+import { AUDIT_CHECKS, MEASURES, ROOT_CAUSES } from "@/lib/lab/calc";
 import type { CohortData } from "@/lib/lab/data";
 import { Bar, Kpi, StatusChip, signed, toneFor } from "./ui";
 
@@ -110,6 +110,26 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
             <li><div className="flex justify-between"><span>Accurate</span><span className="tabular-nums text-slate-500">{data.forecastStats.withinBandPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.withinBandPct ?? 0} tone="teal" /></div></li>
             <li><div className="flex justify-between"><span>Over-called (actual below the commit)</span><span className="tabular-nums text-slate-500">{data.forecastStats.overPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.overPct ?? 0} tone="rose" /></div></li>
             <li><div className="flex justify-between"><span>Under-called (actual above the commit)</span><span className="tabular-nums text-slate-500">{data.forecastStats.underPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.underPct ?? 0} tone="amber" /></div></li>
+          </ul>
+        </section>
+      )}
+
+      {data.reviewStats.total > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Review meetings</h2><p className="mt-0.5 text-xs text-slate-500">{data.reviewStats.total} reviews prepared by {data.reviewStats.managers} of {k.managers} managers. Whether actions reach the company system, and what managers think is behind the exceptions.</p></div>
+            <div className="text-right text-sm text-slate-600"><p>Actions logged in the company system <b className="text-slate-900 dark:text-slate-100">{data.reviewStats.actionLoggedPct ?? "–"}{data.reviewStats.actionLoggedPct != null && "%"}</b></p>{data.reviewStats.followUps > 0 && <p className="text-xs">Follow-ups done {data.reviewStats.followedUp} of {data.reviewStats.followUps}{data.reviewStats.overdue > 0 ? ` · ${data.reviewStats.overdue} overdue` : ""}</p>}</div>
+          </div>
+          <ul className="mt-4 space-y-2.5">
+            {ROOT_CAUSES.map((c) => {
+              const n = data.reviewStats.causes[c.key] ?? 0;
+              return (
+                <li key={c.key} className="text-sm">
+                  <div className="flex justify-between"><span className="text-slate-700 dark:text-slate-300">{c.label} <span className="text-xs text-slate-400">· {c.hint}</span></span><span className="tabular-nums text-slate-500">{n} of {data.reviewStats.total}</span></div>
+                  <div className="mt-1"><Bar pct={(n / data.reviewStats.total) * 100} tone={c.key === "system" ? "teal" : "slate"} /></div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

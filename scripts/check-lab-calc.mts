@@ -77,3 +77,16 @@ eq(c.forecastSummary([{ month: "m", commit: 100, actual: 108 }], { low: 90, high
 eq(c.bandFor({ forecast_band: { low: 90, high: 110 } }), { low: 90, high: 110 }, "forecast: cohort band override");
 eq(c.bandFor(null), { low: 95, high: 105 }, "forecast: default band");
 eq(c.bandFor({ forecast_band: { low: 120, high: 100 } }), { low: 95, high: 105 }, "forecast: an inverted band falls back to the default");
+
+const rs = c.reviewSummary([
+  { rootCause: "system", actionLogged: true, followUpOn: "2026-03-13", followedUp: true },
+  { rootCause: "skill", actionLogged: false, followUpOn: "2026-03-20", followedUp: false },
+  { rootCause: "system", actionLogged: true, followUpOn: "2026-12-01", followedUp: false },
+  { rootCause: null, actionLogged: null },
+], "2026-06-01");
+eq(rs.total, 4, "reviews: four preps");
+eq(rs.actionLoggedPct, 67, "reviews: two of three answered were logged, 67%");
+eq(rs.causes, { skill: 1, will: 0, system: 2, unclear: 0 }, "reviews: root-cause mix");
+eq([rs.followUps, rs.followedUp, rs.overdue], [3, 1, 1], "reviews: follow-ups, done, and one overdue");
+eq(c.reviewSummary([]).actionLoggedPct, null, "reviews: nothing entered");
+eq(c.REVIEW_QUESTIONS.length, 5, "reviews: five standard questions");
