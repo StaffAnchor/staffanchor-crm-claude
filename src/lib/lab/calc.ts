@@ -155,6 +155,23 @@ export function calibration(a: Record<string, number | null>, b: Record<string, 
   return { gaps, bigGaps: known.filter((g) => g >= 2).length, avgGap: known.length ? Math.round((known.reduce((s, g) => s + g, 0) / known.length) * 10) / 10 : null };
 }
 
+export type CalibrationPair = { a: Record<string, number | null>; b: Record<string, number | null> };
+/** Across compared calls: the average gap, and for each criterion how often two managers were 2 or more points apart. */
+export function calibrationSummary(pairs: CalibrationPair[], criteria = SCORECARD_DEFAULT) {
+  const each = pairs.map((p) => calibration(p.a, p.b, criteria.map((c) => c.key))).filter((r) => r.avgGap != null);
+  const per = criteria.map((c, i) => {
+    const gaps = each.map((r) => r.gaps[i]).filter((g): g is number => g != null);
+    return { key: c.key, label: c.label, bigGapPct: gaps.length ? Math.round((gaps.filter((g) => g >= 2).length / gaps.length) * 100) : null, avgGap: gaps.length ? Math.round((gaps.reduce((s2, g) => s2 + g, 0) / gaps.length) * 10) / 10 : null };
+  });
+  const worst = per.filter((x) => (x.bigGapPct ?? 0) > 0).sort((x, y) => (y.bigGapPct ?? 0) - (x.bigGapPct ?? 0))[0];
+  return {
+    compared: each.length,
+    avgGap: each.length ? Math.round((each.reduce((s2, r) => s2 + (r.avgGap ?? 0), 0) / each.length) * 10) / 10 : null,
+    per,
+    mostDisagreedKey: worst?.key ?? null,
+  };
+}
+
 // ---- Rep Banding ----
 export const BAND_DEFAULT = { rampUpTo: 3, developingUpTo: 12 };
 export const bandOf = (tenureMonths: number, b = BAND_DEFAULT): "Ramp up" | "Developing" | "Established" => (tenureMonths <= b.rampUpTo ? "Ramp up" : tenureMonths <= b.developingUpTo ? "Developing" : "Established");

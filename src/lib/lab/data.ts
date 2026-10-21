@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AUDIT_CHECKS, MEASURES, auditSummary, callSummary, weightsFor, type Weights, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
+import { AUDIT_CHECKS, MEASURES, auditSummary, calibrationSummary, callSummary, weightsFor, type Weights, cohortRollup, measuresImproved, progressPct, resultOf, change, type MeasureKey, type Pair } from "./calc";
 import type { LabCohort, LabMember } from "./auth";
 
 export const SESSION_TITLES = [
@@ -27,6 +27,7 @@ export type CohortData = {
   kpis: { managers: number; avgProgress: number | null; attendancePct: number | null; baselinePct: number | null; endlinePct: number | null; assignmentsPct: number | null; improvingOn3Plus: number };
   attendance: { session_id: string; member_id: string; present: boolean }[];
   weights: Weights;
+  calibration: ReturnType<typeof calibrationSummary> & { started: number };
   callStats: { managersScoring: number; calls: number; avgScore: number | null; perCriterion: { key: string; label: string; avgRating: number | null }[]; weakestKey: string | null };
   audit: { managersAudited: number; avgScore: number | null; noPct: (number | null)[]; weakestIndex: number | null };
 };
@@ -105,7 +106,17 @@ export async function loadCohort(db: SupabaseClient, cohortId: string): Promise<
   const allCalls = ((callRows ?? []) as { rep_ref: string; ratings: Record<string, number> }[]).map((c) => ({ repRef: c.rep_ref, ratings: c.ratings }));
   const cohortCalls = callSummary(allCalls, weights);
   const callStats = { managersScoring: managers.filter((m) => m.calls.calls > 0).length, calls: cohortCalls.calls, avgScore: cohortCalls.avgScore, perCriterion: cohortCalls.perCriterion, weakestKey: cohortCalls.weakestKey };
-  return { cohort: cohort as LabCohort, weights, callStats, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
+  // Calibration across the cohort: only calls both managers have scored count, and the managers' names are not needed.
+  const { data: cals } = await db.from("lab_calibrations").select("id, a_member, b_member").eq("cohort_id", cohortId);
+  const calIds = ((cals ?? []) as { id: string }[]).map((c) => c.id);
+  const { data: calScores } = calIds.length ? await db.from("lab_calibration_scores").select("calibration_id, member_id, ratings").in("calibration_id", calIds) : { data: [] };
+  const pairs = ((cals ?? []) as { id: string; a_member: string; b_member: string | null }[]).flatMap((c) => {
+    const rs = ((calScores ?? []) as { calibration_id: string; member_id: string; ratings: Record<string, number> }[]).filter((x) => x.calibration_id === c.id);
+    const a = rs.find((x) => x.member_id === c.a_member)?.ratings, b = c.b_member ? rs.find((x) => x.member_id === c.b_member)?.ratings : undefined;
+    return a && b ? [{ a, b }] : [];
+  });
+  const calib = { ...calibrationSummary(pairs), started: (cals ?? []).length };
+  return { cohort: cohort as LabCohort, weights, calibration: calib, callStats, audit: auditStats, sessions: ses, sessionsHeld: heldSessions.length, members: mem, managers, rollup, kpis, attendance: (att ?? []) as CohortData["attendance"] };
 }
 
 export { resultOf, change };
