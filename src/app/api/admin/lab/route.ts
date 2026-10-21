@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
       const { data: row, error } = await db.from("lab_cohorts").insert({ company_name: company, name, start_date: s("startDate") || null, client_id: client?.id ?? null }).select("id").single();
       if (error || !row) return bad("Couldn't create the cohort.");
       await db.from("lab_sessions").insert(SESSION_TITLES.map((title, i) => ({ cohort_id: row.id, n: i + 1, title })));
+      // The admin who creates a cohort is its facilitator, so they can sign in at /lab and see it as the
+      // stakeholders do (manager-wise and overall), as well as from the CRM.
+      const { data: me } = await db.from("profiles").select("email, full_name").eq("id", auth.userId).maybeSingle();
+      if (me?.email) await db.from("lab_members").insert({ cohort_id: row.id, email: me.email.toLowerCase(), full_name: me.full_name ?? null, role: "facilitator" });
       return NextResponse.json({ ok: true, id: row.id });
     }
     case "add_member": {
