@@ -103,3 +103,19 @@ eq(cp.gaps, { skill: 1, will: 1, system: 1, unclear: 0 }, "coaching: gap mix");
 eq(cp.systemSharePct, 33, "coaching: one of three classified gaps was a system gap");
 eq([cp.followUps, cp.followedUp, cp.overdue], [3, 1, 1], "coaching: follow-ups, done, one overdue");
 eq(c.coachingSummary([]).systemSharePct, null, "coaching: nothing entered");
+
+const oo = c.oneOnOneSummary([
+  { repRef: "R1", commitment: "Send written next step after every call", dueOn: "2026-03-13", done: true },
+  { repRef: "R1", commitment: "Ask about budget on 5 calls", dueOn: "2026-03-20", done: false },
+  { repRef: "r2", commitment: "Update stage notes", dueOn: "2026-03-01", done: null },
+  { repRef: "R3", commitment: "Review a call with me", dueOn: "2026-12-01", done: null },
+  { repRef: "R4", commitment: "", done: null },
+], "2026-06-01");
+eq(oo.total, 5, "one-on-ones: five meetings");
+eq(oo.reps, 4, "one-on-ones: R1 twice, so four reps");
+eq(oo.commitments, 4, "one-on-ones: four made a commitment");
+eq(oo.doneOnTimePct, 50, "one-on-ones: one of two answered was done on time");
+eq(oo.overdueOpen, 1, "one-on-ones: one open commitment is overdue");
+eq(c.oneOnOneSummary([]).doneOnTimePct, null, "one-on-ones: nothing entered");
+eq(c.ONE_ON_ONE_SEGMENTS.length, 5, "one-on-ones: five segments in 30 minutes");
+eq(c.doneOnTimePct([true, true, true, false]), 75, "done on time: 3 of 4 is 75%");

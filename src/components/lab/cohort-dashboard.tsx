@@ -114,6 +114,16 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         </section>
       )}
 
+      {data.oneOnOneStats.total > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">One-on-ones</h2><p className="mt-0.5 text-xs text-slate-500">{data.oneOnOneStats.total} one-on-ones recorded by {data.oneOnOneStats.managers} of {k.managers} managers, covering {data.oneOnOneStats.reps} reps. {data.oneOnOneStats.commitments} commitments made, {data.oneOnOneStats.answered} checked.</p></div>
+            <p className="text-sm text-slate-600">Commitments done on time <b className="text-slate-900 dark:text-slate-100">{data.oneOnOneStats.doneOnTimePct ?? "–"}{data.oneOnOneStats.doneOnTimePct != null && "%"}</b>{data.oneOnOneStats.overdueOpen > 0 && <span className="ml-2 text-xs text-rose-700">{data.oneOnOneStats.overdueOpen} overdue and unchecked</span>}</p>
+          </div>
+          {data.oneOnOneStats.doneOnTimePct != null && <div className="mt-4"><Bar pct={data.oneOnOneStats.doneOnTimePct} tone={toneFor(data.oneOnOneStats.doneOnTimePct)} /></div>}
+        </section>
+      )}
+
       {data.coachingStats.total > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-end justify-between gap-2">
