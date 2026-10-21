@@ -114,6 +114,20 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
         </section>
       )}
 
+      {data.planStats.total > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Performance plans</h2><p className="mt-0.5 text-xs text-slate-500">{data.planStats.total} 30-day plans from {data.planStats.managers} of {k.managers} managers. Counts only: the content of any plan stays private to the manager.</p></div>
+            <p className="text-sm text-slate-600">Reviews held when due <b className="text-slate-900 dark:text-slate-100">{data.planStats.reviewsDuePct ?? "–"}{data.planStats.reviewsDuePct != null && "%"}</b>{data.planStats.overdueReviews > 0 && <span className="ml-2 text-xs text-rose-700">{data.planStats.overdueReviews} overdue</span>}</p>
+          </div>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {[["Open", data.planStats.open, "slate"], ["Standard met", data.planStats.met, "teal"], ["Standard not met", data.planStats.notMet, "amber"], ["Closed for another reason", data.planStats.closed, "slate"]].map(([label, n, tone]) => (
+              <li key={label as string}><div className="flex justify-between"><span>{label as string}</span><span className="tabular-nums text-slate-500">{n as number} of {data.planStats.total}</span></div><div className="mt-1"><Bar pct={((n as number) / data.planStats.total) * 100} tone={tone as "teal" | "amber" | "slate"} /></div></li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {data.bandingStats.reps > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-end justify-between gap-2">

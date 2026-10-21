@@ -66,6 +66,13 @@ export default function MemberProgress({ m, data, assignments }: { m: MemberMetr
         </section>
       )}
 
+      {m.plans.total > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Performance plans</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{m.plans.total} plan{m.plans.total === 1 ? "" : "s"}: {m.plans.open} open, {m.plans.met} standard met, {m.plans.notMet} not met{m.plans.overdueReviews ? `, ${m.plans.overdueReviews} review${m.plans.overdueReviews === 1 ? "" : "s"} overdue` : ""}. Plan content is private to the manager.</p>
+        </section>
+      )}
+
       {m.banding.total > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Rep banding</h2>

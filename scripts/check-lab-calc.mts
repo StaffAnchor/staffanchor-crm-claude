@@ -145,3 +145,18 @@ eq(c.bandingFor(null), { limits: { rampUpTo: 3, developingUpTo: 12 }, cut: { low
 eq(c.bandingFor({ banding: { rampUpTo: 6, developingUpTo: 18, low: 70, high: 130 } }).limits.developingUpTo, 18, "banding: cohort override");
 eq(c.bandingFor({ banding: { rampUpTo: 12, developingUpTo: 6 } }).limits.rampUpTo, 3, "banding: bad limits fall back to the defaults");
 eq(c.bandReps([{ repRef: "A", tenureMonths: 8, output: 60 }, { repRef: "B", tenureMonths: 8, output: 100 }], { limits: { rampUpTo: 3, developingUpTo: 12 }, cut: { low: 70, high: 130 } }).rows[0].focus, "stretch", "banding: 75% is in band when the low cut-off is 70");
+
+eq(c.addDaysIso("2026-03-01", 10), "2026-03-11", "plan: 10 days after 1 March");
+eq(c.addDaysIso("2026-02-20", 10), "2026-03-02", "plan: crosses month end");
+eq(c.reviewsFor("2026-03-01").map((r) => r.due), ["2026-03-11", "2026-03-21", "2026-03-31"], "plan: reviews at day 10, 20 and 30");
+const done = (due: string) => ({ day: 10, due, done: true, status: "on_track" as const });
+const todo = (due: string) => ({ day: 20, due, done: false, status: null });
+const ps = c.planSummary([
+  { outcome: "open", reviews: [done("2026-05-01"), todo("2026-05-10"), todo("2026-12-01")] },
+  { outcome: "met", reviews: [done("2026-04-01"), done("2026-04-10"), done("2026-04-20")] },
+  { outcome: "not_met", reviews: [done("2026-03-01"), todo("2026-03-10"), todo("2026-03-20")] },
+], "2026-06-01");
+eq([ps.total, ps.open, ps.met, ps.notMet, ps.closed], [3, 1, 1, 1, 0], "plan: counts by outcome");
+eq(ps.overdueReviews, 1, "plan: only the open plan's overdue review counts (closed plans are not chased)");
+eq(ps.reviewsDuePct, 63, "plan: 5 of the 8 reviews due by now were done");
+eq(c.planSummary([]).reviewsDuePct, null, "plan: nothing entered");
