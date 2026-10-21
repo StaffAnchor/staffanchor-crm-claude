@@ -144,3 +144,32 @@ export function AttendanceCell({ sessionId, memberId, value }: { sessionId: stri
     </span>
   );
 }
+
+export function ScorecardWeights({ cohortId, weights, locked }: { cohortId: string; weights: { key: string; label: string; weight: number }[]; locked: boolean }) {
+  const router = useRouter();
+  const [w, setW] = useState<Record<string, string>>(() => Object.fromEntries(weights.map((x) => [x.key, String(x.weight)])));
+  const [lock, setLock] = useState(locked);
+  const [msg, setMsg] = useState<string | null>(null);
+  const total = Object.values(w).reduce((a, x) => a + (Number(x) || 0), 0);
+  async function save() {
+    setMsg(null);
+    const r = await act({ action: "set_scorecard", cohortId, weights: Object.fromEntries(Object.entries(w).map(([k, v]) => [k, Number(v)])), locked: lock } as Record<string, unknown>);
+    setMsg(r.ok ? "Saved." : r.error ?? "Couldn't save.");
+    if (r.ok) router.refresh();
+  }
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-3">
+        {weights.map((x) => (
+          <label key={x.key} className="text-xs text-slate-500">{x.label}<br /><input className={`${input} w-24`} inputMode="numeric" value={w[x.key]} onChange={(e) => setW({ ...w, [x.key]: e.target.value.replace(/\D/g, "") })} /></label>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className={total === 100 ? "text-emerald-700" : "text-red-600"}>Total {total} of 100</span>
+        <label className="flex items-center gap-1.5 text-slate-600"><input type="checkbox" checked={lock} onChange={(e) => setLock(e.target.checked)} /> Lock the weights (after the baseline is agreed)</label>
+        <button onClick={save} disabled={total !== 100} className={btn}>Save weights</button>
+        {msg && <span className="text-slate-600">{msg}</span>}
+      </div>
+    </div>
+  );
+}

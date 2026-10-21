@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { adminDb } from "@/lib/pro-sessions/core";
 import { loadCohort } from "@/lib/lab/data";
 import CohortDashboard from "@/components/lab/cohort-dashboard";
-import { AddMemberForm, AttendanceCell, InviteAll, MemberActions, ReportsToSelect, SessionDate } from "../lab-admin-forms";
+import { AddMemberForm, AttendanceCell, InviteAll, MemberActions, ReportsToSelect, ScorecardWeights, SessionDate } from "../lab-admin-forms";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +70,12 @@ export default async function CohortAdminPage({ params }: { params: Promise<{ id
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-base font-semibold">Call Quality Scorecard weights</h3>
+        <p className="text-xs text-slate-500">Starting weights add to 100. Agree any change with the sales head before the baseline, then lock them so before and after stay comparable.</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><ScorecardWeights cohortId={id} weights={data.weights} locked={data.cohort.config.scorecard_locked === true} /></div>
       </section>
 
       <section className="space-y-3">

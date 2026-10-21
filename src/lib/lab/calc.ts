@@ -117,6 +117,37 @@ export function weightedScore(ratings: Record<string, number | null>, weights = 
   return w > 0 ? Math.round((total / (5 * w)) * 1000) / 10 : null;
 }
 
+export type Weights = { key: string; label: string; weight: number }[];
+/** The cohort's weights: the defaults, with any weight the facilitator set for this cohort. Always seven criteria. */
+export function weightsFor(config: Record<string, unknown> | null | undefined): Weights {
+  const set = (config?.scorecard_weights ?? {}) as Record<string, unknown>;
+  return SCORECARD_DEFAULT.map((c) => ({ ...c, weight: typeof set[c.key] === "number" && (set[c.key] as number) >= 0 ? (set[c.key] as number) : c.weight }));
+}
+export const weightsValid = (w: Weights) => w.reduce((s, c) => s + c.weight, 0) === 100;
+
+export type CallIn = { repRef: string; scoredOn?: string | null; ratings: Record<string, number | null> };
+/** One manager's call scoring: overall and per-rep averages, and the criterion that scores lowest (where coaching should start). */
+export function callSummary(calls: CallIn[], weights: Weights = SCORECARD_DEFAULT) {
+  const scored = calls.map((c) => ({ ...c, score: weightedScore(c.ratings, weights) })).filter((c): c is typeof c & { score: number } => c.score != null);
+  const reps = new Map<string, number[]>();
+  for (const c of scored) reps.set(c.repRef, [...(reps.get(c.repRef) ?? []), c.score]);
+  const avg = (a: number[]) => Math.round((a.reduce((s, x) => s + x, 0) / a.length) * 10) / 10;
+  const perCriterion = weights.map((w) => {
+    const r = scored.map((c) => c.ratings[w.key]).filter((x): x is number => typeof x === "number");
+    return { key: w.key, label: w.label, avgRating: r.length ? Math.round((r.reduce((s, x) => s + x, 0) / r.length) * 10) / 10 : null };
+  });
+  const rated = perCriterion.filter((c) => c.avgRating != null);
+  const lowest = rated.length ? rated.reduce((m, c) => (c.avgRating! < m.avgRating! ? c : m)) : null;
+  return {
+    calls: scored.length,
+    reps: reps.size,
+    avgScore: scored.length ? avg(scored.map((c) => c.score)) : null,
+    perRep: [...reps.entries()].map(([rep, v]) => ({ rep, calls: v.length, avg: avg(v) })).sort((x, y) => x.avg - y.avg),
+    perCriterion,
+    weakestKey: lowest && lowest.avgRating! < 5 ? lowest.key : null,
+  };
+}
+
 // ---- Calibration ----
 export function calibration(a: Record<string, number | null>, b: Record<string, number | null>, keys = SCORECARD_DEFAULT.map((c) => c.key)) {
   const gaps = keys.map((k) => (a[k] != null && b[k] != null ? Math.abs(a[k]! - b[k]!) : null));
