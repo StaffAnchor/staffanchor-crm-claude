@@ -162,6 +162,40 @@ export function oneOnOneSummary(rows: OneOnOne[], today = new Date().toISOString
   };
 }
 
+export const PLAN_DAYS = [10, 20, 30] as const;
+export type ReviewStatus = "on_track" | "at_risk" | "off_track";
+export type PlanReview = { day: number; due: string; done: boolean; status: ReviewStatus | null };
+export type PlanOutcome = "open" | "met" | "not_met" | "closed";
+export const PLAN_OUTCOMES: { key: PlanOutcome; label: string }[] = [
+  { key: "open", label: "Open" }, { key: "met", label: "Standard met" }, { key: "not_met", label: "Standard not met" }, { key: "closed", label: "Closed for another reason" },
+];
+
+/** The date `days` after `from` (both as YYYY-MM-DD, in plain calendar days). */
+export function addDaysIso(from: string, days: number): string {
+  const d = new Date(`${from}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+/** The three review checkpoints of a 30-day plan: day 10, day 20 and day 30. */
+export const reviewsFor = (startedOn: string): PlanReview[] => PLAN_DAYS.map((day) => ({ day, due: addDaysIso(startedOn, day), done: false, status: null }));
+
+export type PlanIn = { outcome: PlanOutcome; reviews: PlanReview[] };
+/** One manager's performance plans, as counts only: how many, how they ended, and whether reviews happen on time. */
+export function planSummary(plans: PlanIn[], today = new Date().toISOString().slice(0, 10)) {
+  const open = plans.filter((p) => p.outcome === "open");
+  const reviewsDue = plans.flatMap((p) => p.reviews).filter((r) => r.due <= today);
+  return {
+    total: plans.length,
+    open: open.length,
+    met: plans.filter((p) => p.outcome === "met").length,
+    notMet: plans.filter((p) => p.outcome === "not_met").length,
+    closed: plans.filter((p) => p.outcome === "closed").length,
+    overdueReviews: open.flatMap((p) => p.reviews).filter((r) => !r.done && r.due < today).length,
+    reviewsDone: plans.flatMap((p) => p.reviews).filter((r) => r.done).length,
+    reviewsDuePct: reviewsDue.length ? Math.round((reviewsDue.filter((r) => r.done).length / reviewsDue.length) * 100) : null,
+  };
+}
+
 // ---- Pipeline Audit (nine yes/no checks) ----
 export const AUDIT_CHECKS = [
   "Stage matches buyer action", "Dated next step", "Decision maker known", "Need confirmed", "Last contact within cadence",
