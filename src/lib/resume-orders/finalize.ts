@@ -15,8 +15,11 @@ export async function finalizeResumeOrder(db: SupabaseClient, razorpayOrderId: s
   if (!data) return { ok: false, error: "Order doesn't match the payment." };
   const o = data as Order;
   if (o.status !== "pending_payment") return { ok: true, token: o.intake_token }; // already handled
-  const { error } = await db.from("resume_orders").update({ status: "paid", razorpay_payment_id: paymentId, paid_at: new Date().toISOString() }).eq("id", o.id).eq("status", "pending_payment");
+  const { data: flipped, error } = await db.from("resume_orders").update({ status: "paid", razorpay_payment_id: paymentId, paid_at: new Date().toISOString() }).eq("id", o.id).eq("status", "pending_payment").select("id");
   if (error) return { ok: false, error: "Couldn't confirm the order." };
+  // The browser callback and the webhook can arrive together: only the one that actually changed the status carries on
+  // to the invoice and the confirmation email, so the customer gets one of each.
+  if (!flipped || flipped.length === 0) return { ok: true, token: o.intake_token };
 
   // Tax invoice, made now and kept. It is emailed only when someone asks for it.
   try {

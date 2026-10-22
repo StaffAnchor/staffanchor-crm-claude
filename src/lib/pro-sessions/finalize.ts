@@ -42,8 +42,24 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
   if (booking.status === "paid" && (booking.calendar_event_id || booking.meet_link)) return { ok: true, booking, intakeToken: await comboOrderToken(db, booking) };
 
   if (booking.status !== "paid") {
-    await db.from("pro_bookings").update({ status: "paid", razorpay_payment_id: paymentId, paid_at: new Date().toISOString() }).eq("id", bookingId);
+    await db.from("pro_bookings").update({ status: "paid", razorpay_payment_id: paymentId, paid_at: new Date().toISOString() }).eq("id", bookingId).eq("status", "pending_payment");
     booking = { ...booking, status: "paid" };
+  }
+
+  // The browser callback and the Razorpay webhook can arrive in the same second, and both used to create a calendar
+  // event, so the customer got two invites with two Meet links. Only the first to claim the booking does the work
+  // (event, invoice, confirmation); the other waits for it and returns the same result. A claim older than two
+  // minutes counts as abandoned, so a retry after a real failure can still go ahead.
+  const staleBefore = new Date(Date.now() - 2 * 60000).toISOString();
+  const { data: claim } = await db.from("pro_bookings").update({ finalize_claimed_at: new Date().toISOString() }).eq("id", bookingId).is("calendar_event_id", null).or(`finalize_claimed_at.is.null,finalize_claimed_at.lt.${staleBefore}`).select("id");
+  if (!claim || claim.length === 0) {
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      const { data: again } = await db.from("pro_bookings").select("*").eq("id", bookingId).maybeSingle();
+      if (again) booking = again as Booking;
+      if (booking.calendar_event_id || booking.meet_link) break;
+    }
+    return { ok: true, booking, intakeToken: await comboOrderToken(db, booking) };
   }
 
   const { data: svc } = await db.from("pro_services").select("slug, title, duration_min, price_inr").eq("slug", booking.service_slug).maybeSingle();
@@ -86,8 +102,9 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
     console.error("session invoice failed", e);
   }
 
-  // Confirmation email: From info@, copy to the owner.
-  try {
+  // Confirmation email: From info@, copy to the owner. Claimed first, so it goes out once however many times this runs.
+  const { data: mailClaim } = await db.from("pro_bookings").update({ confirmation_sent_at: new Date().toISOString() }).eq("id", bookingId).is("confirmation_sent_at", null).select("id");
+  if (mailClaim && mailClaim.length > 0) try {
     const when = formatIst(new Date(booking.slot_start));
     const text = [
       `Hi ${booking.name.split(/\s+/)[0]},`,
@@ -113,6 +130,7 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
     });
   } catch (e) {
     console.error("pro session confirmation email failed", e);
+    await db.from("pro_bookings").update({ confirmation_sent_at: null }).eq("id", bookingId); // let a retry send it
   }
   return { ok: true, booking: { ...booking, meet_link: meet }, intakeToken };
 }
