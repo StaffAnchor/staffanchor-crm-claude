@@ -60,6 +60,12 @@ async function describe(db: SupabaseClient, kind: InvoiceKind, refId: string) {
 
 /** Makes the invoice for a paid booking or order if there is not one yet. Safe to call twice. */
 export async function ensureServiceInvoice(db: SupabaseClient, kind: InvoiceKind, refId: string): Promise<Row | null> {
+  // A Resume Writing order that came with a combo booking has no invoice of its own: the one invoice, for the full
+  // amount paid, sits on the booking. Anything asking for the resume order's invoice gets that one.
+  if (kind === "resume") {
+    const { data: ord } = await db.from("resume_orders").select("booking_id").eq("id", refId).maybeSingle();
+    if (ord?.booking_id) return ensureServiceInvoice(db, "edge", ord.booking_id as string);
+  }
   const { data: existing } = await db.from("service_invoices").select("*").eq("kind", kind).eq("ref_id", refId).maybeSingle();
   if (existing) return existing as Row;
   const d = await describe(db, kind, refId);

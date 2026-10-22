@@ -23,6 +23,7 @@ type Order = {
   draft_sent_at: string | null;
   revisions_used: number;
   source: string | null;
+  booking_id: string | null;
   created_at: string;
 };
 
@@ -75,11 +76,26 @@ export default async function ResumeOrdersPage() {
       invoices[i.ref_id as string] = { id: i.id, number: i.invoice_number, url: await signedInvoiceUrl(db, i.pdf_path), sentAt: i.sent_at, sentTo: i.sent_to, email: i.customer_email };
     }
   }
+  // A combo order (Job Strategy + Resume Rebuild) belongs to a booking that holds the full amount paid and the one invoice.
+  // Its amount here is only the resume share, so it is shown with the real total and kept out of the revenue figure.
+  const combo: Record<string, { paid: number; title: string }> = {};
+  const comboInvoices: Record<string, InvoiceInfo> = {};
+  const comboIds = orders.map((o) => o.booking_id).filter((x): x is string => !!x);
+  if (db && comboIds.length) {
+    const { data: bks } = await db.from("pro_bookings").select("id, amount_inr, service_slug").in("id", comboIds);
+    const { data: svcs } = await db.from("pro_services").select("slug, title");
+    const titleOf = new Map((svcs ?? []).map((s: { slug: string; title: string }) => [s.slug, s.title]));
+    for (const b of (bks ?? []) as { id: string; amount_inr: number; service_slug: string }[]) combo[b.id] = { paid: b.amount_inr, title: titleOf.get(b.service_slug) ?? "the combo" };
+    const { data: einv } = await db.from("service_invoices").select("*").eq("kind", "edge").in("ref_id", comboIds);
+    for (const i of einv ?? []) comboInvoices[i.ref_id as string] = { id: i.id, number: i.invoice_number, url: await signedInvoiceUrl(db, i.pdf_path), sentAt: i.sent_at, sentTo: i.sent_to, email: i.customer_email };
+  }
   const count = (f: (o: Order) => boolean) => orders.filter(f).length;
   const now = nowMs();
   const open = (o: Order) => ["paid", "details_received", "draft_sent", "revision"].includes(o.status);
   const overdue = (o: Order) => (o.status === "details_received" || o.status === "revision") && !!o.draft_due_at && new Date(o.draft_due_at).getTime() < now && !o.draft_sent_at;
-  const paidTotal = orders.filter((o) => o.status !== "pending_payment").reduce((a, o) => a + o.amount_inr, 0);
+  const paid = (o: Order) => o.status !== "pending_payment";
+  const paidTotal = orders.filter((o) => paid(o) && !o.booking_id).reduce((a, o) => a + o.amount_inr, 0);
+  const comboPaid = count((o) => paid(o) && !!o.booking_id);
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5 px-5 py-8">
@@ -90,7 +106,7 @@ export default async function ResumeOrdersPage() {
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { l: "Paid orders", v: String(count((o) => o.status !== "pending_payment")), n: inr(paidTotal) },
+          { l: "Paid orders", v: String(count(paid)), n: `${inr(paidTotal)} on its own${comboPaid ? ` · ${comboPaid} in a combo, counted on the StaffAnchor Edge page` : ""}` },
           { l: "Waiting for their details", v: String(count((o) => o.status === "paid")) },
           { l: "To write", v: String(count((o) => o.status === "details_received" || o.status === "revision")), n: `${count(overdue)} overdue` },
           { l: "Completed", v: String(count((o) => o.status === "completed")) },
@@ -116,7 +132,7 @@ export default async function ResumeOrdersPage() {
                   <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-[13px]">
                     <span>
                       <span className="font-medium text-slate-900 dark:text-slate-100">{o.name}</span>
-                      <span className="ml-2 text-slate-400">{o.experience_years != null ? `${o.experience_years} yrs, ` : ""}{t.band} plan · {inr(o.amount_inr)} · ordered {day(o.created_at)}</span>
+                      <span className="ml-2 text-slate-400">{o.experience_years != null ? `${o.experience_years} yrs, ` : ""}{t.band} plan · {o.booking_id && combo[o.booking_id] ? `part of ${combo[o.booking_id].title}: ${inr(combo[o.booking_id].paid)} paid in total, resume share ${inr(o.amount_inr)}` : inr(o.amount_inr)} · ordered {day(o.created_at)}</span>
                     </span>
                     <span className="flex items-center gap-3 text-xs">
                       {open(o) && o.draft_due_at && !o.draft_sent_at && <span className={late ? "font-medium text-red-600" : "text-slate-500"}>First draft due {day(o.draft_due_at)}</span>}
@@ -143,7 +159,14 @@ export default async function ResumeOrdersPage() {
                     {cvUrl[o.id] && (
                       <a href={cvUrl[o.id]} target="_blank" className="text-teal-600 hover:underline">Download their current resume</a>
                     )}
-                    {o.status !== "pending_payment" && <InvoiceControls kind="resume" refId={o.id} invoice={invoices[o.id] ?? null} />}
+                    {o.status !== "pending_payment" && (o.booking_id ? (
+                      <div className="space-y-1">
+                        <InvoiceControls kind="edge" refId={o.booking_id} invoice={comboInvoices[o.booking_id] ?? null} />
+                        <p className="text-[11px] text-slate-400">One invoice covers the whole combo, so there is no separate resume invoice.</p>
+                      </div>
+                    ) : (
+                      <InvoiceControls kind="resume" refId={o.id} invoice={invoices[o.id] ?? null} />
+                    ))}
                     <OrderActions id={o.id} status={o.status} revisionsUsed={o.revisions_used} revisionsAllowed={t.revisions} />
                   </div>
                 </details>
