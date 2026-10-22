@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { AUDIT_CHECKS, MEASURES, ROOT_CAUSES } from "@/lib/lab/calc";
+import { AUDIT_CHECKS, COST_FIELDS, MEASURES, ROOT_CAUSES } from "@/lib/lab/calc";
 import type { CohortData } from "@/lib/lab/data";
 import { Bar, Kpi, StatusChip, signed, toneFor } from "./ui";
 
 // The cohort view for sales heads, management and the facilitator: how far the cohort has got, what moved, and who
 // needs a nudge. Each manager links to their own progress page.
-export default function CohortDashboard({ data, memberHref, onlyIds }: { data: CohortData; memberHref: (id: string) => string; onlyIds?: Set<string> }) {
+export default function CohortDashboard({ data, memberHref, onlyIds, exportBase }: { data: CohortData; memberHref: (id: string) => string; onlyIds?: Set<string>; exportBase?: string }) {
+  const dl = (format: string) => `${exportBase}${exportBase?.includes("?") ? "&" : "?"}format=${format}`;
+  const fs = data.finalStats;
+  const rs = (n: number | null) => (n == null ? "–" : `Rs ${n.toLocaleString("en-IN")}`);
   const all = data.managers;
   const rows = (onlyIds ? all.filter((m) => onlyIds.has(m.member.id)) : all).slice().sort((a, b) => a.progress - b.progress);
   const k = data.kpis;
@@ -15,6 +18,13 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
 
   return (
     <div className="space-y-6">
+      {exportBase && (
+        <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
+          <span className="text-xs text-slate-500">Report for the sales head:</span>
+          <a href={dl("pdf")} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50">Download PDF</a>
+          <a href={dl("csv")} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50">Download CSV</a>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Kpi label="Managers" value={k.managers} sub={`${data.sessionsHeld} of ${data.sessions.length} sessions held`} />
         <Kpi label="Avg progress" value={pctText(k.avgProgress)} />
@@ -26,7 +36,7 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">What moved: baseline to endline</h2>
-        <p className="mt-0.5 text-xs text-slate-500">Cohort averages of the four agreed measures. We track movement in behaviour, not revenue.</p>
+        <p className="mt-0.5 text-xs text-slate-500">Cohort averages of the four agreed measures. Once endlines come in, both columns cover only the managers who have both, so the movement matches. We track movement in behaviour, not revenue.</p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
@@ -111,6 +121,31 @@ export default function CohortDashboard({ data, memberHref, onlyIds }: { data: C
             <li><div className="flex justify-between"><span>Over-called (actual below the commit)</span><span className="tabular-nums text-slate-500">{data.forecastStats.overPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.overPct ?? 0} tone="rose" /></div></li>
             <li><div className="flex justify-between"><span>Under-called (actual above the commit)</span><span className="tabular-nums text-slate-500">{data.forecastStats.underPct ?? 0}%</span></div><div className="mt-1"><Bar pct={data.forecastStats.underPct ?? 0} tone="amber" /></div></li>
           </ul>
+        </section>
+      )}
+
+      {fs.cost.managers > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The cost of weak sales management</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{fs.cost.managers} of {k.managers} managers entered their own numbers: averages across their teams, and the attrition cost added up.</p>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {[[COST_FIELDS[0].label, fs.cost.avgMissedFollowups == null ? "–" : `${fs.cost.avgMissedFollowups}%`], [COST_FIELDS[1].label, fs.cost.avgLowConversion == null ? "–" : `${fs.cost.avgLowConversion}%`], [COST_FIELDS[2].label, fs.cost.avgForecastGap == null ? "–" : `${fs.cost.avgForecastGap}%`], ["Revenue per rep (avg)", rs(fs.cost.avgRevenuePerRep)], ["Reps lost in 12 months", String(fs.cost.repsLost)], ["Cost of avoidable attrition", rs(fs.cost.totalAttritionCost)]].map(([l, v]) => (
+              <div key={l} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50"><dt className="text-xs text-slate-500">{l}</dt><dd className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-100">{v}</dd></div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      {(fs.cadence.weeks > 0 || fs.onboarding.plans > 0 || fs.charter.items > 0 || fs.reflections.notes > 0) && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Habits and routines</h2>
+          <p className="mt-0.5 text-xs text-slate-500">Whether managers are building the routines the programme teaches.</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {fs.cadence.weeks > 0 && <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/50"><p className="text-sm font-medium">Follow-up cadence</p><p className="mt-1 text-2xl font-semibold">{fs.cadence.avgPct ?? "–"}{fs.cadence.avgPct != null && "%"}</p><p className="text-xs text-slate-500">of sampled deals had a dated next step, across {fs.cadence.weeks} weekly checks by {fs.cadence.managers} of {k.managers} managers</p></div>}
+            {fs.reflections.notes > 0 && <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/50"><p className="text-sm font-medium">Weekly reflection</p><p className="mt-1 text-2xl font-semibold">{fs.reflections.steady} of {k.managers}</p><p className="text-xs text-slate-500">managers wrote a note in at least 3 of the last 4 weeks ({fs.reflections.notes} notes in all). Likely causes named: skill {fs.reflections.causes.skill}, will {fs.reflections.causes.will}, system {fs.reflections.causes.system}</p></div>}
+            {fs.charter.items > 0 && <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/50"><p className="text-sm font-medium">90-day charters</p><p className="mt-1 text-2xl font-semibold">{fs.charter.withResult} of {fs.charter.items}</p><p className="text-xs text-slate-500">priorities have a result recorded, from {fs.charter.managers} of {k.managers} managers{fs.charter.reviewOverdue > 0 ? ` · ${fs.charter.reviewOverdue} past their review date with no result` : ""}</p></div>}
+            {fs.onboarding.plans > 0 && <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/50"><p className="text-sm font-medium">New-rep onboarding</p><p className="mt-1 text-2xl font-semibold">{fs.onboarding.plans} plan{fs.onboarding.plans === 1 ? "" : "s"}</p><p className="text-xs text-slate-500">{fs.onboarding.active} in their first 90 days · weekly checks logged {fs.onboarding.loggedPct ?? "–"}{fs.onboarding.loggedPct != null && "%"} of those expected</p></div>}
+          </div>
         </section>
       )}
 

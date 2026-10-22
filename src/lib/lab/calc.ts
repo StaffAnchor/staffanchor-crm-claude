@@ -38,16 +38,17 @@ export type RollupRow = { memberId: string; values: Partial<Record<MeasureKey, P
 
 /** Cohort roll-up: per-measure averages and movement, and how many managers improved on 3 or more measures. */
 export function cohortRollup(rows: RollupRow[]) {
+  const avg = (a: number[]) => (a.length ? Math.round((a.reduce((s2, x) => s2 + x, 0) / a.length) * 10) / 10 : null);
   const per = MEASURES.map((m) => {
-    const b = rows.map((r) => num(r.values[m.key]?.baseline)).filter((x): x is number => x != null);
-    const e = rows.map((r) => num(r.values[m.key]?.endline)).filter((x): x is number => x != null);
     const both = rows.filter((r) => num(r.values[m.key]?.baseline) != null && num(r.values[m.key]?.endline) != null);
-    const avg = (a: number[]) => (a.length ? Math.round((a.reduce((s, x) => s + x, 0) / a.length) * 10) / 10 : null);
     const moves = both.map((r) => r.values[m.key]!.endline! - r.values[m.key]!.baseline!);
+    // Once anyone has an endline, both averages are taken over the same managers, so baseline to endline matches the
+    // movement. Before that, the baseline average covers everyone who has entered one.
+    const baselines = both.length ? both.map((r) => r.values[m.key]!.baseline!) : rows.map((r) => num(r.values[m.key]?.baseline)).filter((x): x is number => x != null);
     return {
       key: m.key, label: m.label, unit: m.unit,
-      baselineAvg: avg(b), endlineAvg: avg(e),
-      avgMovement: moves.length ? Math.round((moves.reduce((s, x) => s + x, 0) / moves.length) * 10) / 10 : null,
+      baselineAvg: avg(baselines), endlineAvg: both.length ? avg(both.map((r) => r.values[m.key]!.endline!)) : null,
+      avgMovement: moves.length ? avg(moves) : null,
       improved: both.filter((r) => resultOf(r.values[m.key]!, m.betterWhen) === "Improved").length,
       measured: both.length,
     };
@@ -194,6 +195,79 @@ export function planSummary(plans: PlanIn[], today = new Date().toISOString().sl
     reviewsDone: plans.flatMap((p) => p.reviews).filter((r) => r.done).length,
     reviewsDuePct: reviewsDue.length ? Math.round((reviewsDue.filter((r) => r.done).length / reviewsDue.length) * 100) : null,
   };
+}
+
+// ---- Follow-up Cadence: weekly check ----
+export type CadenceCheck = { sampled: number; withNextStep: number; weekEnding?: string };
+export const CADENCE_DEFAULTS = [
+  { stage: "New lead", within: "15 minutes", channel: "Call, then message", purpose: "Reach and qualify", owner: "Rep", quiet: "3 attempts over 3 days, then nurture" },
+  { stage: "Qualified", within: "1 working day", channel: "Call + email summary", purpose: "Confirm need and next step", owner: "Rep", quiet: "Escalate to manager after 5 days" },
+  { stage: "Proposal sent", within: "2 working days", channel: "Call", purpose: "Handle questions and get a decision date", owner: "Rep", quiet: "Manager joins call on day 7" },
+  { stage: "Negotiation", within: "Within 1 working day", channel: "Call", purpose: "Close open points in writing", owner: "Rep + manager", quiet: "Decide close or park within 10 days" },
+];
+/** One manager's weekly follow-up checks: the average on-time share (deals with a dated next step), and the latest week. */
+export function cadenceSummary(checks: CadenceCheck[]) {
+  const pcts = checks.map((c) => onTimePct(c.sampled, c.withNextStep)).filter((p): p is number => p != null);
+  const dated = checks.filter((c) => c.weekEnding && c.sampled > 0).sort((x, y) => (y.weekEnding as string).localeCompare(x.weekEnding as string));
+  return { weeks: checks.length, avgPct: pcts.length ? Math.round(pcts.reduce((a, x) => a + x, 0) / pcts.length) : null, latestPct: dated.length ? onTimePct(dated[0].sampled, dated[0].withNextStep) : null, sampled: checks.reduce((a, c) => a + c.sampled, 0) };
+}
+
+// ---- Onboarding 30-60-90 ----
+export const ONBOARDING_DEFAULT = {
+  d30: { learn: "Product, process, CRM stages, call standards", do: "Shadow 10 calls. Do 5 calls with a manager listening.", prove: "Follows the follow-up cadence on every deal" },
+  d60: { learn: "Objection handling and discovery", do: "Own a full pipeline with weekly review", prove: "Call quality score at agreed minimum" },
+  d90: { learn: "Forecasting and negotiation", do: "Run own forecast and review", prove: "Forecast within agreed range for the month" },
+};
+const daysBetween = (from: string, to: string) => Math.floor((new Date(`${to}T00:00:00Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86400000);
+export type OnboardingIn = { startedOn: string; weeksLogged: number };
+/** How many of the weekly checks that should exist by now (1 to 13) have been logged, across a manager's new reps. */
+export function onboardingSummary(plans: OnboardingIn[], today = new Date().toISOString().slice(0, 10)) {
+  const rows = plans.map((p) => {
+    const d = daysBetween(p.startedOn, today);
+    const expected = d < 0 ? 0 : Math.min(13, Math.floor(d / 7) + 1);
+    return { active: d >= 0 && d <= 90, expected, logged: Math.min(p.weeksLogged, expected) };
+  });
+  const expected = rows.reduce((a, r) => a + r.expected, 0);
+  return { total: plans.length, active: rows.filter((r) => r.active).length, weeksLogged: plans.reduce((a, p) => a + p.weeksLogged, 0), loggedPct: expected ? Math.round((rows.reduce((a, r) => a + r.logged, 0) / expected) * 100) : null };
+}
+
+// ---- 90-Day Charter ----
+export type CharterItem = { problem?: string | null; result?: string | null; reviewOn?: string | null };
+export function charterSummary(items: CharterItem[], today = new Date().toISOString().slice(0, 10)) {
+  const set = items.filter((i) => (i.problem ?? "").trim());
+  const withResult = set.filter((i) => (i.result ?? "").trim());
+  return { total: set.length, withResult: withResult.length, reviewOverdue: set.filter((i) => !(i.result ?? "").trim() && i.reviewOn && i.reviewOn < today).length };
+}
+
+// ---- Weekly Reflection ----
+export type Reflection = { weekEnding: string; cause: RootCause | null };
+/** A manager's weekly notes: how many, and how many of the last four weeks have one (the habit). */
+export function reflectionSummary(rows: Reflection[], today = new Date().toISOString().slice(0, 10)) {
+  const recent = rows.filter((r) => daysBetween(r.weekEnding, today) >= 0 && daysBetween(r.weekEnding, today) < 28);
+  return {
+    total: rows.length,
+    lastFourWeeks: new Set(recent.map((r) => daysBetween(r.weekEnding, today) < 0 ? "" : String(Math.floor(daysBetween(r.weekEnding, today) / 7)))).size,
+    causes: { skill: rows.filter((r) => r.cause === "skill").length, will: rows.filter((r) => r.cause === "will").length, system: rows.filter((r) => r.cause === "system").length, unclear: rows.filter((r) => r.cause === "unclear").length },
+  };
+}
+
+// ---- Cost of weak sales management (the client's own numbers) ----
+export const COST_FIELDS: { key: string; label: string; how: string; source: string; unit: string }[] = [
+  { key: "missed_followups_pct", label: "Missed follow-ups", how: "Open deals with no dated next step", source: "CRM view", unit: "% of open deals" },
+  { key: "low_conversion_pct", label: "Low lead conversion", how: "Leads reaching a qualified conversation", source: "CRM report", unit: "% of leads" },
+  { key: "forecast_gap_pct", label: "Inaccurate forecasts", how: "Gap between month-start commit and actual", source: "Forecast Tracker", unit: "% gap" },
+  { key: "revenue_per_rep", label: "Low rep productivity", how: "Revenue per rep per month", source: "Your sales report", unit: "Rs per rep" },
+  { key: "attrition_count", label: "Avoidable attrition", how: "Reps who left within 12 months", source: "HR record", unit: "number of reps" },
+  { key: "replacement_cost", label: "Replacement cost per rep", how: "Hiring plus ramp-up cost, as you calculate it", source: "HR / finance", unit: "Rs per rep" },
+];
+export type CostVals = Partial<Record<string, number | null>>;
+export function costSummary(rows: CostVals[]) {
+  const avg = (k: string) => {
+    const v = rows.map((r) => r[k]).filter((x): x is number => typeof x === "number");
+    return v.length ? Math.round((v.reduce((a, x) => a + x, 0) / v.length) * 10) / 10 : null;
+  };
+  const costs = rows.map((r) => attritionCost(r.attrition_count ?? null, r.replacement_cost ?? null)).filter((x): x is number => x != null);
+  return { managers: rows.filter((r) => Object.values(r).some((x) => typeof x === "number")).length, avgMissedFollowups: avg("missed_followups_pct"), avgLowConversion: avg("low_conversion_pct"), avgForecastGap: avg("forecast_gap_pct"), avgRevenuePerRep: avg("revenue_per_rep"), totalAttritionCost: costs.length ? costs.reduce((a, x) => a + x, 0) : null, repsLost: rows.reduce((a, r) => a + (r.attrition_count ?? 0), 0) };
 }
 
 // ---- Pipeline Audit (nine yes/no checks) ----
