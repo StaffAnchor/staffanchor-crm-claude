@@ -93,7 +93,7 @@ export default async function CohortAdminPage({ params }: { params: Promise<{ id
       <section className="space-y-3">
         <h3 className="text-base font-semibold">Cohort analytics</h3>
         <p className="text-xs text-slate-500">This is what the sales head and management see when they sign in.</p>
-        <CohortDashboard data={data} memberHref={(mid) => `/analytics/lab/${id}/m/${mid}`} />
+        <CohortDashboard data={data} memberHref={(mid) => `/analytics/lab/${id}/m/${mid}`} exportBase={`/api/admin/lab/export?cohortId=${id}`} />
       </section>
     </div>
   );

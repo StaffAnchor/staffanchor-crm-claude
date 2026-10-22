@@ -66,6 +66,18 @@ export default function MemberProgress({ m, data, assignments }: { m: MemberMetr
         </section>
       )}
 
+      {(m.cadence.weeks > 0 || m.reflections.total > 0 || m.charter.total > 0 || m.onboarding.total > 0) && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Habits and routines</h2>
+          <ul className="mt-1.5 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+            {m.cadence.weeks > 0 && <li>Follow-up cadence: {m.cadence.avgPct ?? "–"}% on time across {m.cadence.weeks} weekly checks (latest {m.cadence.latestPct ?? "–"}%).</li>}
+            {m.reflections.total > 0 && <li>Weekly reflection: {m.reflections.total} note{m.reflections.total === 1 ? "" : "s"}, {m.reflections.lastFourWeeks} of the last 4 weeks.</li>}
+            {m.charter.total > 0 && <li>90-day charter: {m.charter.total} priorit{m.charter.total === 1 ? "y" : "ies"}, {m.charter.withResult} with a result{m.charter.reviewOverdue ? `, ${m.charter.reviewOverdue} past review date` : ""}.</li>}
+            {m.onboarding.total > 0 && <li>New-rep onboarding: {m.onboarding.total} plan{m.onboarding.total === 1 ? "" : "s"}, weekly checks logged {m.onboarding.loggedPct ?? "–"}% of those expected.</li>}
+          </ul>
+        </section>
+      )}
+
       {m.plans.total > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Performance plans</h2>

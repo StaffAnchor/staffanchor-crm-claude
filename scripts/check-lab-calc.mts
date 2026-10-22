@@ -160,3 +160,46 @@ eq([ps.total, ps.open, ps.met, ps.notMet, ps.closed], [3, 1, 1, 1, 0], "plan: co
 eq(ps.overdueReviews, 1, "plan: only the open plan's overdue review counts (closed plans are not chased)");
 eq(ps.reviewsDuePct, 63, "plan: 5 of the 8 reviews due by now were done");
 eq(c.planSummary([]).reviewsDuePct, null, "plan: nothing entered");
+
+const cc = c.cadenceSummary([{ sampled: 10, withNextStep: 8 }, { sampled: 10, withNextStep: 6 }, { sampled: 0, withNextStep: 0 }]);
+eq(cc.weeks, 3, "cadence: three weeks logged");
+eq(cc.avgPct, 70, "cadence: average of 80 and 60; a week with no sample is left out");
+eq(c.cadenceSummary([]).avgPct, null, "cadence: nothing entered");
+eq(c.CADENCE_DEFAULTS.length, 4, "cadence: four default stages");
+const ob = c.onboardingSummary([{ startedOn: "2026-05-01", weeksLogged: 5 }, { startedOn: "2026-06-01", weeksLogged: 0 }, { startedOn: "2026-02-01", weeksLogged: 13 }], "2026-06-01");
+eq(ob.total, 3, "onboarding: three plans");
+eq(ob.active, 2, "onboarding: two within their first 90 days, one started February and is past it");
+eq(ob.loggedPct, 95, "onboarding: 18 of the 19 weekly checks expected so far were logged");
+
+const ch = c.charterSummary([
+  { problem: "Reviews find issues but actions are not followed", result: "", reviewOn: "2026-05-01" },
+  { problem: "Stuck deals", result: "Rule added, 3 of 4 moved", reviewOn: "2026-05-01" },
+  { problem: "", result: "", reviewOn: "2026-01-01" },
+], "2026-06-01");
+eq([ch.total, ch.withResult, ch.reviewOverdue], [2, 1, 1], "charter: an empty row does not count, one result recorded, one review overdue");
+const rf = c.reflectionSummary([
+  { weekEnding: "2026-05-30", cause: "system" },
+  { weekEnding: "2026-05-23", cause: "skill" },
+  { weekEnding: "2026-05-09", cause: null },
+  { weekEnding: "2026-03-01", cause: "will" },
+], "2026-06-01");
+eq(rf.total, 4, "reflection: four notes");
+eq(rf.lastFourWeeks, 3, "reflection: notes in three of the last four weekly windows (the March note is older)");
+eq(rf.causes, { skill: 1, will: 1, system: 1, unclear: 0 }, "reflection: cause mix");
+const cs3 = c.costSummary([{ missed_followups_pct: 30, attrition_count: 3, replacement_cost: 150000, revenue_per_rep: 400000 }, { missed_followups_pct: 20, attrition_count: 2, replacement_cost: 100000 }, {}]);
+eq(cs3.managers, 2, "cost: two managers entered numbers");
+eq(cs3.avgMissedFollowups, 25, "cost: average missed follow-ups 25%");
+eq(cs3.totalAttritionCost, 650000, "cost: 3 x 150000 plus 2 x 100000");
+eq(cs3.repsLost, 5, "cost: five reps lost");
+eq(c.costSummary([]).totalAttritionCost, null, "cost: nothing entered");
+eq(c.COST_FIELDS.length, 6, "cost: six fields from the workbook");
+
+eq(c.cadenceSummary([{ weekEnding: "2026-03-06", sampled: 10, withNextStep: 8 }, { weekEnding: "2026-03-13", sampled: 10, withNextStep: 9 }]).latestPct, 90, "cadence: latest week is the most recent date, 90%");
+
+const ru = c.cohortRollup([
+  { memberId: "a", values: { follow_up_ontime: { baseline: 60, endline: 78 } } },
+  { memberId: "b", values: { follow_up_ontime: { baseline: 40, endline: null } } },
+]).per.find((x) => x.key === "follow_up_ontime")!;
+eq([ru.baselineAvg, ru.endlineAvg, ru.avgMovement], [60, 78, 18], "roll-up: baseline and endline are averaged over the same managers, so 60 to 78 matches the +18 movement");
+const rb = c.cohortRollup([{ memberId: "a", values: { follow_up_ontime: { baseline: 60, endline: null } } }, { memberId: "b", values: { follow_up_ontime: { baseline: 40, endline: null } } }]).per.find((x) => x.key === "follow_up_ontime")!;
+eq([rb.baselineAvg, rb.endlineAvg, rb.avgMovement], [50, null, null], "roll-up: before any endline, the baseline average covers everyone");
