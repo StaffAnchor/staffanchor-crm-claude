@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cadenceSummary, onTimePct } from "@/lib/lab/calc";
-import { cardCls, fieldCls } from "@/components/lab/tool-page";
+import { cardCls, fieldCls } from "@/components/lab/styles";
 
 export type Rule = { stage: string; within: string; channel: string; purpose: string; owner: string; quiet: string };
 export type Check = { id: string; weekEnding: string; sampled: number; withNextStep: number; reason: string; fix: string };

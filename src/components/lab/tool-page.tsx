@@ -31,5 +31,3 @@ export function ToolFrame({ me, eyebrow, title, intro, wide, children }: { me: {
     </>
   );
 }
-export const fieldCls = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-600 dark:border-slate-700 dark:bg-slate-900";
-export const cardCls = "rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900";

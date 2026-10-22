@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { cardCls, fieldCls } from "@/components/lab/tool-page";
+import { cardCls, fieldCls } from "@/components/lab/styles";
 
 export type Item = { problem: string; evidence: string; baseline: string; desired: string; experiment: string; owner: string; reviewOn: string; result: string; nextStep: string };
 const blank = (): Item => ({ problem: "", evidence: "", baseline: "", desired: "", experiment: "", owner: "", reviewOn: "", result: "", nextStep: "" });

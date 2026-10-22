@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ONBOARDING_DEFAULT } from "@/lib/lab/calc";
-import { cardCls, fieldCls } from "@/components/lab/tool-page";
+import { cardCls, fieldCls } from "@/components/lab/styles";
 
 type Plan = Record<"d30" | "d60" | "d90", { learn: string; do: string; prove: string }>;
 export type Week = { week: number; well: string; fix: string; support: string };

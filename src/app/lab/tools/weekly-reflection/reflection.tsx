@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROOT_CAUSES } from "@/lib/lab/calc";
-import { cardCls, fieldCls } from "@/components/lab/tool-page";
+import { cardCls, fieldCls } from "@/components/lab/styles";
 
 export type Saved = { id: string; weekEnding: string; mattered: string; evidence: string; slipped: string; cause: string; action: string; helpFrom: string; checkNext: string };
 const lastFriday = () => { const d = new Date(); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 2) % 7)); return d.toISOString().slice(0, 10); };

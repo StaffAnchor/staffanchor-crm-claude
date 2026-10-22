@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { COST_FIELDS, attritionCost } from "@/lib/lab/calc";
-import { cardCls, fieldCls } from "@/components/lab/tool-page";
+import { cardCls, fieldCls } from "@/components/lab/styles";
 
 const rs = (n: number) => `Rs ${n.toLocaleString("en-IN")}`;
 
