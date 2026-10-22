@@ -5,6 +5,7 @@ import { googleConfigured } from "@/lib/pro-sessions/google";
 import AvailabilityEditor from "./availability-editor";
 import ProposalHelper from "./proposal-helper";
 import InvoiceControls, { type InvoiceInfo } from "../invoice-controls";
+import NewSessionForm from "./new-session-form";
 import { signedInvoiceUrl } from "@/lib/service-invoices";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,9 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
       invoices[i.ref_id as string] = { id: i.id, number: i.invoice_number, url: await signedInvoiceUrl(db, i.pdf_path), sentAt: i.sent_at, sentTo: i.sent_to, email: i.customer_email };
     }
   }
+  const { data: reportRows } = db ? await db.from("session_reports").select("id, booking_id, candidate_name, track, status, updated_at, sent_at").order("updated_at", { ascending: false }).limit(12) : { data: [] };
+  const reports = (reportRows ?? []) as { id: string; booking_id: string | null; candidate_name: string; track: string; status: string; updated_at: string; sent_at: string | null }[];
+  const reportOf = new Map(reports.filter((r) => r.booking_id).map((r) => [r.booking_id as string, r]));
   const paid = rows.filter((b) => b.status === "paid");
   const linked = !!process.env.PRO_INTERNAL_SECRET;
   const gc = googleConfigured();
@@ -96,6 +100,20 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
           <p className="text-[12.5px] text-slate-500">paid, worth {inr(paid.reduce((a, b) => a + b.amount_inr, 0))}</p>
         </Card>
       </div>
+
+      <Card title="Session reports" sub="Open one during the meeting, fill it in as you talk, and it makes a PDF for the candidate. Start it from a booking below, or here for someone who did not book through the site.">
+        <NewSessionForm />
+        {reports.length > 0 && (
+          <ul className="mt-4 divide-y divide-slate-100 text-[13px] dark:divide-slate-800">
+            {reports.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <Link href={`/analytics/edge/session/${r.id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">{r.candidate_name}</Link>
+                <span className="text-xs text-slate-500">{r.track === "sales" ? "Sales" : "Non-sales"} · {r.status === "final" ? "Final" : "Draft"}{r.sent_at ? " · sent" : ""} · updated {new Date(r.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <Card title="Booking pages" sub="Share these. The StaffAnchor Edge pages on both websites link to the same ones.">
         <ul className="space-y-1 text-[13px]">
@@ -149,6 +167,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
                       {b.meet_link && <div><a className="text-xs text-teal-600 hover:underline" href={b.meet_link} target="_blank">Meet link</a></div>}
                       {b.calendar_error && <div className="text-xs text-amber-700">{b.calendar_error}</div>}
                       {b.status === "paid" && <div className="mt-1.5"><InvoiceControls kind="edge" refId={b.id} invoice={invoices[b.id] ?? null} /></div>}
+                      {b.status === "paid" && <div className="mt-1.5"><Link href={`/analytics/edge/session/start?booking=${b.id}`} className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400">{reportOf.get(b.id) ? "Open session report →" : "Start session report →"}</Link></div>}
                     </td>
                     <td className="py-2 text-xs text-slate-500">{b.source ?? "—"}</td>
                   </tr>
