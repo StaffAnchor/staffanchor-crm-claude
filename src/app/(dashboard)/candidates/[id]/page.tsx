@@ -111,6 +111,8 @@ export default async function CandidateDetailPage({
 
   if (!candidate) notFound();
   const renderStart = Date.now();
+  const waDigits = String(candidate.phone ?? "").replace(/\D/g, "");
+  const waPhoneKey = waDigits.length >= 10 ? waDigits.slice(-10) : "";
 
   // Everything below depends only on the candidate's id, so all of it starts at once instead of one query after another.
   // (A query builder only sends when awaited, so each is wrapped to start now and awaited where its result is used.)
@@ -127,7 +129,16 @@ export default async function CandidateDetailPage({
     debriefs: Promise.resolve(supabase.from("candidate_debriefs").select("id, created_at, raw_note, structured, profiles(full_name)").eq("candidate_id", id).order("created_at", { ascending: false }).limit(5)),
     brief: Promise.resolve(supabase.from("candidate_briefs").select("brief, source, generated_at").eq("candidate_id", id).maybeSingle()),
     activities: Promise.resolve(supabase.from("activities").select("id, actor_id, kind, body, created_at, profiles(full_name)").eq("entity_type", "candidate").eq("entity_id", id).order("created_at", { ascending: false })),
-    whatsapp: Promise.resolve(supabase.from("whatsapp_messages").select("id, direction, body_preview, status, created_at").eq("candidate_id", id).order("created_at", { ascending: true }).limit(50)),
+    // Messages sent before the profile existed (the bot's onboarding questions) carry no candidate_id, so the chat is matched on
+    // the phone's last 10 digits as well. to_phone holds the number with or without the 91 prefix.
+    whatsapp: Promise.resolve(
+      supabase
+        .from("whatsapp_messages")
+        .select("id, direction, body_preview, status, created_at")
+        .or(waPhoneKey ? `candidate_id.eq.${id},to_phone.like.%${waPhoneKey}` : `candidate_id.eq.${id}`)
+        .order("created_at", { ascending: false })
+        .limit(50),
+    ),
     links: Promise.resolve(
       supabase
         .from("candidate_mandate_links")
@@ -370,7 +381,8 @@ export default async function CandidateDetailPage({
     actor_name: (a.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
   })) as import("./activity-log-panel").Activity[];
 
-  const { data: whatsappRows } = await q.whatsapp;
+  // Newest 50 are fetched so a long chat keeps its latest messages; the panel reads oldest first.
+  const whatsappRows = ((await q.whatsapp).data ?? []).slice().reverse();
 
   const { data: links } = await q.links;
 
