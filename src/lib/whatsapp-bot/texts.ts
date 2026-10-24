@@ -16,7 +16,7 @@ export const MENU_REMINDER = `Sorry, I didn't catch that. Please reply with 1, 2
 2 - I'm hiring sales talent
 3 - Something else`;
 
-export const EMPLOYER_ACK = `Thanks for reaching out to StaffAnchor! A consultant will contact you shortly. To help us prepare, please share your company name and the sales role(s) you're hiring for. You can also send the job description here, as text or a PDF/Word file. (Wrong option? Reply MENU.)`;
+export const EMPLOYER_ACK = `Thanks for reaching out to StaffAnchor! A consultant will contact you shortly. To help us prepare, please share your company name and the sales role(s) you're hiring for. You can also send the job description here, as text or a PDF/Word file. For anything urgent, you can reach Gagan Sharma directly on +91-7273000088. (Wrong option? Reply MENU.)`;
 
 export const OTHER_ACK = `Thanks for messaging StaffAnchor. Please tell us how we can help, and a member of our team will reply here shortly. (Wrong option? Reply MENU.)`;
 
@@ -78,4 +78,4 @@ export const VERIFY_REMINDER = `Could you share the email address you used to re
 export const KNOWN_ACK = (n: string) => `Hi ${n}, thanks for your message. A recruiter will reply here shortly.`;
 export const CV_RETRY = `I couldn't open that file. Please try sending your CV again as a PDF or Word document, or reply SKIP and a recruiter will follow up.`;
 
-export const JD_ACK = `Thanks, we've received your details. A consultant will review them and contact you shortly.`;
+export const JD_ACK = `Thanks, we've received your details. A consultant will review them and contact you shortly. For anything urgent, you can reach Gagan Sharma directly on +91-7273000088.`;
