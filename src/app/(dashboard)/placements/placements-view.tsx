@@ -300,15 +300,11 @@ export default function PlacementsView({
             <tr>
               <th className="w-8 px-2 py-2"></th>
               <th className="text-left px-3 py-2">Candidate</th>
-              <th className="text-left px-3 py-2">Client</th>
-              <th className="text-left px-3 py-2">Mandate</th>
+              <th className="text-left px-3 py-2">Client and role</th>
               <th className="text-left px-3 py-2">Joining date</th>
               <th className="text-left px-3 py-2">Confirmation</th>
               <th className="text-left px-3 py-2">Offered CTC</th>
-              <th className="text-left px-3 py-2">Billing % </th>
-              <th className="text-left px-3 py-2">Billing value</th>
-              <th className="text-left px-3 py-2">GST (18%)</th>
-              <th className="text-left px-3 py-2">Final billing</th>
+              <th className="text-right px-3 py-2">Billing, incl. GST</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -345,16 +341,14 @@ export default function PlacementsView({
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                    {row.clientName}
+                  <td className="px-3 py-2.5">
+                    <p className="text-slate-800 dark:text-slate-200">{row.clientName}</p>
+                    <Link href={`/mandates/${row.mandateId}`} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline">
+                      {row.roleTitle}
+                    </Link>
                     {!row.hasClientLink && (
                       <div className="text-xs text-rose-500 mt-0.5">Mandate not linked to a client record — billing can&apos;t compute</div>
                     )}
-                  </td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                    <Link href={`/mandates/${row.mandateId}`} className="hover:text-teal-600 hover:underline">
-                      {row.roleTitle}
-                    </Link>
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-1.5">
@@ -420,17 +414,21 @@ export default function PlacementsView({
                       <div className="text-xs text-amber-600 mt-0.5">Not set — using candidate&apos;s expected CTC as estimate</div>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                    {row.feePercentage != null ? `${row.feePercentage}%` : <span className="text-rose-500">Not set</span>}
+                  <td className="px-3 py-2.5 text-right">
+                    <p className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{breakdown ? inr(breakdown.total) : "—"}</p>
+                    <p className="text-[11.5px] tabular-nums text-slate-500 dark:text-slate-400">
+                      {row.feePercentage != null ? (
+                        breakdown ? `${row.feePercentage}% = ${inr(breakdown.billing)} + GST ${inr(breakdown.gst)}` : `${row.feePercentage}% fee`
+                      ) : (
+                        <span className="text-rose-500">Fee % not set</span>
+                      )}
+                    </p>
                   </td>
-                  <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300">{breakdown ? inr(breakdown.billing) : "—"}</td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{breakdown ? inr(breakdown.gst) : "—"}</td>
-                  <td className="px-3 py-2.5 font-semibold text-slate-900 dark:text-slate-100">{breakdown ? inr(breakdown.total) : "—"}</td>
                 </tr>
                 {isExpanded && (
                   <tr key={`${row.linkId}-retention`} className="bg-slate-50/60 dark:bg-slate-800/30">
                     <td></td>
-                    <td colSpan={10} className="px-3 py-3">
+                    <td colSpan={6} className="px-3 py-3">
                       <RetentionCheckins row={row} savingId={savingId} onSaveOutcome={saveCheckinOutcome} />
                     </td>
                   </tr>
@@ -440,7 +438,7 @@ export default function PlacementsView({
             })}
             {visibleRows.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-3 py-8 text-center text-slate-400 text-[12.5px]">
+                <td colSpan={7} className="px-3 py-8 text-center text-slate-400 text-[12.5px]">
                   No placements in this view.
                 </td>
               </tr>
