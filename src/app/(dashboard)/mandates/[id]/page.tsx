@@ -18,8 +18,8 @@ import NextAction, { type NextActionItem } from "@/components/next-action";
 import FindMatchesPanel from "./find-matches-panel";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
-import MandateSplitLayout from "./mandate-split-layout";
 import DeleteMandateButton from "./delete-mandate-button";
+import HeaderMenu from "./header-menu";
 import PublishMandateButton from "./publish-mandate-button";
 import ArchiveMandateButton from "./archive-mandate-button";
 import UnarchiveMandateButton from "./unarchive-mandate-button";
@@ -324,30 +324,45 @@ export default async function MandateDetailPage({
       </Link>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-6 mt-3 shadow-sm flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-ros-heading font-semibold tracking-tight text-slate-900 dark:text-slate-100">{mandate.role_title}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {mandate.client_name} · {mandate.city ?? "—"} ·{" "}
-            {mandate.category?.replace("_", " ")} / {mandate.sub_domain}
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-[26px] leading-8 font-semibold tracking-tight text-slate-900 dark:text-slate-100">{mandate.role_title}</h1>
+            <Badge tone={mandate.status === "open" ? "success" : mandate.status === "draft" ? "warning" : "neutral"} size="sm" className="!normal-case !tracking-normal text-[12.5px]">
+              {mandate.is_archived ? "Archived" : String(mandate.status).replace("_", " ").replace(/^./, (c: string) => c.toUpperCase())}
+            </Badge>
+          </div>
+          <p className="mt-1 text-[14px] text-slate-600 dark:text-slate-300">
+            {mandate.client_id ? (
+              <Link href={`/clients/${mandate.client_id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-300">
+                {mandate.client_name}
+              </Link>
+            ) : (
+              mandate.client_name
+            )}
+            {" · "}
+            {mandate.city ?? "—"}
+            {mandate.category ? ` · ${String(mandate.category).replace("_", " ")}${mandate.sub_domain ? ` / ${mandate.sub_domain}` : ""}` : ""}
           </p>
-          <div id="staffing" className="contents"><MandateStaffingControl mandateId={id} initialAssigned={assignedStaff} allProfiles={allStaffProfiles ?? []} /></div>
+          <div id="staffing" className="mt-2"><MandateStaffingControl mandateId={id} initialAssigned={assignedStaff} allProfiles={allStaffProfiles ?? []} /></div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {mandate.status === "open" && mandate.short_code && <CopyShareLinkButton shortCode={mandate.short_code} />}
-          <CopyForLinkedinButton mandate={mandate} />
-          <LinkedinPostButton mandateId={id} />
-          <DownloadJdButton mandateId={id} />
-          {mandate.is_archived ? (
-            <UnarchiveMandateButton mandateId={id} />
-          ) : (
-            <ArchiveMandateButton
-              mandateId={id}
-              currentStatus={mandate.status}
-              headcount={mandate.headcount}
-              placedCount={placedCount}
-            />
-          )}
-          <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
+          <HeaderMenu label="Share" icon={<Share2 className="h-3.5 w-3.5" />} primary>
+            {mandate.status === "open" && mandate.short_code && <CopyShareLinkButton shortCode={mandate.short_code} />}
+            <CopyForLinkedinButton mandate={mandate} />
+            <LinkedinPostButton mandateId={id} />
+            <DownloadJdButton mandateId={id} />
+            <Link href="#sharing" className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
+              Client link and portal
+            </Link>
+          </HeaderMenu>
+          <HeaderMenu label="More">
+            {mandate.is_archived ? (
+              <UnarchiveMandateButton mandateId={id} />
+            ) : (
+              <ArchiveMandateButton mandateId={id} currentStatus={mandate.status} headcount={mandate.headcount} placedCount={placedCount} />
+            )}
+            <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
+          </HeaderMenu>
         </div>
       </div>
 
@@ -445,8 +460,15 @@ export default async function MandateDetailPage({
         </div>
       )}
 
-      <MandateSplitLayout
-        left={
+      <Tabs
+        className="mt-6"
+        items={[
+          {
+            key: "pipeline",
+            label: "Pipeline",
+            icon: <Users className="h-3.5 w-3.5" />,
+            badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{pipelineCount}</span>,
+            content: (
         <MandateCandidatesView
           aiSuggestions={
             <div className="space-y-6">
@@ -535,22 +557,19 @@ export default async function MandateDetailPage({
           teamMembers={allStaffProfiles ?? []}
           isAdmin={viewerRole === "admin"}
         />
-        }
-        right={
-        <>
-        {/* The 10 independently-saving panels this page used to render in
-            one long scroll (see "Close Mandates cockpit" in the Recruiter
-            OS roadmap) -- grouped behind tabs by what a recruiter is
-            actually trying to do, so getting to Job Description no longer
-            means scrolling past Screening Questions and Find Matches. */}
-        <Tabs
-          items={[
+            ),
+          },
             {
               key: "intake",
-              label: "Intake",
+              label: "Brief",
               icon: <ClipboardList className="h-3.5 w-3.5" />,
               content: (
                 <>
+                  <MustHavesPanel
+                    mandateId={id}
+                    initialMustHaves={mandate.must_haves ?? []}
+                    initialGoodToHaves={mandate.good_to_haves ?? []}
+                  />
                   <BasicDetailsPanel
                     mandateId={id}
                     initial={{
@@ -624,18 +643,13 @@ export default async function MandateDetailPage({
                       client_name: mandate.client_name,
                     }}
                   />
-                  <MustHavesPanel
-                    mandateId={id}
-                    initialMustHaves={mandate.must_haves ?? []}
-                    initialGoodToHaves={mandate.good_to_haves ?? []}
-                  />
                   <FeeSchedulePanel mandateId={id} initial={(mandate.fee_tranche_template ?? []) as never} />
                 </>
               ),
             },
             {
               key: "screening",
-              label: "Screening & Matching",
+              label: "Screening",
               icon: <ListChecks className="h-3.5 w-3.5" />,
               content: (
                 <>
@@ -677,22 +691,35 @@ export default async function MandateDetailPage({
               key: "sourcing",
               label: "Sourcing",
               icon: <Users className="h-3.5 w-3.5" />,
-              content: <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />,
-            },
-            {
-              key: "linkedin-sourced",
-              label: "LinkedIn Sourced",
-              icon: <Link2 className="h-3.5 w-3.5" />,
               content: (
-                <LinkedInSourcedPanel mandateId={id} initialProfiles={(sourcedProfiles ?? []) as SourcedProfile[]} />
+                <>
+                  <AlignCandidatesPanel mandateId={id} availableCandidates={availableCandidates} />
+                  <LinkedInSourcedPanel mandateId={id} initialProfiles={(sourcedProfiles ?? []) as SourcedProfile[]} />
+                </>
               ),
             },
             {
               key: "sharing",
-              label: "Sharing & Public Listing",
+              label: "Sharing and client portal",
               icon: <Share2 className="h-3.5 w-3.5" />,
               content: (
                 <>
+                  <div id="sharing" className="rounded-ros-xl border border-teal-200 bg-teal-50/50 p-4 dark:border-teal-900 dark:bg-teal-950/20">
+                    <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Client portal</h3>
+                    <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-300">
+                      {mandate.client_name} signs in at jobs.staffanchor.com/client-portal to see this role and the candidates you share. The one-off shortlist link is further down.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <a href="https://jobs.staffanchor.com/client-portal" target="_blank" rel="noopener noreferrer" className="rounded-ros-md bg-teal-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700">
+                        Open the client portal
+                      </a>
+                      {mandate.client_id && (
+                        <Link href={`/clients/${mandate.client_id}`} className="rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+                          Manage portal access
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                   <QuickApplyFunnelPanel mandateId={id} />
                   <PriorityApplicantFunnelPanel mandateId={id} />
                   <ApplicationQuestionsPanel
@@ -715,22 +742,7 @@ export default async function MandateDetailPage({
                 </>
               ),
             },
-          ]}
-        />
-
-        {mandate.client_id && (
-          <Link
-            href={`/clients/${mandate.client_id}`}
-            className="mt-6 block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:border-teal-300 hover:shadow-md transition-all text-sm text-slate-700 dark:text-slate-300"
-          >
-            <span className="font-medium text-teal-600">Manage {mandate.client_name} →</span>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Client details, contacts, and portal access are managed once per client, not per mandate.
-            </p>
-          </Link>
-        )}
-        </>
-        }
+        ]}
       />
     </div>
   );
