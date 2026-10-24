@@ -37,6 +37,8 @@ import ActionCenter from "./action-center";
 import MessageHub from "./message-hub";
 import TodoList from "./todo-list";
 import GapChip from "./gap-chip";
+import CopyButton from "./copy-button";
+import InlineFact from "./inline-fact";
 import CallButton from "./call-button";
 import CvActionsBar from "@/components/cv-actions-bar";
 import { candidateNextActions, plain } from "@/lib/candidate-next-actions";
@@ -493,9 +495,10 @@ export default async function CandidateDetailPage({
     callNoteCount: pastDebriefs.length,
   });
   const todos = next.todos;
-  const VERDICT_BAR = { ready: "bg-emerald-500", needs_details: "bg-amber-400", on_hold: "bg-rose-500", not_a_fit: "bg-slate-400" } as const;
-  const AVATARS = ["bg-teal-100 text-teal-800", "bg-violet-100 text-violet-800", "bg-sky-100 text-sky-800", "bg-amber-100 text-amber-800", "bg-rose-100 text-rose-800", "bg-emerald-100 text-emerald-800"];
-  const avatarTone = AVATARS[Array.from(String(candidate.full_name ?? "?")).reduce<number>((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % AVATARS.length];
+  const detailsTotal = 8;
+  const detailsDone = detailsTotal - missingKeyDetails(candidate).length;
+  const lastTouch = [...activities.map((a: { created_at?: string }) => a.created_at), ...((whatsappRows ?? []) as { created_at?: string }[]).map((m) => m.created_at)].filter(Boolean).sort().pop();
+  const lastContactDays = lastTouch ? daysAgo(lastTouch as string) : null;
   const VERDICT_TONE = {
     ready: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
     needs_details: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
@@ -529,6 +532,7 @@ export default async function CandidateDetailPage({
             initialDecisionFlags={candidate.ai_decision_flags}
             initialSkillInventory={candidate.skill_inventory}
             initialStabilityScore={candidate.stability_score}
+            nextQuestions={callDoubts}
           />
           {candidate.skills && !candidate.skill_inventory && (
             <div>
@@ -724,57 +728,95 @@ export default async function CandidateDetailPage({
       </div>
 
       {/* 1. Who this is, the verdict, and four facts */}
-      <Card className="mt-3 overflow-hidden" padded={false}>
-        <div className={`h-1.5 ${VERDICT_BAR[next.verdict]}`} aria-hidden />
-        <div className="p-7">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4 min-w-0">
-              <div className={`w-14 h-14 rounded-ros-full ${avatarTone} flex items-center justify-center text-lg font-semibold shrink-0`}>
+      <Card className="mt-3" padded={false}>
+        <div className="p-6">
+          <div className="flex items-start justify-between gap-5">
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div className="w-11 h-11 rounded-ros-full bg-teal-50 text-teal-800 ring-1 ring-teal-100 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-900 flex items-center justify-center text-[15px] font-semibold shrink-0">
                 {initialsFor(candidate.full_name)}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-[26px] leading-8 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {candidate.candidate_number != null && (
                     <span className="text-xs font-mono text-slate-400" title="Candidate number">
                       C-{String(candidate.candidate_number).padStart(6, "0")}
                     </span>
                   )}
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12.5px] font-medium ring-1 ${VERDICT_TONE[next.verdict]}`} title={next.reason}>
+                    {next.verdict === "ready" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                    {next.verdictLabel}
+                  </span>
                 </div>
                 <p className="text-[14px] text-slate-600 dark:text-slate-300 mt-0.5">
                   {candidate.current_job_title}
                   {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
                   {candidate.current_location ? ` · ${candidate.current_location}` : ""}
                 </p>
-                <p className="text-[12.5px] text-slate-400 mt-0.5">
-                  {/\.invalid$/i.test(candidate.email ?? "") ? "No email yet" : candidate.email}
-                  {candidate.phone ? ` · ${candidate.phone}` : ""}
-                  {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 ? ` · alt ${candidate.alt_phones.join(", ")}` : ""}
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
+                  {!/\.invalid$/i.test(candidate.email ?? "") && candidate.email ? (
+                    <span className="inline-flex items-center gap-1">
+                      {candidate.email}
+                      <CopyButton text={candidate.email} label="email" />
+                    </span>
+                  ) : (
+                    <span>No email yet</span>
+                  )}
+                  {candidate.phone && (
+                    <span className="inline-flex items-center gap-1">
+                      {candidate.phone}
+                      <CopyButton text={String(candidate.phone)} label="phone number" />
+                    </span>
+                  )}
+                  {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 && <span>alt {candidate.alt_phones.join(", ")}</span>}
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-2 shrink-0">
-              <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
-              <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
+                <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
+              </div>
+              <div className="text-right text-[12px] text-slate-500 dark:text-slate-400">
+                <p className="flex items-center justify-end gap-2">
+                  <span>{detailsDone} of {detailsTotal} key details</span>
+                  <span className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden>
+                    <span className={`block h-full rounded-full ${detailsDone === detailsTotal ? "bg-emerald-500" : "bg-amber-400"}`} style={{ width: `${(detailsDone / detailsTotal) * 100}%` }} />
+                  </span>
+                </p>
+                <p className="mt-0.5">{lastContactDays == null ? "No contact logged yet" : lastContactDays === 0 ? "Last contact today" : `Last contact ${lastContactDays}d ago`}</p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13.5px] font-semibold ring-1 ${VERDICT_TONE[next.verdict]}`}>{next.verdict === "ready" ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}{next.verdictLabel}</span>
-            <span className="text-[13px] text-slate-600 dark:text-slate-300">{next.reason}</span>
-          </div>
+          {next.verdict !== "ready" && <p className="mt-3 text-[13px] text-slate-600 dark:text-slate-300">{next.reason}</p>}
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-            <StatChip label="Experience" tone="sky" icon={<Briefcase className="h-4 w-4" />} gap value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
-            <StatChip label="Notice period" tone="violet" icon={<Clock className="h-4 w-4" />} gap value={candidate.notice_period} />
-            <StatChip
+          <div className="mt-4 flex flex-wrap divide-x divide-slate-100 rounded-ros-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+            <div className="min-w-0 flex-1 px-4 py-3">
+              <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+                <Briefcase className="h-3.5 w-3.5 text-slate-400" />
+                Experience
+              </p>
+              <p className="mt-0.5 text-[16px] font-semibold text-slate-900 dark:text-slate-100">{candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : <GapChip label="Add it" />}</p>
+            </div>
+            <InlineFact candidateId={candidate.id} label="Notice period" icon={<Clock className="h-3.5 w-3.5" />} display={candidate.notice_period || null} fields={[{ key: "notice_period", label: "Notice period", kind: "text", value: candidate.notice_period ?? null }]} />
+            <InlineFact
+              candidateId={candidate.id}
               label="Fixed CTC, now → expected"
-              tone="emerald"
-              icon={<IndianRupee className="h-4 w-4" />}
-              gap
-              value={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
+              icon={<IndianRupee className="h-3.5 w-3.5" />}
+              display={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
+              fields={[
+                { key: "current_fixed_ctc", label: "Now", kind: "lakhs", value: candidate.current_fixed_ctc ?? null },
+                { key: "expected_fixed_ctc", label: "Expected", kind: "lakhs", value: candidate.expected_fixed_ctc ?? null },
+              ]}
             />
-            <StatChip label="Best matching role" tone="teal" icon={<Target className="h-4 w-4" />} value={bestMatch} />
+            <div className="min-w-0 flex-1 px-4 py-3">
+              <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+                <Target className="h-3.5 w-3.5 text-slate-400" />
+                Best matching role
+              </p>
+              <p className="mt-0.5 truncate text-[16px] font-semibold text-slate-900 dark:text-slate-100" title={bestMatch ?? undefined}>{bestMatch ?? <span className="text-[14px] font-normal text-slate-400">No match yet</span>}</p>
+            </div>
           </div>
 
           {redFlags.length > 0 && (
@@ -884,22 +926,3 @@ export default async function CandidateDetailPage({
 // Portal-style headline stat -- bolder number, quieter label, its own
 // bordered chip so these four read as the "at a glance" facts rather than
 // blending into the denser field grid underneath.
-const TILE: Record<string, { box: string; icon: string }> = {
-  sky: { box: "bg-sky-50/70 dark:bg-sky-950/20", icon: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" },
-  violet: { box: "bg-violet-50/70 dark:bg-violet-950/20", icon: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
-  emerald: { box: "bg-emerald-50/70 dark:bg-emerald-950/20", icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
-  teal: { box: "bg-teal-50/70 dark:bg-teal-950/20", icon: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300" },
-};
-
-function StatChip({ label, value, gap, tone = "teal", icon }: { label: string; value?: string | null; gap?: boolean; tone?: keyof typeof TILE; icon?: React.ReactNode }) {
-  const t = TILE[tone];
-  return (
-    <div className={`flex items-start gap-3 rounded-ros-lg px-4 py-3.5 ${t.box}`}>
-      {icon ? <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${t.icon}`}>{icon}</span> : null}
-      <div className="min-w-0">
-        <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</p>
-        {value ? <p className="mt-0.5 text-[16px] font-semibold text-slate-900 dark:text-slate-100">{value}</p> : gap ? <GapChip /> : <p className="mt-0.5 text-[14px] text-slate-400">None yet</p>}
-      </div>
-    </div>
-  );
-}

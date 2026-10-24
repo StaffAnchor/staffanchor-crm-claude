@@ -61,6 +61,7 @@ export default function AiSummaryPanel({
   initialDecisionFlags,
   initialSkillInventory,
   initialStabilityScore,
+  nextQuestions = [],
 }: {
   candidateId: string;
   initialSummary: string | null;
@@ -68,6 +69,8 @@ export default function AiSummaryPanel({
   initialDecisionFlags?: AiDecisionFlags | null;
   initialSkillInventory?: SkillInventory | null;
   initialStabilityScore?: number | null;
+  /** Things worth asking on the next call, taken from the doubts the profile already raised. */
+  nextQuestions?: string[];
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -129,6 +132,9 @@ export default function AiSummaryPanel({
   ].filter((g) => g.items.length > 0);
   const skills = Array.from(new Set([...(skillInventory?.core_skills ?? []), ...(skillInventory?.domain_expertise ?? [])]));
   const moreSkills = Array.from(new Set([...(skillInventory?.tools_platforms ?? []), ...(skillInventory?.soft_skills ?? [])]));
+  const cut = (summary ?? "").search(/(?<=[.!?])\s+(?=[A-Z])/);
+  const firstSentence = cut > 0 ? (summary ?? "").slice(0, cut) : summary ?? "";
+  const restOfSummary = cut > 0 ? (summary ?? "").slice(cut).trim() : "";
   const sentence = (t: string) => (t ? t.charAt(0) + t.slice(1).toLowerCase() : t);
 
   return (
@@ -159,9 +165,19 @@ export default function AiSummaryPanel({
         </div>
       )}
 
-      <p className="mt-3 text-[14px] leading-6 text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-        {summary || "Not generated yet. Click Generate to summarise this candidate from their profile data."}
-      </p>
+      {summary ? (
+        <div className="mt-3">
+          <p className="text-[15px] font-medium leading-6 text-slate-900 dark:text-slate-100">{firstSentence}</p>
+          {restOfSummary && (
+            <details className="mt-1.5">
+              <summary className="cursor-pointer text-[12.5px] text-teal-700 dark:text-teal-300">Read the full summary</summary>
+              <p className="mt-2 text-[14px] leading-6 text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{restOfSummary}</p>
+            </details>
+          )}
+        </div>
+      ) : (
+        <p className="mt-3 text-[14px] text-slate-500">Not generated yet. Click Generate to summarise this candidate from their profile data.</p>
+      )}
 
       {passport?.profile_incomplete && <p className="mt-2 text-[12.5px] text-slate-500">Based on limited information: they have not finished registering. It updates once they do.</p>}
 
@@ -193,6 +209,20 @@ export default function AiSummaryPanel({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {nextQuestions.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">Ask on the next call</p>
+          <ul className="space-y-1.5">
+            {nextQuestions.slice(0, 4).map((q, i) => (
+              <li key={i} className="flex items-start gap-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">
+                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" aria-hidden />
+                <span>{q}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
