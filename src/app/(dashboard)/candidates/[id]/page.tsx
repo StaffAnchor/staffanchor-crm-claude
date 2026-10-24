@@ -2,7 +2,7 @@ import Link from "next/link";
 import { after } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
-import { FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, AlertTriangle, ChevronLeft, ChevronRight, Briefcase, Clock, IndianRupee, Target, LayoutGrid, PhoneCall, Layers, MessageSquare, ScrollText, History as HistoryIcon, AlertCircle, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -39,7 +39,7 @@ import TodoList from "./todo-list";
 import GapChip from "./gap-chip";
 import CallButton from "./call-button";
 import CvActionsBar from "@/components/cv-actions-bar";
-import { candidateNextActions } from "@/lib/candidate-next-actions";
+import { candidateNextActions, plain } from "@/lib/candidate-next-actions";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
 import { ProfileRatingPanel } from "@/components/profile-rating";
@@ -493,6 +493,9 @@ export default async function CandidateDetailPage({
     callNoteCount: pastDebriefs.length,
   });
   const todos = next.todos;
+  const VERDICT_BAR = { ready: "bg-emerald-500", needs_details: "bg-amber-400", on_hold: "bg-rose-500", not_a_fit: "bg-slate-400" } as const;
+  const AVATARS = ["bg-teal-100 text-teal-800", "bg-violet-100 text-violet-800", "bg-sky-100 text-sky-800", "bg-amber-100 text-amber-800", "bg-rose-100 text-rose-800", "bg-emerald-100 text-emerald-800"];
+  const avatarTone = AVATARS[Array.from(String(candidate.full_name ?? "?")).reduce<number>((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % AVATARS.length];
   const VERDICT_TONE = {
     ready: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
     needs_details: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
@@ -502,11 +505,13 @@ export default async function CandidateDetailPage({
   const { data: bestMatchRow } = await supabase.from("mandate_ai_matches").select("score, mandates(role_title, client_name)").eq("candidate_id", candidate.id).in("fit", ["strong", "possible"]).order("score", { ascending: false }).limit(1).maybeSingle();
   const bestMatch = bestMatchRow ? `${(bestMatchRow as unknown as { mandates?: { role_title?: string } | null }).mandates?.role_title ?? "Role"} · ${(bestMatchRow as { score: number }).score}` : null;
   const suggestMissing = next.missing.length > 0;
-  const hubSuggestion = suggestMissing ? `Ask for ${next.missing.map((m) => m.label.toLowerCase()).join(", ")}. The official WhatsApp tab does it in one click.` : todos.some((t) => t.fix === "get_cv") ? "Ask for their CV by email." : null;
+  const hubSuggestion = suggestMissing ? `Ask for ${next.missing.map((m) => plain(m.label)).join(", ")}. The official WhatsApp tab does it in one click.` : todos.some((t) => t.fix === "get_cv") ? "Ask for their CV by email." : null;
 
   const tabs = [
     {
       label: "Overview",
+      icon: <LayoutGrid className="h-4 w-4" />,
+      tone: "teal" as const,
       content: (
         <div className="space-y-5">
           <BriefCard
@@ -568,6 +573,8 @@ export default async function CandidateDetailPage({
     },
     {
       label: "Calls & notes",
+      icon: <PhoneCall className="h-4 w-4" />,
+      tone: "violet" as const,
       content: (
         <div className="space-y-6">
           <p className="rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
@@ -610,6 +617,8 @@ export default async function CandidateDetailPage({
     },
     {
       label: "Roles",
+      icon: <Layers className="h-4 w-4" />,
+      tone: "sky" as const,
       content: (
         <div className="space-y-6">
           <section>
@@ -642,10 +651,14 @@ export default async function CandidateDetailPage({
     },
     {
       label: "Messages",
+      icon: <MessageSquare className="h-4 w-4" />,
+      tone: "emerald" as const,
       content: <WhatsAppPanel candidateId={candidate.id} hasPhone={!!candidate.phone} messages={(whatsappRows ?? []) as import("./whatsapp-panel").WhatsAppMessage[]} />,
     },
     {
       label: "CV & career",
+      icon: <ScrollText className="h-4 w-4" />,
+      tone: "amber" as const,
       content: (
         <div className="space-y-6">
           <CvFactsPanel candidateId={candidate.id} />
@@ -665,6 +678,8 @@ export default async function CandidateDetailPage({
     },
     {
       label: "History",
+      icon: <HistoryIcon className="h-4 w-4" />,
+      tone: "slate" as const,
       content: (
         <div className="space-y-6">
           <Timeline events={timelineEvents} />
@@ -678,7 +693,7 @@ export default async function CandidateDetailPage({
   ];
 
   return (
-    <div className="max-w-[1100px] mx-auto px-5 py-8">
+    <div className="max-w-[1180px] mx-auto px-5 py-8">
       <div className="flex items-center justify-between">
         <Link href={backHref} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
           {backLabel}
@@ -709,16 +724,17 @@ export default async function CandidateDetailPage({
       </div>
 
       {/* 1. Who this is, the verdict, and four facts */}
-      <Card className="mt-3" padded={false}>
-        <div className="p-6">
+      <Card className="mt-3 overflow-hidden" padded={false}>
+        <div className={`h-1.5 ${VERDICT_BAR[next.verdict]}`} aria-hidden />
+        <div className="p-7">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 min-w-0">
-              <div className="w-12 h-12 rounded-ros-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-base font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+              <div className={`w-14 h-14 rounded-ros-full ${avatarTone} flex items-center justify-center text-lg font-semibold shrink-0`}>
                 {initialsFor(candidate.full_name)}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
+                  <h1 className="text-[26px] leading-8 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {candidate.candidate_number != null && (
                     <span className="text-xs font-mono text-slate-400" title="Candidate number">
                       C-{String(candidate.candidate_number).padStart(6, "0")}
@@ -744,19 +760,21 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[13px] font-semibold ring-1 ${VERDICT_TONE[next.verdict]}`}>{next.verdictLabel}</span>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13.5px] font-semibold ring-1 ${VERDICT_TONE[next.verdict]}`}>{next.verdict === "ready" ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}{next.verdictLabel}</span>
             <span className="text-[13px] text-slate-600 dark:text-slate-300">{next.reason}</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-            <StatChip label="Experience" gap value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
-            <StatChip label="Notice period" gap value={candidate.notice_period} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+            <StatChip label="Experience" tone="sky" icon={<Briefcase className="h-4 w-4" />} gap value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
+            <StatChip label="Notice period" tone="violet" icon={<Clock className="h-4 w-4" />} gap value={candidate.notice_period} />
             <StatChip
               label="Fixed CTC, now → expected"
+              tone="emerald"
+              icon={<IndianRupee className="h-4 w-4" />}
               gap
               value={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
             />
-            <StatChip label="Best matching role" value={bestMatch} />
+            <StatChip label="Best matching role" tone="teal" icon={<Target className="h-4 w-4" />} value={bestMatch} />
           </div>
 
           {redFlags.length > 0 && (
@@ -866,11 +884,22 @@ export default async function CandidateDetailPage({
 // Portal-style headline stat -- bolder number, quieter label, its own
 // bordered chip so these four read as the "at a glance" facts rather than
 // blending into the denser field grid underneath.
-function StatChip({ label, value, gap }: { label: string; value?: string | null; gap?: boolean }) {
+const TILE: Record<string, { box: string; icon: string }> = {
+  sky: { box: "bg-sky-50/70 dark:bg-sky-950/20", icon: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" },
+  violet: { box: "bg-violet-50/70 dark:bg-violet-950/20", icon: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
+  emerald: { box: "bg-emerald-50/70 dark:bg-emerald-950/20", icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  teal: { box: "bg-teal-50/70 dark:bg-teal-950/20", icon: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300" },
+};
+
+function StatChip({ label, value, gap, tone = "teal", icon }: { label: string; value?: string | null; gap?: boolean; tone?: keyof typeof TILE; icon?: React.ReactNode }) {
+  const t = TILE[tone];
   return (
-    <div className="border-l-2 border-slate-100 pl-3 dark:border-slate-800">
-      <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</p>
-      {value ? <p className="mt-0.5 text-[15px] font-semibold text-slate-900 dark:text-slate-100">{value}</p> : gap ? <GapChip /> : <p className="mt-0.5 text-[14px] text-slate-400">None yet</p>}
+    <div className={`flex items-start gap-3 rounded-ros-lg px-4 py-3.5 ${t.box}`}>
+      {icon ? <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${t.icon}`}>{icon}</span> : null}
+      <div className="min-w-0">
+        <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</p>
+        {value ? <p className="mt-0.5 text-[16px] font-semibold text-slate-900 dark:text-slate-100">{value}</p> : gap ? <GapChip /> : <p className="mt-0.5 text-[14px] text-slate-400">None yet</p>}
+      </div>
     </div>
   );
 }

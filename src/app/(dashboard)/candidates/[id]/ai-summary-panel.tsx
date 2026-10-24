@@ -147,12 +147,12 @@ export default function AiSummaryPanel({
       {(decisionFlags?.recommendation || stabilityLabel) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {decisionFlags?.recommendation && (
-            <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm" className="normal-case tracking-normal text-[12.5px]">
+            <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm" className="!normal-case !tracking-normal text-[12.5px]">
               {decisionFlags.recommendation}
             </Badge>
           )}
           {stabilityLabel && (
-            <Badge tone={STABILITY_TONE[stabilityLabel] ?? "neutral"} size="sm" icon={<TrendingUp className="w-3 h-3" />} className="normal-case tracking-normal text-[12.5px]">
+            <Badge tone={STABILITY_TONE[stabilityLabel] ?? "neutral"} size="sm" icon={<TrendingUp className="w-3 h-3" />} className="!normal-case !tracking-normal text-[12.5px]">
               Stability {stabilityScore}/100, {stabilityLabel.toLowerCase()}
             </Badge>
           )}

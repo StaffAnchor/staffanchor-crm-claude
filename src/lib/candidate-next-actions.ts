@@ -21,12 +21,15 @@ export type NextActions = { verdict: Verdict; verdictLabel: string; reason: stri
 
 export const STALE_DAYS = 60;
 
+// "Current CTC" becomes "current CTC": lower case for running text, but acronyms stay as they are.
+export const plain = (label: string) => label.toLowerCase().replace(/\bctc\b/g, "CTC").replace(/\bcv\b/g, "CV");
+
 export function candidateNextActions(c: NextActionInput): NextActions {
   const missing = missingKeyDetails(c).filter((m) => m.key !== "resume_file_url");
   const todos: Todo[] = [];
 
   if (c.phone_hold) todos.push({ key: "phone", text: "Confirm their phone number", impact: "It is on hold, so no WhatsApp or call can go out until it is confirmed.", urgent: true, fix: "confirm_phone" });
-  if (missing.length > 0) todos.push({ key: "missing", text: `Get ${missing.map((m) => m.label.toLowerCase()).join(", ")}`, impact: "A profile without these cannot go to a client, and role matching is weaker.", urgent: true, fix: "ask_missing" });
+  if (missing.length > 0) todos.push({ key: "missing", text: `Get ${missing.map((m) => plain(m.label)).join(", ")}`, impact: "A profile without these cannot go to a client, and role matching is weaker.", urgent: true, fix: "ask_missing" });
   if (!c.resume_file_url) todos.push({ key: "cv", text: "Get their CV", impact: "The summary, CV facts and role matching are all read from the CV.", urgent: missing.length === 0, fix: "get_cv" });
   const stale = c.confirmedDaysAgo == null || c.confirmedDaysAgo > STALE_DAYS;
   if (stale && missing.length === 0) todos.push({ key: "confirm", text: "Confirm CTC and notice period on a call", impact: c.confirmedDaysAgo == null ? "They have never confirmed their own details. Clients expect verified numbers." : `Last confirmed ${c.confirmedDaysAgo} days ago. Numbers go stale.`, urgent: false, fix: "call" });
@@ -43,7 +46,7 @@ export function candidateNextActions(c: NextActionInput): NextActions {
     reason = "A recruiter marked this person as not a fit.";
   } else if (missing.length > 0 || !c.resume_file_url) {
     verdict = "needs_details";
-    reason = missing.length > 0 ? `Missing ${missing.slice(0, 3).map((m) => m.label.toLowerCase()).join(", ")}${missing.length > 3 ? ` and ${missing.length - 3} more` : ""}.` : "No CV on file.";
+    reason = missing.length > 0 ? `Missing ${missing.slice(0, 3).map((m) => plain(m.label)).join(", ")}${missing.length > 3 ? ` and ${missing.length - 3} more` : ""}.` : "No CV on file.";
   } else if (stale) {
     verdict = "needs_details";
     reason = c.confirmedDaysAgo == null ? "Details have never been confirmed by the candidate." : `Details last confirmed ${c.confirmedDaysAgo} days ago.`;
