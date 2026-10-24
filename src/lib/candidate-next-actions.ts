@@ -29,9 +29,9 @@ export function candidateNextActions(c: NextActionInput): NextActions {
   if (missing.length > 0) todos.push({ key: "missing", text: `Get ${missing.map((m) => m.label.toLowerCase()).join(", ")}`, impact: "A profile without these cannot go to a client, and role matching is weaker.", urgent: true, fix: "ask_missing" });
   if (!c.resume_file_url) todos.push({ key: "cv", text: "Get their CV", impact: "The summary, CV facts and role matching are all read from the CV.", urgent: missing.length === 0, fix: "get_cv" });
   const stale = c.confirmedDaysAgo == null || c.confirmedDaysAgo > STALE_DAYS;
-  if (stale) todos.push({ key: "confirm", text: "Confirm CTC and notice period on a call", impact: c.confirmedDaysAgo == null ? "They have never confirmed their own details. Clients expect verified numbers." : `Last confirmed ${c.confirmedDaysAgo} days ago. Numbers go stale.`, urgent: false, fix: "call" });
+  if (stale && missing.length === 0) todos.push({ key: "confirm", text: "Confirm CTC and notice period on a call", impact: c.confirmedDaysAgo == null ? "They have never confirmed their own details. Clients expect verified numbers." : `Last confirmed ${c.confirmedDaysAgo} days ago. Numbers go stale.`, urgent: false, fix: "call" });
   if (c.activeRoleCount === 0) todos.push({ key: "role", text: "Put them on a role", impact: "Not on any role yet, so nothing is moving.", urgent: false, fix: "add_role" });
-  if (c.callNoteCount === 0 && !c.recommendation) todos.push({ key: "call_note", text: "Record a call note after you speak", impact: "It writes the brief clients see and sharpens future matches.", urgent: false, fix: "record_call" });
+  if (c.callNoteCount === 0 && !c.recommendation && todos.length === 0) todos.push({ key: "call_note", text: "Record a call note after you speak", impact: "It writes the brief clients see and sharpens future matches.", urgent: false, fix: "record_call" });
 
   let verdict: Verdict;
   let reason: string;

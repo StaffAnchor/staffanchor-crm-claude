@@ -670,18 +670,11 @@ export default function EditProfileButton({
       <button
         onClick={() => setOpen(true)}
         className={`flex items-center gap-1.5 text-[12px] font-semibold rounded-ros-md px-3.5 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
-          missingRequiredCount > 0
-            ? "text-white bg-teal-600 hover:bg-teal-500 shadow-sm shadow-teal-600/30"
-            : "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+          "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
         }`}
       >
         <Pencil className="w-3 h-3" />
-        {missingRequiredCount > 0 ? "Complete Profile" : "Edit Profile"}
-        {missingRequiredCount > 0 && (
-          <span className="ml-0.5 rounded-full bg-white/25 px-1.5 py-0.5 text-xs leading-none">
-            {missingRequiredCount} left
-          </span>
-        )}
+        Edit profile
       </button>
 
       {open && (

@@ -36,6 +36,7 @@ import SendRole from "./send-role";
 import ActionCenter from "./action-center";
 import MessageHub from "./message-hub";
 import TodoList from "./todo-list";
+import GapChip from "./gap-chip";
 import CallButton from "./call-button";
 import CvActionsBar from "@/components/cv-actions-bar";
 import { candidateNextActions } from "@/lib/candidate-next-actions";
@@ -524,7 +525,7 @@ export default async function CandidateDetailPage({
             initialSkillInventory={candidate.skill_inventory}
             initialStabilityScore={candidate.stability_score}
           />
-          {candidate.skills && (
+          {candidate.skills && !candidate.skill_inventory && (
             <div>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
               <div className="flex flex-wrap gap-1.5">
@@ -748,10 +749,11 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-            <StatChip label="Experience" value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
-            <StatChip label="Notice period" value={candidate.notice_period} />
+            <StatChip label="Experience" gap value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
+            <StatChip label="Notice period" gap value={candidate.notice_period} />
             <StatChip
               label="Fixed CTC, now → expected"
+              gap
               value={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
             />
             <StatChip label="Best matching role" value={bestMatch} />
@@ -864,11 +866,11 @@ export default async function CandidateDetailPage({
 // Portal-style headline stat -- bolder number, quieter label, its own
 // bordered chip so these four read as the "at a glance" facts rather than
 // blending into the denser field grid underneath.
-function StatChip({ label, value }: { label: string; value?: string | null }) {
+function StatChip({ label, value, gap }: { label: string; value?: string | null; gap?: boolean }) {
   return (
-    <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2">
-      <p className="text-xs text-slate-400 uppercase tracking-wide">{label}</p>
-      <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
+    <div className="border-l-2 border-slate-100 pl-3 dark:border-slate-800">
+      <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</p>
+      {value ? <p className="mt-0.5 text-[15px] font-semibold text-slate-900 dark:text-slate-100">{value}</p> : gap ? <GapChip /> : <p className="mt-0.5 text-[14px] text-slate-400">None yet</p>}
     </div>
   );
 }
