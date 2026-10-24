@@ -4,6 +4,17 @@ import { useEffect, useState, type ReactNode } from "react";
 
 export type TabTone = "teal" | "violet" | "sky" | "emerald" | "amber" | "slate";
 
+// Each tab has its own colour so you always know which room you are in. The active tab is a tinted pill with a solid
+// icon; the others keep a quiet icon in the same hue so the colours are learned, not decorative.
+const TONE: Record<TabTone, { on: string; icon: string }> = {
+  teal: { on: "bg-teal-50 text-teal-800 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800", icon: "text-teal-600" },
+  violet: { on: "bg-violet-50 text-violet-800 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-200 dark:ring-violet-800", icon: "text-violet-500" },
+  sky: { on: "bg-sky-50 text-sky-800 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-800", icon: "text-sky-500" },
+  emerald: { on: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-800", icon: "text-emerald-500" },
+  amber: { on: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800", icon: "text-amber-500" },
+  slate: { on: "bg-slate-100 text-slate-800 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700", icon: "text-slate-400" },
+};
+
 export default function Tabs({
   tabs,
 }: {
@@ -25,18 +36,19 @@ export default function Tabs({
 
   return (
     <div id="profile-tabs">
-      <div className="mb-6 flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-700">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {tabs.map((tab, i) => {
+          const tone = TONE[tab.tone ?? "teal"];
           const on = active === i;
           return (
             <button
               key={tab.label}
               onClick={() => setActive(i)}
-              className={`-mb-px inline-flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-[13.5px] font-medium transition-colors duration-150 ${
-                on ? "border-teal-600 text-teal-800 dark:text-teal-200" : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-medium ring-1 transition-colors duration-150 ${
+                on ? `${tone.on} shadow-sm` : "text-slate-600 ring-transparent hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60"
               }`}
             >
-              {tab.icon ? <span className={on ? "text-teal-600" : "text-slate-400"}>{tab.icon}</span> : null}
+              {tab.icon ? <span className={on ? "" : tone.icon}>{tab.icon}</span> : null}
               {tab.label}
             </button>
           );

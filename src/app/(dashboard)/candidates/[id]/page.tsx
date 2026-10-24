@@ -38,7 +38,7 @@ import MessageHub from "./message-hub";
 import TodoList from "./todo-list";
 import GapChip from "./gap-chip";
 import CopyButton from "./copy-button";
-import InlineFact from "./inline-fact";
+import InlineFact, { FactTile } from "./inline-fact";
 import CallButton from "./call-button";
 import CvActionsBar from "@/components/cv-actions-bar";
 import { candidateNextActions, plain } from "@/lib/candidate-next-actions";
@@ -499,6 +499,9 @@ export default async function CandidateDetailPage({
   const detailsDone = detailsTotal - missingKeyDetails(candidate).length;
   const lastTouch = [...activities.map((a: { created_at?: string }) => a.created_at), ...((whatsappRows ?? []) as { created_at?: string }[]).map((m) => m.created_at)].filter(Boolean).sort().pop();
   const lastContactDays = lastTouch ? daysAgo(lastTouch as string) : null;
+  const VERDICT_BAR = { ready: "bg-emerald-500", needs_details: "bg-amber-400", on_hold: "bg-rose-500", not_a_fit: "bg-slate-400" } as const;
+  const AVATARS = ["bg-teal-100 text-teal-800", "bg-violet-100 text-violet-800", "bg-sky-100 text-sky-800", "bg-amber-100 text-amber-800", "bg-rose-100 text-rose-800", "bg-emerald-100 text-emerald-800"];
+  const avatarTone = AVATARS[Array.from(String(candidate.full_name ?? "?")).reduce<number>((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % AVATARS.length];
   const VERDICT_TONE = {
     ready: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
     needs_details: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
@@ -728,11 +731,12 @@ export default async function CandidateDetailPage({
       </div>
 
       {/* 1. Who this is, the verdict, and four facts */}
-      <Card className="mt-3" padded={false}>
+      <Card className="mt-3 overflow-hidden" padded={false}>
+        <div className={`h-1.5 ${VERDICT_BAR[next.verdict]}`} aria-hidden />
         <div className="p-6">
           <div className="flex items-start justify-between gap-5">
             <div className="flex items-start gap-3.5 min-w-0">
-              <div className="w-11 h-11 rounded-ros-full bg-teal-50 text-teal-800 ring-1 ring-teal-100 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-900 flex items-center justify-center text-[15px] font-semibold shrink-0">
+              <div className={`w-12 h-12 rounded-ros-full ${avatarTone} flex items-center justify-center text-base font-semibold shrink-0`}>
                 {initialsFor(candidate.full_name)}
               </div>
               <div className="min-w-0">
@@ -789,34 +793,27 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
-          {next.verdict !== "ready" && <p className="mt-3 text-[13px] text-slate-600 dark:text-slate-300">{next.reason}</p>}
+          
 
-          <div className="mt-4 flex flex-wrap divide-x divide-slate-100 rounded-ros-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
-            <div className="min-w-0 flex-1 px-4 py-3">
-              <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
-                <Briefcase className="h-3.5 w-3.5 text-slate-400" />
-                Experience
-              </p>
+          <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <FactTile label="Experience" icon={<Briefcase className="h-4 w-4" />} tone="sky">
               <p className="mt-0.5 text-[16px] font-semibold text-slate-900 dark:text-slate-100">{candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : <GapChip label="Add it" />}</p>
-            </div>
-            <InlineFact candidateId={candidate.id} label="Notice period" icon={<Clock className="h-3.5 w-3.5" />} display={candidate.notice_period || null} fields={[{ key: "notice_period", label: "Notice period", kind: "text", value: candidate.notice_period ?? null }]} />
+            </FactTile>
+            <InlineFact candidateId={candidate.id} label="Notice period" tone="violet" icon={<Clock className="h-4 w-4" />} display={candidate.notice_period || null} fields={[{ key: "notice_period", label: "Notice period", kind: "text", value: candidate.notice_period ?? null }]} />
             <InlineFact
               candidateId={candidate.id}
               label="Fixed CTC, now → expected"
-              icon={<IndianRupee className="h-3.5 w-3.5" />}
+              tone="emerald"
+              icon={<IndianRupee className="h-4 w-4" />}
               display={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
               fields={[
                 { key: "current_fixed_ctc", label: "Now", kind: "lakhs", value: candidate.current_fixed_ctc ?? null },
                 { key: "expected_fixed_ctc", label: "Expected", kind: "lakhs", value: candidate.expected_fixed_ctc ?? null },
               ]}
             />
-            <div className="min-w-0 flex-1 px-4 py-3">
-              <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
-                <Target className="h-3.5 w-3.5 text-slate-400" />
-                Best matching role
-              </p>
-              <p className="mt-0.5 truncate text-[16px] font-semibold text-slate-900 dark:text-slate-100" title={bestMatch ?? undefined}>{bestMatch ?? <span className="text-[14px] font-normal text-slate-400">No match yet</span>}</p>
-            </div>
+            <FactTile label="Best matching role" icon={<Target className="h-4 w-4" />} tone="teal">
+              <p className="mt-0.5 text-[16px] font-semibold leading-5 text-slate-900 dark:text-slate-100" title={bestMatch ?? undefined}>{bestMatch ?? <span className="text-[14px] font-normal text-slate-400">No match yet</span>}</p>
+            </FactTile>
           </div>
 
           {redFlags.length > 0 && (

@@ -8,7 +8,27 @@ import { createClient } from "@/lib/supabase/client";
 type Field = { key: "notice_period" | "current_fixed_ctc" | "expected_fixed_ctc"; label: string; kind: "text" | "lakhs"; value: string | number | null };
 
 // A headline fact you can fix on the spot: click, type, press Enter. Notice period is text; CTC is in lakhs per year.
-export default function InlineFact({ candidateId, label, icon, fields, display }: { candidateId: string; label: string; icon: ReactNode; fields: Field[]; display: string | null }) {
+const TILE: Record<string, { box: string; icon: string }> = {
+  sky: { box: "bg-sky-50/70 dark:bg-sky-950/20", icon: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" },
+  violet: { box: "bg-violet-50/70 dark:bg-violet-950/20", icon: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
+  emerald: { box: "bg-emerald-50/70 dark:bg-emerald-950/20", icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  teal: { box: "bg-teal-50/70 dark:bg-teal-950/20", icon: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300" },
+};
+
+export function FactTile({ label, icon, tone, children }: { label: string; icon: ReactNode; tone: keyof typeof TILE; children: ReactNode }) {
+  const t = TILE[tone];
+  return (
+    <div className={`flex min-w-0 items-start gap-3 rounded-ros-lg px-4 py-3.5 ${t.box}`}>
+      <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${t.icon}`}>{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</p>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export default function InlineFact({ candidateId, label, icon, fields, display, tone = "teal" }: { candidateId: string; label: string; icon: ReactNode; fields: Field[]; display: string | null; tone?: keyof typeof TILE }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [vals, setVals] = useState<Record<string, string>>(() => Object.fromEntries(fields.map((f) => [f.key, f.value == null ? "" : String(f.value)])));
@@ -39,11 +59,7 @@ export default function InlineFact({ candidateId, label, icon, fields, display }
 
   const input = "w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-[13px] dark:border-slate-600 dark:bg-slate-900";
   return (
-    <div className="min-w-0 flex-1 px-4 py-3">
-      <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
-        <span className="text-slate-400">{icon}</span>
-        {label}
-      </p>
+    <FactTile label={label} icon={icon} tone={tone}>
       {editing ? (
         <form
           className="mt-1.5 flex flex-wrap items-center gap-2"
@@ -81,6 +97,6 @@ export default function InlineFact({ candidateId, label, icon, fields, display }
           <Pencil className="h-3 w-3 text-slate-300 group-hover:text-slate-500" />
         </button>
       )}
-    </div>
+    </FactTile>
   );
 }
