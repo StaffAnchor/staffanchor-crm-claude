@@ -517,27 +517,14 @@ export default async function CandidateDetailPage({
             name={candidate.full_name}
             employer={candidate.current_employer}
           />
-          {/* One place for everything the system read about this person: the AI's verdict first, the facts it rests on straight under it. */}
-          <section className="rounded-ros-lg border border-slate-200 dark:border-slate-700">
-            <div className="p-4">
-              <AiSummaryPanel
-                candidateId={candidate.id}
-                initialSummary={candidate.ai_summary}
-                initialPassport={candidate.ai_passport}
-                initialDecisionFlags={candidate.ai_decision_flags}
-                initialSkillInventory={candidate.skill_inventory}
-                initialStabilityScore={candidate.stability_score}
-              />
-            </div>
-            <div className="border-t border-slate-100 p-4 dark:border-slate-800">
-              <CvFactsPanel candidateId={candidate.id} />
-            </div>
-            {passportRow ? (
-              <div className="border-t border-slate-100 p-4 dark:border-slate-800">
-                <SaasPassportCard row={passportRow as unknown as PassportRow} />
-              </div>
-            ) : null}
-          </section>
+          <AiSummaryPanel
+            candidateId={candidate.id}
+            initialSummary={candidate.ai_summary}
+            initialPassport={candidate.ai_passport}
+            initialDecisionFlags={candidate.ai_decision_flags}
+            initialSkillInventory={candidate.skill_inventory}
+            initialStabilityScore={candidate.stability_score}
+          />
           {candidate.skills && (
             <div>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
@@ -661,6 +648,8 @@ export default async function CandidateDetailPage({
       label: "CV & career",
       content: (
         <div className="space-y-6">
+          <CvFactsPanel candidateId={candidate.id} />
+          {passportRow ? <SaasPassportCard row={passportRow as unknown as PassportRow} /> : null}
           {candidate.resume_mismatches && candidate.resume_mismatches.length > 0 && <ResumeMismatchesPanel candidateId={candidate.id} mismatches={candidate.resume_mismatches} />}
           <ProfileRatingPanel candidateId={candidate.id} />
           <CareerTimelinePanel
