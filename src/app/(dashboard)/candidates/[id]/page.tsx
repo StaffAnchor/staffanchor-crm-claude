@@ -33,9 +33,8 @@ import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
 import { missingKeyDetails } from "@/lib/key-details";
 import { recordTiming } from "@/lib/page-timing";
-import ProfileChecklist from "@/components/profile-checklist";
-import NextAction, { type NextActionItem } from "@/components/next-action";
 import ResumePreview from "./resume-preview";
+import SendRole from "./send-role";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
 import QuickContactActions from "./quick-contact-actions";
@@ -80,13 +79,6 @@ const RECOMMENDATION_TONE: Record<string, BadgeTone> = {
   "Not a Fit": "danger",
 };
 
-const SENIORITY_LABEL: Record<string, string> = {
-  ic: "IC",
-  team_lead: "Team Lead",
-  manager: "Manager",
-  director: "Director",
-  vp_plus: "VP & above",
-};
 
 function daysAgo(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -122,7 +114,6 @@ export default async function CandidateDetailPage({
     viewer: Promise.resolve(supabase.auth.getUser()).then(async ({ data: { user } }) => (user ? { user, profile: (await supabase.from("profiles").select("full_name, email").eq("id", user.id).single()).data } : { user: null, profile: null })),
     passport: Promise.resolve(supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle()),
     cvFacts: Promise.resolve(supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle()),
-    levelTags: Promise.resolve(supabase.from("candidate_role_tags").select("seniority").eq("candidate_id", id).eq("is_current", true)),
     notes: Promise.resolve(supabase.from("recruiter_notes").select("id, note_type, content, created_at, author_id").eq("candidate_id", id).order("created_at", { ascending: false })),
     audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
     pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
@@ -477,25 +468,214 @@ export default async function CandidateDetailPage({
   }
 
   recordTiming("candidate", renderStart);
-  const { data: levelRows } = await q.levelTags;
-  const roleLevelKnown = ((levelRows ?? []) as { seniority: string }[]).some((r) => r.seniority && r.seniority !== "unclear");
   const missingNow = missingKeyDetails(candidate);
   const activeLinks = (links ?? []).filter((l) => !["rejected", "pulled_back"].includes(l.stage));
-  let nextAction: NextActionItem | null = null;
-  if ((candidate as { phone_hold?: boolean }).phone_hold) nextAction = { text: "Phone number is on hold. Confirm it with the candidate before messaging." };
-  else if (missingNow.length > 0) nextAction = { text: `Missing ${missingNow.slice(0, 3).map((m) => m.label.toLowerCase()).join(", ")}${missingNow.length > 3 ? ` and ${missingNow.length - 3} more` : ""}. Ask the candidate.` };
-  else if (activeLinks.length === 0) nextAction = { text: "Not on any mandate. Check the suggested roles below." };
+  // What still needs doing for this person, each with why it matters. One list replaces the old banner, checklist and risk strip.
+  const confirmedAt = ((candidate.details_confirmed_at as string | null | undefined) ?? (candidate.segment_data as { call_confirmed?: { at?: string } } | null)?.call_confirmed?.at) ?? null;
+  const confirmedDays = confirmedAt ? daysAgo(confirmedAt) : null;
+  const todos: { text: string; impact: string; urgent?: boolean; ask?: boolean }[] = [];
+  if ((candidate as { phone_hold?: boolean }).phone_hold) todos.push({ text: "Confirm their phone number", impact: "It is on hold, so no WhatsApp or call can go out until it is confirmed.", urgent: true });
+  if (missingNow.length > 0) todos.push({ text: `Get ${missingNow.map((m) => m.label.toLowerCase()).join(", ")}`, impact: "A profile without these cannot go to a client, and role matching is weaker.", urgent: true, ask: true });
+  if (!candidate.resume_file_url) todos.push({ text: "Get their CV", impact: "The summary, CV facts and role matching are all read from the CV." });
+  if (confirmedDays == null || confirmedDays > 60) todos.push({ text: "Confirm CTC and notice period on a call", impact: confirmedDays == null ? "They have never confirmed their own details. Clients expect verified numbers." : `Last confirmed ${confirmedDays} days ago. Numbers go stale.` });
+  if (activeLinks.length === 0) todos.push({ text: "Put them on a role", impact: "Not on any role yet, so nothing is moving. See the Roles tab for suggestions." });
+  if (pastDebriefs.length === 0 && !recommendation) todos.push({ text: "Record a call note after you speak", impact: "It writes the brief clients see and sharpens future matches." });
+
+  const tabs = [
+    {
+      label: "Overview",
+      content: (
+        <div className="space-y-5">
+          <BriefCard
+            candidateId={candidate.id}
+            brief={(briefRow?.brief as Brief | undefined) ?? null}
+            generatedAt={briefRow?.generated_at ?? null}
+            fromCall={briefRow?.source === "cv+call"}
+            name={candidate.full_name}
+            employer={candidate.current_employer}
+          />
+          <AiSummaryPanel
+            candidateId={candidate.id}
+            initialSummary={candidate.ai_summary}
+            initialPassport={candidate.ai_passport}
+            initialDecisionFlags={candidate.ai_decision_flags}
+            initialSkillInventory={candidate.skill_inventory}
+            initialStabilityScore={candidate.stability_score}
+          />
+          {passportRow && <SaasPassportCard row={passportRow as unknown as PassportRow} />}
+          <CvFactsPanel candidateId={candidate.id} />
+          {candidate.skills && (
+            <div>
+              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {candidate.skills.split(",").map((s: string) => s.trim()).filter(Boolean).map((skill: string) => (
+                  <Badge key={skill} tone="accent" size="sm" className="normal-case tracking-normal">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {segmentEntries.length > 0 && (
+            <div>
+              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Sales profile</h3>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                {segmentEntries.map(([k, v]) => (
+                  <div key={k}>
+                    <p className="text-xs text-slate-400">{humanize(k)}</p>
+                    <p className="text-[13px] text-slate-700 dark:text-slate-300">{formatValue(v)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {Object.keys(selfAssessment).length > 0 && (
+            <div>
+              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">In their own words</h3>
+              <div className="space-y-3">
+                {Object.entries(selfAssessment).map(([k, v]) => (
+                  <div key={k}>
+                    <p className="text-xs font-medium text-slate-400 uppercase">{humanize(k)}</p>
+                    <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{String(v)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <details className="rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700">
+            <summary className="cursor-pointer text-[13px] font-semibold text-slate-900 dark:text-slate-100">Group, practices and tags</summary>
+            <div className="mt-3">
+              <ProfileGroupControl
+                candidateId={candidate.id}
+                group={candidate.profile_group ?? null}
+                subgroup={candidate.profile_subgroup ?? null}
+                also={candidate.profile_group_also ?? null}
+                reason={candidate.profile_group_reason ?? null}
+                needsReview={!!candidate.profile_group_needs_review}
+                locked={!!candidate.profile_group_locked}
+              />
+            </div>
+            <p className="mt-3 mb-3 text-xs text-slate-500 dark:text-slate-400">A candidate can belong to more than one practice, each with its own seniority band.</p>
+            <PracticeTagsPanel candidateId={candidate.id} allPractices={(allPracticesRows ?? []) as never} initial={(candidatePracticeRows ?? []) as never} />
+          </details>
+        </div>
+      ),
+    },
+    {
+      label: "Calls & notes",
+      content: (
+        <div className="space-y-6">
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
+            Everything about a call lives here, in order: tap answers <b>during</b> the call, write a note <b>after</b> it, then optionally score them.
+          </p>
+          <section>
+            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">1. During the call</h3>
+            <CallCompanion candidate={candidate as never} doubts={callDoubts} recruiterName={scorerName} />
+          </section>
+          <section>
+            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">2. After the call</h3>
+            <AfterCallCard candidateId={candidate.id} history={pastDebriefs} />
+          </section>
+          <details className="rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700" open={!!recommendation}>
+            <summary className="cursor-pointer text-[13px] font-semibold text-slate-900 dark:text-slate-100">
+              3. Scorecard <span className="font-normal text-slate-500">(optional, internal only)</span>
+              {recommendation ? <span className="ml-2"><Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">{recommendation}</Badge></span> : null}
+            </summary>
+            <div className="mt-3">
+              {scores.length > 0 && (
+                <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                  {scores.map((s) => (
+                    <div key={s.label} className="text-center">
+                      <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-xs font-normal text-slate-400">/5</span></p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <AssessmentForm candidateId={candidate.id} assessment={assessment} candidateLocation={candidate.current_location} linkedMandateCities={linkedMandateCities} />
+              <MandateDiscussions entries={(candidate.mandate_discussion_summaries ?? []) as never} />
+            </div>
+          </details>
+          <section>
+            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Notes</h3>
+            <NotesPanel candidateId={candidate.id} notes={notes ?? []} />
+          </section>
+        </div>
+      ),
+    },
+    {
+      label: "Roles",
+      content: (
+        <div className="space-y-6">
+          <section>
+            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">On these roles</h3>
+            <MandateLinksPanel
+              candidateId={candidate.id}
+              candidateName={candidate.full_name}
+              links={(links ?? []) as never}
+              openMandates={openMandates ?? []}
+              applicationAnswersByMandate={applicationAnswersByMandate}
+            />
+          </section>
+          <section>
+            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Roles that could fit</h3>
+            <SuggestedRolesPanel candidateId={candidate.id} hasCv={!!candidate.resume_file_url} />
+          </section>
+          <section>
+            <h3 className="mb-1 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Other open roles in their practice</h3>
+            <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Based on their practice tags (Overview tab).</p>
+            <PracticeMatchesPanel
+              candidateId={candidate.id}
+              candidatePractices={(candidatePracticeRows ?? []) as never}
+              allPractices={(allPracticesRows ?? []) as never}
+              mandates={(openMandates ?? []) as never}
+              alreadyLinkedMandateIds={alreadyLinkedMandateIds}
+            />
+          </section>
+        </div>
+      ),
+    },
+    {
+      label: "Messages",
+      content: <WhatsAppPanel candidateId={candidate.id} hasPhone={!!candidate.phone} messages={(whatsappRows ?? []) as import("./whatsapp-panel").WhatsAppMessage[]} />,
+    },
+    {
+      label: "CV & career",
+      content: (
+        <div className="space-y-6">
+          {candidate.resume_mismatches && candidate.resume_mismatches.length > 0 && <ResumeMismatchesPanel candidateId={candidate.id} mismatches={candidate.resume_mismatches} />}
+          <ProfileRatingPanel candidateId={candidate.id} />
+          <CareerTimelinePanel
+            candidateId={candidate.id}
+            currentEmployer={candidate.current_employer ?? null}
+            initialProfileEntries={(candidate.career_timeline_profile ?? []) as never}
+            initialResumeEntries={(candidate.career_timeline_resume ?? []) as never}
+            initialStabilityScore={candidate.stability_score ?? null}
+            initialDomainConsistencyScore={candidate.domain_consistency_score ?? null}
+          />
+        </div>
+      ),
+    },
+    {
+      label: "History",
+      content: (
+        <div className="space-y-6">
+          <Timeline events={timelineEvents} />
+          <section>
+            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Contact attempts</h3>
+            <ActivityLogPanel candidateId={candidate.id} activities={activities} />
+          </section>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 py-8">
+    <div className="max-w-[1100px] mx-auto px-5 py-8">
       <div className="flex items-center justify-between">
-        <Link
-          href={backHref}
-          className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros"
-        >
+        <Link href={backHref} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
           {backLabel}
         </Link>
-
         {listPosition && (
           <div className="flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400">
             <span className="tabular-nums mr-1">
@@ -505,11 +685,7 @@ export default async function CandidateDetailPage({
               href={neighborHref(prevCandidate)}
               aria-disabled={!prevCandidate}
               title={prevCandidate ? `Previous: ${prevCandidate.full_name}` : undefined}
-              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
-                prevCandidate
-                  ? "hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600 dark:text-slate-400"
-                  : "opacity-30 pointer-events-none text-slate-400"
-              }`}
+              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 ${prevCandidate ? "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400" : "opacity-30 pointer-events-none text-slate-400"}`}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </Link>
@@ -517,11 +693,7 @@ export default async function CandidateDetailPage({
               href={neighborHref(nextCandidate)}
               aria-disabled={!nextCandidate}
               title={nextCandidate ? `Next: ${nextCandidate.full_name}` : undefined}
-              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-ros ${
-                nextCandidate
-                  ? "hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-slate-600 dark:text-slate-400"
-                  : "opacity-30 pointer-events-none text-slate-400"
-              }`}
+              className={`flex items-center justify-center w-6 h-6 rounded-ros-md border border-slate-200 dark:border-slate-700 ${nextCandidate ? "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400" : "opacity-30 pointer-events-none text-slate-400"}`}
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
@@ -529,24 +701,19 @@ export default async function CandidateDetailPage({
         )}
       </div>
 
-      <NextAction item={nextAction} />
-
-      {/* --- Executive summary header --- */}
+      {/* 1. Who this is, in four facts */}
       <Card className="mt-3" padded={false}>
-        <div className="p-6">
+        <div className="p-5">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-ros-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-lg font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+            <div className="flex items-start gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-ros-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-base font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                 {initialsFor(candidate.full_name)}
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {candidate.candidate_number != null && (
-                    <span
-                      className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-xs font-mono text-slate-500 dark:text-slate-400"
-                      title="Candidate number — reference this in internal discussions"
-                    >
+                    <span className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-xs font-mono text-slate-500 dark:text-slate-400" title="Candidate number">
                       C-{String(candidate.candidate_number).padStart(6, "0")}
                     </span>
                   )}
@@ -556,81 +723,11 @@ export default async function CandidateDetailPage({
                     </Badge>
                   )}
                 </div>
-                {(() => {
-                  const callAt = (candidate.segment_data as { call_confirmed?: { at?: string } } | null)?.call_confirmed?.at;
-                  const at = (candidate.details_confirmed_at as string | null | undefined) ?? callAt;
-                  const days = at ? daysAgo(at) : null;
-                  const stale = days == null || days > 60;
-                  return (
-                    <p
-                      className={`text-xs mt-0.5 ${stale ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}
-                      title="The last time the candidate confirmed or updated their own details (CTC, notice period, role)"
-                    >
-                      {at
-                        ? `Details confirmed ${candidate.details_confirmed_at ? "by candidate" : "on a recruiter call"} ${new Date(at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}${stale ? ` (${days} days ago)` : ""}`
-                        : "Details never confirmed by candidate. Verify CTC and notice period."}
-                    </p>
-                  );
-                })()}
                 <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {candidate.current_job_title}
                   {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
-                  {candidate.current_industry ? ` · ${candidate.current_industry}` : ""}
                 </p>
-                {(() => {
-                  const former = ((candidate.industries as string[] | null) ?? []).filter(
-                    (i) => i !== candidate.current_industry
-                  );
-                  if (former.length === 0) return null;
-                  const MAX_SHOWN = 4;
-                  const shown = former.slice(0, MAX_SHOWN);
-                  const overflow = former.length - shown.length;
-                  return (
-                    <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                      <span className="text-xs text-slate-400 mr-0.5">Previously:</span>
-                      {shown.map((i) => (
-                        <Badge key={i} tone="neutral" size="sm" className="normal-case tracking-normal">
-                          {i}
-                        </Badge>
-                      ))}
-                      {overflow > 0 && (
-                        <span
-                          className="text-xs text-slate-400"
-                          title={former.slice(MAX_SHOWN).join(", ")}
-                        >
-                          +{overflow} more
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
-                {/* Practice badges -- surfaced right in the header (not just
-                    buried in the sidebar Practices panel) so a recruiter
-                    scanning this profile immediately sees which practice
-                    pool(s) this candidate is discoverable under, and at
-                    what seniority band. */}
-                {candidatePracticeRows && candidatePracticeRows.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                    <span className="text-xs text-slate-400 mr-0.5">Practices:</span>
-                    {candidatePracticeRows.map((cp) => {
-                      const practice = (allPracticesRows ?? []).find((p) => p.id === cp.practice_id);
-                      if (!practice) return null;
-                      return (
-                        <Badge
-                          key={cp.practice_id}
-                          tone={cp.is_primary ? "accent" : "neutral"}
-                          size="sm"
-                          className="normal-case tracking-normal"
-                          title={cp.tagged_by === "ai" ? "Assigned by AI from the resume, not yet recruiter-confirmed" : undefined}
-                        >
-                          {practice.name} · {SENIORITY_LABEL[cp.seniority_band] ?? cp.seniority_band}
-                          {cp.tagged_by === "ai" ? " · AI" : ""}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center gap-3 mt-2 text-[12px] text-slate-500 dark:text-slate-400">
+                <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[12px] text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1">
                     <Mail className="w-3 h-3" /> {/\.invalid$/i.test(candidate.email ?? "") ? "No email yet" : candidate.email}
                   </span>
@@ -650,59 +747,29 @@ export default async function CandidateDetailPage({
                     </span>
                   )}
                 </div>
-                <ProfileGroupControl
-                  candidateId={candidate.id}
-                  group={candidate.profile_group ?? null}
-                  subgroup={candidate.profile_subgroup ?? null}
-                  also={candidate.profile_group_also ?? null}
-                  reason={candidate.profile_group_reason ?? null}
-                  needsReview={!!candidate.profile_group_needs_review}
-                  locked={!!candidate.profile_group_locked}
-                />
-                <AskMissingDetails candidateId={candidate.id} missing={missingKeyDetails(candidate).map((m) => m.label)} />
               </div>
             </div>
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 shrink-0">
               {candidate.status === "awaiting_input" && <SendInviteButton candidateId={candidate.id} />}
               <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
               <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
-              <DeleteCandidateButton candidateId={candidate.id} candidateName={candidate.full_name} />
             </div>
           </div>
 
-          {/* At-a-glance stat strip -- the handful of numbers a recruiter
-              scans first (current location, experience, notice period,
-              expected CTC), pulled out of the denser 8-field grid below and
-              given their own prominent row right under the header, the way
-              a portal candidate card leads with these before anything else. */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <StatChip label="Current location" value={candidate.current_location} />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
             <StatChip label="Experience" value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
-            <StatChip label="Days to join" value={candidate.notice_period} />
+            <StatChip label="Notice period" value={candidate.notice_period} />
             <StatChip
-              label="Expected fixed CTC"
-              value={candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : null}
+              label="Fixed CTC (now → expected)"
+              value={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
             />
-            <StatChip
-              label="Registered on"
-              value={candidate.created_at ? formatDateIST(candidate.created_at) : null}
-            />
-            <StatChip
-              label="Came from"
-              value={
-                candidate.acquisition_source
-                  ? [candidate.acquisition_source, candidate.acquisition_campaign].filter(Boolean).join(" · ")
-                  : null
-              }
-            />
+            <StatChip label="Group" value={[candidate.profile_group, candidate.profile_subgroup].filter(Boolean).join(" › ") || null} />
           </div>
 
-          <ProfileChecklist candidate={candidate} roleLevelKnown={roleLevelKnown} group={(candidate.profile_group as string | null) ?? null} subGroup={(candidate.profile_subgroup as string | null) ?? null} />
-
           {redFlags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 mt-4">
+            <div className="flex flex-wrap items-center gap-1.5 mt-3">
               <span className="flex items-center gap-1 text-xs font-medium text-rose-600">
-                <AlertTriangle className="w-3.5 h-3.5" /> Risk flags:
+                <AlertTriangle className="w-3.5 h-3.5" /> Watch out:
               </span>
               {redFlags.map((flag) => (
                 <Badge key={flag} tone="danger" size="sm" className="normal-case tracking-normal">
@@ -712,291 +779,60 @@ export default async function CandidateDetailPage({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 mt-4">
-            <PoolControl candidateId={candidate.id} entry={poolEntry} />
+          {/* 2. The things you do most, always in the same place */}
+          <div className="flex flex-wrap items-start gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <SendRole candidateId={candidate.id} candidateName={candidate.full_name} email={candidate.email} roles={(openMandates ?? []) as never} />
             <QuickContactActions candidateId={candidate.id} candidateName={candidate.full_name} phone={candidate.phone} email={candidate.email} missing={missingKeyDetails(candidate).map((m) => m.key)} />
-            {resumeSignedUrl && resumeFileName && (
-              <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} />
-            )}
+            {resumeSignedUrl && resumeFileName && <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} />}
             {candidate.resume_file_url && !resumeSignedUrl && (
               <span className="flex items-center gap-1.5 text-[12px] font-medium text-rose-600 bg-rose-50 rounded-ros-md px-3 py-1.5">
                 <FileText className="w-3 h-3" /> Resume file not found
               </span>
             )}
+            <PoolControl candidateId={candidate.id} entry={poolEntry} />
           </div>
-
-          <ProfileRatingPanel candidateId={candidate.id} />
-
-          {/* Secondary details -- everything else, kept to the denser grid
-              now that the four headline numbers above have their own row. */}
-          <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 text-[13px]">
-            <Field label="Function / Domain" value={candidate.category?.replace("_", " ")} />
-            <Field label="Primary sub-domain" value={candidate.sub_domain} />
-            <Field label="Current fixed CTC" value={candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "—"} />
-            <Field label="Current variable CTC" value={candidate.current_variable_ctc ? `₹${candidate.current_variable_ctc}L` : "—"} />
-            <Field label="ESOPs held" value={candidate.esops_held ? "Yes" : "No"} />
-          </div>
-
-          {candidate.secondary_sub_domains?.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1.5">Secondary sub-domains</p>
-              <div className="flex flex-wrap gap-1.5">
-                {candidate.secondary_sub_domains.map((tag: string) => (
-                  <Badge key={tag} tone="neutral" size="sm" className="normal-case tracking-normal">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </Card>
 
-      {/* --- Call companion: confirm what a CV can't tell us, on the call --- */}
+      {/* 3. What to do next, and why it matters */}
       <Card className="mt-4">
-        <CallCompanion candidate={candidate as never} doubts={callDoubts} recruiterName={scorerName} />
-      </Card>
-
-      <Card className="mt-4">
-        <AfterCallCard candidateId={candidate.id} history={pastDebriefs} />
-      </Card>
-
-      <Card className="mt-4">
-        <BriefCard
-          candidateId={candidate.id}
-          brief={(briefRow?.brief as Brief | undefined) ?? null}
-          generatedAt={briefRow?.generated_at ?? null}
-          fromCall={briefRow?.source === "cv+call"}
-          name={candidate.full_name}
-          employer={candidate.current_employer}
-        />
-      </Card>
-
-      {passportRow && <SaasPassportCard row={passportRow as unknown as PassportRow} />}
-
-      {/* --- AI summary: front and center, not buried in a tab --- */}
-      <Card className="mt-4">
-        <AiSummaryPanel
-          candidateId={candidate.id}
-          initialSummary={candidate.ai_summary}
-          initialPassport={candidate.ai_passport}
-          initialDecisionFlags={candidate.ai_decision_flags}
-          initialSkillInventory={candidate.skill_inventory}
-          initialStabilityScore={candidate.stability_score}
-        />
-      </Card>
-
-      {/* Structured facts read from the CV: what they sold, to whom, team
-          size, tools and honesty flags. These are what a role's requirements
-          get checked against. */}
-      <Card className="mt-4">
-        <CvFactsPanel candidateId={candidate.id} />
-      </Card>
-
-      {/* Resume-truth reconciliation: the AI passport call already compares
-          self-reported form fields against the resume it just read -- only
-          rendered when it actually found something material, so this adds
-          no visual noise for the common case of a clean profile. */}
-      {candidate.resume_mismatches && candidate.resume_mismatches.length > 0 && (
-        <Card className="mt-4">
-          <ResumeMismatchesPanel candidateId={candidate.id} mismatches={candidate.resume_mismatches} />
-        </Card>
-      )}
-
-      <div className="grid grid-cols-3 gap-6 mt-6">
-        <div className="col-span-2">
-          <Card>
-            <Tabs
-              tabs={[
-                {
-                  label: "Overview",
-                  content: (
-                    <div className="space-y-6">
-                      {/* Current industry + previous industries already shown in the
-                          header (line ~401, "Previously:" badges) -- not repeated here. */}
-                      {candidate.skills && (
-                        <div>
-                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
-                          <div className="flex flex-wrap gap-1.5">
-                            {candidate.skills.split(",").map((s: string) => s.trim()).filter(Boolean).map((skill: string) => (
-                              <Badge key={skill} tone="accent" size="sm" className="normal-case tracking-normal">
-                                {skill}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {segmentEntries.length > 0 && (
-                        <div>
-                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Sales profile</h3>
-                          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                            {segmentEntries.map(([k, v]) => (
-                              <div key={k}>
-                                <p className="text-xs text-slate-400">{humanize(k)}</p>
-                                <p className="text-[13px] text-slate-700 dark:text-slate-300">{formatValue(v)}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {Object.keys(selfAssessment).length > 0 && (
-                        <div>
-                          <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Self-reported write-ups</h3>
-                          <div className="space-y-3">
-                            {Object.entries(selfAssessment).map(([k, v]) => (
-                              <div key={k}>
-                                <p className="text-xs font-medium text-slate-400 uppercase">{humanize(k)}</p>
-                                <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{String(v)}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: "Notes",
-                  content: <NotesPanel candidateId={candidate.id} notes={notes ?? []} />,
-                },
-                {
-                  label: "Activity",
-                  content: <ActivityLogPanel candidateId={candidate.id} activities={activities} />,
-                },
-                {
-                  label: "WhatsApp",
-                  content: (
-                    <WhatsAppPanel
-                      candidateId={candidate.id}
-                      hasPhone={!!candidate.phone}
-                      messages={(whatsappRows ?? []) as import("./whatsapp-panel").WhatsAppMessage[]}
-                    />
-                  ),
-                },
-                {
-                  label: "Mandates",
-                  content: (
-                    <MandateLinksPanel
-                      candidateId={candidate.id}
-                      candidateName={candidate.full_name}
-                      links={(links ?? []) as never}
-                      openMandates={openMandates ?? []}
-                      applicationAnswersByMandate={applicationAnswersByMandate}
-                    />
-                  ),
-                },
-                {
-                  label: "Suggested roles",
-                  content: <SuggestedRolesPanel candidateId={candidate.id} hasCv={!!candidate.resume_file_url} />,
-                },
-                {
-                  label: "Career",
-                  content: (
-                    <CareerTimelinePanel
-                      candidateId={candidate.id}
-                      currentEmployer={candidate.current_employer ?? null}
-                      initialProfileEntries={(candidate.career_timeline_profile ?? []) as never}
-                      initialResumeEntries={(candidate.career_timeline_resume ?? []) as never}
-                      initialStabilityScore={candidate.stability_score ?? null}
-                      initialDomainConsistencyScore={candidate.domain_consistency_score ?? null}
-                    />
-                  ),
-                },
-                {
-                  label: "Timeline",
-                  content: <Timeline events={timelineEvents} />,
-                },
-              ]}
-            />
-          </Card>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">To do{todos.length ? ` (${todos.length})` : ""}</h2>
+          {todos.some((t) => t.ask) && <AskMissingDetails candidateId={candidate.id} missing={missingNow.map((m) => m.label)} />}
         </div>
+        {todos.length === 0 ? (
+          <p className="mt-2 text-[13px] text-emerald-700 dark:text-emerald-300">Nothing pending. This profile is ready to put forward.</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
+            {todos.map((t) => (
+              <li key={t.text} className="flex items-start gap-3 py-2.5">
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${t.urgent ? "bg-rose-500" : "bg-amber-500"}`} aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{t.text}</p>
+                  <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{t.impact}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
-        <div>
-          {/* Not sticky: this card is taller than most screens, so a sticky
-              top-20 made the Vetting score card scroll up underneath it and
-              become unreadable. */}
-          <Card>
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Recruiter assessment</h2>
-              {recommendation && (
-                <Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">
-                  {recommendation}
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Internal only, never shown to clients. Fill after a real call using the standard scorecard.
-            </p>
-            {scores.length > 0 && (
-              <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-                {scores.map((s) => (
-                  <div key={s.label} className="text-center">
-                    <p className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.value}<span className="text-xs font-normal text-slate-400">/5</span></p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            <AssessmentForm
-              candidateId={candidate.id}
-              assessment={assessment}
-              candidateLocation={candidate.current_location}
-              linkedMandateCities={linkedMandateCities}
-            />
-            <MandateDiscussions entries={(candidate.mandate_discussion_summaries ?? []) as never} />
-          </Card>
+      {/* 4. Everything else, grouped */}
+      <Card className="mt-4">
+        <Tabs tabs={tabs} />
+      </Card>
 
-          {/* Which recruiting practice(s) this candidate belongs to, each
-              with its own seniority band -- replaces the old single
-              category/sub_domain dropdown. Feeds the practice-pool matching
-              (recruiter_practices <-> candidate_practices <-> mandate
-              practice_id) so a recruiter can pitch the same candidate to
-              every open mandate in their practice, not just the one they
-              first came in on. */}
-          <Card className="mt-4">
-            <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practices</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              A candidate can belong to more than one practice (e.g. SaaS Sales + BFSI) if they&apos;ve genuinely worked
-              both -- each practice carries its own seniority band.
-            </p>
-            <PracticeTagsPanel
-              candidateId={candidate.id}
-              allPractices={(allPracticesRows ?? []) as never}
-              initial={(candidatePracticeRows ?? []) as never}
-            />
-          </Card>
-
-          {/* Every open mandate this candidate's practice tag(s) above
-              actually match -- the per-candidate slice of /practice-pool,
-              right here so a recruiter doesn't have to leave the profile
-              to see who else this person could be pitched to. */}
-          <Card className="mt-4">
-            <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Practice Pool matches</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Other open mandates in this candidate&apos;s practice(s), based on the tags above.
-            </p>
-            <PracticeMatchesPanel
-              candidateId={candidate.id}
-              candidatePractices={(candidatePracticeRows ?? []) as never}
-              allPractices={(allPracticesRows ?? []) as never}
-              mandates={(openMandates ?? []) as never}
-              alreadyLinkedMandateIds={alreadyLinkedMandateIds}
-            />
-          </Card>
-        </div>
+      <div className="mt-6 flex items-center justify-between gap-3 text-[12px] text-slate-400">
+        <span>
+          Registered {candidate.created_at ? formatDateIST(candidate.created_at) : "—"}
+          {candidate.acquisition_source ? ` · from ${[candidate.acquisition_source, candidate.acquisition_campaign].filter(Boolean).join(" · ")}` : ""}
+        </span>
+        <DeleteCandidateButton candidateId={candidate.id} candidateName={candidate.full_name} />
       </div>
     </div>
   );
 }
 
-function Field({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <div>
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="text-slate-800 dark:text-slate-200 font-medium">{value || "—"}</p>
-    </div>
-  );
-}
 
 // Portal-style headline stat -- bolder number, quieter label, its own
 // bordered chip so these four read as the "at a glance" facts rather than
