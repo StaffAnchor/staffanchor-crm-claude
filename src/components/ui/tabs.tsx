@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 // Minimal, dependency-free tab primitive for the ROS design system --
@@ -20,6 +20,20 @@ export type TabItem = {
 
 export function Tabs({ items, defaultKey, className }: { items: TabItem[]; defaultKey?: string; className?: string }) {
   const [active, setActive] = useState(defaultKey ?? items[0]?.key);
+  // A link like #sharing or #best-matches opens the tab with that key, then scrolls to it.
+  useEffect(() => {
+    const go = () => {
+      const key = window.location.hash.replace(/^#/, "");
+      if (key && items.some((i) => i.key === key)) {
+        setActive(key);
+        setTimeout(() => document.getElementById(key)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      }
+    };
+    go();
+    window.addEventListener("hashchange", go);
+    return () => window.removeEventListener("hashchange", go);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className={className}>

@@ -32,7 +32,7 @@ import PriorityApplicantFunnelPanel from "./priority-applicant-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
 import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
-import { AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
+import { Sparkles, AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
@@ -470,17 +470,6 @@ export default async function MandateDetailPage({
             badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{pipelineCount}</span>,
             content: (
         <MandateCandidatesView
-          aiSuggestions={
-            <div className="space-y-6">
-              <div id="best-matches"><Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}><BestMatchesPanel mandateId={id} /></Suspense></div>
-              <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
-                <summary className="cursor-pointer text-[13px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>
-                <div className="mt-3">
-                  <AiMatchesPanel mandateId={id} />
-                </div>
-              </details>
-            </div>
-          }
           initialStage={initialStage}
           rows={(links ?? [])
             .map((l) => {
@@ -557,6 +546,22 @@ export default async function MandateDetailPage({
           teamMembers={allStaffProfiles ?? []}
           isAdmin={viewerRole === "admin"}
         />
+            ),
+          },
+          {
+            key: "best-matches",
+            label: "Best matches",
+            icon: <Sparkles className="h-3.5 w-3.5 text-teal-500" />,
+            content: (
+            <div className="space-y-6">
+              <div id="best-matches"><Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}><BestMatchesPanel mandateId={id} /></Suspense></div>
+              <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
+                <summary className="cursor-pointer text-[13px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>
+                <div className="mt-3">
+                  <AiMatchesPanel mandateId={id} />
+                </div>
+              </details>
+            </div>
             ),
           },
             {
