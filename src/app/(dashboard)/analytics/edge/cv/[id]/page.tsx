@@ -5,6 +5,8 @@ import { COLUMNS, jobsLink, type BriefRow } from "@/lib/cv-brief/store";
 import { SCOPE_TEXT, describeJob, monthLabel, formatMetric, gaps, jobFilled, jobPeriod, keyItems, progress, sanitize, winDone, type Job } from "@/lib/cv-brief/config";
 import CopyBox from "./copy-box";
 import ReminderButton from "./reminder-button";
+import GenerateButton from "./generate-button";
+import { STATUS_LABEL, type DocStatus } from "@/lib/cv-doc/types";
 import { ago, briefState } from "@/lib/cv-brief/state";
 import { reminderDefault } from "@/lib/cv-brief/mail";
 
@@ -142,6 +144,8 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
     "Regards,\nStaffAnchor Talent Solutions",
   ].join("\n\n");
   const photoUrl = b.photo_path ? (await db.storage.from("resume-orders").createSignedUrl(b.photo_path, 3600)).data?.signedUrl ?? null : null;
+  const { data: docRows } = await db.from("cv_docs").select("id, version, status, updated_at").eq("brief_id", b.id).order("version", { ascending: false });
+  const docs = (docRows ?? []) as { id: string; version: number; status: DocStatus; updated_at: string }[];
   const cvUrl = b.cv_path ? (await db.storage.from("resume-orders").createSignedUrl(b.cv_path, 3600)).data?.signedUrl ?? null : null;
   const now = nowMs();
   const st = briefState(b, now);
@@ -183,6 +187,20 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
 
       {b.status !== "sent" && (
         <>
+          <Section title="CV drafts" sub="Written only from what the candidate told us. You edit it, approve it, then share it with them to review.">
+            {docs.length > 0 && (
+              <ul className="space-y-1.5">
+                {docs.map((d) => (
+                  <li key={d.id} className="flex flex-wrap items-center justify-between gap-2">
+                    <Link href={`/analytics/edge/cv/${b.id}/doc/${d.id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">Version {d.version}</Link>
+                    <span className="text-xs text-slate-500">{STATUS_LABEL[d.status]} · updated {formatIst(new Date(d.updated_at))} IST</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <GenerateButton briefId={b.id} hasDrafts={docs.length > 0} submitted={b.status === "submitted"} />
+          </Section>
+
           <Section title="Consent and CV file">
             <Row k="Profile consent" v={b.consent_at ? `Ticked ${formatIst(new Date(b.consent_at))} IST (wording ${b.consent_version})` : "Not given. Do not create a StaffAnchor profile from this form."} />
             <Row k="Photo" v={photoUrl ? <span className="flex items-center gap-3"><a href={photoUrl} target="_blank"><img src={photoUrl} alt="Candidate photo" className="h-16 w-16 rounded-xl object-cover" /></a><span className="text-slate-500">{d.extras.photoPref || "Wants it on the CV: not answered"}</span></span> : d.extras.photoPref ? `No photo uploaded. They said: ${d.extras.photoPref}` : ""} />

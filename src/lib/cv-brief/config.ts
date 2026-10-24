@@ -441,9 +441,18 @@ const moneyShort = (m: Metric): string => {
 const targetPhrase = (p: string) => { const w = periodWord(p); return w ? `${/^[aeiou]/i.test(w) ? "an" : "a"} ${w} target` : "a target"; };
 const periodWord = (p: string) => (p === "Per month" ? "monthly" : p === "Per quarter" ? "quarterly" : p === "Per year" ? "annual" : "");
 const joinList = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
-const lc = (x: string) => x.charAt(0).toLowerCase() + x.slice(1);
+// Lowercases the first letter of an ordinary phrase, but leaves names and acronyms (SaaS, SDRs, B2B) as they are.
+export const lc = (x: string) => (/^[A-Z][a-z]+$/.test(x.split(/[\s/:,(-]/)[0]) ? x.charAt(0).toLowerCase() + x.slice(1) : x);
 
 export type PreviewLine = { text: string; ghost?: boolean };
+
+/** A figure as a short phrase for a CV line: "₹12 Cr a year (team)". The team or business label is always kept. */
+export function metricPhrase(m: Metric): string {
+  const v = m.kind === "money" ? moneyShort(m) : m.kind === "percent" ? `${(m.amount ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}%` : (m.amount ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const per = m.kind === "money" ? (m.period === "Per month" ? " a month" : m.period === "Per quarter" ? " a quarter" : m.period === "Per year" ? " a year" : "") : "";
+  const who = m.scope === "team" ? " (team)" : m.scope === "business" ? " (whole business)" : "";
+  return `${m.amount === null ? m.range : v}${per}${who}${m.amount === null || m.basis === "estimate" ? " (approx.)" : ""}`;
+}
 
 /** How this job will read on the CV, built only from what the candidate entered. Missing parts show as grey prompts. */
 export function describeJob(j: Job, full = true): { head: string; sub: string; lines: PreviewLine[] } {
@@ -462,7 +471,7 @@ export function describeJob(j: Job, full = true): { head: string; sub: string; l
   if (full) {
     const by = (g: string) => PROCESS_GROUPS.find((x) => x.group === g)!.items.filter((i) => j.processes.some((p) => p.key === i.key)).map((i) => lc(i.label));
     const parts = PROCESS_GROUPS.map((g) => ({ g: g.group, items: by(g.group) })).filter((x) => x.items.length);
-    lines.push(parts.length ? { text: `Ran ${joinList(parts.map((x) => `${x.g.toLowerCase()} (${joinList(x.items)})`))}.` } : { text: "The sales processes you ran (inbound, outbound...)", ghost: true });
+    lines.push(parts.length ? { text: `Ran ${joinList(parts.map((x) => `${x.g.toLowerCase()} (${x.items.join(", ")})`))}.` } : { text: "The sales processes you ran (inbound, outbound...)", ghost: true });
   }
   const get = (k: string) => j.metrics.find((m) => m.key === k && (m.amount !== null || m.range));
   const target = get("target");
@@ -471,12 +480,12 @@ export function describeJob(j: Job, full = true): { head: string; sub: string; l
     // Rounded in two steps so 87.5 does not become 87 through floating point.
     const pct = Math.round(Math.round((got.amount / target.amount) * 1000) / 10);
     lines.push({ text: `Achieved ${moneyShort(got)} against ${targetPhrase(target.period)} of ${moneyShort(target)} (${pct}%).` });
-  } else if (got) lines.push({ text: `Achieved ${moneyShort(got)}${periodWord(got.period) ? ` ${periodWord(got.period)}` : ""}${got.amount === null || got.basis === "estimate" ? " (approx.)" : ""}.` });
+  } else if (got) lines.push({ text: `Achieved ${moneyShort(got)}${got.period === "Per month" ? " a month" : got.period === "Per quarter" ? " a quarter" : got.period === "Per year" ? " a year" : ""}${got.amount === null || got.basis === "estimate" ? " (approx.)" : ""}.` });
   else if (target) lines.push({ text: `Carried ${targetPhrase(target.period)} of ${moneyShort(target)}.` });
   else if (!j.metrics.some((m) => m.key !== "target" && m.key !== "achieved" && (m.amount !== null || !!m.range) && m.label)) lines.push({ text: j.noTarget ? "Your volume numbers (calls, leads, deals)" : "Your revenue numbers: target and what you achieved", ghost: true });
   for (const m of j.metrics) {
     if ((m.key === "target" || m.key === "achieved") || (m.amount === null && !m.range) || !m.label) continue;
-    lines.push({ text: `${m.label}: ${formatMetric(m)}.` });
+    lines.push({ text: `${m.label}: ${metricPhrase(m)}.` });
   }
   if (isLeader(j)) {
     const t = j.team;
