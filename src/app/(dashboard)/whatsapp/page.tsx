@@ -79,7 +79,7 @@ export default async function WhatsAppPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1300px] px-5 py-8">
+    <div className="mx-auto max-w-[1500px] px-5 py-8">
       <div className="mb-5">
         <h1 className="ros-page-title">WhatsApp</h1>
         <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">

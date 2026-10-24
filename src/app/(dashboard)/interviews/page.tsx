@@ -121,7 +121,7 @@ export default async function InterviewsPage() {
   ];
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 py-8">
+    <div className="max-w-[1500px] mx-auto px-5 py-8">
       <div className="flex items-baseline justify-between mb-5">
         <div>
           <h1 className="ros-page-title">Interviews</h1>

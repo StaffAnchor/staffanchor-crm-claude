@@ -32,7 +32,7 @@ export default async function HiringPage({ searchParams }: { searchParams: Promi
 
   const board = await loadBoard(supabase, picked);
   return (
-    <div className="mx-auto max-w-[1400px] px-5 py-6">
+    <div className="mx-auto max-w-[1500px] px-5 py-6">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h1 className="ros-page-title">Hiring board</h1>

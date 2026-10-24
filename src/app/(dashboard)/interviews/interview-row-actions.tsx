@@ -157,7 +157,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setLoggingOutcome(false);
             setSendingLink(false);
           }}
-          className="text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors duration-200 ease-ros"
+          className="rounded-full bg-teal-600 px-3 py-1 text-xs font-medium text-white hover:bg-teal-700 transition-colors duration-200 ease-ros"
         >
           {row.confirmed_interview_at ? "Reschedule" : "Confirm time"}
         </button>
@@ -167,7 +167,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setScheduling(false);
             setLoggingOutcome(false);
           }}
-          className="text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors duration-200 ease-ros"
+          className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200 ease-ros"
         >
           Let candidate pick
         </button>
@@ -177,7 +177,7 @@ export default function InterviewRowActions({ row }: { row: InterviewRow }) {
             setScheduling(false);
             setSendingLink(false);
           }}
-          className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros"
+          className="rounded-full px-2.5 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros"
         >
           Log outcome
         </button>

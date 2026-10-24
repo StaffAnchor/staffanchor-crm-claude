@@ -578,7 +578,7 @@ export default function InboxView({
   }, [filterCounts]);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 py-8">
+    <div className="max-w-[1500px] mx-auto px-5 py-8">
       {performanceCard}
       <div className="flex items-center justify-between mb-5">
         <div>
