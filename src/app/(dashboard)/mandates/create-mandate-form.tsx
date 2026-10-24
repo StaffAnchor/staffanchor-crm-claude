@@ -20,6 +20,7 @@ import {
   clientProfileOptions,
   type CurrencyValue,
 } from "@/lib/candidate-options";
+import { TagEditor } from "./[id]/must-haves-panel";
 import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
 import AlsoRoleTypes from "@/components/also-role-types";
@@ -100,6 +101,8 @@ export default function CreateMandateForm({
     jd_responsibilities: "",
     jd_candidate_profile: "",
     jd_compensation_benefits: "",
+    must_haves: [] as string[],
+    good_to_haves: [] as string[],
     // Gold Standard Mandate Intake -- recruiter-only briefing fields, never
     // sent to the public jobs.staffanchor.com listing query.
     hiring_reason: "",
@@ -317,9 +320,11 @@ export default function CreateMandateForm({
         mandatory_working_days: form.weekOff.week_off_type === "rotational" ? form.weekOff.mandatory_working_days : [],
         b2c_customer_types: isB2C ? form.b2c_customer_types : [],
         client_profile: isB2B ? form.client_profile : [],
-        // New mandates always start as drafts -- must-haves/good-to-haves
-        // are captured after creation, and the mandatory-criteria gate
-        // requires them before a mandate can flip to 'open' (live).
+        // New mandates start as drafts. Must-haves and good-to-haves are
+        // captured right here in the form, and the mandatory-criteria gate
+        // still requires them before a mandate can flip to 'open' (live).
+        must_haves: form.must_haves,
+        good_to_haves: form.good_to_haves,
         status: "draft",
       })
       .select("id")
@@ -382,6 +387,8 @@ export default function CreateMandateForm({
       jd_responsibilities: "",
       jd_candidate_profile: "",
       jd_compensation_benefits: "",
+      must_haves: [],
+      good_to_haves: [],
       hiring_reason: "",
       team_handling: "",
       team_size_band: "",
@@ -746,6 +753,15 @@ export default function CreateMandateForm({
             {jdRefineError && <p className="text-xs text-red-600 mt-1.5">{jdRefineError}</p>}
           </div>
         )}
+
+        <div className="mt-4 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Must-haves and good-to-haves</p>
+          <p className="mb-3 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Add them now, so the role is complete from the start. A role cannot be published without both, and matching scores people against them.
+          </p>
+          <TagEditor label="Must have" items={form.must_haves} onChange={(items) => setForm((f) => ({ ...f, must_haves: items }))} />
+          <TagEditor label="Good to have" items={form.good_to_haves} onChange={(items) => setForm((f) => ({ ...f, good_to_haves: items }))} />
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">

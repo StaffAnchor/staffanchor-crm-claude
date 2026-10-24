@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ListChecks, Check, Pencil, X, Plus, ChevronDown, Sparkles, Loader2 } from "lucide-react";
 
-function TagEditor({
+export function TagEditor({
   label,
   items,
   onChange,
@@ -33,7 +33,7 @@ function TagEditor({
             className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[12px] px-2.5 py-1"
           >
             {item}
-            <button onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-600">
+            <button type="button" onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-600">
               <X className="w-3 h-3" />
             </button>
           </span>
@@ -54,6 +54,7 @@ function TagEditor({
           className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1 text-[12px]"
         />
         <button
+          type="button"
           onClick={add}
           className="rounded-lg border border-slate-300 px-2 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
         >
