@@ -7,8 +7,8 @@ type Role = { id: string; role_title: string | null; client_name: string | null 
 
 // The basic "tell this person about a role" action. Pick a role, see exactly what goes out, then send it on WhatsApp
 // (Meta's approved template, the client is never named) or open an email. Nothing is sent until the second click.
-export default function SendRole({ candidateId, candidateName, email, roles }: { candidateId: string; candidateName: string | null; email: string; roles: Role[] }) {
-  const [open, setOpen] = useState(false);
+export default function SendRole({ candidateId, candidateName, email, roles, channel, inline = false }: { candidateId: string; candidateName: string | null; email: string; roles: Role[]; channel?: "whatsapp" | "email"; inline?: boolean }) {
+  const [open, setOpen] = useState(inline);
   const [mandateId, setMandateId] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<{ messages: string[]; note?: string; recipients: number; noPhone: number; optedOut: number; alreadySent: number } | null>(null);
@@ -61,11 +61,11 @@ export default function SendRole({ candidateId, candidateName, email, roles }: {
 
   return (
     <div className="w-full">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1.5 rounded-ros-md bg-teal-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700">
+      {!inline && <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1.5 rounded-ros-md bg-teal-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700">
         <Send className="h-3.5 w-3.5" /> Send a role
-      </button>
+      </button>}
       {open && (
-        <div className="mt-3 rounded-ros-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+        <div className={`${inline ? "" : "mt-3 "}rounded-ros-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40`}>
           <label className="block text-[12px] font-medium text-slate-600 dark:text-slate-300">Which role?</label>
           <select value={mandateId} onChange={(e) => { setMandateId(e.target.value); setPreview(null); setResult(null); setErr(null); }} className="mt-1 w-full max-w-md rounded-lg border border-slate-300 bg-white px-3 py-2 text-[13px] dark:border-slate-600 dark:bg-slate-900">
             <option value="">Choose an open role…</option>
@@ -77,10 +77,10 @@ export default function SendRole({ candidateId, candidateName, email, roles }: {
           </select>
           {mandateId && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={showPreview} disabled={busy} className="inline-flex items-center gap-1.5 rounded-ros-md border border-slate-300 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+              {channel !== "email" && <button type="button" onClick={showPreview} disabled={busy} className="inline-flex items-center gap-1.5 rounded-ros-md border border-slate-300 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                 <MessageCircle className="h-3.5 w-3.5" /> {busy && !preview ? "Preparing…" : "WhatsApp: see the message"}
-              </button>
-              {hasEmail ? (
+              </button>}
+              {channel === "whatsapp" ? null : hasEmail ? (
                 <a href={mailto} className="inline-flex items-center gap-1.5 rounded-ros-md border border-slate-300 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                   <Mail className="h-3.5 w-3.5" /> Email
                 </a>
