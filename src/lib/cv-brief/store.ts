@@ -1,15 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateTextWithFallback, GEMINI_QUALITY_MODELS } from "@/lib/ai-providers";
 import { extractResumeText } from "@/lib/resume-text";
-import { EDUCATION, cleanJob, emptyData, emptyJob, sanitize, type Basics, type CvData } from "./config";
+import { EDUCATION, emptyData, groupExperiences, sanitize, type Basics, type CvData, type ParsedRole } from "./config";
 
 export type BriefRow = {
   id: string; token: string; booking_id: string | null; candidate_id: string | null; track: string; name: string; email: string | null; phone: string | null;
   data: unknown; status: "sent" | "started" | "submitted"; cv_path: string | null; cv_name: string | null; consent_at: string | null; consent_version: string | null;
   submit_count: number; created_at: string; updated_at: string; started_at: string | null; submitted_at: string | null;
+  photo_path: string | null; opened_at: string | null; last_opened_at: string | null; open_count: number; reminder_count: number; last_reminded_at: string | null; last_reminded_to: string | null; received_email_at: string | null;
 };
 
-export const COLUMNS = "id, token, booking_id, candidate_id, track, name, email, phone, data, status, cv_path, cv_name, consent_at, consent_version, submit_count, created_at, updated_at, started_at, submitted_at";
+export const COLUMNS = "id, token, booking_id, candidate_id, track, name, email, phone, data, status, cv_path, cv_name, consent_at, consent_version, submit_count, created_at, updated_at, started_at, submitted_at, photo_path, opened_at, last_opened_at, open_count, reminder_count, last_reminded_at, last_reminded_to, received_email_at";
 
 export const validToken = (t: unknown): t is string => typeof t === "string" && /^[a-f0-9]{64}$/.test(t);
 
@@ -81,10 +82,12 @@ function parseJson(raw: string): Record<string, unknown> | null {
 }
 
 const PROMPT = (cv: string) => `You read a CV and list only what it plainly says. Do not infer, guess or add anything.
-Return JSON: {"jobs":[{"employer":"","title":"","city":"","start":"YYYY-MM or empty","end":"YYYY-MM or empty","current":false}],"education":{"level":"","detail":""},"certifications":""}
-- Jobs newest first, at most 8. Use empty strings for anything the CV does not state. If only a year is given, use YYYY-01 for start and YYYY-12 for end.
-- "current" is true only if the CV says present or current for that job.
-- education.level must be exactly one of: ${EDUCATION.join(" | ")} or empty. detail is the degree and institution as written.
+Return JSON: {"roles":[{"employer":"","title":"","city":"","start":"YYYY-MM or empty","end":"YYYY-MM or empty","current":false}],"educations":[{"degree":"","institution":"","year":""}],"educationLevel":"","certifications":""}
+- roles: every role the CV lists, newest first, at most 14. If someone held several roles at one employer (for example a promotion), list each role as its own entry and repeat the same employer name exactly. Do not merge or drop any.
+- Use empty strings for anything the CV does not state. If only a year is given, use YYYY-01 for start and YYYY-12 for end.
+- "current" is true only if the CV says present or current for that role.
+- educations: each degree or qualification, highest first, at most 4. year is the year of completion if stated.
+- educationLevel must be exactly one of: ${EDUCATION.join(" | ")} or empty, for the highest qualification.
 - certifications is a short comma-separated list as written, or empty.
 
 CV:
@@ -109,13 +112,24 @@ export async function readCvIntoBrief(db: SupabaseClient, brief: BriefRow, cvPat
 
   const data = sanitize(brief.data);
   let added = 0;
-  if (data.jobs.length === 0 && Array.isArray(parsed.jobs)) {
-    data.jobs = parsed.jobs.slice(0, 8).map((j) => ({ ...cleanJob({ ...emptyJob(), ...(j as object), fromCv: true }), fromCv: true })).filter((j) => j.employer || j.title);
+  if (data.jobs.length === 0 && Array.isArray(parsed.roles)) {
+    const str = (v: unknown, n: number) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+    const roles: ParsedRole[] = parsed.roles.slice(0, 14).map((r) => {
+      const x = (r ?? {}) as Record<string, unknown>;
+      return { employer: str(x.employer, 120), title: str(x.title, 120), city: str(x.city, 80), start: str(x.start, 7), end: str(x.end, 7), current: x.current === true };
+    }).filter((r) => r.employer || r.title);
+    // Roles at one company that follow each other become one job; a rejoin after another company stays separate.
+    data.jobs = groupExperiences(roles).slice(0, 10);
     added = data.jobs.length;
   }
-  const edu = (parsed.education ?? {}) as { level?: unknown; detail?: unknown };
-  if (!data.basics.education && typeof edu.level === "string" && EDUCATION.includes(edu.level)) data.basics.education = edu.level;
-  if (!data.basics.educationDetail && typeof edu.detail === "string") data.basics.educationDetail = edu.detail.slice(0, 300);
+  if (data.basics.educations.length === 0 && Array.isArray(parsed.educations)) {
+    data.basics.educations = parsed.educations.slice(0, 4).map((e) => {
+      const x = (e ?? {}) as Record<string, unknown>;
+      return { degree: String(x.degree ?? "").slice(0, 160), institution: String(x.institution ?? "").slice(0, 160), year: String(x.year ?? "").slice(0, 12) };
+    }).filter((e) => e.degree || e.institution);
+    if (!data.basics.educationDetail && data.basics.educations[0]) data.basics.educationDetail = [data.basics.educations[0].degree, data.basics.educations[0].institution].filter(Boolean).join(", ");
+  }
+  if (!data.basics.education && typeof parsed.educationLevel === "string" && EDUCATION.includes(parsed.educationLevel)) data.basics.education = parsed.educationLevel;
   if (!data.extras.certifications && typeof parsed.certifications === "string") data.extras.certifications = parsed.certifications.slice(0, 600);
   return { ok: true, jobs: added, data: sanitize(data) };
 }

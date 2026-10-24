@@ -7,6 +7,7 @@ import ProposalHelper from "./proposal-helper";
 import InvoiceControls, { type InvoiceInfo } from "../invoice-controls";
 import NewSessionForm from "./new-session-form";
 import NewCvForm from "./new-cv-form";
+import { briefState } from "@/lib/cv-brief/state";
 import { signedInvoiceUrl } from "@/lib/service-invoices";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,11 @@ function Card({ title, children, sub }: { title: string; sub?: string; children:
   );
 }
 
+// Called only after the page has started rendering data, so the clock read stays out of the render body.
+function nowMs() {
+  return Date.now();
+}
+
 export default async function ProSessionsAdmin({ searchParams }: { searchParams: Promise<{ gcal?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
@@ -68,10 +74,11 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
   const { data: reportRows } = db ? await db.from("session_reports").select("id, booking_id, candidate_name, track, status, updated_at, sent_at").order("updated_at", { ascending: false }).limit(12) : { data: [] };
   const reports = (reportRows ?? []) as { id: string; booking_id: string | null; candidate_name: string; track: string; status: string; updated_at: string; sent_at: string | null }[];
   const reportOf = new Map(reports.filter((r) => r.booking_id).map((r) => [r.booking_id as string, r]));
-  const { data: cvRows } = db ? await db.from("cv_briefs").select("id, booking_id, name, status, updated_at, submitted_at").order("updated_at", { ascending: false }).limit(12) : { data: [] };
-  const cvForms = (cvRows ?? []) as { id: string; booking_id: string | null; name: string; status: "sent" | "started" | "submitted"; updated_at: string; submitted_at: string | null }[];
+  const { data: cvRows } = db ? await db.from("cv_briefs").select("id, booking_id, name, status, updated_at, submitted_at, opened_at, created_at, last_reminded_at, reminder_count").order("updated_at", { ascending: false }).limit(12) : { data: [] };
+  const cvForms = (cvRows ?? []) as { id: string; booking_id: string | null; name: string; status: "sent" | "started" | "submitted"; updated_at: string; submitted_at: string | null; opened_at: string | null; created_at: string; last_reminded_at: string | null; reminder_count: number }[];
   const cvOf = new Map(cvForms.filter((r) => r.booking_id).map((r) => [r.booking_id as string, r]));
-  const CV_STATUS = { sent: "link made", started: "in progress", submitted: "submitted" } as const;
+  const cvNow = nowMs();
+  const cvState = (r: (typeof cvForms)[number]) => briefState(r, cvNow);
   const paid = rows.filter((b) => b.status === "paid");
   const linked = !!process.env.PRO_INTERNAL_SECRET;
   const gc = googleConfigured();
@@ -127,7 +134,11 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
             {cvForms.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <Link href={`/analytics/edge/cv/${r.id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">{r.name}</Link>
-                <span className={`text-xs ${r.status === "submitted" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>{CV_STATUS[r.status]} · updated {new Date(r.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                <span className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className={`rounded-full px-2 py-0.5 font-medium ${cvState(r).cls}`}>{cvState(r).label}</span>
+                  {cvState(r).nudge && <span className="font-medium text-red-700 dark:text-red-300">Needs a nudge</span>}
+                  <span>updated {new Date(r.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                </span>
               </li>
             ))}
           </ul>
@@ -187,7 +198,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
                       {b.calendar_error && <div className="text-xs text-amber-700">{b.calendar_error}</div>}
                       {b.status === "paid" && <div className="mt-1.5"><InvoiceControls kind="edge" refId={b.id} invoice={invoices[b.id] ?? null} /></div>}
                       {b.status === "paid" && <div className="mt-1.5"><Link href={`/analytics/edge/session/start?booking=${b.id}`} className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400">{reportOf.get(b.id) ? "Open session report →" : "Start session report →"}</Link></div>}
-                      {b.status === "paid" && <div className="mt-1"><Link href={`/analytics/edge/cv/start?booking=${b.id}`} className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400">{cvOf.get(b.id) ? `CV form (${CV_STATUS[cvOf.get(b.id)!.status]}) →` : "CV form →"}</Link></div>}
+                      {b.status === "paid" && <div className="mt-1"><Link href={`/analytics/edge/cv/start?booking=${b.id}`} className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400">{cvOf.get(b.id) ? `CV form (${cvState(cvOf.get(b.id)!).label.toLowerCase()}) →` : "CV form →"}</Link></div>}
                     </td>
                     <td className="py-2 text-xs text-slate-500">{b.source ?? "—"}</td>
                   </tr>

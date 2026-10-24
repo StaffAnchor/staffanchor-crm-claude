@@ -3,6 +3,7 @@ import { adminDb } from "@/lib/pro-sessions/core";
 import { requireInternal } from "@/lib/pro-sessions/internal-auth";
 import { CONSENT_VERSION, sanitize } from "@/lib/cv-brief/config";
 import { validToken } from "@/lib/cv-brief/store";
+import { notifySubmitted } from "@/lib/cv-brief/mail";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,12 @@ export async function POST(req: NextRequest) {
   if (!db) return NextResponse.json({ ok: false }, { status: 503 });
   const b = (await req.json().catch(() => ({}))) as { token?: string; data?: unknown; consent?: boolean; submit?: boolean };
   if (!validToken(b.token)) return NextResponse.json({ ok: false, error: "Link not found." }, { status: 404 });
-  const { data: row } = await db.from("cv_briefs").select("id, status, started_at, consent_at, submit_count").eq("token", b.token).maybeSingle();
+  const { data: row } = await db.from("cv_briefs").select("id, token, name, email, status, started_at, consent_at, submit_count, received_email_at").eq("token", b.token).maybeSingle();
   if (!row) return NextResponse.json({ ok: false, error: "Link not found." }, { status: 404 });
 
   const now = new Date().toISOString();
-  const patch: Record<string, unknown> = { data: sanitize(b.data), updated_at: now };
+  const clean = sanitize(b.data);
+  const patch: Record<string, unknown> = { data: clean, updated_at: now };
   if (!row.started_at) patch.started_at = now;
   if (b.consent === true && !row.consent_at) {
     patch.consent_at = now;
@@ -33,5 +35,6 @@ export async function POST(req: NextRequest) {
   }
   const { error } = await db.from("cv_briefs").update(patch).eq("id", row.id);
   if (error) return NextResponse.json({ ok: false, error: "Couldn't save." }, { status: 500 });
+  if (b.submit === true) await notifySubmitted(db, row, clean.basics.email, (row.submit_count ?? 0) + 1);
   return NextResponse.json({ ok: true, savedAt: now });
 }

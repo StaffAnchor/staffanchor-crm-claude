@@ -12,9 +12,15 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
   const db = adminDb();
   if (!db) return NextResponse.json({ ok: false }, { status: 503 });
-  const { token } = (await req.json().catch(() => ({}))) as { token?: string };
+  const { token, view } = (await req.json().catch(() => ({}))) as { token?: string; view?: boolean };
   if (!validToken(token)) return NextResponse.json({ ok: false, error: "Link not found." }, { status: 404 });
-  const { data: b } = await db.from("cv_briefs").select("name, status, data, cv_name, consent_at, submitted_at, updated_at").eq("token", token).maybeSingle();
+  const { data: b } = await db.from("cv_briefs").select("id, name, status, data, cv_name, photo_path, consent_at, submitted_at, updated_at, opened_at, open_count").eq("token", token).maybeSingle();
   if (!b) return NextResponse.json({ ok: false, error: "Link not found." }, { status: 404 });
-  return NextResponse.json({ ok: true, name: b.name, status: b.status, data: sanitize(b.data), cvName: b.cv_name, consent: !!b.consent_at, submittedAt: b.submitted_at, updatedAt: b.updated_at });
+  // Only the page itself counts as an open (the upload check also calls this).
+  if (view === true) {
+    const now = new Date().toISOString();
+    await db.from("cv_briefs").update({ opened_at: b.opened_at ?? now, last_opened_at: now, open_count: (b.open_count ?? 0) + 1 }).eq("id", b.id);
+  }
+  const photoUrl = b.photo_path ? (await db.storage.from("resume-orders").createSignedUrl(b.photo_path as string, 3600)).data?.signedUrl ?? null : null;
+  return NextResponse.json({ ok: true, photoUrl, name: b.name, status: b.status, data: sanitize(b.data), cvName: b.cv_name, consent: !!b.consent_at, submittedAt: b.submitted_at, updatedAt: b.updated_at });
 }
