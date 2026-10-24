@@ -41,6 +41,7 @@ export default async function InboxPage() {
   type MorningBriefingData = {
     interviews_today: number;
     overdue_followups: number;
+    profiles_to_complete?: number;
     hot_profiles_overnight: number;
     clients_waiting: number;
     predicted_billing_lakhs: number;
@@ -88,6 +89,7 @@ export default async function InboxPage() {
               firstName={firstName}
               interviewsToday={Number(briefing.interviews_today ?? 0)}
               overdueFollowups={Number(briefing.overdue_followups ?? 0)}
+              profilesToComplete={Number(briefing.profiles_to_complete ?? 0)}
               hotProfilesOvernight={Number(briefing.hot_profiles_overnight ?? 0)}
               clientsWaiting={Number(briefing.clients_waiting ?? 0)}
               predictedBillingLakhs={Number(briefing.predicted_billing_lakhs ?? 0)}

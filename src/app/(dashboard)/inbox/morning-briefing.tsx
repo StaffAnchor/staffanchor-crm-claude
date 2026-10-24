@@ -20,6 +20,7 @@ export default function MorningBriefing({
   firstName,
   interviewsToday,
   overdueFollowups,
+  profilesToComplete = 0,
   hotProfilesOvernight,
   clientsWaiting,
   predictedBillingLakhs,
@@ -30,6 +31,7 @@ export default function MorningBriefing({
   firstName: string;
   interviewsToday: number;
   overdueFollowups: number;
+  profilesToComplete?: number;
   hotProfilesOvernight: number;
   clientsWaiting: number;
   predictedBillingLakhs: number;
@@ -97,6 +99,12 @@ export default function MorningBriefing({
             ₹{predictedBillingLakhs.toLocaleString("en-IN")}L
           </span>
         </span>
+        {profilesToComplete > 0 && (
+          <Link href="/candidates/outreach" className="flex items-center gap-1.5 hover:text-teal-700 dark:hover:text-teal-400 transition-colors">
+            <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{profilesToComplete.toLocaleString("en-IN")}</span> profiles are missing details. Ask them on WhatsApp
+          </Link>
+        )}
         {topMandate && (
           <span className="flex items-center gap-1.5">
             <Target className="w-3.5 h-3.5 text-teal-600" />
