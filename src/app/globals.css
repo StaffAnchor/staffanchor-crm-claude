@@ -7,7 +7,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
+  --background: #f4f6f9;
   --foreground: #0f172a;
 
   /* --- ROS design tokens (Phase 0) ---
@@ -139,6 +139,27 @@
    reaches "all pages" rather than just the handful of files touched
    directly in each page pass. */
 @theme {
+  /* Brand teal, retuned: a little deeper and richer than Tailwind's default so buttons, active tabs and
+     links read as one confident colour. Every existing teal-* class picks this up with no per-page edits. */
+  --color-teal-50: #effaf8;
+  --color-teal-100: #d3f2ed;
+  --color-teal-200: #a8e4db;
+  --color-teal-300: #6fcfc3;
+  --color-teal-400: #35b5a8;
+  --color-teal-500: #14998d;
+  --color-teal-600: #0b7f75;
+  --color-teal-700: #0b6760;
+  --color-teal-800: #0e514c;
+  --color-teal-900: #0f423e;
+
+  /* Slate, with the pale end nudged for contrast: slate-400 is the caption and placeholder grey, and the
+     default was too faint to read comfortably on white. */
+  --color-slate-50: #f6f8fb;
+  --color-slate-100: #eef2f7;
+  --color-slate-200: #e1e7ef;
+  --color-slate-300: #bcc6d4;
+  --color-slate-400: #8191a7;
+
   --radius-md: 0.5rem;
   --radius-lg: 0.875rem;
   --radius-xl: 1.25rem;
@@ -201,6 +222,42 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
+/* Base-layer polish: sits below Tailwind utilities, so any page that sets its own style still wins. */
+@layer base {
+  body {
+    letter-spacing: -0.006em;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+  }
+  /* Numbers line up in columns: pay, counts, dates. */
+  td, th, .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  /* One keyboard-focus ring for everything, in the brand colour. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-teal-500);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-teal-100);
+    color: var(--color-teal-900);
+  }
+  .dark ::selection {
+    background: var(--color-teal-800);
+    color: var(--color-teal-50);
+  }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  /* Quiet, thin scrollbars so long tables and panels do not look heavy. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-slate-300) transparent;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -234,7 +291,7 @@ body {
    ui/ primitives so Tab-key navigation is always visibly trackable
    (mouse users never see it, thanks to :focus-visible). */
 .ros-focusable:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--color-teal-500);
   outline-offset: 2px;
 }
 
@@ -256,8 +313,8 @@ body {
    softly-lit backdrop rather than a flat fill. */
 .ros-canvas {
   background:
-    radial-gradient(1200px 600px at 15% -10%, rgb(20 184 166 / 0.05), transparent 60%),
-    radial-gradient(1000px 500px at 100% 0%, rgb(59 130 246 / 0.04), transparent 55%),
+    radial-gradient(1200px 600px at 15% -10%, rgb(11 127 117 / 0.06), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgb(79 70 229 / 0.04), transparent 55%),
     var(--background);
 }
 
