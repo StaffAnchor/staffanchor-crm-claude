@@ -19,6 +19,8 @@ import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
 import DeleteMandateButton from "./delete-mandate-button";
 import HeaderMenu from "./header-menu";
+import PortalPreviewButton from "@/components/portal-preview-button";
+import ClientPortalAccessPanel from "../../clients/[id]/client-portal-access-panel";
 import ScorePipelineButton from "./score-pipeline-button";
 import PublishMandateButton from "./publish-mandate-button";
 import ArchiveMandateButton from "./archive-mandate-button";
@@ -199,6 +201,13 @@ export default async function MandateDetailPage({
   // action's contact picker opens instantly with the list already in hand,
   // same reasoning as fetching allCandidates/allStaffProfiles above.
   const { data: clientContacts } = await q.contacts;
+  // Who at the client has portal access (and pending invites), so access can be given from the role as well.
+  const [{ data: portalInvites }, { data: portalUsers }] = mandate.client_id
+    ? await Promise.all([
+        supabase.from("client_invites").select("id, email, created_at, consumed_at").eq("client_id", mandate.client_id).order("created_at", { ascending: false }),
+        supabase.from("client_users").select("id, email, full_name, created_at").eq("client_id", mandate.client_id),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   // Client-level resource library (website, YouTube, profile PDF, etc.) --
   // shared across every mandate for this client, so it's fetched off
@@ -715,9 +724,7 @@ export default async function MandateDetailPage({
                       {mandate.client_name} signs in at jobs.staffanchor.com/client-portal to see this role and the candidates you share. The one-off shortlist link is further down.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <a href="https://jobs.staffanchor.com/client-portal" target="_blank" rel="noopener noreferrer" className="rounded-ros-md bg-teal-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700">
-                        Open the client portal
-                      </a>
+                      {mandate.client_id && <PortalPreviewButton clientId={mandate.client_id} />}
                       {mandate.client_id && (
                         <Link href={`/clients/${mandate.client_id}`} className="rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                           Manage portal access
@@ -725,6 +732,9 @@ export default async function MandateDetailPage({
                       )}
                     </div>
                   </div>
+                  {mandate.client_id && (
+                    <ClientPortalAccessPanel clientId={mandate.client_id} clientName={mandate.client_name} initialInvites={portalInvites ?? []} initialUsers={portalUsers ?? []} />
+                  )}
                   <QuickApplyFunnelPanel mandateId={id} />
                   <PriorityApplicantFunnelPanel mandateId={id} />
                   <ApplicationQuestionsPanel
