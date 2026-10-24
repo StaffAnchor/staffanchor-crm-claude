@@ -9,6 +9,7 @@ import {
   cityOptions,
   cityStateMap,
   ctcOptions,
+  fixedCtcOptions,
   level1OptionsForProfileType,
   secondarySpecializationGroups,
   primaryAsSecondaryLabel,
@@ -938,7 +939,7 @@ export default function EditProfileButton({
                     <label className={FIELD_LABEL}>Current fixed CTC</label>
                     <select value={form.currentFixedCtc} onChange={(e) => set("currentFixedCtc", e.target.value)} className={fieldCls(!form.currentFixedCtc)}>
                       <option value="">Select...</option>
-                      {ctcOptions.map((o) => (
+                      {fixedCtcOptions.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
@@ -956,7 +957,7 @@ export default function EditProfileButton({
                     <label className={FIELD_LABEL}>Expected fixed CTC</label>
                     <select value={form.expectedFixedCtc} onChange={(e) => set("expectedFixedCtc", e.target.value)} className={fieldCls(!form.expectedFixedCtc)}>
                       <option value="">Select...</option>
-                      {ctcOptions.map((o) => (
+                      {fixedCtcOptions.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>

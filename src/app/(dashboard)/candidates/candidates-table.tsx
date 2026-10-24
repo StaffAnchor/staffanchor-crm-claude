@@ -16,7 +16,8 @@ import {
   employmentStatusOptions,
   highestQualificationOptions,
   workModeOptions,
-  ctcOptions,
+  fixedCtcOptions,
+  ctcLabel,
   roleLevelOptions,
   noticePeriodOptions,
   relocationOptions,
@@ -230,6 +231,14 @@ function ScoreCell({ value }: { value: number | undefined }) {
       <span className="ml-1 text-xs text-slate-500 dark:text-slate-400 tabular-nums">{value}/5</span>
     </span>
   );
+}
+
+// Dropdown labels for a CTC cell: the whole-number options, plus the stored value itself when it is not one of them
+// (11.5, 4.75), so it reads "₹11.5 LPA" and not a bare number.
+function ctcLabels(current: number | null): Record<string, string> {
+  const labels = Object.fromEntries(fixedCtcOptions.map((o) => [String(o.value), `₹${o.label}`]));
+  if (current != null) labels[String(current)] = `₹${ctcLabel(current)}`;
+  return labels;
 }
 
 // One-click quick-edit for the 8 fields simple/safe enough for a single
@@ -595,8 +604,9 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (c, { updateField }) => (
       <InlineSelectCell
         value={c.current_fixed_ctc != null ? String(c.current_fixed_ctc) : null}
-        options={ctcOptions.map((o) => String(o.value))}
-        labels={Object.fromEntries(ctcOptions.map((o) => [String(o.value), `₹${o.label}`]))}
+        options={fixedCtcOptions.map((o) => String(o.value))}
+        labels={ctcLabels(c.current_fixed_ctc)}
+        disabledOption={c.current_fixed_ctc != null && !fixedCtcOptions.some((o) => o.value === c.current_fixed_ctc) ? { value: String(c.current_fixed_ctc), label: `₹${ctcLabel(c.current_fixed_ctc!)}` } : null}
         onSave={(v) => updateField(c.id, "current_fixed_ctc", Number(v))}
       />
     ),
@@ -863,8 +873,9 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (c, { updateField }) => (
       <InlineSelectCell
         value={c.expected_fixed_ctc != null ? String(c.expected_fixed_ctc) : null}
-        options={ctcOptions.map((o) => String(o.value))}
-        labels={Object.fromEntries(ctcOptions.map((o) => [String(o.value), `₹${o.label}`]))}
+        options={fixedCtcOptions.map((o) => String(o.value))}
+        labels={ctcLabels(c.expected_fixed_ctc)}
+        disabledOption={c.expected_fixed_ctc != null && !fixedCtcOptions.some((o) => o.value === c.expected_fixed_ctc) ? { value: String(c.expected_fixed_ctc), label: `₹${ctcLabel(c.expected_fixed_ctc!)}` } : null}
         onSave={(v) => updateField(c.id, "expected_fixed_ctc", Number(v))}
       />
     ),
