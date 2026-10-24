@@ -582,10 +582,7 @@ export default function InboxView({
       {performanceCard}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-ros-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-            <Flame className="w-6 h-6 text-amber-500" />
-            My Desk
-          </h1>
+          <h1 className="ros-page-title">My Desk</h1>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             {recruiterScopedItems.length === 0
               ? "You're all caught up."

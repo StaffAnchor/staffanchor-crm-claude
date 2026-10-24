@@ -10,6 +10,12 @@ import { CalendarClock, Clock, Sparkles, MessageSquareWarning, IndianRupee, Targ
 // cheap, already-indexed query (get_my_morning_briefing()) -- nothing
 // cached, nothing AI-generated, so it's always exactly current and never
 // costs a Gemini call.
+// "Good morning/afternoon/evening" by India time, so the page never says morning at 9pm.
+function greeting(): string {
+  const hour = (new Date().getUTCHours() + 5 + (new Date().getUTCMinutes() >= 30 ? 1 : 0)) % 24;
+  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+}
+
 export default function MorningBriefing({
   firstName,
   interviewsToday,
@@ -40,9 +46,10 @@ export default function MorningBriefing({
     },
     {
       icon: Clock,
-      value: overdueFollowups,
+      value: overdueFollowups.toLocaleString("en-IN"),
       label: overdueFollowups === 1 ? "follow-up overdue" : "follow-ups overdue",
-      tint: overdueFollowups > 0 ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400",
+      // A pile this size is a backlog to trim, not an emergency today, so it is amber rather than alarm red.
+      tint: overdueFollowups > 0 ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400",
     },
     {
       icon: Sparkles,
@@ -60,14 +67,14 @@ export default function MorningBriefing({
       icon: PhoneCall,
       value: leadsNeedingFollowup,
       label: leadsNeedingFollowup === 1 ? "prospect gone quiet" : "prospects gone quiet",
-      tint: leadsNeedingFollowup > 0 ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400",
+      tint: leadsNeedingFollowup > 0 ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400",
       href: "/client-acquisition/sales",
     },
   ];
 
   return (
     <div className="rounded-ros-xl border border-teal-200 dark:border-teal-900 bg-gradient-to-br from-teal-50 to-white dark:from-teal-950/30 dark:to-slate-900 p-6 mb-5 shadow-sm">
-      <p className="text-[16px] font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-4">Good morning, {firstName}.</p>
+      <p className="text-[16px] font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-4">{greeting()}, {firstName}.</p>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
         {tiles.map((t, i) => {
           const Icon = t.icon;
