@@ -23,7 +23,7 @@ const CAN = [
   "Prepare new clients, draft mandates, notes and pipeline additions",
 ];
 
-export default function Chat({ firstName, initialThreads }: { firstName: string; initialThreads: Thread[] }) {
+export default function Chat({ firstName, initialThreads, initialAsk }: { firstName: string; initialThreads: Thread[]; initialAsk?: string }) {
   const [threads, setThreads] = useState<Thread[]>(initialThreads);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Shown[]>([]);
@@ -113,6 +113,16 @@ export default function Chat({ firstName, initialThreads }: { firstName: string;
       void loadThreads();
     }
   }
+
+  // A request handed over from another page (for example the hiring board) is sent once, as if typed.
+  const asked = useRef(false);
+  useEffect(() => {
+    if (initialAsk && !asked.current) {
+      asked.current = true;
+      void send(initialAsk);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function archive(id: string) {
     await fetch(`/api/agent/threads/${id}`, { method: "DELETE" });

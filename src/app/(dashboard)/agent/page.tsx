@@ -6,7 +6,8 @@ import Chat, { type Thread } from "./chat";
 export const dynamic = "force-dynamic";
 
 // The CRM assistant. Admins only: it can look at everything and prepare messages and records, and an admin approves each one.
-export default async function AgentPage() {
+export default async function AgentPage({ searchParams }: { searchParams: Promise<{ ask?: string }> }) {
+  const sp = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,5 +21,5 @@ export default async function AgentPage() {
   const counts: Record<string, number> = {};
   for (const p of (pending ?? []) as { thread_id: string | null }[]) if (p.thread_id) counts[p.thread_id] = (counts[p.thread_id] ?? 0) + 1;
   const threads: Thread[] = ((data ?? []) as { id: string; title: string; updated_at: string }[]).map((t) => ({ ...t, pending: counts[t.id] ?? 0 }));
-  return <Chat firstName={(profile.full_name ?? "").split(/\s+/)[0] || "there"} initialThreads={threads} />;
+  return <Chat firstName={(profile.full_name ?? "").split(/\s+/)[0] || "there"} initialThreads={threads} initialAsk={(sp.ask ?? "").slice(0, 1500) || undefined} />;
 }
