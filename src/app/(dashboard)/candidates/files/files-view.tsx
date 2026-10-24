@@ -139,7 +139,7 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
                   <>
                     {" "}
                     · {f.kind === "duplicate_file" ? "already on" : "looks like"}{" "}
-                    <Link href={`/candidates/${f.match_candidate_id}`} className="text-teal-600 hover:underline">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${f.match_candidate_id}`} className="text-teal-600 hover:underline">
                       {f.match_name}
                     </Link>
                     {f.kind === "name_match" && (f.match_has_cv ? " (already has a CV)" : " (has no CV yet)")}

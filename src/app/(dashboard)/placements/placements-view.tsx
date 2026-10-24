@@ -334,7 +334,7 @@ export default function PlacementsView({
                     </button>
                   </td>
                   <td className="px-3 py-2.5">
-                    <Link href={`/candidates/${row.candidateId}`} className="font-medium text-teal-600 dark:text-teal-400 hover:underline">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${row.candidateId}`} className="font-medium text-teal-600 dark:text-teal-400 hover:underline">
                       {row.candidateName}
                     </Link>
                     {overdueForRow > 0 && (

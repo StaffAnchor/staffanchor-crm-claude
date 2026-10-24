@@ -301,7 +301,7 @@ function SourcedRow({
           </p>
         </div>
         <Link
-          href={`/candidates/${profile.promoted_candidate_id}?mandateId=${mandateId}`}
+          target="_blank" rel="noopener noreferrer" href={`/candidates/${profile.promoted_candidate_id}?mandateId=${mandateId}`}
           className="shrink-0 flex items-center gap-1 text-[12px] text-emerald-700 dark:text-emerald-400 font-medium"
         >
           <UserCheck className="w-3.5 h-3.5" /> Promoted →

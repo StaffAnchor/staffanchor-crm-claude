@@ -31,10 +31,10 @@ type Member = {
 // Same pattern as the main Candidates table's ResumeCell -- signed URLs are
 // batch-generated server-side (see page.tsx), so this is a pure render with
 // no per-row Storage API call.
-function ResumeCell({ resumeFileUrl, resumeSignedUrl }: { resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
+function ResumeCell({ candidateId, resumeFileUrl, resumeSignedUrl }: { candidateId: string; resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
   if (!resumeFileUrl) return <span className="text-xs text-slate-300">—</span>;
   if (!resumeSignedUrl) return <span className="text-xs text-red-500">Not found</span>;
-  return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
+  return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" candidateId={candidateId} />;
 }
 
 function uniqueSorted(values: (string | null | undefined)[]) {
@@ -182,7 +182,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
             {filtered.map((m) => (
               <tr key={m.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/70">
                 <td className="px-4 py-2.5 whitespace-nowrap">
-                  <Link href={`/candidates/${m.id}?groupId=${groupId}`} className="font-medium text-slate-800 dark:text-slate-100 hover:text-teal-600">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${m.id}?groupId=${groupId}`} className="font-medium text-slate-800 dark:text-slate-100 hover:text-teal-600">
                     {m.full_name || "Unnamed"}
                   </Link>
                   {m.candidate_number ? <span className="text-slate-400 text-xs ml-1">#{m.candidate_number}</span> : null}
@@ -201,7 +201,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
                 <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{m.open_to_relocation ?? "—"}</td>
                 <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">{m.status ?? "—"}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
-                  <ResumeCell resumeFileUrl={m.resume_file_url} resumeSignedUrl={m.resume_signed_url} />
+                  <ResumeCell candidateId={m.id} resumeFileUrl={m.resume_file_url} resumeSignedUrl={m.resume_signed_url} />
                 </td>
                 <td className="px-3 py-2.5 text-slate-400 text-[12px] whitespace-nowrap">{new Date(m.addedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</td>
                 <td className="px-3 py-2.5">

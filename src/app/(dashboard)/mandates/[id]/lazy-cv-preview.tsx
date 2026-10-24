@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, FileText, Loader2, X } from "lucide-react";
 import ResumeViewerInline from "../../candidates/[id]/resume-viewer-inline";
+import CvActionsBar from "@/components/cv-actions-bar";
 
 // A CV preview for long lists: the link to the file is only fetched when the button is clicked (it is short-lived), so
 // a list of 100+ people does not sign 100+ files up front. Opens the same viewer as the candidate page.
@@ -52,6 +53,7 @@ export default function LazyCvPreview({ candidateId, name }: { candidateId: stri
                 </button>
               </div>
             </div>
+            <CvActionsBar candidateId={candidateId} />
             <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
               <ResumeViewerInline signedUrl={file.url} fileName={file.fileName} />
             </div>

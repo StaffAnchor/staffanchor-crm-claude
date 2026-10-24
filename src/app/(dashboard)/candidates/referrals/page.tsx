@@ -118,7 +118,7 @@ export default async function ReferralsPage() {
                   <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 align-top">
                     <td className="px-4 py-3">
                       {referrer ? (
-                        <Link href={`/candidates/${referrer.id}`} className="text-teal-600 hover:underline font-medium">
+                        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${referrer.id}`} className="text-teal-600 hover:underline font-medium">
                           {referrer.full_name || referrer.email}
                         </Link>
                       ) : (
@@ -128,7 +128,7 @@ export default async function ReferralsPage() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900 dark:text-slate-100">{r.referred_name}</p>
                       {referred ? (
-                        <Link href={`/candidates/${referred.id}`} className="text-xs text-teal-600 hover:underline">
+                        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${referred.id}`} className="text-xs text-teal-600 hover:underline">
                           View profile ({referred.status})
                         </Link>
                       ) : (

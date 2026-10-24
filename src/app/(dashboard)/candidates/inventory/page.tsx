@@ -262,7 +262,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                   return (
                     <tr key={x.candidate_id} className="border-b border-slate-50 last:border-0 dark:border-slate-800/60">
                       <td className="px-4 py-2">
-                        <Link href={`/candidates/${x.candidate_id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">
+                        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${x.candidate_id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">
                           {c?.full_name ?? "Unnamed"}
                         </Link>
                         {tier && <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[tier]}`}>{POOL_TIER_LABEL[tier]}</span>}

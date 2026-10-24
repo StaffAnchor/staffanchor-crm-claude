@@ -145,7 +145,7 @@ export default function RankedGroups({ mandateId, ranked, reached = {} }: { mand
                 <input type="checkbox" checked={picked.has(c.candidate_id)} onChange={() => toggle(c.candidate_id)} aria-label={`Select ${c.full_name ?? "candidate"}`} className="mt-1.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/candidates/${c.candidate_id}`} className="text-[14px] font-semibold text-teal-700 hover:underline dark:text-teal-400">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.candidate_id}`} className="text-[14px] font-semibold text-teal-700 hover:underline dark:text-teal-400">
                       {c.full_name ?? "Unnamed"}
                     </Link>
                     {c.pool_tier && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[c.pool_tier as PoolTier]}`}>Pool: {POOL_TIER_LABEL[c.pool_tier as PoolTier]}</span>}

@@ -264,7 +264,7 @@ export default async function DatabaseHealthPage({ searchParams }: { searchParam
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                   <span>
                     {m.candidates ? (
-                      <Link href={`/candidates/${m.candidates.id}`} className="font-medium text-slate-800 hover:underline dark:text-slate-200">
+                      <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidates.id}`} className="font-medium text-slate-800 hover:underline dark:text-slate-200">
                         {m.candidates.full_name ?? "Unnamed"}
                       </Link>
                     ) : (

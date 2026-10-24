@@ -461,7 +461,7 @@ export default function MandateCandidatesBoard({
                           <div className="flex items-center gap-1.5">
                             <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[row.candidate.id]}>
                               <Link
-                                href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
+                                target="_blank" rel="noopener noreferrer" href={`/candidates/${row.candidate.id}?mandateId=${mandateContext.mandateId}`}
                                 onClick={() => markViewed(row.id)}
                                 className={`text-[12.5px] hover:text-teal-600 truncate block ${row.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
                               >
@@ -625,6 +625,7 @@ export default function MandateCandidatesBoard({
                             signedUrl={resumeSignedUrlByCandidate[row.candidate.id]}
                             fileName={(row.candidate.resume_file_url ?? `${row.candidate.full_name}-resume`).replace(/^resumes\//, "")}
                             label="Preview resume"
+                            candidateId={row.candidate.id}
                             onOpen={() => markViewed(row.id)}
                           />
                         </div>

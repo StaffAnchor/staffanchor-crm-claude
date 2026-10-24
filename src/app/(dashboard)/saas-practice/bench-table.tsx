@@ -701,7 +701,7 @@ export default function BenchTable({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 hover:text-teal-600">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 hover:text-teal-600">
                       {r.full_name ?? "Unnamed"}
                     </Link>
                     {r.practice_fit && <Badge tone="accent">{FIT_LABEL[r.practice_fit]}</Badge>}
@@ -812,7 +812,7 @@ export default function BenchTable({
                     </button>
                   )}
                   <Link
-                    href={`/candidates/${r.candidate_id}`}
+                    target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`}
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> Profile

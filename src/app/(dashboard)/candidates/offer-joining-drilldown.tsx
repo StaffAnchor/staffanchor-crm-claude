@@ -93,7 +93,7 @@ export default function OfferJoiningDrilldown({
                     <tr key={`${r.candidateId}-${i}`}>
                       <td className="py-2 pr-2">
                         <Link
-                          href={`/candidates/${r.candidateId}`}
+                          target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidateId}`}
                           className="font-medium text-teal-600 dark:text-teal-400 hover:underline"
                         >
                           {r.candidateName}

@@ -117,7 +117,7 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[12px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{initials(r.full_name)}</div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
                     {r.full_name ?? "Unnamed"}
                   </Link>
                   <PoolControl candidateId={r.candidate_id} entry={r.pool} compact />

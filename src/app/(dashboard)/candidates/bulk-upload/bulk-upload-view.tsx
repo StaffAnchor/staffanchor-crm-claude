@@ -574,7 +574,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 </div>
                 {row.createState === "saved" && row.createdCandidateId && (
                   <Link
-                    href={`/candidates/${row.createdCandidateId}`}
+                    target="_blank" rel="noopener noreferrer" href={`/candidates/${row.createdCandidateId}`}
                     className="flex items-center gap-1 text-[12px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 shrink-0"
                   >
                     <Check className="w-3 h-3" /> {row.mandate_id && !row.linkError ? "Created & linked" : "Created"}
@@ -601,7 +601,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 <p className="flex items-center gap-1.5 text-[12px] text-amber-700 mb-2.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Looks like this email already exists --{" "}
-                  <Link href={`/candidates/${row.duplicate.candidateId}`} className="underline font-medium">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${row.duplicate.candidateId}`} className="underline font-medium">
                     {row.duplicate.fullName}
                   </Link>
                   . Unchecked by default so a duplicate isn&apos;t created; open their profile instead if you want to

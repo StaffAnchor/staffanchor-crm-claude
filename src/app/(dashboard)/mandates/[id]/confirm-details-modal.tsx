@@ -95,7 +95,7 @@ export default function ConfirmDetailsModal({
               </ul>
               {needsProfileEdit.length > 0 && (
                 <p className="mt-2">
-                  <Link href={`/candidates/${candidateId}`} className="font-medium underline">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${candidateId}`} className="font-medium underline">
                     Open the candidate page
                   </Link>{" "}
                   to add: {needsProfileEdit.join(", ")}.
