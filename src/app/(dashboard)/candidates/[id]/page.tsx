@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import AssessmentForm from "./assessment-form";
-import PracticeTagsPanel from "./practice-tags-panel";
 import MandateDiscussions from "./mandate-discussions";
 import CareerTimelinePanel from "./career-timeline-panel";
 import NotesPanel from "./notes-panel";
@@ -803,13 +802,7 @@ export default async function CandidateDetailPage({
               label={
                 <div className="space-y-5">
                   <div>
-                    <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Role, group and quality</h3>
-                    <div className="-mx-4 mt-1">
-                      <CvActionsBar candidateId={candidate.id} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Profile group</h3>
+                    <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Category</h3>
                     <ProfileGroupControl
                       candidateId={candidate.id}
                       group={candidate.profile_group ?? null}
@@ -821,8 +814,10 @@ export default async function CandidateDetailPage({
                     />
                   </div>
                   <div>
-                    <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Practice tags</h3>
-                    <PracticeTagsPanel candidateId={candidate.id} allPractices={(allPracticesRows ?? []) as never} initial={(candidatePracticeRows ?? []) as never} />
+                    <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Role and quality</h3>
+                    <div className="-mx-4 mt-1">
+                      <CvActionsBar candidateId={candidate.id} showCategory={false} />
+                    </div>
                   </div>
                 </div>
               }

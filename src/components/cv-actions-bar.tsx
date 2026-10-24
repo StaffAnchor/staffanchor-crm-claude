@@ -3,11 +3,23 @@
 import { useEffect, useState } from "react";
 import { POOL_TIERS, POOL_TIER_LABEL, POOL_TIER_PILL, reasonRequired, type PoolTier } from "@/lib/talent-pool";
 
-type State = { roles: { id: string; title: string; client: string; stage: string | null }[]; groups: { id: string; name: string; member: boolean }[]; tier: PoolTier | null };
+type State = {
+  roles: { id: string; title: string; client: string; stage: string | null }[];
+  category: string | null;
+  subcategory: string | null;
+  subcategories: Record<string, string[]>;
+  tier: PoolTier | null;
+};
+
+const CATEGORIES: { key: string; label: string }[] = [
+  { key: "b2b_sales", label: "B2B Sales" },
+  { key: "b2c_sales", label: "B2C Sales" },
+  { key: "non_sales", label: "Non-Sales" },
+];
 
 // Shown under a CV while it is open, so the decision can be made with the CV in front of you: put them on a role,
 // add them to a group, or mark how good they are. One line, three actions.
-export default function CvActionsBar({ candidateId }: { candidateId: string }) {
+export default function CvActionsBar({ candidateId, showCategory = true }: { candidateId: string; showCategory?: boolean }) {
   const [st, setSt] = useState<State | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,16 +49,17 @@ export default function CvActionsBar({ candidateId }: { candidateId: string }) {
     setMsg(j.already ? "Already on that role." : "Added to the role.");
   }
 
-  async function addGroup(groupId: string) {
-    if (!groupId) return;
+  // Category and sub-category are one classification: pick the category, then the sub-category under it.
+  async function setCategory(category: string, subcategory: string | null) {
+    if (!category) return;
     setBusy(true);
     setMsg(null);
-    const res = await fetch(`/api/candidates/${candidateId}/cv-actions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ groupId }) });
+    const res = await fetch("/api/candidates/profile-group", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId, group: category, subgroup: subcategory }) });
     const j = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) return setMsg(j.error ?? "Could not add.");
-    setSt((s) => (s ? { ...s, groups: s.groups.map((g) => (g.id === groupId ? { ...g, member: true } : g)) } : s));
-    setMsg("Added to the group.");
+    if (!res.ok) return setMsg(j.error ?? "Could not save.");
+    setSt((x) => (x ? { ...x, category, subcategory } : x));
+    setMsg(subcategory ? "Category saved." : "Category saved. Now pick the sub-category.");
   }
 
   async function setTier(tier: PoolTier, why: string) {
@@ -78,17 +91,34 @@ export default function CvActionsBar({ candidateId }: { candidateId: string }) {
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-1.5 text-[12px] text-slate-500">
-          Group
-          <select className={sel} value="" disabled={busy} onChange={(e) => void addGroup(e.target.value)}>
-            <option value="">Add to a group…</option>
-            {st.groups.map((g) => (
-              <option key={g.id} value={g.id} disabled={g.member}>
-                {g.name}{g.member ? " (in it)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+        {showCategory && (
+          <>
+            <label className="flex items-center gap-1.5 text-[12px] text-slate-500">
+              Category
+              <select className={sel} value={st.category && CATEGORIES.some((c) => c.key === st.category) ? st.category : ""} disabled={busy} onChange={(e) => void setCategory(e.target.value, e.target.value === st.category ? st.subcategory : null)}>
+                <option value="">{st.category === "unclear" ? "Needs a look…" : "Choose…"}</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {st.category && st.subcategories[st.category] && (
+              <label className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                Sub-category
+                <select className={sel} value={st.subcategory ?? ""} disabled={busy} onChange={(e) => void setCategory(st.category as string, e.target.value || null)}>
+                  <option value="">Choose…</option>
+                  {st.subcategories[st.category].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </>
+        )}
         <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
           Quality
           {POOL_TIERS.map((t) => (
