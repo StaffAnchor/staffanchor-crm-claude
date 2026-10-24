@@ -12,7 +12,6 @@ import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage
 import MandateRejectModal from "./mandate-reject-modal";
 import { ProfileRatingBadge, useProfileRatings } from "@/components/profile-rating";
 import ConfirmDetailsModal from "./confirm-details-modal";
-import { StageTimeline } from "@/components/ui/stage-timeline";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import ApplicationAnswersQuickView, { type ApplicationAnswer } from "./application-answers-quick-view";
 import ResumePreview from "../../candidates/[id]/resume-preview";
@@ -209,6 +208,7 @@ export default function MandateCandidatesTable({
   const router = useRouter();
   const supabase = createClient();
   const [rows, setRows] = useState(initialRows);
+  const [nowMs] = useState(() => Date.now());
   const [flagMap, setFlagMap] = useState<Record<string, ExistingCallFlag>>(flaggedCallByCandidate);
   // Pick up fresh data from the server IN PLACE. This view used to be torn down and rebuilt
   // whenever new rows arrived, which closed anything open on it (a CV preview, a window) a few
@@ -589,7 +589,7 @@ export default function MandateCandidatesTable({
             <th className="text-left px-3 py-2 font-medium">Fit</th>
             <th className="text-left px-3 py-2 font-medium">Pay · notice</th>
             <th className="text-left px-3 py-2 font-medium">Stage</th>
-            <th className="px-3 py-2 w-24"></th>
+            <th className="px-3 py-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -600,7 +600,7 @@ export default function MandateCandidatesTable({
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
                 <td className="px-3 py-3 align-top">
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link
                       target="_blank" rel="noopener noreferrer" href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`}
@@ -628,13 +628,8 @@ export default function MandateCandidatesTable({
                       <Zap className="h-2.5 w-2.5" /> Priority
                     </span>
                   )}
-                  {/* The old "Match NN" badge was removed: it came from a score that
-                      gave almost everyone 76 to 88 and contradicted the evidence-based
-                      verdict. Triage and AI Matches show the verdict with its doubts. */}
-                </div>
-                <div className="text-xs text-slate-400 truncate max-w-[260px]">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
                 {resumeSignedUrlByCandidate[l.candidate.id] && (
-                  <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+                  <span className="inline-flex" onClick={(e) => e.stopPropagation()}>
                     <ResumePreview
                       signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
                       fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
@@ -642,8 +637,13 @@ export default function MandateCandidatesTable({
                       candidateId={l.candidate.id}
                       onOpen={() => markViewed(l.id)}
                     />
-                  </div>
+                  </span>
                 )}
+                  {/* The old "Match NN" badge was removed: it came from a score that
+                      gave almost everyone 76 to 88 and contradicted the evidence-based
+                      verdict. Triage and AI Matches show the verdict with its doubts. */}
+                </div>
+                <div className="text-xs text-slate-400 truncate max-w-[260px]">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
               </td>
                 <td className="px-3 py-3 align-top">
                 <MandateAssessmentPopover
@@ -651,6 +651,11 @@ export default function MandateCandidatesTable({
                   onReassess={() => reassessCandidate(l.candidate.id)}
                   reassessing={reassessingIds.has(l.candidate.id)}
                 />
+                {l.match_assessment && (() => {
+                  const a = l.match_assessment;
+                  const reason = a.recommendation === "Strong Fit" ? a.positives[0] : a.red_flags[0] ?? a.missing[0];
+                  return reason ? <p className="mt-1 line-clamp-2 max-w-[230px] text-[11.5px] leading-4 text-slate-500 dark:text-slate-400">{reason}</p> : null;
+                })()}
               </td>
                 <td className="px-3 py-3 align-top text-[13px]"><div className="text-slate-700 dark:text-slate-300 tabular-nums">
                   {l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}
@@ -734,7 +739,15 @@ export default function MandateCandidatesTable({
                     {/* Pipeline-progress-at-a-glance -- see stage-timeline.tsx for the
                         honest caveat that only the current dot has a real date, since
                         we don't log a full per-transition history. */}
-                    <StageTimeline stage={l.stage} stageUpdatedAt={l.stage_updated_at} rejectedFromStage={l.rejected_from_stage} />
+                    {l.stage_updated_at && !["rejected", "pulled_back", "placed"].includes(l.stage) && (() => {
+                      const days = Math.max(0, Math.floor((nowMs - new Date(l.stage_updated_at).getTime()) / 86_400_000));
+                      const what = l.stage === "submitted" ? "Sent to client" : l.stage === "client_interview" ? "Interview requested" : "In this stage";
+                      return (
+                        <span className={`text-[11.5px] ${days >= 7 ? "font-medium text-amber-600" : "text-slate-400"}`}>
+                          {what} {days === 0 ? "today" : `${days}d ago`}
+                        </span>
+                      );
+                    })()}
                     {l.date_of_joining && (
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                         Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
@@ -755,7 +768,17 @@ export default function MandateCandidatesTable({
                   </div>
                 )}
               </td>
-                <td className="px-3 py-3 align-top text-right">
+                <td className="whitespace-nowrap px-3 py-3 align-top text-right">
+                  {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
+                    <button type="button" onClick={() => void shareWithClient(l)} className="mr-1 rounded-full border border-teal-200 px-2.5 py-1 text-[12px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/40">
+                      Send to client
+                    </button>
+                  )}
+                  {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
+                    <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
+                      Reject
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => toggleOpen(l.id)}

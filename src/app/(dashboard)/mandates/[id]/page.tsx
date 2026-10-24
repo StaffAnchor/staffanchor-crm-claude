@@ -290,9 +290,6 @@ export default async function MandateDetailPage({
   if (mandate.status === "open" && pipelineCount === 0 && daysOpenNum >= 3) {
     blockers.push({ label: "Needs sourcing", tone: "warning" });
   }
-  if (staleLinks && staleLinks.length > 0) {
-    blockers.push({ label: `${staleLinks.length} awaiting client feedback`, tone: "danger" });
-  }
   if (mandate.status === "open" && daysOpenNum >= 21 && submittedCount === 0) {
     blockers.push({ label: "Aging, no submissions", tone: "warning" });
   }
@@ -321,7 +318,7 @@ export default async function MandateDetailPage({
   let nextAction: NextActionItem | null = null;
   if (mandate.status === "open" && !mandate.is_archived) {
     if (assignedStaff.length === 0) nextAction = { text: "Nobody is working this mandate yet. Assign a recruiter.", href: "#staffing", cta: "Assign" };
-    else if (staleNames.length > 0) nextAction = { text: `${mandate.client_name} has not replied on ${staleNames.slice(0, 2).join(", ")}${staleNames.length > 2 ? ` and ${staleNames.length - 2} more` : ""}. Follow up.` };
+    else if (staleNames.length > 0) nextAction = { text: `${mandate.client_name} has not given feedback on ${staleNames.slice(0, 2).join(", ")}${staleNames.length > 2 ? ` and ${staleNames.length - 2} more` : ""}, shared ${STALE_DAYS}+ days ago. Follow up.` };
     else if (pipelineCount === 0) nextAction = { text: "No candidates yet. Review the best matches from the database and add the right ones.", href: "#best-matches", cta: "See matches" };
     else if (submittedCount === 0) nextAction = { text: `${pipelineCount} candidate${pipelineCount === 1 ? "" : "s"} in the pipeline, none shared with the client. Shortlist and submit.` };
   }
@@ -454,20 +451,6 @@ export default async function MandateDetailPage({
         </div>
       )}
 
-      {staleLinks && staleLinks.length > 0 && (
-        <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p className="text-[13px] text-amber-800">
-            <span className="font-medium">{mandate.client_name}</span> hasn&apos;t given feedback on{" "}
-            {staleLinks.length} candidate{staleLinks.length === 1 ? "" : "s"} shared {STALE_DAYS}+ days ago —
-            worth a follow-up:{" "}
-            {staleLinks
-              .map((l) => (l.candidates as unknown as { full_name: string } | null)?.full_name)
-              .filter(Boolean)
-              .join(", ")}
-          </p>
-        </div>
-      )}
 
       <Tabs
         className="mt-6"

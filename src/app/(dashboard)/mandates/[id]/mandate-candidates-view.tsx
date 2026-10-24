@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LayoutGrid, Table2 } from "lucide-react";
+import Link from "next/link";
+import { LayoutGrid, Sparkles, Table2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesBoard from "./mandate-candidates-board";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
@@ -52,6 +53,8 @@ export default function MandateCandidatesView({
   // full pipeline. Board already visually groups by stage as columns, but
   // this still lets it hide every other column when you only care about one.
   const [stageFilter, setStageFilter] = useState<string>(initialStage && initialStage !== "" ? initialStage : "all");
+
+  const newCount = useMemo(() => rows.filter((r) => !r.viewed_at && ["sourced", "screened"].includes(r.stage)).length, [rows]);
 
   const stageCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -177,6 +180,15 @@ export default function MandateCandidatesView({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+        {newCount > 0 && (
+          <Link
+            href={`/mandates/${mandateContext.mandateId}/triage`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-3 py-1 text-xs font-semibold text-white hover:bg-teal-700"
+            title="Go through the candidates nobody has opened yet, one at a time"
+          >
+            <Sparkles className="h-3 w-3" /> Triage {newCount} new
+          </Link>
+        )}
         <div className="inline-flex rounded-ros-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900 shrink-0">
           <button
             onClick={() => setView("board")}
