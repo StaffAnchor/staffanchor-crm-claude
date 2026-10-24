@@ -168,6 +168,16 @@ function stabilityTone(label: string) {
   return "bg-rose-50 text-rose-700";
 }
 
+// One line of "why", cut at two lines; a click shows the whole sentence.
+function FitReason({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button type="button" onClick={() => setOpen((v) => !v)} title={open ? "Show less" : "Show the full reason"} className={`mt-1 block max-w-[230px] text-left text-[11.5px] leading-4 text-slate-500 hover:text-slate-700 dark:text-slate-400 ${open ? "" : "line-clamp-2"}`}>
+      {text}
+    </button>
+  );
+}
+
 export default function MandateCandidatesTable({
   rows: initialRows,
   mandateContext,
@@ -654,12 +664,12 @@ export default function MandateCandidatesTable({
                 {l.match_assessment && (() => {
                   const a = l.match_assessment;
                   const reason = a.recommendation === "Strong Fit" ? a.positives[0] : a.red_flags[0] ?? a.missing[0];
-                  return reason ? <p className="mt-1 line-clamp-2 max-w-[230px] text-[11.5px] leading-4 text-slate-500 dark:text-slate-400">{reason}</p> : null;
+                  return reason ? <FitReason text={reason} /> : null;
                 })()}
               </td>
                 <td className="px-3 py-3 align-top text-[13px]"><div className="text-slate-700 dark:text-slate-300 tabular-nums">
-                  {l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}
-                  {l.candidate.notice_period ? <span className="text-slate-400"> · {l.candidate.notice_period}</span> : null}
+                  <span className="whitespace-nowrap">{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</span>
+                  {l.candidate.notice_period ? <span className="block whitespace-nowrap text-slate-400">{l.candidate.notice_period}</span> : null}
                 </div></td>
                 <td className="px-3 py-3 align-top">
                 {editingStageId === l.id ? (
@@ -769,7 +779,7 @@ export default function MandateCandidatesTable({
                 )}
               </td>
                 <td className="whitespace-nowrap px-3 py-3 align-top text-right">
-                  {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
+                  {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && l.match_assessment?.recommendation !== "Not a Fit" && (
                     <button type="button" onClick={() => void shareWithClient(l)} className="mr-1 rounded-full border border-teal-200 px-2.5 py-1 text-[12px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/40">
                       Send to client
                     </button>
