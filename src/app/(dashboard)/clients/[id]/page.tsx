@@ -11,6 +11,9 @@ import ClientFunnelPanel from "./client-funnel-panel";
 import { computeFunnel } from "../funnel-utils";
 import { Card } from "@/components/ui/card";
 import MandateRequestLinkPanel from "@/components/mandate-request-link-panel";
+import { Tabs } from "@/components/ui/tabs";
+import { Briefcase, Globe2, Users as UsersIcon, Receipt } from "lucide-react";
+import ClientPortalOverview, { type SharedCandidate } from "./client-portal-overview";
 
 export default async function ClientDetailPage({
   params,
@@ -63,6 +66,25 @@ export default async function ClientDetailPage({
       shortlistedByMandate[l.mandate_id] = (shortlistedByMandate[l.mandate_id] ?? 0) + 1;
     }
   });
+
+  // What the client sees in their portal: the people marked as shared (in_shortlist) on this client's roles.
+  const { data: sharedRows } = mandateIds.length
+    ? await supabase
+        .from("candidate_mandate_links")
+        .select("id, mandate_id, candidate_id, client_feedback, requested_interview_at, confirmed_interview_at, client_decision_at, candidates(full_name)")
+        .in("mandate_id", mandateIds)
+        .eq("in_shortlist", true)
+    : { data: [] };
+  const shared: SharedCandidate[] = ((sharedRows ?? []) as unknown as { id: string; mandate_id: string; candidate_id: string; client_feedback: string | null; requested_interview_at: string | null; confirmed_interview_at: string | null; client_decision_at: string | null; candidates: { full_name: string } | null }[]).map((r) => ({
+    linkId: r.id,
+    mandateId: r.mandate_id,
+    candidateId: r.candidate_id,
+    name: r.candidates?.full_name ?? "Unnamed",
+    feedback: r.client_feedback,
+    interviewRequested: !!r.requested_interview_at,
+    interviewConfirmed: !!r.confirmed_interview_at,
+    decidedAt: r.client_decision_at,
+  }));
 
   const funnelStats = computeFunnel((links ?? []).map((l) => l.stage));
 
@@ -118,62 +140,92 @@ export default async function ClientDetailPage({
     .order("label");
 
   return (
-    <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
-      <div className="col-span-2 space-y-6">
-        <div>
-          <Link href="/clients" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
-            ← All clients
+    <div className="max-w-[1180px] mx-auto px-5 py-8">
+      <Link href="/clients" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
+        ← All clients
+      </Link>
+      <Card className="mt-2">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-[26px] leading-8 font-semibold tracking-tight text-slate-900 dark:text-slate-100">{clientRow.name}</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {clientRow.industry ?? "Industry not set"} {clientRow.hq_city ? `· ${clientRow.hq_city}` : ""}
+              {(contacts ?? [])[0] ? ` · ${(contacts ?? [])[0].full_name}${(contacts ?? [])[0].designation ? `, ${(contacts ?? [])[0].designation}` : ""}` : ""}
+            </p>
+          </div>
+          <Link
+            href={`/mandates?newClientId=${encodeURIComponent(id)}&newClientName=${encodeURIComponent(clientRow.name)}#new-mandate`}
+            className="shrink-0 rounded-ros-md bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-semibold px-4 py-2 transition-colors"
+          >
+            + Create a role
           </Link>
-          <Card className="mt-2">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h1 className="text-ros-heading font-semibold tracking-tight text-slate-900 dark:text-slate-100">{clientRow.name}</h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {clientRow.industry ?? "Industry not set"} {clientRow.hq_city ? `· ${clientRow.hq_city}` : ""}
-                </p>
-              </div>
-              {/* Shortcut into the same New Mandate form on /mandates, with
-                  client name (and client_id, as long as it isn't retyped)
-                  prefilled -- so opening a mandate for a client you're
-                  already looking at doesn't mean retyping their name from
-                  scratch on a different page. */}
-              <Link
-                href={`/mandates?newClientId=${encodeURIComponent(id)}&newClientName=${encodeURIComponent(clientRow.name)}#new-mandate`}
-                className="shrink-0 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-medium px-3 py-1.5 transition-colors"
-              >
-                + Create a mandate
-              </Link>
-            </div>
-          </Card>
         </div>
+      </Card>
 
-        <ClientMandatesRollup rows={mandateRows} />
-
-        <ClientFunnelPanel stats={funnelStats} />
-      </div>
-
-      <div className="space-y-6">
-        <ClientInfoPanel
-          clientId={id}
-          initialIndustry={clientRow.industry}
-          initialHqCity={clientRow.hq_city}
-          initialWebsite={clientRow.website}
-          initialNotes={clientRow.notes}
-          initialOwnerId={clientRow.owner_id}
-          initialFeePercentage={clientRow.fee_percentage}
-          ownerOptions={ownerOptions}
-        />
-        <ClientGstPanel clientId={id} initial={(gstRegistrations ?? []) as GstRegistration[]} />
-        <ClientContactsPanel clientId={id} initialContacts={(contacts ?? []) as ClientContact[]} />
-        <ClientResourcesPanel clientId={id} initial={(resources ?? []) as ClientResource[]} />
-        <MandateRequestLinkPanel clientNamePrefill={clientRow.name} />
-        <ClientPortalAccessPanel
-          clientId={id}
-          clientName={clientRow.name}
-          initialInvites={invites ?? []}
-          initialUsers={users ?? []}
-        />
-      </div>
+      <Tabs
+        className="mt-5"
+        items={[
+          {
+            key: "roles",
+            label: "Roles",
+            icon: <Briefcase className="h-3.5 w-3.5" />,
+            badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{mandateRows.length}</span>,
+            content: (
+              <>
+                <ClientMandatesRollup rows={mandateRows} />
+                <ClientFunnelPanel stats={funnelStats} />
+              </>
+            ),
+          },
+          {
+            key: "portal",
+            label: "Client portal",
+            icon: <Globe2 className="h-3.5 w-3.5" />,
+            content: (
+              <>
+                <ClientPortalOverview
+                  clientName={clientRow.name}
+                  roles={(mandates ?? []).map((m) => ({ id: m.id, title: m.role_title, status: m.status, city: m.city }))}
+                  shared={shared}
+                />
+                <ClientPortalAccessPanel clientId={id} clientName={clientRow.name} initialInvites={invites ?? []} initialUsers={users ?? []} />
+                <MandateRequestLinkPanel clientNamePrefill={clientRow.name} />
+              </>
+            ),
+          },
+          {
+            key: "contacts",
+            label: "Contacts and files",
+            icon: <UsersIcon className="h-3.5 w-3.5" />,
+            content: (
+              <>
+                <ClientContactsPanel clientId={id} initialContacts={(contacts ?? []) as ClientContact[]} />
+                <ClientResourcesPanel clientId={id} initial={(resources ?? []) as ClientResource[]} />
+              </>
+            ),
+          },
+          {
+            key: "billing",
+            label: "Billing and terms",
+            icon: <Receipt className="h-3.5 w-3.5" />,
+            content: (
+              <>
+                <ClientInfoPanel
+                  clientId={id}
+                  initialIndustry={clientRow.industry}
+                  initialHqCity={clientRow.hq_city}
+                  initialWebsite={clientRow.website}
+                  initialNotes={clientRow.notes}
+                  initialOwnerId={clientRow.owner_id}
+                  initialFeePercentage={clientRow.fee_percentage}
+                  ownerOptions={ownerOptions}
+                />
+                <ClientGstPanel clientId={id} initial={(gstRegistrations ?? []) as GstRegistration[]} />
+              </>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }
