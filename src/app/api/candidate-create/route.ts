@@ -49,7 +49,14 @@ export async function POST(req: NextRequest) {
   if (!candidateFields || typeof candidateFields !== "object") {
     return NextResponse.json({ error: "candidate is required." }, { status: 400 });
   }
-  let email = typeof candidateFields.email === "string" ? candidateFields.email.trim() : "";
+  // Fixed pay can't be 0 (leave it empty to ask the candidate later).
+  for (const key of ["current_fixed_ctc", "expected_fixed_ctc"] as const) {
+    const v = candidateFields[key];
+    if (v !== null && v !== undefined && v !== "" && !(Number(v) > 0)) {
+      return NextResponse.json({ error: `${key === "current_fixed_ctc" ? "Current" : "Expected"} fixed CTC can't be 0.` }, { status: 400 });
+    }
+  }
+  let email =typeof candidateFields.email === "string" ? candidateFields.email.trim() : "";
   // A CV with a mobile number but no email can still become a profile: it is saved under a placeholder
   // address that is clearly marked as "no email" (.invalid), gets no login and no email, and shows
   // "Email" as something to collect later.

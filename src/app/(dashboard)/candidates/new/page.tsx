@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   cityOptions,
   cityStateMap,
-  ctcOptions,
+  fixedCtcOptions,
   experienceOptions,
   noticePeriodOptions,
   employmentStatusOptions,
@@ -624,7 +624,7 @@ export default function NewCandidatePage() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">Select...</option>
-                {ctcOptions.map((c) => (
+                {fixedCtcOptions.map((c) => (
                   <option key={c.value} value={c.value}>
                     {c.label}
                   </option>
@@ -659,7 +659,7 @@ export default function NewCandidatePage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:bg-slate-100 disabled:text-slate-400"
           >
             <option value="">Select...</option>
-            {ctcOptions.map((c) => (
+            {fixedCtcOptions.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
               </option>

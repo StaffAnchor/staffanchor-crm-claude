@@ -319,6 +319,12 @@ export const ctcOptions: { value: number; label: string }[] = [
   { value: 121, label: "120L+" },
 ];
 
+// Fixed pay (current, expected, offer) can't be 0, so those dropdowns leave it out. Variable pay keeps 0 for "none".
+export const fixedCtcOptions = ctcOptions.filter((o) => o.value > 0);
+
+/** A stored CTC as text, whether or not it is one of the whole-number options (11.5 reads "11.5 LPA"). */
+export const ctcLabel = (v: number): string => (v > 120 ? "120L+" : `${Number(v.toFixed(2))} LPA`);
+
 export const experienceOptions: { value: number; label: string }[] = [
   { value: 0, label: "Fresher" },
   ...Array.from({ length: 40 }, (_, i) => {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, Check, ChevronDown, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { ctcOptions, noticePeriodOptions, workModeOptions, relocationOptions } from "@/lib/candidate-options";
+import { fixedCtcOptions, noticePeriodOptions, workModeOptions, relocationOptions } from "@/lib/candidate-options";
 import { RATING_DIMENSIONS, type CallRating } from "@/lib/call-ratings";
 import { CallRatingTags, CallRatingHistory, type RatingRow } from "./call-rating-tags";
 
@@ -289,7 +289,7 @@ export default function CallCompanion({
                 className="rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent px-2.5 py-1.5 text-[13px] w-44"
               >
                 <option value="">Select</option>
-                {ctcOptions.map((o) => (
+                {fixedCtcOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -318,7 +318,7 @@ export default function CallCompanion({
                     className="rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent px-2.5 py-1.5 text-[13px] w-40"
                   >
                     <option value="">Offer CTC</option>
-                    {ctcOptions.map((o) => (
+                    {fixedCtcOptions.map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label}
                       </option>
