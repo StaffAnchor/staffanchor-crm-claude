@@ -1,6 +1,7 @@
 import { classifyText, parseMenuChoice, type ContactKind } from "./classify";
 import { askCompany, emptyState, startOnboarding, step, type Answers, type BotState, type Effect, type Inbound, type StepResult } from "./flow";
 import { isMenu, isStop } from "./parse";
+import { answersFromReply } from "./reply-answers";
 import { isQuestion } from "./faq";
 import { firstEmail, introducedName, saysNew } from "./identity";
 import * as T from "./texts";
@@ -189,8 +190,12 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
 
   const startJobseeker = (extraPrefill?: Answers) => {
     const c = identity.candidate;
-    const prefill = { ...(c ? candidatePrefill(c) : {}), ...(extraPrefill ?? {}) };
-    const started: StepResult = startOnboarding({ prefill, existingCandidateId: c?.id ?? null, hasResume: !!c?.resume_file_url, nowIso: now });
+    const known = { ...(c ? candidatePrefill(c) : {}), ...(extraPrefill ?? {}) };
+    // Someone we already know who answers our message ("30 days, 22 lpa") is not asked the same thing again.
+    const heard = c && (m.type === "text" || m.type === "button") ? answersFromReply(m.text, known) : {};
+    const absorbed = Object.keys(heard).length > 0;
+    const prefill = { ...known, ...heard };
+    const started: StepResult = startOnboarding({ prefill, existingCandidateId: c?.id ?? null, hasResume: !!c?.resume_file_url, nowIso: now, absorbed });
     started.state.lastMessageId = m.id;
     state = started.state;
     replies = started.replies;

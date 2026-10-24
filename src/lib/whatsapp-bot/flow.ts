@@ -134,7 +134,7 @@ const isCvFile = (m: Inbound): boolean => {
 const looksLikeAnotherQuery = (text: string) => text.length >= 100 || text.includes("?");
 
 /** Start asking questions. `prefill` is what we already know about someone with an incomplete profile. */
-export function startOnboarding(opts: { prefill?: Answers; existingCandidateId?: string | null; hasResume?: boolean; nowIso: string; recruiterAsked?: boolean; skip?: Step[] }): StepResult {
+export function startOnboarding(opts: { prefill?: Answers; existingCandidateId?: string | null; hasResume?: boolean; nowIso: string; recruiterAsked?: boolean; skip?: Step[]; /** The person's first message already answered something, which has been noted. */ absorbed?: boolean }): StepResult {
   const state: BotState = {
     ...emptyState(),
     status: "active",
@@ -146,13 +146,18 @@ export function startOnboarding(opts: { prefill?: Answers; existingCandidateId?:
     startedAt: opts.nowIso,
     recruiterStarted: !!opts.recruiterAsked,
   };
-  const intro = opts.recruiterAsked
+  const intro = opts.absorbed
+    ? `Thanks ${first(state)}, I've noted that.`
+    : opts.recruiterAsked
     ? `Hi ${first(state)}! This is StaffAnchor. To match you with the right roles, we need a few more details to complete your profile (about a minute). Reply SKIP to pass on a question, or STOP at any time.`
     : opts.existingCandidateId
     ? `Hi ${first(state)}! We found your StaffAnchor profile, but a few details are missing. I'll ask a few quick questions (about a minute). Reply SKIP to pass on one, or STOP at any time.`
     : T.INTRO;
   const result: StepResult = { state, replies: [intro], effects: [] };
-  return moveOn(result);
+  const moved = moveOn(result);
+  // Nothing left to ask: just confirm it is saved, without the "I'll ask a few questions" opening.
+  if (opts.absorbed && moved.state.status !== "active") moved.replies = moved.replies.slice(1);
+  return moved;
 }
 
 /** Ask the next question, or save the profile and ask for the CV once every answer is in. */
