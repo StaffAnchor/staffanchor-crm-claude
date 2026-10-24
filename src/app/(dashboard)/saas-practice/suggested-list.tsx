@@ -24,7 +24,7 @@ export default function SuggestedList({ items }: { items: Suggestion[] }) {
         {items.map(({ row: r, reasons, cautions }) => (
           <li key={r.candidate_id} className="flex gap-3 rounded-ros-xl border border-teal-100 bg-teal-50/40 p-3 dark:border-teal-900/40 dark:bg-teal-950/10">
             <div className="min-w-0 flex-1">
-              <Link href={`/candidates/${r.candidate_id}`} className="text-[13.5px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
+              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[13.5px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
                 {r.full_name ?? "Unnamed"}
               </Link>
               <p className="text-[12px] text-slate-500">
@@ -45,7 +45,7 @@ export default function SuggestedList({ items }: { items: Suggestion[] }) {
               </div>
             </div>
             <div className="flex shrink-0 flex-col gap-1.5">
-              <Link href={`/candidates/${r.candidate_id}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-emerald-500">
+              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-emerald-500">
                 <Phone className="h-3.5 w-3.5" /> Call &amp; log
               </Link>
               <WhatsAppMenu

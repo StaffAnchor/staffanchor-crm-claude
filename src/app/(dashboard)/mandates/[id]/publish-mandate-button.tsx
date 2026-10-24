@@ -175,7 +175,7 @@ export default function PublishMandateButton({
               {preview.map((p) => (
                 <div key={p.candidate_id} className="flex items-start justify-between gap-2 text-[12px]">
                   <div className="min-w-0">
-                    <Link href={`/candidates/${p.candidate_id}?mandateId=${mandateId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-teal-600">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${p.candidate_id}?mandateId=${mandateId}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-teal-600">
                       {p.full_name}
                     </Link>
                     <span className="ml-1.5 text-slate-500 dark:text-slate-400">{p.reason}</span>

@@ -149,7 +149,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
               const missing = profileChecklist(r as never, true).filter((i) => !i.have);
               return (
                 <li key={r.id as string}>
-                  <Link href={`/candidates/${r.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <span className="min-w-[160px] flex-1">
                       <span className="block text-[14px] font-medium text-slate-900 dark:text-slate-100">{(r.full_name as string) ?? "Unnamed"}</span>
                       <span className="block text-xs text-slate-500">{[r.current_job_title, r.current_employer].filter(Boolean).join(" at ") || "No role on file"}</span>

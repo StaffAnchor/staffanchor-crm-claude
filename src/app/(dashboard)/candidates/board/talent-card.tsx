@@ -91,7 +91,7 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-100 to-teal-100 text-[14px] font-bold text-teal-700 dark:from-teal-950 dark:to-teal-950 dark:text-teal-300">{initials(c.full_name)}</div>
         <div className="min-w-0 flex-1">
-          <Link href={`/candidates/${c.id}`} className="block truncate text-[15px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
+          <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.id}`} className="block truncate text-[15px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
             {c.full_name}
           </Link>
           <p className="truncate text-[12.5px] text-slate-500 dark:text-slate-400">{c.headline || "Role not on file"}</p>
@@ -166,13 +166,13 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
 
       <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800" style={{ marginTop: "0.9rem" }}>
         <SaveToList candidateId={c.id} lists={lists} memberOf={memberOf} />
-        {c.resume_signed_url && <ResumePreview signedUrl={c.resume_signed_url} fileName={(c.resume_file_url ?? `${c.full_name}-resume`).replace(/^resumes\//, "")} label="CV" />}
+        {c.resume_signed_url && <ResumePreview signedUrl={c.resume_signed_url} fileName={(c.resume_file_url ?? `${c.full_name}-resume`).replace(/^resumes\//, "")} label="CV" candidateId={c.id} />}
         <WhatsAppMenu
           phone={c.phone}
           templates={candidateTemplates(c.full_name, { me, candidateId: c.id, missing: c.readiness_missing }).filter((t) => t.key !== "intro")}
           className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
         />
-        <Link href={`/candidates/${c.id}`} className="inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700">
+        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.id}`} className="inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700">
           Open
         </Link>
       </div>

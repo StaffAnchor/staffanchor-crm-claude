@@ -603,7 +603,7 @@ export default function MandateCandidatesTable({
                 <div className="flex items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link
-                      href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`}
+                      target="_blank" rel="noopener noreferrer" href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`}
                       onClick={() => markViewed(l.id)}
                       className={`hover:text-teal-600 ${l.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
                     >
@@ -768,6 +768,7 @@ export default function MandateCandidatesTable({
                       signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
                       fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
                       label="Preview"
+                      candidateId={l.candidate.id}
                       onOpen={() => markViewed(l.id)}
                     />
                   ) : (

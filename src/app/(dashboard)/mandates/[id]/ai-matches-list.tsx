@@ -156,7 +156,7 @@ function Card({
             {onSelect && m.status !== "added" && (
               <input type="checkbox" checked={selected} onChange={(e) => onSelect(e.target.checked)} aria-label={`Select ${m.name}`} className="h-4 w-4" />
             )}
-            <Link href={`/candidates/${m.candidateId}`} className="text-[14px] font-semibold text-teal-700 dark:text-teal-400 hover:underline">
+            <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidateId}`} className="text-[14px] font-semibold text-teal-700 dark:text-teal-400 hover:underline">
               {m.name}
             </Link>
             <ProfileRatingBadge row={rating} />
@@ -188,7 +188,7 @@ function Card({
           <span className="shrink-0 text-[12px] font-medium text-emerald-700 dark:text-emerald-300">In pipeline</span>
         ) : (
           <div className="shrink-0 flex items-center gap-2">
-            {m.resumeUrl && <ResumePreview signedUrl={m.resumeUrl} fileName={(m.resumeName ?? `${m.name}-resume`).replace(/^resumes\//, "")} label="CV" />}
+            {m.resumeUrl && <ResumePreview signedUrl={m.resumeUrl} fileName={(m.resumeName ?? `${m.name}-resume`).replace(/^resumes\//, "")} label="CV" candidateId={m.candidateId} />}
             <WhatsAppMenu
               phone={m.phone}
               templates={candidateTemplates(m.name, { me, candidateId: m.candidateId, missing: m.missing, role: roleTitle }).filter((t) => t.key !== "intro")}

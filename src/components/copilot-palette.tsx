@@ -198,7 +198,7 @@ export default function CopilotPalette({ role }: { role: string }) {
   }, [query]);
 
   function openResult(r: CopilotResult) {
-    router.push(`/candidates/${r.id}`);
+    window.open(`/candidates/${r.id}`, "_blank", "noopener,noreferrer");
     closePalette();
   }
 

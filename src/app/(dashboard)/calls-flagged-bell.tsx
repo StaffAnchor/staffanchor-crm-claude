@@ -105,7 +105,7 @@ export default function CallsFlaggedBell() {
       // back=calls sends the candidate profile's "back" link to
       // /calls-flagged (this same list, full-page) instead of the
       // mandate -- see candidates/[id]/page.tsx.
-      router.push(`/candidates/${call.candidate_id}?mandateId=${call.mandate_id}&back=calls`);
+      window.open(`/candidates/${call.candidate_id}?mandateId=${call.mandate_id}&back=calls`, "_blank", "noopener,noreferrer");
     } else if (call.mandate_id) {
       router.push(`/mandates/${call.mandate_id}`);
     }

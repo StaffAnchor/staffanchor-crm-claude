@@ -82,7 +82,7 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
   return (
     <Card className="p-4 transition-colors duration-200 hover:border-teal-300 dark:hover:border-teal-700">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Link href={`/candidates/${m.candidate_id}`} className="min-w-0 flex-1">
+        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidate_id}`} className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{m.full_name}</p>
             <Badge tone={tone}>{m.score}</Badge>
@@ -90,7 +90,7 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
           <p className="mt-0.5 truncate text-[12.5px] text-slate-500 dark:text-slate-400">{[m.current_job_title, m.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</p>
         </Link>
         {m.resume_signed_url && (
-          <ResumePreview signedUrl={m.resume_signed_url} fileName={(m.resume_file_url ?? `${m.full_name}-resume`).replace(/^resumes\//, "")} label="CV" />
+          <ResumePreview signedUrl={m.resume_signed_url} fileName={(m.resume_file_url ?? `${m.full_name}-resume`).replace(/^resumes\//, "")} label="CV" candidateId={m.candidate_id} />
         )}
       </div>
 

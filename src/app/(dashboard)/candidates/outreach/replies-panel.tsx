@@ -71,7 +71,7 @@ export default function RepliesPanel({ mailbox, counts, rows }: { mailbox: strin
               <div className="min-w-0">
                 <p className="truncate font-medium text-slate-800 dark:text-slate-200">
                   {r.candidate_id ? (
-                    <Link href={`/candidates/${r.candidate_id}`} className="hover:underline">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="hover:underline">
                       {r.name ?? r.from_email}
                     </Link>
                   ) : (

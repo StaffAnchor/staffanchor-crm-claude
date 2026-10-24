@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { FileText, X, Download } from "lucide-react";
 import ResumeViewerInline from "./resume-viewer-inline";
+import CvActionsBar from "@/components/cv-actions-bar";
 
 export default function ResumePreview({
   signedUrl,
   fileName,
   label,
   onOpen,
+  candidateId,
 }: {
   signedUrl: string;
   fileName: string;
@@ -20,6 +22,8 @@ export default function ResumePreview({
   // context-agnostic (also used on the shortlist token page and candidate
   // detail page, which have no mandate to mark).
   onOpen?: () => void;
+  // Staff screens pass the candidate so the open CV also offers add-to-role / group / quality. Left out on client and vendor pages.
+  candidateId?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -59,6 +63,7 @@ export default function ResumePreview({
                 </button>
               </div>
             </div>
+            {candidateId ? <CvActionsBar candidateId={candidateId} /> : null}
             <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
               <ResumeViewerInline signedUrl={signedUrl} fileName={fileName} />
             </div>

@@ -436,7 +436,7 @@ export default function MatchesWorkspace({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
-                      href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
+                      target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
                       className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate"
                     >
                       {m.full_name}
@@ -670,7 +670,7 @@ export default function MatchesWorkspace({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
-                          href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
+                          target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
                           className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate"
                         >
                           {m.full_name}
@@ -705,7 +705,7 @@ export default function MatchesWorkspace({
                         )}
                         {!m.has_ai_summary && (
                           <Link
-                            href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
+                            target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
                             className="inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 hover:bg-amber-100"
                             title="Open the profile to generate one"
                           >

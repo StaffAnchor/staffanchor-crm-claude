@@ -354,10 +354,10 @@ function InlineSelectCell({
 // its own createSignedUrl request on mount, which meant up to 100 separate
 // Storage API round trips on a full page of results. Now it's a pure
 // render with no network activity at all.
-function ResumeCell({ resumeFileUrl, resumeSignedUrl }: { resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
+function ResumeCell({ candidateId, resumeFileUrl, resumeSignedUrl }: { candidateId: string; resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
   if (!resumeFileUrl) return <span className="text-xs text-slate-300">—</span>;
   if (!resumeSignedUrl) return <span className="text-xs text-red-500">Not found</span>;
-  return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" />;
+  return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" candidateId={candidateId} />;
 }
 
 function PreviousIndustriesCell({
@@ -940,7 +940,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "resume",
     label: "Resume",
-    render: (c) => <ResumeCell resumeFileUrl={c.resume_file_url} resumeSignedUrl={c.resume_signed_url} />,
+    render: (c) => <ResumeCell candidateId={c.id} resumeFileUrl={c.resume_file_url} resumeSignedUrl={c.resume_signed_url} />,
   },
   {
     key: "communication_score",

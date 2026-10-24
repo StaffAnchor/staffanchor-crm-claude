@@ -362,7 +362,7 @@ export default function WhatsAppInbox({
                 </div>
                 <div className="flex items-center gap-3 text-[12px]">
                   {active.candidateId ? (
-                    <Link href={`/candidates/${active.candidateId}`} className="font-medium text-teal-600 hover:underline">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${active.candidateId}`} className="font-medium text-teal-600 hover:underline">
                       Open candidate
                     </Link>
                   ) : (
@@ -456,7 +456,7 @@ export default function WhatsAppInbox({
                   >
                     Link this chat and save the number
                   </button>
-                  <Link href={`/candidates/${suggestions[active.key].candidateId}`} className="text-[12px] font-medium text-teal-600 hover:underline">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${suggestions[active.key].candidateId}`} className="text-[12px] font-medium text-teal-600 hover:underline">
                     Open profile
                   </Link>
                 </div>
@@ -616,7 +616,7 @@ export default function WhatsAppInbox({
                   <p className="mt-2 text-[12px] text-emerald-700">
                     {created.isNew ? "Profile created" : "CV added to the existing profile (matched by the email on the CV)"}{created.alt ? ", and this WhatsApp number was saved as an alternate number" : ""}
                     {created.name ? ` for ${created.name}` : ""}.{" "}
-                    <Link href={`/candidates/${created.id}`} className="font-medium underline">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${created.id}`} className="font-medium underline">
                       Open candidate
                     </Link>
                   </p>

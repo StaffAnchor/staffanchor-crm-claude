@@ -205,7 +205,7 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
             <Row k="Profile consent" v={b.consent_at ? `Ticked ${formatIst(new Date(b.consent_at))} IST (wording ${b.consent_version})` : "Not given. Do not create a StaffAnchor profile from this form."} />
             <Row k="Photo" v={photoUrl ? <span className="flex items-center gap-3"><a href={photoUrl} target="_blank"><img src={photoUrl} alt="Candidate photo" className="h-16 w-16 rounded-xl object-cover" /></a><span className="text-slate-500">{d.extras.photoPref || "Wants it on the CV: not answered"}</span></span> : d.extras.photoPref ? `No photo uploaded. They said: ${d.extras.photoPref}` : ""} />
             <Row k="Uploaded CV" v={cvUrl ? <a href={cvUrl} target="_blank" className="text-teal-700 hover:underline dark:text-teal-400">{b.cv_name ?? "Download"}</a> : "None uploaded"} />
-            <Row k="StaffAnchor profile" v={b.candidate_id ? <Link href={`/candidates/${b.candidate_id}`} className="text-teal-700 hover:underline dark:text-teal-400">Open profile</Link> : "No matching profile found by email or phone"} />
+            <Row k="StaffAnchor profile" v={b.candidate_id ? <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${b.candidate_id}`} className="text-teal-700 hover:underline dark:text-teal-400">Open profile</Link> : "No matching profile found by email or phone"} />
           </Section>
 
           {missing.length > 0 && (

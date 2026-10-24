@@ -494,16 +494,27 @@ export default async function CandidateDetailPage({
             name={candidate.full_name}
             employer={candidate.current_employer}
           />
-          <AiSummaryPanel
-            candidateId={candidate.id}
-            initialSummary={candidate.ai_summary}
-            initialPassport={candidate.ai_passport}
-            initialDecisionFlags={candidate.ai_decision_flags}
-            initialSkillInventory={candidate.skill_inventory}
-            initialStabilityScore={candidate.stability_score}
-          />
-          {passportRow && <SaasPassportCard row={passportRow as unknown as PassportRow} />}
-          <CvFactsPanel candidateId={candidate.id} />
+          {/* One place for everything the system read about this person: the AI's verdict first, the facts it rests on straight under it. */}
+          <section className="rounded-ros-lg border border-slate-200 dark:border-slate-700">
+            <div className="p-4">
+              <AiSummaryPanel
+                candidateId={candidate.id}
+                initialSummary={candidate.ai_summary}
+                initialPassport={candidate.ai_passport}
+                initialDecisionFlags={candidate.ai_decision_flags}
+                initialSkillInventory={candidate.skill_inventory}
+                initialStabilityScore={candidate.stability_score}
+              />
+            </div>
+            <div className="border-t border-slate-100 p-4 dark:border-slate-800">
+              <CvFactsPanel candidateId={candidate.id} />
+            </div>
+            {passportRow ? (
+              <div className="border-t border-slate-100 p-4 dark:border-slate-800">
+                <SaasPassportCard row={passportRow as unknown as PassportRow} />
+              </div>
+            ) : null}
+          </section>
           {candidate.skills && (
             <div>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
@@ -783,7 +794,7 @@ export default async function CandidateDetailPage({
           <div className="flex flex-wrap items-start gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
             <SendRole candidateId={candidate.id} candidateName={candidate.full_name} email={candidate.email} roles={(openMandates ?? []) as never} />
             <QuickContactActions candidateId={candidate.id} candidateName={candidate.full_name} phone={candidate.phone} email={candidate.email} missing={missingKeyDetails(candidate).map((m) => m.key)} />
-            {resumeSignedUrl && resumeFileName && <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} />}
+            {resumeSignedUrl && resumeFileName && <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} candidateId={candidate.id} />}
             {candidate.resume_file_url && !resumeSignedUrl && (
               <span className="flex items-center gap-1.5 text-[12px] font-medium text-rose-600 bg-rose-50 rounded-ros-md px-3 py-1.5">
                 <FileText className="w-3 h-3" /> Resume file not found
