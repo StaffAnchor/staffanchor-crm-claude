@@ -70,7 +70,8 @@ export default async function DashboardLayout({
     // admin CRUD tools (managing people/vendor accounts), not metrics.
     // Analytics stays in the bar for the owner; the admin tools (Team, Vendors, Sales Circle, Marketing) moved
     // into the account menu so the bar shows what is used every day.
-    ...(profile?.role === "admin" ? [{ href: "/analytics", label: "Analytics", enabled: true }] : []),
+    // The CRM assistant: ask anything, and approve what it proposes. Admins only.
+    ...(profile?.role === "admin" ? [{ href: "/agent", label: "Assistant", enabled: true }, { href: "/analytics", label: "Analytics", enabled: true }] : []),
   ];
   const adminLinks =
     profile?.role === "admin"
