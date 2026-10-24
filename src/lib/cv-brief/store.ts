@@ -7,9 +7,10 @@ export type BriefRow = {
   id: string; token: string; booking_id: string | null; candidate_id: string | null; track: string; name: string; email: string | null; phone: string | null;
   data: unknown; status: "sent" | "started" | "submitted"; cv_path: string | null; cv_name: string | null; consent_at: string | null; consent_version: string | null;
   submit_count: number; created_at: string; updated_at: string; started_at: string | null; submitted_at: string | null;
+  opened_at: string | null; last_opened_at: string | null; open_count: number; reminder_count: number; last_reminded_at: string | null; last_reminded_to: string | null; received_email_at: string | null;
 };
 
-export const COLUMNS = "id, token, booking_id, candidate_id, track, name, email, phone, data, status, cv_path, cv_name, consent_at, consent_version, submit_count, created_at, updated_at, started_at, submitted_at";
+export const COLUMNS = "id, token, booking_id, candidate_id, track, name, email, phone, data, status, cv_path, cv_name, consent_at, consent_version, submit_count, created_at, updated_at, started_at, submitted_at, opened_at, last_opened_at, open_count, reminder_count, last_reminded_at, last_reminded_to, received_email_at";
 
 export const validToken = (t: unknown): t is string => typeof t === "string" && /^[a-f0-9]{64}$/.test(t);
 

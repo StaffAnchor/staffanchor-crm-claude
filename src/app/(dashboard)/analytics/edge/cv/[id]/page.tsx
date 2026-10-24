@@ -4,14 +4,16 @@ import { adminDb, formatIst } from "@/lib/pro-sessions/core";
 import { COLUMNS, jobsLink, type BriefRow } from "@/lib/cv-brief/store";
 import { SCOPE_TEXT, formatMetric, gaps, jobFilled, jobPeriod, progress, sanitize, type Job } from "@/lib/cv-brief/config";
 import CopyBox from "./copy-box";
+import ReminderButton from "./reminder-button";
+import { ago, briefState } from "@/lib/cv-brief/state";
+import { reminderDefault } from "@/lib/cv-brief/mail";
 
 export const dynamic = "force-dynamic";
 
-const STATUS: Record<string, { label: string; cls: string }> = {
-  sent: { label: "Link made, not opened yet", cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
-  started: { label: "In progress", cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" },
-  submitted: { label: "Submitted", cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200" },
-};
+// Called only after the page has been rendered, so the clock read stays out of the render body.
+function nowMs() {
+  return Date.now();
+}
 
 function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
@@ -110,7 +112,10 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
     "Regards,\nStaffAnchor Talent Solutions",
   ].join("\n\n");
   const cvUrl = b.cv_path ? (await db.storage.from("resume-orders").createSignedUrl(b.cv_path, 3600)).data?.signedUrl ?? null : null;
-  const st = STATUS[b.status];
+  const now = nowMs();
+  const st = briefState(b, now);
+  const remindTo = (b.email ?? d.basics.email ?? "").trim();
+  const recentlyReminded = !!b.last_reminded_at && now - new Date(b.last_reminded_at).getTime() < 24 * 60 * 60 * 1000;
   const missing = gaps(d);
   const jobs = d.jobs.filter(jobFilled);
   const t = d.targets;
@@ -123,7 +128,9 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
         <h1 className="ros-page-title">{b.name}: Sales CV form</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-slate-500">
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span>
+          {st.nudge && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-200">Time for a nudge</span>}
           <span>{progress(d)}% of the key details are in</span>
+          {b.opened_at && b.status !== "submitted" && <span>· opened {b.open_count} {b.open_count === 1 ? "time" : "times"}, last {ago(b.last_opened_at ?? b.opened_at, now)}</span>}
           {b.updated_at && b.status !== "sent" && <span>· last saved {formatIst(new Date(b.updated_at))} IST</span>}
           {b.submitted_at && <span>· submitted {formatIst(new Date(b.submitted_at))} IST{b.submit_count > 1 ? ` (${b.submit_count} times)` : ""}</span>}
         </p>
@@ -134,6 +141,14 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
         <CopyBox label="Message to send" value={message} rows={9} />
         <p className="text-xs text-slate-400">The link is only theirs: it shows nothing but their own answers. Anyone who has it can fill the form, so send it only to them.</p>
       </Section>
+
+      {b.status !== "submitted" && (
+        <Section title="Not submitted yet" sub={b.reminder_count > 0 ? `Reminded ${b.reminder_count} ${b.reminder_count === 1 ? "time" : "times"}, last ${ago(b.last_reminded_at ?? b.created_at, now)}${b.last_reminded_to ? ` (${b.last_reminded_to})` : ""}.` : "No reminder sent yet."}>
+          <ReminderButton id={b.id} name={b.name} to={remindTo} message={reminderDefault(b.name, b.token, st.key === "submitted" ? "sent" : st.key)} recent={recentlyReminded} />
+          {!remindTo && <p className="text-xs text-amber-700">No email address on file, so type one in the reminder box, or copy the message above and send it by WhatsApp.</p>}
+        </Section>
+      )}
+      {b.status === "submitted" && b.received_email_at && <p className="text-xs text-slate-400">The candidate was emailed a receipt on {formatIst(new Date(b.received_email_at))} IST.</p>}
 
       {b.status !== "sent" && (
         <>
