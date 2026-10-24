@@ -54,7 +54,7 @@ export default function ProfileGroupControl({
       <ProfileGroupBadge group={group} subgroup={subgroup} also={also} needsReview={needsReview} reason={reason} />
       {reason && <span className="max-w-[420px] text-xs text-slate-500 dark:text-slate-400">{reason}{locked ? " (kept as set)" : ""}</span>}
       <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-xs font-medium text-teal-600 hover:underline">
-        <Pencil className="h-3 w-3" /> Change group
+        <Pencil className="h-3 w-3" /> Change category
       </button>
       {open && (
         <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-2 dark:border-slate-700 dark:bg-slate-800/40">

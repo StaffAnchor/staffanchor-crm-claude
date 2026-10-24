@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Loader2, BadgeCheck, AlertTriangle, CircleHelp, ThumbsUp, ThumbsDown, TrendingUp } from "lucide-react";
+import { Sparkles, Loader2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 
@@ -121,129 +121,90 @@ export default function AiSummaryPanel({
       (skillInventory.domain_expertise?.length ?? 0) > 0 ||
       (skillInventory.soft_skills?.length ?? 0) > 0);
 
+  const SHOWN = 3;
+  const dots: { label: string; dot: string; items: string[] }[] = [
+    { label: "Strengths", dot: "bg-emerald-500", items: decisionFlags?.green_flags ?? [] },
+    { label: "Concerns", dot: "bg-rose-500", items: decisionFlags?.red_flags ?? [] },
+    { label: "To check", dot: "bg-amber-500", items: decisionFlags?.watch_areas ?? [] },
+  ].filter((g) => g.items.length > 0);
+  const skills = Array.from(new Set([...(skillInventory?.core_skills ?? []), ...(skillInventory?.domain_expertise ?? [])]));
+  const moreSkills = Array.from(new Set([...(skillInventory?.tools_platforms ?? []), ...(skillInventory?.soft_skills ?? [])]));
+  const sentence = (t: string) => (t ? t.charAt(0) + t.slice(1).toLowerCase() : t);
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900 dark:text-slate-100">
-          <Sparkles className="w-3.5 h-3.5 text-teal-500" />
-          AI summary <span className="text-xs font-normal text-slate-400">(prose is shown to clients; flags/verdict below are internal only)</span>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-1.5 text-[15px] font-semibold text-slate-900 dark:text-slate-100" title="The summary text can be shown to clients. Strengths, concerns and skills are internal only.">
+          <Sparkles className="w-4 h-4 text-teal-600" />
+          AI summary
         </h3>
         <Button variant="secondary" size="sm" onClick={handleGenerate} disabled={loading} icon={loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}>
           {summary ? "Regenerate" : "Generate"}
         </Button>
       </div>
-      {error && <p className="text-[12px] text-rose-600 mb-2">{error}</p>}
-      {passport?.profile_incomplete && (
-        <p className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-ros-md px-2.5 py-1.5 mb-2">
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-          Profile incomplete — this candidate hasn&apos;t finished registering yet, so the summary below is based on
-          limited information. It will regenerate automatically once they complete their profile.
-        </p>
-      )}
+      {error && <p className="mt-2 text-[12px] text-rose-600">{error}</p>}
 
-      {/* Decision-support block: the first thing a recruiter should see when
-          deciding whether to shortlist or reject -- an explicit AI verdict
-          plus scannable green/red/grey flags, ahead of the narrative prose
-          below. Internal only (see AiDecisionFlags comment above). */}
-      {hasFlags && (
-        <div className="mb-3 rounded-ros-md border border-slate-200 dark:border-slate-700 p-3 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              AI read (internal — not shown to client)
-            </p>
-            <div className="flex items-center gap-1.5">
-              {stabilityLabel && (
-                <Badge tone={STABILITY_TONE[stabilityLabel] ?? "neutral"} size="sm" icon={<TrendingUp className="w-3 h-3" />}>
-                  {stabilityScore}/100 · {stabilityLabel}
-                </Badge>
-              )}
-              {decisionFlags?.recommendation && (
-                <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm">
-                  {decisionFlags.recommendation}
-                </Badge>
-              )}
-            </div>
-          </div>
-          {decisionFlags?.green_flags && decisionFlags.green_flags.length > 0 && (
-            <div className="space-y-1">
-              {decisionFlags.green_flags.map((f, i) => (
-                <div key={i} className="flex items-start gap-1.5 text-[12.5px] text-emerald-700 dark:text-emerald-400">
-                  <ThumbsUp className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
-            </div>
+      {(decisionFlags?.recommendation || stabilityLabel) && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {decisionFlags?.recommendation && (
+            <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm" className="normal-case tracking-normal text-[12.5px]">
+              {decisionFlags.recommendation}
+            </Badge>
           )}
-          {decisionFlags?.red_flags && decisionFlags.red_flags.length > 0 && (
-            <div className="space-y-1">
-              {decisionFlags.red_flags.map((f, i) => (
-                <div key={i} className="flex items-start gap-1.5 text-[12.5px] text-rose-700 dark:text-rose-400">
-                  <ThumbsDown className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {decisionFlags?.watch_areas && decisionFlags.watch_areas.length > 0 && (
-            <div className="space-y-1">
-              {decisionFlags.watch_areas.map((f, i) => (
-                <div key={i} className="flex items-start gap-1.5 text-[12.5px] text-amber-700 dark:text-amber-400">
-                  <CircleHelp className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
-            </div>
+          {stabilityLabel && (
+            <Badge tone={STABILITY_TONE[stabilityLabel] ?? "neutral"} size="sm" icon={<TrendingUp className="w-3 h-3" />} className="normal-case tracking-normal text-[12.5px]">
+              Stability {stabilityScore}/100, {stabilityLabel.toLowerCase()}
+            </Badge>
           )}
         </div>
       )}
 
-      <p className="text-[13px] text-slate-600 dark:text-slate-400 whitespace-pre-wrap bg-slate-50 dark:bg-slate-800/50 rounded-ros-md p-3">
-        {summary || "Not generated yet — click Generate to summarize this candidate from their profile data."}
+      <p className="mt-3 text-[14px] leading-6 text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+        {summary || "Not generated yet. Click Generate to summarise this candidate from their profile data."}
       </p>
-      {passport?.resume_highlights && passport.resume_highlights.length > 0 && (
-        <div className="mt-2 bg-slate-50 dark:bg-slate-800/50 rounded-ros-md p-3">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
-            From their resume
-          </p>
-          <ul className="space-y-1">
-            {passport.resume_highlights.map((h, i) => (
-              <li key={i} className="flex items-start gap-1.5 text-[12.5px] text-slate-600 dark:text-slate-400">
-                <BadgeCheck className="w-3.5 h-3.5 text-teal-500 mt-0.5 shrink-0" />
-                <span>{h}</span>
-              </li>
-            ))}
-          </ul>
+
+      {passport?.profile_incomplete && <p className="mt-2 text-[12.5px] text-slate-500">Based on limited information: they have not finished registering. It updates once they do.</p>}
+
+      {hasFlags && dots.length > 0 && (
+        <div className="mt-5 grid gap-5 sm:grid-cols-3">
+          {dots.map((g) => (
+            <div key={g.label}>
+              <p className="mb-2 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">{g.label}</p>
+              <ul className="space-y-1.5">
+                {g.items.slice(0, SHOWN).map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">
+                    <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${g.dot}`} aria-hidden />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              {g.items.length > SHOWN && (
+                <details className="mt-1.5">
+                  <summary className="cursor-pointer text-[12px] text-teal-700 dark:text-teal-300">{g.items.length - SHOWN} more</summary>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {g.items.slice(SHOWN).map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">
+                        <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${g.dot}`} aria-hidden />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Skill inventory: internal-only, structured extraction (not the
-          free-text skills field) purpose-built to feed mandate-candidate
-          matching -- see src/lib/ai-passport.ts SkillInventory comment. */}
-      {hasSkillInventory && (
-        <div className="mt-2 rounded-ros-md border border-slate-200 dark:border-slate-700 p-3 space-y-2">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-            Skill inventory (internal — powers mandate matching)
-          </p>
-          {(
-            [
-              ["Core skills", skillInventory?.core_skills],
-              ["Tools & platforms", skillInventory?.tools_platforms],
-              ["Domain expertise", skillInventory?.domain_expertise],
-              ["Soft skills", skillInventory?.soft_skills],
-            ] as const
-          ).map(([label, items]) =>
-            items && items.length > 0 ? (
-              <div key={label}>
-                <p className="text-xs text-slate-400 mb-1">{label}</p>
-                <div className="flex flex-wrap gap-1">
-                  {items.map((s, i) => (
-                    <Badge key={i} tone="accent" size="sm">
-                      {s}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ) : null
+      {hasSkillInventory && (skills.length > 0 || moreSkills.length > 0) && (
+        <div className="mt-5">
+          <p className="mb-2 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">Skills</p>
+          <p className="text-[13px] leading-6 text-slate-700 dark:text-slate-300">{skills.map(sentence).join(" · ")}</p>
+          {moreSkills.length > 0 && (
+            <details className="mt-1.5">
+              <summary className="cursor-pointer text-[12px] text-teal-700 dark:text-teal-300">Tools and soft skills</summary>
+              <p className="mt-1.5 text-[13px] leading-6 text-slate-600 dark:text-slate-400">{moreSkills.map(sentence).join(" · ")}</p>
+            </details>
           )}
         </div>
       )}

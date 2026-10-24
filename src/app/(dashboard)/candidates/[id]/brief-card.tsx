@@ -53,6 +53,19 @@ export default function BriefCard({
     }
   }
 
+  if (!brief) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 text-[13px] text-slate-500">
+        <FileText className="h-4 w-4 text-slate-400" />
+        <span>No client brief yet. It is written after your first call note.</span>
+        <button type="button" onClick={regenerate} disabled={busy} className="text-teal-700 underline decoration-teal-300 underline-offset-2 disabled:opacity-60 dark:text-teal-300">
+          {busy ? "Writing…" : "Write it now"}
+        </button>
+        {error && <span className="text-rose-600">{error}</span>}
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -100,13 +113,13 @@ export default function BriefCard({
           <div className="grid gap-4 md:grid-cols-2">
             {brief.selling.length > 0 && (
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Selling track record</p>
+                <p className="mb-1 text-[12.5px] font-medium text-slate-500">Selling track record</p>
                 <ul className="list-disc space-y-0.5 pl-5">{brief.selling.map((x) => <li key={x}>{x}</li>)}</ul>
               </div>
             )}
             {brief.strengths.length > 0 && (
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Strengths</p>
+                <p className="mb-1 text-[12.5px] font-medium text-slate-500">Strengths</p>
                 <ul className="list-disc space-y-0.5 pl-5">{brief.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
               </div>
             )}
@@ -118,7 +131,7 @@ export default function BriefCard({
           )}
           {brief.probe.length > 0 && (
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Worth testing</p>
+              <p className="mb-1 text-[12.5px] font-medium text-slate-500">Worth testing</p>
               <ul className="list-disc space-y-0.5 pl-5">{brief.probe.map((x) => <li key={x}>{x}</li>)}</ul>
             </div>
           )}
