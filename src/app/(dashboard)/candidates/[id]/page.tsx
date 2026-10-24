@@ -2,7 +2,7 @@ import Link from "next/link";
 import { after } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
-import { FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, AlertTriangle, ChevronLeft, ChevronRight, Briefcase, Clock, IndianRupee, Target, LayoutGrid, PhoneCall, Layers, MessageSquare, ScrollText, History as HistoryIcon, AlertCircle, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -37,9 +37,11 @@ import ActionCenter from "./action-center";
 import MessageHub from "./message-hub";
 import TodoList from "./todo-list";
 import GapChip from "./gap-chip";
+import CopyButton from "./copy-button";
+import InlineFact from "./inline-fact";
 import CallButton from "./call-button";
 import CvActionsBar from "@/components/cv-actions-bar";
-import { candidateNextActions } from "@/lib/candidate-next-actions";
+import { candidateNextActions, plain } from "@/lib/candidate-next-actions";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
 import { ProfileRatingPanel } from "@/components/profile-rating";
@@ -493,6 +495,10 @@ export default async function CandidateDetailPage({
     callNoteCount: pastDebriefs.length,
   });
   const todos = next.todos;
+  const detailsTotal = 8;
+  const detailsDone = detailsTotal - missingKeyDetails(candidate).length;
+  const lastTouch = [...activities.map((a: { created_at?: string }) => a.created_at), ...((whatsappRows ?? []) as { created_at?: string }[]).map((m) => m.created_at)].filter(Boolean).sort().pop();
+  const lastContactDays = lastTouch ? daysAgo(lastTouch as string) : null;
   const VERDICT_TONE = {
     ready: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
     needs_details: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
@@ -502,11 +508,13 @@ export default async function CandidateDetailPage({
   const { data: bestMatchRow } = await supabase.from("mandate_ai_matches").select("score, mandates(role_title, client_name)").eq("candidate_id", candidate.id).in("fit", ["strong", "possible"]).order("score", { ascending: false }).limit(1).maybeSingle();
   const bestMatch = bestMatchRow ? `${(bestMatchRow as unknown as { mandates?: { role_title?: string } | null }).mandates?.role_title ?? "Role"} · ${(bestMatchRow as { score: number }).score}` : null;
   const suggestMissing = next.missing.length > 0;
-  const hubSuggestion = suggestMissing ? `Ask for ${next.missing.map((m) => m.label.toLowerCase()).join(", ")}. The official WhatsApp tab does it in one click.` : todos.some((t) => t.fix === "get_cv") ? "Ask for their CV by email." : null;
+  const hubSuggestion = suggestMissing ? `Ask for ${next.missing.map((m) => plain(m.label)).join(", ")}. The official WhatsApp tab does it in one click.` : todos.some((t) => t.fix === "get_cv") ? "Ask for their CV by email." : null;
 
   const tabs = [
     {
       label: "Overview",
+      icon: <LayoutGrid className="h-4 w-4" />,
+      tone: "teal" as const,
       content: (
         <div className="space-y-5">
           <BriefCard
@@ -524,6 +532,7 @@ export default async function CandidateDetailPage({
             initialDecisionFlags={candidate.ai_decision_flags}
             initialSkillInventory={candidate.skill_inventory}
             initialStabilityScore={candidate.stability_score}
+            nextQuestions={callDoubts}
           />
           {candidate.skills && !candidate.skill_inventory && (
             <div>
@@ -568,6 +577,8 @@ export default async function CandidateDetailPage({
     },
     {
       label: "Calls & notes",
+      icon: <PhoneCall className="h-4 w-4" />,
+      tone: "violet" as const,
       content: (
         <div className="space-y-6">
           <p className="rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
@@ -610,6 +621,8 @@ export default async function CandidateDetailPage({
     },
     {
       label: "Roles",
+      icon: <Layers className="h-4 w-4" />,
+      tone: "sky" as const,
       content: (
         <div className="space-y-6">
           <section>
@@ -642,10 +655,14 @@ export default async function CandidateDetailPage({
     },
     {
       label: "Messages",
+      icon: <MessageSquare className="h-4 w-4" />,
+      tone: "emerald" as const,
       content: <WhatsAppPanel candidateId={candidate.id} hasPhone={!!candidate.phone} messages={(whatsappRows ?? []) as import("./whatsapp-panel").WhatsAppMessage[]} />,
     },
     {
       label: "CV & career",
+      icon: <ScrollText className="h-4 w-4" />,
+      tone: "amber" as const,
       content: (
         <div className="space-y-6">
           <CvFactsPanel candidateId={candidate.id} />
@@ -665,6 +682,8 @@ export default async function CandidateDetailPage({
     },
     {
       label: "History",
+      icon: <HistoryIcon className="h-4 w-4" />,
+      tone: "slate" as const,
       content: (
         <div className="space-y-6">
           <Timeline events={timelineEvents} />
@@ -678,7 +697,7 @@ export default async function CandidateDetailPage({
   ];
 
   return (
-    <div className="max-w-[1100px] mx-auto px-5 py-8">
+    <div className="max-w-[1180px] mx-auto px-5 py-8">
       <div className="flex items-center justify-between">
         <Link href={backHref} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
           {backLabel}
@@ -711,52 +730,93 @@ export default async function CandidateDetailPage({
       {/* 1. Who this is, the verdict, and four facts */}
       <Card className="mt-3" padded={false}>
         <div className="p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4 min-w-0">
-              <div className="w-12 h-12 rounded-ros-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-base font-semibold text-slate-600 dark:text-slate-400 shrink-0">
+          <div className="flex items-start justify-between gap-5">
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div className="w-11 h-11 rounded-ros-full bg-teal-50 text-teal-800 ring-1 ring-teal-100 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-900 flex items-center justify-center text-[15px] font-semibold shrink-0">
                 {initialsFor(candidate.full_name)}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {candidate.candidate_number != null && (
                     <span className="text-xs font-mono text-slate-400" title="Candidate number">
                       C-{String(candidate.candidate_number).padStart(6, "0")}
                     </span>
                   )}
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12.5px] font-medium ring-1 ${VERDICT_TONE[next.verdict]}`} title={next.reason}>
+                    {next.verdict === "ready" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                    {next.verdictLabel}
+                  </span>
                 </div>
                 <p className="text-[14px] text-slate-600 dark:text-slate-300 mt-0.5">
                   {candidate.current_job_title}
                   {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
                   {candidate.current_location ? ` · ${candidate.current_location}` : ""}
                 </p>
-                <p className="text-[12.5px] text-slate-400 mt-0.5">
-                  {/\.invalid$/i.test(candidate.email ?? "") ? "No email yet" : candidate.email}
-                  {candidate.phone ? ` · ${candidate.phone}` : ""}
-                  {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 ? ` · alt ${candidate.alt_phones.join(", ")}` : ""}
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
+                  {!/\.invalid$/i.test(candidate.email ?? "") && candidate.email ? (
+                    <span className="inline-flex items-center gap-1">
+                      {candidate.email}
+                      <CopyButton text={candidate.email} label="email" />
+                    </span>
+                  ) : (
+                    <span>No email yet</span>
+                  )}
+                  {candidate.phone && (
+                    <span className="inline-flex items-center gap-1">
+                      {candidate.phone}
+                      <CopyButton text={String(candidate.phone)} label="phone number" />
+                    </span>
+                  )}
+                  {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 && <span>alt {candidate.alt_phones.join(", ")}</span>}
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-2 shrink-0">
-              <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
-              <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
+                <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
+              </div>
+              <div className="text-right text-[12px] text-slate-500 dark:text-slate-400">
+                <p className="flex items-center justify-end gap-2">
+                  <span>{detailsDone} of {detailsTotal} key details</span>
+                  <span className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden>
+                    <span className={`block h-full rounded-full ${detailsDone === detailsTotal ? "bg-emerald-500" : "bg-amber-400"}`} style={{ width: `${(detailsDone / detailsTotal) * 100}%` }} />
+                  </span>
+                </p>
+                <p className="mt-0.5">{lastContactDays == null ? "No contact logged yet" : lastContactDays === 0 ? "Last contact today" : `Last contact ${lastContactDays}d ago`}</p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[13px] font-semibold ring-1 ${VERDICT_TONE[next.verdict]}`}>{next.verdictLabel}</span>
-            <span className="text-[13px] text-slate-600 dark:text-slate-300">{next.reason}</span>
-          </div>
+          {next.verdict !== "ready" && <p className="mt-3 text-[13px] text-slate-600 dark:text-slate-300">{next.reason}</p>}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-            <StatChip label="Experience" gap value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
-            <StatChip label="Notice period" gap value={candidate.notice_period} />
-            <StatChip
+          <div className="mt-4 flex flex-wrap divide-x divide-slate-100 rounded-ros-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+            <div className="min-w-0 flex-1 px-4 py-3">
+              <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+                <Briefcase className="h-3.5 w-3.5 text-slate-400" />
+                Experience
+              </p>
+              <p className="mt-0.5 text-[16px] font-semibold text-slate-900 dark:text-slate-100">{candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : <GapChip label="Add it" />}</p>
+            </div>
+            <InlineFact candidateId={candidate.id} label="Notice period" icon={<Clock className="h-3.5 w-3.5" />} display={candidate.notice_period || null} fields={[{ key: "notice_period", label: "Notice period", kind: "text", value: candidate.notice_period ?? null }]} />
+            <InlineFact
+              candidateId={candidate.id}
               label="Fixed CTC, now → expected"
-              gap
-              value={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
+              icon={<IndianRupee className="h-3.5 w-3.5" />}
+              display={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
+              fields={[
+                { key: "current_fixed_ctc", label: "Now", kind: "lakhs", value: candidate.current_fixed_ctc ?? null },
+                { key: "expected_fixed_ctc", label: "Expected", kind: "lakhs", value: candidate.expected_fixed_ctc ?? null },
+              ]}
             />
-            <StatChip label="Best matching role" value={bestMatch} />
+            <div className="min-w-0 flex-1 px-4 py-3">
+              <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+                <Target className="h-3.5 w-3.5 text-slate-400" />
+                Best matching role
+              </p>
+              <p className="mt-0.5 truncate text-[16px] font-semibold text-slate-900 dark:text-slate-100" title={bestMatch ?? undefined}>{bestMatch ?? <span className="text-[14px] font-normal text-slate-400">No match yet</span>}</p>
+            </div>
           </div>
 
           {redFlags.length > 0 && (
@@ -866,11 +926,3 @@ export default async function CandidateDetailPage({
 // Portal-style headline stat -- bolder number, quieter label, its own
 // bordered chip so these four read as the "at a glance" facts rather than
 // blending into the denser field grid underneath.
-function StatChip({ label, value, gap }: { label: string; value?: string | null; gap?: boolean }) {
-  return (
-    <div className="border-l-2 border-slate-100 pl-3 dark:border-slate-800">
-      <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</p>
-      {value ? <p className="mt-0.5 text-[15px] font-semibold text-slate-900 dark:text-slate-100">{value}</p> : gap ? <GapChip /> : <p className="mt-0.5 text-[14px] text-slate-400">None yet</p>}
-    </div>
-  );
-}
