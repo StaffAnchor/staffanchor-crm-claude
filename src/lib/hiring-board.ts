@@ -13,6 +13,7 @@ export type BoardCandidate = {
   years: number | null;
   ctc: string;
   notice: string;
+  hasCv: boolean;
   cells: Record<string, BoardCell>;
   bestRoleId: string;
   bestScore: number;
@@ -92,7 +93,7 @@ export async function loadBoard(supabase: SupabaseClient, mandateIds: string[], 
 
   const { data: cs } = await supabase
     .from("candidates")
-    .select("id, full_name, current_job_title, current_employer, city_canonical, current_location, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period")
+    .select("id, full_name, current_job_title, current_employer, city_canonical, current_location, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, resume_file_url")
     .in("id", ranked.map((r) => r.cid));
   const byId = new Map((cs ?? []).map((c) => [c.id as string, c]));
   const candidates: BoardCandidate[] = [];
@@ -109,6 +110,7 @@ export async function loadBoard(supabase: SupabaseClient, mandateIds: string[], 
       years: c.total_experience_years != null ? Number(c.total_experience_years) : null,
       ctc: c.current_fixed_ctc != null ? `${c.current_fixed_ctc}${c.expected_fixed_ctc != null ? ` → ${c.expected_fixed_ctc}` : ""} LPA` : "",
       notice: (c.notice_period as string) ?? "",
+      hasCv: !!c.resume_file_url,
       cells: r.row,
       bestRoleId: r.bestRoleId,
       bestScore: r.bestScore,

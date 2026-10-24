@@ -17,13 +17,12 @@ type NavLink = { href: string; label: string; enabled: boolean };
 // `also` lists pages that belong to a group but have no tab of their own, so the right heading still lights up.
 const NAV_GROUPS: { id: string; label: string; items: string[]; also?: string[] }[] = [
   { id: "today", label: "Today", items: ["/today"] },
-  { id: "pipeline", label: "Pipeline", items: ["/hiring", "/mandates", "/candidates", "/interviews"], also: ["/saas-practice", "/referrals"] },
-  { id: "clients", label: "Clients", items: ["/clients", "/client-acquisition"], also: ["/employer-inquiries", "/sales"] },
-  { id: "placements", label: "Placements", items: ["/placements"], also: ["/retention"] },
-  { id: "inbox", label: "Inbox", items: ["/tasks", "/whatsapp"] },
+  // Everything about a role: the board across roles, the roles themselves, the clients behind them, the interviews and the placements that follow.
+  { id: "roles", label: "Roles", items: ["/hiring", "/mandates", "/clients", "/client-acquisition", "/interviews", "/placements"], also: ["/employer-inquiries", "/sales", "/retention"] },
+  { id: "people", label: "People", items: ["/candidates"], also: ["/saas-practice", "/referrals"] },
+  { id: "inbox", label: "Inbox", items: ["/whatsapp", "/tasks"] },
   // Only admins are given this link (see the dashboard layout), so everyone else never sees the heading.
   { id: "assistant", label: "Assistant", items: ["/agent"] },
-  { id: "analytics", label: "Analytics", items: ["/analytics"] },
 ];
 
 // Redesigned per direct feedback (Aug 2026): the old header was dark navy
