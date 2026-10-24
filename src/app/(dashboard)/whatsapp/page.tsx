@@ -3,6 +3,8 @@ import { missingKeyDetails } from "@/lib/key-details";
 import { draftMissingMessage } from "@/lib/missing-message";
 import { groupConversations, type WaMessage } from "@/lib/whatsapp-threads";
 import { introducedName } from "@/lib/whatsapp-bot/identity";
+import { adminDb } from "@/lib/pro-sessions/core";
+import { loadWaiting } from "@/lib/waiting-queue";
 import WhatsAppInbox, { type ContactInfo } from "./whatsapp-inbox";
 
 // Everyone who has messaged the StaffAnchor WhatsApp number, newest first, with a
@@ -78,6 +80,10 @@ export default async function WhatsAppPage() {
     };
   }
 
+  // The one rule for "reply now", shared with Today and the menu badge.
+  const admin = adminDb();
+  const urgentKeys = admin ? (await loadWaiting(admin).catch(() => [])).map((w) => w.key) : undefined;
+
   return (
     <div className="mx-auto max-w-[1500px] px-5 py-8">
       <div className="mb-5">
@@ -87,7 +93,7 @@ export default async function WhatsAppPage() {
         </p>
       </div>
       <p className="mb-3 text-[12.5px]"><a href="/whatsapp/training" className="font-medium text-teal-700 hover:underline dark:text-teal-300">Teach the assistant</a><span className="text-slate-400"> · questions it couldn&apos;t answer, answered once for everyone</span></p>
-      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} drafts={drafts} suggestions={suggestions} />
+      <WhatsAppInbox conversations={conversations} names={names} contacts={contacts} missing={missing} drafts={drafts} suggestions={suggestions} urgentKeys={urgentKeys} />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { WINDOW_MS, type WaConversation } from "@/lib/whatsapp-threads";
 
 // What a WhatsApp conversation is waiting for, in one word, so the page can be organised by "what do I do?" instead of
 // by who the person is. Every conversation is in exactly one state.
-export type WaState = "needs_you" | "assistant" | "waiting" | "failed" | "archived";
+export type WaState = "needs_you" | "can_wait" | "assistant" | "waiting" | "failed" | "archived";
 
 export type WaContactLite = {
   kind: string;
@@ -56,7 +56,10 @@ export function ago(ms: number): string {
 
 const clip = (s: string, n = 70) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
-export function statusOf(c: WaConversation, info: WaContactLite | undefined, now: number): WaStatus {
+// `urgentKeys` is the one definition of "reply now" (employers, candidates on a live role, questions the assistant could
+// not answer: see waiting-queue.ts). A chat where a person could reply but nobody has to, such as a candidate who only got
+// the automatic acknowledgement, is "can_wait" rather than "needs_you". Leave it undefined to keep the old behaviour.
+export function statusOf(c: WaConversation, info: WaContactLite | undefined, now: number, urgentKeys?: Set<string>): WaStatus {
   const last = c.messages[c.messages.length - 1];
   const sinceLast = Math.max(0, now - new Date(last.created_at).getTime());
   const windowLeft = c.lastInboundAt ? WINDOW_MS - (now - new Date(c.lastInboundAt).getTime()) : 0;
@@ -73,6 +76,7 @@ export function statusOf(c: WaConversation, info: WaContactLite | undefined, now
     const handed = info?.needsHuman && info.reason;
     const body = last.direction === "inbound" ? (last.body_preview ?? "").trim() : "";
     const why = handed ? (info!.reason as string) : body ? `They wrote: ${clip(body)}` : "They replied";
+    if (urgentKeys && !urgentKeys.has(c.key)) return { state: "can_wait", why, waitingMs: sinceLast, urgency: "ok", ...base };
     return { state: "needs_you", why, waitingMs: sinceLast, urgency: urgencyFor(sinceLast), ...base };
   }
 
@@ -93,7 +97,8 @@ export function statusOf(c: WaConversation, info: WaContactLite | undefined, now
 }
 
 export const STATE_META: Record<WaState, { label: string; blurb: string; tone: string }> = {
-  needs_you: { label: "Needs you", blurb: "Someone is waiting for a person to reply or act.", tone: "rose" },
+  needs_you: { label: "Reply now", blurb: "Employers, candidates on a live role, and questions the assistant could not answer.", tone: "rose" },
+  can_wait: { label: "Can wait", blurb: "Candidates who wrote in and got the automatic reply. Nobody has to answer them, but you can.", tone: "slate" },
   assistant: { label: "Assistant working", blurb: "The assistant is collecting details. Nothing for you to do unless it hands over.", tone: "teal" },
   waiting: { label: "Waiting on them", blurb: "We sent a message and they haven't answered yet.", tone: "slate" },
   failed: { label: "Not delivered", blurb: "A message didn't reach the person. Check the number.", tone: "amber" },

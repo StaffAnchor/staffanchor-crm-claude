@@ -50,7 +50,7 @@ const TONE: Record<string, { tile: string; dot: string; banner: string }> = {
   amber: { tile: "border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/20", dot: "bg-amber-500", banner: "border-amber-100 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200" },
 };
 
-const TILES: WaState[] = ["needs_you", "assistant", "waiting", "failed"];
+const TILES: WaState[] = ["needs_you", "can_wait", "assistant", "waiting", "failed"];
 
 export default function WhatsAppInbox({
   conversations,
@@ -59,6 +59,7 @@ export default function WhatsAppInbox({
   missing,
   drafts,
   suggestions = {},
+  urgentKeys = [],
 }: {
   conversations: WaConversation[];
   names: Record<string, string>;
@@ -66,12 +67,15 @@ export default function WhatsAppInbox({
   missing: Record<string, string[]>;
   drafts: Record<string, string>;
   suggestions?: Record<string, { candidateId: string; name: string; phone: string | null }>;
+  /** Phone keys that need a reply now: one rule shared with Today and the menu badge. */
+  urgentKeys?: string[];
 }) {
+  const urgent = useMemo(() => new Set(urgentKeys), [urgentKeys]);
   const router = useRouter();
   // Opens on what needs you; if nothing does, on the chats waiting for a reply, so what you sent is never hidden.
   const [view, setView] = useState<View>(() => {
     const t = Date.now();
-    return conversations.some((c) => statusOf(c, contacts[c.key], t).state === "needs_you") ? "needs_you" : "waiting";
+    return conversations.some((c) => statusOf(c, contacts[c.key], t, urgent).state === "needs_you") ? "needs_you" : "waiting";
   });
   const templateFlags = useWhatsAppTemplates();
   const [followUp, setFollowUp] = useState(false);
@@ -105,11 +109,11 @@ export default function WhatsAppInbox({
   // are we waiting on. "Who they are" (jobseeker, employer) is a small filter, not the main structure.
   const statuses = useMemo(() => {
     const m = new Map<string, WaStatus>();
-    for (const c of conversations) m.set(c.key, statusOf(c, contacts[c.key], now));
+    for (const c of conversations) m.set(c.key, statusOf(c, contacts[c.key], now, urgent));
     return m;
-  }, [conversations, contacts, now]);
+  }, [conversations, contacts, now, urgent]);
   const counts = useMemo(() => {
-    const n: Record<WaState, number> = { needs_you: 0, assistant: 0, waiting: 0, failed: 0, archived: 0 };
+    const n: Record<WaState, number> = { needs_you: 0, can_wait: 0, assistant: 0, waiting: 0, failed: 0, archived: 0 };
     for (const c of conversations) {
       if (who !== "all" && whoOf(contacts[c.key]) !== who) continue;
       n[statuses.get(c.key)!.state]++;
@@ -256,7 +260,7 @@ export default function WhatsAppInbox({
     <div>
       {/* What is going on, at a glance. Each tile is a view of the list below. */}
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {TILES.map((st) => {
+        {TILES.filter((st) => st !== "assistant" || counts.assistant > 0).map((st) => {
           const meta = STATE_META[st];
           const tone = TONE[meta.tone];
           const on = view === st;
