@@ -141,8 +141,8 @@ export default async function ClientsPage({
   ];
 
   return (
-    <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
-      <div className="col-span-2">
+    <div className="max-w-[1500px] mx-auto px-5 py-8">
+      <div>
         <div className="flex items-baseline justify-between mb-5">
           <div>
             <h1 className="ros-page-title">Clients</h1>
@@ -151,6 +151,17 @@ export default async function ClientsPage({
               {isPartnerView ? " you brought in" : " in your database"}
             </p>
           </div>
+          <details className="group relative">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-teal-700 [&::-webkit-details-marker]:hidden">
+              <span aria-hidden>+</span> New client
+            </summary>
+            <div className="absolute right-0 z-30 mt-2 w-[360px] max-w-[90vw]">
+              <Card>
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New client</h2>
+                <CreateClientForm />
+              </Card>
+            </div>
+          </details>
         </div>
 
         <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">
@@ -177,7 +188,7 @@ export default async function ClientsPage({
           />
         </form>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(clients ?? []).map((c) => {
             const stats = statsByClient[c.id] ?? { open: 0, total: 0, shortlisted: 0 };
             const funnel = funnelByClient[c.id];
@@ -245,17 +256,11 @@ export default async function ClientsPage({
           <EmptyState
             icon={<Building2 className="w-6 h-6 text-slate-400" />}
             title={q ? "No clients match your search" : "No clients yet"}
-            description={q ? undefined : "Add your first client using the form on the right."}
+            description={q ? undefined : "Add your first client with the New client button above."}
           />
         )}
       </div>
 
-      <div>
-        <Card className="sticky top-20">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">New client</h2>
-          <CreateClientForm />
-        </Card>
-      </div>
     </div>
   );
 }
