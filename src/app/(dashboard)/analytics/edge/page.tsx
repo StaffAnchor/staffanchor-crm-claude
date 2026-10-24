@@ -6,6 +6,7 @@ import AvailabilityEditor from "./availability-editor";
 import ProposalHelper from "./proposal-helper";
 import InvoiceControls, { type InvoiceInfo } from "../invoice-controls";
 import NewSessionForm from "./new-session-form";
+import NewCvForm from "./new-cv-form";
 import { signedInvoiceUrl } from "@/lib/service-invoices";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +68,10 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
   const { data: reportRows } = db ? await db.from("session_reports").select("id, booking_id, candidate_name, track, status, updated_at, sent_at").order("updated_at", { ascending: false }).limit(12) : { data: [] };
   const reports = (reportRows ?? []) as { id: string; booking_id: string | null; candidate_name: string; track: string; status: string; updated_at: string; sent_at: string | null }[];
   const reportOf = new Map(reports.filter((r) => r.booking_id).map((r) => [r.booking_id as string, r]));
+  const { data: cvRows } = db ? await db.from("cv_briefs").select("id, booking_id, name, status, updated_at, submitted_at").order("updated_at", { ascending: false }).limit(12) : { data: [] };
+  const cvForms = (cvRows ?? []) as { id: string; booking_id: string | null; name: string; status: "sent" | "started" | "submitted"; updated_at: string; submitted_at: string | null }[];
+  const cvOf = new Map(cvForms.filter((r) => r.booking_id).map((r) => [r.booking_id as string, r]));
+  const CV_STATUS = { sent: "link made", started: "in progress", submitted: "submitted" } as const;
   const paid = rows.filter((b) => b.status === "paid");
   const linked = !!process.env.PRO_INTERNAL_SECRET;
   const gc = googleConfigured();
@@ -109,6 +114,20 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <Link href={`/analytics/edge/session/${r.id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">{r.candidate_name}</Link>
                 <span className="text-xs text-slate-500">{r.track === "sales" ? "Sales" : "Non-sales"} · {r.status === "final" ? "Final" : "Draft"}{r.sent_at ? " · sent" : ""} · updated {new Date(r.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card title="Candidate CV forms" sub="A private link the candidate fills in (about 10 to 15 minutes) with their sales career, numbers and what they want next, so you can write a stronger CV. Make it from a booking below, or here for someone who did not book through the site.">
+        <NewCvForm />
+        {cvForms.length > 0 && (
+          <ul className="mt-4 divide-y divide-slate-100 text-[13px] dark:divide-slate-800">
+            {cvForms.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <Link href={`/analytics/edge/cv/${r.id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">{r.name}</Link>
+                <span className={`text-xs ${r.status === "submitted" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>{CV_STATUS[r.status]} · updated {new Date(r.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
               </li>
             ))}
           </ul>
@@ -168,6 +187,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
                       {b.calendar_error && <div className="text-xs text-amber-700">{b.calendar_error}</div>}
                       {b.status === "paid" && <div className="mt-1.5"><InvoiceControls kind="edge" refId={b.id} invoice={invoices[b.id] ?? null} /></div>}
                       {b.status === "paid" && <div className="mt-1.5"><Link href={`/analytics/edge/session/start?booking=${b.id}`} className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400">{reportOf.get(b.id) ? "Open session report →" : "Start session report →"}</Link></div>}
+                      {b.status === "paid" && <div className="mt-1"><Link href={`/analytics/edge/cv/start?booking=${b.id}`} className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400">{cvOf.get(b.id) ? `CV form (${CV_STATUS[cvOf.get(b.id)!.status]}) →` : "CV form →"}</Link></div>}
                     </td>
                     <td className="py-2 text-xs text-slate-500">{b.source ?? "—"}</td>
                   </tr>
