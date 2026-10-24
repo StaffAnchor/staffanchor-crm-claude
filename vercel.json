@@ -90,6 +90,10 @@
     {
       "path": "/api/cron/readiness-snapshot",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/waiting-digest",
+      "schedule": "30 3 * * *"
     }
   ]
 }

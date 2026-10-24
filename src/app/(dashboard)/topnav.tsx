@@ -17,7 +17,7 @@ type NavLink = { href: string; label: string; enabled: boolean };
 // `also` lists pages that belong to a group but have no tab of their own, so the right heading still lights up.
 const NAV_GROUPS: { id: string; label: string; items: string[]; also?: string[] }[] = [
   { id: "today", label: "Today", items: ["/today"] },
-  { id: "pipeline", label: "Pipeline", items: ["/mandates", "/candidates", "/interviews"], also: ["/saas-practice", "/referrals"] },
+  { id: "pipeline", label: "Pipeline", items: ["/hiring", "/mandates", "/candidates", "/interviews"], also: ["/saas-practice", "/referrals"] },
   { id: "clients", label: "Clients", items: ["/clients", "/client-acquisition"], also: ["/employer-inquiries", "/sales"] },
   { id: "placements", label: "Placements", items: ["/placements"], also: ["/retention"] },
   { id: "inbox", label: "Inbox", items: ["/tasks", "/whatsapp"] },

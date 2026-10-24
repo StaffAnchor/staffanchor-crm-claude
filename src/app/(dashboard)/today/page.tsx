@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadTodayDesk } from "@/lib/today-desk";
 import { loadFocus } from "@/lib/today-focus";
+import { adminDb } from "@/lib/pro-sessions/core";
+import { loadWaiting } from "@/lib/waiting-queue";
 import TodayView from "./today-view";
 
 export const dynamic = "force-dynamic";
@@ -21,5 +23,7 @@ export default async function TodayPage() {
 
   const desk = await loadTodayDesk(supabase, user.id, name);
   const focus = await loadFocus(supabase, user.id, desk).catch(() => ({ cards: [], feesInPlay: null }));
-  return <TodayView desk={desk} focus={focus} />;
+  const admin = adminDb();
+  const waiting = admin ? await loadWaiting(admin).catch(() => []) : [];
+  return <TodayView desk={desk} focus={focus} waiting={waiting} />;
 }

@@ -37,6 +37,7 @@ export default async function DashboardLayout({
     { href: "/tasks", label: "Tasks", enabled: true },
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/whatsapp", label: "WhatsApp", enabled: true },
+    { href: "/hiring", label: "Hiring board", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
     // Sales + Employer Inquiries consolidated under one section (Sep

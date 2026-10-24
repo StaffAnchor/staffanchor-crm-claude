@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarClock, Hourglass, Handshake, Trophy, CheckCircle2, ListChecks } from "lucide-react";
 import FocusStack from "./focus-stack";
 import type { FocusData } from "@/lib/today-focus";
+import { KIND_LABEL, type WaitingItem } from "@/lib/waiting-queue";
 import type { Decision, NextUp, RoleHealth, RoleRow, TodayDesk, Tone } from "@/lib/today-desk";
 
 const card = "rounded-ros-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm";
@@ -100,7 +101,26 @@ function RoleLine({ r }: { r: RoleRow }) {
   );
 }
 
-export default function TodayView({ desk, focus }: { desk: TodayDesk; focus: FocusData }) {
+function WaitingRow({ w }: { w: WaitingItem }) {
+  const age = w.hoursWaiting >= 24 ? `${Math.floor(w.hoursWaiting / 24)}d` : `${w.hoursWaiting}h`;
+  return (
+    <li className="border-t border-slate-100 dark:border-slate-800 first:border-t-0">
+      <Link href={w.href} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ros-focusable">
+        <span className={`h-2 w-2 rounded-full shrink-0 ${w.kind === "employer" ? "bg-rose-500" : w.kind === "candidate_on_role" ? "bg-amber-500" : "bg-slate-400"}`} aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">
+            {w.name} <span className="font-normal text-slate-500 dark:text-slate-400">· {KIND_LABEL[w.kind]}</span>
+          </p>
+          {w.preview ? <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">{w.preview}</p> : null}
+        </div>
+        <span className="text-[12px] text-slate-400 shrink-0">{age}</span>
+        <ArrowRight className="h-4 w-4 text-slate-400 shrink-0" aria-hidden />
+      </Link>
+    </li>
+  );
+}
+
+export default function TodayView({ desk, focus, waiting }: { desk: TodayDesk; focus: FocusData; waiting: WaitingItem[] }) {
   const { metrics } = desk;
   const needCount = desk.decisions.length + desk.moreDecisions;
   const placements = metrics.placements;
@@ -108,6 +128,22 @@ export default function TodayView({ desk, focus }: { desk: TodayDesk; focus: Foc
   return (
     <div className="max-w-[1200px] mx-auto px-5 py-8">
       <FocusStack cards={focus.cards} greeting={desk.greeting} firstName={desk.firstName} fees={focus.feesInPlay} />
+
+      <section className={`${card} mb-6`}>
+        <header className="px-4 pt-4 pb-3">
+          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Waiting on you{waiting.length ? ` (${waiting.length})` : ""}</h2>
+          <p className="text-[12px] text-slate-500 dark:text-slate-400">Employers first, then candidates on a live role. Everyone else has already been answered.</p>
+        </header>
+        {waiting.length === 0 ? (
+          <div className="flex items-center gap-2 px-4 py-5 border-t border-slate-100 dark:border-slate-800 text-[14px] text-slate-600 dark:text-slate-300">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
+            Nobody is waiting on a reply.
+          </div>
+        ) : (
+          <ul>{waiting.slice(0, 8).map((w) => <WaitingRow key={`${w.kind}-${w.key}`} w={w} />)}</ul>
+        )}
+        {waiting.length > 8 ? <p className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-[12px] text-slate-500">{waiting.length - 8} more in the WhatsApp inbox.</p> : null}
+      </section>
 
       <p className="mb-3 text-[12px] font-medium uppercase tracking-wide text-slate-400">The wider picture</p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
