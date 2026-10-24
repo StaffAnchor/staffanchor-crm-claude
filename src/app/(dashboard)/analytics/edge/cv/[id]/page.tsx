@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminDb, formatIst } from "@/lib/pro-sessions/core";
 import { COLUMNS, jobsLink, type BriefRow } from "@/lib/cv-brief/store";
-import { SCOPE_TEXT, describeJob, formatMetric, gaps, jobFilled, jobPeriod, keyItems, progress, sanitize, winDone, type Job } from "@/lib/cv-brief/config";
+import { SCOPE_TEXT, describeJob, monthLabel, formatMetric, gaps, jobFilled, jobPeriod, keyItems, progress, sanitize, winDone, type Job } from "@/lib/cv-brief/config";
 import CopyBox from "./copy-box";
 import ReminderButton from "./reminder-button";
 import { ago, briefState } from "@/lib/cv-brief/state";
@@ -47,7 +47,19 @@ function JobView({ j, n }: { j: Job; n: number }) {
         {items.map((k) => <span key={k.id} className={`rounded-full px-2 py-0.5 ${k.done ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-200"}`}>{k.done ? "✓" : "Missing:"} {k.label}</span>)}
       </p>
       <dl className="mt-3 space-y-2">
-        <Row k="Type of role" v={[j.fn, j.level].filter(Boolean).join(" · ")} />
+        {j.positions.length > 1 ? (
+          <div className="grid gap-1 md:grid-cols-[170px_1fr]">
+            <dt className="text-xs text-slate-400">Roles here (promotion path)</dt>
+            <dd>
+              <ul className="space-y-0.5">
+                {j.positions.map((p) => <li key={p.id}>{p.title || "Title not given"}{p.level ? <span className="text-slate-500"> · {p.level}</span> : null}<span className="text-slate-500"> · {[monthLabel(p.start), p.current ? "Present" : monthLabel(p.end)].filter(Boolean).join(" – ")}</span></li>)}
+              </ul>
+            </dd>
+          </div>
+        ) : null}
+        <Row k="Type of role" v={[j.fn, j.positions.length > 1 ? "" : j.level].filter(Boolean).join(" · ")} />
+        <Row k="Notable customers" v={j.clients} />
+        <Row k="Sales target" v={j.noTarget ? "Did not carry a target" : ""} />
         <Row k="Industry" v={j.industry} />
         <Row k="What they sold" v={j.sells} />
         <Row k="Business model" v={<Chips items={j.model} />} />
@@ -129,6 +141,7 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
     "Start by uploading your current CV and it will fill in your jobs for you. Nothing is compulsory, so skip anything you can't share.",
     "Regards,\nStaffAnchor Talent Solutions",
   ].join("\n\n");
+  const photoUrl = b.photo_path ? (await db.storage.from("resume-orders").createSignedUrl(b.photo_path, 3600)).data?.signedUrl ?? null : null;
   const cvUrl = b.cv_path ? (await db.storage.from("resume-orders").createSignedUrl(b.cv_path, 3600)).data?.signedUrl ?? null : null;
   const now = nowMs();
   const st = briefState(b, now);
@@ -172,6 +185,7 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
         <>
           <Section title="Consent and CV file">
             <Row k="Profile consent" v={b.consent_at ? `Ticked ${formatIst(new Date(b.consent_at))} IST (wording ${b.consent_version})` : "Not given. Do not create a StaffAnchor profile from this form."} />
+            <Row k="Photo" v={photoUrl ? <span className="flex items-center gap-3"><a href={photoUrl} target="_blank"><img src={photoUrl} alt="Candidate photo" className="h-16 w-16 rounded-xl object-cover" /></a><span className="text-slate-500">{d.extras.photoPref || "Wants it on the CV: not answered"}</span></span> : d.extras.photoPref ? `No photo uploaded. They said: ${d.extras.photoPref}` : ""} />
             <Row k="Uploaded CV" v={cvUrl ? <a href={cvUrl} target="_blank" className="text-teal-700 hover:underline dark:text-teal-400">{b.cv_name ?? "Download"}</a> : "None uploaded"} />
             <Row k="StaffAnchor profile" v={b.candidate_id ? <Link href={`/candidates/${b.candidate_id}`} className="text-teal-700 hover:underline dark:text-teal-400">Open profile</Link> : "No matching profile found by email or phone"} />
           </Section>
@@ -191,13 +205,23 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
               <Row k="Now" v={[d.basics.title, d.basics.employer].filter(Boolean).join(", ")} />
               <Row k="Experience" v={d.basics.expYears !== null ? `${d.basics.expYears} years` : ""} />
               <Row k="Status" v={d.basics.status} />
-              <Row k="Education" v={[d.basics.education, d.basics.educationDetail].filter(Boolean).join(": ")} />
+              <Row k="Education" v={d.basics.educations.length ? <ul className="space-y-0.5">{d.basics.educations.map((e, i) => <li key={i}>{[e.degree, e.institution, e.year].filter(Boolean).join(", ")}</li>)}</ul> : [d.basics.education, d.basics.educationDetail].filter(Boolean).join(": ")} />
               <Row k="LinkedIn" v={d.basics.linkedin} />
             </dl>
           </Section>
 
           <Section title={`Jobs (${jobs.length})`} sub="Newest first.">
             {jobs.length === 0 ? <p className="text-slate-400">No jobs added yet.</p> : jobs.map((j, i) => <JobView key={j.id} j={j} n={i} />)}
+          </Section>
+
+          <Section title="How they see themselves" sub="Their own words, picked and typed by them. Use these to write the CV summary.">
+            <dl className="space-y-2">
+              <Row k="Words they chose" v={<Chips items={d.story.strengths} />} />
+              <Row k="Selling style" v={d.story.style} />
+              <Row k="Known for" v={d.story.knownFor} />
+              <Row k="Want from the next role" v={<Chips items={d.story.wantNext} />} />
+              <Row k="CV headline they wrote" v={d.story.headline} />
+            </dl>
           </Section>
 
           <Section title="What they want next">

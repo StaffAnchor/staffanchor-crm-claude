@@ -71,6 +71,12 @@ export const assembleWin = (tpl: string, blanks: string[]) => {
 };
 export const winDone = (w: Win) => w.text.trim().length > 0 && !w.text.includes("___");
 
+// The self-reflection step: how they sell and what they want next, in their own words, picked rather than typed.
+export const STRENGTHS = ["Hunter", "Closer", "Farmer", "Relationship builder", "Consultative", "Negotiator", "Storyteller", "Data-driven", "Process-driven", "Resilient", "Persistent", "Fast learner", "Customer-first", "Strategic", "Coach", "Team builder"];
+export const STYLES = ["Hunter: new business", "Farmer: growing accounts", "A mix of both", "Consultative adviser", "Technical or solution seller"];
+export const WANT_NEXT = ["A bigger target", "A team to lead", "Faster growth", "A better product", "Stability", "Higher pay", "A new industry", "Global exposure", "Learning and mentoring", "Better work-life balance"];
+export const PHOTO_PREFS = ["Yes, include it", "No photo on my CV", "Not sure, advise me"];
+
 export type Scope = "own" | "team" | "business";
 export type MetricKind = "money" | "count" | "percent";
 
@@ -92,9 +98,16 @@ export type Metric = {
 export type Win = { id: string; type: string; text: string; result: string; tpl: string; blanks: string[] };
 export type Proc = { key: string; label: string; volume: string; role: string };
 
+// One role at a company. A promotion within the same company is another position in the same job, not a new job.
+export type Position = { id: string; title: string; level: string; start: string; end: string; current: boolean };
+
 export type Job = {
   id: string;
   fromCv: boolean;
+  checked: boolean; // the candidate has confirmed the company, roles and dates
+  positions: Position[];
+  noTarget: boolean;
+  clients: string;
   employer: string;
   industry: string;
   city: string;
@@ -131,7 +144,7 @@ export type Job = {
 
 export type Basics = {
   name: string; email: string; phone: string; city: string; employer: string; title: string; expYears: number | null;
-  education: string; educationDetail: string; linkedin: string; status: string;
+  education: string; educationDetail: string; educations: { degree: string; institution: string; year: string }[]; linkedin: string; status: string;
 };
 
 export type Targets = {
@@ -140,9 +153,11 @@ export type Targets = {
   expectedFixed: number | null; expectedVariable: number | null; avoid: string; note: string;
 };
 
-export type Extras = { certifications: string; languages: string[]; awards: string; cvPages: string; cvAvoid: string; confidential: boolean; gaps: string; anything: string };
+export type Story = { strengths: string[]; style: string; knownFor: string; wantNext: string[]; headline: string };
 
-export type CvData = { basics: Basics; jobs: Job[]; targets: Targets; extras: Extras };
+export type Extras = { photoPref: string; certifications: string; languages: string[]; awards: string; cvPages: string; cvAvoid: string; confidential: boolean; gaps: string; anything: string };
+
+export type CvData = { basics: Basics; jobs: Job[]; story: Story; targets: Targets; extras: Extras };
 
 const MAX_JOBS = 10;
 
@@ -150,7 +165,7 @@ export const newId = () => Math.random().toString(36).slice(2, 10);
 
 export function emptyJob(): Job {
   return {
-    id: newId(), fromCv: false, employer: "", industry: "", city: "", start: "", end: "", current: false, title: "", fn: "", level: "",
+    id: newId(), fromCv: false, checked: false, positions: [], noTarget: false, clients: "", employer: "", industry: "", city: "", start: "", end: "", current: false, title: "", fn: "", level: "",
     sells: "", model: [], customers: [], buyers: [], motion: [], channels: [], route: "", cycle: "", reportsTo: "", geography: "", metrics: [],
     manages: "", team: { direct: null, total: null, layers: "", hired: "", attrition: "", note: "" }, processes: [], stages: [], tools: [], process: "", leads: [], composition: [], wins: [],
     growth: { from: "", to: "", period: "" }, promoted: "", extra: "",
@@ -159,10 +174,11 @@ export function emptyJob(): Job {
 
 export function emptyData(): CvData {
   return {
-    basics: { name: "", email: "", phone: "", city: "", employer: "", title: "", expYears: null, education: "", educationDetail: "", linkedin: "", status: "" },
+    basics: { name: "", email: "", phone: "", city: "", employer: "", title: "", expYears: null, education: "", educationDetail: "", educations: [], linkedin: "", status: "" },
     jobs: [],
+    story: { strengths: [], style: "", knownFor: "", wantNext: [], headline: "" },
     targets: { roles: "", levels: [], industries: [], companyTypes: [], cities: "", relocate: "", travel: "", workMode: "", empType: "", notice: "", currentFixed: null, currentVariable: null, expectedFixed: null, expectedVariable: null, avoid: "", note: "" },
-    extras: { certifications: "", languages: [], awards: "", cvPages: "", cvAvoid: "", confidential: false, gaps: "", anything: "" },
+    extras: { photoPref: "", certifications: "", languages: [], awards: "", cvPages: "", cvAvoid: "", confidential: false, gaps: "", anything: "" },
   };
 }
 
@@ -210,9 +226,20 @@ export function cleanJob(raw: unknown): Job {
   const t = rec(j.team);
   const g = rec(j.growth);
   const current = j.current === true;
-  return {
+  const positions = sortPositions(
+    (Array.isArray(j.positions) ? j.positions : []).slice(0, 6).map((p): Position => {
+      const x = rec(p);
+      const cur = x.current === true;
+      return { id: id(x.id), title: str(x.title, 120), level: str(x.level, 80), start: month(x.start), end: cur ? "" : month(x.end), current: cur };
+    }).filter((p) => p.title || p.start || p.level),
+  );
+  return syncJob({
     id: id(j.id),
     fromCv: j.fromCv === true,
+    checked: j.checked === true,
+    positions,
+    noTarget: j.noTarget === true,
+    clients: str(j.clients, 400),
     employer: str(j.employer, 120), industry: str(j.industry, 80), city: str(j.city, 80),
     start: month(j.start), end: current ? "" : month(j.end), current,
     title: str(j.title, 120), fn: str(j.fn, 80), level: str(j.level, 80),
@@ -232,7 +259,52 @@ export function cleanJob(raw: unknown): Job {
     }),
     growth: { from: str(g.from, 120), to: str(g.to, 120), period: str(g.period, 80) },
     promoted: str(j.promoted, 400), extra: text(j.extra),
-  };
+  });
+}
+
+// ---- roles within a company ----
+
+const roleKey = (p: Position) => `${p.current ? "1" : "0"}|${p.end || ""}|${p.start || ""}`;
+
+/** Newest role first, by the dates given. Roles without dates keep the order they came in. */
+export function sortPositions(ps: Position[]): Position[] {
+  return ps.map((p, i) => ({ p, i })).sort((a, b) => (roleKey(a.p) < roleKey(b.p) ? 1 : roleKey(a.p) > roleKey(b.p) ? -1 : a.i - b.i)).map((x) => x.p);
+}
+
+/**
+ * Keeps the job's own title, level and dates in step with its roles: the title and level are the latest role's, the start is
+ * the first role's, and it is current if any role is. Nothing else in the form needs to know about roles to keep working.
+ */
+export function syncJob(j: Job): Job {
+  let ps = j.positions;
+  if (ps.length === 0 && (j.title || j.level || j.start || j.end || j.current)) ps = [{ id: newId(), title: j.title, level: j.level, start: j.start, end: j.end, current: j.current }];
+  if (ps.length === 0) return { ...j, positions: [] };
+  const latest = ps.reduce((a, b) => (roleKey(b) > roleKey(a) ? b : a), ps[0]);
+  const starts = ps.map((p) => p.start).filter(Boolean).sort();
+  const current = ps.some((p) => p.current);
+  const ends = ps.filter((p) => !p.current).map((p) => p.end).filter(Boolean).sort();
+  return { ...j, positions: ps, title: latest.title, level: latest.level, start: starts[0] ?? "", current, end: current ? "" : (ends[ends.length - 1] ?? "") };
+}
+
+const COMPANY_NOISE = new Set(["pvt", "ltd", "private", "limited", "inc", "llp", "corp", "corporation", "india", "co", "company", "the"]);
+export const normEmployer = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w && !COMPANY_NOISE.has(w)).join(" ");
+
+export type ParsedRole = { employer: string; title: string; city: string; start: string; end: string; current: boolean };
+
+/**
+ * Turns the roles read from a CV into jobs. Roles at the same company that follow each other are one job with several
+ * roles (a promotion), not several jobs. If another company comes in between, it is a rejoin and stays a separate job.
+ */
+export function groupExperiences(parsed: ParsedRole[]): Job[] {
+  const out: Job[] = [];
+  for (const r of parsed) {
+    const prev = out[out.length - 1];
+    const same = prev && normEmployer(prev.employer) !== "" && normEmployer(prev.employer) === normEmployer(r.employer);
+    const pos: Position = { id: newId(), title: r.title, level: "", start: r.start, end: r.current ? "" : r.end, current: r.current };
+    if (same) prev.positions.push(pos);
+    else out.push({ ...emptyJob(), fromCv: true, employer: r.employer, city: r.city, positions: [pos] });
+  }
+  return out.map((j) => syncJob({ ...j, positions: sortPositions(j.positions) }));
 }
 
 export function sanitize(raw: unknown): CvData {
@@ -244,9 +316,12 @@ export function sanitize(raw: unknown): CvData {
   return {
     basics: {
       name: str(b.name, 120), email: str(b.email, 160), phone: str(b.phone, 30), city: str(b.city, 80), employer: str(b.employer, 120), title: str(b.title, 120),
-      expYears: num(b.expYears, 60), education: oneOf(b.education, EDUCATION), educationDetail: str(b.educationDetail, 300), linkedin: str(b.linkedin, 300), status: oneOf(b.status, STATUSES),
+      expYears: num(b.expYears, 60), education: oneOf(b.education, EDUCATION), educationDetail: str(b.educationDetail, 300),
+      educations: (Array.isArray(b.educations) ? b.educations : []).slice(0, 4).map((x) => { const e2 = rec(x); return { degree: str(e2.degree, 160), institution: str(e2.institution, 160), year: str(e2.year, 12) }; }).filter((x) => x.degree || x.institution),
+      linkedin: str(b.linkedin, 300), status: oneOf(b.status, STATUSES),
     },
     jobs: (Array.isArray(r.jobs) ? r.jobs : []).slice(0, MAX_JOBS).map(cleanJob),
+    story: { strengths: list(rec(r.story).strengths, 5, 60), style: str(rec(r.story).style, 80), knownFor: str(rec(r.story).knownFor, 300), wantNext: list(rec(r.story).wantNext, 6, 60), headline: str(rec(r.story).headline, 300) },
     targets: {
       ...d.targets,
       roles: str(t.roles, 400), levels: list(t.levels, 8), industries: list(t.industries, 15), companyTypes: list(t.companyTypes, 6), cities: str(t.cities, 300),
@@ -255,7 +330,7 @@ export function sanitize(raw: unknown): CvData {
       avoid: str(t.avoid, 400), note: text(t.note),
     },
     extras: {
-      certifications: str(e.certifications, 600), languages: list(e.languages, 12), awards: text(e.awards), cvPages: oneOf(e.cvPages, CV_PAGES), cvAvoid: str(e.cvAvoid, 600),
+      photoPref: oneOf(e.photoPref, PHOTO_PREFS), certifications: str(e.certifications, 600), languages: list(e.languages, 12), awards: text(e.awards), cvPages: oneOf(e.cvPages, CV_PAGES), cvAvoid: str(e.cvAvoid, 600),
       confidential: e.confidential === true, gaps: text(e.gaps), anything: text(e.anything),
     },
   };
@@ -268,7 +343,8 @@ export type Preset = { key: string; label: string; kind: MetricKind; scope: Scop
 const P = (key: string, label: string, kind: MetricKind, scope: Scope, hint: string): Preset => ({ key, label, kind, scope, hint });
 
 // A leader if they say so, manage people, or (before they have chosen a level) their title clearly says so, so team size is never missed.
-export const isLeader = (j: Job) => LEADER_LEVELS.includes(j.level) || j.manages === "yes" || (!j.level && LEADER_LEVELS.includes(suggestLevel(j.title)));
+export const isLeader = (j: Job) =>
+  LEADER_LEVELS.includes(j.level) || j.manages === "yes" || j.positions.some((p) => LEADER_LEVELS.includes(p.level) || (!p.level && LEADER_LEVELS.includes(suggestLevel(p.title)))) || (!j.level && LEADER_LEVELS.includes(suggestLevel(j.title)));
 
 export function presetsFor(j: Job): Preset[] {
   const out: Preset[] = [
@@ -374,8 +450,15 @@ export function describeJob(j: Job, full = true): { head: string; sub: string; l
   const head = [j.title, j.employer].filter(Boolean).join(", ") || "Your job title, company";
   const sub = [jobPeriod(j), j.city].filter(Boolean).join(" · ");
   const lines: PreviewLine[] = [];
+  if (j.positions.length > 1) {
+    const ps = sortPositions(j.positions);
+    const first = ps[ps.length - 1];
+    const last = ps[0];
+    if (first.title && last.title && first.title !== last.title) lines.push({ text: `Progressed from ${first.title} to ${last.title}.` });
+  }
   const to = j.customers.length ? ` to ${joinList(j.customers.map(lc))}` : "";
   lines.push(j.sells.trim() ? { text: `Sold ${j.sells.trim().replace(/\.$/, "")}${to}${j.model.length ? ` (${j.model.join(", ")})` : ""}.` } : { text: "What you sold, and to whom", ghost: true });
+  if (j.clients.trim()) lines.push({ text: `Customers included ${j.clients.trim().replace(/\.$/, "")}.` });
   if (full) {
     const by = (g: string) => PROCESS_GROUPS.find((x) => x.group === g)!.items.filter((i) => j.processes.some((p) => p.key === i.key)).map((i) => lc(i.label));
     const parts = PROCESS_GROUPS.map((g) => ({ g: g.group, items: by(g.group) })).filter((x) => x.items.length);
@@ -390,7 +473,7 @@ export function describeJob(j: Job, full = true): { head: string; sub: string; l
     lines.push({ text: `Achieved ${moneyShort(got)} against ${targetPhrase(target.period)} of ${moneyShort(target)} (${pct}%).` });
   } else if (got) lines.push({ text: `Achieved ${moneyShort(got)}${periodWord(got.period) ? ` ${periodWord(got.period)}` : ""}${got.amount === null || got.basis === "estimate" ? " (approx.)" : ""}.` });
   else if (target) lines.push({ text: `Carried ${targetPhrase(target.period)} of ${moneyShort(target)}.` });
-  else lines.push({ text: "Your revenue numbers: target and what you achieved", ghost: true });
+  else if (!j.metrics.some((m) => m.key !== "target" && m.key !== "achieved" && (m.amount !== null || !!m.range) && m.label)) lines.push({ text: j.noTarget ? "Your volume numbers (calls, leads, deals)" : "Your revenue numbers: target and what you achieved", ghost: true });
   for (const m of j.metrics) {
     if ((m.key === "target" || m.key === "achieved") || (m.amount === null && !m.range) || !m.label) continue;
     lines.push({ text: `${m.label}: ${formatMetric(m)}.` });
