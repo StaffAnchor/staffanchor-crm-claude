@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminDb, formatIst } from "@/lib/pro-sessions/core";
 import { COLUMNS, jobsLink, type BriefRow } from "@/lib/cv-brief/store";
-import { SCOPE_TEXT, formatMetric, gaps, jobFilled, jobPeriod, progress, sanitize, type Job } from "@/lib/cv-brief/config";
+import { SCOPE_TEXT, describeJob, formatMetric, gaps, jobFilled, jobPeriod, keyItems, progress, sanitize, winDone, type Job } from "@/lib/cv-brief/config";
 import CopyBox from "./copy-box";
 import ReminderButton from "./reminder-button";
 import { ago, briefState } from "@/lib/cv-brief/state";
@@ -35,13 +35,17 @@ const Row = ({ k, v }: { k: string; v: React.ReactNode }) => (v === "" || v === 
 const Chips = ({ items }: { items: string[] }) => (items.length ? <span className="flex flex-wrap gap-1.5">{items.map((i) => <span key={i} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-800">{i}</span>)}</span> : "");
 
 function JobView({ j, n }: { j: Job; n: number }) {
-  const withNumbers = j.metrics.filter((m) => m.amount !== null);
+  const withNumbers = j.metrics.filter((m) => m.amount !== null || !!m.range);
+  const items = keyItems(j, n < 2);
   return (
     <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{j.title || "Role not given"}{j.employer ? `, ${j.employer}` : ""}</p>
         <p className="text-xs text-slate-500">{jobPeriod(j) || "Dates not given"}{j.city ? ` · ${j.city}` : ""}{n === 0 ? " · latest" : ""}{j.fromCv ? " · read from CV" : ""}</p>
       </div>
+      <p className="mt-2 flex flex-wrap gap-1.5 text-[11.5px] font-semibold">
+        {items.map((k) => <span key={k.id} className={`rounded-full px-2 py-0.5 ${k.done ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-200"}`}>{k.done ? "✓" : "Missing:"} {k.label}</span>)}
+      </p>
       <dl className="mt-3 space-y-2">
         <Row k="Type of role" v={[j.fn, j.level].filter(Boolean).join(" · ")} />
         <Row k="Industry" v={j.industry} />
@@ -51,6 +55,17 @@ function JobView({ j, n }: { j: Job; n: number }) {
         <Row k="Dealt with" v={<Chips items={j.buyers} />} />
         <Row k="How they sold" v={<Chips items={j.motion} />} />
         <Row k="Channels" v={<Chips items={j.channels} />} />
+        {j.processes.length > 0 && (
+          <div className="grid gap-1 md:grid-cols-[170px_1fr]">
+            <dt className="text-xs text-slate-400">Processes run</dt>
+            <dd>
+              <ul className="space-y-0.5">
+                {j.processes.map((p) => <li key={p.key}>{p.label}{[p.volume && `${p.volume} a month`, p.role].filter(Boolean).length ? <span className="text-slate-500"> · {[p.volume && `${p.volume} a month`, p.role].filter(Boolean).join(" · ")}</span> : null}</li>)}
+              </ul>
+            </dd>
+          </div>
+        )}
+        <Row k="Parts of the sale owned" v={<Chips items={j.stages} />} />
         <Row k="Direct or partners" v={j.route} />
         <Row k="Sales cycle" v={j.cycle} />
         <Row k="Reported to" v={j.reportsTo} />
@@ -76,6 +91,8 @@ function JobView({ j, n }: { j: Job; n: number }) {
           <>
             <Row k="Direct reports" v={j.team.direct !== null ? String(j.team.direct) : ""} />
             <Row k="Whole team" v={j.team.total !== null ? String(j.team.total) : ""} />
+            <Row k="Team made up of" v={<Chips items={j.composition} />} />
+            <Row k="Duties as a leader" v={<Chips items={j.leads} />} />
             <Row k="Layers" v={j.team.layers} />
             <Row k="Hiring" v={j.team.hired} />
             <Row k="Attrition" v={j.team.attrition} />
@@ -84,10 +101,11 @@ function JobView({ j, n }: { j: Job; n: number }) {
         )}
         <Row k="Tools" v={<Chips items={j.tools} />} />
         <Row k="Processes" v={j.process} />
-        {j.wins.filter((w) => w.text.trim()).map((w, i) => (
+        {j.wins.filter(winDone).map((w, i) => (
           <Row key={w.id} k={`Achievement ${i + 1}${w.type ? ` (${w.type})` : ""}`} v={[w.text, w.result && `Result: ${w.result}`].filter(Boolean).join("\n")} />
         ))}
         <Row k="Promotions" v={j.promoted} />
+        <Row k="How it reads" v={<span className="block rounded-lg bg-slate-50 p-3 text-[12.5px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">{describeJob(j, n < 2).lines.filter((l) => !l.ghost).map((l) => l.text).join(" ")}</span>} />
         <Row k="Anything else" v={j.extra} />
       </dl>
     </div>

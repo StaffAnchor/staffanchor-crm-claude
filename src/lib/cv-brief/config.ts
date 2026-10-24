@@ -37,6 +37,40 @@ export const COMPANY_TYPES = ["Startup", "Scale-up", "Large / MNC", "Indian cong
 export const CV_PAGES = ["One page", "Two pages", "Whatever works best"];
 export const LANGUAGES = ["English", "Hindi", "Marathi", "Gujarati", "Punjabi", "Tamil", "Telugu", "Kannada", "Malayalam", "Bengali", "Odia", "Assamese", "Urdu"];
 
+// How they sold: the processes they ran (inbound, outbound, existing customers, partners), asked as tiles with a little detail.
+export const PROCESS_GROUPS: { group: string; items: { key: string; label: string }[] }[] = [
+  { group: "Inbound", items: [{ key: "web", label: "Website and contact-us leads" }, { key: "chat", label: "Chat and WhatsApp enquiries" }, { key: "inbound_calls", label: "Inbound calls" }, { key: "campaign", label: "Marketing campaign leads" }, { key: "events", label: "Events and walk-ins" }] },
+  { group: "Outbound", items: [{ key: "cold_calls", label: "Cold calling" }, { key: "cold_email", label: "Cold email" }, { key: "social", label: "LinkedIn and social outreach" }, { key: "field", label: "Field visits and door-to-door" }] },
+  { group: "Existing customers", items: [{ key: "upsell", label: "Upsell and cross-sell" }, { key: "renewals", label: "Renewals" }, { key: "collections", label: "Collections and follow-up" }] },
+  { group: "Partners and others", items: [{ key: "partners", label: "Partners and channel" }, { key: "referrals", label: "Referrals" }, { key: "tenders", label: "Tenders and RFPs" }] },
+];
+export const PROCESS_LABEL: Record<string, string> = Object.fromEntries(PROCESS_GROUPS.flatMap((g) => g.items.map((i) => [i.key, i.label])));
+export const VOLUMES = ["Under 50", "50 to 200", "200 to 1,000", "1,000+", "Not sure"];
+export const PROC_ROLES = ["I did it myself", "My team did it", "I set it up"];
+export const STAGES = ["Finding leads", "Qualifying", "Demo or pitch", "Proposal and negotiation", "Closing", "Handover and onboarding", "Renewal and growth"];
+export const LEAD_DUTIES = ["Hiring", "Training and onboarding", "Coaching", "Setting targets", "Performance reviews", "Incentive design", "Forecasting", "Pipeline reviews"];
+export const COMPOSITION = ["Sales reps", "SDRs or BDRs", "Account managers", "Team leads or managers", "Pre-sales or support", "Field executives"];
+export const RANGES_INR = ["Under ₹10 L", "₹10 to 50 L", "₹50 L to 1 Cr", "₹1 to 5 Cr", "₹5 to 10 Cr", "₹10 to 25 Cr", "₹25 to 50 Cr", "₹50 to 100 Cr", "Over ₹100 Cr"];
+
+// Achievements as fill-in-the-blank sentences, so nobody has to write from scratch.
+export const WIN_TEMPLATES: { id: string; type: string; tpl: string; ph: string[] }[] = [
+  { id: "beat", type: "Beat target", tpl: "Exceeded target by {}% in {}", ph: ["For example 18", "For example FY24"] },
+  { id: "grew", type: "Revenue growth", tpl: "Grew revenue from {} to {} in {}", ph: ["For example ₹2 Cr", "For example ₹5 Cr", "For example 18 months"] },
+  { id: "team", type: "Built or scaled a team", tpl: "Built a team of {} {}", ph: ["For example 12", "For example from scratch in 6 months"] },
+  { id: "market", type: "New market / geography", tpl: "Opened {} and reached {} in {}", ph: ["For example the West region", "For example ₹3 Cr", "For example a year"] },
+  { id: "attr", type: "Better retention / lower attrition", tpl: "Brought team attrition down from {} to {}", ph: ["For example 40%", "For example 22%"] },
+  { id: "conv", type: "Improved conversion", tpl: "Lifted lead-to-sale conversion from {} to {}", ph: ["For example 6%", "For example 11%"] },
+  { id: "acct", type: "Won a key account", tpl: "Won {} worth {}", ph: ["The account or type of customer", "For example ₹1.2 Cr a year"] },
+  { id: "award", type: "Award / recognition", tpl: "Received {} for {}", ph: ["For example the Top Performer award", "For example FY23 sales"] },
+  { id: "custom", type: "Other", tpl: "{}", ph: ["Describe it in your own words"] },
+];
+
+export const assembleWin = (tpl: string, blanks: string[]) => {
+  let i = 0;
+  return tpl.replace(/\{\}/g, () => (blanks[i++] ?? "").trim() || "___");
+};
+export const winDone = (w: Win) => w.text.trim().length > 0 && !w.text.includes("___");
+
 export type Scope = "own" | "team" | "business";
 export type MetricKind = "money" | "count" | "percent";
 
@@ -51,10 +85,12 @@ export type Metric = {
   period: string;
   scope: Scope;
   basis: "actual" | "estimate";
+  range: string;
   note: string;
 };
 
-export type Win = { id: string; type: string; text: string; result: string };
+export type Win = { id: string; type: string; text: string; result: string; tpl: string; blanks: string[] };
+export type Proc = { key: string; label: string; volume: string; role: string };
 
 export type Job = {
   id: string;
@@ -81,8 +117,12 @@ export type Job = {
   metrics: Metric[];
   manages: "" | "yes" | "no";
   team: { direct: number | null; total: number | null; layers: string; hired: string; attrition: string; note: string };
+  processes: Proc[];
+  stages: string[];
   tools: string[];
   process: string;
+  leads: string[];
+  composition: string[];
   wins: Win[];
   growth: { from: string; to: string; period: string };
   promoted: string;
@@ -112,7 +152,7 @@ export function emptyJob(): Job {
   return {
     id: newId(), fromCv: false, employer: "", industry: "", city: "", start: "", end: "", current: false, title: "", fn: "", level: "",
     sells: "", model: [], customers: [], buyers: [], motion: [], channels: [], route: "", cycle: "", reportsTo: "", geography: "", metrics: [],
-    manages: "", team: { direct: null, total: null, layers: "", hired: "", attrition: "", note: "" }, tools: [], process: "", wins: [],
+    manages: "", team: { direct: null, total: null, layers: "", hired: "", attrition: "", note: "" }, processes: [], stages: [], tools: [], process: "", leads: [], composition: [], wins: [],
     growth: { from: "", to: "", period: "" }, promoted: "", extra: "",
   };
 }
@@ -160,6 +200,7 @@ export function cleanMetric(raw: unknown): Metric {
     period: oneOf(m.period, PERIODS),
     scope: (oneOf(m.scope, ["own", "team", "business"]) as Scope) || "own",
     basis: m.basis === "estimate" ? "estimate" : "actual",
+    range: oneOf(m.range, RANGES_INR) || str(m.range, 60),
     note: str(m.note, 300),
   };
 }
@@ -180,10 +221,14 @@ export function cleanJob(raw: unknown): Job {
     metrics: (Array.isArray(j.metrics) ? j.metrics : []).slice(0, 16).map(cleanMetric),
     manages: j.manages === "yes" || j.manages === "no" ? j.manages : "",
     team: { direct: num(t.direct, 100000), total: num(t.total, 1000000), layers: str(t.layers, 40), hired: str(t.hired, 80), attrition: str(t.attrition, 80), note: str(t.note, 400) },
-    tools: list(j.tools, 20), process: text(j.process),
+    processes: (Array.isArray(j.processes) ? j.processes : []).slice(0, 14).map((p) => {
+      const x = rec(p);
+      return { key: str(x.key, 40), label: str(x.label, 80) || PROCESS_LABEL[str(x.key, 40)] || "", volume: oneOf(x.volume, VOLUMES), role: oneOf(x.role, PROC_ROLES) };
+    }).filter((p) => p.key),
+    stages: list(j.stages, 8), tools: list(j.tools, 20), process: text(j.process), leads: list(j.leads, 10), composition: list(j.composition, 8),
     wins: (Array.isArray(j.wins) ? j.wins : []).slice(0, 4).map((w) => {
       const x = rec(w);
-      return { id: id(x.id), type: str(x.type, 60), text: text(x.text), result: str(x.result, 400) };
+      return { id: id(x.id), type: str(x.type, 60), text: text(x.text), result: str(x.result, 400), tpl: str(x.tpl, 40), blanks: list(x.blanks, 6, 120) };
     }),
     growth: { from: str(g.from, 120), to: str(g.to, 120), period: str(g.period, 80) },
     promoted: str(j.promoted, 400), extra: text(j.extra),
@@ -222,7 +267,8 @@ export type Preset = { key: string; label: string; kind: MetricKind; scope: Scop
 
 const P = (key: string, label: string, kind: MetricKind, scope: Scope, hint: string): Preset => ({ key, label, kind, scope, hint });
 
-export const isLeader = (j: Job) => LEADER_LEVELS.includes(j.level) || j.manages === "yes";
+// A leader if they say so, manage people, or (before they have chosen a level) their title clearly says so, so team size is never missed.
+export const isLeader = (j: Job) => LEADER_LEVELS.includes(j.level) || j.manages === "yes" || (!j.level && LEADER_LEVELS.includes(suggestLevel(j.title)));
 
 export function presetsFor(j: Job): Preset[] {
   const out: Preset[] = [
@@ -247,7 +293,7 @@ export function presetsFor(j: Job): Preset[] {
 }
 
 export function metricFromPreset(p: Preset): Metric {
-  return { id: newId(), key: p.key, label: p.label, kind: p.kind, amount: null, currency: p.kind === "money" ? "INR" : "", unit: p.kind === "money" ? "Lakh" : "", period: p.kind === "money" ? "Per year" : "", scope: p.scope, basis: "actual", note: "" };
+  return { id: newId(), key: p.key, label: p.label, kind: p.kind, amount: null, currency: p.kind === "money" ? "INR" : "", unit: p.kind === "money" ? "Lakh" : "", period: p.kind === "money" ? "Per year" : "", scope: p.scope, basis: "actual", range: "", note: "" };
 }
 
 // ---- reading it back ----
@@ -255,10 +301,10 @@ export function metricFromPreset(p: Preset): Metric {
 export const SCOPE_TEXT: Record<Scope, string> = { own: "personal", team: "team", business: "whole business" };
 
 export function formatMetric(m: Metric): string {
-  if (m.amount === null) return "";
-  const n = m.amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  const v = m.kind === "percent" ? `${n}%` : m.kind === "count" ? n : `${m.currency === "INR" ? "₹" : m.currency + " "}${n}${m.unit ? " " + m.unit : ""}`;
-  return [v, m.period && m.kind === "money" ? m.period.toLowerCase() : "", SCOPE_TEXT[m.scope], m.basis === "estimate" ? "approximate" : ""].filter(Boolean).join(" · ");
+  if (m.amount === null && !m.range) return "";
+  const n = m.amount === null ? "" : m.amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const v = m.amount === null ? m.range : m.kind === "percent" ? `${n}%` : m.kind === "count" ? n : `${m.currency === "INR" ? "₹" : m.currency + " "}${n}${m.unit ? " " + m.unit : ""}`;
+  return [v, m.period && m.kind === "money" ? m.period.toLowerCase() : "", SCOPE_TEXT[m.scope], m.amount === null || m.basis === "estimate" ? "approximate" : ""].filter(Boolean).join(" · ");
 }
 
 export function monthLabel(ym: string): string {
@@ -271,32 +317,117 @@ export const jobPeriod = (j: Job) => [monthLabel(j.start), j.current ? "Present"
 
 export const jobFilled = (j: Job) => !!(j.employer || j.title);
 
-/** Suggestions, never errors: the details that make the biggest difference to a sales CV. Latest two jobs only. */
+
+/**
+ * A guess at the level from the job title, offered for one-tap confirmation and never applied on its own. Titles that can
+ * mean either a seller or a manager (Account Manager, Business Development Manager) give no guess.
+ */
+export function suggestLevel(title: string): string {
+  const t = title.toLowerCase();
+  if (!t.trim()) return "";
+  if (/\b(ceo|cxo|chief|founder|co-founder|managing director)\b/.test(t)) return "CXO / founder";
+  if (/\b(vp|vice president|business head|country head|national head|head)\b/.test(t)) return "VP / business head";
+  if (/\b(avp|director)\b/.test(t)) return "Director / AVP";
+  if (/\b(senior manager|sr\.? manager|general manager|agm|dgm)\b/.test(t)) return "Senior manager";
+  if (/\b(team lead|team leader|sales lead)\b/.test(t)) return "Team lead";
+  if (/account/.test(t) && /manager/.test(t)) return "";
+  if (/\b(regional|area|zonal|cluster|branch|national|sales|inside sales|field sales|channel sales) manager\b/.test(t)) return "Manager";
+  if (/\bsenior\b.*\b(executive|associate|consultant|representative)\b/.test(t)) return "Senior executive";
+  if (/\b(executive|associate|representative|specialist|consultant)\b/.test(t)) return "Executive / associate";
+  return "";
+}
+
+// ---- the details a sales CV cannot do without, asked for proactively and checked the same way everywhere ----
+
+export type KeyItem = { id: "role" | "sold" | "process" | "numbers" | "team" | "wins"; label: string; done: boolean };
+
+export const hasNumber = (j: Job) => j.metrics.some((m) => m.amount !== null || !!m.range);
+
+/** What a job still needs. Team size only counts for people who lead; sales processes only for the jobs asked in full. */
+export function keyItems(j: Job, full = true): KeyItem[] {
+  const out: KeyItem[] = [
+    { id: "role", label: "Role, level and dates", done: !!(j.employer && j.title && j.start && j.level) },
+    { id: "sold", label: "What you sold", done: j.sells.trim().length > 0 },
+  ];
+  if (full) out.push({ id: "process", label: "Sales processes", done: j.processes.length > 0 });
+  out.push({ id: "numbers", label: "Revenue numbers", done: hasNumber(j) });
+  if (isLeader(j)) out.push({ id: "team", label: "Team size", done: j.team.total !== null || j.team.direct !== null });
+  out.push({ id: "wins", label: "An achievement", done: j.wins.some(winDone) });
+  return out;
+}
+
+const moneyShort = (m: Metric): string => {
+  if (m.amount === null) return m.range;
+  const n = m.amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  const u = m.unit === "Crore" ? " Cr" : m.unit === "Lakh" ? " L" : m.unit ? " " + m.unit.toLowerCase() : "";
+  return `${m.currency === "INR" || !m.currency ? "₹" : m.currency + " "}${n}${u}`;
+};
+const targetPhrase = (p: string) => { const w = periodWord(p); return w ? `${/^[aeiou]/i.test(w) ? "an" : "a"} ${w} target` : "a target"; };
+const periodWord = (p: string) => (p === "Per month" ? "monthly" : p === "Per quarter" ? "quarterly" : p === "Per year" ? "annual" : "");
+const joinList = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+const lc = (x: string) => x.charAt(0).toLowerCase() + x.slice(1);
+
+export type PreviewLine = { text: string; ghost?: boolean };
+
+/** How this job will read on the CV, built only from what the candidate entered. Missing parts show as grey prompts. */
+export function describeJob(j: Job, full = true): { head: string; sub: string; lines: PreviewLine[] } {
+  const head = [j.title, j.employer].filter(Boolean).join(", ") || "Your job title, company";
+  const sub = [jobPeriod(j), j.city].filter(Boolean).join(" · ");
+  const lines: PreviewLine[] = [];
+  const to = j.customers.length ? ` to ${joinList(j.customers.map(lc))}` : "";
+  lines.push(j.sells.trim() ? { text: `Sold ${j.sells.trim().replace(/\.$/, "")}${to}${j.model.length ? ` (${j.model.join(", ")})` : ""}.` } : { text: "What you sold, and to whom", ghost: true });
+  if (full) {
+    const by = (g: string) => PROCESS_GROUPS.find((x) => x.group === g)!.items.filter((i) => j.processes.some((p) => p.key === i.key)).map((i) => lc(i.label));
+    const parts = PROCESS_GROUPS.map((g) => ({ g: g.group, items: by(g.group) })).filter((x) => x.items.length);
+    lines.push(parts.length ? { text: `Ran ${joinList(parts.map((x) => `${x.g.toLowerCase()} (${joinList(x.items)})`))}.` } : { text: "The sales processes you ran (inbound, outbound...)", ghost: true });
+  }
+  const get = (k: string) => j.metrics.find((m) => m.key === k && (m.amount !== null || m.range));
+  const target = get("target");
+  const got = get("achieved");
+  if (got && target && got.amount !== null && target.amount !== null && target.amount > 0 && got.unit === target.unit && got.currency === target.currency) {
+    // Rounded in two steps so 87.5 does not become 87 through floating point.
+    const pct = Math.round(Math.round((got.amount / target.amount) * 1000) / 10);
+    lines.push({ text: `Achieved ${moneyShort(got)} against ${targetPhrase(target.period)} of ${moneyShort(target)} (${pct}%).` });
+  } else if (got) lines.push({ text: `Achieved ${moneyShort(got)}${periodWord(got.period) ? ` ${periodWord(got.period)}` : ""}${got.amount === null || got.basis === "estimate" ? " (approx.)" : ""}.` });
+  else if (target) lines.push({ text: `Carried ${targetPhrase(target.period)} of ${moneyShort(target)}.` });
+  else lines.push({ text: "Your revenue numbers: target and what you achieved", ghost: true });
+  for (const m of j.metrics) {
+    if ((m.key === "target" || m.key === "achieved") || (m.amount === null && !m.range) || !m.label) continue;
+    lines.push({ text: `${m.label}: ${formatMetric(m)}.` });
+  }
+  if (isLeader(j)) {
+    const t = j.team;
+    const size = t.total ?? t.direct;
+    if (size !== null) {
+      const bits = [t.direct !== null && t.total !== null && t.direct !== t.total ? `${t.direct} direct reports` : "", t.hired ? `hired ${t.hired}` : "", t.attrition ? `attrition ${t.attrition}` : ""].filter(Boolean);
+      lines.push({ text: `Led a team of ${size}${j.composition.length ? ` (${joinList(j.composition.map(lc))})` : ""}${bits.length ? `: ${bits.join(", ")}` : ""}.` });
+    } else lines.push({ text: "Your team size", ghost: true });
+  }
+  const wins = j.wins.filter(winDone);
+  if (wins.length) wins.forEach((w) => lines.push({ text: `${w.text.replace(/\.$/, "")}${w.result ? `: ${w.result}` : ""}.` }));
+  else lines.push({ text: "An achievement you are proud of", ghost: true });
+  return { head, sub, lines };
+}
+
+/** Suggestions, never errors: what is still missing in their latest two jobs, plus what they want next. */
 export function gaps(d: CvData): string[] {
   const out: string[] = [];
-  if (!d.jobs.some(jobFilled)) out.push("Add at least your current or latest job.");
-  d.jobs.filter(jobFilled).slice(0, 2).forEach((j, i) => {
+  const jobs = d.jobs.filter(jobFilled);
+  if (!jobs.length) out.push("Add at least your current or latest job.");
+  jobs.slice(0, 2).forEach((j, i) => {
     const who = j.employer || j.title || `Job ${i + 1}`;
-    if (!j.sells.trim()) out.push(`${who}: what you sold.`);
-    if (!j.metrics.some((m) => m.amount !== null)) out.push(`${who}: at least one number (target, achieved or revenue).`);
-    if (isLeader(j) && j.team.total === null && j.team.direct === null) out.push(`${who}: how many people you managed.`);
-    if (!j.wins.some((w) => w.text.trim())) out.push(`${who}: one achievement in your own words.`);
-    if (!j.start) out.push(`${who}: when you started.`);
+    for (const k of keyItems(j, true)) if (!k.done) out.push(`${who}: ${k.label.toLowerCase()}.`);
   });
   if (!d.targets.roles.trim()) out.push("The role you are looking for.");
   if (!d.basics.linkedin.trim()) out.push("Your LinkedIn link.");
   return out;
 }
 
+/** How complete the details a sales CV needs are, 0 to 100: the key items of the latest two jobs, plus the basics and what they want next. */
 export function progress(d: CvData): number {
-  const jobs = d.jobs.filter(jobFilled);
-  const checks = [
-    !!(d.basics.name && d.basics.email && d.basics.phone),
-    jobs.length > 0,
-    jobs.some((j) => j.metrics.some((m) => m.amount !== null)),
-    jobs.some((j) => j.wins.some((w) => w.text.trim())),
-    !!d.targets.roles.trim(),
-    d.targets.cities.trim() !== "" || d.targets.relocate !== "",
-  ];
-  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  const jobs = d.jobs.filter(jobFilled).slice(0, 2);
+  const items = jobs.flatMap((j, i) => keyItems(j, i < 2).map((k) => k.done));
+  if (!jobs.length) items.push(false, false, false, false);
+  items.push(!!(d.basics.name && d.basics.email && d.basics.phone), !!d.targets.roles.trim(), d.targets.cities.trim() !== "" || d.targets.relocate !== "");
+  return Math.round((items.filter(Boolean).length / items.length) * 100);
 }
