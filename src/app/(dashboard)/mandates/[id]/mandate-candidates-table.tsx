@@ -172,8 +172,8 @@ function stabilityTone(label: string) {
 function FitReason({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <button type="button" onClick={() => setOpen((v) => !v)} title={open ? "Show less" : "Show the full reason"} className={`mt-1 block max-w-[230px] text-left text-[11.5px] leading-4 text-slate-500 hover:text-slate-700 dark:text-slate-400 ${open ? "" : "line-clamp-2"}`}>
-      {text}
+    <button type="button" onClick={() => setOpen((v) => !v)} title={open ? "Show less" : "Show the full reason"} className="mt-1 block max-w-[230px] text-left text-[11.5px] leading-4 text-slate-500 hover:text-slate-700 dark:text-slate-400">
+      <span className={open ? "" : "line-clamp-2"}>{text}</span>
     </button>
   );
 }
