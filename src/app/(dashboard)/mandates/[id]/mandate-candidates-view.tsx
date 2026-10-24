@@ -1,15 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { LayoutGrid, Table2, Sparkles, Loader2 } from "lucide-react";
+import { LayoutGrid, Table2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesBoard from "./mandate-candidates-board";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
 import { STAGES } from "@/lib/mandate-stage";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
-import { Alert } from "@/components/ui/alert";
 
 // Thin toggle wrapper -- Board is the new default (matches the reference
 // ATS screenshot the user liked). Both views now share the same bulk
@@ -47,44 +45,7 @@ export default function MandateCandidatesView({
   // reverting to the static "Flag for call" label.
   flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
-  const router = useRouter();
   const [view, setView] = useState<"board" | "table">("table");
-  const [scoring, setScoring] = useState(false);
-  const [scoreMessage, setScoreMessage] = useState<{ text: string; messageTone: "success" | "error" } | null>(null);
-
-  // Backfills match_score for candidates already on this pipeline who never
-  // went through the Matching Workspace's "Add to pipeline" (bulk sourcing,
-  // quick-apply, manual add, LinkedIn sourcing promotion, etc. never got a
-  // score snapshotted). New candidates linked going forward get scored
-  // automatically (see the candidate_mandate_links DB trigger) -- this is
-  // just for everyone already here before that existed.
-  async function scorePipeline() {
-    setScoring(true);
-    setScoreMessage(null);
-    try {
-      const res = await fetch("/api/mandate-match-pipeline", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mandateId: mandateContext.mandateId }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setScoreMessage({ text: json.error ?? "Scoring failed.", messageTone: "error" });
-      } else {
-        setScoreMessage({
-          text: `Scored ${json.scored} of ${json.consideredCount} candidate${json.consideredCount === 1 ? "" : "s"}${json.truncated ? " (pipeline is larger than the scoring cap)" : ""}.`,
-          messageTone: "success",
-        });
-        // The rows-changed effect above bumps dataVersion once the
-        // refreshed rows prop actually lands from the server.
-        router.refresh();
-      }
-    } catch {
-      setScoreMessage({ text: "Scoring failed. Please try again.", messageTone: "error" });
-    } finally {
-      setScoring(false);
-    }
-  }
 
   // "all" plus every pipeline stage -- lets a recruiter narrow either view
   // down to, say, just "client_interview" instead of scrolling/scanning the
@@ -216,17 +177,6 @@ export default function MandateCandidatesView({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {rows.length > 0 && (
-            <button
-              onClick={scorePipeline}
-              disabled={scoring}
-              title="Score every candidate already on this pipeline against this mandate"
-              className="flex items-center gap-1.5 text-[12px] text-teal-600 hover:underline disabled:opacity-50"
-            >
-              {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-              {scoring ? "Scoring..." : "Score pipeline"}
-            </button>
-          )}
         <div className="inline-flex rounded-ros-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900 shrink-0">
           <button
             onClick={() => setView("board")}
@@ -247,11 +197,6 @@ export default function MandateCandidatesView({
         </div>
         </div>
       </div>
-      {scoreMessage && (
-        <Alert tone={scoreMessage.messageTone} className="-mt-1 mb-2 w-fit">
-          {scoreMessage.text}
-        </Alert>
-      )}
 
       {view === "board" ? (
         <MandateCandidatesBoard

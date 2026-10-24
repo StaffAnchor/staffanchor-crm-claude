@@ -15,11 +15,11 @@ import AiMatchesPanel from "./ai-matches-panel";
 import BestMatchesPanel from "./best-matches-panel";
 import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
-import FindMatchesPanel from "./find-matches-panel";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
 import DeleteMandateButton from "./delete-mandate-button";
 import HeaderMenu from "./header-menu";
+import ScorePipelineButton from "./score-pipeline-button";
 import PublishMandateButton from "./publish-mandate-button";
 import ArchiveMandateButton from "./archive-mandate-button";
 import UnarchiveMandateButton from "./unarchive-mandate-button";
@@ -550,9 +550,19 @@ export default async function MandateDetailPage({
           },
           {
             key: "best-matches",
-            label: "Best matches",
+            label: "Matches",
             icon: <Sparkles className="h-3.5 w-3.5 text-teal-500" />,
             content: (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-[13px] text-slate-600 dark:text-slate-300">The best people in your whole database for this role, ranked with the reasons. Add the right ones to the pipeline.</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <ScorePipelineButton mandateId={id} disabled={pipelineCount === 0} />
+                    <Link href={`/mandates/${id}/matches`} className="rounded-ros-md border border-teal-300 px-3 py-1.5 text-[13px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/30">
+                      Custom search with extra criteria →
+                    </Link>
+                  </div>
+                </div>
             <div className="space-y-6">
               <div id="best-matches"><Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}><BestMatchesPanel mandateId={id} /></Suspense></div>
               <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
@@ -562,6 +572,7 @@ export default async function MandateDetailPage({
                 </div>
               </details>
             </div>
+              </div>
             ),
           },
             {
@@ -678,17 +689,6 @@ export default async function MandateDetailPage({
                       requires_own_device: mandate.requires_own_device ?? false,
                     }}
                   />
-                  <FindMatchesPanel
-                    mandateId={id}
-                    initialMatches={mandate.auto_match_results ?? null}
-                    initialComputedAt={mandate.auto_match_computed_at ?? null}
-                  />
-                  <Link
-                    href={`/mandates/${id}/matches`}
-                    className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30 text-[13px] font-medium py-2"
-                  >
-                    Open full matching workspace →
-                  </Link>
                 </>
               ),
             },
