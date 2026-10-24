@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { BoardCandidate, BoardRole } from "@/lib/hiring-board";
+import LazyCvPreview from "../mandates/[id]/lazy-cv-preview";
 
 const FIT = {
   strong: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
@@ -86,7 +87,7 @@ export default function Board({ roles, candidates }: { roles: BoardRole[]; candi
               <th className="px-3 py-2">Candidate</th>
               {roles.map((r) => (
                 <th key={r.id} className="min-w-[150px] px-3 py-2 align-bottom">
-                  <Link href={`/mandates/${r.id}`} className="block font-semibold text-slate-800 hover:underline dark:text-slate-100">
+                  <Link href={`/mandates/${r.id}`} target="_blank" rel="noopener noreferrer" className="block font-semibold text-slate-800 hover:underline dark:text-slate-100">
                     {r.title}
                   </Link>
                   <span className="block font-normal text-slate-500">{[r.client, r.city].filter(Boolean).join(" · ")}</span>
@@ -111,11 +112,18 @@ export default function Board({ roles, candidates }: { roles: BoardRole[]; candi
                   <input type="checkbox" checked={sel.has(c.id)} onChange={() => toggle(c.id)} aria-label={`Select ${c.name}`} className="h-4 w-4" />
                 </td>
                 <td className="px-3 py-2.5">
-                  <Link href={`/candidates/${c.id}`} className="font-medium text-slate-900 hover:underline dark:text-slate-100">
+                  <Link href={`/candidates/${c.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-900 hover:underline dark:text-slate-100">
                     {c.name}
                   </Link>
                   <span className="block text-slate-500">{c.headline}</span>
                   <span className="block text-[12px] text-slate-400">{[c.city, c.years != null ? `${c.years} yrs` : "", c.ctc, c.notice].filter(Boolean).join(" · ")}</span>
+                  {c.hasCv ? (
+                    <div className="mt-1.5 w-28">
+                      <LazyCvPreview candidateId={c.id} name={c.name} />
+                    </div>
+                  ) : (
+                    <span className="mt-1.5 block text-[12px] text-slate-400">No CV on file</span>
+                  )}
                 </td>
                 {roles.map((r) => {
                   const cell = c.cells[r.id];
