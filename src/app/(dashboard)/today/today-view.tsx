@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CalendarClock, Hourglass, Handshake, Trophy, CheckCircle2, ListChecks } from "lucide-react";
 import FocusStack from "./focus-stack";
+import Sparkline from "@/components/ui/sparkline";
 import type { FocusData } from "@/lib/today-focus";
 import { KIND_LABEL, type WaitingItem } from "@/lib/waiting-queue";
 import type { Decision, NextUp, RoleHealth, RoleRow, TodayDesk, Tone } from "@/lib/today-desk";
@@ -70,8 +71,10 @@ function NextUpRow({ t }: { t: NextUp }) {
   );
 }
 
-function RoleLine({ r }: { r: RoleRow }) {
+function RoleLine({ r, max }: { r: RoleRow; max: number }) {
   const h = HEALTH[r.health];
+  const width = Math.max(r.inPipeline > 0 ? 6 : 0, Math.round((r.inPipeline / Math.max(1, max)) * 100));
+  const unseen = r.inPipeline > 0 ? Math.round((r.unreviewed / r.inPipeline) * 100) : 0;
   return (
     <li className="border-t border-slate-100 dark:border-slate-800 first:border-t-0">
       <Link
@@ -87,7 +90,15 @@ function RoleLine({ r }: { r: RoleRow }) {
             {r.setupNote ? <span className="sm:hidden text-teal-700 dark:text-teal-300"> · {r.setupNote}</span> : null}
           </p>
         </div>
-        <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.inPipeline}</div>
+        <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">
+          {r.inPipeline}
+          <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" title={`${r.unreviewed} of ${r.inPipeline} not yet opened`}>
+            <div className="flex h-full" style={{ width: `${width}%` }}>
+              <span className="h-full bg-teal-500" style={{ width: `${100 - unseen}%` }} />
+              <span className="h-full bg-amber-400" style={{ width: `${unseen}%` }} />
+            </div>
+          </div>
+        </div>
         <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.unreviewed}</div>
         <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.sent}</div>
         <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.interviewing}</div>
@@ -120,7 +131,27 @@ function WaitingRow({ w }: { w: WaitingItem }) {
   );
 }
 
-export default function TodayView({ desk, focus, waiting }: { desk: TodayDesk; focus: FocusData; waiting: WaitingItem[] }) {
+function TrendTile({ label, values, sub }: { label: string; values: number[]; sub: string }) {
+  const total = values.reduce((a, b) => a + b, 0);
+  const half = Math.floor(values.length / 2);
+  const recent = values.slice(half).reduce((a, b) => a + b, 0);
+  const before = values.slice(0, half).reduce((a, b) => a + b, 0);
+  const up = recent >= before;
+  return (
+    <div className={`${card} flex items-center justify-between gap-4 p-4`}>
+      <div className="min-w-0">
+        <p className="text-[12px] text-slate-500 dark:text-slate-400">{label}</p>
+        <p className="mt-1.5 text-[26px] leading-none font-semibold tracking-tight tabular-nums text-slate-900 dark:text-slate-100">{total}</p>
+        <p className="mt-1.5 text-[12px] text-slate-500 dark:text-slate-400 truncate">
+          <span className={up ? "font-medium text-emerald-700 dark:text-emerald-400" : "font-medium text-amber-700 dark:text-amber-400"}>{up ? "Up" : "Down"}</span> on the week before · {sub}
+        </p>
+      </div>
+      <Sparkline values={values} tone={up ? "teal" : "amber"} label={`${label}, last ${values.length} days`} />
+    </div>
+  );
+}
+
+export default function TodayView({ desk, focus, waiting, trends }: { desk: TodayDesk; focus: FocusData; waiting: WaitingItem[]; trends: { newProfiles: number[]; addedToRoles: number[] } }) {
   const { metrics } = desk;
   const needCount = desk.decisions.length + desk.moreDecisions;
   const placements = metrics.placements;
@@ -169,6 +200,11 @@ export default function TodayView({ desk, focus, waiting }: { desk: TodayDesk; f
         />
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <TrendTile label="New profiles, last 14 days" values={trends.newProfiles} sub="registered or uploaded" />
+        <TrendTile label="Added to roles, last 14 days" values={trends.addedToRoles} sub="applied or added by us" />
+      </div>
+
       <div className="grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-5 items-start">
         <div className="space-y-5 min-w-0">
           <section className={card}>
@@ -214,7 +250,7 @@ export default function TodayView({ desk, focus, waiting }: { desk: TodayDesk; f
                 </div>
                 <ul>
                   {desk.roles.map((r) => (
-                    <RoleLine key={r.mandateId} r={r} />
+                    <RoleLine key={r.mandateId} r={r} max={Math.max(...desk.roles.map((x) => x.inPipeline))} />
                   ))}
                 </ul>
               </>
