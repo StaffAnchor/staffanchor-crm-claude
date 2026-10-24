@@ -92,7 +92,11 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
       source = "identity";
     } else {
       const byText = classifyText(m.text);
-      if (byText && (kind === "unsorted" || source === "text")) {
+      // Someone labelled an employer or referrer from their own words stays that way. A later message that happens to say
+      // "roles" must not turn a hiring manager into a jobseeker and start asking them for a CTC. Only their own menu answer,
+      // a recruiter, or our records can change that label.
+      const sticky = (kind === "employer" || kind === "referrer") && source === "text";
+      if (byText && !sticky && (kind === "unsorted" || source === "text")) {
         kind = byText;
         source = "text";
       }
@@ -287,6 +291,12 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
       state.retries = 0;
       replies = [T.MENU];
     }
+  } else if (kind === "jobseeker" && !identity.candidate && state.status === "idle" && /employer|job description/i.test(contact.needs_human_reason ?? "")) {
+    // Already flagged as an employer enquiry (however it came to be labelled a jobseeker): never start the profile questions.
+    kind = "employer";
+    patch.kind = "employer";
+    patch.kind_source = "text";
+    await employerReply();
   } else if (kind === "jobseeker") {
     if (identity.candidate && REGISTERED_STATUS(identity.candidate.status)) {
       await ackOnce(T.KNOWN_ACK(T.firstName(identity.candidate.full_name)), "Registered candidate messaged");

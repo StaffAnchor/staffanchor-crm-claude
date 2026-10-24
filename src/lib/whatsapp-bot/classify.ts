@@ -3,7 +3,9 @@
 // answer to the 1/2/3 menu beats both.
 export type ContactKind = "jobseeker" | "employer" | "referrer" | "other" | "unsorted";
 
-const EMPLOYER = /\b(hire|hiring|we are hiring|looking to hire|need to hire|recruit(?:ing|ment)? (?:for|a|an|some)|vacanc(?:y|ies)|manpower|staffing|bulk hiring|need (?:a |an |some )?(?:sales|candidates?|employees?|team)|our company|my company|our requirement|requirement for)\b/i;
+const EMPLOYER = /\b(hire|hiring|we are hiring|looking to hire|need to hire|recruit(?:ing|ment)? (?:for|a|an|some)|vacanc(?:y|ies)|manpower|staffing|bulk hiring|need (?:a |an |some )?(?:sales|candidates?|employees?|team)|our company|my company|our requirement|requirement for|we (?:are|\x27re) (?:looking|searching) for|our client)\b/i;
+// "Company name: Acme" cannot sit inside the word-boundary group above, because a boundary does not follow a colon.
+const COMPANY_LIST = /company name\s*[:\-]/i;
 const JOBSEEKER = /\b(job|jobs|role|roles|opening|openings|opportunit(?:y|ies)|applied|application|registered|registration|my profile|profile|cv|resume|naukri|career|interview|looking for (?:a |an )?(?:new )?(?:role|job|opportunity)|new roles?|job description)\b/i;
 const STRONG_JOBSEEKER = /\b(applied|my cv|my resume|my profile|looking for (?:a |an )?(?:new )?(?:role|job)|new roles?|registered on|job description)\b/i;
 const REFERRER = /\b(sales circle|referrer|referral partner|i (?:just )?(?:submitted|made) a referral)\b/i;
@@ -12,7 +14,7 @@ export function classifyText(text: string | null | undefined): Exclude<ContactKi
   const t = (text ?? "").trim();
   if (!t) return null;
   if (REFERRER.test(t)) return "referrer";
-  const emp = EMPLOYER.test(t);
+  const emp = EMPLOYER.test(t) || COMPANY_LIST.test(t);
   const job = JOBSEEKER.test(t);
   if (emp && !STRONG_JOBSEEKER.test(t)) return "employer";
   if (job && !emp) return "jobseeker";
