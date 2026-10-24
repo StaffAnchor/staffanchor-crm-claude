@@ -779,10 +779,16 @@ export default function MandateCandidatesTable({
                 )}
               </td>
                 <td className="whitespace-nowrap px-3 py-3 align-top text-right">
-                  {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && l.match_assessment?.recommendation !== "Not a Fit" && (
-                    <button type="button" onClick={() => void shareWithClient(l)} className="mr-1 rounded-full border border-teal-200 px-2.5 py-1 text-[12px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/40">
-                      Send to client
-                    </button>
+                  {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
+                    l.match_assessment?.recommendation === "Not a Fit" ? (
+                      <button type="button" onClick={() => void shareWithClient(l)} title="The assessment says this is not a fit. Clients are sometimes fine with exceptions." className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+                        Send anyway
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => void shareWithClient(l)} className="mr-1 rounded-full border border-teal-200 px-2.5 py-1 text-[12px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/40">
+                        Send to client
+                      </button>
+                    )
                   )}
                   {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
                     <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
