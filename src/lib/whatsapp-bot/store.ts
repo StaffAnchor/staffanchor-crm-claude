@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ContactKind } from "./classify";
 import type { Answers, BotState } from "./flow";
 import { bestAnswer, normalizeQuestion, type FaqAnswer } from "./faq";
+import { sendEmail, renderEmailShell } from "@/lib/mail";
 
 // Everything the engine reads and writes, behind one small interface, so the rules can be
 // tested against an in-memory copy and run in production against the database.
@@ -92,6 +93,8 @@ export interface Store {
   findFaqAnswer?(text: string): Promise<{ id: string; answer: string } | null>;
   /** A question the assistant could not answer, kept so a person can answer it once for everyone. */
   logUnansweredQuestion?(phoneKey: string, candidateId: string | null, text: string, reason: string | null): Promise<void>;
+  /** An employer has just written in. Tells the admin at once (bell and email), at most once every 12 hours per number. */
+  alertEmployer?(phoneKey: string, name: string | null, text: string | null): Promise<void>;
 }
 
 const CANDIDATE_COLUMNS =
@@ -274,6 +277,33 @@ export function supabaseStore(admin: SupabaseClient): Store {
       const clean = text.trim().slice(0, 500);
       if (!clean) return;
       await admin.from("bot_questions").insert({ phone_key: phoneKey, candidate_id: candidateId, text: clean, norm: normalizeQuestion(clean).slice(0, 300), reason });
+    },
+    async alertEmployer(phoneKey, name, text) {
+      const since = new Date(Date.now() - 12 * 3600_000).toISOString();
+      const link = `/whatsapp?c=${phoneKey}`;
+      const { data: recent } = await admin.from("notifications").select("id").eq("type", "employer_whatsapp").eq("link", link).gte("created_at", since).limit(1);
+      if (recent?.length) return;
+      const who = name?.trim() || "An employer";
+      const preview = (text ?? "").replace(/\s+/g, " ").trim().slice(0, 240);
+      const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin");
+      if (admins?.length) {
+        await admin.from("notifications").insert(
+          admins.map((a: { id: string }) => ({ user_id: a.id, type: "employer_whatsapp", title: `${who} wrote to us on WhatsApp`, body: preview || "Employer enquiry", link })),
+        );
+      }
+      const to = process.env.INQUIRY_ALERT_TO || "gagan@staffanchor.com";
+      const phone = `+91 ${phoneKey}`;
+      const url = `https://clients.staffanchor.com${link}`;
+      const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      await sendEmail({
+        to,
+        subject: `Employer on WhatsApp: ${who} (${phone})`,
+        text: `${who} wrote to us on WhatsApp.\nPhone: ${phone}\n${preview ? `Message: ${preview}\n` : ""}\nOpen the chat: ${url}`,
+        html: renderEmailShell({
+          preheader: `${who} wrote to us on WhatsApp.`,
+          bodyHtml: `<p style="margin:0 0 12px;">An employer just wrote to us on WhatsApp.</p><p style="margin:0 0 6px;"><b>${esc(who)}</b><br/>Phone: <a href="tel:${phone.replace(/\s/g, "")}">${phone}</a></p>${preview ? `<p style="margin:8px 0;color:#475569;">&ldquo;${esc(preview)}&rdquo;</p>` : ""}<p style="margin:16px 0 0;"><a href="${url}" style="color:#2563eb;">Open the chat</a></p>`,
+        }),
+      }).catch(() => {});
     },
     async recordOpenToWork(candidateId, open) {
       await admin

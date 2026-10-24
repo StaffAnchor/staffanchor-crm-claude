@@ -179,6 +179,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   // An employer who sends a job description (a file, or a long message) gets a "received" note,
   // once a day, instead of being asked again what they are hiring for.
   const employerReply = async () => {
+    await store.alertEmployer?.(key, contact.display_name, m.text).catch(() => {});
     const isJd = isFile || (m.text ?? "").trim().length >= 120;
     if (!isJd) return ackOnce(T.EMPLOYER_ACK, "Employer enquiry");
     flow = "jd";
