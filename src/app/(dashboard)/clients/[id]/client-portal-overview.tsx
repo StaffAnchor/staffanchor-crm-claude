@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import PortalPreviewButton from "@/components/portal-preview-button";
 import { Card } from "@/components/ui/card";
 
 export type SharedCandidate = {
@@ -19,11 +19,9 @@ const FEEDBACK: Record<string, { label: string; cls: string }> = {
   not_interested: { label: "Not interested", cls: "bg-slate-100 text-slate-700 ring-slate-200" },
 };
 
-const portalUrl = "https://jobs.staffanchor.com/client-portal";
-
 // What this client sees when they sign in: each of their roles, and the people you have shared on it (in_shortlist).
 // The client portal itself needs the client's own login, so this is the same list from the staff side.
-export default function ClientPortalOverview({ clientName, roles, shared }: { clientName: string; roles: PortalRole[]; shared: SharedCandidate[] }) {
+export default function ClientPortalOverview({ clientId, clientName, roles, shared }: { clientId: string; clientName: string; roles: PortalRole[]; shared: SharedCandidate[] }) {
   const byRole = new Map<string, SharedCandidate[]>();
   for (const s of shared) byRole.set(s.mandateId, [...(byRole.get(s.mandateId) ?? []), s]);
   const waiting = shared.filter((s) => !s.feedback).length;
@@ -37,9 +35,7 @@ export default function ClientPortalOverview({ clientName, roles, shared }: { cl
             Each role and the people you have shared on it. {shared.length === 0 ? "Nothing is shared yet." : `${shared.length} shared, ${waiting} waiting for their feedback.`}
           </p>
         </div>
-        <a href={portalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-ros-md bg-teal-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-teal-700">
-          Open the client portal <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+        <PortalPreviewButton clientId={clientId} />
       </div>
 
       {roles.length === 0 ? (

@@ -184,6 +184,7 @@ export default async function ClientDetailPage({
             content: (
               <>
                 <ClientPortalOverview
+                  clientId={id}
                   clientName={clientRow.name}
                   roles={(mandates ?? []).map((m) => ({ id: m.id, title: m.role_title, status: m.status, city: m.city }))}
                   shared={shared}
