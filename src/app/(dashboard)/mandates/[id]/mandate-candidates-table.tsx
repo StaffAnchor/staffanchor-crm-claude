@@ -770,21 +770,10 @@ export default function MandateCandidatesTable({
                 <tr className="bg-slate-50/60 dark:bg-slate-800/30">
                   <td></td>
                   <td colSpan={5} className="px-3 pb-4 pt-1">
-                    <div className="grid gap-5 md:grid-cols-3">
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Reach out</p>
+                    <div className="grid items-start gap-4 md:grid-cols-3">
+                      <div className="rounded-ros-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                        <p className="mb-3 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Contact and calls</p>
                         <div className="flex flex-col items-start gap-1.5">
-                  {resumeSignedUrlByCandidate[l.candidate.id] ? (
-                    <ResumePreview
-                      signedUrl={resumeSignedUrlByCandidate[l.candidate.id]}
-                      fileName={(l.candidate.resume_file_url ?? `${l.candidate.full_name}-resume`).replace(/^resumes\//, "")}
-                      label="Preview"
-                      candidateId={l.candidate.id}
-                      onOpen={() => markViewed(l.id)}
-                    />
-                  ) : (
-                    <span className="text-xs text-slate-300">—</span>
-                  )}
                   <PipelineWhatsApp
                     candidateId={l.candidate.id}
                     candidateName={l.candidate.full_name}
@@ -825,10 +814,10 @@ export default function MandateCandidatesTable({
                   />
                 </div>
                       </div>
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">About</p>
-                        <dl className="space-y-2 text-[12.5px]">
-                          <div><dt className="text-slate-400">Owner</dt><dd>
+                      <div className="rounded-ros-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                        <p className="mb-3 text-[13px] font-semibold text-slate-900 dark:text-slate-100">About this candidate</p>
+                        <dl className="space-y-3 text-[13px] [&_dd]:mt-0.5">
+                          <div><dt className="text-slate-500" title="The team member who looks after this candidate. The recruiter for the role is shown at the top of the page.">Candidate owner</dt><dd>
                 {isAdmin ? (
                   <select
                     defaultValue={l.candidate.owner_id ?? ""}
@@ -850,7 +839,7 @@ export default function MandateCandidatesTable({
                   </span>
                 )}
               </dd></div>
-                          <div><dt className="text-slate-400">Source</dt><dd>
+                          <div><dt className="text-slate-500">Source</dt><dd>
                 <span
                   className="text-xs text-slate-600 dark:text-slate-400 truncate block max-w-[150px]"
                   title={sourceCellLabel(l.candidate)}
@@ -863,7 +852,7 @@ export default function MandateCandidatesTable({
                   </div>
                 )}
               </dd></div>
-                          <div><dt className="text-slate-400">Stability</dt><dd>
+                          <div><dt className="text-slate-500">Stability</dt><dd>
                 {l.candidate.stability_score === null || l.candidate.stability_score === undefined ? (
                   <button
                     onClick={(e) => {
@@ -888,13 +877,13 @@ export default function MandateCandidatesTable({
                   </span>
                 )}
               </dd></div>
-                          <div><dt className="text-slate-400">Recommendation</dt><dd>
+                          <div><dt className="text-slate-500">Recruiter view</dt><dd>
                 {(l.candidate.recruiter_assessment?.["overall_recommendation"] as string) ?? "Not assessed"}
               </dd></div>
                         </dl>
                       </div>
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Client</p>
+                      <div className="rounded-ros-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                        <p className="mb-3 text-[13px] font-semibold text-slate-900 dark:text-slate-100">With the client</p>
                         
                 <div className="flex flex-col items-start gap-1">
                   {(() => {
