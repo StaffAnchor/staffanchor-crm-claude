@@ -18,62 +18,40 @@ export default function TopTierCard({
   founderCalls?: boolean;
 }) {
   const unconfirmed = Math.max(0, readySalesCount - topCount);
+  const pill = (isActive: boolean, strong: boolean) =>
+    `inline-flex items-baseline gap-2 rounded-full border px-3.5 py-1.5 text-[13px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
+      isActive ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30" : strong ? "border-teal-200 bg-white dark:border-teal-900 dark:bg-slate-900" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+    }`;
   return (
-    <section aria-label="Top tier" className="mb-3 rounded-ros-lg border border-amber-200 bg-amber-50/60 p-4 shadow-ros-sm dark:border-amber-900/60 dark:bg-amber-950/20">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 dark:text-slate-100">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-500" /> Top tier
-          </h2>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">
-            Sales profiles that are complete and confirmed open to work in the last 90 days. Start here for a new mandate.
-          </p>
-        </div>
+    <section aria-label="Top tier" className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-ros-lg border border-slate-200 bg-white px-4 py-3 shadow-ros-sm dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 dark:text-slate-100" title="Complete sales profiles. Start here for a new mandate.">
+        <Star className="h-4 w-4 fill-amber-400 text-amber-500" /> Top tier
+      </h2>
+      <Link href={hrefFor("open")} className={pill(active === "open", topCount > 0)} title="Complete sales profiles confirmed open to work in the last 90 days">
+        <span className={`text-[18px] font-semibold tabular-nums leading-none ${topCount > 0 ? "text-teal-700 dark:text-teal-300" : "text-slate-400"}`}>{topCount}</span>
+        <span className="text-slate-600 dark:text-slate-300">open to work now</span>
+      </Link>
+      <Link href={hrefFor("ready")} className={pill(active === "ready", false)} title="Complete data, openness not confirmed yet">
+        <span className="text-[18px] font-semibold tabular-nums leading-none text-slate-800 dark:text-slate-100">{readySalesCount}</span>
+        <span className="text-slate-600 dark:text-slate-300">ready sales profiles</span>
+      </Link>
+      <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1.5">
         {active && (
-          <Link href={hrefFor(undefined)} className="text-[12px] font-medium text-teal-600 hover:underline">
-            Clear top tier filter
+          <Link href={hrefFor(undefined)} className="text-[12.5px] font-medium text-slate-500 hover:text-slate-800 hover:underline">
+            Clear filter
           </Link>
         )}
-      </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <Link
-          href={hrefFor("open")}
-          className={`rounded-lg border bg-white px-3 py-2 transition hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 ${active === "open" ? "border-amber-400" : "border-slate-200 dark:border-slate-700"}`}
-        >
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ready and open to work</div>
-          <div className="mt-0.5 flex items-baseline justify-between">
-            <span className="text-[22px] font-bold tabular-nums leading-tight text-slate-900 dark:text-slate-100">{topCount}</span>
-            <span className="text-xs text-slate-400">most recently confirmed first</span>
-          </div>
-        </Link>
-        <Link
-          href={hrefFor("ready")}
-          className={`rounded-lg border bg-white px-3 py-2 transition hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 ${active === "ready" ? "border-amber-400" : "border-slate-200 dark:border-slate-700"}`}
-        >
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">All ready sales profiles</div>
-          <div className="mt-0.5 flex items-baseline justify-between">
-            <span className="text-[22px] font-bold tabular-nums leading-tight text-slate-900 dark:text-slate-100">{readySalesCount}</span>
-            <span className="text-xs text-slate-400">complete data, openness unconfirmed</span>
-          </div>
-        </Link>
-      </div>
-      {founderCalls && (
-        <p className="mt-2 text-[12px] text-slate-600 dark:text-slate-300">
-          <Link href="/candidates/founder-calls" className="font-medium text-teal-600 hover:underline">
-            Founder calls →
-          </Link>{" "}
-          your daily 4 senior profiles to speak to personally.
-        </p>
-      )}
-      {unconfirmed > 0 && (
-        <p className="mt-2 text-[12px] text-slate-600 dark:text-slate-300">
-          {unconfirmed} ready sales profiles haven&apos;t confirmed they&apos;re open yet.{" "}
-          <Link href="/candidates/outreach" className="font-medium text-teal-600 hover:underline">
-            Ask them on WhatsApp
-          </Link>{" "}
-          and they move into the top tier when they tap &quot;Yes, I&apos;m open&quot;.
-        </p>
-      )}
+        {founderCalls && (
+          <Link href="/candidates/founder-calls" className="text-[12.5px] font-medium text-teal-700 hover:underline dark:text-teal-300" title="Your daily 4 senior profiles to speak to personally">
+            Founder calls
+          </Link>
+        )}
+        {unconfirmed > 0 && (
+          <Link href="/candidates/outreach" className="rounded-full bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700" title="They move into the top tier when they tap Yes, I'm open">
+            Ask {unconfirmed} on WhatsApp
+          </Link>
+        )}
+      </span>
     </section>
   );
 }
