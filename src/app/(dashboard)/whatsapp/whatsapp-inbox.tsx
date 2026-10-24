@@ -428,6 +428,12 @@ export default function WhatsAppInbox({
                     Mark as handled
                   </button>
                 )}
+                {(status.state === "needs_you" || status.state === "can_wait") && windowLeft <= 0 && templateFlags?.followUp && (
+                  <button type="button" onClick={() => setFollowUp(true)} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1 font-semibold text-white hover:bg-emerald-500">
+                    <MessageCircle className="h-3.5 w-3.5" /> Send follow-up
+                  </button>
+                )}
+                {status.state === "can_wait" && <span className="text-xs opacity-80">Nobody has to answer this one. Reply only if you want to.</span>}
                 {status.state === "waiting" && <span className="text-xs opacity-80">Nothing to do yet. {windowLeft > 0 ? "You can still write to them." : "Wait for them, or follow up with a template."}</span>}
                 {status.state === "assistant" && <span className="text-xs opacity-80">It will hand over if it gets stuck.</span>}
               </div>
