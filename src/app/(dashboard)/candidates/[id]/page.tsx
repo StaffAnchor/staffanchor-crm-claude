@@ -2,7 +2,7 @@ import Link from "next/link";
 import { after } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
-import { Phone, Mail, MapPin, FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -26,7 +26,6 @@ import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
 import AskMissingDetails from "./ask-missing-details";
 import ProfileGroupControl from "./profile-group-control";
-import PoolControl from "@/components/pool-control";
 import AfterCallCard, { type PastDebrief } from "./after-call-card";
 import BriefCard from "./brief-card";
 import type { Brief } from "@/lib/candidate-brief";
@@ -35,9 +34,14 @@ import { missingKeyDetails } from "@/lib/key-details";
 import { recordTiming } from "@/lib/page-timing";
 import ResumePreview from "./resume-preview";
 import SendRole from "./send-role";
+import ActionCenter from "./action-center";
+import MessageHub from "./message-hub";
+import TodoList from "./todo-list";
+import CallButton from "./call-button";
+import CvActionsBar from "@/components/cv-actions-bar";
+import { candidateNextActions } from "@/lib/candidate-next-actions";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
-import QuickContactActions from "./quick-contact-actions";
 import { ProfileRatingPanel } from "@/components/profile-rating";
 import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
@@ -468,18 +472,37 @@ export default async function CandidateDetailPage({
   }
 
   recordTiming("candidate", renderStart);
-  const missingNow = missingKeyDetails(candidate);
   const activeLinks = (links ?? []).filter((l) => !["rejected", "pulled_back"].includes(l.stage));
-  // What still needs doing for this person, each with why it matters. One list replaces the old banner, checklist and risk strip.
+  // One function decides the verdict and the to-do list (see lib/candidate-next-actions).
   const confirmedAt = ((candidate.details_confirmed_at as string | null | undefined) ?? (candidate.segment_data as { call_confirmed?: { at?: string } } | null)?.call_confirmed?.at) ?? null;
-  const confirmedDays = confirmedAt ? daysAgo(confirmedAt) : null;
-  const todos: { text: string; impact: string; urgent?: boolean; ask?: boolean }[] = [];
-  if ((candidate as { phone_hold?: boolean }).phone_hold) todos.push({ text: "Confirm their phone number", impact: "It is on hold, so no WhatsApp or call can go out until it is confirmed.", urgent: true });
-  if (missingNow.length > 0) todos.push({ text: `Get ${missingNow.map((m) => m.label.toLowerCase()).join(", ")}`, impact: "A profile without these cannot go to a client, and role matching is weaker.", urgent: true, ask: true });
-  if (!candidate.resume_file_url) todos.push({ text: "Get their CV", impact: "The summary, CV facts and role matching are all read from the CV." });
-  if (confirmedDays == null || confirmedDays > 60) todos.push({ text: "Confirm CTC and notice period on a call", impact: confirmedDays == null ? "They have never confirmed their own details. Clients expect verified numbers." : `Last confirmed ${confirmedDays} days ago. Numbers go stale.` });
-  if (activeLinks.length === 0) todos.push({ text: "Put them on a role", impact: "Not on any role yet, so nothing is moving. See the Roles tab for suggestions." });
-  if (pastDebriefs.length === 0 && !recommendation) todos.push({ text: "Record a call note after you speak", impact: "It writes the brief clients see and sharpens future matches." });
+  const next = candidateNextActions({
+    email: candidate.email,
+    current_job_title: candidate.current_job_title,
+    current_employer: candidate.current_employer,
+    total_experience_years: candidate.total_experience_years,
+    current_fixed_ctc: candidate.current_fixed_ctc,
+    expected_fixed_ctc: candidate.expected_fixed_ctc,
+    notice_period: candidate.notice_period,
+    current_location: candidate.current_location,
+    resume_file_url: candidate.resume_file_url,
+    phone: candidate.phone,
+    phone_hold: (candidate as { phone_hold?: boolean }).phone_hold ?? false,
+    recommendation: recommendation ?? null,
+    confirmedDaysAgo: confirmedAt ? daysAgo(confirmedAt) : null,
+    activeRoleCount: activeLinks.length,
+    callNoteCount: pastDebriefs.length,
+  });
+  const todos = next.todos;
+  const VERDICT_TONE = {
+    ready: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
+    needs_details: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900",
+    on_hold: "bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900",
+    not_a_fit: "bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
+  } as const;
+  const { data: bestMatchRow } = await supabase.from("mandate_ai_matches").select("score, mandates(role_title, client_name)").eq("candidate_id", candidate.id).in("fit", ["strong", "possible"]).order("score", { ascending: false }).limit(1).maybeSingle();
+  const bestMatch = bestMatchRow ? `${(bestMatchRow as unknown as { mandates?: { role_title?: string } | null }).mandates?.role_title ?? "Role"} · ${(bestMatchRow as { score: number }).score}` : null;
+  const suggestMissing = next.missing.length > 0;
+  const hubSuggestion = suggestMissing ? `Ask for ${next.missing.map((m) => m.label.toLowerCase()).join(", ")}. The official WhatsApp tab does it in one click.` : todos.some((t) => t.fix === "get_cv") ? "Ask for their CV by email." : null;
 
   const tabs = [
     {
@@ -553,22 +576,6 @@ export default async function CandidateDetailPage({
               </div>
             </div>
           )}
-          <details className="rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700">
-            <summary className="cursor-pointer text-[13px] font-semibold text-slate-900 dark:text-slate-100">Group, practices and tags</summary>
-            <div className="mt-3">
-              <ProfileGroupControl
-                candidateId={candidate.id}
-                group={candidate.profile_group ?? null}
-                subgroup={candidate.profile_subgroup ?? null}
-                also={candidate.profile_group_also ?? null}
-                reason={candidate.profile_group_reason ?? null}
-                needsReview={!!candidate.profile_group_needs_review}
-                locked={!!candidate.profile_group_locked}
-              />
-            </div>
-            <p className="mt-3 mb-3 text-xs text-slate-500 dark:text-slate-400">A candidate can belong to more than one practice, each with its own seniority band.</p>
-            <PracticeTagsPanel candidateId={candidate.id} allPractices={(allPracticesRows ?? []) as never} initial={(candidatePracticeRows ?? []) as never} />
-          </details>
         </div>
       ),
     },
@@ -712,9 +719,9 @@ export default async function CandidateDetailPage({
         )}
       </div>
 
-      {/* 1. Who this is, in four facts */}
+      {/* 1. Who this is, the verdict, and four facts */}
       <Card className="mt-3" padded={false}>
-        <div className="p-5">
+        <div className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 min-w-0">
               <div className="w-12 h-12 rounded-ros-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-base font-semibold text-slate-600 dark:text-slate-400 shrink-0">
@@ -722,59 +729,44 @@ export default async function CandidateDetailPage({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
+                  <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {candidate.candidate_number != null && (
-                    <span className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 text-xs font-mono text-slate-500 dark:text-slate-400" title="Candidate number">
+                    <span className="text-xs font-mono text-slate-400" title="Candidate number">
                       C-{String(candidate.candidate_number).padStart(6, "0")}
                     </span>
                   )}
-                  {recommendation && (
-                    <Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">
-                      {recommendation}
-                    </Badge>
-                  )}
                 </div>
-                <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-[14px] text-slate-600 dark:text-slate-300 mt-0.5">
                   {candidate.current_job_title}
                   {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
+                  {candidate.current_location ? ` · ${candidate.current_location}` : ""}
                 </p>
-                <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[12px] text-slate-500 dark:text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Mail className="w-3 h-3" /> {/\.invalid$/i.test(candidate.email ?? "") ? "No email yet" : candidate.email}
-                  </span>
-                  {candidate.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> {candidate.phone}
-                    </span>
-                  )}
-                  {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 && (
-                    <span className="flex items-center gap-1" title="Alternate number (for example the WhatsApp number)">
-                      <Phone className="w-3 h-3" /> Alt: {candidate.alt_phones.join(", ")}
-                    </span>
-                  )}
-                  {candidate.current_location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {candidate.current_location}
-                    </span>
-                  )}
-                </div>
+                <p className="text-[12.5px] text-slate-400 mt-0.5">
+                  {/\.invalid$/i.test(candidate.email ?? "") ? "No email yet" : candidate.email}
+                  {candidate.phone ? ` · ${candidate.phone}` : ""}
+                  {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 ? ` · alt ${candidate.alt_phones.join(", ")}` : ""}
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-2 shrink-0">
-              {candidate.status === "awaiting_input" && <SendInviteButton candidateId={candidate.id} />}
               <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
               <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[13px] font-semibold ring-1 ${VERDICT_TONE[next.verdict]}`}>{next.verdictLabel}</span>
+            <span className="text-[13px] text-slate-600 dark:text-slate-300">{next.reason}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
             <StatChip label="Experience" value={candidate.total_experience_years ? formatExperience(candidate.total_experience_years) : null} />
             <StatChip label="Notice period" value={candidate.notice_period} />
             <StatChip
-              label="Fixed CTC (now → expected)"
+              label="Fixed CTC, now → expected"
               value={candidate.current_fixed_ctc || candidate.expected_fixed_ctc ? `${candidate.current_fixed_ctc ? `₹${candidate.current_fixed_ctc}L` : "?"} → ${candidate.expected_fixed_ctc ? `₹${candidate.expected_fixed_ctc}L` : "?"}` : null}
             />
-            <StatChip label="Group" value={[candidate.profile_group, candidate.profile_subgroup].filter(Boolean).join(" › ") || null} />
+            <StatChip label="Best matching role" value={bestMatch} />
           </div>
 
           {redFlags.length > 0 && (
@@ -790,41 +782,81 @@ export default async function CandidateDetailPage({
             </div>
           )}
 
-          {/* 2. The things you do most, always in the same place */}
-          <div className="flex flex-wrap items-start gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <SendRole candidateId={candidate.id} candidateName={candidate.full_name} email={candidate.email} roles={(openMandates ?? []) as never} />
-            <QuickContactActions candidateId={candidate.id} candidateName={candidate.full_name} phone={candidate.phone} email={candidate.email} missing={missingKeyDetails(candidate).map((m) => m.key)} />
-            {resumeSignedUrl && resumeFileName && <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} candidateId={candidate.id} />}
-            {candidate.resume_file_url && !resumeSignedUrl && (
-              <span className="flex items-center gap-1.5 text-[12px] font-medium text-rose-600 bg-rose-50 rounded-ros-md px-3 py-1.5">
-                <FileText className="w-3 h-3" /> Resume file not found
-              </span>
-            )}
-            <PoolControl candidateId={candidate.id} entry={poolEntry} />
+          {/* 2. Four buttons, always in the same place */}
+          <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+            <ActionCenter
+              message={
+                <MessageHub
+                  candidateId={candidate.id}
+                  candidateName={candidate.full_name}
+                  phone={candidate.phone}
+                  email={candidate.email}
+                  missingKeys={missingKeyDetails(candidate).map((m) => m.key)}
+                  suggestion={hubSuggestion}
+                  suggestedTab={suggestMissing && candidate.phone ? "official" : "email"}
+                  emailSlot={
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <SendInviteButton candidateId={candidate.id} />
+                        <span className="text-[12px] text-slate-500">Emails them a link to complete their own profile.</span>
+                      </div>
+                      <SendRole candidateId={candidate.id} candidateName={candidate.full_name} email={candidate.email} roles={(openMandates ?? []) as never} channel="email" inline />
+                    </div>
+                  }
+                  officialSlot={
+                    <div className="space-y-3">
+                      <AskMissingDetails candidateId={candidate.id} missing={next.missing.map((m) => m.label)} />
+                      <SendRole candidateId={candidate.id} candidateName={candidate.full_name} email={candidate.email} roles={(openMandates ?? []) as never} channel="whatsapp" inline />
+                    </div>
+                  }
+                />
+              }
+              label={
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Role, group and quality</h3>
+                    <div className="-mx-4 mt-1">
+                      <CvActionsBar candidateId={candidate.id} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Profile group</h3>
+                    <ProfileGroupControl
+                      candidateId={candidate.id}
+                      group={candidate.profile_group ?? null}
+                      subgroup={candidate.profile_subgroup ?? null}
+                      also={candidate.profile_group_also ?? null}
+                      reason={candidate.profile_group_reason ?? null}
+                      needsReview={!!candidate.profile_group_needs_review}
+                      locked={!!candidate.profile_group_locked}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Practice tags</h3>
+                    <PracticeTagsPanel candidateId={candidate.id} allPractices={(allPracticesRows ?? []) as never} initial={(candidatePracticeRows ?? []) as never} />
+                  </div>
+                </div>
+              }
+            >
+              <CallButton candidateId={candidate.id} phone={candidate.phone} />
+              {resumeSignedUrl && resumeFileName && <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} label="CV" candidateId={candidate.id} />}
+              {candidate.resume_file_url && !resumeSignedUrl && (
+                <span className="flex items-center gap-1.5 text-[12px] font-medium text-rose-600 bg-rose-50 rounded-ros-md px-3 py-1.5">
+                  <FileText className="w-3 h-3" /> Resume file not found
+                </span>
+              )}
+            </ActionCenter>
           </div>
         </div>
       </Card>
 
       {/* 3. What to do next, and why it matters */}
       <Card className="mt-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">To do{todos.length ? ` (${todos.length})` : ""}</h2>
-          {todos.some((t) => t.ask) && <AskMissingDetails candidateId={candidate.id} missing={missingNow.map((m) => m.label)} />}
-        </div>
+        <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">To do{todos.length ? ` (${todos.length})` : ""}</h2>
         {todos.length === 0 ? (
           <p className="mt-2 text-[13px] text-emerald-700 dark:text-emerald-300">Nothing pending. This profile is ready to put forward.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
-            {todos.map((t) => (
-              <li key={t.text} className="flex items-start gap-3 py-2.5">
-                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${t.urgent ? "bg-rose-500" : "bg-amber-500"}`} aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{t.text}</p>
-                  <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{t.impact}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <TodoList todos={todos} />
         )}
       </Card>
 

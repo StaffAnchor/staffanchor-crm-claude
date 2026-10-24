@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export default function Tabs({
   tabs,
@@ -8,9 +8,21 @@ export default function Tabs({
   tabs: { label: string; content: ReactNode }[];
 }) {
   const [active, setActive] = useState(0);
+  // The to-do list can ask for a tab by name ("Calls & notes").
+  useEffect(() => {
+    const on = (e: Event) => {
+      const i = tabs.findIndex((t) => t.label === (e as CustomEvent<string>).detail);
+      if (i >= 0) {
+        setActive(i);
+        document.getElementById("profile-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+    window.addEventListener("profile-open-tab", on);
+    return () => window.removeEventListener("profile-open-tab", on);
+  }, [tabs]);
 
   return (
-    <div>
+    <div id="profile-tabs">
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700 mb-5">
         {tabs.map((tab, i) => (
           <button

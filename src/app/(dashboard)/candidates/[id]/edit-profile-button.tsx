@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Pencil, Loader2, X, Upload, Download } from "lucide-react";
@@ -203,6 +203,12 @@ export default function EditProfileButton({
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
+  // The to-do list can open this ("Fix the number").
+  useEffect(() => {
+    const on = () => setOpen(true);
+    window.addEventListener("profile-edit", on);
+    return () => window.removeEventListener("profile-edit", on);
+  }, []);
   const hasResume = Boolean(resumeSignedUrl && resumeFileName);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
