@@ -293,6 +293,9 @@ export default async function MandatesPage({
   }
   const hasAnyFilter = Boolean(status || showArchived || category || city || client || recruiter);
 
+  const { count: needsTypeRaw } = await supabase.from("mandates").select("id", { count: "exact", head: true }).eq("status", "open").eq("is_archived", false).or("role_cluster.is.null,seniority_band.is.null");
+  const needsTypeCount = needsTypeRaw ?? 0;
+
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 flex gap-6">
       {/* Left filter rail -- mirrors Zoho's "FILTER JOB OPENINGS BY" panel:
@@ -340,6 +343,12 @@ export default async function MandatesPage({
       </aside>
 
       <div className="flex-1 min-w-0">
+        {needsTypeCount > 0 && (
+          <Link href="/mandates/role-types" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-900 hover:bg-amber-100/70 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+            <span className="font-semibold">{needsTypeCount} open {needsTypeCount === 1 ? "role has" : "roles have"} no role type yet,</span>
+            <span>so the system can&apos;t find people for {needsTypeCount === 1 ? "it" : "them"}. Set them all in one go →</span>
+          </Link>
+        )}
         <div className="flex items-baseline justify-between mb-5">
           <div>
             <h1 className="ros-page-title">Mandates</h1>

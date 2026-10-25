@@ -28,7 +28,7 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
       label: p.in_pipeline === 1 ? "person in the pipeline" : "people in the pipeline",
       line: typeSet ? "Review the best-fit people from the database, top tier first." : "First say what kind of role this is, so the system can find the right people.",
       cta: typeSet ? "Review matches" : "Set the role type",
-      href: "#best-matches",
+      href: typeSet ? "#best-matches" : "/mandates/role-types",
       done: typeSet && p.in_pipeline > 0,
     },
     {
