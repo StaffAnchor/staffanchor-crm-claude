@@ -62,6 +62,12 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const pool = ((rows ?? []) as MatchRow[]).filter((r) => !inPipeline.has(r.candidate_id) && !dismissed.has(r.candidate_id));
   const nameOf = new Map(worlds.map((w) => [w.slug, w.name]));
   const ranked = rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s, { also });
+  // The best 120 overall, plus everyone already in the role's own city however far down they rank: a city-bound role
+  // must never hide the local people behind better-scoring candidates from elsewhere.
+  const top = ranked.slice(0, 120);
+  const seen = new Set(top.map((r) => r.row.candidate_id));
+  const local = card.cities.length > 0 ? ranked.filter((r) => !seen.has(r.row.candidate_id) && r.metro && card.cities.includes(r.metro)).slice(0, 150) : [];
+  const shownRanked = [...top, ...local];
 
   return (
     <div className="space-y-4">
@@ -75,7 +81,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
           templateKey="referralRole"
         />
       )}
-      <RankedGroups mandateId={mandateId} ranked={ranked.slice(0, 120)} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
+      <RankedGroups mandateId={mandateId} cities={card.cities} ranked={shownRanked} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, or marked not a fit, is left out.
       </p>

@@ -3,7 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import RoleNudgeButton from "./role-nudge-button";
 
-type Playbook = { nudgeable: number; nudged: number; in_pipeline: number; shortlisted: number; told: number; read: number; interested: number; not_now: number; no_reply: number; to_call: number; called: number };
+type Playbook = { summaries_approved: number; nudgeable: number; nudged: number; in_pipeline: number; shortlisted: number; told: number; read: number; interested: number; not_now: number; no_reply: number; to_call: number; called: number };
 
 // The same four steps on every role, in the same order: Match, Reach, Track, Call, then Send to client. Each step shows
 // where this role stands and one button for what to do next. The numbers come from the role's own outreach records, so
@@ -66,9 +66,9 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
       title: "5. Send to client",
       big: p.shortlisted,
       label: "in the client shortlist",
-      line: "After a good call, share them from the pipeline.",
-      cta: "Open the pipeline",
-      href: "#pipeline",
+      line: p.shortlisted > 0 ? `${p.summaries_approved} of ${p.shortlisted} have an approved one-page summary for the client.` : "After a good call, share them from the pipeline.",
+      cta: p.shortlisted > 0 && p.summaries_approved < p.shortlisted ? "Review client summaries" : p.shortlisted > 0 ? "Client summaries" : "Open the pipeline",
+      href: p.shortlisted > 0 ? `/mandates/${mandateId}/summaries` : "#pipeline",
       done: p.shortlisted > 0,
     },
   ];

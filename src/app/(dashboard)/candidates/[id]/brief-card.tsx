@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Copy, FileText, Loader2, RefreshCw } from "lucide-react";
 import { briefToText, type Brief } from "@/lib/candidate-brief";
+import { createClient } from "@/lib/supabase/client";
 
 // The candidate brief: the client-ready presentation, written and refreshed by the system. Copy it for an
 // email or WhatsApp; the client version leaves out the name and employer.
@@ -11,6 +12,8 @@ export default function BriefCard({
   candidateId,
   brief,
   generatedAt,
+  approvedAt = null,
+  changedSinceApproval = false,
   fromCall,
   name,
   employer,
@@ -18,6 +21,9 @@ export default function BriefCard({
   candidateId: string;
   brief: Brief | null;
   generatedAt: string | null;
+  /** When a recruiter approved this for clients; clients see only the approved copy. */
+  approvedAt?: string | null;
+  changedSinceApproval?: boolean;
   fromCall: boolean;
   name: string | null;
   employer: string | null;
@@ -37,6 +43,19 @@ export default function BriefCard({
       else router.refresh();
     } catch {
       setError("Network error.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setApproved(approve: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      const { data, error: e } = await createClient().rpc("approve_candidate_brief", { p_candidate: candidateId, p_approve: approve });
+      const d = data as { ok?: boolean; error?: string } | null;
+      if (e || !d?.ok) setError(d?.error ?? e?.message ?? "Couldn't save the approval.");
+      else router.refresh();
     } finally {
       setBusy(false);
     }
@@ -93,6 +112,29 @@ export default function BriefCard({
       </div>
       {error && <p className="mb-2 text-[12.5px] text-rose-600">{error}</p>}
 
+      {brief && (
+        <div className={`mb-3 flex flex-wrap items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] ${approvedAt && !changedSinceApproval ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200" : "bg-amber-50 text-amber-900 dark:bg-amber-950/20 dark:text-amber-200"}`}>
+          <span className="font-semibold">Client one-pager:</span>
+          <span className="flex-1">
+            {!approvedAt
+              ? "Not approved, so clients do not see this. Read it, then approve it to show it in the client portal."
+              : changedSinceApproval
+                ? `Approved ${new Date(approvedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, but the brief has been rewritten since. Clients still see the approved version until you approve this one.`
+                : `Approved ${new Date(approvedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}. Clients with this person on a shortlist can read it.`}
+          </span>
+          {(!approvedAt || changedSinceApproval) && (
+            <button type="button" disabled={busy} onClick={() => setApproved(true)} className="rounded-full bg-emerald-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+              {changedSinceApproval ? "Approve the new version" : "Approve for clients"}
+            </button>
+          )}
+          {approvedAt && (
+            <button type="button" disabled={busy} onClick={() => setApproved(false)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+              Withdraw
+            </button>
+          )}
+        </div>
+      )}
+
       {!brief ? (
         <p className="text-[12.5px] text-slate-500">No brief yet. It is written automatically after your first call note or when someone is added to the Talent Pool. Or write it now.</p>
       ) : (
@@ -131,7 +173,7 @@ export default function BriefCard({
           )}
           {brief.probe.length > 0 && (
             <div>
-              <p className="mb-1 text-[12.5px] font-medium text-slate-500">Worth testing</p>
+              <p className="mb-1 text-[12.5px] font-medium text-slate-500">To confirm on the call</p>
               <ul className="list-disc space-y-0.5 pl-5">{brief.probe.map((x) => <li key={x}>{x}</li>)}</ul>
             </div>
           )}

@@ -124,7 +124,7 @@ export default async function CandidateDetailPage({
     audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
     pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
     debriefs: Promise.resolve(supabase.from("candidate_debriefs").select("id, created_at, raw_note, structured, profiles(full_name)").eq("candidate_id", id).order("created_at", { ascending: false }).limit(5)),
-    brief: Promise.resolve(supabase.from("candidate_briefs").select("brief, source, generated_at").eq("candidate_id", id).maybeSingle()),
+    brief: Promise.resolve(supabase.from("candidate_briefs").select("brief, source, generated_at, approved_brief, approved_at").eq("candidate_id", id).maybeSingle()),
     activities: Promise.resolve(supabase.from("activities").select("id, actor_id, kind, body, created_at, profiles(full_name)").eq("entity_type", "candidate").eq("entity_id", id).order("created_at", { ascending: false })),
     // Messages sent before the profile existed (the bot's onboarding questions) carry no candidate_id, so the chat is matched on
     // the phone's last 10 digits as well. to_phone holds the number with or without the 91 prefix.
@@ -536,6 +536,8 @@ export default async function CandidateDetailPage({
             candidateId={candidate.id}
             brief={(briefRow?.brief as Brief | undefined) ?? null}
             generatedAt={briefRow?.generated_at ?? null}
+            approvedAt={(briefRow?.approved_at as string | null | undefined) ?? null}
+            changedSinceApproval={!!briefRow?.approved_brief && JSON.stringify(briefRow.approved_brief) !== JSON.stringify(briefRow.brief)}
             fromCall={briefRow?.source === "cv+call"}
             name={candidate.full_name}
             employer={candidate.current_employer}

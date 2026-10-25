@@ -39,10 +39,27 @@ const REACHED_STYLE: Record<string, string> = {
   not_now: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
 };
 
-export default function RankedGroups({ mandateId, ranked, reached = {} }: { mandateId: string; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }> }) {
+type Where = "all" | "here" | "reloc" | "unknown";
+const RELOC_OK = new Set(["Yes", "Maybe", "Depends upon Option"]);
+
+export default function RankedGroups({ mandateId, ranked: allRanked, reached = {}, cities = [] }: { mandateId: string; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }>; cities?: string[] }) {
   const router = useRouter();
   const flags = useWhatsAppTemplates();
   const [reviewing, setReviewing] = useState(false);
+  // Where they are, for a role tied to a city: in the city, elsewhere but open to moving, or elsewhere with no answer yet.
+  const [where, setWhere] = useState<Where>("all");
+  const placeOf = (r: Ranked): Exclude<Where, "all"> => (r.metro && cities.includes(r.metro) ? "here" : RELOC_OK.has(r.row.open_to_relocation ?? "") ? "reloc" : "unknown");
+  const whereCounts = useMemo(() => {
+    const n = { here: 0, reloc: 0, unknown: 0 };
+    for (const r of allRanked) n[placeOf(r)]++;
+    return n;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allRanked, cities]);
+  const ranked = useMemo(
+    () => (where === "all" ? allRanked : allRanked.filter((r) => placeOf(r) === where)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allRanked, where, cities]
+  );
   const counts = useMemo(() => Object.fromEntries(GROUPS.map((g) => [g.key, ranked.filter((r) => r.bucket === g.key).length])) as Record<Ranked["bucket"], number>, [ranked]);
   const first = (GROUPS.find((g) => counts[g.key] > 0) ?? GROUPS[0]).key;
   const [tab, setTab] = useState<Ranked["bucket"]>(first);
@@ -60,7 +77,10 @@ export default function RankedGroups({ mandateId, ranked, reached = {} }: { mand
     if (!res.ok) setGone((g) => new Set([...g].filter((x) => x !== candidateId)));
   }
 
-  const list = ranked.filter((r) => r.bucket === tab && !gone.has(r.row.candidate_id));
+  // Local people come first within a group when the role is tied to a city; otherwise the order is the score.
+  const list = ranked
+    .filter((r) => r.bucket === tab && !gone.has(r.row.candidate_id))
+    .sort((a, b) => (cities.length ? Number(placeOf(b) === "here") - Number(placeOf(a) === "here") : 0) || b.score - a.score);
 
   async function addPicked() {
     const chosen = ranked.filter((r) => picked.has(r.row.candidate_id));
@@ -95,6 +115,32 @@ export default function RankedGroups({ mandateId, ranked, reached = {} }: { mand
 
   return (
     <div className="space-y-3">
+      {cities.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-[12.5px]">
+          <span className="font-medium text-slate-500">Where they are:</span>
+          {(
+            [
+              { k: "all", label: "Everyone", n: allRanked.length },
+              { k: "here", label: `In ${cities.join(" / ")}`, n: whereCounts.here },
+              { k: "reloc", label: "Elsewhere, open to moving", n: whereCounts.reloc },
+              { k: "unknown", label: "Elsewhere, not asked yet", n: whereCounts.unknown },
+            ] as { k: Where; label: string; n: number }[]
+          ).map((o) => (
+            <button
+              key={o.k}
+              type="button"
+              onClick={() => {
+                setWhere(o.k);
+                setShown(PER_PAGE);
+              }}
+              className={`rounded-full border px-3 py-1 font-medium ${where === o.k ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`}
+            >
+              {o.label} <span className="opacity-70">{o.n}</span>
+            </button>
+          ))}
+          {where === "unknown" && <span className="text-slate-400">They have not said whether they would relocate. Ask on a call.</span>}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         {GROUPS.map((g) => (
           <button
