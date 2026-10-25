@@ -17,6 +17,7 @@ import SuggestedRolesPanel from "./suggested-roles-panel";
 import CheckRolesButton from "./check-roles-button";
 import { getServiceClient } from "@/lib/cv-facts";
 import { bestRoleFits } from "@/lib/candidate-role-fit";
+import { fillMissingRoleCards } from "@/lib/role-card";
 import SaasPassportCard from "./saas-passport-card";
 import { PASSPORT_COLUMNS, type PassportRow } from "@/lib/saas-passport";
 import PracticeMatchesPanel from "./practice-matches-panel";
@@ -536,6 +537,8 @@ export default async function CandidateDetailPage({
   // Without an AI check yet, fall back to the same ranking the role's Matches use.
   const svc = bestMatchRow ? null : getServiceClient();
   const fit = svc ? (await bestRoleFits(svc, candidate.id, 1).catch(() => []))[0] : undefined;
+  // Roles without a card cannot be ranked yet; a few are written in the background each time a profile is opened.
+  if (svc) after(() => void fillMissingRoleCards(svc, 3).catch(() => 0));
   const BUCKET = { perfect: "Perfect fit", close: "Close fit", stretch: "Stretch" } as const;
   const bestMatchText = bestMatch ?? (fit ? `${fit.roleTitle} · ${BUCKET[fit.bucket]}` : null);
   const suggestMissing = next.missing.length > 0;

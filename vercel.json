@@ -56,6 +56,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/cron/role-cards",
+      "schedule": "0 */6 * * *"
+    },
+    {
       "path": "/api/cron/practice-tag-sweep",
       "schedule": "0 15 * * *"
     },

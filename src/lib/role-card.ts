@@ -152,3 +152,22 @@ Return ONLY JSON, no markdown:
     return { ok: false, error: e instanceof Error && /paused/i.test(e.message) ? "AI is paused by an admin." : "Couldn't write the role card just now." };
   }
 }
+
+/**
+ * Writes the role card for open roles that have a type and level but no card yet, a few at a time. Matching cannot rank
+ * a role without its card, so a role set up without ever opening its Matches page would otherwise stay invisible to it.
+ */
+export async function fillMissingRoleCards(admin: SupabaseClient, max = 3): Promise<number> {
+  const [{ data: open }, { data: have }] = await Promise.all([
+    admin.from("mandates").select("id").eq("status", "open").not("role_cluster", "is", null).not("seniority_band", "is", null).order("created_at", { ascending: false }),
+    admin.from("mandate_role_cards").select("mandate_id"),
+  ]);
+  const has = new Set(((have ?? []) as { mandate_id: string }[]).map((r) => r.mandate_id));
+  const todo = ((open ?? []) as { id: string }[]).filter((m) => !has.has(m.id)).slice(0, max);
+  let made = 0;
+  for (const m of todo) {
+    const r = await generateRoleCard(admin, m.id).catch(() => ({ ok: false as const }));
+    if (r.ok) made++;
+  }
+  return made;
+}
