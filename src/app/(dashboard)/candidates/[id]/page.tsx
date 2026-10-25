@@ -550,6 +550,13 @@ export default async function CandidateDetailPage({
             name={candidate.full_name}
             employer={candidate.current_employer}
           />
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 [&::-webkit-details-marker]:hidden">
+              <span>Detailed analysis <span className="font-normal text-slate-500">· fit, stability, strengths and concerns (internal)</span></span>
+              <span className="text-[12px] font-normal text-teal-700 group-open:hidden">Show</span>
+              <span className="hidden text-[12px] font-normal text-teal-700 group-open:inline">Hide</span>
+            </summary>
+            <div className="mt-3">
           <AiSummaryPanel
             candidateId={candidate.id}
             initialSummary={candidate.ai_summary}
@@ -559,6 +566,8 @@ export default async function CandidateDetailPage({
             initialStabilityScore={candidate.stability_score}
             nextQuestions={callDoubts}
           />
+            </div>
+          </details>
           {candidate.skills && !candidate.skill_inventory && (
             <div>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
@@ -572,8 +581,14 @@ export default async function CandidateDetailPage({
             </div>
           )}
           {segmentEntries.length > 0 && (
-            <div>
-              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Sales profile</h3>
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 [&::-webkit-details-marker]:hidden">
+                <span>Sales profile <span className="font-normal text-slate-500">· {segmentEntries.length} details from the CV and calls</span></span>
+                <span className="text-[12px] font-normal text-teal-700 group-open:hidden">Show</span>
+                <span className="hidden text-[12px] font-normal text-teal-700 group-open:inline">Hide</span>
+              </summary>
+              <div className="mt-3">
+              <h3 className="sr-only">Sales profile</h3>
               {callConfirmed?.at && <p className="mb-2 text-[12px] text-emerald-700 dark:text-emerald-300">Confirmed on a call {new Date(callConfirmed.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}{callConfirmed.by ? ` by ${callConfirmed.by}` : ""}.</p>}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 {segmentEntries.map(([k, v]) => (
@@ -583,7 +598,8 @@ export default async function CandidateDetailPage({
                   </div>
                 ))}
               </div>
-            </div>
+              </div>
+            </details>
           )}
           {Object.keys(selfAssessment).length > 0 && (
             <div>
