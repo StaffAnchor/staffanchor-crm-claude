@@ -656,11 +656,17 @@ export default function EditProfileButton({
     }
 
     const { error } = await supabase.from("candidates").update(update).eq("id", candidate.id);
-    setSaving(false);
     if (error) {
+      setSaving(false);
       setError(error.message);
       return;
     }
+    // A recruiter who changes the profile type here means it: keep it, the same way the Category control does, so the
+    // automatic sorting from the CV does not quietly change it back.
+    if (form.category && form.category !== (candidate.category ?? "")) {
+      await fetch("/api/candidates/profile-group", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: candidate.id, group: form.category }) }).catch(() => {});
+    }
+    setSaving(false);
     setOpen(false);
     router.refresh();
   }
@@ -787,7 +793,7 @@ export default function EditProfileButton({
                 <span className={SECTION_LABEL}>Function / Domain &amp; Specialization</span>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={FIELD_LABEL}>Current Profile Type</label>
+                    <label className={FIELD_LABEL}>Profile Type <span className="font-normal normal-case text-slate-400">(set from the CV; changing it here keeps your choice)</span></label>
                     <select
                       value={form.category}
                       onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subDomain: "", secondarySubDomains: [] }))}
