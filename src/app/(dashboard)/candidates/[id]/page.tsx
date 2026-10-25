@@ -20,12 +20,11 @@ import PracticeMatchesPanel from "./practice-matches-panel";
 import Tabs from "./tabs";
 import Timeline from "./timeline";
 import AiSummaryPanel from "./ai-summary-panel";
-import CallCompanion from "./call-companion";
 import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
 import AskMissingDetails from "./ask-missing-details";
 import ProfileGroupControl from "./profile-group-control";
-import AfterCallCard, { type PastDebrief } from "./after-call-card";
+import ProfileCallSection, { type PastDebrief } from "./profile-call-section";
 import BriefCard from "./brief-card";
 import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
@@ -161,7 +160,6 @@ export default async function CandidateDetailPage({
   // same "who did this, not who owns the record" principle as profile_completed_by.
   const { user: viewerUser, profile: viewerProfile } = await q.viewer;
   void viewerUser;
-  const scorerName = viewerProfile?.full_name ?? viewerProfile?.email ?? "Unknown";
 
   // Things worth asking on a call: the AI's watch-areas plus any honesty or gap
   // flags raised when the CV was read.
@@ -599,19 +597,33 @@ export default async function CandidateDetailPage({
       content: (
         <div className="space-y-6">
           <p className="rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
-            Everything about a call lives here, in order: tap answers <b>during</b> the call, write a note <b>after</b> it, then optionally score them.
+            One place for a call, the same as Calls today: fill in what they tell you, rate how they came across, write a quick note, then pick the result. Everything lands on the profile.
           </p>
           <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">1. During the call</h3>
-            <CallCompanion candidate={candidate as never} doubts={callDoubts} recruiterName={scorerName} />
-          </section>
-          <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">2. After the call</h3>
-            <AfterCallCard candidateId={candidate.id} history={pastDebriefs} />
+            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">1. Record a call</h3>
+            <ProfileCallSection
+              person={{
+                id: candidate.id,
+                full_name: candidate.full_name,
+                total_experience_years: candidate.total_experience_years,
+                current_fixed_ctc: candidate.current_fixed_ctc,
+                expected_fixed_ctc: candidate.expected_fixed_ctc,
+                notice_period: candidate.notice_period,
+                current_location: candidate.current_location,
+                open_to_relocation: candidate.open_to_relocation,
+                work_mode: candidate.work_mode,
+                comm: topTier.comm,
+                open_fresh: topTier.openFresh,
+                offer_in_hand: typeof (candidate.segment_data as { offer_in_hand?: unknown } | null)?.offer_in_hand === "boolean" ? ((candidate.segment_data as { offer_in_hand: boolean }).offer_in_hand) : null,
+                offer_ctc: Number((candidate.segment_data as { offer_ctc?: unknown } | null)?.offer_ctc) || null,
+              }}
+              doubts={callDoubts}
+              history={pastDebriefs}
+            />
           </section>
           <details className="rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700" open={!!recommendation}>
             <summary className="cursor-pointer text-[13px] font-semibold text-slate-900 dark:text-slate-100">
-              3. Scorecard <span className="font-normal text-slate-500">(optional, internal only)</span>
+              2. Scorecard <span className="font-normal text-slate-500">(optional, internal only)</span>
               {recommendation ? <span className="ml-2"><Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">{recommendation}</Badge></span> : null}
             </summary>
             <div className="mt-3">

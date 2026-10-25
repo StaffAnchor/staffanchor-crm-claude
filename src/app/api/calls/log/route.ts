@@ -25,6 +25,7 @@ type Body = {
   note?: string | null;
   callBackAt?: string | null;
   tier?: string | null;
+  offer?: { inHand?: boolean; ctc?: number | null } | null;
 };
 
 const num = (v: unknown): number | null => {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: me } = await supabase.from("profiles").select("role, full_name, email").eq("id", user.id).single();
   if (!me || !["admin", "recruiter", "partner", "freelancer"].includes(me.role)) return NextResponse.json({ error: "Not permitted" }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as Body;
@@ -51,7 +52,13 @@ export async function POST(req: Request) {
   const update: Record<string, unknown> = {};
   const f = body.fields ?? {};
   // The form arrives pre-filled with what is already on the profile, so only what actually changed is written.
-  const { data: before } = await supabase.from("candidates").select("current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode").eq("id", id).maybeSingle();
+  const { data: before } = await supabase
+    .from("candidates")
+    .select(
+      "status, segment_data, phone, resume_file_url, current_employer, current_job_title, current_employment_status, total_experience_years, highest_qualification, category, sub_domain, industries, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode"
+    )
+    .eq("id", id)
+    .maybeSingle();
   const was = (before ?? {}) as Record<string, unknown>;
   for (const k of ["current_fixed_ctc", "expected_fixed_ctc"] as const) {
     const v = num(f[k]);
@@ -65,6 +72,23 @@ export async function POST(req: Request) {
 
   if (outcome === "reached") {
     update.details_confirmed_at = now.toISOString();
+    // Shown on the profile as "Confirmed on call <date> by <name>", plus whether they hold an offer.
+    const seg: Record<string, unknown> = { ...((was.segment_data as Record<string, unknown> | null) ?? {}), call_confirmed: { at: now.toISOString(), by: me.full_name ?? me.email } };
+    if (body.offer?.inHand === true && num(body.offer.ctc)) {
+      seg.offer_in_hand = true;
+      seg.offer_ctc = num(body.offer.ctc);
+    } else if (body.offer?.inHand === false) {
+      seg.offer_in_hand = false;
+      delete seg.offer_ctc;
+    }
+    update.segment_data = seg;
+    // A lead whose details are now complete becomes Registered, the same gate the public form uses.
+    if (was.status === "lead" || was.status === "awaiting_input") {
+      const m = { ...was, ...update } as Record<string, unknown>;
+      const has = (v: unknown) => v !== null && v !== undefined && v !== "";
+      const required = ["phone", "current_location", "resume_file_url", "current_employer", "current_job_title", "current_employment_status", "total_experience_years", "current_fixed_ctc", "expected_fixed_ctc", "notice_period", "highest_qualification", "category", "sub_domain", "work_mode", "open_to_relocation"];
+      if (required.every((k) => has(m[k])) && Array.isArray(m.industries) && m.industries.length > 0) update.status = "registered";
+    }
     if (body.openness === "Looking") {
       update.open_to_work_at = now.toISOString();
       update.not_now_until = null;

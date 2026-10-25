@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import CallCompanion from "../../candidates/[id]/call-companion";
+import CallRecordForm, { type CallFormPerson } from "../../candidates/call-record-form";
+
+// Said they are open to roles in the last 90 days (the same window the top tier uses).
+const openFresh = (iso: unknown) => !!iso && Date.now() - new Date(String(iso)).getTime() < 90 * 86_400_000;
 import RoleFitReview from "./role-fit-review";
 
 // What the Call companion itself can fix. Everything else on the checklist is a
@@ -111,11 +114,16 @@ export default function ConfirmDetailsModal({
           {candidate && (
             <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Call details</p>
-              <CallCompanion
-                candidate={candidate as never}
-                doubts={[]}
-                recruiterName={recruiterName}
-                onSaved={async () => {
+              <CallRecordForm
+                key={String(candidate.updated_at ?? "")}
+                p={{
+                  ...(candidate as unknown as CallFormPerson),
+                  open_fresh: openFresh(candidate.open_to_work_at),
+                  offer_in_hand: typeof (candidate.segment_data as { offer_in_hand?: unknown } | null)?.offer_in_hand === "boolean" ? (candidate.segment_data as { offer_in_hand: boolean }).offer_in_hand : null,
+                  offer_ctc: Number((candidate.segment_data as { offer_ctc?: unknown } | null)?.offer_ctc) || null,
+                }}
+                mode="profile"
+                onDone={async () => {
                   await loadCandidate();
                   await onRecheck();
                 }}
