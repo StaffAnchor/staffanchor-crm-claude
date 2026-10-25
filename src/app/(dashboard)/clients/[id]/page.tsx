@@ -12,6 +12,7 @@ import { computeFunnel } from "../funnel-utils";
 import { Card } from "@/components/ui/card";
 import MandateRequestLinkPanel from "@/components/mandate-request-link-panel";
 import { Tabs } from "@/components/ui/tabs";
+import ClientHeader from "./client-header";
 import { Briefcase, Globe2, Users as UsersIcon, Receipt } from "lucide-react";
 import ClientPortalOverview, { type SharedCandidate } from "./client-portal-overview";
 
@@ -71,11 +72,11 @@ export default async function ClientDetailPage({
   const { data: sharedRows } = mandateIds.length
     ? await supabase
         .from("candidate_mandate_links")
-        .select("id, mandate_id, candidate_id, client_feedback, requested_interview_at, confirmed_interview_at, client_decision_at, candidates(full_name)")
+        .select("id, mandate_id, candidate_id, client_feedback, requested_interview_at, confirmed_interview_at, client_decision_at, shortlisted_at, candidates(full_name)")
         .in("mandate_id", mandateIds)
         .eq("in_shortlist", true)
     : { data: [] };
-  const shared: SharedCandidate[] = ((sharedRows ?? []) as unknown as { id: string; mandate_id: string; candidate_id: string; client_feedback: string | null; requested_interview_at: string | null; confirmed_interview_at: string | null; client_decision_at: string | null; candidates: { full_name: string } | null }[]).map((r) => ({
+  const shared: SharedCandidate[] = ((sharedRows ?? []) as unknown as { id: string; mandate_id: string; candidate_id: string; client_feedback: string | null; requested_interview_at: string | null; confirmed_interview_at: string | null; client_decision_at: string | null; shortlisted_at: string | null; candidates: { full_name: string } | null }[]).map((r) => ({
     linkId: r.id,
     mandateId: r.mandate_id,
     candidateId: r.candidate_id,
@@ -85,6 +86,16 @@ export default async function ClientDetailPage({
     interviewConfirmed: !!r.confirmed_interview_at,
     decidedAt: r.client_decision_at,
   }));
+
+  const headerShared = ((sharedRows ?? []) as unknown as { mandate_id: string; client_feedback: string | null; shortlisted_at: string | null; client_decision_at: string | null; requested_interview_at: string | null; confirmed_interview_at: string | null }[]).map((r) => ({
+    mandateId: r.mandate_id,
+    feedback: r.client_feedback,
+    sharedAt: r.shortlisted_at,
+    decidedAt: r.client_decision_at,
+    interviewRequested: !!r.requested_interview_at,
+    interviewConfirmed: !!r.confirmed_interview_at,
+  }));
+  const { data: invoiceRows } = await supabase.from("historical_invoices").select("invoice_date, net_amount, gross_amount, currency").eq("client_id", id);
 
   const funnelStats = computeFunnel((links ?? []).map((l) => l.stage));
 
@@ -161,6 +172,15 @@ export default async function ClientDetailPage({
           </Link>
         </div>
       </Card>
+
+      <ClientHeader
+        roles={(mandates ?? []).map((m) => ({ id: m.id, status: m.status, title: m.role_title }))}
+        shared={headerShared}
+        stages={(links ?? []).map((l) => l.stage)}
+        invoices={((invoiceRows ?? []) as { invoice_date: string | null; net_amount: number | null; gross_amount: number | null; currency: string | null }[]).map((i) => ({ invoiceDate: i.invoice_date, net: i.net_amount, gross: i.gross_amount, currency: i.currency }))}
+        contact={(contacts ?? [])[0] ? { name: (contacts ?? [])[0].full_name, designation: (contacts ?? [])[0].designation, email: (contacts ?? [])[0].email, phone: (contacts ?? [])[0].phone } : null}
+        feePercentage={clientRow.fee_percentage}
+      />
 
       <Tabs
         className="mt-5"
