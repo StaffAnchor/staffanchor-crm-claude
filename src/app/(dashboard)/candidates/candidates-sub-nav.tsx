@@ -4,17 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // People, kept to the places used every day: Talent (everyone, with the top-tier strip), Calls today (the one list for
-// whoever is on the phones), Improve profiles (what is missing, asked in batches) and Outreach. The rest sits under "More".
+// whoever is on the phones), Activity (who was contacted, how, and whether it worked) and Improve profiles (what is
+// missing, asked in batches). The rest sits under "More".
 const TABS = [
   { href: "/candidates", label: "Talent" },
   { href: "/candidates/calls", label: "Calls today" },
+  { href: "/candidates/activity", label: "Activity" },
   { href: "/candidates/pipeline", label: "Improve profiles" },
-  { href: "/candidates/outreach", label: "Outreach" },
 ];
 
 // Used rarely, so they stay out of the way. Shortlists are really saved pools; the B2B SaaS practice view is the same
 // people filtered by what they sell.
 const MORE = [
+  { href: "/candidates/outreach", label: "Email and WhatsApp campaigns" },
   { href: "/candidates/inventory", label: "Role and city map" },
   { href: "/saas-practice", label: "B2B SaaS practice view" },
   { href: "/candidates/lists", label: "Saved shortlists" },
