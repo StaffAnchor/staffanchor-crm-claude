@@ -57,7 +57,7 @@
     },
     {
       "path": "/api/cron/role-cards",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/practice-tag-sweep",
