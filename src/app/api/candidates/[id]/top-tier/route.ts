@@ -12,12 +12,13 @@ export const runtime = "nodejs";
 const UUID = /^[0-9a-f-]{36}$/i;
 const REST_DAYS = 30;
 
-// Moving one person up to the top tier: someone is "top tier" once their profile is ready AND they have confirmed they are
-// open to work in the last 90 days. Three ways to get that confirmation, all started by a person pressing a button:
-//   mark_open  you spoke to them and they said so
-//   email      the one-tap "are you open?" email (they tap Yes, which records it)
-//   whatsapp   the approved reactivation template, once it is set up
-// "preview" returns what each would say so nothing goes out unseen.
+// Moving one person up to the top tier. Top tier means a strong sales person: 3+ years, pay-to-experience ratio of 1.5 or
+// more, communication rated good on a call, and confirmed open to work in the last 90 days (see the candidate_top_tier view).
+// Taps a recruiter can make, all started by a person pressing a button:
+//   rate_communication  how they came across on a call: good, okay or weak
+//   mark_open / not_now they told you they are, or are not, looking
+//   email / whatsapp    the one-tap "are you open?" message, only for people who already pass the pay and experience check
+// "preview" returns what each message would say so nothing goes out unseen.
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const {
@@ -43,6 +44,30 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const { data: recent } = await admin.from("profile_outreach").select("created_at").eq("candidate_id", id).eq("channel", "email").eq("status", "sent").gte("created_at", sinceRest).limit(1);
   const emailedRecently = (recent ?? []).length > 0;
 
+  // The asks go only to people who pass the numbers, so the top tier is not diluted by messaging everyone.
+  const { data: tierRow } = await admin.from("candidate_top_tier").select("is_sales, exp_ok, ratio_ok").eq("candidate_id", id).maybeSingle();
+  const passes = !!tierRow && tierRow.is_sales && tierRow.exp_ok && tierRow.ratio_ok;
+
+  if (body.action === "rate_communication") {
+    const value = (body as { value?: string }).value;
+    if (value !== "good" && value !== "okay" && value !== "weak") return NextResponse.json({ error: "Pick good, okay or weak." }, { status: 400 });
+    const { error } = await admin.from("candidate_call_ratings").insert({ candidate_id: id, rated_by: user.id, communication: value });
+    if (error) return NextResponse.json({ ok: false, error: "Couldn't save the rating." }, { status: 500 });
+    await admin.from("audit_log").insert({ actor: user.id, action: "top_tier_rate_communication", entity: "candidate", entity_id: id, detail: { value } });
+    return NextResponse.json({ ok: true, message: `Communication saved as ${value}.` });
+  }
+
+  if (body.action === "not_now") {
+    const { error } = await admin.from("candidates").update({ not_now_until: new Date(Date.now() + 90 * 86_400_000).toISOString() }).eq("id", id);
+    if (error) return NextResponse.json({ ok: false, error: "Couldn't save that." }, { status: 500 });
+    await admin.from("audit_log").insert({ actor: user.id, action: "top_tier_not_now", entity: "candidate", entity_id: id, detail: { via: "recruiter" } });
+    return NextResponse.json({ ok: true, message: "Marked as not looking for now. Rested for 90 days." });
+  }
+
+  if ((body.action === "email" || body.action === "whatsapp") && !passes) {
+    return NextResponse.json({ ok: false, error: "This message only goes to sales people with 3+ years and a pay-to-experience ratio of 1.5 or more." });
+  }
+
   if (body.action === "preview") {
     const mail = buildReactivationEmail({ id, full_name: c.full_name }, "sales");
     return NextResponse.json({
@@ -56,7 +81,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const { error } = await admin.from("candidates").update({ open_to_work_at: new Date().toISOString(), not_now_until: null }).eq("id", id);
     if (error) return NextResponse.json({ ok: false, error: "Couldn't save that." }, { status: 500 });
     await admin.from("audit_log").insert({ actor: user.id, action: "top_tier_mark_open", entity: "candidate", entity_id: id, detail: { via: "recruiter" } });
-    return NextResponse.json({ ok: true, message: "Marked as open to work. They now count for the top tier." });
+    return NextResponse.json({ ok: true, message: "Marked as open to work." });
   }
 
   if (body.action === "email") {

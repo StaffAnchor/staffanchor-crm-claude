@@ -34,7 +34,7 @@ import { recordTiming } from "@/lib/page-timing";
 import ResumePreview from "./resume-preview";
 import SendRole from "./send-role";
 import ActionCenter from "./action-center";
-import TopTierStatus from "./top-tier-status";
+import TopTierStatus, { type TopTierData } from "./top-tier-status";
 import MessageHub from "./message-hub";
 import TodoList from "./todo-list";
 import GapChip from "./gap-chip";
@@ -496,6 +496,19 @@ export default async function CandidateDetailPage({
     callNoteCount: pastDebriefs.length,
   });
   const todos = next.todos;
+  const { data: topTierRow } = await supabase.from("candidate_top_tier").select("is_sales, pay_ratio, exp_ok, ratio_ok, comm, open_fresh, resting, tier").eq("candidate_id", candidate.id).maybeSingle();
+  const topTier: TopTierData = {
+    isSales: !!topTierRow?.is_sales,
+    payRatio: topTierRow?.pay_ratio != null ? Number(topTierRow.pay_ratio) : null,
+    expYears: candidate.total_experience_years != null ? Number(candidate.total_experience_years) : null,
+    ctc: candidate.current_fixed_ctc != null ? Number(candidate.current_fixed_ctc) : null,
+    expOk: !!topTierRow?.exp_ok,
+    ratioOk: !!topTierRow?.ratio_ok,
+    comm: (topTierRow?.comm as string | null) ?? null,
+    openFresh: !!topTierRow?.open_fresh,
+    resting: !!topTierRow?.resting,
+    tier: (topTierRow?.tier as TopTierData["tier"]) ?? null,
+  };
   const detailsTotal = 8;
   const detailsDone = detailsTotal - missingKeyDetails(candidate).length;
   const lastTouch = [...activities.map((a: { created_at?: string }) => a.created_at), ...((whatsappRows ?? []) as { created_at?: string }[]).map((m) => m.created_at)].filter(Boolean).sort().pop();
@@ -890,15 +903,7 @@ export default async function CandidateDetailPage({
                 </span>
               )}
             </ActionCenter>
-            <TopTierStatus
-              candidateId={candidate.id}
-              isSales={candidate.profile_group === "b2b_sales" || candidate.profile_group === "b2c_sales"}
-              ready={candidate.readiness_tier === "ready"}
-              openAt={(candidate.open_to_work_at as string | null | undefined) ?? null}
-              notNowUntil={(candidate.not_now_until as string | null | undefined) ?? null}
-              missingCount={missingKeyDetails(candidate).length}
-              nowMs={renderStart}
-            />
+            <TopTierStatus candidateId={candidate.id} data={topTier} />
           </div>
         </div>
       </Card>

@@ -494,10 +494,10 @@ export default async function CandidatesPage({
       }
     }
     if (params.category) qq = qq.eq("category", params.category);
-    // Top tier: complete sales profiles; "open" also needs a recent open-to-work confirmation.
-    if (params.top === "open" || params.top === "ready") {
-      qq = qq.eq("readiness_tier", "ready").in("profile_group", SALES_GROUPS);
-      if (params.top === "open") qq = qq.gte("open_to_work_at", topTierCutoffIso());
+    // Top tier (see the candidate_top_tier view): top = all five tests passed, ask = strong but not yet confirmed open,
+    // call = passes pay and experience, communication not rated yet.
+    if (params.top === "top" || params.top === "ask" || params.top === "call") {
+      qq = qq.eq("top_tier", params.top === "top" ? "top" : params.top === "ask" ? "ask_open" : "worth_a_call");
     }
     if (params.ready && ["ready", "almost", "needs_work"].includes(params.ready)) qq = qq.eq("readiness_tier", params.ready);
     if (params.missing && /^[a-z_]+$/.test(params.missing)) qq = qq.contains("readiness_missing", [params.missing]);
@@ -629,7 +629,7 @@ export default async function CandidatesPage({
     .select(
       "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, city_canonical, employer_canonical, readiness_score, readiness_tier, readiness_missing, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
     )
-    .order(params.top === "open" ? "open_to_work_at" : "created_at", { ascending: false })
+    .order(params.top === "top" || params.top === "ask" || params.top === "call" ? "pay_ratio_value" : "created_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .range(rangeFrom, rangeTo);
   const query = applyFilters(baseQuery);
@@ -1035,14 +1035,13 @@ export default async function CandidatesPage({
   const readinessHref = (ready?: string, missing?: string) => qs({ ready, missing });
   const topHref = (top?: string) => qs({ top, ready: undefined, missing: undefined, group: undefined, subgroup: undefined });
 
-  const [topCountRes, readySalesRes] = await Promise.all([
-    supabase
-      .from("candidates")
-      .select("id", { count: "exact", head: true })
-      .eq("readiness_tier", "ready")
-      .in("profile_group", SALES_GROUPS)
-      .gte("open_to_work_at", topTierCutoffIso()),
-    supabase.from("candidates").select("id", { count: "exact", head: true }).eq("readiness_tier", "ready").in("profile_group", SALES_GROUPS),
+  const tierCount = (tier: string) => supabase.from("candidate_top_tier").select("candidate_id", { count: "exact", head: true }).eq("tier", tier);
+  const [topRes, askRes, callRes, noPayRes] = await Promise.all([
+    tierCount("top"),
+    tierCount("ask_open"),
+    tierCount("worth_a_call"),
+    // Sales people with 3+ years whose current pay is missing: the ratio can't be worked out until we have it.
+    supabase.from("candidates").select("id", { count: "exact", head: true }).in("profile_group", SALES_GROUPS).gte("total_experience_years", 3).or("current_fixed_ctc.is.null,current_fixed_ctc.eq.0"),
   ]);
 
   return (
@@ -1097,7 +1096,7 @@ export default async function CandidatesPage({
           is everyone in the client pipeline right now. Fixed column spans
           (not flex-wrap) so the boxes line up into a real grid instead of
           drifting to whatever width their content happens to need. */}
-      <TopTierCard topCount={topCountRes.count ?? 0} readySalesCount={readySalesRes.count ?? 0} active={params.top} hrefFor={topHref} founderCalls={isAdmin} />
+      <TopTierCard topCount={topRes.count ?? 0} askCount={askRes.count ?? 0} callCount={callRes.count ?? 0} noPayCount={noPayRes.count ?? 0} active={params.top} hrefFor={topHref} founderCalls={isAdmin} />
       {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} coverage={cvCoverage} />}
       {readinessOverview && <ReadinessStrip overview={readinessOverview} activeTier={params.ready} activeMissing={params.missing} hrefFor={readinessHref} />}
 

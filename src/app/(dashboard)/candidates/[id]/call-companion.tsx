@@ -112,6 +112,8 @@ export default function CallCompanion({
   const [offer, setOffer] = useState(typeof seg.offer_in_hand === "boolean" ? (seg.offer_in_hand ? "Yes" : "No") : "");
   const [offerCtc, setOfferCtc] = useState(typeof seg.offer_ctc === "number" ? String(seg.offer_ctc) : "");
   const [note, setNote] = useState("");
+  // Whether they are looking right now. "Looking" puts them in the 90-day open window used by the top tier; "Not now" rests them.
+  const [openness, setOpenness] = useState("");
   const [rating, setRating] = useState<CallRating>({});
   const [history, setHistory] = useState<RatingRow[]>([]);
   const [saving, setSaving] = useState(false);
@@ -201,6 +203,12 @@ export default function CallCompanion({
     if (workMode) update.work_mode = workMode;
     if (notice) update.notice_period = notice;
     if (relocation) update.open_to_relocation = relocation;
+    if (openness === "Looking") {
+      update.open_to_work_at = now;
+      update.not_now_until = null;
+    } else if (openness === "Not now") {
+      update.not_now_until = new Date(Date.now() + 90 * 86_400_000).toISOString();
+    }
 
     const graduates = incomplete && missing.length === 0;
     if (graduates) update.status = "registered";
@@ -232,6 +240,7 @@ export default function CallCompanion({
       });
       setRating({});
     }
+    setOpenness("");
     await supabase.from("audit_log").insert({
       actor: user?.id,
       action: "call_companion_saved",
@@ -307,6 +316,9 @@ export default function CallCompanion({
             </Row>
             <Row label="Open to relocate?">
               <Chips value={relocation} options={relocationOptions} onChange={setRelocation} />
+            </Row>
+            <Row label="Open to new opportunities?" hint="(feeds the top tier)">
+              <Chips value={openness} options={["Looking", "Not now"]} onChange={setOpenness} />
             </Row>
             <Row label="Offer in hand?">
               <div className="flex flex-wrap items-center gap-3">
