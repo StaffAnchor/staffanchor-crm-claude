@@ -101,7 +101,7 @@ export default function ProfileGroupsStrip({
       >
         {legend.map((g) =>
           count(g) > 0 ? (
-            <Link
+            <Link target="_blank" rel="noopener noreferrer"
               key={g}
               href={hrefFor(g, undefined)}
               className={`${GROUP_BAR[g]} transition hover:opacity-80`}
@@ -114,7 +114,7 @@ export default function ProfileGroupsStrip({
       </div>
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
         {legend.map((g) => (
-          <Link
+          <Link target="_blank" rel="noopener noreferrer"
             key={g}
             href={hrefFor(g, undefined)}
             className="inline-flex items-center gap-1.5 hover:text-slate-800 dark:hover:text-slate-200"
@@ -146,7 +146,7 @@ export default function ProfileGroupsStrip({
               key={g}
               className={`flex flex-col rounded-xl bg-gradient-to-br p-3.5 ring-1 transition ${active ? `${ACCENT[g].ring} ring-2` : "ring-slate-200 dark:ring-slate-700"} ${ACCENT[g].soft} ${isNon ? "lg:col-span-6" : "lg:col-span-3"}`}
             >
-              <Link href={hrefFor(g, undefined)} className="block">
+              <Link target="_blank" rel="noopener noreferrer" href={hrefFor(g, undefined)} className="block">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p
@@ -183,7 +183,7 @@ export default function ProfileGroupsStrip({
                     {rows.map((sRow) => {
                       const subActive = activeGroup === g && activeSubgroup === sRow.name;
                       return (
-                        <Link
+                        <Link target="_blank" rel="noopener noreferrer"
                           key={sRow.name}
                           href={hrefFor(g, sRow.name)}
                           className={`group rounded-md px-1.5 py-1 transition hover:bg-white/80 dark:hover:bg-slate-800/60 ${subActive ? "bg-white ring-1 ring-slate-300 dark:bg-slate-800" : ""}`}
@@ -223,7 +223,7 @@ export default function ProfileGroupsStrip({
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-3">
-        <Link
+        <Link target="_blank" rel="noopener noreferrer"
           href={hrefFor("review", undefined)}
           className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "review" ? "border-rose-300 bg-rose-50/60 dark:border-rose-800 dark:bg-rose-950/20" : "border-slate-200 dark:border-slate-700"}`}
         >
@@ -237,7 +237,7 @@ export default function ProfileGroupsStrip({
             {overview.needs_review}
           </span>
         </Link>
-        <Link
+        <Link target="_blank" rel="noopener noreferrer"
           href={hrefFor("unread", undefined)}
           className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "unread" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
         >
@@ -251,7 +251,7 @@ export default function ProfileGroupsStrip({
             {coverage?.cv_unread ?? 0}
           </span>
         </Link>
-        <Link
+        <Link target="_blank" rel="noopener noreferrer"
           href={hrefFor("nocv", undefined)}
           className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "nocv" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
         >

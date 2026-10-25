@@ -49,7 +49,7 @@ export default function ReadinessStrip({
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {TIERS.map((t) => (
-          <Link
+          <Link target="_blank" rel="noopener noreferrer"
             key={t}
             href={hrefFor(t, undefined)}
             className={`rounded-lg border px-3 py-2 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeTier === t ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
@@ -70,7 +70,7 @@ export default function ReadinessStrip({
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">Fix next: profiles missing</p>
           <div className="flex flex-wrap gap-1.5">
             {fixNext.map(([k, c]) => (
-              <Link
+              <Link target="_blank" rel="noopener noreferrer"
                 key={k}
                 href={hrefFor(undefined, k)}
                 className={`rounded-full px-2.5 py-1 text-xs ring-1 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeMissing === k ? "bg-slate-100 font-semibold text-slate-900 ring-slate-400 dark:bg-slate-800 dark:text-slate-100" : "text-slate-600 ring-slate-200 dark:text-slate-300 dark:ring-slate-700"}`}

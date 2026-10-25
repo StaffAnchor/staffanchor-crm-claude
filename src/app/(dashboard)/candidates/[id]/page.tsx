@@ -34,6 +34,7 @@ import { recordTiming } from "@/lib/page-timing";
 import ResumePreview from "./resume-preview";
 import SendRole from "./send-role";
 import ActionCenter from "./action-center";
+import TopTierStatus from "./top-tier-status";
 import MessageHub from "./message-hub";
 import TodoList from "./todo-list";
 import GapChip from "./gap-chip";
@@ -889,6 +890,15 @@ export default async function CandidateDetailPage({
                 </span>
               )}
             </ActionCenter>
+            <TopTierStatus
+              candidateId={candidate.id}
+              isSales={candidate.profile_group === "b2b_sales" || candidate.profile_group === "b2c_sales"}
+              ready={candidate.readiness_tier === "ready"}
+              openAt={(candidate.open_to_work_at as string | null | undefined) ?? null}
+              notNowUntil={(candidate.not_now_until as string | null | undefined) ?? null}
+              missingCount={missingKeyDetails(candidate).length}
+              nowMs={renderStart}
+            />
           </div>
         </div>
       </Card>

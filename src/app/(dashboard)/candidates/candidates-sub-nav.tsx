@@ -3,19 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// The Candidates area, kept to what is used every day. Inventory (what we hold, by role and city) comes first;
-// the less frequent pages sit under "More". Talent board and Practice Pool were folded into the Inventory and the
-// role matches on each mandate.
+// People, kept to four places: Talent (everyone, with the top-tier ladder), Improve profiles (what is missing and who to ask),
+// the role and city map, and Outreach. Pages that were never used sit under "More".
 const TABS = [
-  { href: "/candidates/pipeline", label: "Pipeline" },
-  { href: "/candidates/inventory", label: "Inventory" },
-  { href: "/candidates", label: "Candidates" },
-  { href: "/saas-practice", label: "B2B SaaS" },
-  { href: "/candidates/lists", label: "Shortlists" },
+  { href: "/candidates", label: "Talent" },
+  { href: "/candidates/pipeline", label: "Improve profiles" },
+  { href: "/candidates/inventory", label: "Role and city map" },
   { href: "/candidates/outreach", label: "Outreach" },
 ];
 
+// Used rarely, so they stay out of the way. Shortlists are really saved pools; the B2B SaaS practice view is the same
+// people filtered by what they sell.
 const MORE = [
+  { href: "/saas-practice", label: "B2B SaaS practice view" },
+  { href: "/candidates/lists", label: "Saved shortlists" },
   { href: "/candidates/referrals", label: "Referrals" },
   { href: "/candidates/files", label: "CV files" },
   { href: "/candidates/duplicates", label: "Duplicates (admin)" },

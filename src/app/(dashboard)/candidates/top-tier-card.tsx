@@ -27,11 +27,11 @@ export default function TopTierCard({
       <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 dark:text-slate-100" title="Complete sales profiles. Start here for a new mandate.">
         <Star className="h-4 w-4 fill-amber-400 text-amber-500" /> Top tier
       </h2>
-      <Link href={hrefFor("open")} className={pill(active === "open", topCount > 0)} title="Complete sales profiles confirmed open to work in the last 90 days">
+      <Link target="_blank" rel="noopener noreferrer" href={hrefFor("open")} className={pill(active === "open", topCount > 0)} title="Complete sales profiles confirmed open to work in the last 90 days">
         <span className={`text-[18px] font-semibold tabular-nums leading-none ${topCount > 0 ? "text-teal-700 dark:text-teal-300" : "text-slate-400"}`}>{topCount}</span>
         <span className="text-slate-600 dark:text-slate-300">open to work now</span>
       </Link>
-      <Link href={hrefFor("ready")} className={pill(active === "ready", false)} title="Complete data, openness not confirmed yet">
+      <Link target="_blank" rel="noopener noreferrer" href={hrefFor("ready")} className={pill(active === "ready", false)} title="Complete data, openness not confirmed yet">
         <span className="text-[18px] font-semibold tabular-nums leading-none text-slate-800 dark:text-slate-100">{readySalesCount}</span>
         <span className="text-slate-600 dark:text-slate-300">ready sales profiles</span>
       </Link>
