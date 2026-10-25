@@ -241,7 +241,10 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     }
 
     // 6. Experience: inside the range is best, up to two years outside is fine, three is borderline.
-    const exp = row.total_experience_years != null ? Number(row.total_experience_years) : null;
+    // A recorded 0 is almost always "not filled in" rather than a fresher, so it is treated as unknown, not as a close fit.
+    const expRaw = row.total_experience_years != null ? Number(row.total_experience_years) : null;
+    const exp = expRaw && expRaw > 0 ? expRaw : null;
+    if (exp == null && (card.exp_min != null || card.exp_max != null)) gaps.push("Experience not known yet, confirm on a call");
     if (exp != null && (card.exp_min != null || card.exp_max != null)) {
       const lo = card.exp_min ?? 0;
       const hi = card.exp_max ?? 99;
