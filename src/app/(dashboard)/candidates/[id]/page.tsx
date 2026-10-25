@@ -66,16 +66,22 @@ function initialsFor(name: string | null | undefined) {
     .toUpperCase();
 }
 
+const LABEL_FIX: Record<string, string> = { Crm: "CRM", B2b: "B2B", B2c: "B2C", Ctc: "CTC", Icp: "ICP", Saas: "SaaS" };
 function humanize(key: string) {
   return key
     .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\b(Crm|B2b|B2c|Ctc|Icp|Saas)\b/g, (w) => LABEL_FIX[w] ?? w);
 }
+
+// Keys the system keeps for itself; shown elsewhere on the page (or nowhere), never as a raw field.
+const SEGMENT_HIDDEN = new Set(["call_confirmed", "revenue_snapshot", "offer_ctc"]);
 
 function formatValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (Array.isArray(value)) return value.length ? value.join(", ") : "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "object") return Object.values(value as Record<string, unknown>).filter((v) => v !== null && v !== "" && typeof v !== "object").join(", ") || "—";
   return String(value);
 }
 
@@ -461,7 +467,9 @@ export default async function CandidateDetailPage({
       }),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
-  const segmentEntries = Object.entries(segment).filter(([, v]) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0));
+  const segmentEntries = Object.entries(segment).filter(([k, v]) => !SEGMENT_HIDDEN.has(k) && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0));
+  const callConfirmed = (segment as { call_confirmed?: { at?: string; by?: string } }).call_confirmed;
+  const onePagerPending = !!briefRow?.brief && !briefRow?.approved_at;
 
   // Single place computing a neighbor's link so it always carries whichever
   // context (mandate / group / filtered list) got us to this page.
@@ -566,6 +574,7 @@ export default async function CandidateDetailPage({
           {segmentEntries.length > 0 && (
             <div>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Sales profile</h3>
+              {callConfirmed?.at && <p className="mb-2 text-[12px] text-emerald-700 dark:text-emerald-300">Confirmed on a call {new Date(callConfirmed.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}{callConfirmed.by ? ` by ${callConfirmed.by}` : ""}.</p>}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 {segmentEntries.map(([k, v]) => (
                   <div key={k}>
@@ -926,7 +935,11 @@ export default async function CandidateDetailPage({
       <Card className="mt-4">
         <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">To do{todos.length ? ` (${todos.length})` : ""}</h2>
         {todos.length === 0 ? (
-          <p className="mt-2 text-[13px] text-emerald-700 dark:text-emerald-300">Nothing pending. This profile is ready to put forward.</p>
+          onePagerPending ? (
+            <p className="mt-2 text-[13px] text-amber-800 dark:text-amber-300">Details are complete. One step left: read the client one-pager on the Overview tab and approve it, so clients can see this profile.</p>
+          ) : (
+            <p className="mt-2 text-[13px] text-emerald-700 dark:text-emerald-300">Nothing pending. This profile is ready to put forward.</p>
+          )
         ) : (
           <TodoList todos={todos} />
         )}

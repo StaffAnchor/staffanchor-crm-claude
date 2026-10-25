@@ -9,11 +9,13 @@ export type Thread = { id: string; title: string; updated_at: string; pending: n
 
 const IDEAS = [
   "What needs my attention today?",
-  "Which open mandates have no one shortlisted?",
+  "Which open roles have nobody who said yes yet?",
+  "Who said yes to a role and has not been called?",
+  "Which roles have people told about them with no reply after 2 days?",
+  "Which top tier people are not in any open role's pipeline?",
+  "Which shortlisted people still need an approved client summary?",
   "Who is waiting for a reply on WhatsApp?",
   "Find B2B SaaS account executives in Bangalore with 4 to 7 years, hunters not farmers",
-  "Who should I message about our open roles, and what should I say?",
-  "How many candidates did we add this week?",
 ];
 
 const CAN = [
