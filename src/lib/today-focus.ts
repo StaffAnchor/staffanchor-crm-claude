@@ -202,29 +202,29 @@ export async function loadFocus(supabase: SupabaseClient, userId: string, desk: 
     }
   }
 
-  // Money owed: an invoice sent and past its due date with no payment recorded. The reminder itself stays a button on the
+  // Money owed: an invoice emailed to the client a week or more ago with no payment recorded (the same rule as the billing page). The reminder itself stays a button on the
   // billing page, where the message is shown before it goes; nothing here sends anything.
-  const todayStr = nowIso.slice(0, 10);
   type One<T> = T | T[] | null;
   const one = <T,>(v: One<T>): T | null => (Array.isArray(v) ? v[0] ?? null : v);
   const { data: dueTr } = await supabase
     .from("placement_fee_tranches")
-    .select("id, due_date, proforma_reminder_count, mandates(role_title, client_name), candidate_mandate_links(candidates(full_name))")
+    .select("id, proforma_sent_at, proforma_reminder_count, mandates(role_title, client_name), candidate_mandate_links(candidates(full_name))")
     .eq("status", "proforma_sent")
     .is("payment_received_at", null)
     .is("cancelled_at", null)
-    .lt("due_date", todayStr)
-    .order("due_date", { ascending: true })
+    .not("proforma_sent_at", "is", null)
+    .lt("proforma_sent_at", new Date(now - 7 * DAY).toISOString())
+    .order("proforma_sent_at", { ascending: true })
     .limit(4);
-  for (const t of (dueTr ?? []) as unknown as { id: string; due_date: string; proforma_reminder_count: number | null; mandates: One<{ role_title: string | null; client_name: string | null }>; candidate_mandate_links: One<{ candidates: One<{ full_name: string | null }> }> }[]) {
+  for (const t of (dueTr ?? []) as unknown as { id: string; proforma_sent_at: string; proforma_reminder_count: number | null; mandates: One<{ role_title: string | null; client_name: string | null }>; candidate_mandate_links: One<{ candidates: One<{ full_name: string | null }> }> }[]) {
     const m = one(t.mandates);
     const person = one(one(t.candidate_mandate_links)?.candidates ?? null)?.full_name;
-    const days = Math.floor((now - new Date(t.due_date).getTime()) / DAY);
+    const days = Math.floor((now - new Date(t.proforma_sent_at).getTime()) / DAY);
     const n = t.proforma_reminder_count ?? 0;
     cards.push({
       id: `pay:${t.id}`,
       kind: "money",
-      title: `${m?.client_name ?? "A client"} has not paid, ${days} days overdue`,
+      title: `${m?.client_name ?? "A client"} has not paid: invoice sent ${days} days ago`,
       why: `${[person, m?.role_title].filter(Boolean).join(" · ")}. ${n === 0 ? "No reminder sent yet." : `${n} reminder${n === 1 ? "" : "s"} sent.`}`,
       value: null,
       href: "/analytics/billing",
