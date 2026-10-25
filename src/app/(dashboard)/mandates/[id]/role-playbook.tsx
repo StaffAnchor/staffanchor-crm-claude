@@ -9,9 +9,14 @@ type Playbook = { in_pipeline: number; shortlisted: number; told: number; read: 
 // nobody has to remember who was told about the role or what they answered.
 export default async function RolePlaybook({ mandateId }: { mandateId: string }) {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("role_playbook", { p_mandate: mandateId });
+  const [{ data }, { data: m }] = await Promise.all([
+    supabase.rpc("role_playbook", { p_mandate: mandateId }),
+    supabase.from("mandates").select("role_cluster").eq("id", mandateId).maybeSingle(),
+  ]);
   const p = data as Playbook | null;
   if (!p) return null;
+  // Matching needs the kind of role (and level) to be set once; until then there is nothing to rank against.
+  const typeSet = !!m?.role_cluster;
 
   // The first step that still has work to do is the highlighted one.
   const steps = [
@@ -20,10 +25,10 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
       title: "1. Match",
       big: p.in_pipeline,
       label: p.in_pipeline === 1 ? "person in the pipeline" : "people in the pipeline",
-      line: "Review the best-fit people from the database, top tier first.",
-      cta: "Review matches",
+      line: typeSet ? "Review the best-fit people from the database, top tier first." : "First say what kind of role this is, so the system can find the right people.",
+      cta: typeSet ? "Review matches" : "Set the role type",
       href: "#best-matches",
-      done: p.in_pipeline > 0,
+      done: typeSet && p.in_pipeline > 0,
     },
     {
       key: "reach",
@@ -59,7 +64,7 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
       key: "send",
       title: "5. Send to client",
       big: p.shortlisted,
-      label: p.shortlisted === 1 ? "shared with the client" : "shared with the client",
+      label: "in the client shortlist",
       line: "After a good call, share them from the pipeline.",
       cta: "Open the pipeline",
       href: "#pipeline",
