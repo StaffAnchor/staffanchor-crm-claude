@@ -175,7 +175,8 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
                       {whatOf(r)}
                       {r.channel !== "email" && r.detail && <span className="block max-w-[360px] truncate text-xs text-slate-400">{r.detail}</span>}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-slate-500">{r.sent_by ? senderOf.get(r.sent_by) ?? "Team" : "Automatic"}</td>
+                    {/* Only the welcome email goes out with nobody pressing anything; everything else was sent by the team. */}
+                    <td className="whitespace-nowrap px-4 py-2.5 text-slate-500">{r.sent_by ? senderOf.get(r.sent_by) ?? "Team" : r.kind === "welcome" ? "Automatic" : "Team"}</td>
                     <td className="px-4 py-2.5"><span className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-medium ${GROUP_CLS[o.group]}`}>{o.label}</span></td>
                   </tr>
                 );
