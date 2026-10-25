@@ -14,6 +14,9 @@ import ResumeMismatchesPanel from "./resume-mismatches-panel";
 import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
 import SuggestedRolesPanel from "./suggested-roles-panel";
+import CheckRolesButton from "./check-roles-button";
+import { getServiceClient } from "@/lib/cv-facts";
+import { bestRoleFits } from "@/lib/candidate-role-fit";
 import SaasPassportCard from "./saas-passport-card";
 import { PASSPORT_COLUMNS, type PassportRow } from "@/lib/saas-passport";
 import PracticeMatchesPanel from "./practice-matches-panel";
@@ -530,6 +533,11 @@ export default async function CandidateDetailPage({
   } as const;
   const { data: bestMatchRow } = await supabase.from("mandate_ai_matches").select("score, mandates(role_title, client_name)").eq("candidate_id", candidate.id).in("fit", ["strong", "possible"]).order("score", { ascending: false }).limit(1).maybeSingle();
   const bestMatch = bestMatchRow ? `${(bestMatchRow as unknown as { mandates?: { role_title?: string } | null }).mandates?.role_title ?? "Role"} · ${(bestMatchRow as { score: number }).score}` : null;
+  // Without an AI check yet, fall back to the same ranking the role's Matches use.
+  const svc = bestMatchRow ? null : getServiceClient();
+  const fit = svc ? (await bestRoleFits(svc, candidate.id, 1).catch(() => []))[0] : undefined;
+  const BUCKET = { perfect: "Perfect fit", close: "Close fit", stretch: "Stretch" } as const;
+  const bestMatchText = bestMatch ?? (fit ? `${fit.roleTitle} · ${BUCKET[fit.bucket]}` : null);
   const suggestMissing = next.missing.length > 0;
   const hubSuggestion = suggestMissing ? `Ask for ${next.missing.map((m) => plain(m.label)).join(", ")}. The official WhatsApp tab does it in one click.` : todos.some((t) => t.fix === "get_cv") ? "Ask for their CV by email." : null;
 
@@ -865,7 +873,8 @@ export default async function CandidateDetailPage({
               ]}
             />
             <FactTile label="Best matching role" icon={<Target className="h-4 w-4" />} tone="teal">
-              <p className="mt-0.5 text-[16px] font-semibold leading-5 text-slate-900 dark:text-slate-100" title={bestMatch ?? undefined}>{bestMatch ?? <span className="text-[14px] font-normal text-slate-400">No match yet</span>}</p>
+              <p className="mt-0.5 text-[16px] font-semibold leading-5 text-slate-900 dark:text-slate-100" title={fit ? `${fit.clientName ? fit.clientName + ": " : ""}${fit.why}` : bestMatch ?? undefined}>{bestMatchText ?? <span className="text-[14px] font-normal text-slate-400">Not checked against roles yet</span>}</p>
+              {!bestMatch && <CheckRolesButton candidateId={candidate.id} />}
             </FactTile>
           </div>
 
