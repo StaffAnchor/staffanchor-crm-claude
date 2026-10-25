@@ -538,7 +538,7 @@ export default async function CandidateDetailPage({
   const svc = bestMatchRow ? null : getServiceClient();
   const fit = svc ? (await bestRoleFits(svc, candidate.id, 1).catch(() => []))[0] : undefined;
   // Roles without a card cannot be ranked yet; a few are written in the background each time a profile is opened.
-  if (svc) after(() => void fillMissingRoleCards(svc, 3).catch(() => 0));
+  if (svc) after(async () => { await fillMissingRoleCards(svc, 3).catch(() => 0); });
   const BUCKET = { perfect: "Perfect fit", close: "Close fit", stretch: "Stretch" } as const;
   const bestMatchText = bestMatch ?? (fit ? `${fit.roleTitle} · ${BUCKET[fit.bucket]}` : null);
   const suggestMissing = next.missing.length > 0;
