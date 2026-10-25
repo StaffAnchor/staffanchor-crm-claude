@@ -16,7 +16,15 @@ function istDayStartIso(): string {
 
 // Calls today: one list for whoever is on the phones. The system picks who to call (strongest first), shows the CV next to
 // the call, and everything said on the call is typed straight into the profile. Nothing is sent to anyone from here.
-export default async function CallsTodayPage() {
+const FOCUS = [
+  { key: "mixed", label: "Mixed", hint: "Half qualify, half fill gaps" },
+  { key: "qualify", label: "Qualify", hint: "Pay known, ratio 1.5+: rate them and confirm they are looking" },
+  { key: "complete", label: "Fill gaps", hint: "Missing current pay first, then notice period and expected pay" },
+] as const;
+
+export default async function CallsTodayPage({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
+  const sp = await searchParams;
+  const focus = FOCUS.some((f) => f.key === sp.focus) ? (sp.focus as (typeof FOCUS)[number]["key"]) : "mixed";
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,7 +34,7 @@ export default async function CallsTodayPage() {
   if (!me || !["admin", "recruiter", "partner", "freelancer"].includes(me.role)) redirect("/today");
 
   const [{ data: rows, error }, { data: todays }] = await Promise.all([
-    supabase.rpc("calls_today", { p_limit: DAILY_TARGET }),
+    supabase.rpc("calls_today", { p_limit: DAILY_TARGET, p_focus: focus }),
     supabase.from("call_log").select("caller_id, outcome").gte("created_at", istDayStartIso()).limit(2000),
   ]);
   const people = ((rows ?? []) as CallPerson[]).map((p) => ({ ...p, resume_url: null as string | null }));
@@ -72,6 +80,20 @@ export default async function CallsTodayPage() {
             {team.length > 0 && ` · ${team.map((t) => `${t.me ? "you" : t.name.split(" ")[0]} ${t.calls}`).join(", ")}`}
           </p>
         </div>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-[12.5px]">
+        <span className="font-medium text-slate-500">Today&apos;s focus:</span>
+        {FOCUS.map((f) => (
+          <a
+            key={f.key}
+            href={f.key === "mixed" ? "?" : `?focus=${f.key}`}
+            title={f.hint}
+            className={`rounded-full border px-3 py-1 font-medium ${focus === f.key ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"}`}
+          >
+            {f.label}
+          </a>
+        ))}
+        <span className="text-slate-400">{FOCUS.find((f) => f.key === focus)?.hint}</span>
       </div>
       {error ? (
         <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-800">Couldn&apos;t load today&apos;s list: {error.message}</p>

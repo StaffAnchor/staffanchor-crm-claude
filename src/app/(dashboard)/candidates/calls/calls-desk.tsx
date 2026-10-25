@@ -24,7 +24,7 @@ export type CallPerson = {
   pay_ratio: number | null;
   comm: string | null;
   open_fresh: boolean;
-  reason: "call_back" | "confirm_open" | "worth_a_call" | "pay_missing";
+  reason: "call_back" | "confirm_open" | "worth_a_call" | "pay_missing" | "details_missing";
   tries: number;
   last_outcome: string | null;
 };
@@ -32,9 +32,14 @@ export type CallPerson = {
 const REASON: Record<CallPerson["reason"], { label: string; cls: string }> = {
   call_back: { label: "Call back due", cls: "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-200" },
   confirm_open: { label: "Strong, confirm they are looking", cls: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" },
-  worth_a_call: { label: "Worth a call", cls: "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" },
-  pay_missing: { label: "Pay missing", cls: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" },
+  worth_a_call: { label: "Qualify", cls: "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" },
+  pay_missing: { label: "Fill gaps", cls: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" },
+  details_missing: { label: "Fill gaps", cls: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" },
 };
+
+// The critical details still missing, most important first: without current pay the top-tier ratio can't be worked out.
+const gapsOf = (p: CallPerson) =>
+  [!p.current_fixed_ctc && "current pay", !p.notice_period && "notice", !p.expected_fixed_ctc && "expected pay", !p.current_location && "city"].filter(Boolean) as string[];
 
 const tel = (p: string | null) => {
   const d = (p ?? "").replace(/\D/g, "");
@@ -287,7 +292,11 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                   {done[p.id] && <span className="shrink-0 text-[11px] font-medium text-emerald-700">{OUT[done[p.id]]}</span>}
                 </span>
                 <span className="block truncate text-[12px] text-slate-500">{[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
-                <span className={`mt-1 inline-block rounded px-1.5 py-px text-[11px] font-medium ${REASON[p.reason].cls}`}>{REASON[p.reason].label}</span>
+                <span className={`mt-1 inline-block rounded px-1.5 py-px text-[11px] font-medium ${REASON[p.reason].cls}`}>
+                  {REASON[p.reason].label}
+                  {(p.reason === "pay_missing" || p.reason === "details_missing") && gapsOf(p).length > 0 && `: ${gapsOf(p).join(", ")}`}
+                  {p.reason === "worth_a_call" && p.pay_ratio != null && ` · ratio ${Number(p.pay_ratio).toFixed(1)}`}
+                </span>
                 {p.tries > 0 && <span className="ml-1.5 text-[11px] text-slate-400">tried {p.tries}×</span>}
               </button>
             </li>
