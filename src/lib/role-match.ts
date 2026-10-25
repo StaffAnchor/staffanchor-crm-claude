@@ -62,6 +62,9 @@ const NEAR: Record<string, Record<string, number>> = {
   sales_manager: { sales_leadership: 0.6, account_exec: 0.4 },
 };
 
+// Cities close enough that someone in one can reasonably take a job in the other.
+const NEARBY: Record<string, string[]> = { "Mumbai (MMR)": ["Pune"], Pune: ["Mumbai (MMR)"] };
+
 /** Clusters worth fetching for a role: the wanted one and everything near it. */
 export function clustersFor(card: RoleCard, also: string[] = []): string[] {
   const main = [card.cluster, ...also];
@@ -123,6 +126,19 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       }
     }
 
+    // What a recruiter would accept without a second thought: about two years either way on experience, a couple of lakhs
+    // (or 10%) on pay, a nearby city, someone open to move. A "near" is noted but costs little; a "miss" is a real gap.
+    // Anything not known yet (pay, motion, relocation) is never a miss: it is a reason to call and ask.
+    let misses = 0;
+    let nears = 0;
+    let borderline = 0;
+    let payUnknown = false;
+    if (fn === "near") nears++;
+    else if (fn === "past") {
+      misses++;
+      borderline++;
+    } else if (fn === "none") misses++;
+
     // 2. Level.
     const level = levelTag?.seniority ?? "unclear";
     if (card.level !== "any") {
@@ -132,13 +148,15 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       } else {
         const d = Math.abs(LEVEL_ORDER.indexOf(level) - LEVEL_ORDER.indexOf(card.level));
         if (d === 0) {
-          score += 15;
+          score += 12;
           matched.push(`Right level (${LEVEL_NAME[level]})`);
         } else if (d === 1) {
-          score += 7;
+          score += 6;
+          nears++;
           gaps.push(`A step ${LEVEL_ORDER.indexOf(level) > LEVEL_ORDER.indexOf(card.level) ? "above" : "below"}: ${LEVEL_NAME[level]}`);
         } else {
-          score -= 10;
+          score -= 8;
+          misses++;
           gaps.push(`Level differs: ${LEVEL_NAME[level]}`);
         }
       }
@@ -172,8 +190,14 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
         score += Math.round(best);
         worldFit = kind === "exact" ? "exact" : "adjacent";
         if (worldFit === "exact") matched.push(`Sells in ${name(bestSlug)}`);
-        else gaps.push(`Sells in a nearby world (${name(bestSlug)})`);
-      } else gaps.push("What they sell is not close");
+        else {
+          nears++;
+          gaps.push(`Sells in a nearby world (${name(bestSlug)})`);
+        }
+      } else {
+        misses++;
+        gaps.push("What they sell is not close");
+      }
     } else if (row.worlds.length === 0) {
       worldFit = "unknown";
       gaps.push("What they sell is not known yet");
@@ -187,48 +211,97 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       matched.push(`Sells to ${row.customer_types.filter((c) => card.customer_types.includes(c)).join(", ")}`);
     }
 
-    // 5. City.
+    // 5. City: the role's city first, then a nearby city, then someone who says they would move.
     const metro = cur[0]?.metro ?? row.tags[0]?.metro ?? null;
     if (card.cities.length > 0) {
+      const near = metro ? card.cities.find((c) => NEARBY[metro]?.includes(c)) : undefined;
       if (metro && card.cities.includes(metro)) {
-        score += 10;
+        score += 12;
         matched.push(`Based in ${metro}`);
       } else if (metro === "Abroad") {
         score -= 20;
+        misses++;
         gaps.push("Based abroad");
+      } else if (near) {
+        score += 7;
+        nears++;
+        gaps.push(`Based in ${metro}, close to ${near}`);
       } else if (row.open_to_relocation === "Yes") {
         score += 6;
+        nears++;
         matched.push(`Open to relocate${metro ? ` (now ${metro})` : ""}`);
       } else if (row.open_to_relocation === "Maybe" || row.open_to_relocation === "Depends upon Option") {
         score += 3;
+        nears++;
         gaps.push(`In ${metro ?? "another city"}, might relocate`);
-      } else gaps.push(`In ${metro ?? "another city"}, not ${card.cities.join(" / ")}`);
+      } else {
+        misses++;
+        gaps.push(`In ${metro ?? "another city"}, not ${card.cities.join(" / ")}`);
+      }
     }
 
-    // 6. Experience.
+    // 6. Experience: inside the range is best, up to two years outside is fine, three is borderline.
     const exp = row.total_experience_years != null ? Number(row.total_experience_years) : null;
     if (exp != null && (card.exp_min != null || card.exp_max != null)) {
       const lo = card.exp_min ?? 0;
       const hi = card.exp_max ?? 99;
+      const want = `${lo}-${hi === 99 ? "+" : hi}`;
       if (exp >= lo && exp <= hi) {
-        score += 8;
+        score += 10;
         matched.push(`${exp} years, within range`);
-      } else if (exp >= lo - 2 && exp <= hi + 2) score += 3;
-      else {
-        score -= 8;
-        gaps.push(`${exp} years, role wants ${lo}-${hi === 99 ? "+" : hi}`);
+      } else if (exp >= lo - 2 && exp <= hi + 2) {
+        score += 6;
+        nears++;
+        gaps.push(`${exp} years, role wants ${want} (close enough)`);
+      } else if (exp >= lo - 3 && exp <= hi + 3) {
+        score += 1;
+        misses++;
+        borderline++;
+        gaps.push(`${exp} years, role wants ${want}`);
+      } else {
+        score -= 10;
+        misses++;
+        gaps.push(`${exp} years, role wants ${want}`);
       }
     }
 
-    // 7. Pay and notice.
+    // 7. Pay (expected, else current) against the budget: a couple of lakhs or 10% over is fine; unknown means call and ask.
     const pay = row.expected_fixed_ctc != null ? Number(row.expected_fixed_ctc) : row.current_fixed_ctc != null ? Number(row.current_fixed_ctc) : null;
-    if (card.budget_max != null && pay != null) {
-      if (pay <= card.budget_max) score += 6;
-      else if (pay > card.budget_max * 1.2) {
-        score -= 8;
+    if (card.budget_max != null) {
+      const tol = Math.max(2, card.budget_max * 0.1);
+      if (pay == null) {
+        payUnknown = true;
+        score += 2;
+        gaps.push("Pay expectation not known yet, confirm on a call");
+      } else if (pay <= card.budget_max) score += 8;
+      else if (pay <= card.budget_max + tol) {
+        score += 4;
+        nears++;
+        gaps.push(`Expects ${pay} LPA, a little above budget ${card.budget_max}`);
+      } else if (pay <= card.budget_max * 1.25) {
+        score -= 4;
+        misses++;
+        borderline++;
         gaps.push(`Expects ${pay} LPA, budget ${card.budget_max}`);
-      } else gaps.push(`Expects ${pay} LPA, slightly above budget ${card.budget_max}`);
+      } else {
+        score -= 10;
+        misses++;
+        gaps.push(`Expects ${pay} LPA, budget ${card.budget_max}`);
+      }
     }
+
+    // Sales motion: only when both sides say it. Unknown or "both" is never held against anyone.
+    if (card.motion && card.motion !== "both" && row.motion && row.motion !== "both") {
+      if (row.motion === card.motion) {
+        score += 6;
+        matched.push(`Sells as a ${row.motion}, as the role needs`);
+      } else {
+        score -= 8;
+        misses++;
+        gaps.push(`Sells as a ${row.motion}, the role needs a ${card.motion}`);
+      }
+    }
+
     const nd = noticeDays(row.notice_period);
     if (nd != null && nd <= 30) {
       score += 4;
@@ -241,28 +314,35 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       matched.push("Told us they're open to new roles");
     }
 
-    // 8. Verified by a recruiter.
-    if (row.pool_tier === "top") score += 8;
-    else if (row.pool_tier === "strong") score += 5;
-    else if (row.pool_tier === "watch") score += 2;
-
-    // 9. What a call told us. Top tier means verified strong and looking; a weak communicator is a real concern in sales.
-    if (row.quality_tier === "top") {
-      score += 10;
-      matched.push("Top tier: strong on a call and looking");
-    } else if (row.comm === "good") {
-      score += 4;
-      matched.push("Communicates well (rated on a call)");
-    } else if (row.comm === "weak") {
+    // 8 and 9. What we know from a recruiter and from calls. Good people rank higher, but only when they are close to the
+    // brief: a top-tier profile far from the requirements gets no lift. A weak communicator in sales is left out of searches.
+    const weak = row.comm === "weak";
+    const strong = row.quality_tier === "top" || row.pool_tier === "top" || row.pool_tier === "strong" || row.comm === "good";
+    if (misses <= 1) {
+      if (row.pool_tier === "top") score += 8;
+      else if (row.pool_tier === "strong") score += 5;
+      else if (row.pool_tier === "watch") score += 2;
+      if (row.quality_tier === "top") {
+        score += 10;
+        matched.push("Top tier: strong on a call and looking");
+      } else if (row.comm === "good") {
+        score += 4;
+        matched.push("Communicates well (rated on a call)");
+      }
+    }
+    if (weak) {
       score -= 6;
       gaps.push("Communication rated weak on a call");
     }
 
-    const hard = gaps.filter((g) => !/not known yet|Level not clear/.test(g));
+    // Perfect: everything lines up. Close: nothing is really off, a few small give-and-takes, or pay still to confirm; one
+    // borderline miss is allowed for a proven good profile. Everything else is a stretch.
+    const fnOk = fn === "exact" || fn === "near";
     let bucket: Ranked["bucket"];
-    if (fn === "exact" && worldFit === "exact" && hard.length === 0) bucket = "perfect";
-    else if (hard.length <= 1 && fn !== "none" && worldFit !== "none") bucket = "close";
+    if (!weak && fn === "exact" && misses === 0 && nears === 0 && !payUnknown && worldFit !== "none") bucket = "perfect";
+    else if (!weak && fnOk && ((misses === 0 && nears <= 3) || (misses === 1 && borderline === 1 && strong && nears <= 1))) bucket = "close";
     else bucket = "stretch";
+    if (weak && !opts.keepAll) continue;
     // Search results hide weak matches; people who already applied are always scored, however low.
     if (score < 35 && bucket === "stretch" && !opts.keepAll) continue;
     out.push({ row, score, bucket, matched, gaps, level, metro });
