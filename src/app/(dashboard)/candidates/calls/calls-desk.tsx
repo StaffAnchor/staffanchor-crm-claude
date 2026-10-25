@@ -257,7 +257,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
   const OUT: Record<string, string> = { reached: "Spoke", no_answer: "No answer", call_later: "Call back", not_interested: "Not interested", wrong_number: "Wrong number" };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[270px_minmax(0,400px)_minmax(0,1fr)]">
+    <div className="grid gap-4 lg:grid-cols-[270px_minmax(0,1fr)] xl:grid-cols-[270px_minmax(0,400px)_minmax(0,1fr)]">
       {/* Phone: a bar instead of the list. */}
       <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] lg:hidden dark:border-slate-700 dark:bg-slate-900">
         <button type="button" onClick={() => go(-1)} className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-700 dark:border-slate-600 dark:text-slate-200">Previous</button>
@@ -324,7 +324,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                   {copied ? "Copied" : "Copy number"}
                 </button>
                 {active.resume_url && (
-                  <button type="button" onClick={() => setShowCv((v) => !v)} className="rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 lg:hidden dark:border-slate-600 dark:text-slate-200">
+                  <button type="button" onClick={() => setShowCv((v) => !v)} className="rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 xl:hidden dark:border-slate-600 dark:text-slate-200">
                     {showCv ? "Hide CV" : "View CV"}
                   </button>
                 )}
@@ -333,7 +333,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
             <CallForm key={active.id} p={active} onDone={finished} />
           </section>
 
-          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:block lg:h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
+          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 xl:col-span-1 xl:block xl:h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
             {active.resume_url && active.resume_file_url ? (
               <div className="h-full overflow-auto">
                 <ResumeViewerInline key={active.id} signedUrl={active.resume_url} fileName={active.resume_file_url.replace(/^resumes\//, "")} />
