@@ -232,6 +232,9 @@ export const roleOpportunityTemplate = (): string | null => process.env.WHATSAPP
 
 /** Approved (marketing) template asking people in the database whether they are open to hearing about new roles. */
 export const reactivationTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_REACTIVATION || null;
+// "still_open_check" was created in WhatsApp Manager as English (US), not plain English, and a template is only found in the
+// language it was registered in.
+export const reactivationLanguage = (): string => process.env.WHATSAPP_TEMPLATE_REACTIVATION_LANGUAGE || "en_US";
 
 /** Approved (marketing) template asking a candidate to refer a seller they would back; has a "Refer someone" link button. */
 export const referralAskTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_REFERRAL_ASK || null;

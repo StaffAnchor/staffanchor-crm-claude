@@ -12,7 +12,7 @@ export type WaRecipient = { id: string; first: string; phone: string | null; bod
  * Sends one approved template to a small, paced batch, started by a person pressing Send after reviewing. Each message is
  * logged to the chat history, and anyone who has opted out, has no usable number, or is on hold is skipped.
  */
-export async function sendWhatsAppBatch(admin: SupabaseClient, templateName: string, people: WaRecipient[]) {
+export async function sendWhatsAppBatch(admin: SupabaseClient, templateName: string, people: WaRecipient[], languageCode?: string) {
   const store = supabaseStore(admin);
   let sent = 0;
   let failed = 0;
@@ -29,7 +29,7 @@ export async function sendWhatsAppBatch(admin: SupabaseClient, templateName: str
       skipped++;
       continue;
     }
-    const res = await sendWhatsAppTemplate({ to: key, templateName, bodyParams: c.bodyParams, ...(c.urlButtonParam ? { urlButtonParam: c.urlButtonParam } : {}) });
+    const res = await sendWhatsAppTemplate({ to: key, templateName, ...(languageCode ? { languageCode } : {}), bodyParams: c.bodyParams, ...(c.urlButtonParam ? { urlButtonParam: c.urlButtonParam } : {}) });
     await store.logMessage({
       candidate_id: c.id,
       direction: "outbound",

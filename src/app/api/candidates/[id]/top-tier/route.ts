@@ -4,7 +4,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { buildReactivationEmail } from "@/lib/campaign-emails";
 import { emailRoom, sendBatch } from "@/lib/campaign-send";
 import { sendWhatsAppBatch } from "@/lib/campaign-whatsapp";
-import { oneLine, reactivationTemplate } from "@/lib/whatsapp";
+import { oneLine, reactivationLanguage, reactivationTemplate } from "@/lib/whatsapp";
 import { renderReactivationMessage } from "@/lib/whatsapp-template-text";
 
 export const runtime = "nodejs";
@@ -98,7 +98,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (body.action === "whatsapp") {
     if (!template) return NextResponse.json({ ok: false, needsTemplate: true, error: "The WhatsApp template for this isn't set up yet." });
     if (!hasPhone) return NextResponse.json({ ok: false, error: "No usable phone number." });
-    const r = await sendWhatsAppBatch(admin, template, [{ id, first, phone: c.phone as string, bodyParams: [first], preview: renderReactivationMessage(first) }]);
+    const r = await sendWhatsAppBatch(admin, template, [{ id, first, phone: c.phone as string, bodyParams: [first], preview: renderReactivationMessage(first) }], reactivationLanguage());
     await admin.from("audit_log").insert({ actor: user.id, action: "top_tier_ask_whatsapp", entity: "candidate", entity_id: id, detail: { sent: r.sent, failed: r.failed, skipped: r.skipped } });
     return NextResponse.json(r.sent > 0 ? { ok: true, message: "WhatsApp sent. When they tap Yes, they move into the top tier." } : { ok: false, error: r.skipped ? "They opted out of messages or the number isn't usable." : r.error ?? "The message didn't go out." });
   }

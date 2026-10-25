@@ -4,7 +4,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { buildReactivationEmail } from "@/lib/campaign-emails";
 import { emailRoom, sendBatch } from "@/lib/campaign-send";
 import { sendWhatsAppBatch, WA_MAX_PER_PRESS } from "@/lib/campaign-whatsapp";
-import { oneLine, reactivationTemplate } from "@/lib/whatsapp";
+import { oneLine, reactivationLanguage, reactivationTemplate } from "@/lib/whatsapp";
 import { renderReactivationMessage } from "@/lib/whatsapp-template-text";
 
 export const runtime = "nodejs";
@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
         chosen.map((c) => {
           const first = oneLine((c.full_name ?? "").trim().split(/\s+/)[0] || "there");
           return { id: c.id, first, phone: c.phone ?? null, bodyParams: [first], preview: renderReactivationMessage(first) };
-        })
+        }),
+        reactivationLanguage()
       );
     } else {
       result = await sendBatch(admin, user.id, "reactivation", chosen.map((c) => ({ id: c.id, full_name: c.full_name, email: c.email as string })), (c) => buildReactivationEmail(c, role), [cluster]);

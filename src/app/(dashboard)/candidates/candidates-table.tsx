@@ -601,7 +601,11 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "current_fixed_ctc",
     label: "Current Fixed CTC",
-    render: (c, { updateField }) => (
+    render: (c, { updateField }) => {
+      // Pay-to-experience ratio (CTC in lakhs / years). 1.5 or more is the bar for the top tier.
+      const ratio = c.current_fixed_ctc && c.current_fixed_ctc > 0 && Number(c.total_experience_years) >= 1 ? Number(c.current_fixed_ctc) / Number(c.total_experience_years) : null;
+      return (
+      <div>
       <InlineSelectCell
         value={c.current_fixed_ctc != null ? String(c.current_fixed_ctc) : null}
         options={fixedCtcOptions.map((o) => String(o.value))}
@@ -609,7 +613,14 @@ const COLUMN_DEFS: ColumnDef[] = [
         disabledOption={c.current_fixed_ctc != null && !fixedCtcOptions.some((o) => o.value === c.current_fixed_ctc) ? { value: String(c.current_fixed_ctc), label: `₹${ctcLabel(c.current_fixed_ctc!)}` } : null}
         onSave={(v) => updateField(c.id, "current_fixed_ctc", Number(v))}
       />
-    ),
+      {ratio !== null && (
+        <span className={`mt-0.5 block text-[11px] tabular-nums ${ratio >= 1.5 ? "font-medium text-emerald-700 dark:text-emerald-400" : "text-slate-400"}`} title="Current pay in lakhs divided by years of experience. 1.5 or more is the bar for the top tier.">
+          ratio {ratio.toFixed(1)}
+        </span>
+      )}
+      </div>
+      );
+    },
   },
   {
     key: "total_experience_years",
