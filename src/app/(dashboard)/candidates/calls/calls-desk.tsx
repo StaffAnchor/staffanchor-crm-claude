@@ -26,12 +26,14 @@ export type CallPerson = {
   pay_ratio: number | null;
   comm: string | null;
   open_fresh: boolean;
-  reason: "call_back" | "confirm_open" | "worth_a_call" | "pay_missing" | "details_missing";
+  reason: "call_back" | "interested" | "confirm_open" | "worth_a_call" | "pay_missing" | "details_missing";
+  interested_role?: string | null;
   tries: number;
   last_outcome: string | null;
 };
 
 const REASON: Record<CallPerson["reason"], { label: string; cls: string }> = {
+  interested: { label: "Said yes to a role", cls: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100" },
   call_back: { label: "Call back due", cls: "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-200" },
   confirm_open: { label: "Strong, confirm they are looking", cls: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" },
   worth_a_call: { label: "Qualify", cls: "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" },
@@ -126,7 +128,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                 </span>
                 <span className="block truncate text-[12px] text-slate-500">{[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
                 <span className={`mt-1 inline-block rounded px-1.5 py-px text-[11px] font-medium ${REASON[p.reason].cls}`}>
-                  {REASON[p.reason].label}
+                  {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : REASON[p.reason].label}
                   {(p.reason === "pay_missing" || p.reason === "details_missing") && gapsOf(p).length > 0 && `: ${gapsOf(p).join(", ")}`}
                   {p.reason === "worth_a_call" && p.pay_ratio != null && ` · ratio ${Number(p.pay_ratio).toFixed(1)}`}
                 </span>

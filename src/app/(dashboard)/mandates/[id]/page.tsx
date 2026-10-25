@@ -15,6 +15,7 @@ import AiMatchesPanel from "./ai-matches-panel";
 import BestMatchesPanel from "./best-matches-panel";
 import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
+import RolePlaybook from "./role-playbook";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
 import DeleteMandateButton from "./delete-mandate-button";
@@ -439,6 +440,7 @@ export default async function MandateDetailPage({
       </p>
 
       <NextAction item={nextAction} />
+      {mandate.status === "open" && !mandate.is_archived && <RolePlaybook mandateId={id} />}
 
       {blockers.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
