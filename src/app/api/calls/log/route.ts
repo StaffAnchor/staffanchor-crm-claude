@@ -1,7 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdmin } from "@supabase/supabase-js";
+import { runDebrief } from "@/lib/debrief";
+import { generateBrief } from "@/lib/candidate-brief";
+import { isPoolTier } from "@/lib/talent-pool";
+import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 // One call, recorded once: what the candidate said goes straight onto their profile, how they came across is saved as a
 // call rating, and the outcome is logged so the daily call list knows who to show next (and who not to call again yet).
@@ -18,6 +24,7 @@ type Body = {
   openness?: string | null;
   note?: string | null;
   callBackAt?: string | null;
+  tier?: string | null;
 };
 
 const num = (v: unknown): number | null => {
@@ -75,13 +82,32 @@ export async function POST(req: Request) {
   if (outcome === "reached" && (communication === "good" || communication === "okay" || communication === "weak")) {
     await supabase.from("candidate_call_ratings").insert({ candidate_id: id, rated_by: user.id, communication });
   }
-  const note = typeof body.note === "string" ? body.note.trim().slice(0, 2000) : "";
-  if (note) await supabase.from("recruiter_notes").insert({ candidate_id: id, author_id: user.id, note_type: "call_note", content: note });
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 4000) : "";
+  // "After the call": the same reading the profile page does. The note fills any detail still blank (never overwriting
+  // what was just typed above), saves ratings it supports, sets the Talent Pool verdict, and logs the call; then the
+  // client brief is rewritten and strong people are matched against open roles. Other outcomes keep a plain note.
+  let debrief: { summary: string; filled: string[]; tier: string | null; concerns: string[] } | null = null;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (outcome === "reached" && note.length >= 8 && serviceKey) {
+    const admin = createAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { persistSession: false } });
+    const r = await runDebrief(admin, { candidateId: id, authorId: user.id, note, tier: isPoolTier(body.tier) ? body.tier : null });
+    if (r.ok) {
+      debrief = { summary: r.debrief.summary, filled: r.applied.filled.map((f) => `${f.label}: ${f.value}`), tier: r.applied.tier, concerns: r.debrief.concerns };
+      after(async () => {
+        await generateBrief(admin, id);
+        await queueProactiveMatchesForCandidate(id, admin).catch(() => {});
+      });
+    } else {
+      await supabase.from("recruiter_notes").insert({ candidate_id: id, author_id: user.id, note_type: "call_note", content: note });
+    }
+  } else if (note) {
+    await supabase.from("recruiter_notes").insert({ candidate_id: id, author_id: user.id, note_type: "call_note", content: note });
+  }
 
   const callBackAt = outcome === "call_later" && body.callBackAt && !Number.isNaN(Date.parse(body.callBackAt)) ? new Date(body.callBackAt).toISOString() : null;
   const { error: logError } = await supabase.from("call_log").insert({ candidate_id: id, caller_id: user.id, outcome, note: note || null, call_back_at: callBackAt, fields_filled: filled });
   if (logError) return NextResponse.json({ ok: false, error: `Saved the profile, but couldn't log the call: ${logError.message}` }, { status: 500 });
   await supabase.from("audit_log").insert({ actor: user.id, action: "call_logged", entity: "candidate", entity_id: id, detail: { outcome, filled, communication: communication ?? null, openness: body.openness ?? null } });
 
-  return NextResponse.json({ ok: true, filled });
+  return NextResponse.json({ ok: true, filled, debrief });
 }

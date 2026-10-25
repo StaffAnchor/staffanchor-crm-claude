@@ -31,6 +31,10 @@ export type MatchRow = {
   readiness_tier?: string | null;
   readiness_missing?: string[] | null;
   sub_group?: string | null;
+  /** Latest communication rating from a call: good, okay or weak. */
+  comm?: string | null;
+  /** From candidate_top_tier: "top" once pay ratio, experience, communication and openness are all confirmed. */
+  quality_tier?: string | null;
 };
 
 export type Ranked = {
@@ -241,6 +245,18 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     if (row.pool_tier === "top") score += 8;
     else if (row.pool_tier === "strong") score += 5;
     else if (row.pool_tier === "watch") score += 2;
+
+    // 9. What a call told us. Top tier means verified strong and looking; a weak communicator is a real concern in sales.
+    if (row.quality_tier === "top") {
+      score += 10;
+      matched.push("Top tier: strong on a call and looking");
+    } else if (row.comm === "good") {
+      score += 4;
+      matched.push("Communicates well (rated on a call)");
+    } else if (row.comm === "weak") {
+      score -= 6;
+      gaps.push("Communication rated weak on a call");
+    }
 
     const hard = gaps.filter((g) => !/not known yet|Level not clear/.test(g));
     let bucket: Ranked["bucket"];

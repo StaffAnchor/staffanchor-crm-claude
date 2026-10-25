@@ -5,6 +5,9 @@ import { useMemo, useState } from "react";
 import { Check, ExternalLink, FileText, Phone } from "lucide-react";
 import { cityOptions, fixedCtcOptions, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
 import ResumeViewerInline from "../[id]/resume-viewer-inline";
+import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
+
+export type CallResult = { outcome: string; name: string; summary: string | null; filled: string[]; tier: string | null; concerns: string[] };
 
 export type CallPerson = {
   id: string;
@@ -90,7 +93,8 @@ function Field({ label, missing, children }: { label: string; missing?: boolean;
 const asOpts = (xs: string[]) => xs.map((x) => ({ v: x, label: x }));
 const select = "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] dark:border-slate-700 dark:bg-slate-900";
 
-function CallForm({ p, onDone }: { p: CallPerson; onDone: (outcome: string) => void }) {
+function CallForm({ p, onDone }: { p: CallPerson; onDone: (r: CallResult) => void }) {
+  const [tier, setTier] = useState<PoolTier | null>(null);
   const [ctc, setCtc] = useState(p.current_fixed_ctc ? String(Number(p.current_fixed_ctc)) : "");
   const [expected, setExpected] = useState(p.expected_fixed_ctc ? String(Number(p.expected_fixed_ctc)) : "");
   const [notice, setNotice] = useState(p.notice_period ?? "");
@@ -128,12 +132,21 @@ function CallForm({ p, onDone }: { p: CallPerson; onDone: (outcome: string) => v
           communication: comm || null,
           openness: openness || null,
           note,
+          tier,
           ...extra,
         }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.ok) setError(d.error ?? "That didn't save. Try again.");
-      else onDone(outcome);
+      else
+        onDone({
+          outcome,
+          name: p.full_name ?? "Candidate",
+          summary: d.debrief?.summary ?? null,
+          filled: [...((d.filled as string[] | undefined) ?? []).map((f) => f.replace(/_/g, " ")), ...((d.debrief?.filled as string[] | undefined) ?? [])],
+          tier: d.debrief?.tier ?? null,
+          concerns: (d.debrief?.concerns as string[] | undefined) ?? [],
+        });
     } catch {
       setError("The connection dropped. Check, then try again.");
     } finally {
@@ -193,14 +206,29 @@ function CallForm({ p, onDone }: { p: CallPerson; onDone: (outcome: string) => v
       <Field label="Looking for a new role?" missing={!p.open_fresh}>
         <Chips value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
       </Field>
-      <Field label="Note (optional)">
-        <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Anything worth remembering" className={select} />
+      <Field label="After the call (optional): write it like a text to a colleague">
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={4}
+          placeholder="e.g. Sold ERP to mid-market, closes 25-30L deals, beat quota 3 years. Sharp, great communicator. Leads a team of 6. Worried he moved twice in 2 years."
+          className={select}
+        />
+        <p className="mt-1 text-[11.5px] text-slate-400">Same as on the profile: the system reads it, fills any detail still blank, notes strengths and concerns for the client brief, and matches strong people to open roles.</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-[12px] text-slate-500">Your verdict (optional):</span>
+          {POOL_TIERS.map((t) => (
+            <button key={t} type="button" aria-pressed={tier === t} onClick={() => setTier(tier === t ? null : t)} className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${tier === t ? "border-amber-500 bg-amber-100 text-amber-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
+              {POOL_TIER_LABEL[t]}
+            </button>
+          ))}
+        </div>
       </Field>
 
       {error && <p className="text-[12.5px] font-medium text-rose-600">{error}</p>}
       <div className="space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
         <button type="button" disabled={!!busy} onClick={() => log("reached")} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
-          <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : "Spoke to them: save and next"}
+          <Check className="h-4 w-4" /> {busy === "reached" ? (note.trim().length >= 8 ? "Saving and reading your note…" : "Saving…") : "Spoke to them: save and next"}
         </button>
         <div className="flex flex-wrap gap-1.5">
           {[
@@ -229,6 +257,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
   const [showList, setShowList] = useState(false);
   const [showCv, setShowCv] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [last, setLast] = useState<CallResult | null>(null);
   const active = people.find((p) => p.id === selected) ?? null;
   const left = useMemo(() => people.filter((p) => !done[p.id]).length, [people, done]);
   const index = active ? people.findIndex((p) => p.id === active.id) : -1;
@@ -247,9 +276,10 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
     );
   }
 
-  function finished(outcome: string) {
+  function finished(r: CallResult) {
     if (!active) return;
-    const next = { ...done, [active.id]: outcome };
+    setLast(r);
+    const next = { ...done, [active.id]: r.outcome };
     setDone(next);
     const i = people.findIndex((p) => p.id === active.id);
     const after = [...people.slice(i + 1), ...people.slice(0, i)].find((p) => !next[p.id]);
@@ -339,6 +369,14 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                 )}
               </div>
             </div>
+            {last && (
+              <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[12px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
+                <p className="font-semibold">Saved {last.name}.{last.tier ? ` Talent Pool: ${POOL_TIER_LABEL[last.tier as PoolTier] ?? last.tier}.` : ""}</p>
+                {last.summary && <p className="mt-0.5">{last.summary}</p>}
+                {last.filled.length > 0 && <p className="mt-0.5">Filled in: {last.filled.join(", ")}.</p>}
+                {last.concerns.length > 0 && <p className="mt-0.5 text-amber-800 dark:text-amber-300">Concerns noted: {last.concerns.join("; ")}.</p>}
+              </div>
+            )}
             <CallForm key={active.id} p={active} onDone={finished} />
           </section>
 
