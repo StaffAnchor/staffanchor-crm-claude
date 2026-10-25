@@ -43,11 +43,16 @@ export async function POST(req: Request) {
   const now = new Date();
   const update: Record<string, unknown> = {};
   const f = body.fields ?? {};
-  if (num(f.current_fixed_ctc)) update.current_fixed_ctc = num(f.current_fixed_ctc);
-  if (num(f.expected_fixed_ctc)) update.expected_fixed_ctc = num(f.expected_fixed_ctc);
+  // The form arrives pre-filled with what is already on the profile, so only what actually changed is written.
+  const { data: before } = await supabase.from("candidates").select("current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode").eq("id", id).maybeSingle();
+  const was = (before ?? {}) as Record<string, unknown>;
+  for (const k of ["current_fixed_ctc", "expected_fixed_ctc"] as const) {
+    const v = num(f[k]);
+    if (v !== null && Number(was[k] ?? 0) !== v) update[k] = v;
+  }
   for (const k of ["notice_period", "current_location", "open_to_relocation", "work_mode"] as const) {
     const v = text(f[k]);
-    if (v) update[k] = v;
+    if (v && String(was[k] ?? "").trim() !== v) update[k] = v;
   }
   const filled = Object.keys(update);
 
