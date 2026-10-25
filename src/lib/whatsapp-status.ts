@@ -31,6 +31,7 @@ export type WaStatus = {
 };
 
 const SENT_LABEL: [RegExp, string][] = [
+  [/role_nudge/i, "Reminder about a role"],
   [/role_opportunity|opportunity_intro/i, "Told about a role"],
   [/referral_role/i, "Asked to refer someone for a role"],
   [/referral/i, "Asked for a referral"],

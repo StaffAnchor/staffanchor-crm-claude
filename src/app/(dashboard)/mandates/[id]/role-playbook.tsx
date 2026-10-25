@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import RoleNudgeButton from "./role-nudge-button";
 
-type Playbook = { in_pipeline: number; shortlisted: number; told: number; read: number; interested: number; not_now: number; no_reply: number; to_call: number; called: number };
+type Playbook = { nudgeable: number; nudged: number; in_pipeline: number; shortlisted: number; told: number; read: number; interested: number; not_now: number; no_reply: number; to_call: number; called: number };
 
 // The same four steps on every role, in the same order: Match, Reach, Track, Call, then Send to client. Each step shows
 // where this role stands and one button for what to do next. The numbers come from the role's own outreach records, so
@@ -35,7 +36,7 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
       title: "2. Reach",
       big: p.told,
       label: p.told === 1 ? "person told about the role" : "people told about the role",
-      line: p.told === 0 ? "Pick people in Matches and tell them about the role on WhatsApp. You see the message first." : `${p.read} read it${p.no_reply > 0 ? `, ${p.no_reply} no reply after 2 days` : ""}.`,
+      line: p.told === 0 ? "Pick people in Matches and tell them about the role on WhatsApp. You see the message first." : `${p.read} read it${p.no_reply > 0 ? `, ${p.no_reply} no reply after 2 days` : ""}${p.nudged > 0 ? `. ${p.nudged} reminded` : ""}.`,
       cta: p.told === 0 ? "Tell people about it" : "Tell more people",
       href: "#best-matches",
       done: p.told > 0,
@@ -101,6 +102,7 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
               </p>
               <p className="mt-1 text-[11.5px] leading-4 text-slate-500 dark:text-slate-400">{s.line}</p>
               {Cta}
+              {s.key === "reach" && p.nudgeable > 0 && <RoleNudgeButton mandateId={mandateId} count={p.nudgeable} />}
             </div>
           );
         })}

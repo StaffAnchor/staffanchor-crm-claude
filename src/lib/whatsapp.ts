@@ -229,6 +229,8 @@ export const profileDetailsTemplate = (): string | null => process.env.WHATSAPP_
 
 /** Approved (marketing) template used to tell a candidate about an opening. */
 export const roleOpportunityTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_ROLE_OPPORTUNITY || null;
+// The one reminder to people who were told about a role and have not answered (WHATSAPP_TEMPLATE_ROLE_NUDGE).
+export const roleNudgeTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_ROLE_NUDGE || null;
 
 /** Approved (marketing) template asking people in the database whether they are open to hearing about new roles. */
 export const reactivationTemplate = (): string | null => process.env.WHATSAPP_TEMPLATE_REACTIVATION || null;

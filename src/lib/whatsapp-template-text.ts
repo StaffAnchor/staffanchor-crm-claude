@@ -41,6 +41,10 @@ export const renderDetailsFreeform = (first: string, list: string, link: string)
 export const renderOpportunityMessage = (first: string, role: string, city: string) =>
   `Hi ${first}, we have a ${role} opening in ${city} that matches your experience. Would you like us to share the details and put your profile forward?`;
 
+// The reminder template: same three values as the first message, and the same Yes / Not now / Stop buttons.
+export const renderRoleNudgeMessage = (first: string, role: string, city: string) =>
+  `Hi ${first}, a quick follow-up on the ${role} opening in ${city} that we shared earlier. Would you like us to send you the details?`;
+
 export const renderInterviewMessage = (first: string, role: string) =>
   `Hi ${first}, good news: your profile has moved forward for the ${role} role and the interview is being scheduled. Please reply with the days and times that suit you over the next few days, and we will confirm the slot with you.`;
 
