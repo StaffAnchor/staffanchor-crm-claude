@@ -8,12 +8,14 @@ import CallButton from "@/components/call-button";
 import { createClient } from "@/lib/supabase/client";
 import type { FocusCard } from "@/lib/today-focus";
 
-const KIND_LABEL: Record<FocusCard["kind"], string> = { chat: "WhatsApp", callback: "Call back", task: "Task", decision: "Role" };
+const KIND_LABEL: Record<FocusCard["kind"], string> = { chat: "WhatsApp", callback: "Call back", task: "Task", decision: "Role", money: "Payment", checkin: "Check-in" };
 const KIND_STYLE: Record<FocusCard["kind"], string> = {
   chat: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
   callback: "bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300",
   task: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
   decision: "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+  money: "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300",
+  checkin: "bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300",
 };
 
 // One thing at a time: the next most useful action, with its button. Do it, tap Done (or Not now), and the next one

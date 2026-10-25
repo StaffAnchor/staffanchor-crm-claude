@@ -12,8 +12,8 @@ import { POOL_TIER_LABEL, POOL_TIER_PILL, type PoolTier } from "@/lib/talent-poo
 import type { Ranked } from "@/lib/role-match";
 
 const GROUPS: { key: Ranked["bucket"]; label: string; blurb: string; tone: string }[] = [
-  { key: "perfect", label: "Perfect", blurb: "Does this job today, sells the right thing, nothing important is off.", tone: "bg-emerald-600" },
-  { key: "close", label: "Close", blurb: "One thing is different, and it says which.", tone: "bg-teal-600" },
+  { key: "perfect", label: "Perfect", blurb: "Does this job today, sells the right thing, and city, pay and experience all line up.", tone: "bg-emerald-600" },
+  { key: "close", label: "Close", blurb: "Nothing important is off. A nearby city, a little over on pay or experience, or pay still to confirm on a call.", tone: "bg-teal-600" },
   { key: "stretch", label: "Stretch", blurb: "More is different, but worth a look.", tone: "bg-slate-500" },
 ];
 

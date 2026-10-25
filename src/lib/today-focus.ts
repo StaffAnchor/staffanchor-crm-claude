@@ -9,7 +9,7 @@ import { REMINDER_FRESH_DAYS, ROUTINE_TASK_TYPES, TASK_FRESH_DAYS, type DeskTask
 
 export type FocusCard = {
   id: string;
-  kind: "chat" | "callback" | "task" | "decision";
+  kind: "chat" | "callback" | "task" | "decision" | "money" | "checkin";
   title: string;
   why: string;
   /** What it is worth, when we can say: the fee if this person is placed. */
@@ -164,6 +164,118 @@ export async function loadFocus(supabase: SupabaseClient, userId: string, desk: 
     cards.push({ id: `d:${d.id}`, kind: "decision", title: d.title, why: d.detail, value: null, href: d.href, actionLabel: d.actionLabel, candidate: null, mandateId: null, taskId: null, rank: d.tone === "urgent" ? 78 : d.tone === "attention" ? 60 : 45 });
   }
 
+  // Calls promised back from the Calls today form: a "call later" whose time has come, with no call to that person since.
+  const nowIso = new Date(now).toISOString();
+  const { data: laterRows } = await supabase
+    .from("call_log")
+    .select("id, candidate_id, call_back_at, created_at, candidates(full_name, phone)")
+    .eq("caller_id", userId)
+    .eq("outcome", "call_later")
+    .not("call_back_at", "is", null)
+    .lte("call_back_at", nowIso)
+    .order("call_back_at", { ascending: true })
+    .limit(20);
+  type Later = { id: string; candidate_id: string; call_back_at: string; created_at: string; candidates: { full_name: string | null; phone: string | null } | { full_name: string | null; phone: string | null }[] | null };
+  const laters = (laterRows ?? []) as unknown as Later[];
+  if (laters.length > 0) {
+    const { data: since } = await supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", Array.from(new Set(laters.map((l) => l.candidate_id)))).gte("created_at", laters.reduce((m, l) => (l.created_at < m ? l.created_at : m), laters[0].created_at));
+    const seen = new Set<string>();
+    for (const l of laters) {
+      if (seen.has(l.candidate_id)) continue;
+      if (((since ?? []) as { candidate_id: string; created_at: string }[]).some((x) => x.candidate_id === l.candidate_id && x.created_at > l.created_at)) continue;
+      seen.add(l.candidate_id);
+      const cand = Array.isArray(l.candidates) ? l.candidates[0] : l.candidates;
+      const late = Math.floor((now - new Date(l.call_back_at).getTime()) / DAY);
+      cards.push({
+        id: `cl:${l.id}`,
+        kind: "callback",
+        title: `Call back ${cand?.full_name ?? "this person"}`,
+        why: late >= 1 ? `You said you'd call back. That was ${late} day${late === 1 ? "" : "s"} ago.` : "You said you'd call back about now.",
+        value: null,
+        href: `/candidates/${l.candidate_id}`,
+        actionLabel: "Open profile",
+        candidate: { id: l.candidate_id, name: cand?.full_name ?? null, phone: cand?.phone ?? null },
+        mandateId: null,
+        taskId: null,
+        rank: 92,
+      });
+    }
+  }
+
+  // Money owed: an invoice sent and past its due date with no payment recorded. The reminder itself stays a button on the
+  // billing page, where the message is shown before it goes; nothing here sends anything.
+  const todayStr = nowIso.slice(0, 10);
+  type One<T> = T | T[] | null;
+  const one = <T,>(v: One<T>): T | null => (Array.isArray(v) ? v[0] ?? null : v);
+  const { data: dueTr } = await supabase
+    .from("placement_fee_tranches")
+    .select("id, due_date, proforma_reminder_count, mandates(role_title, client_name), candidate_mandate_links(candidates(full_name))")
+    .eq("status", "proforma_sent")
+    .is("payment_received_at", null)
+    .is("cancelled_at", null)
+    .lt("due_date", todayStr)
+    .order("due_date", { ascending: true })
+    .limit(4);
+  for (const t of (dueTr ?? []) as unknown as { id: string; due_date: string; proforma_reminder_count: number | null; mandates: One<{ role_title: string | null; client_name: string | null }>; candidate_mandate_links: One<{ candidates: One<{ full_name: string | null }> }> }[]) {
+    const m = one(t.mandates);
+    const person = one(one(t.candidate_mandate_links)?.candidates ?? null)?.full_name;
+    const days = Math.floor((now - new Date(t.due_date).getTime()) / DAY);
+    const n = t.proforma_reminder_count ?? 0;
+    cards.push({
+      id: `pay:${t.id}`,
+      kind: "money",
+      title: `${m?.client_name ?? "A client"} has not paid, ${days} days overdue`,
+      why: `${[person, m?.role_title].filter(Boolean).join(" · ")}. ${n === 0 ? "No reminder sent yet." : `${n} reminder${n === 1 ? "" : "s"} sent.`}`,
+      value: null,
+      href: "/analytics/billing",
+      actionLabel: "Review and remind",
+      candidate: null,
+      mandateId: null,
+      taskId: null,
+      rank: 88,
+    });
+  }
+
+  // After joining: the 30, 90 and 180-day check-ins that are due or overdue (they decide whether the fee is safe).
+  const soon = new Date(now + 2 * DAY).toISOString().slice(0, 10);
+  const { data: cks } = await supabase
+    .from("placement_retention_checkins")
+    .select("id, checkin_type, due_date, candidate_mandate_links(candidate_id, candidates(full_name), mandates(role_title, client_name))")
+    .is("completed_at", null)
+    .lte("due_date", soon)
+    .order("due_date", { ascending: true })
+    .limit(6);
+  for (const k of (cks ?? []) as unknown as { id: string; checkin_type: string; due_date: string; candidate_mandate_links: One<{ candidate_id: string; candidates: One<{ full_name: string | null }>; mandates: One<{ role_title: string | null; client_name: string | null }> }> }[]) {
+    const link = one(k.candidate_mandate_links);
+    const person = one(link?.candidates ?? null)?.full_name;
+    const m = one(link?.mandates ?? null);
+    const days = Math.floor((now - new Date(k.due_date).getTime()) / DAY);
+    cards.push({
+      id: `ck:${k.id}`,
+      kind: "checkin",
+      title: `${k.checkin_type.replace("_day", "-day")} check-in: ${person ?? "the new joiner"}`,
+      why: `${[m?.client_name, m?.role_title].filter(Boolean).join(" · ")}. ${days > 0 ? `${days} day${days === 1 ? "" : "s"} overdue.` : days === 0 ? "Due today." : "Due soon."} Ask how they are doing and whether they are staying.`,
+      value: null,
+      href: "/placements",
+      actionLabel: "Record the check-in",
+      candidate: null,
+      mandateId: null,
+      taskId: null,
+      rank: days > 0 ? 84 : 74,
+    });
+  }
+
   cards.sort((a, b) => b.rank - a.rank);
-  return { cards: cards.slice(0, 8), feesInPlay };
+  // The money, joiner and role decisions must not be crowded out by chats: if fewer than three made the first eight, the
+  // best ones swap in for the lowest of the rest.
+  const important = (c: FocusCard) => c.kind === "money" || c.kind === "checkin" || c.kind === "decision";
+  const top = cards.slice(0, 8);
+  const extra = cards.slice(8).filter(important).slice(0, Math.max(0, 3 - top.filter(important).length));
+  for (const e of extra) {
+    let at = -1;
+    for (let i = top.length - 1; i >= 0; i--) if (!important(top[i])) { at = i; break; }
+    if (at >= 0) top[at] = e;
+  }
+  top.sort((a, b) => b.rank - a.rank);
+  return { cards: top, feesInPlay };
 }
