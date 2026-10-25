@@ -76,6 +76,11 @@ export const VERIFY_EMAIL = (n: string) =>
   `Hi ${n}, thanks for getting in touch. To find your profile quickly, could you reply with the email address you registered with? If you haven't registered yet, reply NEW.`;
 export const VERIFY_REMINDER = `Could you share the email address you used to register with StaffAnchor? If you haven't registered yet, just reply NEW and I'll set you up.`;
 export const KNOWN_ACK = (n: string) => `Hi ${n}, thanks for your message. A recruiter will connect with you once your profile gets shortlisted for a role.`;
+// Someone who messages about a specific role from the jobs site. Honest about what happens next, and it does not promise a call.
+export const ROLE_INTEREST_ACK = (n: string, role: string) =>
+  `Hi ${n}, thank you for your interest in the ${role} role. We've shared it with our recruiters. If your profile is a good match, someone from our team will contact you with the details.`;
+export const ROLE_APPLIED_ACK = (n: string, role: string) =>
+  `Hi ${n}, thank you for applying for the ${role} role. Your application is with our recruiters. If your profile is a good match, someone from our team will contact you with the next steps.`;
 export const CV_RETRY = `I couldn't open that file. Please try sending your CV again as a PDF or Word document, or reply SKIP and a recruiter will follow up.`;
 
 export const JD_ACK = `Thanks, we've received your details. A consultant will review them and contact you shortly. For anything urgent, you can reach Gagan Sharma directly on +91-7273000088.`;

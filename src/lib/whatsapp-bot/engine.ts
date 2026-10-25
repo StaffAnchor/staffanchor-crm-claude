@@ -5,6 +5,7 @@ import { answersFromReply } from "./reply-answers";
 import { isQuestion } from "./faq";
 import { firstEmail, introducedName, saysNew } from "./identity";
 import * as T from "./texts";
+import { roleInterest } from "./role-interest";
 import type { CandidateLite, Contact, Store } from "./store";
 
 // The rules for every WhatsApp message that comes in.
@@ -254,7 +255,18 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
 
   // A question a recruiter has already answered once: answer it the same way, without a person. Anything not clearly the
   // same question goes on as before, and is kept for a person to answer.
-  const asked = m.type === "text" && m.text !== null && isQuestion(m.text) ? m.text : null;
+  // A ready-made "I'm interested in this role" message is interest, not a question for a person to answer.
+  const interest = m.type === "text" ? roleInterest(m.text) : null;
+  const asked = m.type === "text" && m.text !== null && !interest && isQuestion(m.text) ? m.text : null;
+  const knownReply = async () => {
+    const name = T.firstName(identity.candidate?.full_name);
+    if (!interest) return ackOnce(T.KNOWN_ACK(name), "Registered candidate messaged");
+    flow = "role_interest";
+    hand("Registered candidate messaged");
+    const done = await store.countBotMessagesSince(key, new Date(env.nowMs - DAY).toISOString(), "bot:role_interest");
+    if (done < 3) replies = [interest.applied ? T.ROLE_APPLIED_ACK(name, interest.role) : T.ROLE_INTEREST_ACK(name, interest.role)];
+    else action = "silent";
+  };
   const faq = asked && kind !== "unsorted" ? await store.findFaqAnswer?.(asked).catch(() => null) : null;
 
   if (faq) {
@@ -280,7 +292,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
       state.awaitingMenu = false;
       if (choice === "jobseeker") {
         if (identity.candidate && REGISTERED_STATUS(identity.candidate.status)) {
-          await ackOnce(T.KNOWN_ACK(T.firstName(identity.candidate.full_name)), "Registered candidate messaged");
+          await knownReply();
         } else await beginJobseeker();
         flow = state.verify ? "verify" : "onboarding";
       } else if (choice === "employer") await employerReply();
@@ -305,7 +317,7 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
     await employerReply();
   } else if (kind === "jobseeker") {
     if (identity.candidate && REGISTERED_STATUS(identity.candidate.status)) {
-      await ackOnce(T.KNOWN_ACK(T.firstName(identity.candidate.full_name)), "Registered candidate messaged");
+      await knownReply();
     } else if (state.verify) {
       await verifyReply();
     } else if (state.status === "idle") {
