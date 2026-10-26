@@ -349,15 +349,34 @@ function InlineSelectCell({
   );
 }
 
-// Signed URL is computed server-side for every row in one batched call
-// (see candidates/page.tsx) -- this used to be a per-row useEffect firing
-// its own createSignedUrl request on mount, which meant up to 100 separate
-// Storage API round trips on a full page of results. Now it's a pure
-// render with no network activity at all.
-function ResumeCell({ candidateId, resumeFileUrl, resumeSignedUrl }: { candidateId: string; resumeFileUrl: string | null; resumeSignedUrl: string | null }) {
+// The CV link is asked for when Preview is pressed, not prepared for every row on every visit (that made the whole list wait
+// for up to 100 links before it could appear).
+function ResumeCell({ candidateId, resumeFileUrl }: { candidateId: string; resumeFileUrl: string | null }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [state, setState] = useState<"idle" | "loading" | "missing">("idle");
   if (!resumeFileUrl) return <span className="text-xs text-slate-300">—</span>;
-  if (!resumeSignedUrl) return <span className="text-xs text-red-500">Not found</span>;
-  return <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" candidateId={candidateId} />;
+  if (url) return <ResumePreview signedUrl={url} fileName={resumeFileUrl.replace(/^resumes\//, "")} label="Preview" candidateId={candidateId} defaultOpen />;
+  if (state === "missing") return <span className="text-xs text-red-500">Not found</span>;
+  return (
+    <button
+      type="button"
+      disabled={state === "loading"}
+      onClick={async () => {
+        setState("loading");
+        try {
+          const r = await fetch(`/api/calls/cv-url?id=${candidateId}`);
+          const d = r.ok ? ((await r.json()) as { url: string | null }) : { url: null };
+          if (d.url) setUrl(d.url);
+          else setState("missing");
+        } catch {
+          setState("missing");
+        }
+      }}
+      className="flex items-center gap-1.5 rounded-ros-md bg-teal-50 px-3 py-1.5 text-[12px] font-medium text-teal-700 transition-all duration-200 ease-ros hover:bg-teal-100 disabled:opacity-60"
+    >
+      {state === "loading" ? "Opening…" : "Preview"}
+    </button>
+  );
 }
 
 function PreviousIndustriesCell({
@@ -951,7 +970,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "resume",
     label: "Resume",
-    render: (c) => <ResumeCell candidateId={c.id} resumeFileUrl={c.resume_file_url} resumeSignedUrl={c.resume_signed_url} />,
+    render: (c) => <ResumeCell candidateId={c.id} resumeFileUrl={c.resume_file_url} />,
   },
   {
     key: "communication_score",

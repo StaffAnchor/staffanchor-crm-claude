@@ -11,6 +11,7 @@ export default function ResumePreview({
   label,
   onOpen,
   candidateId,
+  defaultOpen,
 }: {
   signedUrl: string;
   fileName: string;
@@ -24,8 +25,10 @@ export default function ResumePreview({
   onOpen?: () => void;
   // Staff screens pass the candidate so the open CV also offers add-to-role / group / quality. Left out on client and vendor pages.
   candidateId?: string;
+  // Opens straight away (used when the link was only just fetched because the button was pressed).
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen ?? false);
 
   return (
     <>

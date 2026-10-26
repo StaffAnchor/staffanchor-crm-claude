@@ -239,47 +239,6 @@ type SearchParams = {
 
 const PAGE_SIZE = 100;
 
-// PostgREST caps a single .select() response at 1000 rows regardless of
-// table size, with no error or indication it happened -- see the call site
-// in the KPI/filter-options query below for the full story on why this
-// exists. Pages through in chunks of KPI_SCAN_PAGE_SIZE via .range() until
-// a page comes back short of that size, capped at KPI_SCAN_MAX_ROWS as a
-// sanity ceiling (mirrors the .limit(20000) already used for
-// candidate_mandate_links's full-table scan elsewhere on this page) so a
-// runaway loop can't hammer the DB if something upstream is ever wrong.
-const KPI_SCAN_PAGE_SIZE = 1000;
-const KPI_SCAN_MAX_ROWS = 20000;
-
-type CandidateKpiRow = {
-  sub_domain: string | null;
-  status: string;
-  created_at: string;
-  created_by: string | null;
-  current_location: string | null;
-  city_canonical: string | null;
-  recruiter_assessment: unknown;
-};
-
-async function fetchAllCandidateRows(
-  supabase: Awaited<ReturnType<typeof createClient>>
-): Promise<{ data: CandidateKpiRow[]; error: null } | { data: null; error: unknown }> {
-  const cols = "sub_domain, status, created_at, created_by, current_location, city_canonical, recruiter_assessment";
-  // First page also tells us the total, so every remaining page can be fetched at the same time
-  // instead of one round trip after another.
-  const first = await supabase.from("candidates").select(cols, { count: "exact" }).range(0, KPI_SCAN_PAGE_SIZE - 1);
-  if (first.error) return { data: null, error: first.error };
-  const rows: CandidateKpiRow[] = [...((first.data ?? []) as CandidateKpiRow[])];
-  const total = Math.min(first.count ?? rows.length, KPI_SCAN_MAX_ROWS);
-  const offsets: number[] = [];
-  for (let offset = KPI_SCAN_PAGE_SIZE; offset < total; offset += KPI_SCAN_PAGE_SIZE) offsets.push(offset);
-  const rest = await Promise.all(offsets.map((offset) => supabase.from("candidates").select(cols).range(offset, offset + KPI_SCAN_PAGE_SIZE - 1)));
-  for (const page of rest) {
-    if (page.error) return { data: null, error: page.error };
-    rows.push(...((page.data ?? []) as CandidateKpiRow[]));
-  }
-  return { data: rows, error: null };
-}
-
 export default async function CandidatesPage({
   searchParams,
 }: {
@@ -397,7 +356,7 @@ export default async function CandidatesPage({
     // pages through with .range() until a page comes back short, so this
     // keeps working correctly as the table keeps growing past 1000, 2000,
     // etc., not just today's fix for today's row count.
-    fetchAllCandidateRows(supabase),
+    supabase.rpc("candidate_facets"),
     // Pipeline progress (Submitted / Client Interview / Client Shortlisted /
     // Offer / Placed) lives on candidate_mandate_links.stage, per mandate --
     // not candidates.status. Counting "distinct candidates with at least
@@ -455,17 +414,10 @@ export default async function CandidatesPage({
     : null;
   const openMandates = openMandatesRes.data as { id: string; role_title: string; client_name: string }[] | null;
   const teamMembers = teamMembersRes.data as { id: string; full_name: string | null; email: string }[] | null;
-  const allRows = allRowsRes.data as
-    | {
-        sub_domain: string | null;
-        status: string;
-        created_at: string;
-        created_by: string | null;
-        current_location: string | null;
-        city_canonical: string | null;
-        recruiter_assessment: Record<string, unknown> | null;
-      }[]
-    | null;
+  // One small database summary replaces downloading the whole candidates table on every visit (it was three requests and
+  // grew with every new profile). The same numbers, counted in the database.
+  type Facets = { total?: number; sub_domains?: string[]; locations?: string[]; status_counts?: Record<string, number>; created_by_counts?: Record<string, number>; new_today?: number; new_wtd?: number; new_mtd?: number; new_last_month?: number; assessed?: number };
+  const facets = (allRowsRes.data ?? {}) as Facets;
   const allStageLinks = allStageLinksRes.data as
     | { candidate_id: string; stage: string; date_of_joining: string | null; rejected_from_stage: string | null }[]
     | null;
@@ -671,9 +623,8 @@ export default async function CandidatesPage({
   // other, so they run together rather than one after another -- same
   // reasoning as the initial lookup wave.
   const [signedBatchRes, candidatePracticeRowsRes, linkRowsRes] = await Promise.all([
-    resumePaths.length > 0
-      ? supabase.storage.from("resumes").createSignedUrls(resumePaths, 60 * 60 * 12)
-      : Promise.resolve({ data: null }),
+    // CV links are no longer prepared for all 100 rows on every visit; the Preview button asks for its own when pressed.
+    Promise.resolve({ data: null as { signedUrl?: string | null; error?: unknown; path?: string | null }[] | null }),
     candidateIds.length > 0
       ? supabase
           .from("candidate_practices")
@@ -774,25 +725,7 @@ export default async function CandidatesPage({
   // canonical taxonomy (pre-taxonomy-unification legacy values like "SaaS
   // Sales") still needs to stay filterable -- surfaced as a separate group
   // below the real taxonomy instead of silently disappearing.
-  const legacySubDomains = Array.from(
-    new Set(
-      (allRows ?? [])
-        .map((r) => r.sub_domain)
-        .filter((d): d is string => Boolean(d) && !CANONICAL_PRIMARY_SPECIALIZATIONS.has(d as string))
-    )
-  ).sort();
-  // Some legacy sub_domain values on file are themselves comma-containing
-  // strings (e.g. "Inside Sales (B2C), EdTech, BFSI (Fintech / Finance /
-  // Loan / Insurance), Real Estate" -- an old free-text/multi-tag entry
-  // that predates the canonical taxonomy). Passed straight through as a
-  // MultiSelectFilter option, a value like that collides with the filter's
-  // own comma-joined URL encoding the instant it's selected: the same bug
-  // class fixed for current_location above, just with no clean "take the
-  // part before the first comma" fallback here since these aren't
-  // hierarchical. Instead, each legacy option is URI-component-encoded
-  // (commas -> %2C) before being handed to the filter as its "value", with
-  // a value->original-string label map so the checkbox and chip UI still
-  // show the real text -- decoded back on the query side above.
+  const legacySubDomains = (facets.sub_domains ?? []).filter((d) => !CANONICAL_PRIMARY_SPECIALIZATIONS.has(d)).sort();
   const legacySubDomainOptions = legacySubDomains.map((d) => encodeURIComponent(d));
   const legacySubDomainLabelByEncoded: Record<string, string> = Object.fromEntries(
     legacySubDomains.map((d) => [encodeURIComponent(d), d])
@@ -822,48 +755,16 @@ export default async function CandidatesPage({
   // comma-delimited URL encoding -- and matching it as a prefix (see the
   // .ilike("city%") filter below) so selecting "Hyderabad" still catches
   // both stored variants instead of only whichever one is an exact match.
-  const locationOptions = Array.from(
-    new Set(
-      (allRows ?? [])
-        .map((r) => r.city_canonical ?? (r.current_location ?? "").split(",")[0].trim())
-        .filter((v): v is string => Boolean(v))
-    )
-  ).sort();
-  const statusCounts: Record<string, number> = {};
-  const createdByCounts: Record<string, number> = {};
-  let newToday = 0;
-  let newWTD = 0;
-  let newMTD = 0;
-  let newLastMonth = 0;
-  let recruiterAssessedCount = 0;
-  const now = new Date();
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-  // Week = Mon-Sun containing today.
-  const startOfWeek = new Date(startOfToday);
-  const dayOfWeek = (startOfToday.getDay() + 6) % 7; // 0 = Monday
-  startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  (allRows ?? []).forEach((r) => {
-    statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
-    if (r.created_by) createdByCounts[r.created_by] = (createdByCounts[r.created_by] ?? 0) + 1;
-    // "New Additions" is meant to track ongoing organic inflow (applications,
-    // recruiter sourcing, referrals) -- the one-time Zoho historical import
-    // all landed with a created_at of the migration run itself, so including
-    // it here would make every cadence bucket read as "721 this month"
-    // forever, which is meaningless as a growth metric.
-    if (r.created_by !== "bulk_import") {
-      const createdAt = new Date(r.created_at);
-      if (createdAt >= startOfToday) newToday += 1;
-      if (createdAt >= startOfWeek) newWTD += 1;
-      if (createdAt >= startOfMonth) newMTD += 1;
-      if (createdAt >= startOfLastMonth && createdAt < startOfMonth) newLastMonth += 1;
-    }
-    const assessment = r.recruiter_assessment as Record<string, unknown> | null;
-    if (assessment && Object.keys(assessment).length > 0) recruiterAssessedCount += 1;
-  });
-  const totalCount = (allRows ?? []).length;
+  const locationOptions = [...(facets.locations ?? [])].sort();
+  const statusCounts: Record<string, number> = facets.status_counts ?? {};
+  const createdByCounts: Record<string, number> = facets.created_by_counts ?? {};
+  // "New Additions" tracks ongoing organic inflow, so the one-time historical import is left out (counted in the database).
+  const newToday = facets.new_today ?? 0;
+  const newWTD = facets.new_wtd ?? 0;
+  const newMTD = facets.new_mtd ?? 0;
+  const newLastMonth = facets.new_last_month ?? 0;
+  const recruiterAssessedCount = facets.assessed ?? 0;
+  const totalCount = facets.total ?? 0;
   const quickApplyCount = createdByCounts["quick_apply"] ?? 0;
   // "Build Your Profile" covers both the current self_registration path and
   // the legacy candidate_self_signup value -- same UI-facing origin, just an
