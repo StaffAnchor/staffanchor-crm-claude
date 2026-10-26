@@ -28,6 +28,8 @@ export type WaStatus = {
   windowHoursLeft: number | null;
   /** What we last sent, in plain words, when it was a template or the assistant. */
   lastSent: string | null;
+  /** We asked for details and have heard nothing for 3 days or more: time for one follow-up. */
+  followUpDue?: boolean;
 };
 
 const SENT_LABEL: [RegExp, string][] = [
@@ -60,7 +62,7 @@ const clip = (s: string, n = 70) => (s.length > n ? `${s.slice(0, n - 1).trimEnd
 // `urgentKeys` is the one definition of "reply now" (employers, candidates on a live role, questions the assistant could
 // not answer: see waiting-queue.ts). A chat where a person could reply but nobody has to, such as a candidate who only got
 // the automatic acknowledgement, is "can_wait" rather than "needs_you". Leave it undefined to keep the old behaviour.
-export function statusOf(c: WaConversation, info: WaContactLite | undefined, now: number, urgentKeys?: Set<string>): WaStatus {
+export function statusOf(c: WaConversation, info: WaContactLite | undefined, now: number, urgentKeys?: Set<string>, doneKeys?: Set<string>): WaStatus {
   const last = c.messages[c.messages.length - 1];
   const sinceLast = Math.max(0, now - new Date(last.created_at).getTime());
   const windowLeft = c.lastInboundAt ? WINDOW_MS - (now - new Date(c.lastInboundAt).getTime()) : 0;
@@ -92,14 +94,18 @@ export function statusOf(c: WaConversation, info: WaContactLite | undefined, now
   }
 
   // We sent last and they have not answered.
+  // We asked for their details and they have since completed the profile: that conversation is closed, not waiting.
+  const askedDetails = /profile_details/i.test(lastOut?.template_name ?? "");
+  if (askedDetails && doneKeys?.has(c.key)) return { state: "archived", why: "Profile completed", waitingMs: sinceLast, urgency: "ok", ...base };
   const what = lastSent ?? "Message sent";
   const optedOut = info?.optedOut ? " · opted out of automatic messages" : "";
-  return { state: "waiting", why: `${what} · no reply for ${ago(sinceLast)}${optedOut}`, waitingMs: sinceLast, urgency: "ok", ...base };
+  const followUpDue = askedDetails && !info?.optedOut && sinceLast >= 3 * 86_400_000;
+  return { state: "waiting", why: `${what} · no reply for ${ago(sinceLast)}${optedOut}${followUpDue ? " · follow up due" : ""}`, waitingMs: sinceLast, urgency: "ok", followUpDue, ...base };
 }
 
 export const STATE_META: Record<WaState, { label: string; blurb: string; tone: string }> = {
   needs_you: { label: "Reply now", blurb: "Employers, candidates on a live role, and questions the assistant could not answer.", tone: "rose" },
-  can_wait: { label: "Can wait", blurb: "Candidates who wrote in and got the automatic reply. Nobody has to answer them, but you can.", tone: "slate" },
+  can_wait: { label: "Can wait", blurb: "Candidates who wrote in and got the automatic reply. Nobody has to answer them for now; after a day they move to Reply now.", tone: "slate" },
   assistant: { label: "Assistant working", blurb: "The assistant is collecting details. Nothing for you to do unless it hands over.", tone: "teal" },
   waiting: { label: "Waiting on them", blurb: "We sent a message and they haven't answered yet.", tone: "slate" },
   failed: { label: "Not delivered", blurb: "A message didn't reach the person. Check the number.", tone: "amber" },

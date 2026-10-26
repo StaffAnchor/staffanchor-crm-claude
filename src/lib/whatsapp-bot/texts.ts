@@ -81,6 +81,8 @@ export const ROLE_INTEREST_ACK = (n: string, role: string) =>
   `Hi ${n}, thank you for your interest in the ${role} role. We've shared it with our recruiters. If your profile is a good match, someone from our team will contact you with the details.`;
 export const ROLE_APPLIED_ACK = (n: string, role: string) =>
   `Hi ${n}, thank you for applying for the ${role} role. Your application is with our recruiters. If your profile is a good match, someone from our team will contact you with the next steps.`;
+// Someone we already know sends a file (a CV, an updated CV, a document): confirm we have it, so they are never left wondering.
+export const FILE_ACK = (n: string) => `Hi ${n}, thank you, we have received your file. A recruiter will review it and get back to you.`;
 export const CV_RETRY = `I couldn't open that file. Please try sending your CV again as a PDF or Word document, or reply SKIP and a recruiter will follow up.`;
 
 export const JD_ACK = `Thanks, we've received your details. A consultant will review them and contact you shortly. For anything urgent, you can reach Gagan Sharma directly on +91-7273000088.`;

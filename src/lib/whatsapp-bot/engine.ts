@@ -260,6 +260,16 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
   const asked = m.type === "text" && m.text !== null && !interest && isQuestion(m.text) ? m.text : null;
   const knownReply = async () => {
     const name = T.firstName(identity.candidate?.full_name);
+    // A file (their CV or any document) always gets a short confirmation and shows as waiting for a person, even when
+    // we spoke to them earlier today. Once an hour at most, so a few files in a row do not each get a reply.
+    if (isFile) {
+      flow = "file_ack";
+      hand(`Sent a file${m.filename ? ` (${m.filename})` : ""}. Open the chat to see it.`);
+      const sent = await store.countBotMessagesSince(key, new Date(env.nowMs - 60 * 60 * 1000).toISOString(), "bot:file_ack");
+      if (sent === 0) replies = [T.FILE_ACK(name)];
+      else action = "silent";
+      return;
+    }
     if (!interest) return ackOnce(T.KNOWN_ACK(name), "Registered candidate messaged");
     flow = "role_interest";
     hand("Registered candidate messaged");

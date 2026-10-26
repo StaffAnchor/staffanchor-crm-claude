@@ -109,9 +109,11 @@ export default function WhatsAppInbox({
   // are we waiting on. "Who they are" (jobseeker, employer) is a small filter, not the main structure.
   const statuses = useMemo(() => {
     const m = new Map<string, WaStatus>();
-    for (const c of conversations) m.set(c.key, statusOf(c, contacts[c.key], now, urgent));
+    // People we asked for details who have since completed their profile are closed, not "waiting".
+    const done = new Set(conversations.filter((c) => c.candidateId && missing[c.candidateId] && missing[c.candidateId].length === 0).map((c) => c.key));
+    for (const c of conversations) m.set(c.key, statusOf(c, contacts[c.key], now, urgent, done));
     return m;
-  }, [conversations, contacts, now, urgent]);
+  }, [conversations, contacts, now, urgent, missing]);
   const counts = useMemo(() => {
     const n: Record<WaState, number> = { needs_you: 0, can_wait: 0, assistant: 0, waiting: 0, failed: 0, archived: 0 };
     for (const c of conversations) {
@@ -349,6 +351,7 @@ export default function WhatsAppInbox({
                       {st.state === "needs_you" && st.windowHoursLeft === null && <span className="rounded bg-slate-100 px-1.5 py-px text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">Needs a template to reply</span>}
                       {st.state === "needs_you" && st.windowHoursLeft !== null && st.windowHoursLeft <= 6 && <span className="rounded bg-amber-50 px-1.5 py-px text-xs font-medium text-amber-700">Free reply closes in {st.windowHoursLeft}h</span>}
                       {st.state === "needs_you" && st.urgency === "late" && <span className="rounded bg-rose-50 px-1.5 py-px text-xs font-medium text-rose-700">Waiting {ago(st.waitingMs)}</span>}
+                      {st.state === "waiting" && st.followUpDue && <span className="rounded bg-amber-50 px-1.5 py-px text-xs font-medium text-amber-700">Follow up due</span>}
                       {view === "all" && st.state !== "needs_you" && <span className="rounded bg-slate-100 px-1.5 py-px text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{STATE_META[st.state].label}</span>}
                     </span>
                   </span>

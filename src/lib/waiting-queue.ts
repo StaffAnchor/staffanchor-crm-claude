@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // on a live role, then a question the assistant could not answer. Candidates who only got the "recruiter will
 // connect once you are shortlisted" reply are left out on purpose: not everyone needs a reply.
 
-export type WaitingKind = "employer" | "candidate_on_role" | "question";
+export type WaitingKind = "employer" | "candidate_on_role" | "question" | "overdue";
 
 export type WaitingItem = {
   kind: WaitingKind;
@@ -17,12 +17,15 @@ export type WaitingItem = {
 };
 
 const LIVE_STAGES = ["screened", "submitted", "shortlisted", "client_shortlisted", "client_interview"];
-const RANK: Record<WaitingKind, number> = { employer: 0, candidate_on_role: 1, question: 2 };
+const RANK: Record<WaitingKind, number> = { employer: 0, candidate_on_role: 1, question: 2, overdue: 3 };
+/** Nobody has to answer everyone at once, but nobody is left unanswered for longer than this. */
+const OVERDUE_HOURS = 24;
 
 export const KIND_LABEL: Record<WaitingKind, string> = {
   employer: "Employer",
   candidate_on_role: "Candidate on a live role",
   question: "Question the assistant could not answer",
+  overdue: "Wrote in over a day ago, no reply from a person yet",
 };
 
 const tail10 = (p: string | null | undefined) => (p ?? "").replace(/\D/g, "").slice(-10);
@@ -36,9 +39,6 @@ export async function loadWaiting(admin: SupabaseClient, now = Date.now()): Prom
     .eq("muted", false)
     .is("archived_at", null);
   const rows = contacts ?? [];
-  if (!rows.length) return await questionsOnly(admin, now, new Set());
-
-  const keys = rows.map((c) => c.phone_key as string);
   const since = new Date(now - 30 * 86_400_000).toISOString();
   const { data: msgs } = await admin
     .from("whatsapp_messages")
@@ -52,7 +52,6 @@ export async function loadWaiting(admin: SupabaseClient, now = Date.now()): Prom
   const lastHuman = new Map<string, string>();
   for (const m of msgs ?? []) {
     const k = tail10(m.to_phone as string);
-    if (!keys.includes(k)) continue;
     if (m.direction === "inbound") {
       if (!lastIn.has(k)) lastIn.set(k, { at: m.created_at as string, text: (m.body_preview as string) ?? "" });
     } else if (!(m.template_name as string | null)?.startsWith("bot:") && !lastHuman.has(k)) {
@@ -88,6 +87,43 @@ export async function loadWaiting(admin: SupabaseClient, now = Date.now()): Prom
       hoursWaiting: Math.max(0, Math.round((now - new Date(inb.at).getTime()) / 3_600_000)),
       href: "/whatsapp",
     });
+  }
+
+  // Anyone else whose last message to us is more than a day old and has had no answer from a person (an automatic
+  // acknowledgement does not count). They were being left quietly under "Can wait" or nowhere at all.
+  const overdueKeys = Array.from(lastIn.entries())
+    .filter(([k, v]) => !covered.has(k) && now - new Date(v.at).getTime() >= OVERDUE_HOURS * 3_600_000 && !((lastHuman.get(k) ?? "") > v.at))
+    .map(([k]) => k);
+  if (overdueKeys.length) {
+    const { data: cs } = await admin
+      .from("whatsapp_contacts")
+      .select("phone_key, kind, kind_source, bot_paused, display_name, candidate_id, needs_human_reason")
+      .in("phone_key", overdueKeys)
+      .eq("opted_out", false)
+      .eq("muted", false)
+      .is("archived_at", null);
+    const ids = (cs ?? []).map((c) => c.candidate_id).filter(Boolean) as string[];
+    const nameById = new Map<string, string>();
+    if (ids.length) {
+      const { data: ns } = await admin.from("candidates").select("id, full_name").in("id", ids);
+      for (const n of ns ?? []) nameById.set(n.id as string, (n.full_name as string) ?? "");
+    }
+    for (const c of cs ?? []) {
+      // Our own team's numbers are never "waiting".
+      if (c.kind === "other" && c.kind_source === "manual" && c.bot_paused) continue;
+      const key = c.phone_key as string;
+      const inb = lastIn.get(key)!;
+      covered.add(key);
+      items.push({
+        kind: "overdue",
+        key,
+        name: (c.candidate_id && nameById.get(c.candidate_id as string)) || (c.display_name as string) || `+91 ${key}`,
+        why: (c.needs_human_reason as string) || "Wrote in and has not had a reply from a person",
+        preview: inb.text.replace(/\s+/g, " ").slice(0, 160),
+        hoursWaiting: Math.max(0, Math.round((now - new Date(inb.at).getTime()) / 3_600_000)),
+        href: "/whatsapp",
+      });
+    }
   }
   const qs = await questionsOnly(admin, now, covered);
   return [...items, ...qs].sort((a, b) => RANK[a.kind] - RANK[b.kind] || b.hoursWaiting - a.hoursWaiting);
