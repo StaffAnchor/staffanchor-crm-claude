@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import CandidatesSubNav from "../candidates-sub-nav";
 import CallsDesk, { type CallPerson } from "./calls-desk";
 
@@ -39,18 +38,6 @@ export default async function CallsTodayPage({ searchParams }: { searchParams: P
     supabase.from("call_log").select("caller_id, outcome").gte("created_at", istDayStartIso()).limit(2000),
   ]);
   const people = ((rows ?? []) as CallPerson[]).map((p) => ({ ...p, resume_url: null as string | null }));
-
-  // CVs open inline next to the call, so every CV in today's list gets a short-lived link.
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (key && people.length) {
-    const admin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, { auth: { persistSession: false } });
-    const paths = people.map((p) => (p.resume_file_url ?? "").replace(/^resumes\//, "")).filter(Boolean);
-    if (paths.length) {
-      const { data: signed } = await admin.storage.from("resumes").createSignedUrls(paths, 4 * 3600);
-      const byPath = new Map((signed ?? []).filter((s) => s.signedUrl).map((s) => [s.path as string, s.signedUrl as string]));
-      for (const p of people) p.resume_url = byPath.get((p.resume_file_url ?? "").replace(/^resumes\//, "")) ?? null;
-    }
-  }
 
   const log = (todays ?? []) as { caller_id: string | null; outcome: string }[];
   const byCaller = new Map<string, number>();

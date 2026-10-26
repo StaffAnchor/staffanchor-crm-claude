@@ -10,7 +10,7 @@ import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
 // call is recorded the same way everywhere. Everything typed here goes onto the profile; the after-the-call note is read
 // by the system (fills blanks, ratings, verdict, client brief, matches); the result is logged in call_log.
 
-export type CallResult = { outcome: string; name: string; summary: string | null; filled: string[]; tier: string | null; concerns: string[] };
+export type CallResult = { outcome: string; name: string; summary: string | null; filled: string[]; tier: string | null; concerns: string[]; reading?: boolean };
 
 export type CallFormPerson = {
   id: string;
@@ -160,6 +160,7 @@ export default function CallRecordForm({
           filled: [...((d.filled as string[] | undefined) ?? []).map((f) => f.replace(/_/g, " ")), ...((d.debrief?.filled as string[] | undefined) ?? [])],
           tier: d.debrief?.tier ?? null,
           concerns: (d.debrief?.concerns as string[] | undefined) ?? [],
+          reading: d.reading === true,
         });
         if (mode === "profile") {
           setComm("");
@@ -313,7 +314,7 @@ export default function CallRecordForm({
       {error && <p className="text-[12.5px] font-medium text-rose-600">{error}</p>}
       <div className="space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
         <button type="button" disabled={!!busy} onClick={() => log("reached")} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
-          <Check className="h-4 w-4" /> {busy === "reached" ? (note.trim().length >= 8 ? "Saving and reading your note…" : "Saving…") : mode === "desk" ? "Spoke to them: save and next" : "Spoke to them: save the call"}
+          <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : mode === "desk" ? "Spoke to them: save and next" : "Spoke to them: save the call"}
         </button>
         <div className="flex flex-wrap gap-1.5">
           {[

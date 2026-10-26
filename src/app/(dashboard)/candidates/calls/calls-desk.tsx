@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, FileText, Phone } from "lucide-react";
 import ResumeViewerInline from "../[id]/resume-viewer-inline";
 import { POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
@@ -81,6 +81,29 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
   const [showCv, setShowCv] = useState(false);
   const [copied, setCopied] = useState(false);
   const [last, setLast] = useState<CallResult | null>(null);
+  // CV links are fetched when a card opens and for the next card in advance (they used to be prepared for all fifty
+  // people before the page could appear). The CV panel can also be switched off on a slower computer; that is remembered.
+  const [cvUrls, setCvUrls] = useState<Record<string, string | null>>({});
+  const [cvOff, setCvOff] = useState(false);
+  useEffect(() => {
+    let off = false;
+    try {
+      off = window.localStorage.getItem("calls-cv-off") === "1";
+    } catch {
+      /* storage can be blocked */
+    }
+    if (off) void Promise.resolve().then(() => setCvOff(true));
+  }, []);
+  const toggleCv = () => {
+    setCvOff((v) => {
+      try {
+        window.localStorage.setItem("calls-cv-off", v ? "0" : "1");
+      } catch {
+        /* storage can be blocked */
+      }
+      return !v;
+    });
+  };
   const active = people.find((p) => p.id === selected) ?? null;
   const left = useMemo(() => people.filter((p) => !done[p.id]).length, [people, done]);
   const index = active ? people.findIndex((p) => p.id === active.id) : -1;
@@ -90,6 +113,21 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
     setSelected(next.id);
     setShowCv(false);
   };
+
+  const activeId = active?.id ?? null;
+  const nextId = index >= 0 && people.length > 1 ? people[(index + 1) % people.length].id : null;
+  useEffect(() => {
+    for (const id of [activeId, nextId]) {
+      if (!id || id in cvUrls) continue;
+      if (!people.find((p) => p.id === id)?.resume_file_url) continue;
+      fetch(`/api/calls/cv-url?id=${id}`)
+        .then((r) => (r.ok ? r.json() : { url: null }))
+        .then((d: { url: string | null }) => setCvUrls((m) => ({ ...m, [id]: d.url })))
+        .catch(() => setCvUrls((m) => ({ ...m, [id]: null })));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, nextId, cvOff]);
+  const activeCv = activeId ? cvUrls[activeId] : null;
 
   if (people.length === 0) {
     return (
@@ -197,9 +235,14 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                 >
                   {copied ? "Copied" : "Copy number"}
                 </button>
-                {active.resume_url && (
+                {active.resume_file_url && (
                   <button type="button" onClick={() => setShowCv((v) => !v)} className="rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 xl:hidden dark:border-slate-600 dark:text-slate-200">
                     {showCv ? "Hide CV" : "View CV"}
+                  </button>
+                )}
+                {active.resume_file_url && (
+                  <button type="button" onClick={toggleCv} className="hidden rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 xl:inline-block dark:border-slate-600 dark:text-slate-200" title="Turn the CV panel off if this page feels slow; it is remembered on this computer">
+                    {cvOff ? "Show CV panel" : "Hide CV panel"}
                   </button>
                 )}
               </div>
@@ -208,6 +251,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
               <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[12px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
                 <p className="font-semibold">Saved {last.name}.{last.tier ? ` Talent Pool: ${POOL_TIER_LABEL[last.tier as PoolTier] ?? last.tier}.` : ""}</p>
                 {last.summary && <p className="mt-0.5">{last.summary}</p>}
+                {last.reading && <p className="mt-0.5">Your note is being read in the background; the details it fills and the client brief update within a minute.</p>}
                 {last.filled.length > 0 && <p className="mt-0.5">Filled in: {last.filled.join(", ")}.</p>}
                 {last.concerns.length > 0 && <p className="mt-0.5 text-amber-800 dark:text-amber-300">Concerns noted: {last.concerns.join("; ")}.</p>}
               </div>
@@ -215,11 +259,13 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
             <CallRecordForm key={active.id} p={active} onDone={finished} mode="desk" />
           </section>
 
-          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 xl:col-span-1 xl:block xl:h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
-            {active.resume_url && active.resume_file_url ? (
+          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 ${cvOff ? "xl:hidden" : "xl:block"} xl:col-span-1 xl:h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
+            {active.resume_file_url && activeCv ? (
               <div className="h-full overflow-auto">
-                <ResumeViewerInline key={active.id} signedUrl={active.resume_url} fileName={active.resume_file_url.replace(/^resumes\//, "")} />
+                <ResumeViewerInline key={active.id} signedUrl={activeCv} fileName={active.resume_file_url.replace(/^resumes\//, "")} />
               </div>
+            ) : active.resume_file_url && activeCv === undefined ? (
+              <div className="flex h-full items-center justify-center text-[13px] text-slate-500">Opening the CV…</div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-[13px] text-slate-500">
                 <FileText className="h-8 w-8 text-slate-300" />

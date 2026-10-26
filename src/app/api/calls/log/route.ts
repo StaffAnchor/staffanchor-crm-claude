@@ -121,20 +121,24 @@ export async function POST(req: Request) {
   // "After the call": the same reading the profile page does. The note fills any detail still blank (never overwriting
   // what was just typed above), saves ratings it supports, sets the Talent Pool verdict, and logs the call; then the
   // client brief is rewritten and strong people are matched against open roles. Other outcomes keep a plain note.
-  let debrief: { summary: string; filled: string[]; tier: string | null; concerns: string[] } | null = null;
+  // Reading the note takes the AI several seconds, so the call is saved and answered straight away and the reading happens
+  // in the background: the blanks it fills, the Talent Pool verdict, the client brief and the role matches follow within a
+  // minute. Waiting for it made every saved call feel slow, and a slow connection made it worse.
+  let reading = false;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (outcome === "reached" && note.length >= 8 && serviceKey) {
+    reading = true;
     const admin = createAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { persistSession: false } });
-    const r = await runDebrief(admin, { candidateId: id, authorId: user.id, note, tier: isPoolTier(body.tier) ? body.tier : null });
-    if (r.ok) {
-      debrief = { summary: r.debrief.summary, filled: r.applied.filled.map((f) => `${f.label}: ${f.value}`), tier: r.applied.tier, concerns: r.debrief.concerns };
-      after(async () => {
-        await generateBrief(admin, id);
+    const tier = isPoolTier(body.tier) ? body.tier : null;
+    after(async () => {
+      const r = await runDebrief(admin, { candidateId: id, authorId: user.id, note, tier }).catch(() => null);
+      if (r && r.ok) {
+        await generateBrief(admin, id).catch(() => {});
         await queueProactiveMatchesForCandidate(id, admin).catch(() => {});
-      });
-    } else {
-      await supabase.from("recruiter_notes").insert({ candidate_id: id, author_id: user.id, note_type: "call_note", content: note });
-    }
+      } else {
+        await admin.from("recruiter_notes").insert({ candidate_id: id, author_id: user.id, note_type: "call_note", content: note });
+      }
+    });
   } else if (note) {
     await supabase.from("recruiter_notes").insert({ candidate_id: id, author_id: user.id, note_type: "call_note", content: note });
   }
@@ -144,5 +148,5 @@ export async function POST(req: Request) {
   if (logError) return NextResponse.json({ ok: false, error: `Saved the profile, but couldn't log the call: ${logError.message}` }, { status: 500 });
   await supabase.from("audit_log").insert({ actor: user.id, action: "call_logged", entity: "candidate", entity_id: id, detail: { outcome, filled, communication: communication ?? null, openness: body.openness ?? null } });
 
-  return NextResponse.json({ ok: true, filled, debrief });
+  return NextResponse.json({ ok: true, filled, debrief: null, reading });
 }

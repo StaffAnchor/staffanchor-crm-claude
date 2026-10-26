@@ -1037,14 +1037,16 @@ export default async function CandidatesPage({
   // pay range), so "3 top tier" opened an empty list whenever any of those happened to exclude the three people.
   const topHref = (top?: string) => (top ? `/candidates?top=${top}` : qs({ top: undefined, ready: undefined, missing: undefined, group: undefined, subgroup: undefined }));
 
-  const tierCount = (tier: string) => supabase.from("candidate_top_tier").select("candidate_id", { count: "exact", head: true }).eq("tier", tier);
-  const [topRes, askRes, callRes, noPayRes] = await Promise.all([
-    tierCount("top"),
-    tierCount("ask_open"),
-    tierCount("worth_a_call"),
+  // The three Top tier counts come from one pass over the people (it used to be three separate passes).
+  const [tierRes, noPayRes] = await Promise.all([
+    supabase.rpc("top_tier_counts"),
     // Sales people with 3+ years whose current pay is missing: the ratio can't be worked out until we have it.
     supabase.from("candidates").select("id", { count: "exact", head: true }).in("profile_group", SALES_GROUPS).gte("total_experience_years", 3).or("current_fixed_ctc.is.null,current_fixed_ctc.eq.0"),
   ]);
+  const tiers = ((tierRes.data ?? [])[0] ?? { top_n: 0, ask_n: 0, call_n: 0 }) as { top_n: number; ask_n: number; call_n: number };
+  const topRes = { count: tiers.top_n };
+  const askRes = { count: tiers.ask_n };
+  const callRes = { count: tiers.call_n };
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
