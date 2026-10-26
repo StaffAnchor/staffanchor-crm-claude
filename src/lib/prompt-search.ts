@@ -128,8 +128,14 @@ export function seedFromMandate(m: {
 }
 
 /** Layers what the recruiter typed over the role's own search: anything they state wins, the rest stays from the role. */
-export function mergeSpecs(base: SearchSpec, ask: SearchSpec): SearchSpec {
+export function mergeSpecs(baseIn: SearchSpec, ask: SearchSpec): SearchSpec {
+  let base = baseIn;
   const uniq = (a: string[]) => Array.from(new Set(a.map((x) => x.trim()).filter(Boolean)));
+  // When the recruiter names places, the role's own place-based must-haves ("Based in or willing to relocate to Pune") would fight them, so they go.
+  const aboutPlace = (t: string) => /\b(based in|located in|relocat|willing to move|work from)\b/i.test(t) || base.cities.some((c) => t.toLowerCase().includes(c.toLowerCase()));
+  if (ask.cities.length) {
+    base = { ...base, must: base.must.filter((t) => !aboutPlace(t)), nice: base.nice.filter((t) => !aboutPlace(t)) };
+  }
   return sanitizeSpec({
     cities: ask.cities.length ? ask.cities : base.cities,
     min_exp: ask.min_exp ?? base.min_exp,
