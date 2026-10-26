@@ -16,6 +16,7 @@ import BestMatchesPanel from "./best-matches-panel";
 import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
 import RolePlaybook from "./role-playbook";
+import { SmartSearchProvider, SmartSearchBar, SmartSearchTab, SmartBadge } from "./smart-search";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
 import DeleteMandateButton from "./delete-mandate-button";
@@ -454,6 +455,8 @@ export default async function MandateDetailPage({
       )}
 
 
+      <SmartSearchProvider mandateId={id} roleTitle={mandate.role_title} city={mandate.cities?.[0] ?? mandate.city ?? null}>
+      {!mandate.is_archived && <SmartSearchBar />}
       <Tabs
         className="mt-6"
         items={[
@@ -568,6 +571,13 @@ export default async function MandateDetailPage({
             </div>
               </div>
             ),
+          },
+          {
+            key: "smart",
+            label: "Smart",
+            icon: <Sparkles className="h-3.5 w-3.5 text-teal-500" />,
+            badge: <SmartBadge />,
+            content: <SmartSearchTab />,
           },
             {
               key: "intake",
@@ -744,6 +754,7 @@ export default async function MandateDetailPage({
             },
         ]}
       />
+      </SmartSearchProvider>
     </div>
   );
 }

@@ -127,6 +127,21 @@ export function seedFromMandate(m: {
   return { prompt, spec, embeddingText: `${prompt}. ${(m.jd_overview ?? "").slice(0, 500)}` };
 }
 
+/** Layers what the recruiter typed over the role's own search: anything they state wins, the rest stays from the role. */
+export function mergeSpecs(base: SearchSpec, ask: SearchSpec): SearchSpec {
+  const uniq = (a: string[]) => Array.from(new Set(a.map((x) => x.trim()).filter(Boolean)));
+  return sanitizeSpec({
+    cities: ask.cities.length ? ask.cities : base.cities,
+    min_exp: ask.min_exp ?? base.min_exp,
+    max_exp: ask.max_exp ?? base.max_exp,
+    max_expected_ctc: ask.max_expected_ctc ?? base.max_expected_ctc,
+    max_current_ctc: ask.max_current_ctc ?? base.max_current_ctc,
+    max_notice_days: ask.max_notice_days ?? base.max_notice_days,
+    must: uniq([...ask.must, ...base.must]).slice(0, 8),
+    nice: uniq([...ask.nice, ...base.nice]).slice(0, 8),
+  });
+}
+
 type CvFactsRow = { candidate_id: string; facts: Record<string, unknown> | null };
 
 /** A short, factual digest of what a candidate's CV says, for the AI to judge against. */

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { searchCandidates, seedFromMandate } from "@/lib/prompt-search";
+import { mergeSpecs, searchCandidates, seedFromMandate, understandPrompt } from "@/lib/prompt-search";
 import { sanitizeSpec, type SearchSpec } from "@/lib/search-spec";
 
 export const maxDuration = 120;
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not permitted" }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { prompt?: string; practiceId?: string; mandateId?: string; spec?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { prompt?: string; practiceId?: string; mandateId?: string; spec?: unknown; ignoreRole?: boolean };
   let prompt = typeof body.prompt === "string" ? body.prompt : "";
   let spec: SearchSpec | undefined = body.spec ? sanitizeSpec(body.spec) : undefined;
   let embeddingText: string | undefined;
@@ -40,8 +40,17 @@ export async function POST(req: NextRequest) {
     if (!m) return NextResponse.json({ error: "Mandate not found" }, { status: 404 });
     const seed = seedFromMandate(m as Parameters<typeof seedFromMandate>[0]);
     if (!prompt.trim()) prompt = seed.prompt;
-    if (!spec) spec = seed.spec;
-    embeddingText = seed.embeddingText;
+    if (!spec) {
+      // What the recruiter typed is read like any search and laid over the role's own place, experience, budget and must-haves.
+      if (body.ignoreRole === true) {
+        spec = (await understandPrompt(prompt)).spec;
+      } else if (prompt.trim() === seed.prompt) {
+        spec = seed.spec;
+      } else {
+        spec = mergeSpecs(seed.spec, (await understandPrompt(prompt)).spec);
+      }
+    }
+    embeddingText = prompt.trim() === seed.prompt ? seed.embeddingText : `${prompt}. Role: ${seed.embeddingText}`;
   }
   if (!prompt.trim()) return NextResponse.json({ error: "prompt is required" }, { status: 400 });
 
@@ -81,5 +90,17 @@ export async function POST(req: NextRequest) {
     resume_signed_url: m.resume_file_url ? resumeUrlByPath[m.resume_file_url.replace(/^resumes\//, "")] ?? null : null,
   }));
 
-  return NextResponse.json({ matches, scanned: result.scanned, spec: result.spec, understood: result.understood, hidden: result.hidden, inPipelineSkipped: result.inPipelineSkipped, partial: result.partial, prompt });
+  // A search made inside a role is kept, so its results wait under the role's Smart tab for whoever opens it next.
+  let savedId: string | null = null;
+  if (mandateId) {
+    const stored = matches.map((m) => ({ ...m, resume_signed_url: null }));
+    const { data: saved } = await supabase
+      .from("mandate_smart_searches")
+      .insert({ mandate_id: mandateId, prompt, spec: result.spec, matches: stored, scanned: result.scanned, hidden: result.hidden, in_pipeline_skipped: result.inPipelineSkipped, partial: result.partial, understood: result.understood, created_by: user.id })
+      .select("id")
+      .single();
+    savedId = (saved?.id as string | undefined) ?? null;
+  }
+
+  return NextResponse.json({ id: savedId, matches, scanned: result.scanned, spec: result.spec, understood: result.understood, hidden: result.hidden, inPipelineSkipped: result.inPipelineSkipped, partial: result.partial, prompt });
 }
