@@ -1033,7 +1033,9 @@ export default async function CandidatesPage({
   const coverageRaw = coverageRes?.data ?? null;
   const cvCoverage = (coverageRaw ?? null) as CvCoverage | null;
   const readinessHref = (ready?: string, missing?: string) => qs({ ready, missing });
-  const topHref = (top?: string) => qs({ top, ready: undefined, missing: undefined, group: undefined, subgroup: undefined });
+  // The Top tier links start from a clean list. They used to keep whatever other filters were on (status, category, search,
+  // pay range), so "3 top tier" opened an empty list whenever any of those happened to exclude the three people.
+  const topHref = (top?: string) => (top ? `/candidates?top=${top}` : qs({ top: undefined, ready: undefined, missing: undefined, group: undefined, subgroup: undefined }));
 
   const tierCount = (tier: string) => supabase.from("candidate_top_tier").select("candidate_id", { count: "exact", head: true }).eq("tier", tier);
   const [topRes, askRes, callRes, noPayRes] = await Promise.all([

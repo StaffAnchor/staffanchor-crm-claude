@@ -5,6 +5,7 @@ import { runDebrief } from "@/lib/debrief";
 import { generateBrief } from "@/lib/candidate-brief";
 import { isPoolTier } from "@/lib/talent-pool";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
+import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -60,11 +61,11 @@ export async function POST(req: Request) {
     .eq("id", id)
     .maybeSingle();
   const was = (before ?? {}) as Record<string, unknown>;
-  for (const k of ["current_fixed_ctc", "expected_fixed_ctc"] as const) {
+  for (const k of ["current_fixed_ctc", "expected_fixed_ctc", "total_experience_years"] as const) {
     const v = num(f[k]);
     if (v !== null && Number(was[k] ?? 0) !== v) update[k] = v;
   }
-  for (const k of ["notice_period", "current_location", "open_to_relocation", "work_mode"] as const) {
+  for (const k of ["notice_period", "current_location", "open_to_relocation", "work_mode", "current_employer", "current_job_title", "current_employment_status", "highest_qualification"] as const) {
     const v = text(f[k]);
     if (v && String(was[k] ?? "").trim() !== v) update[k] = v;
   }
@@ -80,6 +81,16 @@ export async function POST(req: Request) {
     } else if (body.offer?.inHand === false) {
       seg.offer_in_hand = false;
       delete seg.offer_ctc;
+    }
+    // The level they hold now, and whether that means leading people, the same two answers the registration form records.
+    const level = text(f.role_level);
+    if (level && level !== String(seg.role_level ?? "")) {
+      const known = yourLevelOptions.find((l) => l.value === level);
+      if (known) {
+        seg.role_level = level;
+        seg.role_type = known.lead ? "Team Lead" : "IC";
+        filled.push("role_level");
+      }
     }
     update.segment_data = seg;
     // A lead whose details are now complete becomes Registered, the same gate the public form uses.

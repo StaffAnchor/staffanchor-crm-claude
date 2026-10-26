@@ -17,6 +17,7 @@ function istDayStartIso(): string {
 // Calls today: one list for whoever is on the phones. The system picks who to call (strongest first), shows the CV next to
 // the call, and everything said on the call is typed straight into the profile. Nothing is sent to anyone from here.
 const FOCUS = [
+  { key: "noctc", label: "No CTC", hint: "Sales profiles with no current pay: 3+ years first, newest sign-ups first. Source and sign-up date are on each card" },
   { key: "mixed", label: "Mixed", hint: "Half qualify, half fill gaps" },
   { key: "qualify", label: "Qualify", hint: "Pay known, ratio 1.5+: rate them and confirm they are looking" },
   { key: "complete", label: "Fill gaps", hint: "Missing current pay first, then notice period and expected pay" },
@@ -24,7 +25,7 @@ const FOCUS = [
 
 export default async function CallsTodayPage({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
   const sp = await searchParams;
-  const focus = FOCUS.some((f) => f.key === sp.focus) ? (sp.focus as (typeof FOCUS)[number]["key"]) : "mixed";
+  const focus = FOCUS.some((f) => f.key === sp.focus) ? (sp.focus as (typeof FOCUS)[number]["key"]) : "noctc";
   const supabase = await createClient();
   const {
     data: { user },

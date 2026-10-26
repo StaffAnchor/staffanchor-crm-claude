@@ -30,6 +30,24 @@ export type CallPerson = {
   interested_role?: string | null;
   tries: number;
   last_outcome: string | null;
+  source?: string | null;
+  profile_created_at?: string | null;
+  profile_status?: string | null;
+  current_employment_status?: string | null;
+  highest_qualification?: string | null;
+  role_level?: string | null;
+  role_type?: string | null;
+};
+
+// Where a profile came from, in words a recruiter can say to the person, and how long ago it was created.
+const SOURCE_LABEL: Record<string, string> = { self_registration: "Registered on our site", quick_apply: "Quick apply on a job", bulk_import: "Imported from a CV", IIMJobs: "IIMJobs", Naukri: "Naukri", LinkedIn: "LinkedIn", Other: "Other source" };
+const sourceOf = (p: CallPerson) => (p.source ? SOURCE_LABEL[p.source] ?? p.source.replace(/_/g, " ") : null);
+const daysSince = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+const createdOf = (p: CallPerson) => {
+  if (!p.profile_created_at) return null;
+  const d = new Date(p.profile_created_at);
+  const n = daysSince(p.profile_created_at);
+  return `${d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} (${n === 0 ? "today" : n === 1 ? "yesterday" : `${n} days ago`})`;
 };
 
 const REASON: Record<CallPerson["reason"], { label: string; cls: string }> = {
@@ -127,6 +145,11 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                   {done[p.id] && <span className="shrink-0 text-[11px] font-medium text-emerald-700">{OUT[done[p.id]]}</span>}
                 </span>
                 <span className="block truncate text-[12px] text-slate-500">{[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
+                {(sourceOf(p) || p.profile_created_at) && (
+                  <span className="block truncate text-[11.5px] text-slate-400">
+                    {[sourceOf(p), p.profile_created_at ? `signed up ${new Date(p.profile_created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : null].filter(Boolean).join(" · ")}
+                  </span>
+                )}
                 <span className={`mt-1 inline-block rounded px-1.5 py-px text-[11px] font-medium ${REASON[p.reason].cls}`}>
                   {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : REASON[p.reason].label}
                   {(p.reason === "pay_missing" || p.reason === "details_missing") && gapsOf(p).length > 0 && `: ${gapsOf(p).join(", ")}`}
@@ -153,6 +176,13 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                 {[active.current_job_title, active.current_employer].filter(Boolean).join(" at ") || "Role not on file"}
                 {active.total_experience_years ? ` · ${Number(active.total_experience_years)} yrs` : ""}
               </p>
+              {(sourceOf(active) || createdOf(active)) && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px]">
+                  {sourceOf(active) && <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">Source: {sourceOf(active)}</span>}
+                  {createdOf(active) && <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">Profile created {createdOf(active)}</span>}
+                  {active.profile_status && ["awaiting_input", "lead"].includes(active.profile_status) && <span className="rounded bg-amber-50 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">Profile not complete</span>}
+                </div>
+              )}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <a href={`tel:${tel(active.phone)}`} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-teal-700">
                   <Phone className="h-4 w-4" /> {shownPhone(active.phone)}

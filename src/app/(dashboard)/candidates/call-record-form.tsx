@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { cityOptions, fixedCtcOptions, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
+import { cityOptions, employmentStatusOptions, fixedCtcOptions, highestQualificationOptions, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
+import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
 
 // The one call form, used on Calls today, on the candidate profile and in the role page's confirm-details window, so a
@@ -25,6 +26,14 @@ export type CallFormPerson = {
   open_fresh?: boolean;
   offer_in_hand?: boolean | null;
   offer_ctc?: number | null;
+  // What the registration form records, so a call can complete it. All optional: a surface that does not have them
+  // simply shows them blank.
+  current_employer?: string | null;
+  current_job_title?: string | null;
+  current_employment_status?: string | null;
+  highest_qualification?: string | null;
+  role_level?: string | null;
+  role_type?: string | null;
 };
 
 // IST 11:00 on a day N days from now, as an ISO time.
@@ -88,6 +97,12 @@ export default function CallRecordForm({
   const [city, setCity] = useState(p.current_location ?? "");
   const [relocation, setRelocation] = useState(p.open_to_relocation ?? "");
   const [workMode, setWorkMode] = useState(p.work_mode ?? "");
+  const [employer, setEmployer] = useState(p.current_employer ?? "");
+  const [title, setTitle] = useState(p.current_job_title ?? "");
+  const [years, setYears] = useState(num(p.total_experience_years));
+  const [status, setStatus] = useState(p.current_employment_status ?? "");
+  const [qualification, setQualification] = useState(p.highest_qualification ?? "");
+  const [level, setLevel] = useState(p.role_level ?? "");
   const [offer, setOffer] = useState(p.offer_in_hand === true ? "Yes" : p.offer_in_hand === false ? "No" : "");
   const [offerCtc, setOfferCtc] = useState(p.offer_ctc ? String(p.offer_ctc) : "");
   const [comm, setComm] = useState("");
@@ -106,6 +121,11 @@ export default function CallRecordForm({
     !p.open_to_relocation && "open to relocating",
     !p.open_fresh && "whether they are looking",
   ].filter(Boolean) as string[];
+  // Registration details a call can still complete, shown in the "Profile details" section.
+  // "Not provided" (undefined, from a surface that does not load these) is different from "empty on the profile" (null or blank).
+  const blank = (v: unknown) => v === null || v === "";
+  const detailGaps = [blank(p.current_employer) && "company", blank(p.current_job_title) && "job title", p.total_experience_years !== undefined && !num(p.total_experience_years) && "experience", blank(p.current_employment_status) && "employment status", blank(p.highest_qualification) && "qualification", blank(p.role_level) && "role level"].filter(Boolean) as string[];
+  const levelLead = yourLevelOptions.find((l) => l.value === level)?.lead;
 
   async function log(outcome: string, extra: Record<string, unknown> = {}) {
     if (outcome === "reached" && offer === "Yes" && !offerCtc) {
@@ -121,7 +141,7 @@ export default function CallRecordForm({
         body: JSON.stringify({
           candidateId: p.id,
           outcome,
-          fields: outcome === "reached" ? { current_fixed_ctc: ctc, expected_fixed_ctc: expected, notice_period: notice, current_location: city, open_to_relocation: relocation, work_mode: workMode } : {},
+          fields: outcome === "reached" ? { current_fixed_ctc: ctc, expected_fixed_ctc: expected, notice_period: notice, current_location: city, open_to_relocation: relocation, work_mode: workMode, current_employer: employer, current_job_title: title, total_experience_years: years, current_employment_status: status, highest_qualification: qualification, role_level: level } : {},
           offer: outcome === "reached" && offer ? { inHand: offer === "Yes", ctc: offer === "Yes" ? Number(offerCtc) : null } : null,
           communication: comm || null,
           openness: openness || null,
@@ -209,6 +229,45 @@ export default function CallRecordForm({
       <Field label="Work mode">
         <Chips value={workMode} options={asOpts(workModeOptions)} onChange={setWorkMode} />
       </Field>
+      <details open={detailGaps.length > 0} className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+        <summary className="cursor-pointer text-[12.5px] font-semibold text-slate-700 dark:text-slate-200">
+          Profile details <span className="font-normal text-slate-400">{detailGaps.length > 0 ? `· to ask: ${detailGaps.join(", ")}` : "· complete"}</span>
+        </summary>
+        <div className="mt-2.5 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Current company" missing={blank(p.current_employer)}>
+              <input value={employer} onChange={(e) => setEmployer(e.target.value)} placeholder="Company" className={select} />
+            </Field>
+            <Field label="Current job title" missing={blank(p.current_job_title)}>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className={select} />
+            </Field>
+            <Field label="Total experience (years)" missing={p.total_experience_years !== undefined && !num(p.total_experience_years)}>
+              <input type="number" inputMode="decimal" min="0" max="50" step="0.5" value={years} onChange={(e) => setYears(e.target.value)} placeholder="e.g. 6.5" className={select} />
+            </Field>
+            <Field label="Employment status" missing={blank(p.current_employment_status)}>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className={select}>
+                <option value="">Select</option>
+                {employmentStatusOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </Field>
+            <Field label="Highest qualification" missing={blank(p.highest_qualification)}>
+              <select value={qualification} onChange={(e) => setQualification(e.target.value)} className={select}>
+                <option value="">Select</option>
+                {highestQualificationOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </Field>
+            <Field label="Role level" missing={blank(p.role_level)}>
+              <select value={level} onChange={(e) => setLevel(e.target.value)} className={select}>
+                <option value="">Select</option>
+                {yourLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </Field>
+          </div>
+          <p className="text-[11.5px] text-slate-400">
+            Role type: {level ? (levelLead ? "Leads a team" : "Individual contributor") : p.role_type ?? "set by the level"}. These are the same details the registration form asks for, and only changes are saved.
+          </p>
+        </div>
+      </details>
       <Field label="Offer in hand?">
         <div className="flex flex-wrap items-center gap-2">
           <Chips value={offer} options={asOpts(["Yes", "No"])} onChange={setOffer} />
