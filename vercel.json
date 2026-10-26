@@ -56,6 +56,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/cron/rejection-review",
+      "schedule": "30 4 * * 1"
+    },
+    {
       "path": "/api/cron/role-cards",
       "schedule": "0 2 * * *"
     },

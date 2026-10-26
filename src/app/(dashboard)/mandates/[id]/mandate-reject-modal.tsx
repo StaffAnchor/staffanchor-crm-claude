@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, UserX, Building2, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { X, UserX, Building2, Loader2, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { RatingPicker, emptyDraft, saveProfileRating, type RatingDraft } from "@/components/profile-rating";
 import { RECRUITER_REJECTION_REASONS, CLIENT_REJECTION_REASONS, type StageSource } from "@/lib/mandate-stage";
@@ -37,7 +37,40 @@ export default function MandateRejectModal({
   const [note, setNote] = useState("");
   const [rating, setRating] = useState<RatingDraft>(emptyDraft);
 
-  const reasons = source === "recruiter" ? RECRUITER_REJECTION_REASONS : CLIENT_REJECTION_REASONS;
+  const baseReasons = source === "recruiter" ? RECRUITER_REJECTION_REASONS : CLIENT_REJECTION_REASONS;
+
+  // What the CV and the role already say, and whether anyone has actually spoken to this person.
+  type Hint = { value: string; label: string; evidence: string; strength: number };
+  const [hints, setHints] = useState<Hint[]>([]);
+  const [usage, setUsage] = useState<Record<string, number>>({});
+  const [spoken, setSpoken] = useState<boolean | null>(null);
+  const [cvOnly, setCvOnly] = useState(true);
+  useEffect(() => {
+    if (source !== "recruiter" || !candidateId || !mandateId) return;
+    let live = true;
+    fetch(`/api/mandates/${mandateId}/reject-hints?candidateId=${candidateId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { hints: Hint[]; usage: Record<string, number>; spoken: boolean } | null) => {
+        if (!live || !d) return;
+        setHints(d.hints ?? []);
+        setUsage(d.usage ?? {});
+        setSpoken(d.spoken);
+        setCvOnly(!d.spoken);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [source, candidateId, mandateId]);
+
+  // Reasons the CV points to first, then the ones used most, "Other" last.
+  const reasons = useMemo(() => {
+    const suggested = new Set(hints.map((h) => h.value));
+    return [...baseReasons].sort((a, b) => {
+      const other = (v: string) => (v.startsWith("other") ? 1 : 0);
+      return other(a.value) - other(b.value) || Number(suggested.has(b.value)) - Number(suggested.has(a.value)) || (usage[b.value] ?? 0) - (usage[a.value] ?? 0);
+    });
+  }, [baseReasons, hints, usage]);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 p-4" onClick={onCancel}>
@@ -98,11 +131,44 @@ export default function MandateRejectModal({
                 <option value="">Select a reason…</option>
                 {reasons.map((r) => (
                   <option key={r.value} value={r.value}>
+                    {hints.some((h) => h.value === r.value) ? "★ " : ""}
                     {r.label}
                   </option>
                 ))}
               </select>
+              {hints.length > 0 && (
+                <div className="mt-2">
+                  <p className="mb-1 flex items-center gap-1 text-[11.5px] font-medium text-slate-500 dark:text-slate-400">
+                    <Sparkles className="h-3 w-3 text-teal-500" /> The CV points to
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {hints.map((h) => (
+                      <button
+                        key={h.value}
+                        type="button"
+                        onClick={() => {
+                          setCategory(h.value);
+                          if (!note.trim()) setNote(h.evidence);
+                        }}
+                        className={`rounded-lg border px-2.5 py-1.5 text-left text-[12px] ${category === h.value ? "border-teal-400 bg-teal-50 dark:border-teal-700 dark:bg-teal-950/30" : "border-slate-200 hover:border-teal-300 dark:border-slate-700"}`}
+                      >
+                        <span className="font-medium text-slate-800 dark:text-slate-100">{h.label}</span>
+                        <span className="block text-slate-500 dark:text-slate-400">{h.evidence}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            {source === "recruiter" && (
+              <label className="flex items-start gap-2 text-[12px] text-slate-600 dark:text-slate-300">
+                <input type="checkbox" checked={cvOnly} onChange={(e) => setCvOnly(e.target.checked)} className="mt-0.5" />
+                <span>
+                  I haven&apos;t spoken to them; this is from the CV only.
+                  {spoken === true && <span className="block text-slate-400">A call with them is on record, so this is unticked for you.</span>}
+                </span>
+              </label>
+            )}
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Additional detail (optional)
@@ -132,7 +198,9 @@ export default function MandateRejectModal({
                   if (candidateId && rating.rating) {
                     void saveProfileRating(createClient(), candidateId, { rating: rating.rating, reasons: rating.reasons, note: rating.note }, mandateId);
                   }
-                  onConfirm({ source, category, note });
+                  // Whether this was decided from the CV alone or after a conversation is kept with the reason.
+                  const basis = source === "recruiter" ? (cvOnly ? "CV only. " : "After a call. ") : "";
+                  onConfirm({ source, category, note: `${basis}${note.trim()}`.trim() });
                 }}
                 disabled={!category || submitting}
                 className="flex items-center gap-1.5 text-[12.5px] font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-3.5 py-1.5"

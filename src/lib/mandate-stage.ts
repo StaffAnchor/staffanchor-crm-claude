@@ -66,6 +66,12 @@ const SOURCE_LABEL: Record<StageSource, string> = {
 // snake_case so they're stable to group by even if the label text changes.
 export const RECRUITER_REJECTION_REASONS: { value: string; label: string }[] = [
   { value: "skills_mismatch", label: "Skills/experience mismatch" },
+  // Added from what recruiters kept typing in the free-text box ("Job hopper", "Lacks stability", "Experience is very
+  // high compared to requirement", "Not from edtech background"): these were being filed as skills mismatch or Other.
+  { value: "stability_concern", label: "Stability: frequent job changes" },
+  { value: "overqualified", label: "Too senior / overqualified" },
+  { value: "underqualified", label: "Too junior / not enough experience" },
+  { value: "domain_mismatch", label: "Not from the required industry or background" },
   { value: "salary_mismatch", label: "Salary expectation mismatch" },
   { value: "location_mismatch", label: "Location/work-mode mismatch" },
   { value: "culture_fit", label: "Culture/team fit concern" },
