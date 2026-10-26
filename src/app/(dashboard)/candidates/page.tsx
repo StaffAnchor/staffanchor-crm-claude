@@ -422,6 +422,16 @@ export default async function CandidatesPage({
     | { candidate_id: string; stage: string; date_of_joining: string | null; rejected_from_stage: string | null }[]
     | null;
 
+  // Top tier filter: the people in the chosen tier, best pay-to-experience ratio first, and the slice for this page.
+  let topIds: string[] | null = null;
+  let topPageIds: string[] | null = null;
+  if (params.top === "top" || params.top === "ask" || params.top === "call") {
+    const tier = params.top === "top" ? "top" : params.top === "ask" ? "ask_open" : "worth_a_call";
+    const { data: tierRows } = await supabase.from("candidate_top_tier").select("candidate_id, pay_ratio").eq("tier", tier).order("pay_ratio", { ascending: false, nullsFirst: false }).limit(5000);
+    topIds = ((tierRows ?? []) as { candidate_id: string }[]).map((r) => r.candidate_id);
+    topPageIds = topIds.slice(rangeFrom, rangeTo + 1);
+  }
+
   // Applies every filter to a given query builder. Shared by the data query
   // (below) and the count query so page-of-rows and total-matching-count
   // can never drift out of sync with each other.
@@ -448,9 +458,9 @@ export default async function CandidatesPage({
     if (params.category) qq = qq.eq("category", params.category);
     // Top tier (see the candidate_top_tier view): top = all five tests passed, ask = strong but not yet confirmed open,
     // call = passes pay and experience, communication not rated yet.
-    if (params.top === "top" || params.top === "ask" || params.top === "call") {
-      qq = qq.eq("top_tier", params.top === "top" ? "top" : params.top === "ask" ? "ask_open" : "worth_a_call");
-    }
+    // The people are looked up once in the view (below) and only those rows are loaded. Filtering by the computed column
+    // instead made the database re-check the rule for every row (about 5 seconds), which with the sort ran past the limit.
+    if (topPageIds) qq = qq.in("id", topPageIds.length ? topPageIds : ["00000000-0000-0000-0000-000000000000"]);
     if (params.ready && ["ready", "almost", "needs_work"].includes(params.ready)) qq = qq.eq("readiness_tier", params.ready);
     if (params.missing && /^[a-z_]+$/.test(params.missing)) qq = qq.contains("readiness_missing", [params.missing]);
     if (params.group === "review") qq = qq.eq("profile_group_needs_review", true);
@@ -581,13 +591,11 @@ export default async function CandidatesPage({
     .select(
       "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, city_canonical, employer_canonical, readiness_score, readiness_tier, readiness_missing, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
     )
-    .order(params.top === "top" || params.top === "ask" || params.top === "call" ? "pay_ratio_value" : "created_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false })
-    .range(rangeFrom, rangeTo);
-  const query = applyFilters(baseQuery);
-  const countQuery = applyFilters(
-    supabase.from("candidates").select("id", { count: "exact", head: true })
-  );
+    .order("created_at", { ascending: false });
+  const query = applyFilters(topIds ? baseQuery : baseQuery.range(rangeFrom, rangeTo));
+  const countQuery = topIds
+    ? Promise.resolve({ count: topIds.length })
+    : applyFilters(supabase.from("candidates").select("id", { count: "exact", head: true }));
 
   const [
     { data: candidates, error },
@@ -599,6 +607,10 @@ export default async function CandidatesPage({
     },
     { count: number | null },
   ];
+  if (topIds && candidates) {
+    const rank = new Map(topIds.map((id, i) => [id, i]));
+    candidates.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+  }
   const totalFiltered = filteredCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
   const rangeStart = totalFiltered === 0 ? 0 : rangeFrom + 1;
