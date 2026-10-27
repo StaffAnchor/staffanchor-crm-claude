@@ -12,6 +12,7 @@ export function chipsOf(spec: SearchSpec): Chip[] {
   }
   if (spec.max_expected_ctc !== null) out.push({ id: "ectc", text: `Expected ≤ ${spec.max_expected_ctc} LPA`, kind: "hard", remove: (s) => ({ ...s, max_expected_ctc: null }) });
   if (spec.max_current_ctc !== null) out.push({ id: "cctc", text: `Current ≤ ${spec.max_current_ctc} LPA`, kind: "hard", remove: (s) => ({ ...s, max_current_ctc: null }) });
+  if (spec.min_current_ctc !== null) out.push({ id: "cctcmin", text: `Current ≥ ${spec.min_current_ctc} LPA`, kind: "hard", remove: (s) => ({ ...s, min_current_ctc: null }) });
   if (spec.max_notice_days !== null) out.push({ id: "notice", text: spec.max_notice_days === 0 ? "Immediate joiner" : `Notice ≤ ${spec.max_notice_days} days`, kind: "hard", remove: (s) => ({ ...s, max_notice_days: null }) });
   spec.must.forEach((m) => out.push({ id: `must:${m}`, text: m, kind: "must", remove: (s) => ({ ...s, must: s.must.filter((x) => x !== m) }) }));
   spec.nice.forEach((m) => out.push({ id: `nice:${m}`, text: `${m} (nice to have)`, kind: "nice", remove: (s) => ({ ...s, nice: s.nice.filter((x) => x !== m) }) }));

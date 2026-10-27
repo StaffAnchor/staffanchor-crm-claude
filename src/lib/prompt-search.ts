@@ -84,7 +84,8 @@ function parseJson(raw: string): unknown {
 
 /** Step 1: what is the recruiter asking for? Falls back to "no constraints" if the AI can't be reached. */
 export async function understandPrompt(prompt: string): Promise<{ spec: SearchSpec; understood: boolean }> {
-  const ask = `A recruiter typed this search for candidates in an Indian sales-hiring database:\n"""${prompt.slice(0, 1200)}"""\n\nReturn ONLY a JSON object with exactly these keys:\n{"cities": string[], "min_exp": number|null, "max_exp": number|null, "max_expected_ctc": number|null, "max_current_ctc": number|null, "max_notice_days": number|null, "must": string[], "nice": string[]}\n\nRules:\n- Fill a constraint ONLY if the recruiter clearly stated it. Otherwise null or [].\n- cities: city names exactly as typed (a region like "NCR" stays "NCR").\n- min_exp / max_exp: years. "4-7 years" is 4 and 7; "8+ years" is min 8, max null; "under 5 years" is max 5.\n- CTC figures are lakhs per year (LPA). "expected CTC under 30 LPA" is max_expected_ctc 30.\n- max_notice_days: "immediate" is 0, "under 30 days" is 30, "2 months" is 60.\n- must: the qualitative things a CV must show (for example "hunter, not farmer", "B2B SaaS", "has managed a team"). Short phrases, at most 6. Do NOT repeat the constraints above here.\n- nice: preferences that are not mandatory, at most 6.`;
+  const ask = `A recruiter typed this search for candidates in an Indian sales-hiring database:\n"""${prompt.slice(0, 1200)}"""\n\nReturn ONLY a JSON object with exactly these keys:\n{"cities": string[], "min_exp": number|null, "max_exp": number|null, "max_expected_ctc": number|null, "max_current_ctc": number|null, "min_current_ctc": number|null, "max_notice_days": number|null, "must": string[], "nice": string[]}\n\nRules:\n- Fill a constraint ONLY if the recruiter clearly stated it. Otherwise null or [].\n- cities: city names exactly as typed (a region like "NCR" stays "NCR").\n- min_exp / max_exp: years. "4-7 years" is 4 and 7; "8+ years" is min 8, max null; "under 5 years" is max 5.\n- CTC figures are lakhs per year (LPA). "expected CTC under 30 LPA" is max_expected_ctc 30.\n- min_current_ctc: a lower bound on current CTC. "CTC above 10L", "10 LPA and above" or "earning 10+ lakh" is 10. A bare "CTC" with no word like expected means current CTC.
+- max_notice_days: "immediate" is 0, "under 30 days" is 30, "2 months" is 60.\n- must: the qualitative things a CV must show (for example "hunter, not farmer", "B2B SaaS", "has managed a team"). Short phrases, at most 6. Do NOT repeat the constraints above here.\n- nice: preferences that are not mandatory, at most 6.`;
   try {
     const { text } = await generateTextWithFallback(ask, { json: true, thinkingBudget: 256 });
     return { spec: sanitizeSpec(parseJson(text)), understood: true };
@@ -142,6 +143,7 @@ export function mergeSpecs(baseIn: SearchSpec, ask: SearchSpec): SearchSpec {
     max_exp: ask.max_exp ?? base.max_exp,
     max_expected_ctc: ask.max_expected_ctc ?? base.max_expected_ctc,
     max_current_ctc: ask.max_current_ctc ?? base.max_current_ctc,
+    min_current_ctc: ask.min_current_ctc ?? base.min_current_ctc,
     max_notice_days: ask.max_notice_days ?? base.max_notice_days,
     must: uniq([...ask.must, ...base.must]).slice(0, 8),
     nice: uniq([...ask.nice, ...base.nice]).slice(0, 8),

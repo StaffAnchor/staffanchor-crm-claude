@@ -9,6 +9,8 @@ export interface SearchSpec {
   /** lakhs per year */
   max_expected_ctc: number | null;
   max_current_ctc: number | null;
+  /** "CTC above 10 lakh" means current fixed CTC at least this */
+  min_current_ctc: number | null;
   max_notice_days: number | null;
   /** things a CV has to show, e.g. "hunter, not farmer" or "B2B SaaS" */
   must: string[];
@@ -16,7 +18,7 @@ export interface SearchSpec {
   nice: string[];
 }
 
-export const emptySpec = (): SearchSpec => ({ cities: [], min_exp: null, max_exp: null, max_expected_ctc: null, max_current_ctc: null, max_notice_days: null, must: [], nice: [] });
+export const emptySpec = (): SearchSpec => ({ cities: [], min_exp: null, max_exp: null, max_expected_ctc: null, max_current_ctc: null, min_current_ctc: null, max_notice_days: null, must: [], nice: [] });
 
 export type CheckStatus = "met" | "near" | "unknown" | "not_met";
 export interface Check {
@@ -120,6 +122,16 @@ export function evaluateConstraints(c: CandidateFacts, spec: SearchSpec): Check[
   ctcCheck("expected_ctc", spec.max_expected_ctc, c.expected_fixed_ctc, "Expected CTC");
   ctcCheck("current_ctc", spec.max_current_ctc, c.current_fixed_ctc, "Current CTC");
 
+  if (spec.min_current_ctc !== null) {
+    const min = spec.min_current_ctc;
+    const label = `Current CTC ${min}+ LPA`;
+    const v = num(c.current_fixed_ctc);
+    if (v === null) out.push({ key: "current_ctc_min", label, status: "unknown", evidence: "Current CTC not on file" });
+    else if (v >= min) out.push({ key: "current_ctc_min", label, status: "met", evidence: `${v} LPA` });
+    else if (v >= min * 0.9) out.push({ key: "current_ctc_min", label, status: "near", evidence: `${v} LPA, slightly below` });
+    else out.push({ key: "current_ctc_min", label, status: "not_met", evidence: `${v} LPA, below ${min}` });
+  }
+
   if (spec.max_notice_days !== null) {
     const label = spec.max_notice_days === 0 ? "Immediate joiner" : `Notice up to ${spec.max_notice_days} days`;
     const d = noticeDays(c.notice_period);
@@ -144,6 +156,7 @@ export function sanitizeSpec(raw: unknown): SearchSpec {
     max_exp: n(r.max_exp, 0, 50),
     max_expected_ctc: n(r.max_expected_ctc, 0.5, 500),
     max_current_ctc: n(r.max_current_ctc, 0.5, 500),
+    min_current_ctc: n(r.min_current_ctc, 0.5, 500),
     max_notice_days: n(r.max_notice_days, 0, 365),
     must: strs(r.must, 6),
     nice: strs(r.nice, 6),
@@ -153,4 +166,4 @@ export function sanitizeSpec(raw: unknown): SearchSpec {
 }
 
 export const hasConstraints = (s: SearchSpec) =>
-  s.cities.length > 0 || s.min_exp !== null || s.max_exp !== null || s.max_expected_ctc !== null || s.max_current_ctc !== null || s.max_notice_days !== null;
+  s.cities.length > 0 || s.min_exp !== null || s.max_exp !== null || s.max_expected_ctc !== null || s.max_current_ctc !== null || s.min_current_ctc !== null || s.max_notice_days !== null;
