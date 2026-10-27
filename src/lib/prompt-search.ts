@@ -198,7 +198,7 @@ export async function searchCandidates(
       const { generateEmbedding } = await import("@/lib/embeddings");
       const emb = await generateEmbedding(options.embeddingText ?? trimmed);
       if (emb) {
-        const { data: sem } = await supabase.rpc("match_candidates", { query_embedding: emb, match_count: 1000 });
+        const { data: sem } = await supabase.rpc("match_candidates_exact", { query_embedding: emb, match_count: 1000 });
         const ids = ((sem ?? []) as { id: string; similarity: number }[]).filter((m) => m.id).map((m) => {
           similarity.set(m.id, m.similarity);
           return m.id;
