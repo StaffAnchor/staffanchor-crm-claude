@@ -100,6 +100,7 @@ export const CLIENT_REJECTION_REASONS: { value: string; label: string }[] = [
   { value: "client_notice_period", label: "Client: notice period too long" },
   { value: "role_paused_or_closed", label: "Role paused or closed" },
   { value: "lost_to_other_candidate", label: "Client chose another candidate" },
+  { value: "already_interviewed", label: "Client: already interviewed or in their process" },
   { value: "lost_to_other_agency", label: "Lost to another agency/source" },
   { value: "no_client_feedback", label: "Client passed, no reason given" },
   { value: "other_client", label: "Other" },
