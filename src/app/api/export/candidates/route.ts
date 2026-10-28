@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
     .select(
       "candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, sub_domain, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, status, current_industry, role_level, role_type, work_mode, open_to_relocation, created_at"
     )
-    .order("created_at", { ascending: false })
+    .order(params.get("sort") === "updated" ? "updated_at" : "created_at", { ascending: false })
     .limit(5000);
 
   const q = params.get("q");

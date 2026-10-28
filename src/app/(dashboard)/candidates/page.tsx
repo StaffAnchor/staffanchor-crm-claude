@@ -184,6 +184,7 @@ const SALES_GROUPS = ["b2b_sales", "b2c_sales"];
 
 type SearchParams = {
   q?: string;
+  sort?: string;
   top?: string;
   ready?: string;
   missing?: string;
@@ -589,9 +590,9 @@ export default async function CandidatesPage({
   const baseQuery = supabase
     .from("candidates")
     .select(
-      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, city_canonical, employer_canonical, readiness_score, readiness_tier, readiness_missing, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at"
+      "id, candidate_number, full_name, email, phone, current_location, current_employer, current_job_title, category, profile_group, profile_subgroup, profile_group_also, profile_group_needs_review, profile_group_reason, city_canonical, employer_canonical, readiness_score, readiness_tier, readiness_missing, sub_domain, secondary_sub_domains, current_industry, industries, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_employment_status, highest_qualification, work_mode, open_to_relocation, status, created_by, created_by_user, recruiter_assessment, segment_data, owner_id, verification_level, resume_file_url, ai_summary, stability_score, created_at, updated_at"
     )
-    .order("created_at", { ascending: false });
+    .order(params.sort === "updated" ? "updated_at" : "created_at", { ascending: false });
   const query = applyFilters(topIds ? baseQuery : baseQuery.range(rangeFrom, rangeTo));
   const countQuery = topIds
     ? Promise.resolve({ count: topIds.length })

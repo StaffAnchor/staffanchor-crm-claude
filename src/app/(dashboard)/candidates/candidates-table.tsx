@@ -119,6 +119,7 @@ export type CandidateRow = {
   // generateCareerTimelineForCandidate, now fired on every new candidate).
   stability_score: number | null;
   created_at: string;
+  updated_at?: string | null;
   // Practice + seniority tags (see candidate_practices / practices tables) --
   // pre-joined server-side (candidates/page.tsx) rather than fetched per-row,
   // same batching approach as resume_signed_url above.
@@ -531,7 +532,12 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "created_at",
     label: "Profile Created",
-    render: (c) => <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">{formatDate(c.created_at)}</span>,
+    render: (c) => (
+      <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">
+        {formatDate(c.created_at)}
+        {c.updated_at && formatDate(c.updated_at) !== formatDate(c.created_at) ? <span className="block text-[11px] text-slate-400 dark:text-slate-500">Updated {formatDate(c.updated_at)}</span> : null}
+      </span>
+    ),
   },
   {
     key: "owner",
@@ -1623,6 +1629,24 @@ export default function CandidatesTable({
             : `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`}
         </p>
         <div className="flex items-center gap-1">
+          <label className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 px-2.5 py-1.5">
+            Sort
+            <select
+              value={searchParams.get("sort") === "updated" ? "updated" : "created"}
+              onChange={(e) => {
+                const sp = new URLSearchParams(searchParams.toString());
+                if (e.target.value === "updated") sp.set("sort", "updated");
+                else sp.delete("sort");
+                sp.delete("page");
+                const q = sp.toString();
+                router.push(q ? `/candidates?${q}` : "/candidates");
+              }}
+              className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[12px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              <option value="created">Newest profiles</option>
+              <option value="updated">Recently updated</option>
+            </select>
+          </label>
           <a
             href={`/api/export/candidates?${new URLSearchParams({
               ...(fromQS ? Object.fromEntries(new URLSearchParams(fromQS)) : {}),
