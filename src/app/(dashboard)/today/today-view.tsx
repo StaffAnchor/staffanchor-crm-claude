@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, CalendarClock, Hourglass, Handshake, Trophy, CheckCircle2, ListChecks } from "lucide-react";
 import FocusStack from "./focus-stack";
+import ClientReplies from "./client-replies";
+import type { ClientReply } from "@/lib/client-replies";
 import Sparkline from "@/components/ui/sparkline";
 import type { FocusData } from "@/lib/today-focus";
 import { KIND_LABEL, type WaitingItem } from "@/lib/waiting-queue";
@@ -151,7 +153,7 @@ function TrendTile({ label, values, sub }: { label: string; values: number[]; su
   );
 }
 
-export default function TodayView({ desk, focus, waiting, trends }: { desk: TodayDesk; focus: FocusData; waiting: WaitingItem[]; trends: { newProfiles: number[]; addedToRoles: number[] } }) {
+export default function TodayView({ desk, focus, waiting, trends, replies }: { desk: TodayDesk; focus: FocusData; waiting: WaitingItem[]; trends: { newProfiles: number[]; addedToRoles: number[] }; replies: { items: ClientReply[]; unseen: number } }) {
   const { metrics } = desk;
   const needCount = desk.decisions.length + desk.moreDecisions;
   const placements = metrics.placements;
@@ -159,6 +161,8 @@ export default function TodayView({ desk, focus, waiting, trends }: { desk: Toda
   return (
     <div className="max-w-[1200px] mx-auto px-5 py-8">
       <FocusStack cards={focus.cards} greeting={desk.greeting} firstName={desk.firstName} fees={focus.feesInPlay} />
+
+      <ClientReplies items={replies.items} unseen={replies.unseen} />
 
       <section className={`${card} mb-6`}>
         <header className="px-4 pt-4 pb-3">

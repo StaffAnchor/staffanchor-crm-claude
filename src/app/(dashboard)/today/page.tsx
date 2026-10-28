@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadTodayDesk } from "@/lib/today-desk";
 import { loadFocus } from "@/lib/today-focus";
+import { loadClientReplies } from "@/lib/client-replies";
 import { adminDb } from "@/lib/pro-sessions/core";
 import { loadWaiting } from "@/lib/waiting-queue";
 import TodayView from "./today-view";
@@ -37,6 +38,7 @@ export default async function TodayPage() {
 
   const desk = await loadTodayDesk(supabase, user.id, name);
   const focus = await loadFocus(supabase, user.id, desk).catch(() => ({ cards: [], feesInPlay: null }));
+  const replies = await loadClientReplies(supabase).catch(() => ({ items: [], unseen: 0 }));
   const admin = adminDb();
   const waiting = admin ? await loadWaiting(admin).catch(() => []) : [];
   const since = trendSince();
@@ -47,5 +49,5 @@ export default async function TodayPage() {
       ])
     : [{ data: null }, { data: null }];
   const trends = { newProfiles: perDay(newProfiles), addedToRoles: perDay(addedToRoles) };
-  return <TodayView desk={desk} focus={focus} waiting={waiting} trends={trends} />;
+  return <TodayView desk={desk} focus={focus} waiting={waiting} trends={trends} replies={replies} />;
 }
