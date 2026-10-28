@@ -53,6 +53,7 @@ export default function ClientReplies({ items, unseen }: { items: ClientReply[];
               {showLogins ? "Hide sign-ins" : `Show sign-ins (${logins.length})`}
             </button>
           )}
+          <Link href="/clients/activity" className="font-medium text-teal-700 hover:underline dark:text-teal-300">See all</Link>
           {unseen > 0 && (
             <button type="button" onClick={markSeen} disabled={busy} className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
               <Check className="h-4 w-4" /> Mark all seen
