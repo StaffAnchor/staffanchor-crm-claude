@@ -164,12 +164,20 @@ export default async function ClientDetailPage({
               {(contacts ?? [])[0] ? ` · ${(contacts ?? [])[0].full_name}${(contacts ?? [])[0].designation ? `, ${(contacts ?? [])[0].designation}` : ""}` : ""}
             </p>
           </div>
+          <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/clients/activity?client=${encodeURIComponent(id)}`}
+            className="rounded-ros-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-[13px] font-semibold px-4 py-2 transition-colors"
+          >
+            Portal activity
+          </Link>
           <Link
             href={`/mandates?newClientId=${encodeURIComponent(id)}&newClientName=${encodeURIComponent(clientRow.name)}#new-mandate`}
             className="shrink-0 rounded-ros-md bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-semibold px-4 py-2 transition-colors"
           >
             + Create a role
           </Link>
+          </div>
         </div>
       </Card>
 

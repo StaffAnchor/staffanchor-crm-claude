@@ -151,6 +151,10 @@ export default async function ClientsPage({
               {isPartnerView ? " you brought in" : " in your database"}
             </p>
           </div>
+          <div className="flex items-center gap-2">
+          <Link href="/clients/activity" className="rounded-full border border-slate-200 dark:border-slate-700 px-4 py-2 text-[13px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+            Client activity
+          </Link>
           <details className="group relative">
             <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-teal-700 [&::-webkit-details-marker]:hidden">
               <span aria-hidden>+</span> New client
@@ -162,6 +166,7 @@ export default async function ClientsPage({
               </Card>
             </div>
           </details>
+          </div>
         </div>
 
         <div className="bg-slate-50/60 dark:bg-slate-800/50 rounded-ros-lg p-2 mb-4">
