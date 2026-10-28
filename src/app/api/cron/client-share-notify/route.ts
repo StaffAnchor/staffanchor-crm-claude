@@ -17,6 +17,7 @@ const one = <T,>(v: One<T>): T | null => (Array.isArray(v) ? v[0] ?? null : v);
 type Row = {
   id: string;
   mandate_id: string;
+  client_note: string | null;
   candidates: One<{ full_name: string | null; current_job_title: string | null; current_employer: string | null; total_experience_years: number | null }>;
   mandates: One<{ role_title: string | null; client_id: string | null; clients: One<{ name: string | null }> }>;
 };
@@ -34,7 +35,7 @@ async function handler(req: NextRequest) {
 
   const { data } = await admin
     .from("candidate_mandate_links")
-    .select("id, mandate_id, candidates(full_name, current_job_title, current_employer, total_experience_years), mandates(role_title, client_id, clients(name))")
+    .select("id, mandate_id, client_note, candidates(full_name, current_job_title, current_employer, total_experience_years), mandates(role_title, client_id, clients(name))")
     .eq("in_shortlist", true)
     .is("client_notified_at", null)
     .not("stage", "in", "(rejected,pulled_back)")
@@ -61,16 +62,16 @@ async function handler(req: NextRequest) {
     const lines = rows.map((r) => {
       const c = one(r.candidates);
       const bits = [c?.current_job_title, c?.current_employer, c?.total_experience_years != null ? `${Math.round(c.total_experience_years)} yrs` : null].filter(Boolean).join(" · ");
-      return { name: c?.full_name ?? "A candidate", bits };
+      return { name: c?.full_name ?? "A candidate", bits, note: r.client_note?.trim() || null };
     });
     const url = `${PORTAL}/${mandateId}`;
     const subject = n === 1 ? `New candidate shared for ${role}` : `${n} new candidates shared for ${role}`;
-    const listHtml = lines.map((l) => `<li style="margin:0 0 8px"><strong>${esc(l.name)}</strong>${l.bits ? `<br><span style="color:#475569">${esc(l.bits)}</span>` : ""}</li>`).join("");
+    const listHtml = lines.map((l) => `<li style="margin:0 0 8px"><strong>${esc(l.name)}</strong>${l.bits ? `<br><span style="color:#475569">${esc(l.bits)}</span>` : ""}${l.note ? `<br><span style="color:#92400e">Note: ${esc(l.note)}</span>` : ""}</li>`).join("");
     const html = renderEmailShell({
       preheader: subject,
       bodyHtml: `<p>Hi,</p><p>${n === 1 ? "A new candidate has" : `${n} new candidates have`} been shared with you for <strong>${esc(role)}</strong>:</p><ul style="padding-left:18px">${listHtml}</ul><p><a href="${url}" style="display:inline-block;background:#0F172A;color:#ffffff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Review in your portal</a></p><p style="color:#475569">You can mark each one Interested, request an interview, or pass, right from the portal.</p>`,
     });
-    const text = `${n === 1 ? "A new candidate has" : `${n} new candidates have`} been shared with you for ${role}:\n\n${lines.map((l) => `- ${l.name}${l.bits ? ` (${l.bits})` : ""}`).join("\n")}\n\nReview in your portal: ${url}`;
+    const text = `${n === 1 ? "A new candidate has" : `${n} new candidates have`} been shared with you for ${role}:\n\n${lines.map((l) => `- ${l.name}${l.bits ? ` (${l.bits})` : ""}${l.note ? `\n  Note: ${l.note}` : ""}`).join("\n")}\n\nReview in your portal: ${url}`;
 
     if (!live) {
       results.push({ role, client: clientName, candidates: n, to, sent: false });

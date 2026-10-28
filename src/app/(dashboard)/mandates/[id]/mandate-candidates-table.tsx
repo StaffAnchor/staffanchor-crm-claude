@@ -37,6 +37,47 @@ const JOINING_STAGES = new Set<string>(["offer", "placed"]);
 // counts as a strong match" consistent whether a recruiter is looking at
 // the match list or the pipeline table/board.
 
+// A short note for the client, shown on this candidate's card in the client portal once the candidate is shared. Saved on its
+// own, so it can be written before or after sharing.
+function ClientNoteBox({ linkId, initial, onSaved }: { linkId: string; initial: string | null; onSaved: (note: string | null) => void }) {
+  const supabase = createClient();
+  const [text, setText] = useState(initial ?? "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const dirty = text.trim() !== (initial ?? "").trim();
+
+  async function save() {
+    setBusy(true);
+    setErr(null);
+    const note = text.trim() || null;
+    const { error } = await supabase.from("candidate_mandate_links").update({ client_note: note }).eq("id", linkId);
+    setBusy(false);
+    if (error) setErr(error.message);
+    else onSaved(note);
+  }
+
+  return (
+    <div className="mt-3 w-full">
+      <label className="mb-1 block text-[12px] font-medium text-slate-600 dark:text-slate-300">Note for the client</label>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        maxLength={1000}
+        placeholder="Optional. Shown on this candidate's card in the client portal."
+        className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+      />
+      <div className="mt-1 flex items-center gap-2">
+        <button type="button" onClick={save} disabled={busy || !dirty} className="rounded-lg bg-teal-600 px-3 py-1 text-xs font-medium text-white hover:bg-teal-500 disabled:opacity-40">
+          {busy ? "Saving…" : "Save note"}
+        </button>
+        {!dirty && initial ? <span className="text-xs text-emerald-700">Saved, client can see it once shared</span> : null}
+        {err ? <span className="text-xs text-rose-600">{err}</span> : null}
+      </div>
+    </div>
+  );
+}
+
 export type MandateCandidateRow = {
   id: string;
   stage: string;
@@ -101,6 +142,8 @@ export type MandateCandidateRow = {
   // Why the client passed, as they chose it in the portal (and any note they added).
   client_pass_reason: string | null;
   client_pass_note: string | null;
+  // A note from us that the client sees on this candidate's card in the portal.
+  client_note: string | null;
   candidate: {
     id: string;
     full_name: string;
@@ -986,7 +1029,11 @@ export default function MandateCandidatesTable({
                     </span>
                   )}
                 </div>
-              
+                <ClientNoteBox
+                  linkId={l.id}
+                  initial={l.client_note}
+                  onSaved={(note) => setRows((prev) => prev.map((r) => (r.id === l.id ? { ...r, client_note: note } : r)))}
+                />
                       </div>
                     </div>
                   </td>
