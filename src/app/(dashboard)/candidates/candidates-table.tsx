@@ -219,6 +219,10 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" });
 }
 
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true });
+}
+
 function ScoreCell({ value }: { value: number | undefined }) {
   if (!value) return <span className="text-xs text-slate-300">—</span>;
   return (
@@ -535,7 +539,8 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (c) => (
       <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">
         {formatDate(c.created_at)}
-        {c.updated_at && formatDate(c.updated_at) !== formatDate(c.created_at) ? <span className="block text-[11px] text-slate-400 dark:text-slate-500">Updated {formatDate(c.updated_at)}</span> : null}
+        <span className="block text-[11px] text-slate-400 dark:text-slate-500">{formatTime(c.created_at)}</span>
+        {c.updated_at && formatDate(c.updated_at) !== formatDate(c.created_at) ? <span className="block text-[11px] text-slate-400 dark:text-slate-500">Updated {formatDate(c.updated_at)}, {formatTime(c.updated_at)}</span> : null}
       </span>
     ),
   },
