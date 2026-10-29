@@ -1,3 +1,4 @@
+import { passPatternsFor, type PassRef } from "@/lib/client-pass-patterns";
 import CopyShareLinkButton from "./copy-share-link-button";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -325,6 +326,28 @@ export default async function MandateDetailPage({
     else if (submittedCount === 0) nextAction = { text: `${pipelineCount} candidate${pipelineCount === 1 ? "" : "s"} in the pipeline, none shared with the client. Shortlist and submit.` };
   }
 
+  // Warn before sharing someone who looks like people this client has already passed on.
+  const passRefs: PassRef[] = [];
+  const profById = new Map<string, { years: number | null; pay: number | null; industry: string | null; city: string | null }>();
+  if (mandate.client_id) {
+    const { data: clientRoles } = await supabase.from("mandates").select("id").eq("client_id", mandate.client_id);
+    const roleIds = (clientRoles ?? []).map((m) => m.id as string);
+    const { data: passRows } = roleIds.length
+      ? await supabase.from("candidate_mandate_links").select("client_pass_reason, candidates(total_experience_years, expected_fixed_ctc, current_industry, current_location)").in("mandate_id", roleIds).eq("client_feedback", "not_interested").not("client_pass_reason", "is", null)
+      : { data: [] };
+    for (const r of (passRows ?? []) as unknown as { client_pass_reason: string; candidates: { total_experience_years: number | null; expected_fixed_ctc: number | null; current_industry: string | null; current_location: string | null } | { total_experience_years: number | null; expected_fixed_ctc: number | null; current_industry: string | null; current_location: string | null }[] | null }[]) {
+      const c = Array.isArray(r.candidates) ? r.candidates[0] : r.candidates;
+      passRefs.push({ reason: r.client_pass_reason, years: c?.total_experience_years != null ? Number(c.total_experience_years) : null, pay: c?.expected_fixed_ctc != null ? Number(c.expected_fixed_ctc) : null, industry: c?.current_industry ?? null, city: c?.current_location ?? null });
+    }
+    const unsharedIds = (links ?? []).filter((l) => !l.in_shortlist && !["rejected", "pulled_back", "placed"].includes(l.stage as string)).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter((x): x is string => !!x);
+    if (passRefs.length > 0 && unsharedIds.length > 0) {
+      const { data: profs } = await supabase.from("candidates").select("id, total_experience_years, expected_fixed_ctc, current_industry, current_location").in("id", unsharedIds);
+      for (const c of (profs ?? []) as { id: string; total_experience_years: number | null; expected_fixed_ctc: number | null; current_industry: string | null; current_location: string | null }[]) {
+        profById.set(c.id, { years: c.total_experience_years != null ? Number(c.total_experience_years) : null, pay: c.expected_fixed_ctc != null ? Number(c.expected_fixed_ctc) : null, industry: c.current_industry, city: c.current_location });
+      }
+    }
+  }
+
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
       <Link href={backHref} className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200">
@@ -499,6 +522,7 @@ export default async function MandateDetailPage({
                 client_pass_reason: (l.client_pass_reason as string | null) ?? null,
                 client_pass_note: (l.client_pass_note as string | null) ?? null,
                 client_note: (l.client_note as string | null) ?? null,
+                pass_patterns: l.in_shortlist ? [] : (profById.get(cand.id) ? passPatternsFor(profById.get(cand.id)!, passRefs) : []).map((p) => `${p.label} (${p.count} earlier pass${p.count === 1 ? "" : "es"}): ${p.detail}`),
                 candidate: cand,
                 screened: screenedCandidateIds.includes(cand.id),
               };

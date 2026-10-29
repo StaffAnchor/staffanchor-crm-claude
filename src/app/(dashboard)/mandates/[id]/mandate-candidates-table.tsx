@@ -144,6 +144,8 @@ export type MandateCandidateRow = {
   client_pass_note: string | null;
   // A note from us that the client sees on this candidate's card in the portal.
   client_note: string | null;
+  // Ways this not-yet-shared candidate resembles people the client has passed on, worded for the recruiter.
+  pass_patterns: string[];
   candidate: {
     id: string;
     full_name: string;
@@ -846,6 +848,11 @@ export default function MandateCandidatesTable({
                 )}
               </td>
                 <td className="whitespace-nowrap px-3 py-3 align-top text-right">
+                  {!l.in_shortlist && l.pass_patterns.length > 0 && (
+                    <span className="mr-2 inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 align-middle text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
+                      Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
+                    </span>
+                  )}
                   {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
                     l.match_assessment?.recommendation === "Not a Fit" ? (
                       <button type="button" onClick={() => void shareWithClient(l)} title="The assessment says this is not a fit. Clients are sometimes fine with exceptions." className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
