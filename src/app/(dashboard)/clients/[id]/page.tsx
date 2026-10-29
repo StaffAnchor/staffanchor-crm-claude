@@ -1,3 +1,4 @@
+import ClientLearningsPanel, { type LearnRow } from "./client-learnings-panel";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -72,7 +73,7 @@ export default async function ClientDetailPage({
   const { data: sharedRows } = mandateIds.length
     ? await supabase
         .from("candidate_mandate_links")
-        .select("id, mandate_id, candidate_id, client_feedback, requested_interview_at, confirmed_interview_at, client_decision_at, shortlisted_at, candidates(full_name)")
+        .select("id, mandate_id, candidate_id, client_feedback, client_pass_reason, client_pass_note, client_note, requested_interview_at, confirmed_interview_at, client_decision_at, shortlisted_at, candidates(full_name, total_experience_years, expected_fixed_ctc)")
         .in("mandate_id", mandateIds)
         .eq("in_shortlist", true)
     : { data: [] };
@@ -85,6 +86,19 @@ export default async function ClientDetailPage({
     interviewRequested: !!r.requested_interview_at,
     interviewConfirmed: !!r.confirmed_interview_at,
     decidedAt: r.client_decision_at,
+  }));
+
+  const roleTitle = new Map((mandates ?? []).map((m) => [m.id, m.role_title as string | null]));
+  const learnRows: LearnRow[] = ((sharedRows ?? []) as unknown as { mandate_id: string; client_feedback: string | null; client_pass_reason: string | null; client_pass_note: string | null; client_note: string | null; client_decision_at: string | null; candidates: { full_name: string; total_experience_years: number | null; expected_fixed_ctc: number | null } | null }[]).map((r) => ({
+    name: r.candidates?.full_name ?? "Unnamed",
+    role: roleTitle.get(r.mandate_id) ?? "Role",
+    feedback: r.client_feedback,
+    reason: r.client_pass_reason,
+    note: r.client_pass_note,
+    ourNote: r.client_note,
+    years: r.candidates?.total_experience_years != null ? Number(r.candidates.total_experience_years) : null,
+    expectedPay: r.candidates?.expected_fixed_ctc != null ? Number(r.candidates.expected_fixed_ctc) : null,
+    at: r.client_decision_at,
   }));
 
   const headerShared = ((sharedRows ?? []) as unknown as { mandate_id: string; client_feedback: string | null; shortlisted_at: string | null; client_decision_at: string | null; requested_interview_at: string | null; confirmed_interview_at: string | null }[]).map((r) => ({
@@ -201,6 +215,7 @@ export default async function ClientDetailPage({
             content: (
               <>
                 <ClientMandatesRollup rows={mandateRows} />
+                <ClientLearningsPanel rows={learnRows} />
                 <ClientFunnelPanel stats={funnelStats} />
               </>
             ),
