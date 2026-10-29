@@ -801,6 +801,30 @@ export default function MandateCandidatesTable({
                         </span>
                       );
                     })()}
+                    {/* What the client has done about this candidate in the portal, visible without expanding the row. */}
+                    {l.in_shortlist && !["rejected", "pulled_back", "placed"].includes(l.stage) && (
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11.5px] font-medium ${
+                          l.client_feedback === "interested"
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                            : l.client_feedback === "interview_requested"
+                              ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300"
+                              : l.client_feedback === "not_interested"
+                                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+                                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                        }`}
+                        title={l.client_feedback === "not_interested" ? [l.client_pass_reason ? rejectionReasonLabel("client_relayed", l.client_pass_reason) : null, l.client_pass_note].filter(Boolean).join(": ") || undefined : undefined}
+                      >
+                        {l.client_feedback === "interested"
+                          ? "Client: interested"
+                          : l.client_feedback === "interview_requested"
+                            ? "Client: wants interview"
+                            : l.client_feedback === "not_interested"
+                              ? `Client passed${l.client_pass_reason ? ` · ${(rejectionReasonLabel("client_relayed", l.client_pass_reason) ?? "").replace(/^Client:?\s*/i, "").replace(/^cited /i, "")}` : ""}`
+                              : "Client: no response yet"}
+                        {l.client_decision_at && l.client_feedback ? ` · ${new Date(l.client_decision_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}
+                      </span>
+                    )}
                     {l.date_of_joining && (
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                         Joining {new Date(l.date_of_joining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
