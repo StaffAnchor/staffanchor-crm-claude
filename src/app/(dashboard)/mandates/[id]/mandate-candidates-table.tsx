@@ -147,6 +147,8 @@ export type MandateCandidateRow = {
   client_note: string | null;
   // Ways this not-yet-shared candidate resembles people the client has passed on, worded for the recruiter.
   pass_patterns: string[];
+  // The last two jobs, newest first, shown beside the stage so screening needs no extra clicks.
+  last_roles: { title: string; company: string | null; period: string }[];
   candidate: {
     id: string;
     full_name: string;
@@ -646,6 +648,7 @@ export default function MandateCandidatesTable({
             <th className="text-left px-3 py-2 font-medium">Fit</th>
             <th className="text-left px-3 py-2 font-medium">Pay · notice</th>
             <th className="text-left px-3 py-2 font-medium">Stage</th>
+            <th className="hidden px-3 py-2 text-left font-medium xl:table-cell">Last two roles</th>
             <th className="px-3 py-2"></th>
           </tr>
         </thead>
@@ -855,6 +858,23 @@ export default function MandateCandidatesTable({
                   </div>
                 )}
               </td>
+                <td className="hidden px-3 py-3 align-top xl:table-cell">
+                  {l.last_roles.length === 0 ? (
+                    <span className="text-xs text-slate-300 dark:text-slate-600">No job history on file</span>
+                  ) : (
+                    <ul className="max-w-[300px] space-y-1.5">
+                      {l.last_roles.map((r, i) => (
+                        <li key={i} className="leading-4" title={`${r.title}${r.company ? `, ${r.company}` : ""}${r.period ? ` (${r.period})` : ""}`}>
+                          <p className="truncate text-[12.5px] font-medium text-slate-800 dark:text-slate-200">{r.title}</p>
+                          <p className="truncate text-[11.5px] text-slate-500 dark:text-slate-400">
+                            {r.company ?? "Company not stated"}
+                            {r.period ? <span className="text-slate-400 dark:text-slate-500"> · {r.period}</span> : null}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </td>
                 <td className="whitespace-nowrap px-3 py-3 align-top text-right">
                   {!l.in_shortlist && l.pass_patterns.length > 0 && (
                     <span className="mr-2 inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 align-middle text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
@@ -897,7 +917,7 @@ export default function MandateCandidatesTable({
               {openRows.has(l.id) && (
                 <tr className="bg-slate-50/60 dark:bg-slate-800/30">
                   <td></td>
-                  <td colSpan={5} className="px-3 pb-4 pt-1">
+                  <td colSpan={6} className="px-3 pb-4 pt-1">
                     <div className="grid items-start gap-4 md:grid-cols-3">
                       <div className="rounded-ros-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                         <p className="mb-3 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Contact and calls</p>
