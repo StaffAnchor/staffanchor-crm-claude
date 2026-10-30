@@ -50,6 +50,7 @@ import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
 import RecommendDialog from "@/components/recommend-dialog";
 import { ProfileRatingPanel } from "@/components/profile-rating";
+import SalesFlagsPanel from "@/components/sales-flags-panel";
 import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
 import { formatExperience } from "@/lib/format-experience";
@@ -743,6 +744,7 @@ export default async function CandidateDetailPage({
           {passportRow ? <SaasPassportCard row={passportRow as unknown as PassportRow} /> : null}
           {candidate.resume_mismatches && candidate.resume_mismatches.length > 0 && <ResumeMismatchesPanel candidateId={candidate.id} mismatches={candidate.resume_mismatches} />}
           <ProfileRatingPanel candidateId={candidate.id} />
+          <SalesFlagsPanel candidateId={candidate.id} />
           <CareerTimelinePanel
             candidateId={candidate.id}
             currentEmployer={candidate.current_employer ?? null}

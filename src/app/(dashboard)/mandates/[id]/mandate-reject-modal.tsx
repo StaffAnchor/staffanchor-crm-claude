@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { X, UserX, Building2, Loader2, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { RatingPicker, emptyDraft, saveProfileRating, type RatingDraft } from "@/components/profile-rating";
+import { saveSalesFlags } from "@/components/sales-flags-panel";
+import { NOT_A_FIT_REASONS } from "@/lib/not-a-fit-reasons";
 import { RECRUITER_REJECTION_REASONS, CLIENT_REJECTION_REASONS, type StageSource } from "@/lib/mandate-stage";
 
 // Replaces the old single "Rejected" dropdown option + easy-to-miss "Client
@@ -36,6 +38,7 @@ export default function MandateRejectModal({
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
   const [rating, setRating] = useState<RatingDraft>(emptyDraft);
+  const [sellerFlags, setSellerFlags] = useState<string[]>([]);
 
   const baseReasons = source === "recruiter" ? RECRUITER_REJECTION_REASONS : CLIENT_REJECTION_REASONS;
 
@@ -181,6 +184,29 @@ export default function MandateRejectModal({
                 className="w-full text-[13px] rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-2 bg-white dark:bg-slate-900 resize-none"
               />
             </div>
+            {candidateId && source === "recruiter" && (
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                  About how they sell? <span className="font-normal text-slate-400">(optional, remembered for other roles)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {NOT_A_FIT_REASONS.filter((r) => r.scope === "person").map((r) => {
+                    const on = sellerFlags.includes(r.value);
+                    return (
+                      <button
+                        key={r.value}
+                        type="button"
+                        title={r.hint}
+                        onClick={() => setSellerFlags((f) => (on ? f.filter((x) => x !== r.value) : [...f, r.value]))}
+                        className={`rounded-full border px-2.5 py-1 text-[12px] font-medium ${on ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300" : "border-slate-200 text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300"}`}
+                      >
+                        {r.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {candidateId && (
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
@@ -198,6 +224,7 @@ export default function MandateRejectModal({
                   if (candidateId && rating.rating) {
                     void saveProfileRating(createClient(), candidateId, { rating: rating.rating, reasons: rating.reasons, note: rating.note }, mandateId);
                   }
+                  if (candidateId && source === "recruiter" && sellerFlags.length > 0) void saveSalesFlags(candidateId, sellerFlags, mandateId);
                   // Whether this was decided from the CV alone or after a conversation is kept with the reason.
                   const basis = source === "recruiter" ? (cvOnly ? "CV only. " : "After a call. ") : "";
                   onConfirm({ source, category, note: `${basis}${note.trim()}`.trim() });
