@@ -678,7 +678,7 @@ export default function MandateCandidatesTable({
             <th className="px-3 pb-2 text-left font-semibold">Fit</th>
             <th className="px-3 pb-2 text-left font-semibold">Pay · notice</th>
             <th className="px-3 pb-2 text-left font-semibold">Stage</th>
-            <th className="hidden px-3 pb-2 text-left font-semibold 2xl:table-cell">Last two roles</th>
+            <th className="hidden px-3 pb-2 text-left font-semibold min-[1700px]:table-cell">Last two roles</th>
             <th className="px-3 pb-2"></th>
           </tr>
         </thead>
@@ -689,7 +689,7 @@ export default function MandateCandidatesTable({
                 <td className={cell(l, "first", openRows.has(l.id), "px-4 py-4 align-top")}>
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
-                <td className={cell(l, "mid", openRows.has(l.id), "min-w-[300px] px-3 py-4 align-top")}>
+                <td className={cell(l, "mid", openRows.has(l.id), "min-w-[260px] px-3 py-4 align-top")}>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link
@@ -733,7 +733,7 @@ export default function MandateCandidatesTable({
                       gave almost everyone 76 to 88 and contradicted the evidence-based
                       verdict. Triage and AI Matches show the verdict with its doubts. */}
                 </div>
-                <div className="mt-1 max-w-[300px] truncate text-xs text-slate-500 dark:text-slate-400 2xl:hidden">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
+                <div className="mt-1 max-w-[300px] truncate text-xs text-slate-500 dark:text-slate-400 min-[1700px]:hidden">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
                 <div className="mt-1.5 max-w-[320px] text-xs text-slate-500 dark:text-slate-400">
                   <p className="truncate">
                     {[l.candidate.current_location ? `📍 ${l.candidate.current_location}` : null, l.candidate.total_experience_years ? `${Math.round(Number(l.candidate.total_experience_years) * 10) / 10} yrs` : null].filter(Boolean).join(" · ")}
@@ -890,11 +890,11 @@ export default function MandateCandidatesTable({
                   </div>
                 )}
               </td>
-                <td className={cell(l, "mid", openRows.has(l.id), "hidden px-3 py-4 align-top 2xl:table-cell")}>
+                <td className={cell(l, "mid", openRows.has(l.id), "hidden px-3 py-4 align-top min-[1700px]:table-cell")}>
                   {l.last_roles.length === 0 ? (
                     <span className="text-xs text-slate-300 dark:text-slate-600">No job history on file</span>
                   ) : (
-                    <ul className="ml-1 max-w-[260px] space-y-2.5 border-l border-slate-200 pl-3 dark:border-slate-700">
+                    <ul className="ml-1 max-w-[220px] space-y-2.5 border-l border-slate-200 pl-3 dark:border-slate-700">
                       {l.last_roles.map((r, i) => (
                         <li key={i} className={`relative leading-4 before:absolute before:-left-[17px] before:top-1 before:h-2 before:w-2 before:rounded-full before:ring-2 before:ring-white before:content-[''] dark:before:ring-slate-900 ${i === 0 ? "before:bg-teal-500" : "before:bg-slate-300 dark:before:bg-slate-600"}`} title={`${r.title}${r.company ? `, ${r.company}` : ""}${r.period ? ` (${r.period})` : ""}`}>
                           <p className="truncate text-[12.5px] font-medium text-slate-800 dark:text-slate-200">{r.title}</p>
@@ -907,7 +907,7 @@ export default function MandateCandidatesTable({
                     </ul>
                   )}
                 </td>
-                <td className={cell(l, "last", openRows.has(l.id), "min-w-[340px] whitespace-nowrap px-3 py-4 align-top")}>
+                <td className={cell(l, "last", openRows.has(l.id), "min-w-[250px] px-3 py-4 align-top")}>
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
 
                     {!l.in_shortlist && l.pass_patterns.length > 0 && (
