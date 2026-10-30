@@ -7,10 +7,10 @@ import SampleChecker, { type Sample } from "./sample-checker";
 export const dynamic = "force-dynamic";
 
 const REASON_LABEL: Record<string, string> = {
-  wrong_role: "Wrong kind of job",
-  wrong_level: "Wrong level",
-  wrong_world: "Sells the wrong thing",
-  wrong_city: "Wrong city",
+  wrong_role: "Different kind of job",
+  wrong_level: "Wrong seniority",
+  wrong_world: "Sells something else",
+  wrong_city: "Location doesn't work",
   pay_too_high: "Pay too high",
   not_interested: "Not interested",
   other: "Other",

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, MessageCircle, UserPlus } from "lucide-react";
 import LazyCvPreview from "./lazy-cv-preview";
+import NotAFitMenu from "./not-a-fit-menu";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import WhatsAppReview from "@/components/whatsapp-review";
 import { useWhatsAppTemplates } from "@/lib/use-whatsapp-templates";
@@ -18,16 +19,6 @@ const GROUPS: { key: Ranked["bucket"]; label: string; blurb: string; tone: strin
 ];
 
 const PER_PAGE = 15;
-
-const DISMISS_REASONS = [
-  { value: "wrong_role", label: "Wrong kind of job" },
-  { value: "wrong_level", label: "Wrong level" },
-  { value: "wrong_world", label: "Sells the wrong thing" },
-  { value: "wrong_city", label: "Wrong city" },
-  { value: "pay_too_high", label: "Pay too high" },
-  { value: "not_interested", label: "Not interested" },
-  { value: "other", label: "Other" },
-];
 
 const MISSING_LABEL: Record<string, string> = { current_ctc: "current pay", expected_ctc: "expected pay", notice: "notice period", industries: "industries", cv_unread: "CV not read", current_employer: "company", relocation: "relocation", city: "city" };
 const missingText = (m: string[] | null | undefined) => (m ?? []).slice(0, 3).map((k) => MISSING_LABEL[k] ?? k.replace(/_/g, " ")).join(", ");
@@ -234,12 +225,7 @@ export default function RankedGroups({ mandateId, ranked: allRanked, reached = {
                   </div>
                 </div>
                 <div className="shrink-0 space-y-2">
-                  <select aria-label="Not a fit" value="" onChange={(e) => dismiss(c.candidate_id, e.target.value)} className="block w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900">
-                    <option value="">Not a fit…</option>
-                    {DISMISS_REASONS.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
+                  <NotAFitMenu onPick={(reason) => dismiss(c.candidate_id, reason)} />
                   <LazyCvPreview candidateId={c.candidate_id} name={c.full_name} />
                   <PipelineTemplateActions candidateId={c.candidate_id} mandateId={mandateId} stage="sourced" missing={[]} showOpportunity />
                 </div>

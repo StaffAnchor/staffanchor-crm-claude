@@ -487,6 +487,7 @@ export default async function MandateDetailPage({
         items={[
           {
             key: "pipeline",
+            tone: "teal",
             label: "Pipeline",
             icon: <Users className="h-3.5 w-3.5" />,
             badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{pipelineCount}</span>,
@@ -574,8 +575,9 @@ export default async function MandateDetailPage({
           },
           {
             key: "best-matches",
+            tone: "violet",
             label: "Matches",
-            icon: <Sparkles className="h-3.5 w-3.5 text-teal-500" />,
+            icon: <Sparkles className="h-3.5 w-3.5" />,
             content: (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -601,13 +603,15 @@ export default async function MandateDetailPage({
           },
           {
             key: "smart",
+            tone: "sky",
             label: "Smart",
-            icon: <Sparkles className="h-3.5 w-3.5 text-teal-500" />,
+            icon: <Sparkles className="h-3.5 w-3.5" />,
             badge: <SmartBadge />,
             content: <SmartSearchTab />,
           },
             {
               key: "intake",
+            tone: "amber",
               label: "Brief",
               icon: <ClipboardList className="h-3.5 w-3.5" />,
               content: (
@@ -696,6 +700,7 @@ export default async function MandateDetailPage({
             },
             {
               key: "screening",
+            tone: "emerald",
               label: "Screening",
               icon: <ListChecks className="h-3.5 w-3.5" />,
               content: (
@@ -725,6 +730,7 @@ export default async function MandateDetailPage({
             },
             {
               key: "sourcing",
+            tone: "orange",
               label: "Sourcing",
               icon: <Users className="h-3.5 w-3.5" />,
               content: (
@@ -736,6 +742,7 @@ export default async function MandateDetailPage({
             },
             {
               key: "sharing",
+            tone: "rose",
               label: "Sharing and client portal",
               icon: <Share2 className="h-3.5 w-3.5" />,
               content: (
