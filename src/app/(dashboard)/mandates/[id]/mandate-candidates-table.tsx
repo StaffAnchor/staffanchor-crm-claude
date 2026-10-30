@@ -100,7 +100,7 @@ export type MandateCandidateRow = {
   origin: "applied" | "team" | "ai" | "vendor" | "earlier";
   origin_label: string;
   screened: boolean;
-  // Set when the candidate paid ₹99 on jobs.staffanchor.com for a recruiter call on this
+  // Set when the candidate paid ₹199 on jobs.staffanchor.com for a recruiter call on this
   // application; the call is promised by call_due_at.
   call_paid_at: string | null;
   call_due_at: string | null;
@@ -723,7 +723,7 @@ export default function MandateCandidatesTable({
                   {l.call_paid_at && (
                               <span
                                 className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
-                                title="Paid ₹99 for a recruiter call, promised by the due date"
+                                title="Paid ₹199 for a recruiter call, promised by the due date"
                               >
                                 <Zap className="h-2 w-2" /> Paid call{l.call_due_at ? ` · by ${new Date(l.call_due_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}
                               </span>

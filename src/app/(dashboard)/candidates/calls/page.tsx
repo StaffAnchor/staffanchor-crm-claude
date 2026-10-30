@@ -62,7 +62,7 @@ export default async function CallsTodayPage({ searchParams }: { searchParams: P
       .slice(0, 25)
       .map((x) => x.p);
   }
-  // People who paid ₹99 for a recruiter call go before everything else, soonest deadline first, until a call attempt is logged.
+  // People who paid ₹199 for a recruiter call go before everything else, soonest deadline first, until a call attempt is logged.
   const { data: paidLinks } = await supabase
     .from("candidate_mandate_links")
     .select("candidate_id, call_paid_at, call_due_at, mandates(role_title), candidates(id, full_name, phone, current_job_title, current_employer, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode, resume_file_url, source_channel, created_by, created_at, status)")

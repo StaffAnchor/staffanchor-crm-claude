@@ -481,7 +481,7 @@ export default function MandateCandidatesBoard({
                             {row.call_paid_at && (
                               <span
                                 className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
-                                title="Paid ₹99 for a recruiter call, promised by the due date"
+                                title="Paid ₹199 for a recruiter call, promised by the due date"
                               >
                                 <Zap className="h-2 w-2" /> Paid call{row.call_due_at ? ` · by ${new Date(row.call_due_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}
                               </span>

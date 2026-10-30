@@ -29,7 +29,7 @@ export type CallPerson = {
   reason: "call_back" | "interested" | "confirm_open" | "worth_a_call" | "pay_missing" | "details_missing" | "urgent_role" | "paid_call";
   /** For an urgent role: which one, and how well they match it. */
   urgent_role?: { title: string; bucket: "perfect" | "close" } | null;
-  /** Paid ₹99 for a recruiter call on this role: the call is promised by this date. */
+  /** Paid ₹199 for a recruiter call on this role: the call is promised by this date. */
   paid_call?: { title: string; due: string | null } | null;
   interested_role?: string | null;
   tries: number;

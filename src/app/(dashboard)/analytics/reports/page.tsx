@@ -823,7 +823,7 @@ export default async function ReportsPage({
     return { key: ds, label: d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }), count: minutes, href: "/analytics/reports?range=" + range };
   });
 
-  // Paid recruiter calls (₹99 from the jobs site): how many were bought, how many are still waiting for a call, which are
+  // Paid recruiter calls (₹199 from the jobs site): how many were bought, how many are still waiting for a call, which are
   // past their 3-working-day deadline (a refund is due), and the net money. Range-filtered by when they were paid.
   const rangeFromIso = rangeFrom.toISOString();
   const rangeToIso = new Date(rangeTo.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
@@ -837,6 +837,11 @@ export default async function ReportsPage({
     .order("call_paid_at", { ascending: false });
   type PaidCallRow = { id: string; candidate_id: string; call_paid_at: string; call_due_at: string | null; call_refunded_at: string | null; candidates: { full_name: string | null } | null; mandates: { role_title: string | null } | null };
   const paidCalls = (paidCallRows ?? []) as unknown as PaidCallRow[];
+  const { data: paidCallOrders } = await supabase
+    .from("paid_call_orders")
+    .select("amount_paise, status")
+    .gte("paid_at", rangeFromIso)
+    .lte("paid_at", rangeToIso);
   const { data: loggedCallRows } = paidCalls.length
     ? await supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidCalls.map((c) => c.candidate_id))
     : { data: [] as { candidate_id: string; created_at: string }[] };
@@ -853,7 +858,7 @@ export default async function ReportsPage({
   const paidCallCalled = paidCalls.filter((c) => paidCallState(c) === "called").length;
   const paidCallWaiting = paidCalls.filter((c) => paidCallState(c) === "waiting").length;
   const paidCallOverdue = paidCalls.filter((c) => paidCallState(c) === "overdue");
-  const paidCallRevenue = (paidCallCount - paidCallRefunded) * 99;
+  const paidCallRevenue = (paidCallOrders ?? []).filter((o) => o.status === "paid").reduce((sum, o) => sum + o.amount_paise, 0) / 100;
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
@@ -1439,7 +1444,7 @@ export default async function ReportsPage({
                 <Card className="mb-4 flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">
                   <Zap className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
                   <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Candidates who paid ₹99 on the jobs site for a recruiter call within 3 working days. A logged call attempt of any outcome counts as keeping the promise.
+                    Candidates who paid ₹199 on the jobs site for a recruiter call within 3 working days. A logged call attempt of any outcome counts as keeping the promise.
                     &quot;Overdue&quot; means the deadline passed with no call logged, so a refund is due. Scoped to the range above, by payment date.
                   </p>
                 </Card>
