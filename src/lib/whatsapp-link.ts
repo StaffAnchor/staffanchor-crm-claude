@@ -18,6 +18,14 @@ export function whatsappLink(phone: string | null | undefined, text: string): st
   return `https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(text)}`;
 }
 
+// The same message for the WhatsApp desktop app. It opens the chat in the app, so it never fights with a WhatsApp Web
+// tab that is already open (WhatsApp Web allows only one open tab per browser).
+export function whatsappAppLink(phone: string | null | undefined, text: string): string | null {
+  const digits = phone ? whatsappDigits(phone) : null;
+  if (!digits) return null;
+  return `whatsapp://send?phone=${digits}&text=${encodeURIComponent(text)}`;
+}
+
 // Every link opens in this one named tab, so repeated clicks reuse it
 // instead of piling up new tabs.
 export const WHATSAPP_TARGET = "staffanchor-whatsapp";

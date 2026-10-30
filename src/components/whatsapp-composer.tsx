@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Loader2, MessageCircle, Sparkles, Undo2, X } from "lucide-react";
-import { WHATSAPP_TARGET, whatsappLink } from "@/lib/whatsapp-link";
+import { useWhatsAppOpen, WhatsAppOpenSwitch } from "@/lib/use-whatsapp-open";
 
 const TONES: { action: string; label: string }[] = [
   { action: "shorter", label: "Shorter" },
@@ -73,7 +73,8 @@ export default function WhatsAppComposer({
     }
   }
 
-  const link = whatsappLink(phone, trimmed);
+  const wa = useWhatsAppOpen();
+  const link = wa.href(phone, trimmed);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4" onClick={(e) => { e.stopPropagation(); onClose(); }}>
@@ -132,7 +133,8 @@ export default function WhatsAppComposer({
         </div>
         {err && <p className="mt-2 text-[13px] text-rose-600">{err}</p>}
 
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <WhatsAppOpenSwitch className="mt-3 justify-end" />
+        <div className="mt-2 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
           <button type="button" onClick={copy} disabled={!trimmed} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800">
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copied" : "Copy"}
           </button>
@@ -141,7 +143,7 @@ export default function WhatsAppComposer({
           </button>
           <a
             href={trimmed && link ? link : undefined}
-            target={WHATSAPP_TARGET}
+            target={wa.target}
             rel="noreferrer"
             aria-disabled={!trimmed}
             onClick={(e) => {

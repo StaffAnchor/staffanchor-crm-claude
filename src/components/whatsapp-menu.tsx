@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, ChevronDown, Copy, Check } from "lucide-react";
-import { WHATSAPP_TARGET, whatsappLink, type WhatsAppTemplate } from "@/lib/whatsapp-link";
+import { whatsappLink, type WhatsAppTemplate } from "@/lib/whatsapp-link";
 import { MANUAL_TEXT } from "@/components/whatsapp-mode";
 import WhatsAppComposer from "@/components/whatsapp-composer";
+import { useWhatsAppOpen, WhatsAppOpenSwitch } from "@/lib/use-whatsapp-open";
 
 // "WhatsApp" button with a short list of ready-made messages. Picking one
 // opens WhatsApp Web (shared tab) with that text already typed in; the
@@ -30,6 +31,7 @@ export default function WhatsAppMenu({
   const [copied, setCopied] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const wa = useWhatsAppOpen();
 
   async function copy(key: string, text: string) {
     try {
@@ -93,8 +95,8 @@ export default function WhatsAppMenu({
             <div key={t.key} className="flex items-center gap-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
               <a
                 role="menuitem"
-                href={whatsappLink(phone, t.text) ?? "#"}
-                target={WHATSAPP_TARGET}
+                href={wa.href(phone, t.text) ?? "#"}
+                target={wa.target}
                 rel="noreferrer"
                 onClick={() => {
                   setOpen(false);
@@ -117,8 +119,8 @@ export default function WhatsAppMenu({
           ))}
           <a
             role="menuitem"
-            href={whatsappLink(phone, "") ?? "#"}
-            target={WHATSAPP_TARGET}
+            href={wa.href(phone, "") ?? "#"}
+            target={wa.target}
             rel="noreferrer"
             onClick={() => {
               setOpen(false);
@@ -128,6 +130,9 @@ export default function WhatsAppMenu({
           >
             Open an empty chat in WhatsApp
           </a>
+          <div className="border-t border-slate-100 px-2.5 pb-1 pt-2 dark:border-slate-800">
+            <WhatsAppOpenSwitch />
+          </div>
         </div>
       )}
     </div>

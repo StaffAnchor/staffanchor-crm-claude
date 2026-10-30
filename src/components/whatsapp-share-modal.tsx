@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, MessageCircle, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { WHATSAPP_TARGET, firstNameOf, whatsappLink } from "@/lib/whatsapp-link";
+import { firstNameOf, whatsappLink } from "@/lib/whatsapp-link";
+import { useWhatsAppOpen, WhatsAppOpenSwitch } from "@/lib/use-whatsapp-open";
 
 const JOBS_SITE = process.env.NEXT_PUBLIC_JOBS_SITE_URL ?? "https://jobs.staffanchor.com";
 
@@ -116,6 +117,7 @@ export default function WhatsAppShareModal({
       .then(() => {});
   }
 
+  const wa = useWhatsAppOpen();
   const withPhone = recipients.filter((r) => whatsappLink(r.phone, "x"));
   const allDone = withPhone.length > 0 && withPhone.every((r) => sent.has(r.id));
 
@@ -203,9 +205,11 @@ export default function WhatsAppShareModal({
             {loading ? (
               <p className="py-3 text-[12.5px] text-slate-400">Loading…</p>
             ) : (
+              <>
+              <WhatsAppOpenSwitch className="mb-2" />
               <ul className="divide-y divide-slate-100 rounded-ros-md border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
                 {recipients.map((r) => {
-                  const href = whatsappLink(r.phone, message.replaceAll("{name}", firstNameOf(r.full_name)));
+                  const href = wa.href(r.phone, message.replaceAll("{name}", firstNameOf(r.full_name)));
                   const done = sent.has(r.id);
                   return (
                     <li key={r.id} className="flex items-center justify-between gap-3 px-3 py-2">
@@ -216,7 +220,7 @@ export default function WhatsAppShareModal({
                       {href ? (
                         <a
                           href={href}
-                          target={WHATSAPP_TARGET}
+                          target={wa.target}
                           rel="noreferrer"
                           onClick={() => markSent(r)}
                           className={`flex shrink-0 items-center gap-1 rounded-ros-md px-2.5 py-1.5 text-[12px] font-medium ${
@@ -233,6 +237,7 @@ export default function WhatsAppShareModal({
                   );
                 })}
               </ul>
+              </>
             )}
           </div>
         </div>
