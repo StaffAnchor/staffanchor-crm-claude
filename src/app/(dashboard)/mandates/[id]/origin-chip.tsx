@@ -13,6 +13,8 @@ const STYLE: Record<LinkOrigin, { cls: string; icon: React.ReactNode }> = {
 // How this person got into the pipeline, in one small chip next to their name.
 export default function OriginChip({ origin, label }: { origin?: LinkOrigin | null; label?: string | null }) {
   if (!origin || !label) return null;
+  // "Added by <teammate>" says nothing useful when everyone on the team adds people; the "Added by" filter still works.
+  if (origin === "team") return null;
   const s = STYLE[origin];
   return (
     <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ${s.cls}`} title={label}>
