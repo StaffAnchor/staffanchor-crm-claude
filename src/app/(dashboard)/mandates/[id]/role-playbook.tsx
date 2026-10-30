@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import RoleNudgeButton from "./role-nudge-button";
 
@@ -74,39 +74,81 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
   ];
   const next = steps.find((s) => !s.done)?.key ?? "send";
 
+  const nextStep = steps.find((x) => x.key === next)!;
+  const SHORT: Record<string, string> = { match: "Match", reach: "Reach", track: "Track", call: "Call", send: "Send to client" };
+
+  // One slim line that says where the role stands and offers the next step. The full guide, with each step's explanation,
+  // opens underneath for anyone who wants it.
   return (
-    <section aria-label="Role playbook" className="mt-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        {steps.map((s) => {
-          const isNext = s.key === next;
-          const Cta = s.cta ? (
-            s.href.startsWith("#") ? (
-              <a href={s.href} className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
-                {s.cta} <ArrowRight className="h-3 w-3" />
-              </a>
-            ) : (
-              <Link href={s.href} target="_blank" rel="noopener noreferrer" className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
-                {s.cta} <ArrowRight className="h-3 w-3" />
-              </Link>
-            )
-          ) : null;
-          return (
-            <div key={s.key} className={`rounded-lg border px-3 py-2.5 ${isNext ? "border-teal-400 bg-teal-50/60 dark:border-teal-700 dark:bg-teal-950/20" : "border-slate-100 dark:border-slate-800"}`}>
-              <p className="flex items-center justify-between text-[12px] font-semibold text-slate-600 dark:text-slate-300">
-                {s.title}
-                {s.done && <Check className="h-3.5 w-3.5 text-emerald-600" aria-label="done" />}
-              </p>
-              <p className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{s.big}</span>
-                <span className="text-[12px] text-slate-500">{s.label}</span>
-              </p>
-              <p className="mt-1 text-[11.5px] leading-4 text-slate-500 dark:text-slate-400">{s.line}</p>
-              {Cta}
-              {s.key === "reach" && p.nudgeable > 0 && <RoleNudgeButton mandateId={mandateId} count={p.nudgeable} />}
-            </div>
-          );
-        })}
-      </div>
+    <section aria-label="Role playbook" className="mt-3 rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+      <details className="group">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-1.5 gap-y-2 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+          {steps.map((s, i) => (
+            <span key={s.key} className="inline-flex items-center gap-1.5">
+              {i > 0 && <span className="h-px w-3 bg-slate-200 dark:bg-slate-700" aria-hidden />}
+              <span
+                title={s.line}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] ${
+                  s.key === next
+                    ? "bg-teal-50 font-semibold text-teal-800 ring-1 ring-teal-300 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800"
+                    : s.done
+                      ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300"
+                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                }`}
+              >
+                {SHORT[s.key]} <span className="font-semibold tabular-nums">{s.big}</span>
+                {s.done && <Check className="h-3 w-3" aria-label="done" />}
+              </span>
+            </span>
+          ))}
+          <span className="ml-auto flex items-center gap-2">
+            {nextStep.cta &&
+              (nextStep.href.startsWith("#") ? (
+                <a href={nextStep.href} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-700">
+                  {nextStep.cta} <ArrowRight className="h-3 w-3" />
+                </a>
+              ) : (
+                <Link href={nextStep.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-700">
+                  {nextStep.cta} <ArrowRight className="h-3 w-3" />
+                </Link>
+              ))}
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+              Guide <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+            </span>
+          </span>
+        </summary>
+        <div className="grid grid-cols-1 gap-2 border-t border-slate-100 p-3 dark:border-slate-800 sm:grid-cols-2 lg:grid-cols-5">
+          {steps.map((s) => {
+            const isNext = s.key === next;
+            const Cta = s.cta ? (
+              s.href.startsWith("#") ? (
+                <a href={s.href} className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
+                  {s.cta} <ArrowRight className="h-3 w-3" />
+                </a>
+              ) : (
+                <Link href={s.href} target="_blank" rel="noopener noreferrer" className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
+                  {s.cta} <ArrowRight className="h-3 w-3" />
+                </Link>
+              )
+            ) : null;
+            return (
+              <div key={s.key} className={`rounded-lg border px-3 py-2.5 ${isNext ? "border-teal-400 bg-teal-50/60 dark:border-teal-700 dark:bg-teal-950/20" : "border-slate-100 dark:border-slate-800"}`}>
+                <p className="flex items-center justify-between text-[12px] font-semibold text-slate-600 dark:text-slate-300">
+                  {s.title}
+                  {s.done && <Check className="h-3.5 w-3.5 text-emerald-600" aria-label="done" />}
+                </p>
+                <p className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{s.big}</span>
+                  <span className="text-[12px] text-slate-500">{s.label}</span>
+                </p>
+                <p className="mt-1 text-[11.5px] leading-4 text-slate-500 dark:text-slate-400">{s.line}</p>
+                {Cta}
+                {s.key === "reach" && p.nudgeable > 0 && <RoleNudgeButton mandateId={mandateId} count={p.nudgeable} />}
+              </div>
+            );
+          })}
+        </div>
+      </details>
     </section>
   );
 }

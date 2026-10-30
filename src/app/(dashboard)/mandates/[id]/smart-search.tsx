@@ -109,6 +109,9 @@ export function SmartSearchBar() {
   const [prompt, setPrompt] = useState("");
   const [ignoreRole, setIgnoreRole] = useState(false);
   const [justRan, setJustRan] = useState(false);
+  // One quiet line until you click in; the examples and options appear while you are writing.
+  const [focused, setFocused] = useState(false);
+  const expanded = focused || prompt.trim().length > 0;
 
   const go = async () => {
     if (!prompt.trim() || running) return;
@@ -119,12 +122,21 @@ export function SmartSearchBar() {
   const examples = [`Only people who sell to enterprise, ${role.city ? `${role.city} or nearby` : "any city"}`, "Hunters with a team handling background", "Open to relocate, notice under 30 days"];
 
   return (
-    <Card className="mt-3 p-3">
-      <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-700 dark:text-slate-200">
-        <Sparkles className="h-3.5 w-3.5 text-teal-600" /> Smart search for this role
-      </div>
-      <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Tell it who you want in plain words. The best people in the whole database are found and kept under the Smart tab, with why each one fits.</p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+    <Card
+      className="mt-3 p-2.5"
+      onFocus={() => setFocused(true)}
+      onBlur={(e: React.FocusEvent<HTMLElement>) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+      }}
+    >
+      {expanded && (
+        <div className="mb-1.5 flex items-center gap-1.5 px-0.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+          <Sparkles className="h-3.5 w-3.5 text-teal-600" />
+          <span><span className="font-semibold text-slate-700 dark:text-slate-200">Smart search</span> · tell it who you want in plain words. The best people in the whole database are kept under the Smart tab, with why each one fits.</span>
+        </div>
+      )}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {!expanded && <Sparkles className="hidden h-4 w-4 shrink-0 text-teal-600 sm:block" aria-hidden />}
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -134,15 +146,16 @@ export function SmartSearchBar() {
               go();
             }
           }}
-          rows={2}
-          placeholder="e.g. Hunters from B2B SaaS, 5-8 years, comfortable with Pune or Mumbai, ideally have handled a team"
-          className="min-h-[44px] flex-1 resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-teal-800"
+          rows={expanded ? 2 : 1}
+          placeholder="Smart search: who do you want? e.g. Hunters from B2B SaaS, 5-8 years, comfortable with Pune or Mumbai"
+          className="min-h-[40px] flex-1 resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-teal-800"
         />
         <button onClick={go} disabled={running || !prompt.trim()} className="flex shrink-0 items-center justify-center gap-1.5 rounded-ros-md bg-teal-600 px-4 py-2 text-[13px] font-medium text-white hover:bg-teal-500 disabled:opacity-50">
           {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
           {running ? "Searching…" : "Find people"}
         </button>
       </div>
+      {expanded && (
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           {examples.map((ex) => (
@@ -156,6 +169,7 @@ export function SmartSearchBar() {
           Also keep this role&apos;s city, experience, budget and must-haves
         </label>
       </div>
+      )}
       {error && <p className="mt-2 text-[12.5px] text-rose-600">{error}</p>}
       {justRan && !running && !error && current && (
         <p className="mt-2 text-[12.5px] text-slate-600 dark:text-slate-300">

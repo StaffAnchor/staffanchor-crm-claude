@@ -52,7 +52,11 @@ export default function MandateCandidatesView({
   // down to, say, just "client_interview" instead of scrolling/scanning the
   // full pipeline. Board already visually groups by stage as columns, but
   // this still lets it hide every other column when you only care about one.
-  const [stageFilter, setStageFilter] = useState<string>(initialStage && initialStage !== "" ? initialStage : "all");
+  // People still in play are what a recruiter works every day, so the list opens on those. "All" and each stage, including
+  // Rejected, are one click away. A link with ?stage=… still opens that stage.
+  const [stageFilter, setStageFilter] = useState<string>(
+    initialStage && initialStage !== "" ? initialStage : rows.some((r) => !["rejected", "pulled_back"].includes(r.stage)) ? "active" : "all"
+  );
 
   const newCount = useMemo(() => rows.filter((r) => !r.viewed_at && ["sourced", "screened"].includes(r.stage)).length, [rows]);
 
@@ -73,7 +77,12 @@ export default function MandateCandidatesView({
   const [recruiterFilter, setRecruiterFilter] = useState<string>("all");
 
   const stageFilteredRows = useMemo(
-    () => (stageFilter === "all" ? rows : rows.filter((r) => r.stage === stageFilter)),
+    () =>
+      stageFilter === "all"
+        ? rows
+        : stageFilter === "active"
+          ? rows.filter((r) => !["rejected", "pulled_back"].includes(r.stage))
+          : rows.filter((r) => r.stage === stageFilter),
     [rows, stageFilter]
   );
 
@@ -119,6 +128,16 @@ export default function MandateCandidatesView({
     <div>
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <div className="flex items-center gap-1 flex-wrap">
+          <button
+            onClick={() => setStageFilter("active")}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors duration-200 ease-ros ${
+              stageFilter === "active"
+                ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+            }`}
+          >
+            Active ({rows.filter((r) => !["rejected", "pulled_back"].includes(r.stage)).length})
+          </button>
           <button
             onClick={() => setStageFilter("all")}
             className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors duration-200 ease-ros ${
