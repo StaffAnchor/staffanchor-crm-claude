@@ -15,12 +15,14 @@ export default function RecommendDialog({
   defaultMandateId,
   className,
   label = "Recommend to a recruiter",
+  iconOnly = false,
 }: {
   candidateId: string;
   candidateName: string;
   defaultMandateId?: string;
   className?: string;
   label?: string;
+  iconOnly?: boolean;
 }) {
   const supabase = createClient();
   const [open, setOpen] = useState(false);
@@ -67,8 +69,8 @@ export default function RecommendDialog({
 
   return (
     <>
-      <button type="button" onClick={show} className={className ?? "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"}>
-        <Send className="h-3.5 w-3.5" /> {label}
+      <button type="button" onClick={show} title={iconOnly ? label : undefined} aria-label={iconOnly ? label : undefined} className={className ?? "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"}>
+        <Send className="h-3.5 w-3.5" /> {iconOnly ? null : label}
       </button>
       {open && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4" onClick={() => setOpen(false)}>

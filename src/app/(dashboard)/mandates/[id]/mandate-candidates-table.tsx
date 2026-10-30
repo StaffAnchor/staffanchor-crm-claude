@@ -18,7 +18,7 @@ import ResumePreview from "../../candidates/[id]/resume-preview";
 import FlagForCallButton, { type ExistingCallFlag } from "./flag-for-call-button";
 import CallDispositionControl from "./call-disposition-control";
 import VendorNoteControl from "./vendor-note-control";
-import { Zap, Sparkles, Loader2 } from "lucide-react";
+import { Zap, Sparkles, Loader2, X, ChevronDown } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
 import RecommendDialog from "@/components/recommend-dialog";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
@@ -644,7 +644,7 @@ export default function MandateCandidatesTable({
       "border-y border-slate-200 transition-colors dark:border-slate-700",
       isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/60",
       open ? "border-b-0" : "",
-      pos === "first" ? `relative rounded-tl-2xl border-l before:absolute before:bottom-4 before:left-3 before:top-4 before:w-1 before:rounded-full before:content-[''] ${open ? "" : "rounded-bl-2xl"} ${accentOf(l)}` : "",
+      pos === "first" ? `relative rounded-tl-2xl border-l before:absolute before:bottom-4 before:left-2 before:top-4 before:w-1 before:rounded-full before:content-[''] ${open ? "" : "rounded-bl-2xl"} ${accentOf(l)}` : "",
       pos === "last" ? `rounded-tr-2xl border-r ${open ? "" : "rounded-br-2xl"}` : "",
       extra,
     ]
@@ -671,8 +671,8 @@ export default function MandateCandidatesTable({
       <table className="w-full border-separate border-spacing-0 text-sm">
         <thead className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           <tr>
-            <th className="w-10 px-4 pb-2">
-              <input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={toggleAll} />
+            <th className="w-14 px-2 pb-2 text-center" title="Select all">
+              <input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={toggleAll} aria-label="Select all candidates" className="h-4 w-4 cursor-pointer rounded accent-teal-600" />
             </th>
             <th className="px-3 pb-2 text-left font-semibold">Candidate</th>
             <th className="px-3 pb-2 text-left font-semibold">Fit</th>
@@ -683,12 +683,22 @@ export default function MandateCandidatesTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((l) => (
+          {rows.map((l, rowIndex) => (
             <Fragment key={l.id}>
               <tr className="group">
-                <td className={cell(l, "first", openRows.has(l.id), "px-4 py-4 align-top")}>
-                <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
-              </td>
+                <td className={cell(l, "first", openRows.has(l.id), "px-2 py-4 pl-4 align-top")}>
+                  {/* The serial number swaps to a tick box on hover, or stays a tick box once something is selected. */}
+                  <div className="relative flex h-7 w-7 items-center justify-center">
+                    <span className={`text-[13px] font-semibold tabular-nums text-slate-400 transition-opacity dark:text-slate-500 ${selected.size > 0 ? "opacity-0" : "group-hover:opacity-0"}`}>{rowIndex + 1}</span>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(l.id)}
+                      onChange={() => toggleRow(l.id)}
+                      aria-label={`Select ${l.candidate.full_name ?? "candidate"}`}
+                      className={`absolute inset-0 m-auto h-4 w-4 cursor-pointer rounded accent-teal-600 transition-opacity ${selected.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+                    />
+                  </div>
+                </td>
                 <td className={cell(l, "mid", openRows.has(l.id), "min-w-[260px] px-3 py-4 align-top")}>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
@@ -908,49 +918,47 @@ export default function MandateCandidatesTable({
                   )}
                 </td>
                 <td className={cell(l, "last", openRows.has(l.id), "min-w-[250px] px-3 py-4 align-top")}>
-                  <div className="flex flex-wrap items-center justify-end gap-1.5">
-
+                  <div className="flex flex-col items-end gap-2">
                     {!l.in_shortlist && l.pass_patterns.length > 0 && (
-                      <div className="basis-full text-right">
-                        <span className="inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 align-middle text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
-                          Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
-                        </span>
-                      </div>
+                      <span className="inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
+                        Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
+                      </span>
                     )}
-                    {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
-                      l.match_assessment?.recommendation === "Not a Fit" ? (
-                        <button type="button" onClick={() => void shareWithClient(l)} title="The assessment says this is not a fit. Clients are sometimes fine with exceptions." className="rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:hover:bg-slate-800">
-                          Send anyway
+                    <div className="flex items-center justify-end gap-1">
+                      {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
+                        l.match_assessment?.recommendation === "Not a Fit" ? (
+                          <button type="button" onClick={() => void shareWithClient(l)} title="The assessment says this is not a fit. Clients are sometimes fine with exceptions." className="mr-1 whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:hover:bg-slate-800">
+                            Send anyway
+                          </button>
+                        ) : (
+                          <button type="button" onClick={() => void shareWithClient(l)} className="mr-1 whitespace-nowrap rounded-lg bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white shadow-sm hover:bg-teal-500">
+                            Send to client
+                          </button>
+                        )
+                      )}
+                      <RecommendDialog
+                        candidateId={l.candidate.id}
+                        candidateName={l.candidate.full_name ?? "this candidate"}
+                        defaultMandateId={mandateContext.mandateId as string}
+                        label="Recommend to a recruiter"
+                        iconOnly
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
+                      />
+                      {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
+                        <button type="button" onClick={() => setRejectModalRow(l)} title="Reject" aria-label="Reject" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
+                          <X className="h-4 w-4" />
                         </button>
-                      ) : (
-                        <button type="button" onClick={() => void shareWithClient(l)} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white shadow-sm hover:bg-teal-500">
-                          Send to client
-                        </button>
-                      )
-                    )}
-                    <div className="contents">
-                    <RecommendDialog
-                      candidateId={l.candidate.id}
-                      candidateName={l.candidate.full_name ?? "this candidate"}
-                      defaultMandateId={mandateContext.mandateId as string}
-                      label="Recommend"
-                      className="mr-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
-                    />
-                    {!["rejected", "pulled_back", "placed"].includes(l.stage) ? (
-                      <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 inline-block min-w-[54px] rounded-full px-2.5 py-1 text-center text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
-                        Reject
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleOpen(l.id)}
+                        aria-expanded={openRows.has(l.id)}
+                        title={openRows.has(l.id) ? "Close details" : "More details"}
+                        className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-[12px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800"
+                      >
+                        {openRows.has(l.id) ? "Close" : "More"}
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openRows.has(l.id) ? "rotate-180" : ""}`} />
                       </button>
-                    ) : (
-                      <span className="mr-1 inline-block min-w-[54px]" aria-hidden="true" />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => toggleOpen(l.id)}
-                      aria-expanded={openRows.has(l.id)}
-                      className="rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800"
-                    >
-                      {openRows.has(l.id) ? "Close" : "More"}
-                    </button>
                     </div>
                   </div>
                 </td>
