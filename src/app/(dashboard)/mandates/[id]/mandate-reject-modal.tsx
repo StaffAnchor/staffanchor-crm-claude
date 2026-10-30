@@ -5,7 +5,7 @@ import { X, UserX, Building2, Loader2, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { RatingPicker, emptyDraft, saveProfileRating, type RatingDraft } from "@/components/profile-rating";
 import { saveSalesFlags } from "@/components/sales-flags-panel";
-import { NOT_A_FIT_REASONS } from "@/lib/not-a-fit-reasons";
+import { CATEGORY_LABEL, NOT_A_FIT_REASONS } from "@/lib/not-a-fit-reasons";
 import { RECRUITER_REJECTION_REASONS, CLIENT_REJECTION_REASONS, type StageSource } from "@/lib/mandate-stage";
 
 // Replaces the old single "Rejected" dropdown option + easy-to-miss "Client
@@ -189,21 +189,26 @@ export default function MandateRejectModal({
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   About how they sell? <span className="font-normal text-slate-400">(optional, remembered for other roles)</span>
                 </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {NOT_A_FIT_REASONS.filter((r) => r.scope === "person").map((r) => {
-                    const on = sellerFlags.includes(r.value);
-                    return (
-                      <button
-                        key={r.value}
-                        type="button"
-                        title={r.hint}
-                        onClick={() => setSellerFlags((f) => (on ? f.filter((x) => x !== r.value) : [...f, r.value]))}
-                        className={`rounded-full border px-2.5 py-1 text-[12px] font-medium ${on ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300" : "border-slate-200 text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300"}`}
-                      >
-                        {r.title}
-                      </button>
-                    );
-                  })}
+                <div className="space-y-1.5">
+                  {["selling", "track", "people"].map((cat) => (
+                    <div key={cat} className="flex flex-wrap items-center gap-1.5">
+                      <span className="w-full text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">{CATEGORY_LABEL[cat]}</span>
+                      {NOT_A_FIT_REASONS.filter((r) => r.scope === "person" && r.category === cat).map((r) => {
+                        const on = sellerFlags.includes(r.value);
+                        return (
+                          <button
+                            key={r.value}
+                            type="button"
+                            title={r.hint}
+                            onClick={() => setSellerFlags((f) => (on ? f.filter((x) => x !== r.value) : [...f, r.value]))}
+                            className={`rounded-full border px-2.5 py-1 text-[12px] font-medium ${on ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300" : "border-slate-200 text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300"}`}
+                          >
+                            {r.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

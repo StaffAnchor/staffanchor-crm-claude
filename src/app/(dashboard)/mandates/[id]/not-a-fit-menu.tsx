@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Briefcase, ChevronDown, Cloud, Coins, Handshake, IndianRupee, Layers, MapPin, Magnet, MessageSquare, MoreHorizontal, PhoneOff, Shuffle, Tag, Target, Filter } from "lucide-react";
-import { NOT_A_FIT_REASONS } from "@/lib/not-a-fit-reasons";
+import { Anchor, BarChart3, Battery, Briefcase, ChevronDown, Cloud, Coins, FileQuestion, Filter, Ghost, Globe, Handshake, IndianRupee, Layers, MapPin, Magnet, MessageSquare, MoreHorizontal, PhoneOff, Scale, Shuffle, Star, Tag, Target, Timer, Clock } from "lucide-react";
+import { CATEGORY_LABEL, NOT_A_FIT_REASONS } from "@/lib/not-a-fit-reasons";
 
-const ICONS: Record<string, typeof Briefcase> = {
+export const REASON_ICONS: Record<string, typeof Briefcase> = {
   briefcase: Briefcase, layers: Layers, tag: Tag, pin: MapPin, rupee: IndianRupee, phone: PhoneOff, funnel: Filter, target: Target,
   handshake: Handshake, cloud: Cloud, coins: Coins, magnet: Magnet, shuffle: Shuffle, message: MessageSquare, dots: MoreHorizontal,
+  clock: Clock, timer: Timer, globe: Globe, chart: BarChart3, doc: FileQuestion, battery: Battery, scale: Scale, ghost: Ghost, star: Star, anchor: Anchor,
 };
+const ICONS = REASON_ICONS;
+const CATEGORIES = ["role", "selling", "track", "people"] as const;
 
 export default function NotAFitMenu({ onPick }: { onPick: (reason: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +40,7 @@ export default function NotAFitMenu({ onPick }: { onPick: (reason: string) => vo
     if (!open && btn.current) {
       const r = btn.current.getBoundingClientRect();
       // Open below the button, right edges aligned; flip above if it would run off the bottom of the screen.
-      const height = Math.min(window.innerHeight - 16, 15 * 46 + 80);
+      const height = Math.min(window.innerHeight - 16, 24 * 40 + 120);
       const top = r.bottom + height > window.innerHeight ? Math.max(8, r.top - height - 4) : r.bottom + 4;
       setPos({ top, left: Math.max(8, r.right - 300) });
     }
@@ -52,12 +55,12 @@ export default function NotAFitMenu({ onPick }: { onPick: (reason: string) => vo
       </button>
       {open && pos && (
         <div ref={menu} role="menu" style={{ position: "fixed", top: pos.top, left: pos.left, width: 300, maxHeight: "calc(100vh - 16px)" }} className="z-[60] overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-          {(["role", "person"] as const).map((scope) => (
-            <div key={scope}>
+          {CATEGORIES.map((cat) => (
+            <div key={cat}>
               <p className="px-2.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                {scope === "role" ? "Not right for this role" : "About the person (remembered for other roles)"}
+                {CATEGORY_LABEL[cat]}{cat !== "role" ? <span className="ml-1 font-normal normal-case tracking-normal text-slate-400">· remembered</span> : null}
               </p>
-              {NOT_A_FIT_REASONS.filter((r) => (scope === "role" ? r.scope === "role" && r.value !== "other" : r.scope === "person")).map((r) => {
+              {NOT_A_FIT_REASONS.filter((r) => r.category === cat && r.value !== "other").map((r) => {
                 const Icon = ICONS[r.icon] ?? MoreHorizontal;
                 return (
                   <button

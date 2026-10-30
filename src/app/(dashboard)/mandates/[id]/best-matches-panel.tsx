@@ -9,7 +9,7 @@ import RankedGroups from "./ranked-groups";
 import AlsoTypesBar from "./also-types-bar";
 import ReferralAskPanel from "../../candidates/referrals/referral-ask-panel";
 import type { RoleCard } from "@/lib/role-card";
-import { notAFitLabel } from "@/lib/not-a-fit-reasons";
+import { notAFitLabel, STRENGTH_FLAGS } from "@/lib/not-a-fit-reasons";
 import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 
 // The best people in the whole database for this role, found and ranked automatically: write the role card from the
@@ -68,13 +68,16 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   for (const f of (flagRows ?? []) as { candidate_id: string; flag: string }[]) (flagsOf.get(f.candidate_id) ?? flagsOf.set(f.candidate_id, []).get(f.candidate_id)!).push(f.flag);
   const ranked = rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s, { also })
     .map((r) => {
-      const flags = flagsOf.get(r.row.candidate_id);
-      if (!flags?.length) return r;
+      const all = flagsOf.get(r.row.candidate_id);
+      if (!all?.length) return r;
+      const good = all.filter((f) => STRENGTH_FLAGS.includes(f));
+      const bad = all.filter((f) => !STRENGTH_FLAGS.includes(f));
       return {
         ...r,
-        score: Math.max(0, r.score - 10 * Math.min(2, flags.length)),
-        bucket: r.bucket === "perfect" ? ("close" as const) : r.bucket,
-        gaps: [...flags.map((f) => `Marked earlier: ${notAFitLabel(f).toLowerCase()}`), ...r.gaps],
+        score: Math.max(0, Math.min(100, r.score - 10 * Math.min(2, bad.length) + 5 * Math.min(2, good.length))),
+        bucket: bad.length > 0 && r.bucket === "perfect" ? ("close" as const) : r.bucket,
+        matched: [...good.map((f) => `Marked earlier: ${notAFitLabel(f).toLowerCase()}`), ...r.matched],
+        gaps: [...bad.map((f) => `Marked earlier: ${notAFitLabel(f).toLowerCase()}`), ...r.gaps],
       };
     })
     .sort((a, b) => b.score - a.score);

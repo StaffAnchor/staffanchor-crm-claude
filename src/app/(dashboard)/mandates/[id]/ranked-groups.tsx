@@ -66,7 +66,10 @@ export default function RankedGroups({ mandateId, roleTitle = null, ranked: allR
     if (!reason) return;
     setGone((g) => new Set(g).add(candidateId));
     const res = await fetch(`/api/mandates/${mandateId}/dismiss`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidate_id: candidateId, reason }) });
-    if (!res.ok) setGone((g) => new Set([...g].filter((x) => x !== candidateId)));
+    if (!res.ok) {
+      setGone((g) => new Set([...g].filter((x) => x !== candidateId)));
+      setMsg("Couldn't save that reason, so the person was not removed. Try again.");
+    }
   }
 
   // Local people come first within a group when the role is tied to a city; otherwise the order is the score.
