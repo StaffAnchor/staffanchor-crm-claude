@@ -81,7 +81,7 @@ export default function TopNav({
 
   return (
     <header className="ros-glass border-b sticky top-0 z-30">
-      <div className="max-w-[1500px] mx-auto px-5 h-16 flex items-center gap-4">
+      <div className="max-w-[1500px] mx-auto px-3 sm:px-5 py-2 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-1.5 md:gap-4">
         <Link href="/today" className="flex items-center shrink-0">
           <Image
             src="/Staffanchor_Logo.svg"
@@ -89,18 +89,18 @@ export default function TopNav({
             width={150}
             height={52}
             priority
-            className="h-9 w-auto object-contain"
+            className="h-8 md:h-9 w-auto object-contain"
           />
         </Link>
 
-        <nav className="flex items-center gap-1 text-[13px] min-w-0 shrink overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="order-3 basis-full md:order-none md:basis-auto flex items-center gap-1 text-[13px] min-w-0 shrink overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-1 px-1">
           {groups.map((g) => {
             const active = g.id === activeGroup?.id;
             return (
               <Link
                 key={g.id}
                 href={g.href}
-                className={`px-4 py-2 rounded-full whitespace-nowrap font-medium tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`px-3.5 md:px-4 py-1.5 md:py-2 rounded-full whitespace-nowrap shrink-0 font-medium tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   active
                     ? "bg-teal-600 text-white shadow-ros-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-teal-50/80 dark:hover:bg-slate-800/80 hover:text-teal-700 dark:hover:text-white"
@@ -119,9 +119,9 @@ export default function TopNav({
           })}
         </nav>
 
-        <div className="flex-1 min-w-2" />
+        <div className="flex-1 min-w-2 order-1 md:order-none" />
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="order-2 md:order-none flex items-center gap-1.5 md:gap-2 shrink-0">
           <div className="relative" ref={createRef}>
             <button
               onClick={() => setCreateOpen((v) => !v)}
@@ -156,7 +156,7 @@ export default function TopNav({
             )}
           </div>
 
-          <ThemeToggle />
+          <div className="hidden sm:block"><ThemeToggle /></div>
 
           <CallsFlaggedBell />
 
@@ -208,6 +208,9 @@ export default function TopNav({
                 >
                   Outreach persona settings
                 </Link>
+                <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2 text-[13px] text-slate-700 dark:border-slate-800 dark:text-slate-300 sm:hidden">
+                  Dark mode <ThemeToggle />
+                </div>
                 <div className="px-3 py-2">
                   <SignOutButton />
                 </div>
@@ -217,14 +220,14 @@ export default function TopNav({
         </div>
       </div>
       {activeGroup && activeGroup.items.length > 1 && (
-        <div className="max-w-[1500px] mx-auto px-5 pb-2 -mt-1 flex items-center gap-1 text-[13px]">
+        <div className="max-w-[1500px] mx-auto px-3 sm:px-5 pb-2 md:-mt-1 flex items-center gap-1 text-[13px] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {activeGroup.items.map((i) => {
             const on = pathname.startsWith(i.href);
             return (
               <Link
                 key={i.href}
                 href={i.href}
-                className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${on ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"}`}
+                className={`px-3 py-1 rounded-full whitespace-nowrap shrink-0 transition-colors ${on ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"}`}
               >
                 {i.label}
                 {i.href === "/tasks" && !on ? <TasksNavBadge /> : null}

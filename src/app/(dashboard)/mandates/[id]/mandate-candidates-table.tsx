@@ -635,12 +635,24 @@ export default function MandateCandidatesTable({
   const expandedCell = (l: MandateCandidateRow, pos: "first" | "last", extra = "") =>
     [
       "border-b border-slate-200 dark:border-slate-700",
+      "max-md:border-0! max-md:bg-transparent! max-md:rounded-none!",
       isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white dark:bg-slate-900",
       pos === "first" ? "rounded-bl-2xl border-l" : "rounded-br-2xl border-r",
       extra,
     ].join(" ");
+  // On phones each row is one stacked card (the <tr> carries the border and colour); the cells just flow inside it.
+  const phoneCell = "max-md:border-0! max-md:bg-transparent! max-md:rounded-none! max-md:p-0! max-md:before:hidden";
+  const phoneAccent = (l: MandateCandidateRow) => {
+    if (isDone(l)) return "max-md:border-l-slate-300";
+    const rec = l.match_assessment?.recommendation;
+    if (rec === "Strong Fit") return "max-md:border-l-emerald-500";
+    if (rec === "Fit with Reservations") return "max-md:border-l-amber-400";
+    if (rec === "Not a Fit") return "max-md:border-l-rose-400";
+    return "max-md:border-l-slate-200";
+  };
   const cell = (l: MandateCandidateRow, pos: "first" | "mid" | "last", open: boolean, extra = "") =>
     [
+      phoneCell,
       "border-y border-slate-200 transition-colors dark:border-slate-700",
       isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/60",
       open ? "border-b-0" : "",
@@ -668,8 +680,8 @@ export default function MandateCandidatesTable({
           mandateContext={mandateContext as { mandateId: string; role_title: string; client_name: string; [key: string]: unknown }}
         />
       </div>
-      <table className="w-full border-separate border-spacing-0 text-sm">
-        <thead className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+      <table className="w-full border-separate border-spacing-0 text-sm max-md:block">
+        <thead className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 max-md:hidden">
           <tr>
             <th className="w-14 px-2 pb-2 text-center" title="Select all">
               <input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={toggleAll} aria-label="Select all candidates" className="h-4 w-4 cursor-pointer rounded accent-teal-600" />
@@ -682,24 +694,24 @@ export default function MandateCandidatesTable({
             <th className="px-3 pb-2"></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="max-md:block">
           {rows.map((l, rowIndex) => (
             <Fragment key={l.id}>
-              <tr className="group">
-                <td className={cell(l, "first", openRows.has(l.id), "px-2 py-4 pl-4 align-top")}>
+              <tr className={`group max-md:relative max-md:mb-3 max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-2.5 max-md:rounded-2xl max-md:border max-md:border-l-4 max-md:border-slate-200 max-md:p-3.5 max-md:pr-3 dark:max-md:border-slate-700 ${isDone(l) ? "max-md:bg-slate-50 dark:max-md:bg-slate-900/50" : "max-md:bg-white dark:max-md:bg-slate-900"} ${phoneAccent(l)}`}>
+                <td className={cell(l, "first", openRows.has(l.id), "px-2 py-4 pl-4 align-top max-md:absolute max-md:right-2.5 max-md:top-2.5 max-md:z-10")}>
                   {/* The serial number swaps to a tick box on hover, or stays a tick box once something is selected. */}
                   <div className="relative flex h-7 w-7 items-center justify-center">
-                    <span className={`text-[13px] font-semibold tabular-nums text-slate-400 transition-opacity dark:text-slate-500 ${selected.size > 0 ? "opacity-0" : "group-hover:opacity-0"}`}>{rowIndex + 1}</span>
+                    <span className={`text-[13px] font-semibold tabular-nums text-slate-400 transition-opacity dark:text-slate-500 max-md:hidden ${selected.size > 0 ? "opacity-0" : "group-hover:opacity-0"}`}>{rowIndex + 1}</span>
                     <input
                       type="checkbox"
                       checked={selected.has(l.id)}
                       onChange={() => toggleRow(l.id)}
                       aria-label={`Select ${l.candidate.full_name ?? "candidate"}`}
-                      className={`absolute inset-0 m-auto h-4 w-4 cursor-pointer rounded accent-teal-600 transition-opacity ${selected.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+                      className={`absolute inset-0 m-auto h-5 w-5 md:h-4 md:w-4 cursor-pointer rounded accent-teal-600 transition-opacity max-md:opacity-100 ${selected.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
                     />
                   </div>
                 </td>
-                <td className={cell(l, "mid", openRows.has(l.id), "min-w-[260px] px-3 py-4 align-top")}>
+                <td className={cell(l, "mid", openRows.has(l.id), "min-w-[260px] px-3 py-4 align-top max-md:col-span-2 max-md:min-w-0 max-md:pr-8")}>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link
@@ -751,7 +763,7 @@ export default function MandateCandidatesTable({
                   {/^(yes|open|willing)/i.test(l.candidate.open_to_relocation ?? "") && <p className="mt-0.5 font-medium text-emerald-600 dark:text-emerald-400">✓ Open to relocate</p>}
                 </div>
               </td>
-                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
+                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top max-md:col-span-2")}>
                 <div className={isDone(l) ? "opacity-60" : ""}>
                 <MandateAssessmentPopover
                   assessment={l.match_assessment}
@@ -765,11 +777,11 @@ export default function MandateCandidatesTable({
                   return reason ? <FitReason text={reason} /> : null;
                 })()}
               </td>
-                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top text-[13px]")}><div className="text-slate-700 dark:text-slate-300 tabular-nums">
+                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top text-[13px] max-md:col-span-1")}><div className="text-slate-700 dark:text-slate-300 tabular-nums">
                   <span className="whitespace-nowrap text-[15px] font-semibold text-slate-900 dark:text-slate-100">{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</span>
                   {l.candidate.notice_period ? <span className="block whitespace-nowrap text-slate-400">{l.candidate.notice_period}</span> : null}
                 </div></td>
-                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
+                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top max-md:col-span-1")}>
                 {editingStageId === l.id ? (
                   <div className="flex flex-col gap-1.5 min-w-[170px]">
                     <select
@@ -917,14 +929,14 @@ export default function MandateCandidatesTable({
                     </ul>
                   )}
                 </td>
-                <td className={cell(l, "last", openRows.has(l.id), "min-w-[250px] px-3 py-4 align-top")}>
-                  <div className="flex flex-col items-end gap-2">
+                <td className={cell(l, "last", openRows.has(l.id), "min-w-[250px] px-3 py-4 align-top max-md:col-span-2 max-md:min-w-0 max-md:border-t! max-md:border-slate-100! max-md:pt-3!")}>
+                  <div className="flex flex-col items-end gap-2 max-md:items-stretch">
                     {!l.in_shortlist && l.pass_patterns.length > 0 && (
                       <span className="inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
                         Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
                       </span>
                     )}
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1 max-md:justify-between">
                       {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
                         l.match_assessment?.recommendation === "Not a Fit" ? (
                           <button type="button" onClick={() => void shareWithClient(l)} title="The assessment says this is not a fit. Clients are sometimes fine with exceptions." className="mr-1 whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:hover:bg-slate-800">
@@ -964,9 +976,9 @@ export default function MandateCandidatesTable({
                 </td>
               </tr>
               {openRows.has(l.id) && (
-                <tr>
-                  <td className={expandedCell(l, "first")}></td>
-                  <td colSpan={6} className={expandedCell(l, "last", "px-3 pb-4")}>
+                <tr className="max-md:mb-3 max-md:-mt-2 max-md:block max-md:rounded-2xl max-md:border max-md:border-slate-200 max-md:bg-slate-50 max-md:p-3 dark:max-md:border-slate-700 dark:max-md:bg-slate-900">
+                  <td className={expandedCell(l, "first", "max-md:hidden")}></td>
+                  <td colSpan={6} className={expandedCell(l, "last", "px-3 pb-4 max-md:block max-md:p-0!")}>
                     <div className="grid items-start gap-4 border-t border-dashed border-slate-200 pt-4 dark:border-slate-700 md:grid-cols-3">
                       <div className="rounded-ros-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                         <p className="mb-3 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Contact and calls</p>
@@ -1154,7 +1166,7 @@ export default function MandateCandidatesTable({
                   </td>
                 </tr>
               )}
-              <tr aria-hidden="true">
+              <tr aria-hidden="true" className="max-md:hidden">
                 <td colSpan={7} className="h-3 p-0"></td>
               </tr>
             </Fragment>
