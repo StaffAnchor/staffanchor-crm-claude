@@ -34,7 +34,8 @@ export function lastTwoRoles(...sources: unknown[]): LastRole[] {
     return roles.slice(0, 2).map((r) => {
       const from = yearOf(r.start);
       const to = r.current ? "Now" : yearOf(r.end);
-      return { title: r.title, company: r.company, period: from ? `${from}–${to ?? ""}`.replace(/–$/, "") : to ?? "" };
+      const period = from ? (to && to !== from ? `${from}–${to}` : to === from ? from : from) : to ?? "";
+      return { title: r.title, company: r.company, period };
     });
   }
   return [];

@@ -625,18 +625,18 @@ export default function MandateCandidatesTable({
   // Rejected people fade so the live ones stand out.
   const isDone = (l: MandateCandidateRow) => ["rejected", "pulled_back"].includes(l.stage);
   const accentOf = (l: MandateCandidateRow) => {
-    if (isDone(l)) return "border-l-slate-300 dark:border-l-slate-600";
+    if (isDone(l)) return "before:bg-slate-300 dark:before:bg-slate-600";
     const rec = l.match_assessment?.recommendation;
-    if (rec === "Strong Fit") return "border-l-emerald-500";
-    if (rec === "Fit with Reservations") return "border-l-amber-400";
-    if (rec === "Not a Fit") return "border-l-rose-400";
-    return "border-l-slate-200 dark:border-l-slate-700";
+    if (rec === "Strong Fit") return "before:bg-emerald-500";
+    if (rec === "Fit with Reservations") return "before:bg-amber-400";
+    if (rec === "Not a Fit") return "before:bg-rose-400";
+    return "before:bg-slate-200 dark:before:bg-slate-700";
   };
   const expandedCell = (l: MandateCandidateRow, pos: "first" | "last", extra = "") =>
     [
       "border-b border-slate-200 dark:border-slate-700",
       isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white dark:bg-slate-900",
-      pos === "first" ? `rounded-bl-2xl border-l-4 ${accentOf(l)}` : "rounded-br-2xl border-r",
+      pos === "first" ? "rounded-bl-2xl border-l" : "rounded-br-2xl border-r",
       extra,
     ].join(" ");
   const cell = (l: MandateCandidateRow, pos: "first" | "mid" | "last", open: boolean, extra = "") =>
@@ -644,7 +644,7 @@ export default function MandateCandidatesTable({
       "border-y border-slate-200 transition-colors dark:border-slate-700",
       isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/60",
       open ? "border-b-0" : "",
-      pos === "first" ? `rounded-tl-2xl border-l-4 ${open ? "" : "rounded-bl-2xl"} ${accentOf(l)}` : "",
+      pos === "first" ? `relative rounded-tl-2xl border-l before:absolute before:bottom-4 before:left-1.5 before:top-4 before:w-1 before:rounded-full before:content-[''] ${open ? "" : "rounded-bl-2xl"} ${accentOf(l)}` : "",
       pos === "last" ? `rounded-tr-2xl border-r ${open ? "" : "rounded-br-2xl"}` : "",
       extra,
     ]
@@ -689,7 +689,7 @@ export default function MandateCandidatesTable({
                 <td className={cell(l, "first", openRows.has(l.id), "px-4 py-4 align-top")}>
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
-                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
+                <td className={cell(l, "mid", openRows.has(l.id), "min-w-[300px] px-3 py-4 align-top")}>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link
@@ -741,12 +741,14 @@ export default function MandateCandidatesTable({
                 </div>
               </td>
                 <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
+                <div className={isDone(l) ? "opacity-60" : ""}>
                 <MandateAssessmentPopover
                   assessment={l.match_assessment}
                   onReassess={() => reassessCandidate(l.candidate.id)}
                   reassessing={reassessingIds.has(l.candidate.id)}
                 />
-                {l.match_assessment && (() => {
+                </div>
+                {l.match_assessment && !isDone(l) && (() => {
                   const a = l.match_assessment;
                   const reason = a.recommendation === "Strong Fit" ? a.positives[0] : a.red_flags[0] ?? a.missing[0];
                   return reason ? <FitReason text={reason} /> : null;
@@ -929,7 +931,7 @@ export default function MandateCandidatesTable({
                       candidateName={l.candidate.full_name ?? "this candidate"}
                       defaultMandateId={mandateContext.mandateId as string}
                       label="Recommend"
-                      className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
+                      className="mr-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
                     />
                     {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
                       <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
