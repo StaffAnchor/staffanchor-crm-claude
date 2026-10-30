@@ -644,7 +644,7 @@ export default function MandateCandidatesTable({
       "border-y border-slate-200 transition-colors dark:border-slate-700",
       isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/60",
       open ? "border-b-0" : "",
-      pos === "first" ? `relative rounded-tl-2xl border-l before:absolute before:bottom-4 before:left-1.5 before:top-4 before:w-1 before:rounded-full before:content-[''] ${open ? "" : "rounded-bl-2xl"} ${accentOf(l)}` : "",
+      pos === "first" ? `relative rounded-tl-2xl border-l before:absolute before:bottom-4 before:left-3 before:top-4 before:w-1 before:rounded-full before:content-[''] ${open ? "" : "rounded-bl-2xl"} ${accentOf(l)}` : "",
       pos === "last" ? `rounded-tr-2xl border-r ${open ? "" : "rounded-br-2xl"}` : "",
       extra,
     ]
@@ -734,10 +734,11 @@ export default function MandateCandidatesTable({
                       verdict. Triage and AI Matches show the verdict with its doubts. */}
                 </div>
                 <div className="mt-1 max-w-[300px] truncate text-xs text-slate-500 dark:text-slate-400 xl:hidden">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
-                <div className="mt-1.5 flex max-w-[300px] flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  {l.candidate.current_location && <span className="truncate">📍 {l.candidate.current_location}</span>}
-                  {l.candidate.total_experience_years ? <span>· {Math.round(Number(l.candidate.total_experience_years) * 10) / 10} yrs</span> : null}
-                  {/^(yes|open|willing)/i.test(l.candidate.open_to_relocation ?? "") ? <span className="text-emerald-600 dark:text-emerald-400">· open to relocate</span> : null}
+                <div className="mt-1.5 max-w-[320px] text-xs text-slate-500 dark:text-slate-400">
+                  <p className="truncate">
+                    {[l.candidate.current_location ? `📍 ${l.candidate.current_location}` : null, l.candidate.total_experience_years ? `${Math.round(Number(l.candidate.total_experience_years) * 10) / 10} yrs` : null].filter(Boolean).join(" · ")}
+                  </p>
+                  {/^(yes|open|willing)/i.test(l.candidate.open_to_relocation ?? "") && <p className="mt-0.5 font-medium text-emerald-600 dark:text-emerald-400">✓ Open to relocate</p>}
                 </div>
               </td>
                 <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
@@ -907,12 +908,14 @@ export default function MandateCandidatesTable({
                   )}
                 </td>
                 <td className={cell(l, "last", openRows.has(l.id), "whitespace-nowrap px-3 py-4 align-top")}>
-                  <div className="flex flex-col items-end gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
 
                     {!l.in_shortlist && l.pass_patterns.length > 0 && (
-                      <span className="inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 align-middle text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
-                        Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
-                      </span>
+                      <div className="basis-full text-right">
+                        <span className="inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 align-middle text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
+                          Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
+                        </span>
+                      </div>
                     )}
                     {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
                       l.match_assessment?.recommendation === "Not a Fit" ? (
@@ -925,7 +928,7 @@ export default function MandateCandidatesTable({
                         </button>
                       )
                     )}
-                    <div className="flex items-center gap-0.5">
+                    <div className="contents">
                     <RecommendDialog
                       candidateId={l.candidate.id}
                       candidateName={l.candidate.full_name ?? "this candidate"}
@@ -933,10 +936,12 @@ export default function MandateCandidatesTable({
                       label="Recommend"
                       className="mr-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
                     />
-                    {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
-                      <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
+                    {!["rejected", "pulled_back", "placed"].includes(l.stage) ? (
+                      <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 inline-block min-w-[54px] rounded-full px-2.5 py-1 text-center text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
                         Reject
                       </button>
+                    ) : (
+                      <span className="mr-1 inline-block min-w-[54px]" aria-hidden="true" />
                     )}
                     <button
                       type="button"
