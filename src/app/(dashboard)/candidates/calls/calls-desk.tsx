@@ -26,7 +26,9 @@ export type CallPerson = {
   pay_ratio: number | null;
   comm: string | null;
   open_fresh: boolean;
-  reason: "call_back" | "interested" | "confirm_open" | "worth_a_call" | "pay_missing" | "details_missing";
+  reason: "call_back" | "interested" | "confirm_open" | "worth_a_call" | "pay_missing" | "details_missing" | "urgent_role";
+  /** For an urgent role: which one, and how well they match it. */
+  urgent_role?: { title: string; bucket: "perfect" | "close" } | null;
   interested_role?: string | null;
   tries: number;
   last_outcome: string | null;
@@ -51,6 +53,7 @@ const createdOf = (p: CallPerson) => {
 };
 
 const REASON: Record<CallPerson["reason"], { label: string; cls: string }> = {
+  urgent_role: { label: "Urgent role", cls: "bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-100" },
   interested: { label: "Said yes to a role", cls: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100" },
   call_back: { label: "Call back due", cls: "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-200" },
   confirm_open: { label: "Strong, confirm they are looking", cls: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" },
@@ -189,7 +192,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                   </span>
                 )}
                 <span className={`mt-1 inline-block rounded px-1.5 py-px text-[11px] font-medium ${REASON[p.reason].cls}`}>
-                  {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : REASON[p.reason].label}
+                  {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : p.reason === "urgent_role" && p.urgent_role ? `Urgent: ${p.urgent_role.title} (${p.urgent_role.bucket === "perfect" ? "perfect" : "close"} match)` : REASON[p.reason].label}
                   {(p.reason === "pay_missing" || p.reason === "details_missing") && gapsOf(p).length > 0 && `: ${gapsOf(p).join(", ")}`}
                   {p.reason === "worth_a_call" && p.pay_ratio != null && ` · ratio ${Number(p.pay_ratio).toFixed(1)}`}
                 </span>

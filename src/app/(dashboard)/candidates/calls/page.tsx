@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
 import CallsDesk, { type CallPerson } from "./calls-desk";
+import { loadUrgentRoleMatches } from "@/lib/urgent-role-calls";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,35 @@ export default async function CallsTodayPage({ searchParams }: { searchParams: P
     supabase.rpc("calls_today", { p_limit: DAILY_TARGET, p_focus: focus }),
     supabase.from("call_log").select("caller_id, outcome").gte("created_at", istDayStartIso()).limit(2000),
   ]);
-  const people = ((rows ?? []) as CallPerson[]).map((p) => ({ ...p, resume_url: null as string | null }));
+  const regular = ((rows ?? []) as CallPerson[]).map((p) => ({ ...p, resume_url: null as string | null }));
+
+  // Urgent roles first: people who match a role marked urgent and still lack details (pay, notice, expected pay, city),
+  // best match first. They are listed ahead of the usual list and are not repeated in it.
+  const urgent = await loadUrgentRoleMatches(supabase).catch(() => ({ roles: [], matches: [] }));
+  let urgentPeople: CallPerson[] = [];
+  if (urgent.matches.length > 0) {
+    const bestFor = new Map<string, (typeof urgent.matches)[number]>();
+    for (const m of urgent.matches) {
+      const cur = bestFor.get(m.candidateId);
+      if (!cur || (m.bucket === "perfect" && cur.bucket !== "perfect") || (m.bucket === cur.bucket && m.order < cur.order)) bestFor.set(m.candidateId, m);
+    }
+    const { data: urgentRows } = await supabase.rpc("calls_for_candidates", { p_ids: Array.from(bestFor.keys()) });
+    const lacks = (p: CallPerson) => !p.current_fixed_ctc || !p.notice_period || !p.expected_fixed_ctc || !p.current_location;
+    urgentPeople = ((urgentRows ?? []) as CallPerson[])
+      .filter(lacks)
+      .map((p) => {
+        const m = bestFor.get(p.id)!;
+        return { p: { ...p, resume_url: null as string | null, reason: "urgent_role" as const, urgent_role: { title: m.roleTitle, bucket: m.bucket } }, m };
+      })
+      .sort((a, b) => (a.m.bucket === b.m.bucket ? a.m.order - b.m.order : a.m.bucket === "perfect" ? -1 : 1))
+      .slice(0, 25)
+      .map((x) => x.p);
+  }
+  const urgentIds = new Set(urgentPeople.map((p) => p.id));
+  // Callbacks and people who said yes still come first; urgent-role completion goes right after them.
+  const lead = regular.filter((p) => !urgentIds.has(p.id) && (p.reason === "call_back" || p.reason === "interested"));
+  const rest = regular.filter((p) => !urgentIds.has(p.id) && p.reason !== "call_back" && p.reason !== "interested");
+  const people = [...lead, ...urgentPeople, ...rest].slice(0, Math.max(DAILY_TARGET, lead.length + urgentPeople.length));
 
   const log = (todays ?? []) as { caller_id: string | null; outcome: string }[];
   const byCaller = new Map<string, number>();
@@ -83,6 +112,11 @@ export default async function CallsTodayPage({ searchParams }: { searchParams: P
         ))}
         <span className="text-slate-400">{FOCUS.find((f) => f.key === focus)?.hint}</span>
       </div>
+      {urgent.roles.length > 0 && (
+        <p className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-[13px] text-orange-900 dark:border-orange-900 dark:bg-orange-950/20 dark:text-orange-200">
+          Urgent {urgent.roles.length === 1 ? "role" : "roles"}: {urgent.roles.map((r) => `${r.title}${r.client ? ` (${r.client})` : ""}`).join(", ")}. {urgentPeople.length > 0 ? `${urgentPeople.length} matching ${urgentPeople.length === 1 ? "person" : "people"} still missing details ${urgentPeople.length === 1 ? "is" : "are"} listed first.` : "Everyone who matches has their details."}
+        </p>
+      )}
       {error ? (
         <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-800">Couldn&apos;t load today&apos;s list: {error.message}</p>
       ) : (

@@ -22,6 +22,7 @@ import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
 import DeleteMandateButton from "./delete-mandate-button";
 import HeaderMenu from "./header-menu";
+import UrgentToggleButton from "./urgent-toggle-button";
 import PortalPreviewButton from "@/components/portal-preview-button";
 import ClientPortalAccessPanel from "../../clients/[id]/client-portal-access-panel";
 import ScorePipelineButton from "./score-pipeline-button";
@@ -387,6 +388,7 @@ export default async function MandateDetailPage({
             </Link>
           </HeaderMenu>
           <HeaderMenu label="More">
+            <UrgentToggleButton mandateId={id} urgent={!!(mandate as { is_urgent?: boolean }).is_urgent} />
             {mandate.is_archived ? (
               <UnarchiveMandateButton mandateId={id} />
             ) : (
