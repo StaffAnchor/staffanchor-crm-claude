@@ -528,6 +528,7 @@ export default function MandateCandidatesBoard({
                             {row.candidate.sub_domain ?? "—"}
                             {row.candidate.current_employer ? ` · ${row.candidate.current_employer}` : ""}
                           </p>
+                          {row.candidate.current_location && <p className="text-xs text-slate-500 truncate">📍 {row.candidate.current_location}</p>}
                           {/* Decision-support chips -- stability score (auto-computed
                               from the resume timeline) plus a compact AI red-flag
                               indicator, so a recruiter scanning the board doesn't have

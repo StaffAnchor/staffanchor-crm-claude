@@ -162,6 +162,7 @@ export type MandateCandidateRow = {
     notice_period: string | null;
     segment_data: Record<string, unknown> | null;
     current_employer: string | null;
+    current_location?: string | null;
     current_job_title?: string | null;
     career_timeline_resume: unknown;
     career_timeline_profile: unknown;
@@ -699,6 +700,12 @@ export default function MandateCandidatesTable({
                       verdict. Triage and AI Matches show the verdict with its doubts. */}
                 </div>
                 <div className="text-xs text-slate-400 truncate max-w-[260px]">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
+                {l.candidate.current_location && (
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[260px]">
+                    📍 {l.candidate.current_location}
+                    {/^(yes|open|willing)/i.test(l.candidate.open_to_relocation ?? "") ? <span className="text-emerald-600 dark:text-emerald-400"> · open to relocate</span> : null}
+                  </div>
+                )}
               </td>
                 <td className="px-3 py-3 align-top">
                 <MandateAssessmentPopover
