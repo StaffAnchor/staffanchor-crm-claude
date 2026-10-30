@@ -38,7 +38,7 @@ export default function VendorNav({
 
   return (
     <header className="bg-[#12141c] text-slate-200 sticky top-0 z-30">
-      <div className="max-w-[1100px] mx-auto px-5 h-14 flex items-center gap-6">
+      <div className="max-w-[1100px] mx-auto px-3 md:px-5 h-14 flex items-center gap-3 md:gap-6">
         <div className="flex items-center gap-2.5 shrink-0">
           <span className="flex items-center justify-center rounded-lg bg-white/95 shadow-[0_1px_3px_rgba(0,0,0,0.35)] px-2 py-1">
             <Image
@@ -47,7 +47,7 @@ export default function VendorNav({
               width={134}
               height={46}
               priority
-              className="h-9 w-auto object-contain"
+              className="h-7 md:h-9 w-auto object-contain"
             />
           </span>
           <span className="text-[13px] font-semibold text-teal-400 tracking-tight hidden md:block">
@@ -55,7 +55,7 @@ export default function VendorNav({
           </span>
         </div>
 
-        <nav className="flex items-center gap-1 text-[13px]">
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto text-[13px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV_LINKS.map((link) => {
             const active = pathname.startsWith(link.href);
             return (

@@ -358,7 +358,7 @@ body {
   #main-content select,
   #main-content textarea,
   #main-content input:not([type="checkbox"]):not([type="radio"]) {
-    max-width: 100%;
+    max-width: calc(100vw - 2rem);
   }
   #main-content img,
   #main-content video {
