@@ -355,6 +355,16 @@ body {
   #main-content .flex.justify-between > .flex.items-center {
     flex-wrap: wrap;
   }
+  #main-content select,
+  #main-content textarea,
+  #main-content input:not([type="checkbox"]):not([type="radio"]) {
+    max-width: 100%;
+  }
+  #main-content img,
+  #main-content video {
+    max-width: 100%;
+    height: auto;
+  }
   #main-content table {
     display: block;
     max-width: 100%;
