@@ -97,7 +97,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
           templateKey="referralRole"
         />
       )}
-      <RankedGroups mandateId={mandateId} cities={card.cities} ranked={shownRanked} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
+      <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} cities={card.cities} ranked={shownRanked} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, or marked not a fit, is left out.
       </p>

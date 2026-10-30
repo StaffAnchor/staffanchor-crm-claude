@@ -7,6 +7,7 @@ import { Check, Loader2, MessageCircle, UserPlus } from "lucide-react";
 import LazyCvPreview from "./lazy-cv-preview";
 import NotAFitMenu from "./not-a-fit-menu";
 import PipelineTemplateActions from "./pipeline-template-actions";
+import WriteWhatsAppButton from "./write-whatsapp-button";
 import WhatsAppReview from "@/components/whatsapp-review";
 import { useWhatsAppTemplates } from "@/lib/use-whatsapp-templates";
 import { POOL_TIER_LABEL, POOL_TIER_PILL, type PoolTier } from "@/lib/talent-pool";
@@ -33,7 +34,7 @@ const REACHED_STYLE: Record<string, string> = {
 type Where = "all" | "here" | "reloc" | "unknown";
 const RELOC_OK = new Set(["Yes", "Maybe", "Depends upon Option"]);
 
-export default function RankedGroups({ mandateId, ranked: allRanked, reached = {}, cities = [] }: { mandateId: string; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }>; cities?: string[] }) {
+export default function RankedGroups({ mandateId, roleTitle = null, ranked: allRanked, reached = {}, cities = [] }: { mandateId: string; roleTitle?: string | null; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }>; cities?: string[] }) {
   const router = useRouter();
   const flags = useWhatsAppTemplates();
   const [reviewing, setReviewing] = useState(false);
@@ -227,6 +228,7 @@ export default function RankedGroups({ mandateId, ranked: allRanked, reached = {
                 <div className="shrink-0 space-y-2">
                   <NotAFitMenu onPick={(reason) => dismiss(c.candidate_id, reason)} />
                   <LazyCvPreview candidateId={c.candidate_id} name={c.full_name} />
+                  <WriteWhatsAppButton candidateId={c.candidate_id} name={c.full_name ?? "there"} role={roleTitle} />
                   <PipelineTemplateActions candidateId={c.candidate_id} mandateId={mandateId} stage="sourced" missing={[]} showOpportunity />
                 </div>
               </div>
