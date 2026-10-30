@@ -37,6 +37,8 @@ export default async function DashboardLayout({
     { href: "/tasks", label: "Tasks", enabled: true },
     { href: "/candidates", label: "Candidates", enabled: true },
     { href: "/whatsapp", label: "WhatsApp", enabled: true },
+    // Candidates colleagues have recommended to you for a role: your own space, see (dashboard)/recommended.
+    { href: "/recommended", label: "Recommended", enabled: true },
     { href: "/hiring", label: "Hiring board", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },

@@ -11,6 +11,7 @@ import NotificationBell from "./notification-bell";
 import CallsFlaggedBell from "./calls-flagged-bell";
 import TasksNavBadge from "./tasks-nav-badge";
 import WhatsAppNavBadge from "./whatsapp-nav-badge";
+import RecommendedNavBadge from "./recommended-nav-badge";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
@@ -20,7 +21,7 @@ const NAV_GROUPS: { id: string; label: string; items: string[]; also?: string[] 
   // Everything about a role: the board across roles, the roles themselves, the clients behind them, the interviews and the placements that follow.
   { id: "roles", label: "Roles", items: ["/hiring", "/mandates", "/clients", "/client-acquisition", "/interviews", "/placements"], also: ["/employer-inquiries", "/sales", "/retention"] },
   { id: "people", label: "People", items: ["/candidates"], also: ["/saas-practice", "/referrals"] },
-  { id: "inbox", label: "Inbox", items: ["/whatsapp", "/tasks"] },
+  { id: "inbox", label: "Inbox", items: ["/whatsapp", "/tasks", "/recommended"] },
   // Only admins are given this link (see the dashboard layout), so everyone else never sees the heading.
   { id: "assistant", label: "Assistant", items: ["/agent"] },
 ];
@@ -110,6 +111,7 @@ export default function TopNav({
                   <>
                     <TasksNavBadge />
                     <WhatsAppNavBadge />
+                    <RecommendedNavBadge />
                   </>
                 ) : null}
               </Link>

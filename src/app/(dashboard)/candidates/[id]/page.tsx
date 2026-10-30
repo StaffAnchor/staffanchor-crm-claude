@@ -48,6 +48,7 @@ import CvActionsBar from "@/components/cv-actions-bar";
 import { candidateNextActions, plain } from "@/lib/candidate-next-actions";
 import DeleteCandidateButton from "./delete-candidate-button";
 import EditProfileButton from "./edit-profile-button";
+import RecommendDialog from "@/components/recommend-dialog";
 import { ProfileRatingPanel } from "@/components/profile-rating";
 import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
@@ -849,6 +850,7 @@ export default async function CandidateDetailPage({
             <div className="flex flex-col items-end gap-2 shrink-0">
               <div className="flex items-center gap-2">
                 <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
+                <RecommendDialog candidateId={candidate.id} candidateName={candidate.full_name ?? "this candidate"} label="Recommend" />
                 <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
               </div>
               <div className="text-right text-[12px] text-slate-500 dark:text-slate-400">

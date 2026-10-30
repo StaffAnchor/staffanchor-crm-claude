@@ -20,6 +20,7 @@ import CallDispositionControl from "./call-disposition-control";
 import VendorNoteControl from "./vendor-note-control";
 import { Zap, Sparkles, Loader2 } from "lucide-react";
 import MandateAssessmentPopover from "./mandate-assessment-popover";
+import RecommendDialog from "@/components/recommend-dialog";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 
 // Stage index used only to decide whether adding to the client shortlist
@@ -871,6 +872,13 @@ export default function MandateCandidatesTable({
                       </button>
                     )
                   )}
+                  <RecommendDialog
+                    candidateId={l.candidate.id}
+                    candidateName={l.candidate.full_name ?? "this candidate"}
+                    defaultMandateId={mandateContext.mandateId as string}
+                    label="Recommend"
+                    className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
+                  />
                   {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
                     <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
                       Reject
