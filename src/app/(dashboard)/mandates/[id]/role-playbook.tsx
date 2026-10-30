@@ -82,9 +82,9 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
   return (
     <section aria-label="Role playbook" className="mt-3 rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
       <details className="group">
-        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-1.5 gap-y-2 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-1.5 gap-y-2 px-3 py-2.5 max-md:flex-nowrap max-md:overflow-x-auto [&::-webkit-details-marker]:hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           {steps.map((s, i) => (
-            <span key={s.key} className="inline-flex items-center gap-1.5">
+            <span key={s.key} className="inline-flex shrink-0 items-center gap-1.5">
               {i > 0 && <span className="h-px w-3 bg-slate-200 dark:bg-slate-700" aria-hidden />}
               <span
                 title={s.line}
@@ -101,7 +101,7 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
               </span>
             </span>
           ))}
-          <span className="ml-auto flex items-center gap-2">
+          <span className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap">
             {nextStep.cta &&
               (nextStep.href.startsWith("#") ? (
                 <a href={nextStep.href} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-700">

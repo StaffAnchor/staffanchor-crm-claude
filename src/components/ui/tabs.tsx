@@ -51,7 +51,7 @@ export function Tabs({ items, defaultKey, className }: { items: TabItem[]; defau
 
   return (
     <div className={className}>
-      <div className="flex flex-wrap gap-1 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-1 backdrop-blur-sm">
+      <div className="flex gap-1 overflow-x-auto md:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-1 backdrop-blur-sm">
         {items.map((item) => {
           const tone = item.tone ? TONE[item.tone] : null;
           const on = active === item.key;
@@ -61,7 +61,7 @@ export function Tabs({ items, defaultKey, className }: { items: TabItem[]; defau
               type="button"
               onClick={() => setActive(item.key)}
               className={cn(
-                "flex items-center gap-1.5 rounded-ros-md px-3 py-1.5 text-[12.5px] font-semibold transition-all duration-200 ease-ros",
+                "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-ros-md px-3 py-1.5 text-[12.5px] font-semibold transition-all duration-200 ease-ros",
                 tone
                   ? on
                     ? `${tone.on} ring-1 shadow-ros-sm`

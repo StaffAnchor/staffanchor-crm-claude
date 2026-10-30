@@ -336,3 +336,21 @@ body {
 .dark .ros-page-title {
   color: rgb(241 245 249);
 }
+
+
+/* Phones: pages keep their desktop gutters otherwise, which leaves a narrow strip for the content. Tighter gutters, and any
+   wide table scrolls sideways inside the page instead of stretching it. */
+@media (max-width: 767px) {
+  #main-content > div[class*="max-w-"] {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  #main-content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

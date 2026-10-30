@@ -711,7 +711,7 @@ export default function MandateCandidatesTable({
                     />
                   </div>
                 </td>
-                <td className={cell(l, "mid", openRows.has(l.id), "min-w-[260px] px-3 py-4 align-top max-md:col-span-2 max-md:min-w-0 max-md:pr-8")}>
+                <td className={cell(l, "mid", openRows.has(l.id), "min-w-[260px] px-3 py-4 align-top max-md:col-span-2 max-md:min-w-0 max-md:pr-8!")}>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link

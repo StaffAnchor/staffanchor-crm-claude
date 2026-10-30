@@ -364,10 +364,10 @@ export default async function MandateDetailPage({
         {backLabel}
       </Link>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-6 mt-3 shadow-sm flex items-start justify-between gap-4">
-        <div className="min-w-0">
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-4 md:p-6 mt-3 shadow-sm flex flex-col md:flex-row items-start justify-between gap-3 md:gap-4">
+        <div className="min-w-0 w-full md:w-auto">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-[26px] leading-8 font-semibold tracking-tight text-slate-900 dark:text-slate-100">{mandate.role_title}</h1>
+            <h1 className="text-[22px] md:text-[26px] leading-7 md:leading-8 font-semibold tracking-tight text-slate-900 dark:text-slate-100">{mandate.role_title}</h1>
             <Badge tone={mandate.status === "open" ? "success" : mandate.status === "draft" ? "warning" : "neutral"} size="sm" className="!normal-case !tracking-normal text-[12.5px]">
               {mandate.is_archived ? "Archived" : String(mandate.status).replace("_", " ").replace(/^./, (c: string) => c.toUpperCase())}
             </Badge>
