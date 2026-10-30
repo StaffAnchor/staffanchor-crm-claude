@@ -65,6 +65,7 @@ export default function QuickContactActions({
       )}
       <WhatsAppMenu
         phone={phone}
+        context={{ name: candidateName }}
         templates={candidateTemplates(candidateName, { me, candidateId, missing }).filter((t) => t.key !== "intro")}
         onIntroduce={() => setSharing(true)}
         onSend={() => logActivity(candidateId, "whatsapp")}
