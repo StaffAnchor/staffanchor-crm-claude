@@ -621,14 +621,44 @@ export default function MandateCandidatesTable({
     if (!CLIENT_DECISION_STAGES.has(next)) void saveStage(row, next);
   }
 
+  // Each candidate is its own card: a coloured edge for how well they fit, white body, rounded corners, a gap before the next.
+  // Rejected people fade so the live ones stand out.
+  const isDone = (l: MandateCandidateRow) => ["rejected", "pulled_back"].includes(l.stage);
+  const accentOf = (l: MandateCandidateRow) => {
+    if (isDone(l)) return "border-l-slate-300 dark:border-l-slate-600";
+    const rec = l.match_assessment?.recommendation;
+    if (rec === "Strong Fit") return "border-l-emerald-500";
+    if (rec === "Fit with Reservations") return "border-l-amber-400";
+    if (rec === "Not a Fit") return "border-l-rose-400";
+    return "border-l-slate-200 dark:border-l-slate-700";
+  };
+  const expandedCell = (l: MandateCandidateRow, pos: "first" | "last", extra = "") =>
+    [
+      "border-b border-slate-200 dark:border-slate-700",
+      isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white dark:bg-slate-900",
+      pos === "first" ? `rounded-bl-2xl border-l-4 ${accentOf(l)}` : "rounded-br-2xl border-r",
+      extra,
+    ].join(" ");
+  const cell = (l: MandateCandidateRow, pos: "first" | "mid" | "last", open: boolean, extra = "") =>
+    [
+      "border-y border-slate-200 transition-colors dark:border-slate-700",
+      isDone(l) ? "bg-slate-50 dark:bg-slate-900/50" : "bg-white group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/60",
+      open ? "border-b-0" : "",
+      pos === "first" ? `rounded-tl-2xl border-l-4 ${open ? "" : "rounded-bl-2xl"} ${accentOf(l)}` : "",
+      pos === "last" ? `rounded-tr-2xl border-r ${open ? "" : "rounded-br-2xl"}` : "",
+      extra,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mt-6 shadow-sm">
+    <div className="mt-6">
       {message && (
-        <div className={`px-4 py-2 text-xs font-medium ${message.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+        <div className={`mb-3 rounded-xl px-4 py-2 text-xs font-medium ${message.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
           {message.text}
         </div>
       )}
-      <div className={selected.size > 0 ? "px-3 pt-3" : ""}>
+      <div className={selected.size > 0 ? "mb-3" : ""}>
         <MandateBulkActionsBar
           rows={rows}
           setRows={setRows}
@@ -638,34 +668,34 @@ export default function MandateCandidatesTable({
           mandateContext={mandateContext as { mandateId: string; role_title: string; client_name: string; [key: string]: unknown }}
         />
       </div>
-      <table className="w-full text-sm">
-        <thead className="text-slate-400 text-xs uppercase tracking-wide">
-          <tr className="border-b border-slate-100 dark:border-slate-800">
-            <th className="px-4 py-2 w-8">
+      <table className="w-full border-separate border-spacing-0 text-sm">
+        <thead className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <tr>
+            <th className="w-10 px-4 pb-2">
               <input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={toggleAll} />
             </th>
-            <th className="text-left px-3 py-2 font-medium">Candidate</th>
-            <th className="text-left px-3 py-2 font-medium">Fit</th>
-            <th className="text-left px-3 py-2 font-medium">Pay · notice</th>
-            <th className="text-left px-3 py-2 font-medium">Stage</th>
-            <th className="hidden px-3 py-2 text-left font-medium xl:table-cell">Last two roles</th>
-            <th className="px-3 py-2"></th>
+            <th className="px-3 pb-2 text-left font-semibold">Candidate</th>
+            <th className="px-3 pb-2 text-left font-semibold">Fit</th>
+            <th className="px-3 pb-2 text-left font-semibold">Pay · notice</th>
+            <th className="px-3 pb-2 text-left font-semibold">Stage</th>
+            <th className="hidden px-3 pb-2 text-left font-semibold xl:table-cell">Last two roles</th>
+            <th className="px-3 pb-2"></th>
           </tr>
         </thead>
         <tbody>
           {rows.map((l) => (
             <Fragment key={l.id}>
-              <tr className={`group hover:bg-slate-50/70 dark:hover:bg-slate-800/40 ${openRows.has(l.id) ? "bg-slate-50/60 dark:bg-slate-800/30" : ""}`}>
-                <td className="px-4 py-3 align-top">
+              <tr className="group">
+                <td className={cell(l, "first", openRows.has(l.id), "px-4 py-4 align-top")}>
                 <input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleRow(l.id)} />
               </td>
-                <td className="px-3 py-3 align-top">
+                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <ApplicationAnswersQuickView answers={applicationAnswersByCandidate[l.candidate.id]}>
                     <Link
                       target="_blank" rel="noopener noreferrer" href={`/candidates/${l.candidate.id}?mandateId=${mandateContext.mandateId}`}
                       onClick={() => markViewed(l.id)}
-                      className={`hover:text-teal-600 ${l.viewed_at ? "font-medium text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
+                      className={`text-[15px] hover:text-teal-600 ${l.viewed_at ? "font-semibold text-slate-900 dark:text-slate-100" : "font-bold text-slate-900 dark:text-slate-100"}`}
                     >
                       {l.candidate.full_name}
                     </Link>
@@ -703,15 +733,14 @@ export default function MandateCandidatesTable({
                       gave almost everyone 76 to 88 and contradicted the evidence-based
                       verdict. Triage and AI Matches show the verdict with its doubts. */}
                 </div>
-                <div className="text-xs text-slate-400 truncate max-w-[260px]">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
-                {l.candidate.current_location && (
-                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[260px]">
-                    📍 {l.candidate.current_location}
-                    {/^(yes|open|willing)/i.test(l.candidate.open_to_relocation ?? "") ? <span className="text-emerald-600 dark:text-emerald-400"> · open to relocate</span> : null}
-                  </div>
-                )}
+                <div className="mt-1 max-w-[300px] truncate text-xs text-slate-500 dark:text-slate-400 xl:hidden">{[l.candidate.current_job_title, l.candidate.current_employer].filter(Boolean).join(" at ") || l.candidate.sub_domain}</div>
+                <div className="mt-1.5 flex max-w-[300px] flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  {l.candidate.current_location && <span className="truncate">📍 {l.candidate.current_location}</span>}
+                  {l.candidate.total_experience_years ? <span>· {Math.round(Number(l.candidate.total_experience_years) * 10) / 10} yrs</span> : null}
+                  {/^(yes|open|willing)/i.test(l.candidate.open_to_relocation ?? "") ? <span className="text-emerald-600 dark:text-emerald-400">· open to relocate</span> : null}
+                </div>
               </td>
-                <td className="px-3 py-3 align-top">
+                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
                 <MandateAssessmentPopover
                   assessment={l.match_assessment}
                   onReassess={() => reassessCandidate(l.candidate.id)}
@@ -723,11 +752,11 @@ export default function MandateCandidatesTable({
                   return reason ? <FitReason text={reason} /> : null;
                 })()}
               </td>
-                <td className="px-3 py-3 align-top text-[13px]"><div className="text-slate-700 dark:text-slate-300 tabular-nums">
-                  <span className="whitespace-nowrap">{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</span>
+                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top text-[13px]")}><div className="text-slate-700 dark:text-slate-300 tabular-nums">
+                  <span className="whitespace-nowrap text-[15px] font-semibold text-slate-900 dark:text-slate-100">{l.candidate.current_fixed_ctc ? `₹${l.candidate.current_fixed_ctc}L` : "—"}</span>
                   {l.candidate.notice_period ? <span className="block whitespace-nowrap text-slate-400">{l.candidate.notice_period}</span> : null}
                 </div></td>
-                <td className="px-3 py-3 align-top">
+                <td className={cell(l, "mid", openRows.has(l.id), "px-3 py-4 align-top")}>
                 {editingStageId === l.id ? (
                   <div className="flex flex-col gap-1.5 min-w-[170px]">
                     <select
@@ -858,13 +887,13 @@ export default function MandateCandidatesTable({
                   </div>
                 )}
               </td>
-                <td className="hidden px-3 py-3 align-top xl:table-cell">
+                <td className={cell(l, "mid", openRows.has(l.id), "hidden px-3 py-4 align-top xl:table-cell")}>
                   {l.last_roles.length === 0 ? (
                     <span className="text-xs text-slate-300 dark:text-slate-600">No job history on file</span>
                   ) : (
-                    <ul className="max-w-[300px] space-y-1.5">
+                    <ul className="ml-1 max-w-[300px] space-y-2.5 border-l border-slate-200 pl-3 dark:border-slate-700">
                       {l.last_roles.map((r, i) => (
-                        <li key={i} className="leading-4" title={`${r.title}${r.company ? `, ${r.company}` : ""}${r.period ? ` (${r.period})` : ""}`}>
+                        <li key={i} className={`relative leading-4 before:absolute before:-left-[17px] before:top-1 before:h-2 before:w-2 before:rounded-full before:ring-2 before:ring-white before:content-[''] dark:before:ring-slate-900 ${i === 0 ? "before:bg-teal-500" : "before:bg-slate-300 dark:before:bg-slate-600"}`} title={`${r.title}${r.company ? `, ${r.company}` : ""}${r.period ? ` (${r.period})` : ""}`}>
                           <p className="truncate text-[12.5px] font-medium text-slate-800 dark:text-slate-200">{r.title}</p>
                           <p className="truncate text-[11.5px] text-slate-500 dark:text-slate-400">
                             {r.company ?? "Company not stated"}
@@ -875,50 +904,55 @@ export default function MandateCandidatesTable({
                     </ul>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-3 py-3 align-top text-right">
-                  {!l.in_shortlist && l.pass_patterns.length > 0 && (
-                    <span className="mr-2 inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 align-middle text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
-                      Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
-                    </span>
-                  )}
-                  {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
-                    l.match_assessment?.recommendation === "Not a Fit" ? (
-                      <button type="button" onClick={() => void shareWithClient(l)} title="The assessment says this is not a fit. Clients are sometimes fine with exceptions." className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
-                        Send anyway
+                <td className={cell(l, "last", openRows.has(l.id), "whitespace-nowrap px-3 py-4 align-top")}>
+                  <div className="flex flex-col items-end gap-2">
+
+                    {!l.in_shortlist && l.pass_patterns.length > 0 && (
+                      <span className="inline-block max-w-[220px] rounded-full bg-amber-50 px-2.5 py-1 align-middle text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-300" title={l.pass_patterns.join("\n")}>
+                        Like past passes: {l.pass_patterns.map((p) => p.split(" (")[0]).join(", ")}
+                      </span>
+                    )}
+                    {!l.in_shortlist && (STAGE_ORDER[l.stage] ?? 0) < STAGE_ORDER["submitted"] && l.stage !== "rejected" && l.stage !== "pulled_back" && (
+                      l.match_assessment?.recommendation === "Not a Fit" ? (
+                        <button type="button" onClick={() => void shareWithClient(l)} title="The assessment says this is not a fit. Clients are sometimes fine with exceptions." className="rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:hover:bg-slate-800">
+                          Send anyway
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => void shareWithClient(l)} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white shadow-sm hover:bg-teal-500">
+                          Send to client
+                        </button>
+                      )
+                    )}
+                    <div className="flex items-center gap-0.5">
+                    <RecommendDialog
+                      candidateId={l.candidate.id}
+                      candidateName={l.candidate.full_name ?? "this candidate"}
+                      defaultMandateId={mandateContext.mandateId as string}
+                      label="Recommend"
+                      className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
+                    />
+                    {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
+                      <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
+                        Reject
                       </button>
-                    ) : (
-                      <button type="button" onClick={() => void shareWithClient(l)} className="mr-1 rounded-full border border-teal-200 px-2.5 py-1 text-[12px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/40">
-                        Send to client
-                      </button>
-                    )
-                  )}
-                  <RecommendDialog
-                    candidateId={l.candidate.id}
-                    candidateName={l.candidate.full_name ?? "this candidate"}
-                    defaultMandateId={mandateContext.mandateId as string}
-                    label="Recommend"
-                    className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30"
-                  />
-                  {!["rejected", "pulled_back", "placed"].includes(l.stage) && (
-                    <button type="button" onClick={() => setRejectModalRow(l)} className="mr-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30">
-                      Reject
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleOpen(l.id)}
+                      aria-expanded={openRows.has(l.id)}
+                      className="rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800"
+                    >
+                      {openRows.has(l.id) ? "Close" : "More"}
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => toggleOpen(l.id)}
-                    aria-expanded={openRows.has(l.id)}
-                    className="rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800"
-                  >
-                    {openRows.has(l.id) ? "Close" : "More"}
-                  </button>
+                    </div>
+                  </div>
                 </td>
               </tr>
               {openRows.has(l.id) && (
-                <tr className="bg-slate-50/60 dark:bg-slate-800/30">
-                  <td></td>
-                  <td colSpan={6} className="px-3 pb-4 pt-1">
-                    <div className="grid items-start gap-4 md:grid-cols-3">
+                <tr>
+                  <td className={expandedCell(l, "first")}></td>
+                  <td colSpan={6} className={expandedCell(l, "last", "px-3 pb-4")}>
+                    <div className="grid items-start gap-4 border-t border-dashed border-slate-200 pt-4 dark:border-slate-700 md:grid-cols-3">
                       <div className="rounded-ros-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                         <p className="mb-3 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Contact and calls</p>
                         <div className="flex flex-col items-start gap-1.5">
@@ -1105,6 +1139,9 @@ export default function MandateCandidatesTable({
                   </td>
                 </tr>
               )}
+              <tr aria-hidden="true">
+                <td colSpan={7} className="h-3 p-0"></td>
+              </tr>
             </Fragment>
           ))}
         </tbody>
