@@ -2,19 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { LEVEL_OPTIONS } from "@/lib/role-type";
+import { NOT_A_FIT_REASONS } from "@/lib/not-a-fit-reasons";
 import SampleChecker, { type Sample } from "./sample-checker";
 
 export const dynamic = "force-dynamic";
 
-const REASON_LABEL: Record<string, string> = {
-  wrong_role: "Different kind of job",
-  wrong_level: "Wrong seniority",
-  wrong_world: "Sells something else",
-  wrong_city: "Location doesn't work",
-  pay_too_high: "Pay too high",
-  not_interested: "Not interested",
-  other: "Other",
-};
+const REASON_LABEL: Record<string, string> = Object.fromEntries(NOT_A_FIT_REASONS.map((r) => [r.value, r.title]));
 
 const nowMs = () => Date.now();
 const pct = (sorted: number[], p: number) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))] : null);

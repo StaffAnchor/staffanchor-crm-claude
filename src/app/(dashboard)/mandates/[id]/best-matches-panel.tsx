@@ -9,6 +9,7 @@ import RankedGroups from "./ranked-groups";
 import AlsoTypesBar from "./also-types-bar";
 import ReferralAskPanel from "../../candidates/referrals/referral-ask-panel";
 import type { RoleCard } from "@/lib/role-card";
+import { notAFitLabel } from "@/lib/not-a-fit-reasons";
 import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 
 // The best people in the whole database for this role, found and ranked automatically: write the role card from the
@@ -61,7 +62,22 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const dismissed = new Set(((dismissedRows ?? []) as { candidate_id: string }[]).map((d) => d.candidate_id));
   const pool = ((rows ?? []) as MatchRow[]).filter((r) => !inPipeline.has(r.candidate_id) && !dismissed.has(r.candidate_id));
   const nameOf = new Map(worlds.map((w) => [w.slug, w.name]));
-  const ranked = rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s, { also });
+  // What recruiters have already learned about a person (no quota, lead generation only, not SaaS...) lowers them here too.
+  const { data: flagRows } = await supabase.from("candidate_sales_flags").select("candidate_id, flag").in("candidate_id", pool.map((r) => r.candidate_id));
+  const flagsOf = new Map<string, string[]>();
+  for (const f of (flagRows ?? []) as { candidate_id: string; flag: string }[]) (flagsOf.get(f.candidate_id) ?? flagsOf.set(f.candidate_id, []).get(f.candidate_id)!).push(f.flag);
+  const ranked = rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s, { also })
+    .map((r) => {
+      const flags = flagsOf.get(r.row.candidate_id);
+      if (!flags?.length) return r;
+      return {
+        ...r,
+        score: Math.max(0, r.score - 10 * Math.min(2, flags.length)),
+        bucket: r.bucket === "perfect" ? ("close" as const) : r.bucket,
+        gaps: [...flags.map((f) => `Marked earlier: ${notAFitLabel(f).toLowerCase()}`), ...r.gaps],
+      };
+    })
+    .sort((a, b) => b.score - a.score);
   // The best 120 overall, plus everyone already in the role's own city however far down they rank: a city-bound role
   // must never hide the local people behind better-scoring candidates from elsewhere.
   const top = ranked.slice(0, 120);
