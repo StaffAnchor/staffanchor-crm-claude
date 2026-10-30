@@ -31,12 +31,12 @@ export default function CandidatesSubNav() {
   const moreActive = MORE.some((m) => isActive(m.href));
 
   return (
-    <div className="flex items-center gap-1 mb-4 -mt-1">
+    <div className="flex flex-wrap items-center gap-1 mb-4 -mt-1">
       {TABS.map((t) => (
         <Link
           key={t.href}
           href={t.href}
-          className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-[12.5px] font-medium transition-colors ${
             isActive(t.href) ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
@@ -51,7 +51,7 @@ export default function CandidatesSubNav() {
         >
           More ▾
         </summary>
-        <div className="absolute left-0 z-30 mt-1 w-64 rounded-ros-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className="absolute left-0 max-md:left-auto max-md:right-0 z-30 mt-1 w-64 max-w-[calc(100vw-1.5rem)] rounded-ros-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           {MORE.map((m) => (
             <Link key={m.href} href={m.href} className="block px-3 py-2 text-[12.5px] text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
               {m.label}

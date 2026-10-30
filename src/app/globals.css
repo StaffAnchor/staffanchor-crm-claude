@@ -347,6 +347,14 @@ body {
     padding-top: 1rem !important;
     padding-bottom: 1.5rem !important;
   }
+  /* Title rows with a button group on the right: let the group drop under the title instead of pushing the page wider. */
+  #main-content .flex.justify-between {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+  #main-content .flex.justify-between > .flex.items-center {
+    flex-wrap: wrap;
+  }
   #main-content table {
     display: block;
     max-width: 100%;
