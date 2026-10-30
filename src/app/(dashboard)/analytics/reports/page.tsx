@@ -114,21 +114,6 @@ function withPct(items: BarItem[], total: number): BarItem[] {
   return items.map((item) => ({ ...item, pct: pctOf(item.count, total) }));
 }
 
-// Simple label -> count tally for breakdown bar lists that don't drill down
-// to a filtered records view (unlike most BarItem lists on this page) --
-// href just re-links the current range, same as everywhere else a bar isn't
-// clickable to something more specific.
-function tallyToBarItems(values: (string | null | undefined)[]): BarItem[] {
-  const counts = new Map<string, number>();
-  for (const v of values) {
-    if (!v) continue;
-    counts.set(v, (counts.get(v) ?? 0) + 1);
-  }
-  return Array.from(counts.entries())
-    .map(([label, count]) => ({ key: label, label, count, href: "/analytics/reports" }))
-    .sort((a, b) => b.count - a.count);
-}
-
 const RANK: Record<string, number> = Object.fromEntries(STAGE_ORDER.map((s, i) => [s, i]));
 
 export default async function ReportsPage({
@@ -838,70 +823,37 @@ export default async function ReportsPage({
     return { key: ds, label: d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }), count: minutes, href: "/analytics/reports?range=" + range };
   });
 
-  // Priority Applicant funnel -- how many candidates even see a Priority
-  // Applicant CTA, how many land on the actual checkout page, how many start
-  // a Razorpay order, how many pay, and who started an order and never came
-  // back ("tried but changed mind"). Clicks are logged via
-  // /api/log-priority-click on jobs.staffanchor.com (priority_applicant_clicks,
-  // same pattern as quick_apply_clicks); checkout attempts/payments come
-  // straight from priority_purchases, which already exists for the
-  // credits/Razorpay flow. Range-filtered by created_at, same window as
-  // every other range-aware widget on this page.
+  // Paid recruiter calls (₹99 from the jobs site): how many were bought, how many are still waiting for a call, which are
+  // past their 3-working-day deadline (a refund is due), and the net money. Range-filtered by when they were paid.
   const rangeFromIso = rangeFrom.toISOString();
   const rangeToIso = new Date(rangeTo.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
 
-  const { data: priorityClickRows } = await supabase
-    .from("priority_applicant_clicks")
-    .select("event_type, placement, referrer, utm_source, utm_medium, device_type, browser, city, country, created_at")
-    .gte("created_at", rangeFromIso)
-    .lte("created_at", rangeToIso);
-
-  const { data: priorityPurchaseRows } = await supabase
-    .from("priority_purchases")
-    .select("id, candidate_id, status, amount_paise, pack_tier, created_at, paid_at, candidates(full_name, email)")
-    .gte("created_at", rangeFromIso)
-    .lte("created_at", rangeToIso)
-    .order("created_at", { ascending: false });
-
-  const priorityClicks = priorityClickRows ?? [];
-  const priorityPurchases = priorityPurchaseRows ?? [];
-
-  const priorityCtaClicks = priorityClicks.filter((e) => e.event_type === "click").length;
-  const priorityCheckoutLanded = priorityClicks.filter((e) => e.event_type === "checkout_started").length;
-  const priorityCheckoutAttempts = priorityPurchases.length;
-  const priorityPaid = priorityPurchases.filter((p) => p.status === "paid");
-  const priorityFailed = priorityPurchases.filter((p) => p.status === "failed");
-  // "Tried but changed mind": an order was created (Razorpay checkout modal
-  // opened) but never reached paid/failed -- and it's been long enough that
-  // this isn't just someone still mid-payment right now.
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const priorityAbandoned = priorityPurchases.filter(
-    (p) => p.status === "created" && new Date(p.created_at) < oneHourAgo
-  );
-  const priorityRevenue = priorityPaid.reduce((sum, p) => sum + (p.amount_paise ?? 0), 0) / 100;
-
-  const priorityClickToLandedPct = priorityCtaClicks > 0 ? Math.round((priorityCheckoutLanded / priorityCtaClicks) * 100) : null;
-  const priorityLandedToAttemptPct =
-    priorityCheckoutLanded > 0 ? Math.round((priorityCheckoutAttempts / priorityCheckoutLanded) * 100) : null;
-  const priorityAttemptToPaidPct =
-    priorityCheckoutAttempts > 0 ? Math.round((priorityPaid.length / priorityCheckoutAttempts) * 100) : null;
-
-  const PLACEMENT_LABELS: Record<string, string> = {
-    job_teaser: "Job page teaser",
-    floating_nudge: "Floating nudge",
-    apply_confirmation: "Apply confirmation card",
-    portal_home: "Portal home tile",
-    my_pipeline_cta: "My Pipeline CTA",
-    my_pipeline_spend_credit: "My Pipeline (spend credit)",
-    checkout_landed: "Checkout page landed",
-    nav_pill: "Nav bar pill",
+  const { data: paidCallRows } = await supabase
+    .from("candidate_mandate_links")
+    .select("id, candidate_id, call_paid_at, call_due_at, call_refunded_at, candidates(full_name), mandates(role_title)")
+    .not("call_paid_at", "is", null)
+    .gte("call_paid_at", rangeFromIso)
+    .lte("call_paid_at", rangeToIso)
+    .order("call_paid_at", { ascending: false });
+  type PaidCallRow = { id: string; candidate_id: string; call_paid_at: string; call_due_at: string | null; call_refunded_at: string | null; candidates: { full_name: string | null } | null; mandates: { role_title: string | null } | null };
+  const paidCalls = (paidCallRows ?? []) as unknown as PaidCallRow[];
+  const { data: loggedCallRows } = paidCalls.length
+    ? await supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidCalls.map((c) => c.candidate_id))
+    : { data: [] as { candidate_id: string; created_at: string }[] };
+  const callsByCandidate = new Map<string, string[]>();
+  for (const c of (loggedCallRows ?? []) as { candidate_id: string; created_at: string }[]) (callsByCandidate.get(c.candidate_id) ?? callsByCandidate.set(c.candidate_id, []).get(c.candidate_id)!).push(c.created_at);
+  const nowForCalls = Date.now();
+  const paidCallState = (c: PaidCallRow): "refunded" | "called" | "overdue" | "waiting" => {
+    if (c.call_refunded_at) return "refunded";
+    if ((callsByCandidate.get(c.candidate_id) ?? []).some((t) => t >= c.call_paid_at)) return "called";
+    return c.call_due_at && new Date(c.call_due_at).getTime() < nowForCalls ? "overdue" : "waiting";
   };
-  const priorityPlacementItems: BarItem[] = withPct(
-    tallyToBarItems(
-      priorityClicks.filter((e) => e.event_type === "click").map((e) => PLACEMENT_LABELS[e.placement] ?? e.placement)
-    ),
-    priorityCtaClicks
-  );
+  const paidCallCount = paidCalls.length;
+  const paidCallRefunded = paidCalls.filter((c) => paidCallState(c) === "refunded").length;
+  const paidCallCalled = paidCalls.filter((c) => paidCallState(c) === "called").length;
+  const paidCallWaiting = paidCalls.filter((c) => paidCallState(c) === "waiting").length;
+  const paidCallOverdue = paidCalls.filter((c) => paidCallState(c) === "overdue");
+  const paidCallRevenue = (paidCallCount - paidCallRefunded) * 99;
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">
@@ -1479,99 +1431,47 @@ export default async function ReportsPage({
             ),
           },
           {
-            key: "priority",
-            label: "Priority Applicant",
+            key: "paid_calls",
+            label: "Paid calls",
             icon: <Zap className="w-3.5 h-3.5" />,
             content: (
               <>
                 <Card className="mb-4 flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">
                   <Zap className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
                   <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Funnel:</span> saw a Priority
-                    Applicant CTA (clicked) → landed on the checkout page → started a Razorpay order → paid. Everything
-                    below is scoped to the range picker above, same as the rest of this page.
-                    &quot;Tried but changed mind&quot; is a Razorpay order that was opened over an hour ago and never
-                    completed or failed -- i.e. genuinely abandoned, not just mid-payment right now.
+                    Candidates who paid ₹99 on the jobs site for a recruiter call within 3 working days. A logged call attempt of any outcome counts as keeping the promise.
+                    &quot;Overdue&quot; means the deadline passed with no call logged, so a refund is due. Scoped to the range above, by payment date.
                   </p>
                 </Card>
-
-                <Card className="mb-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-teal-500" />
-                    <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Priority Applicant funnel</h2>
-                    <span className="text-xs text-slate-400 ml-auto">{currentRangeLabel}</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 text-center">
-                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
-                      <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{priorityCtaClicks}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">CTA clicked</p>
-                    </div>
-                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 py-3">
-                      <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{priorityCheckoutLanded}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        Checkout landed{priorityClickToLandedPct !== null ? ` · ${priorityClickToLandedPct}%` : ""}
-                      </p>
-                    </div>
-                    <div className="rounded-lg bg-teal-50 dark:bg-teal-950/40 py-3">
-                      <p className="text-xl font-bold text-teal-700 dark:text-teal-400">{priorityCheckoutAttempts}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        Order started{priorityLandedToAttemptPct !== null ? ` · ${priorityLandedToAttemptPct}%` : ""}
-                      </p>
-                    </div>
-                    <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 py-3">
-                      <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{priorityPaid.length}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        Paid{priorityAttemptToPaidPct !== null ? ` · ${priorityAttemptToPaidPct}%` : ""}
-                      </p>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-5 mb-4">
+                  <StatTile icon={<Zap className="w-4 h-4" />} label="Paid" value={paidCallCount} />
+                  <StatTile icon={<Zap className="w-4 h-4" />} label="Called" value={paidCallCalled} />
+                  <StatTile icon={<Clock className="w-4 h-4" />} label="Waiting for a call" value={paidCallWaiting} />
+                  <StatTile icon={<AlertTriangle className="w-4 h-4" />} label="Overdue, refund due" value={paidCallOverdue.length} />
+                  <StatTile icon={<TrendingUp className="w-4 h-4" />} label="Net revenue" value={`₹${paidCallRevenue.toLocaleString("en-IN")}`} />
+                </div>
+                <Card>
+                  <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Paid calls in this range</h2>
+                  {paidCalls.length === 0 ? (
+                    <p className="text-[13px] text-slate-400">No paid calls yet.</p>
+                  ) : (
+                    <ul className="space-y-2 max-h-96 overflow-y-auto">
+                      {paidCalls.map((c) => {
+                        const st = paidCallState(c);
+                        return (
+                          <li key={c.id} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5 text-[12.5px] last:border-0 dark:border-slate-800">
+                            <span className="truncate text-slate-700 dark:text-slate-300">
+                              {c.candidates?.full_name ?? "Candidate"} <span className="text-slate-400">· {c.mandates?.role_title ?? "Role"}</span>
+                            </span>
+                            <span className={`shrink-0 font-medium ${st === "overdue" ? "text-rose-600" : st === "called" ? "text-emerald-600" : st === "refunded" ? "text-slate-400" : "text-amber-600"}`}>
+                              {st === "overdue" ? "Overdue" : st === "called" ? "Called" : st === "refunded" ? "Refunded" : `Call by ${c.call_due_at ? new Date(c.call_due_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" }) : "-"}`}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </Card>
-
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <StatTile
-                    icon={<Wallet className="w-4 h-4" />}
-                    label={`Revenue · ${currentRangeLabel.toLowerCase()}`}
-                    value={`₹${priorityRevenue.toLocaleString("en-IN")}`}
-                    accent
-                  />
-                  <StatTile icon={<UserX className="w-4 h-4" />} label="Tried but changed mind" value={priorityAbandoned.length} />
-                  <StatTile icon={<AlertTriangle className="w-4 h-4" />} label="Failed payments" value={priorityFailed.length} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <Card>
-                    <div className="flex items-center gap-2 mb-3">
-                      <GitBranch className="w-4 h-4 text-teal-500" />
-                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Clicks by placement</h2>
-                      <span className="text-xs text-slate-400 ml-auto">{currentRangeLabel}</span>
-                    </div>
-                    <ReportBarList items={priorityPlacementItems} colorClass="bg-teal-500/80" emptyLabel="No Priority Applicant clicks in this range." highlightTop />
-                  </Card>
-                  <Card>
-                    <div className="flex items-center gap-2 mb-3">
-                      <UserX className="w-4 h-4 text-amber-500" />
-                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tried but changed mind</h2>
-                      <span className="text-xs text-slate-400 ml-auto">order started, never completed</span>
-                    </div>
-                    {priorityAbandoned.length === 0 ? (
-                      <p className="text-[13px] text-slate-400">No abandoned Priority Applicant orders in this range.</p>
-                    ) : (
-                      <ul className="space-y-2 max-h-64 overflow-y-auto">
-                        {priorityAbandoned.slice(0, 20).map((p) => {
-                          const cand = p.candidates as unknown as { full_name: string | null; email: string } | null;
-                          return (
-                            <li key={p.id} className="flex items-center justify-between gap-2 text-[12.5px] border-b border-slate-100 dark:border-slate-800 pb-1.5 last:border-0">
-                              <span className="truncate text-slate-700 dark:text-slate-300">{cand?.full_name || cand?.email || "Unknown candidate"}</span>
-                              <span className="shrink-0 text-slate-400">
-                                Pack {p.pack_tier} · {new Date(p.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </Card>
-                </div>
               </>
             ),
           },

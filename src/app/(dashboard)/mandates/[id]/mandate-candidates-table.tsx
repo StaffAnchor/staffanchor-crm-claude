@@ -100,10 +100,10 @@ export type MandateCandidateRow = {
   origin: "applied" | "team" | "ai" | "vendor" | "earlier";
   origin_label: string;
   screened: boolean;
-  // Set when the candidate spent a Priority Applicant credit on this
-  // specific application (jobs.staffanchor.com purchase flow) -- surfaced
-  // here so the recruiter sees it before opening the profile.
-  is_priority: boolean;
+  // Set when the candidate paid ₹99 on jobs.staffanchor.com for a recruiter call on this
+  // application; the call is promised by call_due_at.
+  call_paid_at: string | null;
+  call_due_at: string | null;
   // Snapshotted from the Matching Workspace at the moment this candidate was
   // added to the pipeline via "Add to pipeline" (see matches-workspace.tsx
   // addToPipeline) -- null for candidates added any other way (manual add,
@@ -720,14 +720,14 @@ export default function MandateCandidatesTable({
                       New
                     </span>
                   )}
-                  {l.is_priority && (
-                    <span
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
-                      title="Candidate paid to flag this application as priority"
-                    >
-                      <Zap className="h-2.5 w-2.5" /> Priority
-                    </span>
-                  )}
+                  {l.call_paid_at && (
+                              <span
+                                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
+                                title="Paid ₹99 for a recruiter call, promised by the due date"
+                              >
+                                <Zap className="h-2 w-2" /> Paid call{l.call_due_at ? ` · by ${new Date(l.call_due_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}
+                              </span>
+                            )}
                 {resumeSignedUrlByCandidate[l.candidate.id] && (
                   <span className="inline-flex" onClick={(e) => e.stopPropagation()}>
                     <ResumePreview

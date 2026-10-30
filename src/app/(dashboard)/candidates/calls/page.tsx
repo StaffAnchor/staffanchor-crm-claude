@@ -62,11 +62,41 @@ export default async function CallsTodayPage({ searchParams }: { searchParams: P
       .slice(0, 25)
       .map((x) => x.p);
   }
+  // People who paid ₹99 for a recruiter call go before everything else, soonest deadline first, until a call attempt is logged.
+  const { data: paidLinks } = await supabase
+    .from("candidate_mandate_links")
+    .select("candidate_id, call_paid_at, call_due_at, mandates(role_title), candidates(id, full_name, phone, current_job_title, current_employer, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode, resume_file_url, source_channel, created_by, created_at, status)")
+    .not("call_paid_at", "is", null)
+    .is("call_refunded_at", null)
+    .order("call_due_at", { ascending: true })
+    .limit(60);
+  type PaidLink = { candidate_id: string; call_paid_at: string; call_due_at: string | null; mandates: { role_title: string | null } | { role_title: string | null }[] | null; candidates: Record<string, unknown> | Record<string, unknown>[] | null };
+  const paidList = (paidLinks ?? []) as unknown as PaidLink[];
+  const { data: paidLogged } = paidList.length ? await supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidList.map((l) => l.candidate_id)) : { data: [] as { candidate_id: string; created_at: string }[] };
+  const calledAfter = (l: PaidLink) => ((paidLogged ?? []) as { candidate_id: string; created_at: string }[]).some((c) => c.candidate_id === l.candidate_id && c.created_at >= l.call_paid_at);
+  const paidPeople: CallPerson[] = paidList
+    .filter((l) => !calledAfter(l))
+    .map((l) => {
+      const c = (Array.isArray(l.candidates) ? l.candidates[0] : l.candidates) as Record<string, never> | null;
+      const m = Array.isArray(l.mandates) ? l.mandates[0] : l.mandates;
+      if (!c) return null;
+      return {
+        id: c.id, full_name: c.full_name, phone: c.phone, current_job_title: c.current_job_title, current_employer: c.current_employer,
+        total_experience_years: c.total_experience_years, current_fixed_ctc: c.current_fixed_ctc, expected_fixed_ctc: c.expected_fixed_ctc,
+        notice_period: c.notice_period, current_location: c.current_location, open_to_relocation: c.open_to_relocation, work_mode: c.work_mode,
+        resume_file_url: c.resume_file_url, resume_url: null as string | null, pay_ratio: null, comm: null, open_fresh: false,
+        reason: "paid_call" as const, paid_call: { title: m?.role_title ?? "Role", due: l.call_due_at }, tries: 0, last_outcome: null,
+        source: (c.source_channel as string | null) || (c.created_by as string | null), profile_created_at: c.created_at, profile_status: c.status,
+      } as CallPerson;
+    })
+    .filter((p): p is CallPerson => p !== null);
+  const paidIds = new Set(paidPeople.map((p) => p.id));
   const urgentIds = new Set(urgentPeople.map((p) => p.id));
   // Callbacks and people who said yes still come first; urgent-role completion goes right after them.
-  const lead = regular.filter((p) => !urgentIds.has(p.id) && (p.reason === "call_back" || p.reason === "interested"));
-  const rest = regular.filter((p) => !urgentIds.has(p.id) && p.reason !== "call_back" && p.reason !== "interested");
-  const people = [...lead, ...urgentPeople, ...rest].slice(0, Math.max(DAILY_TARGET, lead.length + urgentPeople.length));
+  const lead = regular.filter((p) => !urgentIds.has(p.id) && !paidIds.has(p.id) && (p.reason === "call_back" || p.reason === "interested"));
+  const rest = regular.filter((p) => !urgentIds.has(p.id) && !paidIds.has(p.id) && p.reason !== "call_back" && p.reason !== "interested");
+  const urgentOnly = urgentPeople.filter((p) => !paidIds.has(p.id));
+  const people = [...paidPeople, ...lead, ...urgentOnly, ...rest].slice(0, Math.max(DAILY_TARGET, paidPeople.length + lead.length + urgentOnly.length));
 
   const log = (todays ?? []) as { caller_id: string | null; outcome: string }[];
   const byCaller = new Map<string, number>();

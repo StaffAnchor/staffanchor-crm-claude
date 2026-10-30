@@ -478,12 +478,12 @@ export default function MandateCandidatesBoard({
                                 New
                               </span>
                             )}
-                            {row.is_priority && (
+                            {row.call_paid_at && (
                               <span
                                 className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white"
-                                title="Candidate paid to flag this application as priority"
+                                title="Paid ₹99 for a recruiter call, promised by the due date"
                               >
-                                <Zap className="h-2 w-2" /> Priority
+                                <Zap className="h-2 w-2" /> Paid call{row.call_due_at ? ` · by ${new Date(row.call_due_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}
                               </span>
                             )}
                             {row.match_score != null && (

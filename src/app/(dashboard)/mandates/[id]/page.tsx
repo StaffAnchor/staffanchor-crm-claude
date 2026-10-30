@@ -35,7 +35,6 @@ import DownloadJdButton from "./download-jd-button";
 import CopyForLinkedinButton from "./copy-for-linkedin-button";
 import LinkedinPostButton from "./linkedin-post-button";
 import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
-import PriorityApplicantFunnelPanel from "./priority-applicant-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
 import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
@@ -90,7 +89,7 @@ export default async function MandateDetailPage({
       supabase
         .from("candidate_mandate_links")
         .select(
-          "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, is_priority, match_score, match_score_breakdown, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, client_note, candidates(id, full_name, email, phone, current_location, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+          "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, call_paid_at, call_due_at, match_score, match_score_breakdown, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, client_note, candidates(id, full_name, email, phone, current_location, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
         )
         .eq("mandate_id", id)
     ),
@@ -257,7 +256,7 @@ export default async function MandateDetailPage({
   // origin was never recorded say so, rather than being guessed.
   const staffName = new Map((allStaffProfiles ?? []).map((p) => [p.id as string, { name: (p.full_name as string | null) || (p.email as string), role: p.role as string }]));
   const SELF_SERVED = new Set(["quick_apply", "self_registration", "candidate_self_signup"]);
-  function originOf(l: { added_by: string | null; match_source: string | null; is_priority: boolean | null; candidates: unknown }): { origin: "applied" | "team" | "ai" | "vendor" | "earlier"; label: string } {
+  function originOf(l: { added_by: string | null; match_source: string | null; call_paid_at: string | null; candidates: unknown }): { origin: "applied" | "team" | "ai" | "vendor" | "earlier"; label: string } {
     const cand = l.candidates as { id: string; created_by: string | null } | null;
     const adder = l.added_by ? staffName.get(l.added_by) : null;
     if (l.match_source === "ai_evidence") return { origin: "ai", label: adder ? `AI suggestion, added by ${adder.name}` : "AI suggestion, added" };
@@ -267,7 +266,7 @@ export default async function MandateDetailPage({
     }
     const answered = !!(cand && (applicationAnswersByCandidate[cand.id]?.length ?? 0) > 0);
     const selfServed = !!(cand && cand.created_by && SELF_SERVED.has(cand.created_by) && l.match_source !== "pipeline_backfill");
-    if (answered || l.is_priority || selfServed) return { origin: "applied", label: "Applied" };
+    if (answered || l.call_paid_at || selfServed) return { origin: "applied", label: "Applied" };
     return { origin: "earlier", label: "Earlier pipeline" };
   }
 
@@ -526,7 +525,8 @@ export default async function MandateDetailPage({
                 created_at: l.created_at,
                 origin: originOf(l as never).origin,
                 origin_label: originOf(l as never).label,
-                is_priority: l.is_priority ?? false,
+                call_paid_at: l.call_paid_at ?? null,
+                call_due_at: l.call_due_at ?? null,
                 match_score: l.match_score ?? null,
                 match_bucket: (((l.match_score_breakdown as { bucket?: string } | null)?.bucket as MandateCandidateRow["match_bucket"]) ?? null) as MandateCandidateRow["match_bucket"],
                 match_assessment: (l.match_assessment as MandateCandidateRow["match_assessment"]) ?? null,
@@ -542,14 +542,13 @@ export default async function MandateDetailPage({
               };
             })
             .filter((r): r is MandateCandidateRow => r !== null)
-            // Priority Applicant candidates surface first -- the whole point
-            // of the paid flag is to be seen ahead of the rest of the queue.
-            // Within each group (priority / non-priority), most recently
+            // Candidates who paid for a recruiter call surface first, so the
+            // promised call is not buried. Within each group, most recently
             // added to this mandate first -- the underlying query has no
             // ORDER BY, so without this candidates were showing up in
             // whatever arbitrary order Postgres happened to return them in.
             .sort((a, b) => {
-              const priorityDiff = Number(b.is_priority) - Number(a.is_priority);
+              const priorityDiff = Number(!!b.call_paid_at) - Number(!!a.call_paid_at);
               if (priorityDiff !== 0) return priorityDiff;
               const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
               const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -776,7 +775,6 @@ export default async function MandateDetailPage({
                     <ClientPortalAccessPanel clientId={mandate.client_id} clientName={mandate.client_name} initialInvites={portalInvites ?? []} initialUsers={portalUsers ?? []} />
                   )}
                   <QuickApplyFunnelPanel mandateId={id} />
-                  <PriorityApplicantFunnelPanel mandateId={id} />
                   <ApplicationQuestionsPanel
                     mandateId={id}
                     initialQuestions={(applicationQuestions ?? []) as ApplicationQuestion[]}
