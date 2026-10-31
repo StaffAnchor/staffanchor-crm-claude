@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// People is three places: Talent (everyone, with the top-tier strip), Profile completion (what is missing or weak, by group,
-// practice and city, with the call lists and bulk asking to fix it) and Outreach (what was sent and how it went, and the campaigns). The rest sits under "More".
+// People is five places: Talent (everyone, with the top-tier strip), Profile completion (what is missing or weak, by group,
+// practice and city, with the call lists and bulk asking to fix it) Supply map and Talent pool (what we hold against what is open, and the people to call first), and Outreach (what was sent and how it went, and the campaigns).
 const TABS = [
   { href: "/candidates", label: "Talent" },
   { href: "/candidates/complete", label: "Profile completion" },
+  { href: "/candidates/inventory", label: "Supply map" },
+  { href: "/saas-practice", label: "Talent pool" },
   { href: "/candidates/activity", label: "Outreach", also: ["/candidates/outreach", "/whatsapp"] },
 ];
 
@@ -18,15 +20,8 @@ const OUTREACH = [
   { href: "/whatsapp", label: "Replies" },
 ];
 
-// Used rarely, so they stay out of the way.
-const MORE = [
-  { href: "/candidates/inventory", label: "Role and city map" },
-  { href: "/saas-practice", label: "B2B SaaS talent pool" },
-  { href: "/candidates/lists", label: "Saved shortlists" },
-  { href: "/candidates/referrals", label: "Referrals" },
-  { href: "/candidates/files", label: "CV files" },
-  { href: "/candidates/duplicates", label: "Duplicates (admin)" },
-];
+// Nothing is hidden away any more: the pages left in People are all used every day.
+const MORE: { href: string; label: string }[] = [];
 
 export default function CandidatesSubNav() {
   const pathname = usePathname();
@@ -49,6 +44,7 @@ export default function CandidatesSubNav() {
           {t.label}
         </Link>
       ))}
+      {MORE.length > 0 && (
       <details className="relative">
         <summary
           className={`list-none cursor-pointer px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
@@ -65,6 +61,7 @@ export default function CandidatesSubNav() {
           ))}
         </div>
       </details>
+      )}
     </div>
     {inOutreach && (
       <div className="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-100 pb-2 dark:border-slate-800">

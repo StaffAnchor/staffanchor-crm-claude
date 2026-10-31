@@ -12,10 +12,11 @@ import { evaluate, filtersFromRole, type RoleOption } from "@/lib/role-fit";
 import RunMatching from "./run-matching";
 import PoolList, { type PoolRow } from "./pool-list";
 import SuggestedList from "./suggested-list";
+import PoolPromotions, { type Promotion } from "./pool-promotions";
 import { suggestToCall, type RoleFitHint, type SuggestContext, type Tenure } from "@/lib/pool-suggest";
 import TargetCompanies from "./target-companies";
 import type { PoolEntry, PoolTier } from "@/lib/talent-pool";
-import { POOL_PRACTICE } from "@/lib/talent-pool";
+import { POOL_PRACTICE, POOL_TIER_LABEL } from "@/lib/talent-pool";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ function BarList({ title, items, total }: { title: string; items: [string, numbe
 
 export default async function SaasPracticePage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const { view } = await searchParams;
-  const poolView = view === "pool";
+  const poolView = view !== "bench";
   const supabase = await createClient();
   const {
     data: { user },
@@ -339,6 +340,13 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
   const poolWatch = Object.values(poolBy).filter((e) => e.tier === "watch").length;
   const poolCold = poolRows.filter((r) => r.daysSinceTouch == null || r.daysSinceTouch >= 60).length;
 
+  // Talent pool: who to add, and which pool members are the first calls for each open role.
+  const [{ data: promoRows }, { data: boardRows }] = poolView ? await Promise.all([supabase.rpc("pool_promotions", { p_limit: 12 }), supabase.rpc("role_call_board", { p_per_role: 6 })]) : [{ data: null }, { data: null }];
+  const promotions = ((promoRows ?? []) as Promotion[]);
+  type BoardRow = { mandate_id: string; candidate_id: string; full_name: string | null; strength: string; pool_tier: PoolTier | null; blockers: string[] | null };
+  const poolBoard = new Map<string, BoardRow[]>();
+  for (const b of (boardRows ?? []) as BoardRow[]) if (b.pool_tier && roleTitle.has(b.mandate_id)) poolBoard.set(b.mandate_id, [...(poolBoard.get(b.mandate_id) ?? []), b]);
+
   const tableRows: BenchRow[] = all.map((r) => ({
     ...r,
     strongRoles: strongRolesByCandidate.get(r.candidate_id) ?? [],
@@ -350,18 +358,18 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
     <div className="max-w-[1500px] mx-auto px-5 py-6 space-y-8">
       <CandidatesSubNav />
       <div>
-        <h1 className="ros-page-title">B2B SaaS and tech sales</h1>
+        <h1 className="ros-page-title">Talent pool</h1>
         <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
-          The practice at a glance: who you hold, what each person has actually sold, and which open roles they could fill. A candidate is counted here when their CV or profile shows software, SaaS or tech sales.
+          The people you would put in front of any client, kept warm and complete, and the bench of B2B SaaS and tech sales profiles behind them. Open a role, call the pool first.
         </p>
       </div>
 
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700">
-        <Link href="/saas-practice" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${!poolView ? "border-slate-900 text-slate-900 dark:border-white dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
-          Bench and roles <span className="ml-1 text-slate-400">{total}</span>
+        <Link href="/saas-practice" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${poolView ? "border-amber-500 text-slate-900 dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+          Talent pool <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-900">{poolCount}</span>
         </Link>
-        <Link href="/saas-practice?view=pool" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${poolView ? "border-amber-500 text-slate-900 dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
-          Talent Pool <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-900">{poolCount}</span>
+        <Link href="/saas-practice?view=bench" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${!poolView ? "border-slate-900 text-slate-900 dark:border-white dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+          B2B SaaS bench <span className="ml-1 text-slate-400">{total}</span>
         </Link>
       </div>
 
@@ -377,6 +385,46 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
             <StatTile label="Watch" value={poolWatch} />
             <StatTile label="Going cold (60+ days)" value={poolCold} />
           </div>
+          <section className="space-y-2">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Keep the pool warm</h2>
+            <div className="grid gap-3 md:grid-cols-3">
+              {([
+                { h: "Confirm they are still looking", t: poolCold > 0 ? `${poolCold} have not been touched in 60+ days` : "Everyone was touched recently", href: "/candidates/complete?group=b2b_sales&sub=*&mode=confirm&pool=1" },
+                { h: "Fill in what is missing", t: "Current pay and CV first, then the other vitals", href: "/candidates/complete?group=b2b_sales&sub=*&mode=gate&pool=1" },
+                { h: "Judge them on a call", t: "Rate communication, seriousness and the rest", href: "/candidates/complete?group=b2b_sales&sub=*&mode=assess&pool=1" },
+              ] as const).map((a) => (
+                <Link key={a.h} target="_blank" rel="noopener noreferrer" href={a.href} className="rounded-ros-xl border border-slate-200 bg-white p-3 hover:border-teal-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                  <p className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">{a.h}</p>
+                  <p className="text-[12px] text-slate-500">{a.t}</p>
+                  <p className="mt-1.5 text-[12px] font-semibold text-teal-700 dark:text-teal-300">Start calling →</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+          {poolBoard.size > 0 && (
+            <section className="space-y-2">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Open roles: call the pool first</h2>
+              <ul className="grid gap-2 md:grid-cols-2">
+                {Array.from(poolBoard.entries()).map(([mid, list]) => (
+                  <li key={mid} className="rounded-ros-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${mid}`} className="text-[13.5px] font-semibold text-teal-700 hover:underline dark:text-teal-300">{roleTitle.get(mid)}</Link>
+                    <ul className="mt-1 space-y-0.5">
+                      {list.map((b) => (
+                        <li key={b.candidate_id} className="text-[12.5px]">
+                          <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${b.candidate_id}`} className="font-medium text-slate-800 hover:underline dark:text-slate-100">{b.full_name ?? "Unnamed"}</Link>
+                          {b.pool_tier && <span className="ml-1.5 text-slate-400">{POOL_TIER_LABEL[b.pool_tier]}</span>}
+                          <span className={`ml-1.5 ${(b.blockers ?? []).length === 0 ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+                            {(b.blockers ?? []).length === 0 ? "ready to send" : `needs ${(b.blockers ?? []).length} to send`}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <PoolPromotions items={promotions} />
           <TargetCompanies initial={targetCompanies} canEdit={me.role === "admin"} />
           <SuggestedList items={suggestions} />
           <PoolList rows={poolRows} />

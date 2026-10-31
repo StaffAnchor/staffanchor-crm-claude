@@ -36,6 +36,8 @@ export type InventoryParams = {
   level: string;
   cluster: string | null;
   metro: string | null;
+  /** ready: only people with every vital on file (can be called and matched today). all: everyone tagged. */
+  metric: "ready" | "all";
 };
 
 export function parseParams(sp: Record<string, string | string[] | undefined>): InventoryParams {
@@ -49,6 +51,7 @@ export function parseParams(sp: Record<string, string | string[] | undefined>): 
     level: LEVELS.some((l) => l.key === one("level")) ? (one("level") as string) : "all",
     cluster: one("cluster"),
     metro: one("metro"),
+    metric: one("metric") === "all" ? "all" : "ready",
   };
 }
 
@@ -61,6 +64,7 @@ export function inventoryHref(p: InventoryParams, over: Partial<InventoryParams>
   if (n.level !== "all") q.set("level", n.level);
   if (n.cluster) q.set("cluster", n.cluster);
   if (n.metro) q.set("metro", n.metro);
+  if (n.metric === "all") q.set("metric", "all");
   const s = q.toString();
   return `/candidates/inventory${s ? `?${s}` : ""}`;
 }

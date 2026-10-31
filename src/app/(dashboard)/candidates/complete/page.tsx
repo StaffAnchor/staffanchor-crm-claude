@@ -118,7 +118,7 @@ function Bar({ done, total, tone = "bg-teal-500" }: { done: number; total: numbe
   );
 }
 
-export default async function CompletionPage({ searchParams }: { searchParams: Promise<{ group?: string; by?: string; sub?: string; city?: string; gap?: string; strength?: string; mode?: string }> }) {
+export default async function CompletionPage({ searchParams }: { searchParams: Promise<{ group?: string; by?: string; sub?: string; city?: string; gap?: string; strength?: string; mode?: string; cluster?: string; metro?: string; pool?: string }> }) {
   const sp = await searchParams;
   const group = GROUPS.some((g) => g.key === sp.group) ? (sp.group as string) : "b2b_sales";
   const by = sp.by === "sub_domain" ? "sub_domain" : "sub_group";
@@ -126,6 +126,11 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const city = sp.city ?? null;
   const gap = sp.gap && GAP_LABEL[sp.gap] ? sp.gap : null;
   const strength = sp.strength && STRENGTH[sp.strength] ? sp.strength : null;
+  // Filters that come from the supply map (a kind of role in a city) and the talent pool.
+  const cluster = sp.cluster && /^[a-z0-9_]+$/.test(sp.cluster) ? sp.cluster : null;
+  const metro = sp.metro ? sp.metro.slice(0, 40) : null;
+  const pool = sp.pool === "1";
+  const scoped = !!(cluster || pool);
   const mode = sp.mode === "assess" || sp.mode === "complete" || sp.mode === "confirm" || sp.mode === "vitals" ? sp.mode : "gate";
 
   const supabase = await createClient();
@@ -141,6 +146,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     supabase.rpc("completion_trend", { p_group: ["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null, p_days: 30 }),
   ]);
   const trend = (trendData ?? null) as Trend | null;
+  const clusterName = cluster ? ((await supabase.from("role_clusters").select("name").eq("slug", cluster).maybeSingle()).data?.name as string | undefined) ?? cluster : null;
+  const dupCount = !sub ? Number((await supabase.rpc("duplicate_phone_profiles")).data ?? 0) : 0;
   const rows = ((overview ?? []) as Row[]).map((r) => ({ ...r, gaps: r.gaps ?? {}, strengths: r.strengths ?? {} }));
   const targets = new Map<string, Target>();
   for (const t of (targetRows ?? []) as (Target & { profile_group: string; bucket: string })[]) targets.set(`${t.profile_group}|${t.bucket}`, t);
@@ -154,7 +161,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const addStrengths = (rs: Row[]) => rs.reduce<Record<string, number>>((a, r) => { for (const [k, v] of Object.entries(r.strengths)) a[k] = (a[k] ?? 0) + v; return a; }, {});
   const groupStrengths = Object.fromEntries(GROUPS.map((g) => [g.key, addStrengths(rows.filter((r) => r.profile_group === g.key))])) as Record<string, Record<string, number>>;
 
-  const url = (o: Partial<{ group: string; by: string; sub: string | null; city: string | null; gap: string | null; strength: string | null; mode: string }>) => {
+  const url = (o: Partial<{ group: string; by: string; sub: string | null; city: string | null; gap: string | null; strength: string | null; mode: string; cluster: string | null; metro: string | null; pool: boolean }>) => {
     const q = new URLSearchParams();
     const g = o.group ?? group;
     q.set("group", g);
@@ -170,6 +177,11 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     if (st) q.set("strength", st);
     const m = o.mode ?? mode;
     if (m !== "gate") q.set("mode", m);
+    const cl = "cluster" in o ? o.cluster : cluster;
+    if (cl) q.set("cluster", cl);
+    const me = "metro" in o ? o.metro : metro;
+    if (me) q.set("metro", me);
+    if ("pool" in o ? o.pool : pool) q.set("pool", "1");
     return `/candidates/complete?${q.toString()}`;
   };
 
@@ -218,8 +230,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     const prio = priority!.people.map((p) => ({ ...p, email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null }));
     const seen = new Set(prio.map((p) => p.id));
     people = [...prio, ...rest.filter((p) => !seen.has(p.id))];
-  } else if (working && focusRow && (mode === "assess" ? focusRow.total - focusRow.assessed > 0 : mode === "confirm" ? focusRow.total - focusRow.looking_known > 0 : mode === "complete" ? focusRow.incomplete > 0 : mode === "vitals" ? focusRow.vitals_incomplete > 0 : focusRow.gate_incomplete > 0)) {
-    const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_limit: 50 });
+  } else if (working && focusRow && (scoped || mode === "assess" ? focusRow.total - focusRow.assessed > 0 : mode === "confirm" ? focusRow.total - focusRow.looking_known > 0 : mode === "complete" ? focusRow.incomplete > 0 : mode === "vitals" ? focusRow.vitals_incomplete > 0 : focusRow.gate_incomplete > 0)) {
+    const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_cluster: cluster, p_metro: metro, p_pool: pool, p_limit: 50 });
     if (error) queueError = error.message;
     people = await hydrate((queue ?? []) as QueueRow[]);
   }
@@ -258,24 +270,6 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         )}
       </div>
 
-      {!working && priority && priority.people.length > 0 && (
-        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
-          <span className="text-[13.5px] text-teal-900 dark:text-teal-100">
-            <b>{priority.people.length} priority {priority.people.length === 1 ? "call" : "calls"} waiting</b>
-            {priority.counts.paid > 0 && ` · ${priority.counts.paid} paid ₹199`}
-            {priority.counts.interested > 0 && ` · ${priority.counts.interested} said yes to a role`}
-            {priority.counts.callbacks > 0 && ` · ${priority.counts.callbacks} call-backs due`}
-            {priority.counts.urgent > 0 && ` · ${priority.counts.urgent} for an urgent role`}
-          </span>
-          <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Start today&apos;s calls <ArrowRight className="h-4 w-4" /></span>
-        </Link>
-      )}
-      {!working && priority && priority.people.length === 0 && (
-        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
-          Start today&apos;s calls (missing current pay or CV first) <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      )}
-
       {/* The whole base, split by group. Hidden while working a call list so the calls sit at the top of the page. */}
       {!working && (
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -311,6 +305,24 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       )}
 
       {!working && trend && trend.days.length > 0 && <TrendCard trend={trend} label={GROUP_LABEL[group] ?? "All"} />}
+
+      {!working && priority && priority.people.length > 0 && (
+        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
+          <span className="text-[13.5px] text-teal-900 dark:text-teal-100">
+            <b>{priority.people.length} priority {priority.people.length === 1 ? "call" : "calls"} waiting</b>
+            {priority.counts.paid > 0 && ` · ${priority.counts.paid} paid ₹199`}
+            {priority.counts.interested > 0 && ` · ${priority.counts.interested} said yes to a role`}
+            {priority.counts.callbacks > 0 && ` · ${priority.counts.callbacks} call-backs due`}
+            {priority.counts.urgent > 0 && ` · ${priority.counts.urgent} for an urgent role`}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Start today&apos;s calls <ArrowRight className="h-4 w-4" /></span>
+        </Link>
+      )}
+      {!working && priority && priority.people.length === 0 && (
+        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
+          Start today&apos;s calls (missing current pay or CV first) <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
 
       {!working ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -444,7 +456,24 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
               </div>
             </div>
           )}
-          {focusRow && (
+          {scoped && (
+            <div className={`${card} mb-4 p-4`}>
+              <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">
+                {pool ? "Talent pool" : GROUP_LABEL[group]}
+                {clusterName ? ` › ${clusterName}${metro ? ` in ${metro}` : ""}` : ""}
+              </h2>
+              <p className="mt-0.5 max-w-3xl text-[13px] text-slate-500">
+                {pool ? "Everyone in the talent pool, so the list you call first for any role stays complete and current." : "Everyone we hold for this kind of role in this city."} {people.length} can be called now.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
+                <span className="font-medium text-slate-500">Call list:</span>
+                {([{ k: "gate", l: "Current pay + CV" }, { k: "vitals", l: "Fill vitals" }, { k: "complete", l: "Other details" }, { k: "confirm", l: "Confirm looking" }, { k: "assess", l: "Judge on a call" }] as const).map((m) => (
+                  <Link key={m.k} href={url({ mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{m.l}</Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {focusRow && !scoped && (
             <div className={`${card} mb-4 p-4`}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1 basis-72">
@@ -511,10 +540,17 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 The {people.length} people who can be called now{mode === "assess" || mode === "confirm" ? ", strongest on paper first" : ", current pay and CV first, then vitals, fewest gaps first so profiles actually reach complete"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
-              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${mode}`} people={people} />
+              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${mode}|${cluster}|${metro}|${pool}`} people={people} />
             </>
           )}
         </div>
+      )}
+
+      {!working && dupCount > 0 && (
+        <Link href="/candidates/duplicates" className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-900 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+          <span><b>{dupCount} profiles share a phone number</b> with another profile. Merge them so nobody is called twice.</span>
+          <span className="inline-flex items-center gap-1 font-semibold">Review duplicates <ArrowRight className="h-4 w-4" /></span>
+        </Link>
       )}
 
       {/* The daily batch of people worth asking for their missing details on WhatsApp (this used to be the Improve profiles page). */}

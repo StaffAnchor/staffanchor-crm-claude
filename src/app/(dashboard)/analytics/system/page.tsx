@@ -1,6 +1,7 @@
 import SegTabs from "../seg-tabs";
 import FlowSection from "../flow/section";
 import ScorecardSection from "../../scorecard/section";
+import CvFilesSection from "../../candidates/files/section";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 const VIEWS = [
   { key: "flow", label: "Flow and AI" },
   { key: "quality", label: "Quality checks" },
+  { key: "files", label: "CV files" },
 ];
 
 export default async function SystemPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
@@ -16,7 +18,7 @@ export default async function SystemPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <SegTabs base="/analytics/system" current={view} views={VIEWS} />
-      {view === "quality" ? <ScorecardSection /> : <FlowSection />}
+      {view === "quality" ? <ScorecardSection /> : view === "files" ? <CvFilesSection /> : <FlowSection />}
     </>
   );
 }

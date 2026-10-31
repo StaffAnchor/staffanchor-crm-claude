@@ -4,14 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
 import RecalculateButton from "./recalculate-button";
 import ClassifyButton from "./classify-button";
-import SaveShortlist from "../../saas-practice/save-shortlist";
 import { DOMAINS, LEVELS, METROS, SENIORITY_SHORT, TRACKS, inventoryHref, parseParams } from "@/lib/inventory";
 import { POOL_TIER_LABEL, POOL_TIER_PILL, type PoolTier } from "@/lib/talent-pool";
+import { GAP_LABEL } from "@/lib/completion";
 
 export const dynamic = "force-dynamic";
 
 type Cluster = { slug: string; name: string; track: string; family: string; sort_order: number };
-type Cell = { cluster_slug: string; metro: string; n: number };
+type Cell = { cluster_slug: string; metro: string; n: number; ready: number };
+type Demand = { cluster_slug: string; metro: string; open_roles: number; urgent_roles: number };
+type RoleGap = { mandate_id: string; role_title: string | null; client_name: string | null; city: string | null; metro: string; role_cluster: string; is_urgent: boolean; total_n: number; ready_n: number; gate_missing_n: number; vitals_missing_n: number; reloc_ready_n: number; in_pipeline_n: number };
+type Board = { mandate_id: string; candidate_id: string; full_name: string | null; title: string | null; employer: string | null; city: string | null; strength: string; pool_tier: PoolTier | null; in_pipeline: boolean; blockers: string[] | null };
 
 const shade = (n: number, max: number) => {
   if (n === 0) return "text-slate-300 dark:text-slate-700";
@@ -33,18 +36,33 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   if (!me || !["admin", "recruiter", "partner"].includes(me.role)) redirect("/candidates");
 
   const level = LEVELS.find((l) => l.key === p.level) ?? LEVELS[0];
-  const [{ data: clusterRows }, { data: countRows }, { data: unclassifiedIds }] = await Promise.all([
+  const [{ data: clusterRows }, { data: countRows }, { data: unclassifiedIds }, { data: demandRows }, { data: gapRows }, { data: boardRows }] = await Promise.all([
     supabase.from("role_clusters").select("slug, name, track, family, sort_order").order("sort_order"),
-    supabase.rpc("inventory_counts", { p_track: p.track, p_domain: p.domain, p_current_only: p.scope === "current", p_seniority: level.senior }),
+    supabase.rpc("supply_demand", { p_track: p.track, p_domain: p.domain, p_current_only: p.scope === "current", p_seniority: level.senior }),
     supabase.rpc("inventory_unclassified", { p_track: p.track }),
+    supabase.rpc("open_roles_by_cell"),
+    supabase.rpc("role_supply_gap"),
+    supabase.rpc("role_call_board", { p_per_role: 5 }),
   ]);
   const clusters = (clusterRows ?? []) as Cluster[];
   const cells = (countRows ?? []) as Cell[];
+  const demand = new Map(((demandRows ?? []) as Demand[]).map((d) => [`${d.cluster_slug}|${d.metro}`, d]));
+  const clusterTrack = new Map(clusters.map((c) => [c.slug, c.track]));
+  const clusterNameOf = new Map(clusters.map((c) => [c.slug, c.name]));
+  const gaps = ((gapRows ?? []) as RoleGap[]).map((g) => ({ ...g, total_n: Number(g.total_n), ready_n: Number(g.ready_n), gate_missing_n: Number(g.gate_missing_n), vitals_missing_n: Number(g.vitals_missing_n), reloc_ready_n: Number(g.reloc_ready_n), in_pipeline_n: Number(g.in_pipeline_n) }));
+  const board = new Map<string, Board[]>();
+  for (const b of (boardRows ?? []) as Board[]) board.set(b.mandate_id, [...(board.get(b.mandate_id) ?? []), b]);
+
+  // Supply we hold and have ready, with no open role for it: worth taking to clients.
+  const pitch = cells
+    .filter((c) => Number(c.ready) >= 5 && !demand.has(`${c.cluster_slug}|${c.metro}`) && c.metro !== "Unknown" && c.metro !== "Abroad")
+    .sort((a, b) => Number(b.ready) - Number(a.ready))
+    .slice(0, 6);
 
   const byCluster = new Map<string, Map<string, number>>();
   for (const c of cells) {
     const m = byCluster.get(c.cluster_slug) ?? new Map<string, number>();
-    m.set(c.metro, Number(c.n));
+    m.set(c.metro, Number(p.metric === "ready" ? c.ready : c.n));
     byCluster.set(c.cluster_slug, m);
   }
   const rows = clusters
@@ -95,13 +113,18 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
     people = ((data ?? []) as unknown as Person[]).filter((x) => (seen.has(x.candidate_id) ? false : (seen.add(x.candidate_id), true)));
     people.sort((a, b) => Number(b.candidates?.total_experience_years ?? 0) - Number(a.candidates?.total_experience_years ?? 0));
   }
-  const { data: listRows } = await supabase.rpc("candidate_lists_with_counts");
-  const lists = ((listRows ?? []) as { id: string; name: string; n: number | string; owner_name: string | null }[]).map((l) => ({ id: l.id, name: l.name, n: Number(l.n), owner_name: l.owner_name }));
   const poolBy = new Map<string, PoolTier>();
   if (people.length > 0) {
     const { data: pool } = await supabase.from("talent_pool_entries").select("candidate_id, tier").in("candidate_id", people.map((x) => x.candidate_id));
     for (const e of (pool ?? []) as { candidate_id: string; tier: PoolTier }[]) poolBy.set(e.candidate_id, e.tier);
   }
+
+  const readyBy = new Map<string, { gaps: string[]; vgaps: string[]; strength: string }>();
+  if (people.length > 0) {
+    const { data: rd } = await supabase.rpc("people_readiness", { p_ids: people.map((x) => x.candidate_id) });
+    for (const r of (rd ?? []) as { id: string; gaps: string[]; vgaps: string[]; strength: string }[]) readyBy.set(r.id, r);
+  }
+  const incompleteHere = people.filter((x) => (readyBy.get(x.candidate_id)?.vgaps.length ?? 1) > 0).length;
 
   const grandTotal = rows.reduce((a, r) => a + r.total, 0);
   const chip = (on: boolean) =>
@@ -113,9 +136,9 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <CandidatesSubNav />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="ros-page-title">Talent inventory</h1>
+          <h1 className="ros-page-title">Supply map</h1>
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
-            What you hold, by kind of role and by city, whether or not a mandate is open. Pick a track, then click any number to see the people behind it.
+            What you hold against what is open: by kind of role and city, how many are ready to call and match today, and where open roles are short of ready people. Click a number to see the people behind it, or a button to fix the gap.
           </p>
         </div>
         {me.role === "admin" && (
@@ -126,6 +149,80 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
           </div>
         )}
       </div>
+
+      {gaps.length > 0 && (
+        <section className="space-y-2">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Open roles: are we ready?</h2>
+            <p className="text-[12.5px] text-slate-500">Urgent first, then the roles with the fewest ready people in their city. &quot;Ready&quot; means every vital is on file, so they can be called and matched today.</p>
+          </div>
+          <ul className="grid gap-3 lg:grid-cols-2">
+            {gaps.map((g) => {
+              const track = clusterTrack.get(g.role_cluster) ?? p.track;
+              const incomplete = g.total_n - g.ready_n;
+              const fixHref = `/candidates/complete?${new URLSearchParams({ group: track, sub: "*", mode: g.gate_missing_n > 0 ? "gate" : "vitals", cluster: g.role_cluster, ...(g.metro !== "Unknown" ? { metro: g.metro } : {}) }).toString()}`;
+              const tone = g.ready_n >= 10 ? "border-emerald-200 dark:border-emerald-900" : g.ready_n >= 4 ? "border-amber-200 dark:border-amber-900" : "border-rose-200 dark:border-rose-900";
+              const firstCalls = board.get(g.mandate_id) ?? [];
+              return (
+                <li key={g.mandate_id} className={`rounded-ros-xl border bg-white p-4 dark:bg-slate-900 ${tone}`}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${g.mandate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
+                        {g.role_title ?? "Role"}
+                      </Link>
+                      {g.is_urgent && <span className="ml-2 rounded bg-orange-100 px-1.5 py-px text-[11px] font-semibold text-orange-900 dark:bg-orange-900/40 dark:text-orange-100">Urgent</span>}
+                      <p className="text-[12px] text-slate-500">{[g.client_name, g.city, clusterNameOf.get(g.role_cluster)].filter(Boolean).join(" · ")}</p>
+                    </div>
+                    <p className="text-right text-[12px] text-slate-500"><b className="text-[20px] tabular-nums text-slate-900 dark:text-slate-100">{g.ready_n}</b> ready<br />of {g.total_n} in {g.metro === "Unknown" ? "the city" : g.metro}</p>
+                  </div>
+                  <p className="mt-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+                    {incomplete > 0 ? `${g.gate_missing_n} missing current pay or CV, ${g.vitals_missing_n} missing a vital.` : "Everyone we hold here has their vitals."}
+                    {g.reloc_ready_n > 0 && ` ${g.reloc_ready_n} more ready people elsewhere would relocate.`} {g.in_pipeline_n} already in this role&apos;s pipeline.
+                  </p>
+                  {firstCalls.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {firstCalls.map((b) => (
+                        <li key={b.candidate_id} className="flex flex-wrap items-baseline gap-x-2 text-[12.5px]">
+                          <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${b.candidate_id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-300">{b.full_name ?? "Unnamed"}</Link>
+                          {b.pool_tier && <span className={`rounded-full px-1.5 text-[10.5px] font-semibold ring-1 ${POOL_TIER_PILL[b.pool_tier]}`}>{POOL_TIER_LABEL[b.pool_tier]}</span>}
+                          <span className="text-slate-400">{b.strength}{b.in_pipeline ? " · in pipeline" : ""}</span>
+                          <span className={(b.blockers ?? []).length === 0 ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}>
+                            {(b.blockers ?? []).length === 0 ? "ready to send" : `needs ${(b.blockers ?? []).length} to send`}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {incomplete > 0 && (
+                      <Link target="_blank" rel="noopener noreferrer" href={fixHref} className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[12px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
+                        Complete these {incomplete}
+                      </Link>
+                    )}
+                    <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${g.mandate_id}`} className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200">
+                      Open the role
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {pitch.length > 0 && (
+        <section className="rounded-ros-xl border border-teal-200 bg-teal-50/50 p-4 dark:border-teal-900 dark:bg-teal-950/20">
+          <h2 className="text-[14px] font-semibold text-teal-900 dark:text-teal-100">Supply with no open role: take it to clients</h2>
+          <p className="text-[12.5px] text-teal-900/80 dark:text-teal-200/80">Kinds of role we hold ready people for in a city where no mandate is open. These are the easiest conversations to start with a client.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {pitch.map((c) => (
+              <Link key={`${c.cluster_slug}|${c.metro}`} href={inventoryHref(p, { cluster: c.cluster_slug, metro: c.metro })} className="rounded-full bg-white px-3 py-1 text-[12.5px] font-medium text-slate-800 ring-1 ring-teal-200 hover:bg-teal-50 dark:bg-slate-900 dark:text-slate-100 dark:ring-teal-800">
+                {clusterNameOf.get(c.cluster_slug) ?? c.cluster_slug} · {c.metro} · <b>{Number(c.ready)}</b> ready
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
         <div className="flex items-center gap-1 rounded-full border border-slate-200 p-1 dark:border-slate-700">
@@ -159,6 +256,14 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             Ever held
           </Link>
         </div>
+        <div className="flex items-center gap-1">
+          <Link href={inventoryHref(p, { metric: "ready", cluster: null, metro: null })} className={chip(p.metric === "ready")} title="Only people with every vital on file: they can be called and matched today">
+            Ready people
+          </Link>
+          <Link href={inventoryHref(p, { metric: "all", cluster: null, metro: null })} className={chip(p.metric === "all")}>
+            Everyone tagged
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-ros-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
@@ -185,7 +290,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             {families.map((f) => {
               const fr = rows.filter((r) => r.family === f);
               return (
-                <FamilyBlock key={f} family={f} rows={fr} p={p} max={max} />
+                <FamilyBlock key={f} family={f} rows={fr} p={p} max={max} demand={demand} />
               );
             })}
           </tbody>
@@ -205,7 +310,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         </table>
       </div>
       <p className="text-[12px] text-slate-500 dark:text-slate-400">
-        A person can appear in more than one row (for example someone who is both an Account Executive and a Solution Engineer), so totals are counts of roles, not people.{" "}
+        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle" /> an open role in that cell, <span className="mx-1 inline-block h-1.5 w-1.5 rounded-full bg-rose-500 align-middle" /> an urgent one, <b>0!</b> an open role with nobody ready. {" "}A person can appear in more than one row (for example someone who is both an Account Executive and a Solution Engineer), so totals are counts of roles, not people.{" "}
         {unclassifiedCount > 0 && (
           <Link href={inventoryHref(p, { cluster: "none", metro: null })} className="font-medium text-teal-600 hover:underline">
             {unclassifiedCount} in {TRACKS.find((t) => t.value === p.track)?.label} have a current role the rules don&apos;t recognise yet. See who.
@@ -224,14 +329,15 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                 Show all cities
               </Link>
             )}
-            {people.length > 0 && (
-              <SaveShortlist
-                ids={people.map((x) => x.candidate_id)}
-                label={`Save these ${Math.min(people.length, 300)} as a shortlist`}
-                defaultName={`${drillTitle} ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
-                description={`Made from the Talent Inventory: ${drillTitle}${p.domain ? `, ${p.domain}` : ""}${p.level !== "all" ? `, ${level.label.toLowerCase()}` : ""}.`}
-                lists={lists}
-              />
+            {incompleteHere > 0 && p.cluster && p.cluster !== "none" && (
+              <Link
+                target="_blank"
+                rel="noopener noreferrer"
+                href={`/candidates/complete?${new URLSearchParams({ group: p.track, sub: "*", mode: "vitals", cluster: p.cluster, ...(p.metro ? { metro: p.metro } : {}) }).toString()}`}
+                className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[12px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+              >
+                Call the {incompleteHere} missing vitals
+              </Link>
             )}
             {exportHref && (
               <a href={exportHref} className="text-[12px] font-medium text-teal-600 hover:underline">
@@ -253,6 +359,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                   <th className="px-3 py-2 text-right font-medium">Exp</th>
                   <th className="px-3 py-2 font-medium">CTC (now → expected)</th>
                   <th className="px-3 py-2 font-medium">Notice</th>
+                  <th className="px-3 py-2 font-medium">Ready?</th>
                 </tr>
               </thead>
               <tbody>
@@ -275,12 +382,25 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                         {c?.current_fixed_ctc != null ? `${Number(c.current_fixed_ctc)}` : "?"} → {c?.expected_fixed_ctc != null ? `${Number(c.expected_fixed_ctc)}` : "?"} LPA
                       </td>
                       <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{c?.notice_period ?? ""}</td>
+                      <td className="px-3 py-2">
+                        {(() => {
+                          const r = readyBy.get(x.candidate_id);
+                          if (!r) return null;
+                          return r.vgaps.length === 0 ? (
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11.5px] font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Ready</span>
+                          ) : (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200" title={`Missing: ${r.vgaps.map((g) => GAP_LABEL[g] ?? g).join(", ")}`}>
+                              {r.vgaps.length} missing
+                            </span>
+                          );
+                        })()}
+                      </td>
                     </tr>
                   );
                 })}
                 {people.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-6 text-center text-slate-500">
                       No one matches.
                     </td>
                   </tr>
@@ -294,7 +414,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   );
 }
 
-function FamilyBlock({ family, rows, p, max }: { family: string; rows: { slug: string; name: string; m: Map<string, number>; total: number }[]; p: ReturnType<typeof parseParams>; max: number }) {
+function FamilyBlock({ family, rows, p, max, demand }: { family: string; rows: { slug: string; name: string; m: Map<string, number>; total: number }[]; p: ReturnType<typeof parseParams>; max: number; demand: Map<string, Demand> }) {
   return (
     <>
       <tr className="bg-slate-50/70 dark:bg-slate-800/30">
@@ -311,12 +431,19 @@ function FamilyBlock({ family, rows, p, max }: { family: string; rows: { slug: s
           </td>
           {METROS.map((m) => {
             const n = r.m.get(m) ?? 0;
+            const d = demand.get(`${r.slug}|${m}`);
+            const dot = d ? (
+              <span className={`ml-1 inline-block h-1.5 w-1.5 rounded-full align-middle ${d.urgent_roles > 0 ? "bg-rose-500" : "bg-amber-500"}`} title={`${d.open_roles} open ${d.open_roles === 1 ? "role" : "roles"} here${d.urgent_roles > 0 ? `, ${d.urgent_roles} urgent` : ""}`} />
+            ) : null;
             return (
               <td key={m} className="px-1 py-1 text-center">
                 {n > 0 ? (
                   <Link href={inventoryHref(p, { cluster: r.slug, metro: m })} className={`block rounded-md px-2 py-1 tabular-nums ${shade(n, max)}`}>
                     {n}
+                    {dot}
                   </Link>
+                ) : d ? (
+                  <span className="block rounded-md bg-rose-50 px-2 py-1 text-[12px] font-semibold text-rose-700 dark:bg-rose-950/30 dark:text-rose-300" title={`${d.open_roles} open ${d.open_roles === 1 ? "role" : "roles"} here and nobody ready`}>0!</span>
                 ) : (
                   <span className={shade(0, max)}>·</span>
                 )}
