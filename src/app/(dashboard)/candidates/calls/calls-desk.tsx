@@ -41,6 +41,27 @@ export type CallPerson = {
   highest_qualification?: string | null;
   role_level?: string | null;
   role_type?: string | null;
+  email?: string | null;
+  profile_group?: string | null;
+  sub_domain?: string | null;
+  /** Details still missing for this person (from the profile-completion list), as codes like current_ctc. */
+  gaps?: string[];
+  /** Profile strength (strong, good, weak, poor, unrated) and the plain-words reasons behind it. */
+  strength?: string;
+  why?: string[];
+};
+
+export const STRENGTH: Record<string, { label: string; cls: string; bar: string }> = {
+  strong: { label: "Strong", cls: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100", bar: "bg-emerald-500" },
+  good: { label: "Good", cls: "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200", bar: "bg-teal-400" },
+  weak: { label: "Weak", cls: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100", bar: "bg-amber-400" },
+  poor: { label: "Poor", cls: "bg-rose-100 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100", bar: "bg-rose-500" },
+  unrated: { label: "Not rated", cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300", bar: "bg-slate-300 dark:bg-slate-600" },
+};
+
+export const GAP_LABEL: Record<string, string> = {
+  name: "name", phone: "phone", email: "email", cv: "CV", experience: "experience", current_ctc: "current pay", expected_ctc: "expected pay",
+  notice: "notice", city: "city", relocation: "relocation", domain: "domain", sub_domain: "sub-domain", role_level: "role level", employer: "company", title: "job title",
 };
 
 // Where a profile came from, in words a recruiter can say to the person, and how long ago it was created.
@@ -67,7 +88,7 @@ const REASON: Record<CallPerson["reason"], { label: string; cls: string }> = {
 
 // The critical details still missing, most important first: without current pay the top-tier ratio can't be worked out.
 const gapsOf = (p: CallPerson) =>
-  [!p.current_fixed_ctc && "current pay", !p.notice_period && "notice", !p.expected_fixed_ctc && "expected pay", !p.current_location && "city"].filter(Boolean) as string[];
+  p.gaps ? p.gaps.map((g) => GAP_LABEL[g] ?? g) : [!p.current_fixed_ctc && "current pay", !p.notice_period && "notice", !p.expected_fixed_ctc && "expected pay", !p.current_location && "city"].filter(Boolean) as string[];
 
 const tel = (p: string | null) => {
   const d = (p ?? "").replace(/\D/g, "");
@@ -199,6 +220,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                   {(p.reason === "pay_missing" || p.reason === "details_missing") && gapsOf(p).length > 0 && `: ${gapsOf(p).join(", ")}`}
                   {p.reason === "worth_a_call" && p.pay_ratio != null && ` · ratio ${Number(p.pay_ratio).toFixed(1)}`}
                 </span>
+                {p.strength && <span className={`ml-1.5 inline-block rounded px-1.5 py-px text-[11px] font-medium ${STRENGTH[p.strength]?.cls ?? ""}`}>{STRENGTH[p.strength]?.label ?? p.strength}</span>}
                 {p.tries > 0 && <span className="ml-1.5 text-[11px] text-slate-400">tried {p.tries}×</span>}
               </button>
             </li>
@@ -220,6 +242,13 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                 {[active.current_job_title, active.current_employer].filter(Boolean).join(" at ") || "Role not on file"}
                 {active.total_experience_years ? ` · ${Number(active.total_experience_years)} yrs` : ""}
               </p>
+              {active.strength && (
+                <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px]">
+                  <span className={`rounded px-2 py-0.5 font-semibold ${STRENGTH[active.strength]?.cls ?? ""}`}>Profile: {STRENGTH[active.strength]?.label ?? active.strength}</span>
+                  {(active.why ?? []).map((w) => <span key={w} className="text-slate-500">{w}</span>)}
+                  {active.strength === "unrated" && <span className="text-slate-500">Nothing to judge from yet: your call rating will set it.</span>}
+                </p>
+              )}
               {(sourceOf(active) || createdOf(active)) && (
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px]">
                   {sourceOf(active) && <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">Source: {sourceOf(active)}</span>}

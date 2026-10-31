@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 // missing, asked in batches). The rest sits under "More".
 const TABS = [
   { href: "/candidates", label: "Talent" },
+  { href: "/candidates/complete", label: "Profile completion" },
   { href: "/candidates/calls", label: "Calls today" },
   { href: "/candidates/activity", label: "Activity" },
   { href: "/candidates/pipeline", label: "Improve profiles" },

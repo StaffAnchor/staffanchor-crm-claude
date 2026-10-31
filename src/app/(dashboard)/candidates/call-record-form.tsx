@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { cityOptions, employmentStatusOptions, fixedCtcOptions, highestQualificationOptions, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
+import { cityOptions, employmentStatusOptions, fixedCtcOptions, highestQualificationOptions, level1OptionsForProfileType, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
 
@@ -34,6 +34,10 @@ export type CallFormPerson = {
   highest_qualification?: string | null;
   role_level?: string | null;
   role_type?: string | null;
+  email?: string | null;
+  /** b2b_sales, b2c_sales or non_sales; empty or "unclear" when not decided yet. */
+  profile_group?: string | null;
+  sub_domain?: string | null;
 };
 
 // IST 11:00 on a day N days from now, as an ISO time.
@@ -103,6 +107,10 @@ export default function CallRecordForm({
   const [status, setStatus] = useState(p.current_employment_status ?? "");
   const [qualification, setQualification] = useState(p.highest_qualification ?? "");
   const [level, setLevel] = useState(p.role_level ?? "");
+  const [name, setName] = useState(p.full_name ?? "");
+  const [email, setEmail] = useState(p.email ?? "");
+  const [group, setGroup] = useState(["b2b_sales", "b2c_sales", "non_sales"].includes(p.profile_group ?? "") ? (p.profile_group as string) : "");
+  const [subDomain, setSubDomain] = useState(p.sub_domain ?? "");
   const [offer, setOffer] = useState(p.offer_in_hand === true ? "Yes" : p.offer_in_hand === false ? "No" : "");
   const [offerCtc, setOfferCtc] = useState(p.offer_ctc ? String(p.offer_ctc) : "");
   const [comm, setComm] = useState("");
@@ -124,7 +132,7 @@ export default function CallRecordForm({
   // Registration details a call can still complete, shown in the "Profile details" section.
   // "Not provided" (undefined, from a surface that does not load these) is different from "empty on the profile" (null or blank).
   const blank = (v: unknown) => v === null || v === "";
-  const detailGaps = [blank(p.current_employer) && "company", blank(p.current_job_title) && "job title", p.total_experience_years !== undefined && !num(p.total_experience_years) && "experience", blank(p.current_employment_status) && "employment status", blank(p.highest_qualification) && "qualification", blank(p.role_level) && "role level"].filter(Boolean) as string[];
+  const detailGaps = [blank(p.current_employer) && "company", blank(p.current_job_title) && "job title", p.total_experience_years !== undefined && !num(p.total_experience_years) && "experience", blank(p.current_employment_status) && "employment status", blank(p.highest_qualification) && "qualification", blank(p.role_level) && "role level", p.email !== undefined && !/@/.test(p.email ?? "") && "email", p.profile_group !== undefined && !["b2b_sales", "b2c_sales", "non_sales"].includes(p.profile_group ?? "") && "domain", p.sub_domain !== undefined && blank(p.sub_domain) && "sub-domain"].filter(Boolean) as string[];
   const levelLead = yourLevelOptions.find((l) => l.value === level)?.lead;
 
   async function log(outcome: string, extra: Record<string, unknown> = {}) {
@@ -141,7 +149,7 @@ export default function CallRecordForm({
         body: JSON.stringify({
           candidateId: p.id,
           outcome,
-          fields: outcome === "reached" ? { current_fixed_ctc: ctc, expected_fixed_ctc: expected, notice_period: notice, current_location: city, open_to_relocation: relocation, work_mode: workMode, current_employer: employer, current_job_title: title, total_experience_years: years, current_employment_status: status, highest_qualification: qualification, role_level: level } : {},
+          fields: outcome === "reached" ? { current_fixed_ctc: ctc, expected_fixed_ctc: expected, notice_period: notice, current_location: city, open_to_relocation: relocation, work_mode: workMode, current_employer: employer, current_job_title: title, total_experience_years: years, current_employment_status: status, highest_qualification: qualification, role_level: level, full_name: name, email, profile_group: group, sub_domain: subDomain } : {},
           offer: outcome === "reached" && offer ? { inHand: offer === "Yes", ctc: offer === "Yes" ? Number(offerCtc) : null } : null,
           communication: comm || null,
           openness: openness || null,
@@ -257,6 +265,33 @@ export default function CallRecordForm({
                 {highestQualificationOptions.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </Field>
+            <Field label="Full name">
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={select} />
+            </Field>
+            {p.email !== undefined && (
+              <Field label="Email" missing={!/@/.test(p.email ?? "")}>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" className={select} />
+              </Field>
+            )}
+            {p.profile_group !== undefined && (
+              <Field label="Domain" missing={!["b2b_sales", "b2c_sales", "non_sales"].includes(p.profile_group ?? "")}>
+                <select value={group} onChange={(e) => { setGroup(e.target.value); setSubDomain(""); }} className={select}>
+                  <option value="">Select</option>
+                  <option value="b2b_sales">B2B Sales</option>
+                  <option value="b2c_sales">B2C Sales</option>
+                  <option value="non_sales">Non-Sales</option>
+                </select>
+              </Field>
+            )}
+            {p.sub_domain !== undefined && (
+              <Field label="Sub-domain" missing={blank(p.sub_domain)}>
+                <select value={subDomain} onChange={(e) => setSubDomain(e.target.value)} className={select} disabled={!group}>
+                  <option value="">{group ? "Select" : "Pick the domain first"}</option>
+                  {subDomain && !level1OptionsForProfileType(group).includes(subDomain) && <option value={subDomain}>{subDomain}</option>}
+                  {level1OptionsForProfileType(group).map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </Field>
+            )}
             <Field label="Role level" missing={blank(p.role_level)}>
               <select value={level} onChange={(e) => setLevel(e.target.value)} className={select}>
                 <option value="">Select</option>

@@ -6,6 +6,7 @@ import { generateBrief } from "@/lib/candidate-brief";
 import { isPoolTier } from "@/lib/talent-pool";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
+import { level1OptionsForProfileType } from "@/lib/candidate-options";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
   const { data: before } = await supabase
     .from("candidates")
     .select(
-      "status, segment_data, phone, resume_file_url, current_employer, current_job_title, current_employment_status, total_experience_years, highest_qualification, category, sub_domain, industries, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode"
+      "status, full_name, email, profile_group, segment_data, phone, resume_file_url, current_employer, current_job_title, current_employment_status, total_experience_years, highest_qualification, category, sub_domain, industries, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode"
     )
     .eq("id", id)
     .maybeSingle();
@@ -69,7 +70,24 @@ export async function POST(req: Request) {
     const v = text(f[k]);
     if (v && String(was[k] ?? "").trim() !== v) update[k] = v;
   }
-  const filled = Object.keys(update);
+  // Name, email, domain and sub-domain: the other details the registration form collects.
+  const name = text(f.full_name);
+  if (name && name.length > 2 && String(was.full_name ?? "").trim() !== name) update.full_name = name;
+  const email = text(f.email)?.toLowerCase();
+  if (email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && String(was.email ?? "").trim().toLowerCase() !== email) update.email = email;
+  const wasGroup = String(was.profile_group ?? "");
+  const group = text(f.profile_group);
+  if (group && ["b2b_sales", "b2c_sales", "non_sales"].includes(group) && group !== wasGroup) {
+    Object.assign(update, {
+      profile_group: group, profile_subgroup: null, sub_group: null, sub_group_locked: false, profile_group_locked: true, profile_group_source: "manual",
+      profile_group_confidence: "high", profile_group_reason: `Set by ${me.full_name ?? "a recruiter"} on a call`, profile_group_also: null,
+      profile_group_needs_review: false, profile_group_updated_at: now.toISOString(),
+    });
+  }
+  const effectiveGroup = (update.profile_group as string | undefined) ?? wasGroup;
+  const sub = text(f.sub_domain);
+  if (sub && level1OptionsForProfileType(effectiveGroup).includes(sub) && (String(was.sub_domain ?? "") !== sub || update.profile_group)) update.sub_domain = sub;
+  const filled = Object.keys(update).filter((k) => !k.startsWith("profile_group_") && !["profile_subgroup", "sub_group", "sub_group_locked"].includes(k));
 
   if (outcome === "reached") {
     update.details_confirmed_at = now.toISOString();
