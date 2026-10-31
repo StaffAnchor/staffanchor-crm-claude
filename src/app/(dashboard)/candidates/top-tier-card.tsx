@@ -50,7 +50,7 @@ export default function TopTierCard({
           </Link>
         )}
         {noPayCount > 0 && (
-          <Link href="/candidates/pipeline" className="text-[12.5px] font-medium text-amber-700 hover:underline dark:text-amber-300" title="Experienced sales people with no current pay on file, so the ratio can't be worked out">
+          <Link href="/candidates/complete" className="text-[12.5px] font-medium text-amber-700 hover:underline dark:text-amber-300" title="Experienced sales people with no current pay on file, so the ratio can't be worked out">
             {noPayCount.toLocaleString("en-IN")} need their pay filled in
           </Link>
         )}

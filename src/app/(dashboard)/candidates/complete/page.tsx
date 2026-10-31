@@ -6,6 +6,8 @@ import CandidatesSubNav from "../candidates-sub-nav";
 import CallsDesk, { type CallPerson } from "../calls/calls-desk";
 import { GAP_LABEL, STRENGTH } from "@/lib/completion";
 import TargetControl, { type Target } from "./target-control";
+import BatchPanel from "../pipeline/batch-panel";
+import { Bot } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -68,9 +70,10 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (!me || !["admin", "recruiter", "partner", "freelancer"].includes(me.role)) redirect("/today");
 
-  const [{ data: overview }, { data: targetRows }] = await Promise.all([
+  const [{ data: overview }, { data: targetRows }, { count: openQuestions }] = await Promise.all([
     supabase.rpc("completion_overview", { p_by: by }),
     supabase.from("completion_targets").select("profile_group, by_field, bucket, due_on, baseline_incomplete").eq("by_field", by),
+    supabase.from("bot_questions").select("id", { count: "exact", head: true }).eq("status", "open"),
   ]);
   const rows = ((overview ?? []) as Row[]).map((r) => ({ ...r, gaps: r.gaps ?? {}, strengths: r.strengths ?? {} }));
   const targets = new Map<string, Target>();
@@ -364,6 +367,22 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           )}
         </div>
       )}
+
+      {/* The daily batch of people worth asking for their missing details on WhatsApp (this used to be the Improve profiles page). */}
+      <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <BatchPanel />
+        <section className={`${card} p-4`}>
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+            <Bot className="h-4 w-4 text-teal-600" /> Teach the assistant
+          </h2>
+          <p className="mt-1 text-[13px] text-slate-500">Questions candidates asked that the assistant couldn&apos;t answer. Answer once and it replies next time.</p>
+          <p className="mt-3 text-[26px] font-semibold tabular-nums text-slate-900 dark:text-slate-100">{openQuestions ?? 0}</p>
+          <p className="text-[12px] text-slate-500">waiting to be answered</p>
+          <Link href="/whatsapp/training" className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-teal-700 hover:underline dark:text-teal-300">
+            Answer them <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </section>
+      </div>
     </div>
   );
 }

@@ -3,23 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// People, kept to the places used every day: Talent (everyone, with the top-tier strip), Calls today (the one list for
-// whoever is on the phones), Activity (who was contacted, how, and whether it worked) and Improve profiles (what is
-// missing, asked in batches). The rest sits under "More".
+// People is three places: Talent (everyone, with the top-tier strip), Profile completion (what is missing or weak, by group,
+// practice and city, with the call lists and bulk asking to fix it) and Calls & outreach (the priority call queue, what was
+// sent and how it went, and the campaigns). The rest sits under "More".
 const TABS = [
   { href: "/candidates", label: "Talent" },
   { href: "/candidates/complete", label: "Profile completion" },
-  { href: "/candidates/calls", label: "Calls today" },
-  { href: "/candidates/activity", label: "Activity" },
-  { href: "/candidates/pipeline", label: "Improve profiles" },
+  { href: "/candidates/calls", label: "Calls & outreach", also: ["/candidates/activity", "/candidates/outreach"] },
 ];
 
-// Used rarely, so they stay out of the way. Shortlists are really saved pools; the B2B SaaS practice view is the same
-// people filtered by what they sell.
+// The second row shown inside Calls & outreach.
+const OUTREACH = [
+  { href: "/candidates/calls", label: "Calls today" },
+  { href: "/candidates/activity", label: "Activity" },
+  { href: "/candidates/outreach", label: "Campaigns" },
+];
+
+// Used rarely, so they stay out of the way.
 const MORE = [
-  { href: "/candidates/outreach", label: "Email and WhatsApp campaigns" },
   { href: "/candidates/inventory", label: "Role and city map" },
-  { href: "/saas-practice", label: "B2B SaaS practice view" },
+  { href: "/saas-practice", label: "B2B SaaS talent pool" },
   { href: "/candidates/lists", label: "Saved shortlists" },
   { href: "/candidates/referrals", label: "Referrals" },
   { href: "/candidates/files", label: "CV files" },
@@ -30,15 +33,18 @@ export default function CandidatesSubNav() {
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/candidates" ? pathname === "/candidates" : pathname?.startsWith(href));
   const moreActive = MORE.some((m) => isActive(m.href));
+  const tabActive = (t: (typeof TABS)[number]) => isActive(t.href) || (t.also ?? []).some((h) => isActive(h));
+  const inOutreach = OUTREACH.some((o) => isActive(o.href));
 
   return (
-    <div className="flex flex-wrap items-center gap-1 mb-4 -mt-1">
+    <>
+    <div className={`flex flex-wrap items-center gap-1 -mt-1 ${inOutreach ? "mb-2" : "mb-4"}`}>
       {TABS.map((t) => (
         <Link
           key={t.href}
           href={t.href}
           className={`px-3 py-1.5 rounded-full whitespace-nowrap text-[12.5px] font-medium transition-colors ${
-            isActive(t.href) ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            tabActive(t) ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
           {t.label}
@@ -61,5 +67,19 @@ export default function CandidatesSubNav() {
         </div>
       </details>
     </div>
+    {inOutreach && (
+      <div className="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-100 pb-2 dark:border-slate-800">
+        {OUTREACH.map((o) => (
+          <Link
+            key={o.href}
+            href={o.href}
+            className={`px-2.5 py-1 rounded-md whitespace-nowrap text-[12.5px] font-medium ${isActive(o.href) ? "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"}`}
+          >
+            {o.label}
+          </Link>
+        ))}
+      </div>
+    )}
+    </>
   );
 }

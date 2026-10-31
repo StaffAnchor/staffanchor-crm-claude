@@ -217,7 +217,7 @@ export default async function DatabaseHealthPage({ searchParams }: { searchParam
             <Stat label="Missing current CTC" value={next.sales_total - (next.sales_with_ctc ?? 0)} />
             <Stat label="Reachable on WhatsApp" value={next.sales_no_ctc_with_phone ?? 0} note="have a valid mobile number" />
             <div className="flex items-center">
-              <Link href="/candidates/pipeline" className="text-[13px] font-medium text-teal-600 hover:underline">
+              <Link href="/candidates/complete" className="text-[13px] font-medium text-teal-600 hover:underline">
                 Send the next ask batch: people missing current CTC come first →
               </Link>
             </div>
@@ -319,7 +319,7 @@ export default async function DatabaseHealthPage({ searchParams }: { searchParam
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-3 text-[13px]">
-              <Link href="/candidates/pipeline" className="font-medium text-teal-600 hover:underline">
+              <Link href="/candidates/complete" className="font-medium text-teal-600 hover:underline">
                 Send the next daily ask batch →
               </Link>
               <Link href="/candidates?ready=almost" className="font-medium text-teal-600 hover:underline">
