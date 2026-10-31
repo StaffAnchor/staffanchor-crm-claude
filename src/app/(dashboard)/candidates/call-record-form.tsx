@@ -11,7 +11,7 @@ import { BEST_TIMES, CYCLES, INTERVIEWING, JUDGMENTS, NOTICE_FLEX, QUOTA_BANDS, 
 // call is recorded the same way everywhere. Everything typed here goes onto the profile; the after-the-call note is read
 // by the system (fills blanks, ratings, verdict, client brief, matches); the result is logged in call_log.
 
-export type CallResult = { outcome: string; name: string; summary: string | null; filled: string[]; tier: string | null; concerns: string[]; reading?: boolean };
+export type CallResult = { outcome: string; name: string; candidateId?: string; stillMissing?: string[]; summary: string | null; filled: string[]; tier: string | null; concerns: string[]; reading?: boolean };
 
 export type CallFormPerson = {
   id: string;
@@ -237,6 +237,8 @@ export default function CallRecordForm({
         onDone({
           outcome,
           name: p.full_name ?? "Candidate",
+          candidateId: p.id,
+          stillMissing: (d.stillMissing as string[] | undefined) ?? undefined,
           summary: d.debrief?.summary ?? null,
           filled: [...((d.filled as string[] | undefined) ?? []).map((f) => f.replace(/_/g, " ")), ...((d.debrief?.filled as string[] | undefined) ?? [])],
           tier: d.debrief?.tier ?? null,

@@ -7,6 +7,7 @@ import ResumeViewerInline from "../[id]/resume-viewer-inline";
 import { POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
 import CallRecordForm, { type CallResult } from "../call-record-form";
 import { GAP_LABEL, STRENGTH } from "@/lib/completion";
+import StillMissing from "@/components/still-missing";
 
 
 export type CallPerson = {
@@ -278,6 +279,7 @@ export default function CallsDesk({ people }: { people: CallPerson[] }) {
                 {last.summary && <p className="mt-0.5">{last.summary}</p>}
                 {last.reading && <p className="mt-0.5">Your note is being read in the background; the details it fills and the client brief update within a minute.</p>}
                 {last.filled.length > 0 && <p className="mt-0.5">Filled in: {last.filled.join(", ")}.</p>}
+                {last.stillMissing && <StillMissing name={last.name} candidateId={last.candidateId} gaps={last.stillMissing} />}
                 {last.concerns.length > 0 && <p className="mt-0.5 text-amber-800 dark:text-amber-300">Concerns noted: {last.concerns.join("; ")}.</p>}
               </div>
             )}

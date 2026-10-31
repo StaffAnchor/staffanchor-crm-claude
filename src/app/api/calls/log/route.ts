@@ -197,5 +197,12 @@ export async function POST(req: Request) {
   if (logError) return NextResponse.json({ ok: false, error: `Saved the profile, but couldn't log the call: ${logError.message}` }, { status: 500 });
   await supabase.from("audit_log").insert({ actor: user.id, action: "call_logged", entity: "candidate", entity_id: id, detail: { outcome, filled, communication: communication ?? null, openness: body.openness ?? null } });
 
-  return NextResponse.json({ ok: true, filled, debrief: null, reading });
+  // What is still not on the profile after this call, so the recruiter can finish it while the person is fresh in mind.
+  let stillMissing: string[] | undefined;
+  if (outcome === "reached") {
+    const { data: rd } = await supabase.rpc("people_readiness", { p_ids: [id] });
+    const row = ((rd ?? []) as { gaps: string[] }[])[0];
+    if (row) stillMissing = row.gaps;
+  }
+  return NextResponse.json({ ok: true, filled, debrief: null, reading, stillMissing });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import StillMissing from "@/components/still-missing";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
@@ -26,6 +27,7 @@ export default function ProfileCallSection({ person, doubts, history }: { person
           </p>
           {last.summary && <p className="mt-0.5">{last.summary}</p>}
           {last.filled.length > 0 && <p className="mt-0.5">Filled in: {last.filled.join(", ")}.</p>}
+          {last.stillMissing && <StillMissing name={last.name} gaps={last.stillMissing} link={false} />}
           {last.concerns.length > 0 && <p className="mt-0.5 text-amber-800 dark:text-amber-300">Concerns noted: {last.concerns.join("; ")}.</p>}
           {(last.summary || last.reading) && <p className="mt-0.5 text-emerald-800/80 dark:text-emerald-300/80">{last.reading ? "Your note is being read in the background. The details it fills, the client brief and the role matches update within a minute." : "The client brief and the role matches are being refreshed."}</p>}
         </div>
