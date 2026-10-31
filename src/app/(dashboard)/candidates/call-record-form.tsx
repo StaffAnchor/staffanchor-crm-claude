@@ -293,32 +293,9 @@ export default function CallRecordForm({
   const salesFilled = [carriesQuota, quotaBand, style, cycle].filter(Boolean).length;
   const stayFilled = [canMessage, bestTime, canRefer].filter(Boolean).length;
 
-  return (
-    <div className="space-y-3">
-      {(toAsk.length > 0 || doubts.length > 0) && (
-        <div className="rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-          {toAsk.length > 0 && (
-            <p>
-              <b>Ask:</b> {toAsk.join(", ")}. Also listen for how clearly they explain their work.
-            </p>
-          )}
-          {doubts.length > 0 && (
-            <>
-              <p className="mt-1 font-semibold">From the CV, worth checking:</p>
-              <ul className="ml-4 list-disc">
-                {doubts.slice(0, 5).map((d, i) => (
-                  <li key={i}>{d}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      )}
-      <p className="text-[11.5px] text-slate-400">
-        <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-200 bg-slate-100 align-middle" /> Grey is already on the profile. <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-white align-middle" /> White with an amber edge is missing: ask these.
-      </p>
-
-      <Step n={1} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={8} defaultOpen={!basicsKnown}>
+  const stepWho = (n: number) => (
+    <>
+      <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={8} defaultOpen={!basicsKnown}>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Current city" missing={!k.city} known={k.city}>
             <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
@@ -383,8 +360,11 @@ export default function CallRecordForm({
           Role type: {level ? (levelLead ? "Leads a team" : "Individual contributor") : p.role_type ?? "set by the level"}. Only changes are saved.
         </p>
       </Step>
-
-      <Step n={2} title="Their move" hint="Are they looking, why, how soon, what else is on" filled={moveFilled} total={6}>
+    </>
+  );
+  const stepMove = (n: number) => (
+    <>
+      <Step n={n} title="Their move" hint="Are they looking, why, how soon, what else is on" filled={moveFilled} total={6}>
         <Field label="Looking for a new role?" missing={!k.looking} known={k.looking}>
           <Chips known={k.looking} value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
         </Field>
@@ -418,8 +398,11 @@ export default function CallRecordForm({
           <Chips known={k.workMode} value={workMode} options={asOpts(workModeOptions)} onChange={setWorkMode} />
         </Field>
       </Step>
-
-      <Step n={3} title="Pay" hint="What they earn and what they want" filled={payFilled} total={4}>
+    </>
+  );
+  const stepPay = (n: number) => (
+    <>
+      <Step n={n} title="Pay" hint="What they earn and what they want" filled={payFilled} total={4}>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Current fixed pay" missing={!k.ctc} known={k.ctc}>{fixedPay(ctc, setCtc, k.ctc)}</Field>
           <Field label="Current variable pay" known={k.currentVar}>{fixedPay(currentVar, setCurrentVar, k.currentVar)}</Field>
@@ -435,6 +418,37 @@ export default function CallRecordForm({
           </p>
         )}
       </Step>
+    </>
+  );
+
+  // Current pay is the first thing that must be on file, so when it is missing the Pay step comes first.
+  const order = !k.ctc ? (["pay", "who", "move"] as const) : (["who", "move", "pay"] as const);
+  return (
+    <div className="space-y-3">
+      {(toAsk.length > 0 || doubts.length > 0) && (
+        <div className="rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          {toAsk.length > 0 && (
+            <p>
+              <b>Ask:</b> {toAsk.join(", ")}. Also listen for how clearly they explain their work.
+            </p>
+          )}
+          {doubts.length > 0 && (
+            <>
+              <p className="mt-1 font-semibold">From the CV, worth checking:</p>
+              <ul className="ml-4 list-disc">
+                {doubts.slice(0, 5).map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+      <p className="text-[11.5px] text-slate-400">
+        <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-200 bg-slate-100 align-middle" /> Grey is already on the profile. <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-white align-middle" /> White with an amber edge is missing: ask these.
+      </p>
+
+      {order.map((key, i) => <span key={key} className="contents">{key === "who" ? stepWho(i + 1) : key === "move" ? stepMove(i + 1) : stepPay(i + 1)}</span>)}
 
       {isSales && (
         <Step n={4} title="Sales depth" hint="Quota, style and cycle: the strongest fit signals for sales roles" filled={salesFilled} total={4} defaultOpen={p.profile_group !== undefined}>

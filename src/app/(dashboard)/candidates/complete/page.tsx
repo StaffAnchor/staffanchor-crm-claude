@@ -239,11 +239,14 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="ros-page-title">Profile completion</h1>
+          {!working && (
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
             A profile is complete when it has everything needed to present the person to a client: name, phone, email, CV, experience, current and expected pay, notice period,
             city, relocation, domain, sub-domain, role level, company and job title. Current pay and a CV come before everything: without them a profile cannot be used. Then the vitals (current pay, city, role level and type, relocation, domain, sub-domain, CV, plus the basics); expected pay, notice period and the rest come after. Whether someone is looking for a change is asked on every call and counted separately, because it goes stale after 90 days.
           </p>
+          )}
         </div>
+        {!working && (
         <div className="flex items-center gap-1 text-[12px]">
           <span className="text-slate-500">Group practices by</span>
           {BY.map((b) => (
@@ -252,6 +255,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             </Link>
           ))}
         </div>
+        )}
       </div>
 
       {!working && priority && priority.people.length > 0 && (
@@ -272,7 +276,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         </Link>
       )}
 
-      {/* The whole base, split by group. */}
+      {/* The whole base, split by group. Hidden while working a call list so the calls sit at the top of the page. */}
+      {!working && (
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {GROUPS.map((g) => {
           const s = byGroup[g.key];
@@ -303,6 +308,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           );
         })}
       </div>
+      )}
 
       {!working && trend && trend.days.length > 0 && <TrendCard trend={trend} label={GROUP_LABEL[group] ?? "All"} />}
 
