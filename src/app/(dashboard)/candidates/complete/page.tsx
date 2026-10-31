@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
-import CallsDesk, { GAP_LABEL, STRENGTH, type CallPerson } from "../calls/calls-desk";
+import CallsDesk, { type CallPerson } from "../calls/calls-desk";
+import { GAP_LABEL, STRENGTH } from "@/lib/completion";
 import TargetControl, { type Target } from "./target-control";
 
 export const dynamic = "force-dynamic";
