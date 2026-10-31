@@ -61,25 +61,51 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (!me || !["admin", "recruiter", "partner"].includes(me.role)) redirect("/candidates");
 
-  // The whole B2B SaaS and tech bench (a few hundred rows), paged past the 1000-row cap.
-  const all: PassportRow[] = [];
-  for (let off = 0; off < 5000; off += 1000) {
-    const { data } = await supabase
-      .from("saas_passport")
-      .select(PASSPORT_COLUMNS)
-      .not("practice_fit", "is", null)
-      .range(off, off + 999);
-    all.push(...((data ?? []) as unknown as PassportRow[]));
-    if (!data || data.length < 1000) break;
-  }
-  const benchIds = new Set(all.map((r) => r.candidate_id));
+  // The independent reads start together; each is awaited where it is first needed.
+  const allP = (async () => {
+    const acc: PassportRow[] = [];
+for (let off = 0; off < 5000; off += 1000) {
+  const { data } = await supabase
+    .from("saas_passport")
+    .select(PASSPORT_COLUMNS)
+    .not("practice_fit", "is", null)
+    .range(off, off + 999);
+  acc.push(...((data ?? []) as unknown as PassportRow[]));
+  if (!data || data.length < 1000) break;
+}
 
-  const { data: roleRows } = await supabase
+    return acc;
+  })();
+  const roleRowsP = Promise.resolve(supabase
     .from("mandates")
     .select("id, role_title, client_name, status, cities, city, experience_min, experience_max, budget_max, deal_size_band, sales_cycle")
     .eq("category", "b2b_sales")
     .in("status", ["open", "on_hold"])
-    .order("status", { ascending: true });
+    .order("status", { ascending: true }));
+  const staffRowsP = Promise.resolve(supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "recruiter", "partner"]).order("full_name"));
+  const poolRawP = Promise.resolve(supabase
+    .from("talent_pool_entries")
+    .select("candidate_id, tier, reason, tags, marked_by, marked_at")
+    .eq("practice", POOL_PRACTICE)
+    .limit(2000));
+  const taskRowsP = Promise.resolve(supabase
+    .from("recruiter_inbox")
+    .select("candidate_id")
+    .eq("task_type", "COLLECT_DETAILS")
+    .in("status", ["open", "snoozed"])
+    .limit(2000));
+  const relocRowsP = Promise.resolve(supabase
+    .from("candidates")
+    .select("id, open_to_relocation")
+    .eq("profile_group", "b2b_sales")
+    .not("open_to_relocation", "is", null)
+    .limit(1000));
+  const listRowsP = Promise.resolve(supabase.rpc("candidate_lists_with_counts"));
+
+  const all = await allP;
+  const benchIds = new Set(all.map((r) => r.candidate_id));
+
+  const { data: roleRows } = await roleRowsP;
   const roles = (roleRows ?? []) as {
     id: string;
     role_title: string | null;
@@ -130,18 +156,14 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
   const cycleCounts = countBy(all.map((r) => r.sales_cycle));
   const gapCounts = countBy(all.flatMap((r) => r.passport_missing ?? []));
 
-  const { data: staffRows } = await supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "recruiter", "partner"]).order("full_name");
+  const { data: staffRows } = await staffRowsP;
   const recruiters = ((staffRows ?? []) as { id: string; full_name: string | null }[])
     .filter((p) => !!p.full_name)
     .map((p) => ({ id: p.id, name: p.full_name as string }));
 
   // The Talent Pool: who has been marked, by whom, and why.
   const staffName = new Map(((staffRows ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
-  const { data: poolRaw } = await supabase
-    .from("talent_pool_entries")
-    .select("candidate_id, tier, reason, tags, marked_by, marked_at")
-    .eq("practice", POOL_PRACTICE)
-    .limit(2000);
+  const { data: poolRaw } = await poolRawP;
   const poolBy: Record<string, PoolEntry> = {};
   for (const e of (poolRaw ?? []) as { candidate_id: string; tier: PoolTier; reason: string | null; tags: string[] | null; marked_by: string | null; marked_at: string }[]) {
     poolBy[e.candidate_id] = { tier: e.tier, reason: e.reason, tags: e.tags ?? [], marked_by_name: e.marked_by ? staffName.get(e.marked_by) ?? null : null, marked_at: e.marked_at };
@@ -149,12 +171,7 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
   const poolIds = Object.keys(poolBy);
 
   // Candidates who already have an open "collect details" task.
-  const { data: taskRows } = await supabase
-    .from("recruiter_inbox")
-    .select("candidate_id")
-    .eq("task_type", "COLLECT_DETAILS")
-    .in("status", ["open", "snoozed"])
-    .limit(2000);
+  const { data: taskRows } = await taskRowsP;
   const withTask = new Set(((taskRows ?? []) as { candidate_id: string | null }[]).map((t) => t.candidate_id).filter((v): v is string => !!v));
 
   // Who was already emailed in the last 30 days (the same window the sender uses to skip people).
@@ -198,16 +215,11 @@ export default async function SaasPracticePage({ searchParams }: { searchParams:
   }
   const stageByRole: Record<string, Record<string, string>> = {};
   for (const l of links) (stageByRole[l.mandate_id] ??= {})[l.candidate_id] = l.stage;
-  const { data: relocRows } = await supabase
-    .from("candidates")
-    .select("id, open_to_relocation")
-    .eq("profile_group", "b2b_sales")
-    .not("open_to_relocation", "is", null)
-    .limit(1000);
+  const { data: relocRows } = await relocRowsP;
   const relocation: Record<string, string> = {};
   for (const c of (relocRows ?? []) as { id: string; open_to_relocation: string | null }[]) if (c.open_to_relocation) relocation[c.id] = c.open_to_relocation;
 
-  const { data: listRows } = await supabase.rpc("candidate_lists_with_counts");
+  const { data: listRows } = await listRowsP;
   const lists = ((listRows ?? []) as { id: string; name: string; n: number | string; owner_name: string | null }[]).map((l) => ({
     id: l.id,
     name: l.name,
