@@ -26,7 +26,9 @@ const shade = (n: number, max: number) => {
 };
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const p = parseParams(await searchParams);
+  const rawParams = await searchParams;
+  const p = parseParams(rawParams);
+  const showAllRoles = rawParams.roles === "all";
   const supabase = await createClient();
   const {
     data: { user },
@@ -50,6 +52,10 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   const clusterTrack = new Map(clusters.map((c) => [c.slug, c.track]));
   const clusterNameOf = new Map(clusters.map((c) => [c.slug, c.name]));
   const gaps = ((gapRows ?? []) as RoleGap[]).map((g) => ({ ...g, total_n: Number(g.total_n), ready_n: Number(g.ready_n), gate_missing_n: Number(g.gate_missing_n), vitals_missing_n: Number(g.vitals_missing_n), reloc_ready_n: Number(g.reloc_ready_n), in_pipeline_n: Number(g.in_pipeline_n) }));
+  const TOP_ROLES = 6;
+  const visibleGaps = showAllRoles ? gaps : gaps.slice(0, TOP_ROLES);
+  const base = inventoryHref(p, {});
+  const withRoles = (v: string | null) => `${base}${v ? `${base.includes("?") ? "&" : "?"}roles=${v}` : ""}#open-roles`;
   const board = new Map<string, Board[]>();
   for (const b of (boardRows ?? []) as Board[]) board.set(b.mandate_id, [...(board.get(b.mandate_id) ?? []), b]);
 
@@ -151,13 +157,13 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       </div>
 
       {gaps.length > 0 && (
-        <section className="space-y-2">
+        <section id="open-roles" className="space-y-2">
           <div>
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Open roles: are we ready?</h2>
             <p className="text-[12.5px] text-slate-500">Urgent first, then the roles with the fewest ready people in their city. &quot;Ready&quot; means every vital is on file, so they can be called and matched today.</p>
           </div>
           <ul className="grid gap-3 lg:grid-cols-2">
-            {gaps.map((g) => {
+            {visibleGaps.map((g) => {
               const track = clusterTrack.get(g.role_cluster) ?? p.track;
               const incomplete = g.total_n - g.ready_n;
               const fixHref = `/candidates/complete?${new URLSearchParams({ group: track, sub: "*", mode: g.gate_missing_n > 0 ? "gate" : "vitals", cluster: g.role_cluster, ...(g.metro !== "Unknown" ? { metro: g.metro } : {}) }).toString()}`;
@@ -207,6 +213,14 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
               );
             })}
           </ul>
+          {gaps.length > TOP_ROLES && (
+            <p className="text-[12.5px] text-slate-500">
+              Showing {visibleGaps.length} of {gaps.length} open roles.{" "}
+              <Link href={withRoles(showAllRoles ? null : "all")} className="font-semibold text-teal-700 hover:underline dark:text-teal-300">
+                {showAllRoles ? `Show the top ${TOP_ROLES}` : `Show all ${gaps.length}`}
+              </Link>
+            </p>
+          )}
         </section>
       )}
 
