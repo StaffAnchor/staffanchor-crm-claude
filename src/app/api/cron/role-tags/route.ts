@@ -7,6 +7,7 @@ import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 export const maxDuration = 60;
 
 async function handler(req: NextRequest) {
+  const startedAt = Date.now();
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -25,6 +26,9 @@ async function handler(req: NextRequest) {
   const { data: newlyReady } = await admin.from("candidates").select("id").eq("readiness_tier", "ready").gte("readiness_updated_at", since).limit(150);
   let queued = 0;
   for (const c of (newlyReady ?? []) as { id: string }[]) {
+    // The route has 60 s in total and the tag rebuild above takes about 12 s: stop queuing with room to spare. Anyone left over is
+    // still inside the two-day window tomorrow night.
+    if (Date.now() - startedAt > 40_000) break;
     await queueProactiveMatchesForCandidate(c.id, admin).catch(() => {});
     queued++;
   }
