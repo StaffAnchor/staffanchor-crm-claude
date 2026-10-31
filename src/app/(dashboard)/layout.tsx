@@ -34,18 +34,13 @@ export default async function DashboardLayout({
     // boxes on this page (Mandate Tasks/Build Pipeline/Profile Completion),
     // so the tab needed a name covering all three, not just the first.
     { href: "/today", label: "Today", enabled: true },
-    { href: "/tasks", label: "Tasks", enabled: true },
     { href: "/candidates", label: "Candidates", enabled: true },
-    { href: "/whatsapp", label: "WhatsApp", enabled: true },
     // Candidates colleagues have recommended to you for a role: your own space, see (dashboard)/recommended.
-    { href: "/recommended", label: "Recommended", enabled: true },
-    { href: "/hiring", label: "Hiring board", enabled: true },
     { href: "/mandates", label: "Mandates", enabled: true },
     { href: "/clients", label: "Clients", enabled: true },
     // Sales + Employer Inquiries consolidated under one section (Sep
     // 2026) -- see (dashboard)/client-acquisition/layout.tsx.
-    { href: "/client-acquisition", label: "Client Acquisition", enabled: true },
-    { href: "/interviews", label: "Interviews", enabled: true },
+    { href: "/client-acquisition", label: "Prospects", enabled: true },
     // Referrals folded into the Candidates page as a tab (Sep 2026) -- see
     // (dashboard)/candidates/candidates-sub-nav.tsx.
     // Source-of-truth placement tracker (DOJ + join confirmation + billing
@@ -74,7 +69,6 @@ export default async function DashboardLayout({
     // Analytics stays in the bar for the owner; the admin tools (Team, Vendors, Sales Circle, Marketing) moved
     // into the account menu so the bar shows what is used every day.
     // The CRM assistant: ask anything, and approve what it proposes. Admins only.
-    ...(profile?.role === "admin" ? [{ href: "/agent", label: "Assistant", enabled: true }] : []),
   ];
   const adminLinks =
     profile?.role === "admin"

@@ -8,13 +8,14 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/candidates", label: "Talent" },
   { href: "/candidates/complete", label: "Profile completion" },
-  { href: "/candidates/activity", label: "Outreach", also: ["/candidates/outreach"] },
+  { href: "/candidates/activity", label: "Outreach", also: ["/candidates/outreach", "/whatsapp"] },
 ];
 
 // The second row shown inside Outreach.
 const OUTREACH = [
   { href: "/candidates/activity", label: "Activity" },
   { href: "/candidates/outreach", label: "Campaigns" },
+  { href: "/whatsapp", label: "Replies" },
 ];
 
 // Used rarely, so they stay out of the way.

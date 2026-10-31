@@ -9,21 +9,17 @@ import SignOutButton from "./sign-out-button";
 import ThemeToggle from "@/components/theme-toggle";
 import NotificationBell from "./notification-bell";
 import CallsFlaggedBell from "./calls-flagged-bell";
-import TasksNavBadge from "./tasks-nav-badge";
 import WhatsAppNavBadge from "./whatsapp-nav-badge";
-import RecommendedNavBadge from "./recommended-nav-badge";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
 // `also` lists pages that belong to a group but have no tab of their own, so the right heading still lights up.
 const NAV_GROUPS: { id: string; label: string; items: string[]; also?: string[] }[] = [
-  { id: "today", label: "Today", items: ["/today"] },
-  // Everything about a role: the board across roles, the roles themselves, the clients behind them, the interviews and the placements that follow.
-  { id: "roles", label: "Roles", items: ["/hiring", "/mandates", "/clients", "/client-acquisition", "/interviews", "/placements"], also: ["/employer-inquiries", "/sales", "/retention"] },
-  { id: "people", label: "People", items: ["/candidates"], also: ["/saas-practice", "/referrals"] },
-  { id: "inbox", label: "Inbox", items: ["/whatsapp", "/tasks", "/recommended"] },
-  // Only admins are given this link (see the dashboard layout), so everyone else never sees the heading.
-  { id: "assistant", label: "Assistant", items: ["/agent"] },
+  { id: "today", label: "Today", items: ["/today"], also: ["/tasks"] },
+  // Everything about a role: the roles themselves, the clients behind them, new client business and the placements that follow.
+  // Interviews and the old hiring board are no longer in the bar (no activity); their pages still open from links.
+  { id: "roles", label: "Roles", items: ["/mandates", "/clients", "/client-acquisition", "/placements"], also: ["/interviews", "/hiring", "/employer-inquiries", "/sales", "/retention"] },
+  { id: "people", label: "People", items: ["/candidates"], also: ["/saas-practice", "/referrals", "/whatsapp"] },
 ];
 
 // Redesigned per direct feedback (Aug 2026): the old header was dark navy
@@ -107,13 +103,7 @@ export default function TopNav({
                 }`}
               >
                 {g.label}
-                {g.id === "inbox" && !active ? (
-                  <>
-                    <TasksNavBadge />
-                    <WhatsAppNavBadge />
-                    <RecommendedNavBadge />
-                  </>
-                ) : null}
+                {g.id === "people" && !active ? <WhatsAppNavBadge /> : null}
               </Link>
             );
           })}
@@ -230,8 +220,6 @@ export default function TopNav({
                 className={`px-3 py-1 rounded-full whitespace-nowrap shrink-0 transition-colors ${on ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"}`}
               >
                 {i.label}
-                {i.href === "/tasks" && !on ? <TasksNavBadge /> : null}
-                {i.href === "/whatsapp" ? <WhatsAppNavBadge /> : null}
               </Link>
             );
           })}

@@ -6,6 +6,7 @@ import { introducedName } from "@/lib/whatsapp-bot/identity";
 import { adminDb } from "@/lib/pro-sessions/core";
 import { loadWaiting } from "@/lib/waiting-queue";
 import WhatsAppInbox, { type ContactInfo } from "./whatsapp-inbox";
+import CandidatesSubNav from "../candidates/candidates-sub-nav";
 
 // Everyone who has messaged the StaffAnchor WhatsApp number, newest first, with a
 // reply box. Candidates who message first (from the "Message us on WhatsApp"
@@ -86,8 +87,9 @@ export default async function WhatsAppPage() {
 
   return (
     <div className="mx-auto max-w-[1500px] px-5 py-8">
+      <CandidatesSubNav />
       <div className="mb-5">
-        <h1 className="ros-page-title">WhatsApp</h1>
+        <h1 className="ros-page-title">Replies on WhatsApp</h1>
         <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
           Every WhatsApp conversation, sorted by what needs you. You can reply freely for 24 hours after someone writes.
         </p>
