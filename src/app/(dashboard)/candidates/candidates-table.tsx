@@ -322,6 +322,8 @@ function InlineSelectCell({
   // that looks like plain text. A small always-visible chevron plus a
   // faint dashed underline gives the "this is a dropdown" cue up front;
   // hover just deepens it (color shift) to confirm on approach.
+  // The look is written once in globals.css (ros-cell-*), and the chevron is a CSS shape, instead of repeating long class lists and an
+  // inline icon on every one of the table's ~1,500 editable cells.
   return (
     <button
       type="button"
@@ -330,24 +332,24 @@ function InlineSelectCell({
         setEditing(true);
       }}
       title="Click to edit"
-      className="group text-left truncate inline-flex items-center gap-0.5 max-w-[170px] whitespace-nowrap"
+      className="ros-cell-btn"
     >
       {value ? (
         renderClosed ? (
-          <span className="inline-flex items-center gap-0.5">
+          <span className="ros-cell-closed">
             {renderClosed(value)}
-            <ChevronDown className="w-2.5 h-2.5 text-slate-300 dark:text-slate-600 group-hover:text-teal-500 shrink-0" strokeWidth={2.5} />
+            <i className="ros-chev" aria-hidden />
           </span>
         ) : (
-          <span className="inline-flex items-center gap-0.5 text-slate-500 dark:text-slate-400 border-b border-dashed border-slate-300 dark:border-slate-600 group-hover:text-teal-600 group-hover:border-teal-400">
+          <span className="ros-cell-val">
             <span className="truncate">{labels?.[value] ?? value}</span>
-            <ChevronDown className="w-2.5 h-2.5 shrink-0 opacity-70 group-hover:opacity-100" strokeWidth={2.5} />
+            <i className="ros-chev" aria-hidden />
           </span>
         )
       ) : (
-        <span className="inline-flex items-center gap-0.5 text-slate-300 dark:text-slate-600 border-b border-dashed border-slate-300 dark:border-slate-600 group-hover:text-teal-500 group-hover:border-teal-400">
+        <span className="ros-cell-val ros-cell-empty">
           {placeholder}
-          <ChevronDown className="w-2.5 h-2.5 shrink-0 opacity-70 group-hover:opacity-100" strokeWidth={2.5} />
+          <i className="ros-chev" aria-hidden />
         </span>
       )}
     </button>
