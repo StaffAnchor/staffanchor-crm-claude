@@ -7,6 +7,7 @@ import { isPoolTier } from "@/lib/talent-pool";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { level1OptionsForProfileType } from "@/lib/candidate-options";
+import { BEST_TIMES, CYCLES, INTERVIEWING, JUDGMENTS, NOTICE_FLEX, QUOTA_BANDS, REASONS, STYLES, type CallSegment } from "@/lib/call-form-options";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -23,6 +24,9 @@ type Body = {
   outcome?: string;
   fields?: Record<string, unknown>;
   communication?: string | null;
+  ratings?: Record<string, string>;
+  segment?: CallSegment;
+  messageOk?: boolean | null;
   openness?: string | null;
   note?: string | null;
   callBackAt?: string | null;
@@ -57,12 +61,12 @@ export async function POST(req: Request) {
   const { data: before } = await supabase
     .from("candidates")
     .select(
-      "status, full_name, email, profile_group, segment_data, phone, resume_file_url, current_employer, current_job_title, current_employment_status, total_experience_years, highest_qualification, category, sub_domain, industries, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode"
+      "status, full_name, email, current_variable_ctc, profile_group, segment_data, phone, resume_file_url, current_employer, current_job_title, current_employment_status, total_experience_years, highest_qualification, category, sub_domain, industries, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode"
     )
     .eq("id", id)
     .maybeSingle();
   const was = (before ?? {}) as Record<string, unknown>;
-  for (const k of ["current_fixed_ctc", "expected_fixed_ctc", "total_experience_years"] as const) {
+  for (const k of ["current_fixed_ctc", "expected_fixed_ctc", "total_experience_years", "current_variable_ctc"] as const) {
     const v = num(f[k]);
     if (v !== null && Number(was[k] ?? 0) !== v) update[k] = v;
   }
@@ -110,6 +114,27 @@ export async function POST(req: Request) {
         filled.push("role_level");
       }
     }
+    // The quick-tap answers: why they are looking, flexibility, quota and style, when to call. Only answered ones are written.
+    const sg = (body.segment ?? {}) as CallSegment;
+    const pick = (v: unknown, allowed: readonly string[]) => (typeof v === "string" && allowed.includes(v) ? v : null);
+    const reasons = Array.isArray(sg.reason_for_change) ? sg.reason_for_change.filter((r) => (REASONS as readonly string[]).includes(r)).slice(0, 3) : [];
+    if (reasons.length) { seg.reason_for_change = reasons; filled.push("reason_for_change"); }
+    const set = (key: keyof CallSegment, v: unknown) => { if (v !== null && v !== undefined) { seg[key] = v; filled.push(key); } };
+    set("interviewing_elsewhere", pick(sg.interviewing_elsewhere, INTERVIEWING.map((o) => o.v)));
+    set("notice_flex", pick(sg.notice_flex, NOTICE_FLEX.map((o) => o.v)));
+    set("quota_last_year", pick(sg.quota_last_year, QUOTA_BANDS));
+    set("style", pick(sg.style, STYLES));
+    set("cycle", pick(sg.cycle, CYCLES));
+    set("best_time_to_call", pick(sg.best_time_to_call, BEST_TIMES));
+    if (typeof sg.expected_ctc_negotiable === "boolean") set("expected_ctc_negotiable", sg.expected_ctc_negotiable);
+    if (typeof sg.carries_quota === "boolean") set("carries_quota", sg.carries_quota);
+    if (typeof sg.can_refer === "boolean") set("can_refer", sg.can_refer);
+    // Consent to be messaged about roles: yes switches WhatsApp and email on, no switches both off.
+    if (typeof body.messageOk === "boolean") {
+      update.whatsapp_opt_in = body.messageOk;
+      update.email_opt_out = !body.messageOk;
+      filled.push("message_consent");
+    }
     update.segment_data = seg;
     // A lead whose details are now complete becomes Registered, the same gate the public form uses.
     if (was.status === "lead" || was.status === "awaiting_input") {
@@ -131,9 +156,15 @@ export async function POST(req: Request) {
     const { error } = await supabase.from("candidates").update(update).eq("id", id);
     if (error) return NextResponse.json({ ok: false, error: `Couldn't save the profile: ${error.message}` }, { status: 500 });
   }
+  // How they came across: up to five good / okay / weak judgments, saved as one rating row for this call.
   const communication = body.communication;
-  if (outcome === "reached" && (communication === "good" || communication === "okay" || communication === "weak")) {
-    await supabase.from("candidate_call_ratings").insert({ candidate_id: id, rated_by: user.id, communication });
+  if (outcome === "reached") {
+    const row: Record<string, string> = {};
+    for (const j of JUDGMENTS) {
+      const v = j.key === "communication" ? body.ratings?.communication ?? communication : body.ratings?.[j.key];
+      if (v === "good" || v === "okay" || v === "weak") row[j.key] = v;
+    }
+    if (Object.keys(row).length) await supabase.from("candidate_call_ratings").insert({ candidate_id: id, rated_by: user.id, ...row });
   }
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 4000) : "";
   // "After the call": the same reading the profile page does. The note fills any detail still blank (never overwriting
