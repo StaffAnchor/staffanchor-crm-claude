@@ -4,17 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // People is three places: Talent (everyone, with the top-tier strip), Profile completion (what is missing or weak, by group,
-// practice and city, with the call lists and bulk asking to fix it) and Calls & outreach (the priority call queue, what was
-// sent and how it went, and the campaigns). The rest sits under "More".
+// practice and city, with the call lists and bulk asking to fix it) and Outreach (what was sent and how it went, and the campaigns). The rest sits under "More".
 const TABS = [
   { href: "/candidates", label: "Talent" },
   { href: "/candidates/complete", label: "Profile completion" },
-  { href: "/candidates/calls", label: "Calls & outreach", also: ["/candidates/activity", "/candidates/outreach"] },
+  { href: "/candidates/activity", label: "Outreach", also: ["/candidates/outreach"] },
 ];
 
-// The second row shown inside Calls & outreach.
+// The second row shown inside Outreach.
 const OUTREACH = [
-  { href: "/candidates/calls", label: "Calls today" },
   { href: "/candidates/activity", label: "Activity" },
   { href: "/candidates/outreach", label: "Campaigns" },
 ];

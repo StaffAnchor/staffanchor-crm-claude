@@ -4,7 +4,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
 import CallsDesk, { type CallPerson } from "../calls/calls-desk";
-import { GAP_LABEL, STRENGTH } from "@/lib/completion";
+import { GAP_LABEL, STRENGTH, isVital } from "@/lib/completion";
+import { loadPriorityCalls } from "@/lib/priority-calls";
 import TargetControl, { type Target } from "./target-control";
 import BatchPanel from "../pipeline/batch-panel";
 import { Bot } from "lucide-react";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 // Profile completion: for every group and practice, how many profiles have everything needed to present a candidate and how
 // many are still to go, by city and by what is missing, with a deadline per practice and a call list to finish them.
 
-type Row = { profile_group: string; bucket: string; total: number; complete: number; incomplete: number; no_phone: number; assessed: number; gaps: Record<string, number>; strengths: Record<string, number> };
+type Row = { profile_group: string; bucket: string; total: number; complete: number; incomplete: number; no_phone: number; assessed: number; vitals_incomplete: number; looking_known: number; gaps: Record<string, number>; strengths: Record<string, number> };
 type City = { city: string; total: number; complete: number; incomplete: number };
 
 const GROUPS = [
@@ -28,6 +29,12 @@ const BY = [
   { key: "sub_group", label: "Practice" },
   { key: "sub_domain", label: "Specialization" },
 ] as const;
+
+// Midnight today in India, as an ISO time, so "today" means the recruiter's day.
+function istDayStartIso(): string {
+  const ist = new Date(Date.now() + 5.5 * 3_600_000);
+  return new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - 5.5 * 3_600_000).toISOString();
+}
 
 const card = "rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900";
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
@@ -62,7 +69,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const city = sp.city ?? null;
   const gap = sp.gap && GAP_LABEL[sp.gap] ? sp.gap : null;
   const strength = sp.strength && STRENGTH[sp.strength] ? sp.strength : null;
-  const mode = sp.mode === "assess" ? "assess" : "complete";
+  const mode = sp.mode === "assess" || sp.mode === "complete" || sp.mode === "confirm" ? sp.mode : "vitals";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -79,7 +86,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const targets = new Map<string, Target>();
   for (const t of (targetRows ?? []) as (Target & { profile_group: string; bucket: string })[]) targets.set(`${t.profile_group}|${t.bucket}`, t);
 
-  const sum = (rs: Row[]) => rs.reduce((a, r) => ({ total: a.total + r.total, complete: a.complete + r.complete, incomplete: a.incomplete + r.incomplete, no_phone: a.no_phone + r.no_phone, assessed: a.assessed + r.assessed }), { total: 0, complete: 0, incomplete: 0, no_phone: 0, assessed: 0 });
+  const sum = (rs: Row[]) => rs.reduce((a, r) => ({ total: a.total + r.total, complete: a.complete + r.complete, incomplete: a.incomplete + r.incomplete, no_phone: a.no_phone + r.no_phone, assessed: a.assessed + r.assessed, vitals_incomplete: a.vitals_incomplete + r.vitals_incomplete, looking_known: a.looking_known + r.looking_known }), { total: 0, complete: 0, incomplete: 0, no_phone: 0, assessed: 0, vitals_incomplete: 0, looking_known: 0 });
   const byGroup = Object.fromEntries(GROUPS.map((g) => [g.key, sum(rows.filter((r) => r.profile_group === g.key))])) as Record<string, ReturnType<typeof sum>>;
   const grand = sum(rows);
   const groupRows = rows.filter((r) => r.profile_group === group).sort((a, b) => b.incomplete - a.incomplete);
@@ -107,38 +114,60 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     return `/candidates/complete?${q.toString()}`;
   };
 
+  const priorityView = sub === "priority";
   const working = sub !== null;
-  const bucketKey = sub && sub !== "*" ? sub : null;
-  const focusRow = working ? (bucketKey ? groupRows.find((r) => r.bucket === bucketKey) : { ...sum(groupRows), profile_group: group, bucket: "*", gaps: groupGaps, strengths: groupStrengths[group] ?? {} }) : null;
+  const bucketKey = sub && sub !== "*" && !priorityView ? sub : null;
+  const focusRow = working && !priorityView ? (bucketKey ? groupRows.find((r) => r.bucket === bucketKey) : { ...sum(groupRows), profile_group: group, bucket: "*", gaps: groupGaps, strengths: groupStrengths[group] ?? {} }) : null;
 
   // Cities: inside the chosen practice when working, otherwise across the whole group.
   const { data: cityData } = await supabase.rpc("completion_cities", { p_group: group, p_by: by, p_bucket: bucketKey });
   const cities = ((cityData ?? []) as City[]).filter((c) => c.incomplete > 0).sort((a, b) => b.incomplete - a.incomplete).slice(0, 14);
 
+  // Turns queue rows (ids in order, with their gaps and strength) into people the call desk can show.
+  type QueueRow = { id: string; gaps: string[]; strength: string; why: string[] };
+  const hydrate = async (q: QueueRow[]): Promise<CallPerson[]> => {
+    if (q.length === 0) return [];
+    const ids = q.map((x) => x.id);
+    const [{ data: callRows }, { data: extra }] = await Promise.all([
+      supabase.rpc("calls_for_candidates", { p_ids: ids }),
+      supabase.from("candidates").select("id, email, profile_group, sub_domain").in("id", ids),
+    ]);
+    const ex = new Map(((extra ?? []) as { id: string; email: string | null; profile_group: string | null; sub_domain: string | null }[]).map((e) => [e.id, e]));
+    const meta = new Map(q.map((x) => [x.id, x]));
+    const byId = new Map(((callRows ?? []) as CallPerson[]).map((p) => [p.id, p]));
+    return ids
+      .map((id) => byId.get(id))
+      .filter((p): p is CallPerson => !!p)
+      .map((p) => {
+        const m = meta.get(p.id)!;
+        const gaps = [...m.gaps.filter(isVital), ...m.gaps.filter((g) => !isVital(g))];
+        return { ...p, resume_url: null, reason: "details_missing" as const, gaps, strength: m.strength, why: m.why ?? [], email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null };
+      });
+  };
+
   let people: CallPerson[] = [];
   let queueError: string | null = null;
-  if (working && focusRow && (mode === "assess" ? focusRow.total - focusRow.assessed > 0 : focusRow.incomplete > 0)) {
+  const priority = !sub || priorityView ? await loadPriorityCalls(supabase) : null;
+  if (priorityView) {
+    // Today's calls: the priority people first, then everyone missing vitals, B2B first.
+    const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: null, p_by: by, p_mode: mode, p_limit: 60 });
+    if (error) queueError = error.message;
+    const rest = await hydrate((queue ?? []) as QueueRow[]);
+    const seen = new Set(priority!.people.map((p) => p.id));
+    people = [...priority!.people, ...rest.filter((p) => !seen.has(p.id))];
+  } else if (working && focusRow && (mode === "assess" ? focusRow.total - focusRow.assessed > 0 : mode === "confirm" ? focusRow.total - focusRow.looking_known > 0 : mode === "complete" ? focusRow.incomplete > 0 : focusRow.vitals_incomplete > 0)) {
     const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_limit: 50 });
     if (error) queueError = error.message;
-    const q = (queue ?? []) as { id: string; gaps: string[]; strength: string; why: string[] }[];
-    if (q.length > 0) {
-      const ids = q.map((x) => x.id);
-      const [{ data: callRows }, { data: extra }] = await Promise.all([
-        supabase.rpc("calls_for_candidates", { p_ids: ids }),
-        supabase.from("candidates").select("id, email, profile_group, sub_domain").in("id", ids),
-      ]);
-      const ex = new Map(((extra ?? []) as { id: string; email: string | null; profile_group: string | null; sub_domain: string | null }[]).map((e) => [e.id, e]));
-      const gapsOf = new Map(q.map((x) => [x.id, x.gaps]));
-      const strOf = new Map(q.map((x) => [x.id, x]));
-      const byId = new Map(((callRows ?? []) as CallPerson[]).map((p) => [p.id, p]));
-      people = ids
-        .map((id) => byId.get(id))
-        .filter((p): p is CallPerson => !!p)
-        .map((p) => ({ ...p, resume_url: null, reason: "details_missing" as const, gaps: gapsOf.get(p.id) ?? [], strength: strOf.get(p.id)?.strength, why: strOf.get(p.id)?.why ?? [], email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null }));
-    }
+    people = await hydrate((queue ?? []) as QueueRow[]);
   }
 
-  const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).sort((a, b) => b[1] - a[1]) : [];
+  // Calls made today, for the strip above the call list.
+  const dayStart = istDayStartIso();
+  const { data: todaysCalls } = working ? await supabase.from("call_log").select("caller_id, outcome").gte("created_at", dayStart).limit(2000) : { data: [] };
+  const mine = ((todaysCalls ?? []) as { caller_id: string | null; outcome: string }[]).filter((l) => l.caller_id === user.id).length;
+  const teamCalls = (todaysCalls ?? []) as { outcome: string }[];
+
+  const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).sort((a, b) => Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]) : [];
   const focusTarget = focusRow ? targets.get(`${group}|${focusRow.bucket}`) ?? null : null;
 
   return (
@@ -149,7 +178,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           <h1 className="ros-page-title">Profile completion</h1>
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
             A profile is complete when it has everything needed to present the person to a client: name, phone, email, CV, experience, current and expected pay, notice period,
-            city, relocation, domain, sub-domain, role level, company and job title. Incomplete profiles are held back from matching, so finishing them puts more people in front of every role.
+            city, relocation, domain, sub-domain, role level, company and job title. Vitals come first (current pay, city, role level and type, relocation, domain, sub-domain, CV, plus the basics); expected pay, notice period and the rest come after. Whether someone is looking for a change is asked on every call and counted separately, because it goes stale after 90 days.
           </p>
         </div>
         <div className="flex items-center gap-1 text-[12px]">
@@ -161,6 +190,24 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           ))}
         </div>
       </div>
+
+      {!working && priority && priority.people.length > 0 && (
+        <Link href={url({ sub: "priority", city: null, gap: null })} className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
+          <span className="text-[13.5px] text-teal-900 dark:text-teal-100">
+            <b>{priority.people.length} priority {priority.people.length === 1 ? "call" : "calls"} waiting</b>
+            {priority.counts.paid > 0 && ` · ${priority.counts.paid} paid ₹199`}
+            {priority.counts.interested > 0 && ` · ${priority.counts.interested} said yes to a role`}
+            {priority.counts.callbacks > 0 && ` · ${priority.counts.callbacks} call-backs due`}
+            {priority.counts.urgent > 0 && ` · ${priority.counts.urgent} for an urgent role`}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Start today&apos;s calls <ArrowRight className="h-4 w-4" /></span>
+        </Link>
+      )}
+      {!working && priority && priority.people.length === 0 && (
+        <Link href={url({ sub: "priority", city: null, gap: null })} className="mb-4 inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
+          Start today&apos;s calls (missing vitals first) <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
 
       {/* The whole base, split by group. */}
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -178,11 +225,13 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 <span className="text-[28px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{n0(s.total)}</span>
                 <span className="text-[12px] text-slate-500">{grand.total > 0 ? `${pct(s.total, grand.total)}% of ${n0(grand.total)} profiles` : "profiles"}</span>
               </p>
-              <div className="mt-3"><Bar done={s.complete} total={s.total} tone={s.complete === s.total ? "bg-emerald-500" : "bg-teal-500"} /></div>
+              <p className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">Vitals</p>
+              <Bar done={s.total - s.vitals_incomplete} total={s.total} tone={s.vitals_incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} />
               <p className="mt-1.5 flex justify-between text-[12.5px]">
-                <span className="text-emerald-700 dark:text-emerald-300">{n0(s.complete)} complete</span>
-                <span className="font-semibold text-amber-700 dark:text-amber-300">{n0(s.incomplete)} to go</span>
+                <span className="text-emerald-700 dark:text-emerald-300">{n0(s.total - s.vitals_incomplete)} complete</span>
+                <span className="font-semibold text-amber-700 dark:text-amber-300">{n0(s.vitals_incomplete)} to go</span>
               </p>
+              <p className="mt-1 text-[11.5px] text-slate-500">{n0(s.complete)} fully complete (vitals + other details) · {n0(s.looking_known)} confirmed looking</p>
               <p className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">Profile strength · {n0(s.assessed)} judged on a call</p>
               <StrengthBar s={groupStrengths[g.key] ?? {}} total={s.total} />
             </Link>
@@ -194,8 +243,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <section>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{GROUP_LABEL[group]}: {n0(byGroup[group].incomplete)} profiles still to complete</h2>
-              {byGroup[group].incomplete > 0 && (
+              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{GROUP_LABEL[group]}: {n0(byGroup[group].vitals_incomplete)} profiles still missing vitals</h2>
+              {byGroup[group].vitals_incomplete > 0 && (
                 <Link href={url({ sub: "*" })} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700">
                   Work on all of {GROUP_LABEL[group]} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
@@ -206,7 +255,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             ) : (
               <ul className="space-y-2.5">
                 {groupRows.map((r) => {
-                  const top = Object.entries(r.gaps).sort((a, b) => b[1] - a[1]).slice(0, 4);
+                  const top = Object.entries(r.gaps).sort((a, b) => Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]).slice(0, 5);
                   const target = targets.get(`${group}|${r.bucket}`) ?? null;
                   return (
                     <li key={r.bucket} className={`${card} p-4`}>
@@ -214,10 +263,10 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                         <div className="min-w-0 flex-1 basis-64">
                           <p className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{bucketLabel(r.bucket)}</p>
                           <p className="mt-0.5 text-[12.5px] text-slate-500">
-                            {n0(r.total)} profiles · <span className="text-emerald-700 dark:text-emerald-300">{n0(r.complete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(r.incomplete)} to go</b>
+                            {n0(r.total)} profiles · vitals <span className="text-emerald-700 dark:text-emerald-300">{n0(r.total - r.vitals_incomplete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(r.vitals_incomplete)} to go</b> · {n0(r.complete)} fully complete
                             {r.no_phone > 0 && <span> · {r.no_phone} have no usable phone</span>}
                           </p>
-                          <div className="mt-2"><Bar done={r.complete} total={r.total} tone={r.incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} /></div>
+                          <div className="mt-2"><Bar done={r.total - r.vitals_incomplete} total={r.total} tone={r.vitals_incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} /></div>
                           <div className="mt-2.5 max-w-xl">
                             <StrengthBar s={r.strengths} total={r.total} />
                             <p className="mt-0.5 text-[11px] text-slate-400">
@@ -228,7 +277,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                           {top.length > 0 && (
                             <p className="mt-2 flex flex-wrap gap-1.5 text-[11.5px]">
                               {top.map(([k, v]) => (
-                                <Link key={k} href={url({ sub: r.bucket, gap: k })} className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300">
+                                <Link key={k} href={url({ sub: r.bucket, gap: k })} className={`rounded-full px-2 py-0.5 font-medium ${isVital(k) ? "bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
                                   {GAP_LABEL[k] ?? k} · {v}
                                 </Link>
                               ))}
@@ -236,13 +285,13 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                           )}
                         </div>
                         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                          {r.incomplete > 0 && <TargetControl group={group} by={by} bucket={r.bucket} incomplete={r.incomplete} target={target} compact />}
-                          {r.incomplete > 0 ? (
+                          {r.vitals_incomplete > 0 && <TargetControl group={group} by={by} bucket={r.bucket} incomplete={r.vitals_incomplete} target={target} compact />}
+                          {r.vitals_incomplete > 0 ? (
                             <Link href={url({ sub: r.bucket })} className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
                               Start calling <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                           ) : (
-                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">All complete</span>
+                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Vitals complete</span>
                           )}
                         </div>
                       </div>
@@ -256,17 +305,21 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           <aside className="space-y-4">
             <section className={`${card} p-4`}>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Where the gaps are in {GROUP_LABEL[group]}</h3>
-              <ul className="mt-2 space-y-1.5">
-                {Object.entries(groupGaps).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
-                  <li key={k}>
-                    <Link href={url({ sub: "*", gap: k })} className="flex items-center justify-between gap-2 text-[12.5px] hover:underline">
-                      <span className="text-slate-600 dark:text-slate-300">Missing {GAP_LABEL[k] ?? k}</span>
-                      <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{n0(v)}</span>
-                    </Link>
-                  </li>
-                ))}
-                {Object.keys(groupGaps).length === 0 && <li className="text-[12.5px] text-slate-500">Nothing missing.</li>}
-              </ul>
+              {([{ title: "Vitals", test: true }, { title: "Other details", test: false }] as const).map((part) => (
+                <div key={part.title} className="mt-2">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{part.title}</p>
+                  <ul className="mt-1 space-y-1.5">
+                    {Object.entries(groupGaps).filter(([k]) => isVital(k) === part.test).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+                      <li key={k}>
+                        <Link href={url({ sub: "*", gap: k, mode: part.test ? "vitals" : "complete" })} className="flex items-center justify-between gap-2 text-[12.5px] hover:underline">
+                          <span className="text-slate-600 dark:text-slate-300">Missing {GAP_LABEL[k] ?? k}</span>
+                          <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{n0(v)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </section>
             <section className={`${card} p-4`}>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Incomplete profiles by city</h3>
@@ -292,9 +345,32 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         <div>
           <div className="mb-3">
             <Link href={url({ sub: null, city: null, gap: null })} className="inline-flex items-center gap-1 text-[12.5px] font-medium text-teal-700 hover:underline dark:text-teal-300">
-              <ArrowLeft className="h-3.5 w-3.5" /> All {GROUP_LABEL[group]} practices
+              <ArrowLeft className="h-3.5 w-3.5" /> {priorityView ? "Profile completion" : `All ${GROUP_LABEL[group]} practices`}
             </Link>
           </div>
+          {priorityView && priority && (
+            <div className={`${card} mb-4 p-4`}>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">Today&apos;s calls</h2>
+                  <p className="mt-0.5 max-w-3xl text-[13px] text-slate-500">
+                    Priority first: {priority.counts.paid} paid ₹199 {priority.counts.paid === 1 ? "call" : "calls"} (soonest deadline first), {priority.counts.interested} who said yes to a role, {priority.counts.callbacks} call-backs due and {priority.counts.urgent} matching an urgent role. Then everyone missing vitals, B2B first, then B2C, then the rest.
+                    {priority.urgentRoles.length > 0 && ` Urgent: ${priority.urgentRoles.map((r) => r.title).join(", ")}.`}
+                  </p>
+                </div>
+                <div className="text-right text-[12.5px] text-slate-500">
+                  <p><span className="text-[22px] font-semibold tabular-nums text-slate-900 dark:text-slate-100">{mine}</span> calls by you today</p>
+                  <p>Team today: {teamCalls.length} calls, {teamCalls.filter((l) => l.outcome === "reached").length} reached</p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
+                <span className="font-medium text-slate-500">After the priority people:</span>
+                {([{ k: "vitals", l: "Missing vitals" }, { k: "complete", l: "Missing anything" }, { k: "confirm", l: "Confirm looking" }, { k: "assess", l: "Judge on a call" }] as const).map((m) => (
+                  <Link key={m.k} href={url({ sub: "priority", mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{m.l}</Link>
+                ))}
+              </div>
+            </div>
+          )}
           {focusRow && (
             <div className={`${card} mb-4 p-4`}>
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -306,22 +382,22 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                     {strength ? ` › ${STRENGTH[strength].label.toLowerCase()} profiles` : ""}
                   </h2>
                   <p className="mt-0.5 text-[13px] text-slate-500">
-                    {n0(focusRow.total)} profiles · <span className="text-emerald-700 dark:text-emerald-300">{n0(focusRow.complete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(focusRow.incomplete)} to go</b>
+                    {n0(focusRow.total)} profiles · vitals <span className="text-emerald-700 dark:text-emerald-300">{n0(focusRow.total - focusRow.vitals_incomplete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(focusRow.vitals_incomplete)} to go</b> · {n0(focusRow.complete)} fully complete · {n0(focusRow.looking_known)} confirmed looking
                     {focusRow.no_phone > 0 && ` · ${focusRow.no_phone} have no usable phone (they need their number first)`}
                   </p>
-                  <div className="mt-2 max-w-xl"><Bar done={focusRow.complete} total={focusRow.total} /></div>
+                  <div className="mt-2 max-w-xl"><Bar done={focusRow.total - focusRow.vitals_incomplete} total={focusRow.total} /></div>
                 </div>
-                {bucketKey && focusRow.incomplete > 0 && <TargetControl group={group} by={by} bucket={bucketKey} incomplete={focusRow.incomplete} target={focusTarget} />}
+                {bucketKey && focusRow.vitals_incomplete > 0 && <TargetControl group={group} by={by} bucket={bucketKey} incomplete={focusRow.vitals_incomplete} target={focusTarget} />}
               </div>
               <div className="mt-3 max-w-xl"><StrengthBar s={focusRow.strengths} total={focusRow.total} /></div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
                 <span className="font-medium text-slate-500">Call list:</span>
-                {([{ k: "complete", l: "Fill the gaps", n: focusRow.incomplete }, { k: "assess", l: "Judge on a call", n: focusRow.total - focusRow.assessed }] as const).map((m) => (
+                {([{ k: "vitals", l: "Fill vitals", n: focusRow.vitals_incomplete }, { k: "complete", l: "Other details", n: focusRow.incomplete }, { k: "confirm", l: "Confirm looking", n: focusRow.total - focusRow.looking_known }, { k: "assess", l: "Judge on a call", n: focusRow.total - focusRow.assessed }] as const).map((m) => (
                   <Link key={m.k} href={url({ mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
                     {m.l} · {n0(m.n)}
                   </Link>
                 ))}
-                <span className="text-slate-400">{mode === "assess" ? "Nobody has rated their communication yet. Rate it on the call; strength follows." : "Fewest gaps first, so profiles reach complete."}</span>
+                <span className="text-slate-400">{{ vitals: "Missing vitals first (pay, city, level, relocation, domain, CV), fewest gaps first.", complete: "Everyone still missing anything, vitals gaps first.", confirm: "Not known whether they are looking for a change. Strongest first.", assess: "Nobody has rated their communication yet. Rate it on the call; strength follows." }[mode]}</span>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
                 <span className="font-medium text-slate-500">Strength:</span>
@@ -337,7 +413,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 <Link href={url({ gap: null })} className={`rounded-full border px-2.5 py-0.5 font-medium ${!gap ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>Anything</Link>
                 {focusGapEntries.map(([k, v]) => (
                   <Link key={k} href={url({ gap: k })} className={`rounded-full border px-2.5 py-0.5 font-medium ${gap === k ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
-                    {GAP_LABEL[k] ?? k} · {v}
+                    {isVital(k) ? "● " : ""}{GAP_LABEL[k] ?? k} · {v}
                   </Link>
                 ))}
               </div>
@@ -359,10 +435,10 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           ) : (
             <>
               <p className="mb-3 text-[12.5px] text-slate-500">
-                The {people.length} people who can be called now{mode === "assess" ? ", strongest on paper first" : ", fewest gaps first so profiles actually reach complete"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
+                The {people.length} people who can be called now{mode === "assess" || mode === "confirm" ? ", strongest on paper first" : ", vitals gaps first and fewest gaps first, so profiles actually reach complete"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
-              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}`} people={people} />
+              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${mode}`} people={people} />
             </>
           )}
         </div>
