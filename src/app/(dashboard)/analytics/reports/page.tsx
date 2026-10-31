@@ -853,8 +853,10 @@ export default async function ReportsPage({
   const paidTaps = (paidTapRows ?? []) as { spot: string | null }[];
   // Earlier steps for the same range: people who tapped Apply at all, and people who started a payment (an order is created
   // when checkout opens, whether or not it is paid).
-  const [{ count: applyTaps }, { count: paymentsStarted }] = await Promise.all([
+  const [{ count: applyTaps }, { count: formsOpened }, { count: appsSubmitted }, { count: paymentsStarted }] = await Promise.all([
     supabase.from("quick_apply_clicks").select("id", { count: "exact", head: true }).eq("event_type", "click").gte("created_at", rangeFromIso).lte("created_at", rangeToIso),
+    supabase.from("quick_apply_clicks").select("id", { count: "exact", head: true }).eq("event_type", "form_opened").gte("created_at", rangeFromIso).lte("created_at", rangeToIso),
+    supabase.from("quick_apply_clicks").select("id", { count: "exact", head: true }).eq("event_type", "submitted").gte("created_at", rangeFromIso).lte("created_at", rangeToIso),
     supabase.from("paid_call_orders").select("id", { count: "exact", head: true }).gte("created_at", rangeFromIso).lte("created_at", rangeToIso),
   ]);
   const paidTapSpots = ["list", "preview", "detail", "bar", "confirm"].map((k) => ({ k, n: paidTaps.filter((t) => t.spot === k).length }));
@@ -1475,6 +1477,10 @@ export default async function ReportsPage({
                 <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-700 dark:text-slate-200">
                   <span className="font-semibold">Funnel:</span>
                   <span>{applyTaps ?? 0} tapped Apply</span>
+                  <span className="text-slate-400">→</span>
+                  <span>{formsOpened ?? 0} saw the form</span>
+                  <span className="text-slate-400">→</span>
+                  <span>{appsSubmitted ?? 0} submitted (counted from today)</span>
                   <span className="text-slate-400">→</span>
                   <span>{paidTaps.length} tapped the ₹199 offer{applyTaps ? ` (${Math.round((paidTaps.length / applyTaps) * 100)}%)` : ""}</span>
                   <span className="text-slate-400">→</span>
