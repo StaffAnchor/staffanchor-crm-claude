@@ -255,7 +255,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       </div>
 
       {!working && priority && priority.people.length > 0 && (
-        <Link href={url({ sub: "priority", city: null, gap: null })} className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
+        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
           <span className="text-[13.5px] text-teal-900 dark:text-teal-100">
             <b>{priority.people.length} priority {priority.people.length === 1 ? "call" : "calls"} waiting</b>
             {priority.counts.paid > 0 && ` · ${priority.counts.paid} paid ₹199`}
@@ -267,7 +267,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         </Link>
       )}
       {!working && priority && priority.people.length === 0 && (
-        <Link href={url({ sub: "priority", city: null, gap: null })} className="mb-4 inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
+        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
           Start today&apos;s calls (missing current pay or CV first) <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       )}
@@ -312,7 +312,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{GROUP_LABEL[group]}: {n0(byGroup[group].gate_incomplete)} profiles missing current pay or CV · {n0(byGroup[group].vitals_incomplete)} missing a vital</h2>
               {byGroup[group].gate_incomplete > 0 && (
-                <Link href={url({ sub: "*" })} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700">
+                <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "*" })} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700">
                   Work on all of {GROUP_LABEL[group]} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               )}
@@ -338,13 +338,13 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                             <StrengthBar s={r.strengths} total={r.total} />
                             <p className="mt-0.5 text-[11px] text-slate-400">
                               {r.assessed} of {r.total} judged on a call
-                              {r.total - r.assessed > 0 && <> · <Link href={url({ sub: r.bucket, mode: "assess" })} className="font-medium text-teal-700 hover:underline dark:text-teal-300">assess the rest</Link></>}
+                              {r.total - r.assessed > 0 && <> · <Link target="_blank" rel="noopener noreferrer" href={url({ sub: r.bucket, mode: "assess" })} className="font-medium text-teal-700 hover:underline dark:text-teal-300">assess the rest</Link></>}
                             </p>
                           </div>
                           {top.length > 0 && (
                             <p className="mt-2 flex flex-wrap gap-1.5 text-[11.5px]">
                               {top.map(([k, v]) => (
-                                <Link key={k} href={url({ sub: r.bucket, gap: k })} className={`rounded-full px-2 py-0.5 font-medium ${isGate(k) ? "bg-rose-50 text-rose-800 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-200" : isVital(k) ? "bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
+                                <Link key={k} target="_blank" rel="noopener noreferrer" href={url({ sub: r.bucket, gap: k })} className={`rounded-full px-2 py-0.5 font-medium ${isGate(k) ? "bg-rose-50 text-rose-800 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-200" : isVital(k) ? "bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
                                   {GAP_LABEL[k] ?? k} · {v}
                                 </Link>
                               ))}
@@ -354,7 +354,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
                           {r.gate_incomplete > 0 && <TargetControl group={group} by={by} bucket={r.bucket} incomplete={r.gate_incomplete} target={target} compact />}
                           {r.gate_incomplete > 0 ? (
-                            <Link href={url({ sub: r.bucket })} className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
+                            <Link target="_blank" rel="noopener noreferrer" href={url({ sub: r.bucket })} className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
                               Start calling <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                           ) : (
@@ -378,7 +378,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                   <ul className="mt-1 space-y-1.5">
                     {Object.entries(groupGaps).filter(([k]) => isVital(k) === part.test).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || b[1] - a[1]).map(([k, v]) => (
                       <li key={k}>
-                        <Link href={url({ sub: "*", gap: k, mode: part.test ? "vitals" : "complete" })} className="flex items-center justify-between gap-2 text-[12.5px] hover:underline">
+                        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "*", gap: k, mode: part.test ? "vitals" : "complete" })} className="flex items-center justify-between gap-2 text-[12.5px] hover:underline">
                           <span className="text-slate-600 dark:text-slate-300">Missing {GAP_LABEL[k] ?? k}</span>
                           <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{n0(v)}</span>
                         </Link>
@@ -394,7 +394,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
               <ul className="mt-2 space-y-1.5">
                 {cities.map((c) => (
                   <li key={c.city}>
-                    <Link href={url({ sub: "*", city: c.city })} className="block hover:opacity-80">
+                    <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "*", city: c.city })} className="block hover:opacity-80">
                       <span className="flex items-center justify-between text-[12.5px]">
                         <span className="text-slate-700 dark:text-slate-200">{c.city}</span>
                         <span className="text-slate-500"><b className="text-slate-900 dark:text-slate-100">{c.incomplete}</b> of {c.total}</span>
