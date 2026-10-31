@@ -69,7 +69,7 @@ function TrendCard({ trend, label }: { trend: Trend; label: string }) {
     <section className={`${card} mb-5 p-4`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Completions · {label}</h2>
-        <p className="text-[11.5px] text-slate-400">Counted each time a profile crosses a line. Counting began on 31 Oct 2026.</p>
+        <p className="text-[11.5px] text-slate-400">Counted each time a profile crosses a line, whoever edits it. Live since 31 Oct 2026; completions made on calls from 25 Oct were added back. Edits made elsewhere before 31 Oct were not recorded and cannot be recovered.</p>
       </div>
       <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)_minmax(0,260px)]">
         <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
