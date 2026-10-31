@@ -364,7 +364,7 @@ export default function CallRecordForm({
             </button>
           ))}
         </div>
-        <p className="text-[11.5px] text-slate-400">No answer brings them back in Calls today tomorrow (up to 3 tries). Not interested rests them for 90 days.</p>
+        <p className="text-[11.5px] text-slate-400">No answer brings them back in the call list tomorrow (up to 3 tries). Not interested rests them for 90 days.</p>
       </div>
     </div>
   );

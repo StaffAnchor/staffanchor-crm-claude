@@ -153,8 +153,12 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: null, p_by: by, p_mode: mode, p_limit: 60 });
     if (error) queueError = error.message;
     const rest = await hydrate((queue ?? []) as QueueRow[]);
-    const seen = new Set(priority!.people.map((p) => p.id));
-    people = [...priority!.people, ...rest.filter((p) => !seen.has(p.id))];
+    // Priority people come from other lists, so they need the email, domain and sub-domain the call form asks for.
+    const { data: extra } = priority!.people.length ? await supabase.from("candidates").select("id, email, profile_group, sub_domain").in("id", priority!.people.map((p) => p.id)) : { data: [] };
+    const ex = new Map(((extra ?? []) as { id: string; email: string | null; profile_group: string | null; sub_domain: string | null }[]).map((e) => [e.id, e]));
+    const prio = priority!.people.map((p) => ({ ...p, email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null }));
+    const seen = new Set(prio.map((p) => p.id));
+    people = [...prio, ...rest.filter((p) => !seen.has(p.id))];
   } else if (working && focusRow && (mode === "assess" ? focusRow.total - focusRow.assessed > 0 : mode === "confirm" ? focusRow.total - focusRow.looking_known > 0 : mode === "complete" ? focusRow.incomplete > 0 : focusRow.vitals_incomplete > 0)) {
     const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_limit: 50 });
     if (error) queueError = error.message;
