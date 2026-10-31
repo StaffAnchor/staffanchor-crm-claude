@@ -2,25 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Wallet, Target, Users, TrendingUp, Activity, Gauge, HeartHandshake, Database, Video, FileText, GraduationCap } from "lucide-react";
+import { BarChart3, Wallet, Users, Activity, Gauge, Video } from "lucide-react";
 
-const TABS = [
+// Five tabs, not eleven: related views sit together inside one tab (Revenue holds overview, billing and FY targets, and so on).
+// Placements itself lives outside /analytics (it is recruiter-visible), but an admin expects to find it from here too, so it is
+// linked in as a tab even though the active-tab highlight below will never match it.
+const TABS: { href: string; label: string; icon: typeof Gauge; also?: string[] }[] = [
   { href: "/analytics/scoreboard", label: "Scoreboard", icon: Gauge },
-  { href: "/analytics/adoption", label: "Adoption", icon: HeartHandshake },
-  { href: "/analytics/database", label: "Database", icon: Database },
-  { href: "/analytics/edge", label: "StaffAnchor Edge", icon: Video },
-  { href: "/analytics/resume-orders", label: "Resume orders", icon: FileText },
-  { href: "/analytics/lab", label: "Sales Leaders Lab", icon: GraduationCap },
+  { href: "/analytics/revenue", label: "Revenue", icon: Wallet, also: ["/analytics/billing", "/analytics/performance", "/analytics/targets"] },
   { href: "/analytics/reports", label: "Reports", icon: BarChart3 },
-  { href: "/analytics/flow", label: "Flow & AI", icon: Activity },
-  { href: "/analytics/billing", label: "Billing", icon: Wallet },
-  { href: "/analytics/performance", label: "Performance", icon: TrendingUp },
-  { href: "/analytics/targets", label: "FY Targets", icon: Target },
-  // Placements itself lives outside /analytics (it's recruiter-visible,
-  // not admin-only -- see (dashboard)/placements/page.tsx), but it's
-  // exactly the kind of decision-making view an admin expects to find
-  // from here too, so it's linked in as a tab even though the active-tab
-  // highlight below will never match it.
+  { href: "/analytics/edge-resume", label: "Edge and resume", icon: Video, also: ["/analytics/edge", "/analytics/resume-orders"] },
+  { href: "/analytics/system", label: "System health", icon: Activity, also: ["/analytics/flow"] },
   { href: "/placements", label: "Placements", icon: Users },
 ];
 
@@ -32,7 +24,7 @@ export default function AnalyticsSubNav() {
   return (
     <div className="flex items-center gap-1 -mb-px overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {TABS.map((t) => {
-        const active = t.href !== "/placements" && pathname?.startsWith(t.href);
+        const active = t.href !== "/placements" && [t.href, ...(t.also ?? [])].some((h) => pathname?.startsWith(h));
         const Icon = t.icon;
         return (
           <Link

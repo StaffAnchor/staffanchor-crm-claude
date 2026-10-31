@@ -30,6 +30,6 @@ export async function setAiPaused(paused: boolean): Promise<{ ok: boolean; error
       .from("audit_log")
       .insert({ actor: user.id, action: paused ? "ai_paused" : "ai_resumed", entity: "app_config", entity_id: "ai_paused", detail: {} });
   }
-  revalidatePath("/analytics/flow");
+  revalidatePath("/analytics/system");
   return { ok: true };
 }
