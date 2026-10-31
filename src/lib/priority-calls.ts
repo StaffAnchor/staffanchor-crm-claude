@@ -12,10 +12,10 @@ export type PriorityCalls = {
 
 type PaidLink = { candidate_id: string; call_paid_at: string; call_due_at: string | null; mandates: { role_title: string | null } | { role_title: string | null }[] | null; candidates: Record<string, unknown> | Record<string, unknown>[] | null };
 
-export async function loadPriorityCalls(supabase: SupabaseClient): Promise<PriorityCalls> {
+export async function loadPriorityCalls(supabase: SupabaseClient, memoKey?: string): Promise<PriorityCalls> {
   const [{ data: regularRows }, urgent, { data: paidLinks }] = await Promise.all([
     supabase.rpc("calls_today", { p_limit: 100, p_focus: "mixed" }),
-    loadUrgentRoleMatches(supabase).catch(() => ({ roles: [], matches: [] })),
+    loadUrgentRoleMatches(supabase, memoKey).catch(() => ({ roles: [], matches: [] })),
     supabase
       .from("candidate_mandate_links")
       .select("candidate_id, call_paid_at, call_due_at, mandates(role_title), candidates(id, full_name, phone, current_job_title, current_employer, total_experience_years, current_fixed_ctc, expected_fixed_ctc, notice_period, current_location, open_to_relocation, work_mode, resume_file_url, source_channel, created_by, created_at, status)")
@@ -24,6 +24,10 @@ export async function loadPriorityCalls(supabase: SupabaseClient): Promise<Prior
       .order("call_due_at", { ascending: true })
       .limit(60),
   ]);
+
+  // Started now, read later: the call log lookup for paid people does not depend on the urgent-role work below.
+  const paidList = (paidLinks ?? []) as unknown as PaidLink[];
+  const paidLoggedPromise = paidList.length ? supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidList.map((l) => l.candidate_id)) : Promise.resolve({ data: [] as { candidate_id: string; created_at: string }[] });
 
   const leads = ((regularRows ?? []) as CallPerson[])
     .filter((p) => p.reason === "call_back" || p.reason === "interested")
@@ -49,8 +53,7 @@ export async function loadPriorityCalls(supabase: SupabaseClient): Promise<Prior
       .map((x) => x.p);
   }
 
-  const paidList = (paidLinks ?? []) as unknown as PaidLink[];
-  const { data: paidLogged } = paidList.length ? await supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidList.map((l) => l.candidate_id)) : { data: [] as { candidate_id: string; created_at: string }[] };
+  const { data: paidLogged } = await paidLoggedPromise;
   const calledAfter = (l: PaidLink) => ((paidLogged ?? []) as { candidate_id: string; created_at: string }[]).some((c) => c.candidate_id === l.candidate_id && c.created_at >= l.call_paid_at);
   const paidPeople: CallPerson[] = paidList
     .filter((l) => !calledAfter(l))

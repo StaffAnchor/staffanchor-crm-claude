@@ -133,21 +133,50 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const scoped = !!(cluster || pool);
   const mode = sp.mode === "assess" || sp.mode === "complete" || sp.mode === "confirm" || sp.mode === "vitals" ? sp.mode : "gate";
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!me || !["admin", "recruiter", "partner", "freelancer"].includes(me.role)) redirect("/today");
+  const priorityView = sub === "priority";
+  const working = sub !== null;
+  const bucketKey = sub && sub !== "*" && !priorityView ? sub : null;
 
-  const [{ data: overview }, { data: targetRows }, { count: openQuestions }, { data: trendData }] = await Promise.all([
+  const supabase = await createClient();
+  // Everything the page needs is asked for at once: the pages used to wait for each query in turn, which is what made them slow.
+  const queueArgs = priorityView
+    ? { p_group: null, p_by: by, p_mode: mode, p_limit: 60 }
+    : { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_cluster: cluster, p_metro: metro, p_pool: pool, p_limit: 50 };
+  const [
+    { data: authData },
+    { data: myRole },
+    { data: overview },
+    { data: targetRows },
+    openQRes,
+    trendRes,
+    clusterRes,
+    dupRes,
+    { data: cityData },
+    priority,
+    queueRes,
+    callsRes,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.rpc("current_user_role"),
     supabase.rpc("completion_overview", { p_by: by }),
     supabase.from("completion_targets").select("profile_group, by_field, bucket, due_on, baseline_incomplete").eq("by_field", by),
-    supabase.from("bot_questions").select("id", { count: "exact", head: true }).eq("status", "open"),
-    supabase.rpc("completion_trend", { p_group: ["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null, p_days: 30 }),
+    working ? Promise.resolve({ count: 0 }) : supabase.from("bot_questions").select("id", { count: "exact", head: true }).eq("status", "open"),
+    working ? Promise.resolve({ data: null }) : supabase.rpc("completion_trend", { p_group: ["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null, p_days: 30 }),
+    cluster ? supabase.from("role_clusters").select("name").eq("slug", cluster).maybeSingle() : Promise.resolve({ data: null }),
+    sub ? Promise.resolve({ data: 0 }) : supabase.rpc("duplicate_phone_profiles"),
+    // Cities: inside the chosen practice when working, otherwise across the whole group.
+    supabase.rpc("completion_cities", { p_group: group, p_by: by, p_bucket: bucketKey }),
+    !sub || priorityView ? loadPriorityCalls(supabase, "staff") : Promise.resolve(null),
+    working ? supabase.rpc("completion_queue", queueArgs) : Promise.resolve({ data: null, error: null }),
+    working ? supabase.from("call_log").select("caller_id, outcome").gte("created_at", istDayStartIso()).limit(2000) : Promise.resolve({ data: [] }),
   ]);
-  const trend = (trendData ?? null) as Trend | null;
-  const clusterName = cluster ? ((await supabase.from("role_clusters").select("name").eq("slug", cluster).maybeSingle()).data?.name as string | undefined) ?? cluster : null;
-  const dupCount = !sub ? Number((await supabase.rpc("duplicate_phone_profiles")).data ?? 0) : 0;
+  const user = authData?.user;
+  if (!user) redirect("/login");
+  if (!myRole || !["admin", "recruiter", "partner", "freelancer"].includes(myRole as string)) redirect("/today");
+  const openQuestions = (openQRes as { count?: number | null }).count ?? 0;
+  const trend = ((trendRes as { data: unknown }).data ?? null) as Trend | null;
+  const clusterName = cluster ? ((clusterRes as { data: { name?: string } | null }).data?.name ?? cluster) : null;
+  const dupCount = Number((dupRes as { data: unknown }).data ?? 0);
   const rows = ((overview ?? []) as Row[]).map((r) => ({ ...r, gaps: r.gaps ?? {}, strengths: r.strengths ?? {} }));
   const targets = new Map<string, Target>();
   for (const t of (targetRows ?? []) as (Target & { profile_group: string; bucket: string })[]) targets.set(`${t.profile_group}|${t.bucket}`, t);
@@ -185,62 +214,57 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     return `/candidates/complete?${q.toString()}`;
   };
 
-  const priorityView = sub === "priority";
-  const working = sub !== null;
-  const bucketKey = sub && sub !== "*" && !priorityView ? sub : null;
   const focusRow = working && !priorityView ? (bucketKey ? groupRows.find((r) => r.bucket === bucketKey) : { ...sum(groupRows), profile_group: group, bucket: "*", gaps: groupGaps, strengths: groupStrengths[group] ?? {} }) : null;
 
-  // Cities: inside the chosen practice when working, otherwise across the whole group.
-  const { data: cityData } = await supabase.rpc("completion_cities", { p_group: group, p_by: by, p_bucket: bucketKey });
   const cities = ((cityData ?? []) as City[]).filter((c) => c.incomplete > 0).sort((a, b) => b.incomplete - a.incomplete).slice(0, 14);
 
   // Turns queue rows (ids in order, with their gaps and strength) into people the call desk can show.
   type QueueRow = { id: string; gaps: string[]; strength: string; why: string[] };
-  const hydrate = async (q: QueueRow[]): Promise<CallPerson[]> => {
-    if (q.length === 0) return [];
+  type Extra = { id: string; email: string | null; profile_group: string | null; sub_domain: string | null };
+  const hydrate = async (q: QueueRow[], alsoIds: string[]): Promise<{ people: CallPerson[]; extra: Map<string, Extra> }> => {
     const ids = q.map((x) => x.id);
-    const [{ data: callRows }, { data: extra }] = await Promise.all([
-      supabase.rpc("calls_for_candidates", { p_ids: ids }),
-      supabase.from("candidates").select("id, email, profile_group, sub_domain").in("id", ids),
+    const allIds = Array.from(new Set([...ids, ...alsoIds]));
+    if (allIds.length === 0) return { people: [], extra: new Map() };
+    const [callRes, extraRes] = await Promise.all([
+      ids.length ? supabase.rpc("calls_for_candidates", { p_ids: ids }) : Promise.resolve({ data: [] }),
+      supabase.from("candidates").select("id, email, profile_group, sub_domain").in("id", allIds),
     ]);
-    const ex = new Map(((extra ?? []) as { id: string; email: string | null; profile_group: string | null; sub_domain: string | null }[]).map((e) => [e.id, e]));
+    const extra = new Map(((extraRes.data ?? []) as Extra[]).map((e) => [e.id, e]));
     const meta = new Map(q.map((x) => [x.id, x]));
-    const byId = new Map(((callRows ?? []) as CallPerson[]).map((p) => [p.id, p]));
-    return ids
+    const byId = new Map(((callRes.data ?? []) as CallPerson[]).map((p) => [p.id, p]));
+    const people = ids
       .map((id) => byId.get(id))
       .filter((p): p is CallPerson => !!p)
       .map((p) => {
         const m = meta.get(p.id)!;
         const gaps = [...m.gaps.filter(isGate), ...m.gaps.filter((g) => isVital(g) && !isGate(g)), ...m.gaps.filter((g) => !isVital(g))];
-        return { ...p, resume_url: null, reason: "details_missing" as const, gaps, strength: m.strength, why: m.why ?? [], email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null };
+        return { ...p, resume_url: null, reason: "details_missing" as const, gaps, strength: m.strength, why: m.why ?? [], email: extra.get(p.id)?.email ?? null, profile_group: extra.get(p.id)?.profile_group ?? null, sub_domain: extra.get(p.id)?.sub_domain ?? null };
       });
+    return { people, extra };
   };
 
   let people: CallPerson[] = [];
   let queueError: string | null = null;
-  const priority = !sub || priorityView ? await loadPriorityCalls(supabase) : null;
-  if (priorityView) {
-    // Today's calls: the priority people first, then everyone missing vitals, B2B first.
-    const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: null, p_by: by, p_mode: mode, p_limit: 60 });
-    if (error) queueError = error.message;
-    const rest = await hydrate((queue ?? []) as QueueRow[]);
-    // Priority people come from other lists, so they need the email, domain and sub-domain the call form asks for.
-    const { data: extra } = priority!.people.length ? await supabase.from("candidates").select("id, email, profile_group, sub_domain").in("id", priority!.people.map((p) => p.id)) : { data: [] };
-    const ex = new Map(((extra ?? []) as { id: string; email: string | null; profile_group: string | null; sub_domain: string | null }[]).map((e) => [e.id, e]));
-    const prio = priority!.people.map((p) => ({ ...p, email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null }));
-    const seen = new Set(prio.map((p) => p.id));
-    people = [...prio, ...rest.filter((p) => !seen.has(p.id))];
-  } else if (working && focusRow && (scoped || mode === "assess" ? focusRow.total - focusRow.assessed > 0 : mode === "confirm" ? focusRow.total - focusRow.looking_known > 0 : mode === "complete" ? focusRow.incomplete > 0 : mode === "vitals" ? focusRow.vitals_incomplete > 0 : focusRow.gate_incomplete > 0)) {
-    const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_cluster: cluster, p_metro: metro, p_pool: pool, p_limit: 50 });
-    if (error) queueError = error.message;
-    people = await hydrate((queue ?? []) as QueueRow[]);
+  if (working) {
+    const qr = queueRes as { data: unknown; error: { message: string } | null };
+    if (qr.error) queueError = qr.error.message;
+    const queue = (qr.data ?? []) as QueueRow[];
+    const rest = await hydrate(queue, priorityView ? priority?.people.map((p) => p.id) ?? [] : []);
+    if (priorityView && priority) {
+      // Priority people come from other lists, so they need the email, domain and sub-domain the call form asks for.
+      const ex = rest.extra;
+      const prio = priority.people.map((p) => ({ ...p, email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null }));
+      const seen = new Set(prio.map((p) => p.id));
+      people = [...prio, ...rest.people.filter((p) => !seen.has(p.id))];
+    } else {
+      people = rest.people;
+    }
   }
 
   // Calls made today, for the strip above the call list.
-  const dayStart = istDayStartIso();
-  const { data: todaysCalls } = working ? await supabase.from("call_log").select("caller_id, outcome").gte("created_at", dayStart).limit(2000) : { data: [] };
-  const mine = ((todaysCalls ?? []) as { caller_id: string | null; outcome: string }[]).filter((l) => l.caller_id === user.id).length;
-  const teamCalls = (todaysCalls ?? []) as { outcome: string }[];
+  const todaysCalls = (callsRes as { data: { caller_id: string | null; outcome: string }[] | null }).data ?? [];
+  const mine = todaysCalls.filter((l) => l.caller_id === user.id).length;
+  const teamCalls = todaysCalls;
 
   const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]) : [];
   const focusTarget = focusRow ? targets.get(`${group}|${focusRow.bucket}`) ?? null : null;
