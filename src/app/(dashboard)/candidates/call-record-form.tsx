@@ -48,7 +48,7 @@ function callBackAt(days: number): string {
   return new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate(), 11, 0) - 5.5 * 3_600_000).toISOString();
 }
 
-function Chips({ value, options, onChange, tone }: { value: string; options: { v: string; label: string }[]; onChange: (v: string) => void; tone?: (v: string) => string }) {
+function Chips({ value, options, onChange, tone, known }: { value: string; options: { v: string; label: string }[]; onChange: (v: string) => void; tone?: (v: string) => string; known?: boolean }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((o) => (
@@ -57,7 +57,7 @@ function Chips({ value, options, onChange, tone }: { value: string; options: { v
           type="button"
           onClick={() => onChange(value === o.v ? "" : o.v)}
           className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${
-            value === o.v ? tone?.(o.v) ?? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            value === o.v ? (known ? "border-slate-300 bg-slate-200 text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300" : tone?.(o.v) ?? "border-teal-600 bg-teal-600 text-white") : known ? "border-slate-100 text-slate-400 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-500" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           }`}
         >
           {o.label}
@@ -67,10 +67,10 @@ function Chips({ value, options, onChange, tone }: { value: string; options: { v
   );
 }
 
-function Field({ label, missing, children }: { label: string; missing?: boolean; children: React.ReactNode }) {
+function Field({ label, missing, known, children }: { label: string; missing?: boolean; known?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-1 flex items-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">
+      <p className={`mb-1 flex items-center gap-1.5 text-[12px] font-medium ${known ? "text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-200"}`}>
         {label}
         {missing && <span className="rounded bg-amber-100 px-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">ask</span>}
       </p>
@@ -115,7 +115,11 @@ function MultiChips({ value, options, onChange, max }: { value: string[]; option
   );
 }
 
+const length3 = (v: string | null | undefined) => (v ?? "").trim().length > 2;
 const asOpts = (xs: string[]) => xs.map((x) => ({ v: x, label: x }));
+// What is already on the profile is shown grey and quiet; what is missing stays white with an amber edge, so the eye goes there.
+const selectKnown = "w-full rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[13px] text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400";
+const selectMissing = "w-full rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-[13px] shadow-sm dark:border-amber-700 dark:bg-slate-900";
 const select = "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] dark:border-slate-700 dark:bg-slate-900";
 const num = (v: number | string | null | undefined) => (v !== null && v !== undefined && v !== "" && Number(v) > 0 ? String(Number(v)) : "");
 
@@ -253,12 +257,36 @@ export default function CallRecordForm({
     }
   }
 
-  const fixedPay = (value: string, set: (v: string) => void) => (
-    <select value={value} onChange={(e) => set(e.target.value)} className={select}>
+  // Known = already on the profile when the call opened. Known answers are grey; missing ones are white with an amber edge.
+  const k = {
+    city: !blank(p.current_location),
+    years: !!num(p.total_experience_years),
+    group: ["b2b_sales", "b2c_sales", "non_sales"].includes(p.profile_group ?? ""),
+    sub: !blank(p.sub_domain),
+    level: !blank(p.role_level),
+    employer: !blank(p.current_employer),
+    title: !blank(p.current_job_title),
+    status: !blank(p.current_employment_status),
+    qualification: !blank(p.highest_qualification),
+    name: length3(p.full_name),
+    email: /@/.test(p.email ?? ""),
+    ctc: !!num(p.current_fixed_ctc),
+    currentVar: !!num(p.current_variable_ctc),
+    expected: !!num(p.expected_fixed_ctc),
+    notice: !blank(p.notice_period),
+    relocation: !blank(p.open_to_relocation),
+    workMode: !blank(p.work_mode),
+    offer: p.offer_in_hand !== undefined && p.offer_in_hand !== null,
+    looking: !!p.open_fresh,
+  };
+  const sel = (known: boolean) => (known ? selectKnown : selectMissing);
+  const fixedPay = (value: string, set: (v: string) => void, known: boolean) => (
+    <select value={value} onChange={(e) => set(e.target.value)} className={sel(known)}>
       <option value="">Select</option>
       {fixedCtcOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
+  const basicsKnown = [k.city, k.years, k.group, k.sub, k.level, k.employer, k.title, k.status, k.qualification, k.name].every(Boolean);
   const basicsFilled = [ctc, city, relocation, years, level, group, subDomain, name].filter(Boolean).length;
   const moveFilled = [openness, reasons.length ? "x" : "", notice, noticeFlex, interviewing, offer].filter(Boolean).length;
   const payFilled = [ctc, currentVar, expected, payFlex].filter(Boolean).length;
@@ -286,19 +314,22 @@ export default function CallRecordForm({
           )}
         </div>
       )}
+      <p className="text-[11.5px] text-slate-400">
+        <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-200 bg-slate-100 align-middle" /> Grey is already on the profile. <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-white align-middle" /> White with an amber edge is missing: ask these.
+      </p>
 
-      <Step n={1} title="Confirm who they are" hint="Role, level, city, experience, domain" filled={basicsFilled} total={8}>
+      <Step n={1} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={8} defaultOpen={!basicsKnown}>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Current city" missing={!p.current_location}>
-            <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={select} />
+          <Field label="Current city" missing={!k.city} known={k.city}>
+            <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
             <datalist id={`calls-city-${p.id}`}>{cityOptions.map((c) => <option key={c} value={c} />)}</datalist>
           </Field>
-          <Field label="Total experience (years)" missing={p.total_experience_years !== undefined && !num(p.total_experience_years)}>
-            <input type="number" inputMode="decimal" min="0" max="50" step="0.5" value={years} onChange={(e) => setYears(e.target.value)} placeholder="e.g. 6.5" className={select} />
+          <Field label="Total experience (years)" missing={p.total_experience_years !== undefined && !k.years} known={k.years}>
+            <input type="number" inputMode="decimal" min="0" max="50" step="0.5" value={years} onChange={(e) => setYears(e.target.value)} placeholder="e.g. 6.5" className={sel(k.years)} />
           </Field>
           {p.profile_group !== undefined && (
-            <Field label="Domain" missing={!["b2b_sales", "b2c_sales", "non_sales"].includes(p.profile_group ?? "")}>
-              <select value={group} onChange={(e) => { setGroup(e.target.value); setSubDomain(""); }} className={select}>
+            <Field label="Domain" missing={!k.group} known={k.group}>
+              <select value={group} onChange={(e) => { setGroup(e.target.value); setSubDomain(""); }} className={sel(k.group)}>
                 <option value="">Select</option>
                 <option value="b2b_sales">B2B Sales</option>
                 <option value="b2c_sales">B2C Sales</option>
@@ -307,44 +338,44 @@ export default function CallRecordForm({
             </Field>
           )}
           {p.sub_domain !== undefined && (
-            <Field label="Sub-domain" missing={blank(p.sub_domain)}>
-              <select value={subDomain} onChange={(e) => setSubDomain(e.target.value)} className={select} disabled={!group}>
+            <Field label="Sub-domain" missing={!k.sub} known={k.sub}>
+              <select value={subDomain} onChange={(e) => setSubDomain(e.target.value)} className={sel(k.sub)} disabled={!group}>
                 <option value="">{group ? "Select" : "Pick the domain first"}</option>
                 {subDomain && !level1OptionsForProfileType(group).includes(subDomain) && <option value={subDomain}>{subDomain}</option>}
                 {level1OptionsForProfileType(group).map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </Field>
           )}
-          <Field label="Role level" missing={blank(p.role_level)}>
-            <select value={level} onChange={(e) => setLevel(e.target.value)} className={select}>
+          <Field label="Role level" missing={!k.level} known={k.level}>
+            <select value={level} onChange={(e) => setLevel(e.target.value)} className={sel(k.level)}>
               <option value="">Select</option>
               {yourLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </Field>
-          <Field label="Current company" missing={blank(p.current_employer)}>
-            <input value={employer} onChange={(e) => setEmployer(e.target.value)} placeholder="Company" className={select} />
+          <Field label="Current company" missing={!k.employer} known={k.employer}>
+            <input value={employer} onChange={(e) => setEmployer(e.target.value)} placeholder="Company" className={sel(k.employer)} />
           </Field>
-          <Field label="Current job title" missing={blank(p.current_job_title)}>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className={select} />
+          <Field label="Current job title" missing={!k.title} known={k.title}>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className={sel(k.title)} />
           </Field>
-          <Field label="Employment status" missing={blank(p.current_employment_status)}>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className={select}>
+          <Field label="Employment status" missing={!k.status} known={k.status}>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className={sel(k.status)}>
               <option value="">Select</option>
               {employmentStatusOptions.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </Field>
-          <Field label="Highest qualification" missing={blank(p.highest_qualification)}>
-            <select value={qualification} onChange={(e) => setQualification(e.target.value)} className={select}>
+          <Field label="Highest qualification" missing={!k.qualification} known={k.qualification}>
+            <select value={qualification} onChange={(e) => setQualification(e.target.value)} className={sel(k.qualification)}>
               <option value="">Select</option>
               {highestQualificationOptions.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </Field>
-          <Field label="Full name">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={select} />
+          <Field label="Full name" known={k.name} missing={!k.name}>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={sel(k.name)} />
           </Field>
           {p.email !== undefined && (
-            <Field label="Email" missing={!/@/.test(p.email ?? "")}>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" className={select} />
+            <Field label="Email" missing={!k.email} known={k.email}>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" className={sel(k.email)} />
             </Field>
           )}
         </div>
@@ -354,14 +385,14 @@ export default function CallRecordForm({
       </Step>
 
       <Step n={2} title="Their move" hint="Are they looking, why, how soon, what else is on" filled={moveFilled} total={6}>
-        <Field label="Looking for a new role?" missing={!p.open_fresh}>
-          <Chips value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
+        <Field label="Looking for a new role?" missing={!k.looking} known={k.looking}>
+          <Chips known={k.looking} value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
         </Field>
         <Field label="Why are they looking? (up to 3)">
           <MultiChips value={reasons} options={REASONS} onChange={setReasons} max={3} />
         </Field>
-        <Field label="Notice period" missing={!p.notice_period}>
-          <Chips value={notice} options={asOpts(noticePeriodOptions)} onChange={setNotice} />
+        <Field label="Notice period" missing={!k.notice} known={k.notice}>
+          <Chips known={k.notice} value={notice} options={asOpts(noticePeriodOptions)} onChange={setNotice} />
         </Field>
         <Field label="Can they join earlier?">
           <Chips value={noticeFlex} options={NOTICE_FLEX.map((o) => ({ v: o.v, label: o.label }))} onChange={setNoticeFlex} />
@@ -369,9 +400,9 @@ export default function CallRecordForm({
         <Field label="Interviewing elsewhere?">
           <Chips value={interviewing} options={INTERVIEWING.map((o) => ({ v: o.v, label: o.label }))} onChange={setInterviewing} />
         </Field>
-        <Field label="Offer in hand?">
+        <Field label="Offer in hand?" known={k.offer}>
           <div className="flex flex-wrap items-center gap-2">
-            <Chips value={offer} options={asOpts(["Yes", "No"])} onChange={setOffer} />
+            <Chips known={k.offer} value={offer} options={asOpts(["Yes", "No"])} onChange={setOffer} />
             {offer === "Yes" && (
               <select value={offerCtc} onChange={(e) => setOfferCtc(e.target.value)} className={`${select} w-40`}>
                 <option value="">Offer CTC</option>
@@ -380,19 +411,19 @@ export default function CallRecordForm({
             )}
           </div>
         </Field>
-        <Field label="Open to relocating?" missing={!p.open_to_relocation}>
-          <Chips value={relocation} options={asOpts(relocationOptions)} onChange={setRelocation} />
+        <Field label="Open to relocating?" missing={!k.relocation} known={k.relocation}>
+          <Chips known={k.relocation} value={relocation} options={asOpts(relocationOptions)} onChange={setRelocation} />
         </Field>
-        <Field label="Work mode">
-          <Chips value={workMode} options={asOpts(workModeOptions)} onChange={setWorkMode} />
+        <Field label="Work mode" known={k.workMode}>
+          <Chips known={k.workMode} value={workMode} options={asOpts(workModeOptions)} onChange={setWorkMode} />
         </Field>
       </Step>
 
       <Step n={3} title="Pay" hint="What they earn and what they want" filled={payFilled} total={4}>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Current fixed pay" missing={!num(p.current_fixed_ctc)}>{fixedPay(ctc, setCtc)}</Field>
-          <Field label="Current variable pay">{fixedPay(currentVar, setCurrentVar)}</Field>
-          <Field label="Expected fixed pay" missing={!num(p.expected_fixed_ctc)}>{fixedPay(expected, setExpected)}</Field>
+          <Field label="Current fixed pay" missing={!k.ctc} known={k.ctc}>{fixedPay(ctc, setCtc, k.ctc)}</Field>
+          <Field label="Current variable pay" known={k.currentVar}>{fixedPay(currentVar, setCurrentVar, k.currentVar)}</Field>
+          <Field label="Expected fixed pay" missing={!k.expected} known={k.expected}>{fixedPay(expected, setExpected, k.expected)}</Field>
           <Field label="Is the expectation flexible?">
             <Chips value={payFlex} options={asOpts(["Yes", "No"])} onChange={setPayFlex} />
           </Field>

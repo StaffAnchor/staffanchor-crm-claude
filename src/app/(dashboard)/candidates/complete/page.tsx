@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 // many are still to go, by city and by what is missing, with a deadline per practice and a call list to finish them.
 
 type Row = { profile_group: string; bucket: string; total: number; complete: number; incomplete: number; no_phone: number; assessed: number; vitals_incomplete: number; gate_incomplete: number; looking_known: number; gaps: Record<string, number>; strengths: Record<string, number> };
+type Trend = { days: { day: string; gate: number; vitals: number; full: number }[]; mtd: { gate: number; vitals: number; full: number }; people: { name: string; gate: number; vitals: number; full: number }[] };
 type City = { city: string; total: number; complete: number; incomplete: number };
 
 const GROUPS = [
@@ -51,6 +52,62 @@ function StrengthBar({ s, total }: { s: Record<string, number>; total: number })
     </div>
   );
 }
+function TrendCard({ trend, label }: { trend: Trend; label: string }) {
+  const days = trend.days;
+  const max = Math.max(1, ...days.map((d) => d.gate));
+  const today = days[days.length - 1];
+  const yesterday = days[days.length - 2];
+  const tile = (title: string, a: { gate: number; vitals: number; full: number } | undefined) => (
+    <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
+      <p className="mt-0.5 text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{a?.gate ?? 0}<span className="ml-1 text-[11.5px] font-normal text-slate-500">pay + CV done</span></p>
+      <p className="mt-1 text-[11.5px] text-slate-500">{a?.vitals ?? 0} with all vitals · {a?.full ?? 0} fully complete</p>
+    </div>
+  );
+  const shortDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+  return (
+    <section className={`${card} mb-5 p-4`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Completions · {label}</h2>
+        <p className="text-[11.5px] text-slate-400">Counted each time a profile crosses a line. Counting began on 31 Oct 2026.</p>
+      </div>
+      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)_minmax(0,260px)]">
+        <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+          {tile("Today", today)}
+          {tile("Yesterday", yesterday)}
+          {tile("Month to date", trend.mtd)}
+        </div>
+        <div>
+          <p className="mb-1 text-[11.5px] text-slate-500">Profiles that got current pay and a CV, per day, last 30 days</p>
+          <div className="flex h-28 items-end gap-[3px]" role="img" aria-label="Daily completions, last 30 days">
+            {days.map((d) => (
+              <div key={d.day} className="flex h-full flex-1 flex-col justify-end" title={`${shortDay(d.day)}: ${d.gate} pay + CV, ${d.vitals} all vitals, ${d.full} fully complete`}>
+                <div className={`w-full rounded-t ${d.gate > 0 ? "bg-teal-500" : "bg-slate-100 dark:bg-slate-800"}`} style={{ height: `${d.gate > 0 ? Math.max(6, (d.gate / max) * 100) : 4}%` }} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-1 flex justify-between text-[10.5px] text-slate-400"><span>{shortDay(days[0].day)}</span><span>{shortDay(days[days.length - 1].day)}</span></div>
+        </div>
+        <div>
+          <p className="mb-1 text-[11.5px] text-slate-500">This month, by person</p>
+          {trend.people.length === 0 ? (
+            <p className="text-[12.5px] text-slate-400">Nobody has completed a profile yet this month.</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {trend.people.map((p) => (
+                <li key={p.name} className="flex items-baseline justify-between gap-2 text-[12.5px]">
+                  <span className="truncate text-slate-700 dark:text-slate-200">{p.name}</span>
+                  <span className="shrink-0 tabular-nums text-slate-500"><b className="text-slate-900 dark:text-slate-100">{p.gate}</b> pay + CV · {p.full} full</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const bucketLabel = (b: string) => (b === "(not set)" ? "Not set yet" : b);
 
 function Bar({ done, total, tone = "bg-teal-500" }: { done: number; total: number; tone?: string }) {
@@ -77,11 +134,13 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (!me || !["admin", "recruiter", "partner", "freelancer"].includes(me.role)) redirect("/today");
 
-  const [{ data: overview }, { data: targetRows }, { count: openQuestions }] = await Promise.all([
+  const [{ data: overview }, { data: targetRows }, { count: openQuestions }, { data: trendData }] = await Promise.all([
     supabase.rpc("completion_overview", { p_by: by }),
     supabase.from("completion_targets").select("profile_group, by_field, bucket, due_on, baseline_incomplete").eq("by_field", by),
     supabase.from("bot_questions").select("id", { count: "exact", head: true }).eq("status", "open"),
+    supabase.rpc("completion_trend", { p_group: ["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null, p_days: 30 }),
   ]);
+  const trend = (trendData ?? null) as Trend | null;
   const rows = ((overview ?? []) as Row[]).map((r) => ({ ...r, gaps: r.gaps ?? {}, strengths: r.strengths ?? {} }));
   const targets = new Map<string, Target>();
   for (const t of (targetRows ?? []) as (Target & { profile_group: string; bucket: string })[]) targets.set(`${t.profile_group}|${t.bucket}`, t);
@@ -244,6 +303,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           );
         })}
       </div>
+
+      {!working && trend && trend.days.length > 0 && <TrendCard trend={trend} label={GROUP_LABEL[group] ?? "All"} />}
 
       {!working ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
