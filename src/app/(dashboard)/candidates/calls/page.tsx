@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
@@ -115,7 +116,7 @@ export default async function CallsTodayPage({ searchParams }: { searchParams: P
         <div>
           <h1 className="ros-page-title">Calls today</h1>
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
-            The people worth calling, strongest first. Call, fill in what they tell you, rate how they came across, then pick the result. The next person opens by itself. To work through one practice or city at a time, use <a href="/candidates/complete" className="font-medium text-teal-700 hover:underline dark:text-teal-300">Profile completion</a>.
+            The people worth calling, strongest first. Call, fill in what they tell you, rate how they came across, then pick the result. The next person opens by itself. To work through one practice or city at a time, use <Link href="/candidates/complete" className="font-medium text-teal-700 hover:underline dark:text-teal-300">Profile completion</Link>.
           </p>
         </div>
         <div className="text-right text-[12.5px] text-slate-500 dark:text-slate-400">
