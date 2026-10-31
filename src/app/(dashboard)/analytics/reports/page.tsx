@@ -851,6 +851,12 @@ export default async function ReportsPage({
     .lte("created_at", rangeToIso)
     .limit(5000);
   const paidTaps = (paidTapRows ?? []) as { spot: string | null }[];
+  // Earlier steps for the same range: people who tapped Apply at all, and people who started a payment (an order is created
+  // when checkout opens, whether or not it is paid).
+  const [{ count: applyTaps }, { count: paymentsStarted }] = await Promise.all([
+    supabase.from("quick_apply_clicks").select("id", { count: "exact", head: true }).eq("event_type", "click").gte("created_at", rangeFromIso).lte("created_at", rangeToIso),
+    supabase.from("paid_call_orders").select("id", { count: "exact", head: true }).gte("created_at", rangeFromIso).lte("created_at", rangeToIso),
+  ]);
   const paidTapSpots = ["list", "preview", "detail", "bar", "confirm"].map((k) => ({ k, n: paidTaps.filter((t) => t.spot === k).length }));
   const { data: loggedCallRows } = paidCalls.length
     ? await supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidCalls.map((c) => c.candidate_id))
@@ -1465,6 +1471,16 @@ export default async function ReportsPage({
                   <StatTile icon={<Clock className="w-4 h-4" />} label="Waiting for a call" value={paidCallWaiting} />
                   <StatTile icon={<AlertTriangle className="w-4 h-4" />} label="Overdue, refund due" value={paidCallOverdue.length} />
                   <StatTile icon={<TrendingUp className="w-4 h-4" />} label="Net revenue" value={`₹${paidCallRevenue.toLocaleString("en-IN")}`} />
+                </div>
+                <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-700 dark:text-slate-200">
+                  <span className="font-semibold">Funnel:</span>
+                  <span>{applyTaps ?? 0} tapped Apply</span>
+                  <span className="text-slate-400">→</span>
+                  <span>{paidTaps.length} tapped the ₹199 offer{applyTaps ? ` (${Math.round((paidTaps.length / applyTaps) * 100)}%)` : ""}</span>
+                  <span className="text-slate-400">→</span>
+                  <span>{paymentsStarted ?? 0} started payment</span>
+                  <span className="text-slate-400">→</span>
+                  <span>{paidCallCount} paid{paidTaps.length ? ` (${Math.round((paidCallCount / paidTaps.length) * 100)}% of taps)` : ""}</span>
                 </div>
                 <p className="mb-4 text-[12px] text-slate-500 dark:text-slate-400">
                   Offer taps by place: {paidTapSpots.map((t) => `${({ list: "job list", preview: "preview panel", detail: "job page", bar: "phone bar", confirm: "after applying" } as Record<string, string>)[t.k]} ${t.n}`).join(" · ")}. Taps are counted from the day this went live.
