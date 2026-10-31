@@ -213,6 +213,8 @@ type SearchParams = {
   recruiter?: string;
   placed_only?: string;
   page?: string;
+  /** Rows per page: 25, 50 (default) or 100. Each row carries a lot of editable cells, so 100 rows is a heavy page. */
+  size?: string;
   ids?: string;
   mandate?: string;
   mandate_stage?: string;
@@ -238,7 +240,8 @@ type SearchParams = {
   subgroup?: string;
 };
 
-const PAGE_SIZE = 100;
+const PAGE_SIZES = [25, 50, 100];
+const DEFAULT_PAGE_SIZE = 50;
 
 export default async function CandidatesPage({
   searchParams,
@@ -253,6 +256,8 @@ export default async function CandidatesPage({
   } = await supabase.auth.getUser();
 
   const pageNum = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
+  const requestedSize = parseInt(params.size ?? "", 10);
+  const PAGE_SIZE = PAGE_SIZES.includes(requestedSize) ? requestedSize : DEFAULT_PAGE_SIZE;
   const rangeFrom = (pageNum - 1) * PAGE_SIZE;
   const rangeTo = rangeFrom + PAGE_SIZE - 1;
 
@@ -1532,6 +1537,16 @@ export default async function CandidatesPage({
         rangeEnd={rangeEnd}
         isAdmin={isAdmin}
       />
+
+      <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px] text-slate-500 dark:text-slate-400">
+        Rows per page
+        {PAGE_SIZES.map((n) => (
+          <Link key={n} href={qs({ size: n === DEFAULT_PAGE_SIZE ? undefined : String(n) })} className={`rounded-full px-2.5 py-0.5 font-medium ${n === PAGE_SIZE ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
+            {n}
+          </Link>
+        ))}
+        <span className="text-slate-400">Fewer rows load faster.</span>
+      </p>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-3">

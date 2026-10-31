@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import TopNav from "./topnav";
 import CopilotPalette from "@/components/copilot-palette";
 import CallSheet from "@/components/call-sheet";
+import WarmUp from "@/components/warm-up";
 
 export default async function DashboardLayout({
   children,
@@ -101,6 +102,7 @@ export default async function DashboardLayout({
       />
       <CopilotPalette role={profile?.role ?? "recruiter"} />
       <main id="main-content">{children}</main>
+      <WarmUp />
       <CallSheet />
     </div>
   );
