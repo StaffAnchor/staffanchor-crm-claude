@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
 import CallsDesk, { type CallPerson } from "../calls/calls-desk";
-import { GAP_LABEL, STRENGTH, isVital } from "@/lib/completion";
+import { GAP_LABEL, STRENGTH, isGate, isVital } from "@/lib/completion";
 import { loadPriorityCalls } from "@/lib/priority-calls";
 import TargetControl, { type Target } from "./target-control";
 import BatchPanel from "../pipeline/batch-panel";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 // Profile completion: for every group and practice, how many profiles have everything needed to present a candidate and how
 // many are still to go, by city and by what is missing, with a deadline per practice and a call list to finish them.
 
-type Row = { profile_group: string; bucket: string; total: number; complete: number; incomplete: number; no_phone: number; assessed: number; vitals_incomplete: number; looking_known: number; gaps: Record<string, number>; strengths: Record<string, number> };
+type Row = { profile_group: string; bucket: string; total: number; complete: number; incomplete: number; no_phone: number; assessed: number; vitals_incomplete: number; gate_incomplete: number; looking_known: number; gaps: Record<string, number>; strengths: Record<string, number> };
 type City = { city: string; total: number; complete: number; incomplete: number };
 
 const GROUPS = [
@@ -69,7 +69,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const city = sp.city ?? null;
   const gap = sp.gap && GAP_LABEL[sp.gap] ? sp.gap : null;
   const strength = sp.strength && STRENGTH[sp.strength] ? sp.strength : null;
-  const mode = sp.mode === "assess" || sp.mode === "complete" || sp.mode === "confirm" ? sp.mode : "vitals";
+  const mode = sp.mode === "assess" || sp.mode === "complete" || sp.mode === "confirm" || sp.mode === "vitals" ? sp.mode : "gate";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -86,7 +86,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const targets = new Map<string, Target>();
   for (const t of (targetRows ?? []) as (Target & { profile_group: string; bucket: string })[]) targets.set(`${t.profile_group}|${t.bucket}`, t);
 
-  const sum = (rs: Row[]) => rs.reduce((a, r) => ({ total: a.total + r.total, complete: a.complete + r.complete, incomplete: a.incomplete + r.incomplete, no_phone: a.no_phone + r.no_phone, assessed: a.assessed + r.assessed, vitals_incomplete: a.vitals_incomplete + r.vitals_incomplete, looking_known: a.looking_known + r.looking_known }), { total: 0, complete: 0, incomplete: 0, no_phone: 0, assessed: 0, vitals_incomplete: 0, looking_known: 0 });
+  const sum = (rs: Row[]) => rs.reduce((a, r) => ({ total: a.total + r.total, complete: a.complete + r.complete, incomplete: a.incomplete + r.incomplete, no_phone: a.no_phone + r.no_phone, assessed: a.assessed + r.assessed, vitals_incomplete: a.vitals_incomplete + r.vitals_incomplete, gate_incomplete: a.gate_incomplete + r.gate_incomplete, looking_known: a.looking_known + r.looking_known }), { total: 0, complete: 0, incomplete: 0, no_phone: 0, assessed: 0, vitals_incomplete: 0, gate_incomplete: 0, looking_known: 0 });
   const byGroup = Object.fromEntries(GROUPS.map((g) => [g.key, sum(rows.filter((r) => r.profile_group === g.key))])) as Record<string, ReturnType<typeof sum>>;
   const grand = sum(rows);
   const groupRows = rows.filter((r) => r.profile_group === group).sort((a, b) => b.incomplete - a.incomplete);
@@ -110,7 +110,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     const st = "strength" in o ? o.strength : strength;
     if (st) q.set("strength", st);
     const m = o.mode ?? mode;
-    if (m !== "complete") q.set("mode", m);
+    if (m !== "gate") q.set("mode", m);
     return `/candidates/complete?${q.toString()}`;
   };
 
@@ -140,7 +140,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       .filter((p): p is CallPerson => !!p)
       .map((p) => {
         const m = meta.get(p.id)!;
-        const gaps = [...m.gaps.filter(isVital), ...m.gaps.filter((g) => !isVital(g))];
+        const gaps = [...m.gaps.filter(isGate), ...m.gaps.filter((g) => isVital(g) && !isGate(g)), ...m.gaps.filter((g) => !isVital(g))];
         return { ...p, resume_url: null, reason: "details_missing" as const, gaps, strength: m.strength, why: m.why ?? [], email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null };
       });
   };
@@ -159,7 +159,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     const prio = priority!.people.map((p) => ({ ...p, email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null }));
     const seen = new Set(prio.map((p) => p.id));
     people = [...prio, ...rest.filter((p) => !seen.has(p.id))];
-  } else if (working && focusRow && (mode === "assess" ? focusRow.total - focusRow.assessed > 0 : mode === "confirm" ? focusRow.total - focusRow.looking_known > 0 : mode === "complete" ? focusRow.incomplete > 0 : focusRow.vitals_incomplete > 0)) {
+  } else if (working && focusRow && (mode === "assess" ? focusRow.total - focusRow.assessed > 0 : mode === "confirm" ? focusRow.total - focusRow.looking_known > 0 : mode === "complete" ? focusRow.incomplete > 0 : mode === "vitals" ? focusRow.vitals_incomplete > 0 : focusRow.gate_incomplete > 0)) {
     const { data: queue, error } = await supabase.rpc("completion_queue", { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_limit: 50 });
     if (error) queueError = error.message;
     people = await hydrate((queue ?? []) as QueueRow[]);
@@ -171,7 +171,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const mine = ((todaysCalls ?? []) as { caller_id: string | null; outcome: string }[]).filter((l) => l.caller_id === user.id).length;
   const teamCalls = (todaysCalls ?? []) as { outcome: string }[];
 
-  const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).sort((a, b) => Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]) : [];
+  const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]) : [];
   const focusTarget = focusRow ? targets.get(`${group}|${focusRow.bucket}`) ?? null : null;
 
   return (
@@ -182,7 +182,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           <h1 className="ros-page-title">Profile completion</h1>
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
             A profile is complete when it has everything needed to present the person to a client: name, phone, email, CV, experience, current and expected pay, notice period,
-            city, relocation, domain, sub-domain, role level, company and job title. Vitals come first (current pay, city, role level and type, relocation, domain, sub-domain, CV, plus the basics); expected pay, notice period and the rest come after. Whether someone is looking for a change is asked on every call and counted separately, because it goes stale after 90 days.
+            city, relocation, domain, sub-domain, role level, company and job title. Current pay and a CV come before everything: without them a profile cannot be used. Then the vitals (current pay, city, role level and type, relocation, domain, sub-domain, CV, plus the basics); expected pay, notice period and the rest come after. Whether someone is looking for a change is asked on every call and counted separately, because it goes stale after 90 days.
           </p>
         </div>
         <div className="flex items-center gap-1 text-[12px]">
@@ -209,7 +209,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       )}
       {!working && priority && priority.people.length === 0 && (
         <Link href={url({ sub: "priority", city: null, gap: null })} className="mb-4 inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
-          Start today&apos;s calls (missing vitals first) <ArrowRight className="h-3.5 w-3.5" />
+          Start today&apos;s calls (missing current pay or CV first) <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       )}
 
@@ -229,6 +229,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 <span className="text-[28px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{n0(s.total)}</span>
                 <span className="text-[12px] text-slate-500">{grand.total > 0 ? `${pct(s.total, grand.total)}% of ${n0(grand.total)} profiles` : "profiles"}</span>
               </p>
+              <p className="mb-1 mt-3 flex justify-between text-[11px] font-medium uppercase tracking-wide text-slate-400"><span>Current pay + CV</span><span className="normal-case tracking-normal text-slate-500"><b className="text-amber-700 dark:text-amber-300">{n0(s.gate_incomplete)}</b> to go</span></p>
+              <Bar done={s.total - s.gate_incomplete} total={s.total} tone={s.gate_incomplete === 0 ? "bg-emerald-500" : "bg-rose-500"} />
               <p className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">Vitals</p>
               <Bar done={s.total - s.vitals_incomplete} total={s.total} tone={s.vitals_incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} />
               <p className="mt-1.5 flex justify-between text-[12.5px]">
@@ -247,8 +249,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <section>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{GROUP_LABEL[group]}: {n0(byGroup[group].vitals_incomplete)} profiles still missing vitals</h2>
-              {byGroup[group].vitals_incomplete > 0 && (
+              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{GROUP_LABEL[group]}: {n0(byGroup[group].gate_incomplete)} profiles missing current pay or CV · {n0(byGroup[group].vitals_incomplete)} missing a vital</h2>
+              {byGroup[group].gate_incomplete > 0 && (
                 <Link href={url({ sub: "*" })} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700">
                   Work on all of {GROUP_LABEL[group]} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
@@ -259,7 +261,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             ) : (
               <ul className="space-y-2.5">
                 {groupRows.map((r) => {
-                  const top = Object.entries(r.gaps).sort((a, b) => Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]).slice(0, 5);
+                  const top = Object.entries(r.gaps).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]).slice(0, 5);
                   const target = targets.get(`${group}|${r.bucket}`) ?? null;
                   return (
                     <li key={r.bucket} className={`${card} p-4`}>
@@ -267,7 +269,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                         <div className="min-w-0 flex-1 basis-64">
                           <p className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{bucketLabel(r.bucket)}</p>
                           <p className="mt-0.5 text-[12.5px] text-slate-500">
-                            {n0(r.total)} profiles · vitals <span className="text-emerald-700 dark:text-emerald-300">{n0(r.total - r.vitals_incomplete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(r.vitals_incomplete)} to go</b> · {n0(r.complete)} fully complete
+                            {n0(r.total)} profiles · pay + CV <b className="text-rose-700 dark:text-rose-300">{n0(r.gate_incomplete)} to go</b> · vitals <span className="text-emerald-700 dark:text-emerald-300">{n0(r.total - r.vitals_incomplete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(r.vitals_incomplete)} to go</b> · {n0(r.complete)} fully complete
                             {r.no_phone > 0 && <span> · {r.no_phone} have no usable phone</span>}
                           </p>
                           <div className="mt-2"><Bar done={r.total - r.vitals_incomplete} total={r.total} tone={r.vitals_incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} /></div>
@@ -281,7 +283,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                           {top.length > 0 && (
                             <p className="mt-2 flex flex-wrap gap-1.5 text-[11.5px]">
                               {top.map(([k, v]) => (
-                                <Link key={k} href={url({ sub: r.bucket, gap: k })} className={`rounded-full px-2 py-0.5 font-medium ${isVital(k) ? "bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
+                                <Link key={k} href={url({ sub: r.bucket, gap: k })} className={`rounded-full px-2 py-0.5 font-medium ${isGate(k) ? "bg-rose-50 text-rose-800 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-200" : isVital(k) ? "bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
                                   {GAP_LABEL[k] ?? k} · {v}
                                 </Link>
                               ))}
@@ -289,13 +291,13 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                           )}
                         </div>
                         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                          {r.vitals_incomplete > 0 && <TargetControl group={group} by={by} bucket={r.bucket} incomplete={r.vitals_incomplete} target={target} compact />}
-                          {r.vitals_incomplete > 0 ? (
+                          {r.gate_incomplete > 0 && <TargetControl group={group} by={by} bucket={r.bucket} incomplete={r.gate_incomplete} target={target} compact />}
+                          {r.gate_incomplete > 0 ? (
                             <Link href={url({ sub: r.bucket })} className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
                               Start calling <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                           ) : (
-                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Vitals complete</span>
+                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Pay + CV complete</span>
                           )}
                         </div>
                       </div>
@@ -313,7 +315,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 <div key={part.title} className="mt-2">
                   <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{part.title}</p>
                   <ul className="mt-1 space-y-1.5">
-                    {Object.entries(groupGaps).filter(([k]) => isVital(k) === part.test).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+                    {Object.entries(groupGaps).filter(([k]) => isVital(k) === part.test).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || b[1] - a[1]).map(([k, v]) => (
                       <li key={k}>
                         <Link href={url({ sub: "*", gap: k, mode: part.test ? "vitals" : "complete" })} className="flex items-center justify-between gap-2 text-[12.5px] hover:underline">
                           <span className="text-slate-600 dark:text-slate-300">Missing {GAP_LABEL[k] ?? k}</span>
@@ -358,7 +360,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 <div>
                   <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">Today&apos;s calls</h2>
                   <p className="mt-0.5 max-w-3xl text-[13px] text-slate-500">
-                    Priority first: {priority.counts.paid} paid ₹199 {priority.counts.paid === 1 ? "call" : "calls"} (soonest deadline first), {priority.counts.interested} who said yes to a role, {priority.counts.callbacks} call-backs due and {priority.counts.urgent} matching an urgent role. Then everyone missing vitals, B2B first, then B2C, then the rest.
+                    Priority first: {priority.counts.paid} paid ₹199 {priority.counts.paid === 1 ? "call" : "calls"} (soonest deadline first), {priority.counts.interested} who said yes to a role, {priority.counts.callbacks} call-backs due and {priority.counts.urgent} matching an urgent role. Then everyone missing current pay or a CV, B2B first, then B2C, then the rest.
                     {priority.urgentRoles.length > 0 && ` Urgent: ${priority.urgentRoles.map((r) => r.title).join(", ")}.`}
                   </p>
                 </div>
@@ -369,7 +371,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
                 <span className="font-medium text-slate-500">After the priority people:</span>
-                {([{ k: "vitals", l: "Missing vitals" }, { k: "complete", l: "Missing anything" }, { k: "confirm", l: "Confirm looking" }, { k: "assess", l: "Judge on a call" }] as const).map((m) => (
+                {([{ k: "gate", l: "Current pay + CV" }, { k: "vitals", l: "Missing vitals" }, { k: "complete", l: "Missing anything" }, { k: "confirm", l: "Confirm looking" }, { k: "assess", l: "Judge on a call" }] as const).map((m) => (
                   <Link key={m.k} href={url({ sub: "priority", mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{m.l}</Link>
                 ))}
               </div>
@@ -386,22 +388,22 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                     {strength ? ` › ${STRENGTH[strength].label.toLowerCase()} profiles` : ""}
                   </h2>
                   <p className="mt-0.5 text-[13px] text-slate-500">
-                    {n0(focusRow.total)} profiles · vitals <span className="text-emerald-700 dark:text-emerald-300">{n0(focusRow.total - focusRow.vitals_incomplete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(focusRow.vitals_incomplete)} to go</b> · {n0(focusRow.complete)} fully complete · {n0(focusRow.looking_known)} confirmed looking
+                    {n0(focusRow.total)} profiles · pay + CV <b className="text-rose-700 dark:text-rose-300">{n0(focusRow.gate_incomplete)} to go</b> · vitals <span className="text-emerald-700 dark:text-emerald-300">{n0(focusRow.total - focusRow.vitals_incomplete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(focusRow.vitals_incomplete)} to go</b> · {n0(focusRow.complete)} fully complete · {n0(focusRow.looking_known)} confirmed looking
                     {focusRow.no_phone > 0 && ` · ${focusRow.no_phone} have no usable phone (they need their number first)`}
                   </p>
                   <div className="mt-2 max-w-xl"><Bar done={focusRow.total - focusRow.vitals_incomplete} total={focusRow.total} /></div>
                 </div>
-                {bucketKey && focusRow.vitals_incomplete > 0 && <TargetControl group={group} by={by} bucket={bucketKey} incomplete={focusRow.vitals_incomplete} target={focusTarget} />}
+                {bucketKey && focusRow.gate_incomplete > 0 && <TargetControl group={group} by={by} bucket={bucketKey} incomplete={focusRow.gate_incomplete} target={focusTarget} />}
               </div>
               <div className="mt-3 max-w-xl"><StrengthBar s={focusRow.strengths} total={focusRow.total} /></div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
                 <span className="font-medium text-slate-500">Call list:</span>
-                {([{ k: "vitals", l: "Fill vitals", n: focusRow.vitals_incomplete }, { k: "complete", l: "Other details", n: focusRow.incomplete }, { k: "confirm", l: "Confirm looking", n: focusRow.total - focusRow.looking_known }, { k: "assess", l: "Judge on a call", n: focusRow.total - focusRow.assessed }] as const).map((m) => (
+                {([{ k: "gate", l: "Current pay + CV", n: focusRow.gate_incomplete }, { k: "vitals", l: "Fill vitals", n: focusRow.vitals_incomplete }, { k: "complete", l: "Other details", n: focusRow.incomplete }, { k: "confirm", l: "Confirm looking", n: focusRow.total - focusRow.looking_known }, { k: "assess", l: "Judge on a call", n: focusRow.total - focusRow.assessed }] as const).map((m) => (
                   <Link key={m.k} href={url({ mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
                     {m.l} · {n0(m.n)}
                   </Link>
                 ))}
-                <span className="text-slate-400">{{ vitals: "Missing vitals first (pay, city, level, relocation, domain, CV), fewest gaps first.", complete: "Everyone still missing anything, vitals gaps first.", confirm: "Not known whether they are looking for a change. Strongest first.", assess: "Nobody has rated their communication yet. Rate it on the call; strength follows." }[mode]}</span>
+                <span className="text-slate-400">{{ gate: "Current pay or CV missing: nothing else can be done with these profiles until they are on file. Fewest other gaps first.", vitals: "Missing vitals first (pay, city, level, relocation, domain, CV), fewest gaps first.", complete: "Everyone still missing anything, vitals gaps first.", confirm: "Not known whether they are looking for a change. Strongest first.", assess: "Nobody has rated their communication yet. Rate it on the call; strength follows." }[mode]}</span>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
                 <span className="font-medium text-slate-500">Strength:</span>
@@ -417,7 +419,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 <Link href={url({ gap: null })} className={`rounded-full border px-2.5 py-0.5 font-medium ${!gap ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>Anything</Link>
                 {focusGapEntries.map(([k, v]) => (
                   <Link key={k} href={url({ gap: k })} className={`rounded-full border px-2.5 py-0.5 font-medium ${gap === k ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
-                    {isVital(k) ? "● " : ""}{GAP_LABEL[k] ?? k} · {v}
+                    {k === "current_ctc" || k === "cv" ? "★ " : isVital(k) ? "● " : ""}{GAP_LABEL[k] ?? k} · {v}
                   </Link>
                 ))}
               </div>
@@ -439,7 +441,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           ) : (
             <>
               <p className="mb-3 text-[12.5px] text-slate-500">
-                The {people.length} people who can be called now{mode === "assess" || mode === "confirm" ? ", strongest on paper first" : ", vitals gaps first and fewest gaps first, so profiles actually reach complete"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
+                The {people.length} people who can be called now{mode === "assess" || mode === "confirm" ? ", strongest on paper first" : ", current pay and CV first, then vitals, fewest gaps first so profiles actually reach complete"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
               <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${mode}`} people={people} />

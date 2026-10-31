@@ -16,3 +16,7 @@ export const STRENGTH: Record<string, { label: string; cls: string; bar: string 
 /** Vitals: what must be known before anyone calls or matches a person. The rest (expected pay, notice, email, company, title) comes after. */
 export const VITAL_KEYS = ["name", "phone", "experience", "current_ctc", "city", "role_level", "role_type", "relocation", "domain", "sub_domain", "cv"] as const;
 export const isVital = (k: string) => (VITAL_KEYS as readonly string[]).includes(k);
+
+/** The gate: without current pay and a CV nothing can be done with a profile. */
+export const GATE_KEYS = ["current_ctc", "cv"] as const;
+export const isGate = (k: string) => (GATE_KEYS as readonly string[]).includes(k);
