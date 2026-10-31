@@ -842,6 +842,16 @@ export default async function ReportsPage({
     .select("amount_paise, status")
     .gte("paid_at", rangeFromIso)
     .lte("paid_at", rangeToIso);
+  // Taps on the "Apply + recruiter call" offer on the jobs site (silent counter, candidates never see it).
+  const { data: paidTapRows } = await supabase
+    .from("quick_apply_clicks")
+    .select("spot")
+    .eq("event_type", "paid_call_click")
+    .gte("created_at", rangeFromIso)
+    .lte("created_at", rangeToIso)
+    .limit(5000);
+  const paidTaps = (paidTapRows ?? []) as { spot: string | null }[];
+  const paidTapSpots = ["list", "preview", "detail", "bar", "confirm"].map((k) => ({ k, n: paidTaps.filter((t) => t.spot === k).length }));
   const { data: loggedCallRows } = paidCalls.length
     ? await supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidCalls.map((c) => c.candidate_id))
     : { data: [] as { candidate_id: string; created_at: string }[] };
@@ -1448,13 +1458,17 @@ export default async function ReportsPage({
                     &quot;Overdue&quot; means the deadline passed with no call logged, so a refund is due. Scoped to the range above, by payment date.
                   </p>
                 </Card>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-5 mb-4">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-6 mb-4">
+                  <StatTile icon={<Zap className="w-4 h-4" />} label="Offer taps" value={paidTaps.length} />
                   <StatTile icon={<Zap className="w-4 h-4" />} label="Paid" value={paidCallCount} />
                   <StatTile icon={<Zap className="w-4 h-4" />} label="Called" value={paidCallCalled} />
                   <StatTile icon={<Clock className="w-4 h-4" />} label="Waiting for a call" value={paidCallWaiting} />
                   <StatTile icon={<AlertTriangle className="w-4 h-4" />} label="Overdue, refund due" value={paidCallOverdue.length} />
                   <StatTile icon={<TrendingUp className="w-4 h-4" />} label="Net revenue" value={`₹${paidCallRevenue.toLocaleString("en-IN")}`} />
                 </div>
+                <p className="mb-4 text-[12px] text-slate-500 dark:text-slate-400">
+                  Offer taps by place: {paidTapSpots.map((t) => `${({ list: "job list", preview: "preview panel", detail: "job page", bar: "phone bar", confirm: "after applying" } as Record<string, string>)[t.k]} ${t.n}`).join(" · ")}. Taps are counted from the day this went live.
+                </p>
                 <Card>
                   <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Paid calls in this range</h2>
                   {paidCalls.length === 0 ? (
