@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withHeartbeat } from "@/lib/cron-heartbeat";
-import { extractCvFactsForCandidate, getServiceClient, pickCandidatesForCvFacts } from "@/lib/cv-facts";
+import { extractCvFactsForCandidate, getServiceClient, pickCandidatesForCvFacts, pickCandidatesNeedingOwnership } from "@/lib/cv-facts";
 
 // Daily catch-all: reads the CV of any recent candidate that has not been
 // read yet (new CVs are normally read the moment their summary is made;
@@ -22,6 +22,11 @@ async function handler(req: NextRequest) {
   const results = [];
   for (let i = 0; i < ids.length; i += CONCURRENCY) {
     results.push(...(await Promise.all(ids.slice(i, i + CONCURRENCY).map((id) => extractCvFactsForCandidate(id, admin)))));
+  }
+  // Sales CVs read before jobs carried an ownership level are read again, a few a day, so the rest of the bank catches up by itself.
+  const stale = await pickCandidatesNeedingOwnership(admin, 20);
+  for (let i = 0; i < stale.length; i += CONCURRENCY) {
+    results.push(...(await Promise.all(stale.slice(i, i + CONCURRENCY).map((id) => extractCvFactsForCandidate(id, admin, { force: true })))));
   }
   return NextResponse.json({
     ok: true,

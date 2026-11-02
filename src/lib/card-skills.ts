@@ -5,6 +5,7 @@
 export type Skill = { text: string; match: boolean };
 
 type Facts = {
+  roles?: { ownership?: { level?: string | null; has_number?: boolean } | null }[] | null;
   sales?: { primary_motion?: string | null; customer_type?: string | null; segments?: string[]; owned_full_cycle?: string | null; hunter_or_farmer?: string | null; leads_team?: boolean | null; largest_team_size?: number | null } | null;
   industries?: string[] | null;
   tools?: string[] | null;
@@ -33,6 +34,10 @@ export function skillsFromFacts(facts: Facts | null | undefined, profile: { prof
   add(profile.sub_domain);
   add(s?.primary_motion);
   add(s?.hunter_or_farmer && HUNTER[s.hunter_or_farmer]);
+  // What they owned in their last two jobs, when the CV has been read for it.
+  const recent = (facts?.roles ?? []).slice(0, 2).map((r) => r.ownership).filter(Boolean);
+  if (recent.some((o) => o?.level === "owner")) add(recent.some((o) => o?.level === "owner" && o.has_number) ? "Owns a revenue number" : "Owns revenue");
+  else if (recent.length > 0 && recent.every((o) => o?.level === "enabler")) add("Lead generation / support");
   if (s?.owned_full_cycle === "yes") add("Full-cycle sales");
   if (s?.leads_team) add(s.largest_team_size ? `Leads a team of ${s.largest_team_size}` : "Leads a team");
   for (const x of (s?.segments ?? []).slice(0, 2)) add(x);
