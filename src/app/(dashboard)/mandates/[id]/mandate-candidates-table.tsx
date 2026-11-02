@@ -149,6 +149,8 @@ export type MandateCandidateRow = {
   pass_patterns: string[];
   // The last two jobs, newest first, shown beside the stage so screening needs no extra clicks.
   last_roles: { title: string; company: string | null; period: string }[];
+  // Degrees from the CV, newest first as the CV lists them (empty until the CV has been read).
+  education: { degree: string | null; institution: string | null; year: string | null }[];
   candidate: {
     id: string;
     full_name: string;

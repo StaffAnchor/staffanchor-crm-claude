@@ -118,11 +118,15 @@ export default async function MandateDetailPage({
   const { data: links } = await q.links;
   // Last two jobs per person, from the structured CV facts, so a recruiter can screen without opening profiles.
   const rolesByCandidate = new Map<string, unknown>();
+  const educationByCandidate = new Map<string, { degree: string | null; institution: string | null; year: string | null }[]>();
   {
     const ids = (links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter((x): x is string => !!x);
     if (ids.length > 0) {
-      const { data: factRows } = await supabase.from("candidate_cv_facts").select("candidate_id, roles:facts->roles").in("candidate_id", ids);
-      for (const f of (factRows ?? []) as unknown as { candidate_id: string; roles: unknown }[]) rolesByCandidate.set(f.candidate_id, f.roles);
+      const { data: factRows } = await supabase.from("candidate_cv_facts").select("candidate_id, roles:facts->roles, education:facts->education").in("candidate_id", ids);
+      for (const f of (factRows ?? []) as unknown as { candidate_id: string; roles: unknown; education: unknown }[]) {
+        rolesByCandidate.set(f.candidate_id, f.roles);
+        if (Array.isArray(f.education)) educationByCandidate.set(f.candidate_id, f.education as { degree: string | null; institution: string | null; year: string | null }[]);
+      }
     }
   }
 
@@ -535,6 +539,7 @@ export default async function MandateDetailPage({
                 client_pass_reason: (l.client_pass_reason as string | null) ?? null,
                 client_pass_note: (l.client_pass_note as string | null) ?? null,
                 client_note: (l.client_note as string | null) ?? null,
+                education: educationByCandidate.get(cand.id) ?? [],
                 last_roles: lastTwoRoles(rolesByCandidate.get(cand.id), cand.career_timeline_profile, cand.career_timeline_resume),
                 pass_patterns: l.in_shortlist ? [] : (profById.get(cand.id) ? passPatternsFor(profById.get(cand.id)!, passRefs) : []).map((p) => `${p.label} (${p.count} earlier pass${p.count === 1 ? "" : "es"}): ${p.detail}`),
                 candidate: cand,

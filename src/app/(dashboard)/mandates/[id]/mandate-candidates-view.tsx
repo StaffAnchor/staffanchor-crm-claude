@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { LayoutGrid, Sparkles, Table2 } from "lucide-react";
+import { LayoutGrid, Rows3, Sparkles, Table2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesBoard from "./mandate-candidates-board";
+import MandateCandidatesCards from "./mandate-candidates-cards";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
 import { STAGES } from "@/lib/mandate-stage";
@@ -46,7 +47,7 @@ export default function MandateCandidatesView({
   // reverting to the static "Flag for call" label.
   flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
-  const [view, setView] = useState<"board" | "table">("table");
+  const [view, setView] = useState<"board" | "table" | "cards">("table");
 
   // "all" plus every pipeline stage -- lets a recruiter narrow either view
   // down to, say, just "client_interview" instead of scrolling/scanning the
@@ -225,6 +226,14 @@ export default function MandateCandidatesView({
           >
             <Table2 className="w-3 h-3" /> Table
           </button>
+          <button
+            onClick={() => setView("cards")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-ros-md text-xs font-medium transition-all duration-200 ease-ros ${
+              view === "cards" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
+            }`}
+          >
+            <Rows3 className="w-3 h-3" /> Cards
+          </button>
         </div>
         </div>
       </div>
@@ -242,6 +251,14 @@ export default function MandateCandidatesView({
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
           flaggedCallByCandidate={flaggedCallByCandidate}
+        />
+      ) : view === "cards" ? (
+        <MandateCandidatesCards
+          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}`}
+          rows={filteredRows}
+          mandateContext={mandateContext}
+          applicationAnswersByCandidate={applicationAnswersByCandidate}
+          resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
         />
       ) : (
         <MandateCandidatesTable
