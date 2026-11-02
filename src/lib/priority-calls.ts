@@ -3,7 +3,7 @@ import type { CallPerson } from "@/app/(dashboard)/candidates/calls/calls-desk";
 import { loadUrgentRoleMatches } from "@/lib/urgent-role-calls";
 
 // The calls that come before everything else: people who paid for a recruiter call (soonest deadline first), people who
-// said yes to a role, call-backs that are due, and people matching a role marked urgent who still lack details.
+// said yes to a role, call-backs that are due, and people matching a role marked urgent who still lack current pay or a CV.
 export type PriorityCalls = {
   people: CallPerson[];
   counts: { paid: number; callbacks: number; interested: number; urgent: number };
@@ -41,7 +41,7 @@ export async function loadPriorityCalls(supabase: SupabaseClient, memoKey?: stri
       if (!cur || (m.bucket === "perfect" && cur.bucket !== "perfect") || (m.bucket === cur.bucket && m.order < cur.order)) bestFor.set(m.candidateId, m);
     }
     const { data: urgentRows } = await supabase.rpc("calls_for_candidates", { p_ids: Array.from(bestFor.keys()) });
-    const lacks = (p: CallPerson) => !p.current_fixed_ctc || !p.notice_period || !p.expected_fixed_ctc || !p.current_location;
+    const lacks = (p: CallPerson) => !p.current_fixed_ctc || !p.resume_file_url;
     urgentPeople = ((urgentRows ?? []) as CallPerson[])
       .filter(lacks)
       .map((p) => {

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
-import CallsDesk, { type CallPerson } from "../calls/calls-desk";
+import CallsDesk, { type CallHistoryRow, type CallPerson } from "../calls/calls-desk";
 import { GAP_LABEL, STRENGTH, isGate, isVital } from "@/lib/completion";
 import { loadPriorityCalls } from "@/lib/priority-calls";
 import TargetControl, { type Target } from "./target-control";
@@ -131,7 +131,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const metro = sp.metro ? sp.metro.slice(0, 40) : null;
   const pool = sp.pool === "1";
   const scoped = !!(cluster || pool);
-  const mode = sp.mode === "assess" || sp.mode === "complete" || sp.mode === "confirm" || sp.mode === "vitals" ? sp.mode : "gate";
+  // Until current pay and a CV are in for everyone, those two are the only reason to call; the call form still collects the rest.
+  const mode = "gate";
 
   const priorityView = sub === "priority";
   const working = sub !== null;
@@ -168,7 +169,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     supabase.rpc("completion_cities", { p_group: group, p_by: by, p_bucket: bucketKey }),
     !sub || priorityView ? loadPriorityCalls(supabase, "staff") : Promise.resolve(null),
     working ? supabase.rpc("completion_queue", queueArgs) : Promise.resolve({ data: null, error: null }),
-    working ? supabase.from("call_log").select("caller_id, outcome").gte("created_at", istDayStartIso()).limit(2000) : Promise.resolve({ data: [] }),
+    working ? supabase.rpc("call_history_today", { p_since: istDayStartIso() }) : Promise.resolve({ data: [] }),
   ]);
   const user = authData?.user;
   if (!user) redirect("/login");
@@ -262,11 +263,12 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   }
 
   // Calls made today, for the strip above the call list.
-  const todaysCalls = (callsRes as { data: { caller_id: string | null; outcome: string }[] | null }).data ?? [];
+  const history = ((callsRes as { data: CallHistoryRow[] | null }).data ?? []) as CallHistoryRow[];
+  const todaysCalls = history;
   const mine = todaysCalls.filter((l) => l.caller_id === user.id).length;
   const teamCalls = todaysCalls;
 
-  const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]) : [];
+  const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).filter(([k]) => isGate(k)).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]) : [];
   const focusTarget = focusRow ? targets.get(`${group}|${focusRow.bucket}`) ?? null : null;
 
   return (
@@ -338,6 +340,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             {priority.counts.interested > 0 && ` · ${priority.counts.interested} said yes to a role`}
             {priority.counts.callbacks > 0 && ` · ${priority.counts.callbacks} call-backs due`}
             {priority.counts.urgent > 0 && ` · ${priority.counts.urgent} for an urgent role`}
+            <span className="text-teal-800/80 dark:text-teal-200/80"> · then everyone missing current pay or CV</span>
           </span>
           <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Start today&apos;s calls <ArrowRight className="h-4 w-4" /></span>
         </Link>
@@ -364,7 +367,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             ) : (
               <ul className="space-y-2.5">
                 {groupRows.map((r) => {
-                  const top = Object.entries(r.gaps).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]).slice(0, 5);
+                  const top = Object.entries(r.gaps).filter(([k]) => isGate(k)).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]).slice(0, 5);
                   const target = targets.get(`${group}|${r.bucket}`) ?? null;
                   return (
                     <li key={r.bucket} className={`${card} p-4`}>
@@ -413,22 +416,17 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
 
           <aside className="space-y-4">
             <section className={`${card} p-4`}>
-              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Where the gaps are in {GROUP_LABEL[group]}</h3>
-              {([{ title: "Vitals", test: true }, { title: "Other details", test: false }] as const).map((part) => (
-                <div key={part.title} className="mt-2">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{part.title}</p>
-                  <ul className="mt-1 space-y-1.5">
-                    {Object.entries(groupGaps).filter(([k]) => isVital(k) === part.test).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || b[1] - a[1]).map(([k, v]) => (
-                      <li key={k}>
-                        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "*", gap: k, mode: part.test ? "vitals" : "complete" })} className="flex items-center justify-between gap-2 text-[12.5px] hover:underline">
-                          <span className="text-slate-600 dark:text-slate-300">Missing {GAP_LABEL[k] ?? k}</span>
-                          <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{n0(v)}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Who to call in {GROUP_LABEL[group]}</h3>
+              <ul className="mt-2 space-y-1.5">
+                {Object.entries(groupGaps).filter(([k]) => isGate(k)).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+                  <li key={k}>
+                    <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "*", gap: k })} className="flex items-center justify-between gap-2 text-[12.5px] hover:underline">
+                      <span className="text-slate-600 dark:text-slate-300">Missing {GAP_LABEL[k] ?? k}</span>
+                      <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{n0(v)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </section>
             <section className={`${card} p-4`}>
               <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Incomplete profiles by city</h3>
@@ -463,20 +461,15 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 <div>
                   <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">Today&apos;s calls</h2>
                   <p className="mt-0.5 max-w-3xl text-[13px] text-slate-500">
-                    Priority first: {priority.counts.paid} paid ₹199 {priority.counts.paid === 1 ? "call" : "calls"} (soonest deadline first), {priority.counts.interested} who said yes to a role, {priority.counts.callbacks} call-backs due and {priority.counts.urgent} matching an urgent role. Then everyone missing current pay or a CV, B2B first, then B2C, then the rest.
+                    <b>{priority.people.length} priority</b> first{priority.counts.paid > 0 && ` · ${priority.counts.paid} paid ₹199 (soonest deadline first)`}{priority.counts.interested > 0 && ` · ${priority.counts.interested} said yes to a role`}{priority.counts.callbacks > 0 && ` · ${priority.counts.callbacks} call-backs due`}{priority.counts.urgent > 0 && ` · ${priority.counts.urgent} for an urgent role and missing pay or CV`}. Then the next {Math.max(0, people.length - priority.people.length)} people missing current pay or a CV, B2B first.
                     {priority.urgentRoles.length > 0 && ` Urgent: ${priority.urgentRoles.map((r) => r.title).join(", ")}.`}
+                    {" "}The <b>Today</b> tab on the left lists everyone called since morning, and the search box finds anyone who rings back.
                   </p>
                 </div>
                 <div className="text-right text-[12.5px] text-slate-500">
                   <p><span className="text-[22px] font-semibold tabular-nums text-slate-900 dark:text-slate-100">{mine}</span> calls by you today</p>
                   <p>Team today: {teamCalls.length} calls, {teamCalls.filter((l) => l.outcome === "reached").length} reached</p>
                 </div>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
-                <span className="font-medium text-slate-500">After the priority people:</span>
-                {([{ k: "gate", l: "Current pay + CV" }, { k: "vitals", l: "Missing vitals" }, { k: "complete", l: "Missing anything" }, { k: "confirm", l: "Confirm looking" }, { k: "assess", l: "Judge on a call" }] as const).map((m) => (
-                  <Link key={m.k} href={url({ sub: "priority", mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{m.l}</Link>
-                ))}
               </div>
             </div>
           )}
@@ -489,12 +482,6 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
               <p className="mt-0.5 max-w-3xl text-[13px] text-slate-500">
                 {pool ? "Everyone in the talent pool, so the list you call first for any role stays complete and current." : "Everyone we hold for this kind of role in this city."} {people.length} can be called now.
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
-                <span className="font-medium text-slate-500">Call list:</span>
-                {([{ k: "gate", l: "Current pay + CV" }, { k: "vitals", l: "Fill vitals" }, { k: "complete", l: "Other details" }, { k: "confirm", l: "Confirm looking" }, { k: "assess", l: "Judge on a call" }] as const).map((m) => (
-                  <Link key={m.k} href={url({ mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{m.l}</Link>
-                ))}
-              </div>
             </div>
           )}
           {focusRow && !scoped && (
@@ -516,15 +503,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 {bucketKey && focusRow.gate_incomplete > 0 && <TargetControl group={group} by={by} bucket={bucketKey} incomplete={focusRow.gate_incomplete} target={focusTarget} />}
               </div>
               <div className="mt-3 max-w-xl"><StrengthBar s={focusRow.strengths} total={focusRow.total} /></div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
-                <span className="font-medium text-slate-500">Call list:</span>
-                {([{ k: "gate", l: "Current pay + CV", n: focusRow.gate_incomplete }, { k: "vitals", l: "Fill vitals", n: focusRow.vitals_incomplete }, { k: "complete", l: "Other details", n: focusRow.incomplete }, { k: "confirm", l: "Confirm looking", n: focusRow.total - focusRow.looking_known }, { k: "assess", l: "Judge on a call", n: focusRow.total - focusRow.assessed }] as const).map((m) => (
-                  <Link key={m.k} href={url({ mode: m.k })} className={`rounded-full border px-3 py-0.5 font-medium ${mode === m.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
-                    {m.l} · {n0(m.n)}
-                  </Link>
-                ))}
-                <span className="text-slate-400">{{ gate: "Current pay or CV missing: nothing else can be done with these profiles until they are on file. Fewest other gaps first.", vitals: "Missing vitals first (pay, city, level, relocation, domain, CV), fewest gaps first.", complete: "Everyone still missing anything, vitals gaps first.", confirm: "Not known whether they are looking for a change. Strongest first.", assess: "Nobody has rated their communication yet. Rate it on the call; strength follows." }[mode]}</span>
-              </div>
+              <p className="mt-3 text-[12px] text-slate-500">Call list: people whose <b>current pay</b> or <b>CV</b> is missing, fewest other gaps first. The call form still lets you fill in everything else.</p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
                 <span className="font-medium text-slate-500">Strength:</span>
                 <Link href={url({ strength: null })} className={`rounded-full border px-2.5 py-0.5 font-medium ${!strength ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>Any</Link>
@@ -561,10 +540,10 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           ) : (
             <>
               <p className="mb-3 text-[12.5px] text-slate-500">
-                The {people.length} people who can be called now{mode === "assess" || mode === "confirm" ? ", strongest on paper first" : ", current pay and CV first, then vitals, fewest gaps first so profiles actually reach complete"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
+                {people.length} people to call, B2B first. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
-              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${mode}|${cluster}|${metro}|${pool}`} people={people} />
+              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}`} people={people} history={history} meId={user.id} />
             </>
           )}
         </div>
