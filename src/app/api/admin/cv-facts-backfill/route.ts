@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { extractCvFactsForCandidate, getServiceClient, pickCandidatesForCvFacts, pickCandidatesNeedingOwnership } from "@/lib/cv-facts";
+import { extractCvFactsForCandidate, getServiceClient, pickCandidatesForCvFacts } from "@/lib/cv-facts";
 
 // Admin "Read recent CVs now": reads the CVs of the newest candidates that
 // have not been read yet (or, with force and ids, re-reads specific ones).
@@ -33,11 +33,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const limit = Math.min(MAX_BATCH, Math.max(1, Number(body.limit) || DEFAULT_BATCH));
-  // "ownership": re-read sales CVs that were read before each job carried an ownership level (forced, since the CV itself has not changed).
-  const ownership = body.ownership === true;
-  const force = body.force === true || ownership;
-  const group = body.group === "b2b_sales" || body.group === "b2c_sales" ? (body.group as "b2b_sales" | "b2c_sales") : null;
-  const ids: string[] = Array.isArray(body.candidateIds) && body.candidateIds.length > 0 ? body.candidateIds.slice(0, MAX_BATCH) : ownership ? await pickCandidatesNeedingOwnership(admin, limit, group) : await pickCandidatesForCvFacts(admin, limit);
+  const force = body.force === true;
+  const ids: string[] = Array.isArray(body.candidateIds) && body.candidateIds.length > 0 ? body.candidateIds.slice(0, MAX_BATCH) : await pickCandidatesForCvFacts(admin, limit);
 
   const results = [];
   for (let i = 0; i < ids.length; i += CONCURRENCY) {

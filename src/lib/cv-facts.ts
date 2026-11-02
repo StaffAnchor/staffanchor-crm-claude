@@ -202,12 +202,6 @@ Strict rules:
 - Dates: use "YYYY-MM" (or "YYYY" if only the year is given). A role still held has "end": null and "is_current": true.
 - experience_years_from_dates: total years of work computed from the dated roles, rounded to one decimal; null if dates are too incomplete.
 - For each role: "sells" is what the product or service actually is. "industry" is the company's industry, taken from the company and what it sells, not from the candidate's headline. "customer_type" is b2b, b2c, b2b2c or mixed. "segments" is any of "smb", "mid-market", "enterprise", "consumer" that the CV supports. "motion" is one short phrase such as "inside sales", "field sales", "enterprise AE", "SDR/BDR", "channel/partner", "key account management", "business development", "team leadership". "buyers" are the titles sold to. "deal_size", "quota_or_target" and "achievement" are copied as stated, with units. "team_size" is the number of people managed, if stated. "evidence" is a short quote (under 20 words) from the CV supporting this role's entry.
-- For each role, "ownership" says how much of the selling this person owned in that job. Be strict and use only the CV's own words:
-  - "owner": the CV shows THIS PERSON was personally accountable for a revenue, quota or target number (for example "achieved 120% of a Rs 4 Cr annual target", "owned a Rs 10 Cr territory", "responsible for revenue of..."). Accountability for closing business, with a number or an explicit statement of ownership.
-  - "contributor": they sold or closed deals, but no target, quota or revenue figure of their own is stated, or they were one of several people on a shared number.
-  - "enabler": the work stops before closing, or only supports revenue: lead generation, prospecting, appointment setting, SDR/BDR, qualification only, pre-sales, sales operations, coordination, account servicing or support to a sales team. "Responsible for lead generation" alone is enabler. Words such as "supported", "assisted", "helped" or "part of the team that" do not make someone an owner.
-  - "unclear": the CV does not say enough.
-  "scope" is what they were accountable for: "revenue", "pipeline", "accounts", "team" or "other"; null if unclear. "has_number" is true only if a target, quota, attainment percentage, revenue figure or deal value is stated for that job. "stages" lists the stages of the sale the CV shows this person doing themselves, from "source", "qualify", "pitch", "negotiate", "close", "renew", "expand"; an empty list if none are shown. "quote" is under 25 words copied from the CV that show why you chose the level; null if "unclear".
 - sales.owned_full_cycle: "yes" only if the CV shows prospecting through closing by the person; "no" if clearly only part of the cycle (for example only lead generation or only account servicing); otherwise "unclear". hunter_or_farmer likewise: "unclear" unless the CV shows it.
 - flags (0 to 5, each with kind and a one-sentence detail, only real issues): "gap" (an unexplained gap of 6 months or more), "short_stints" (several roles under 12 months), "claim_not_backed" (for example the headline or skills claim a domain, such as B2B SaaS, that the job history does not show), "inconsistent" (dates or titles that do not add up), "not_a_resume" (the document is not a CV at all, for example an offer letter, ID, certificate, job description or brochure; then return no roles), "other". Empty if nothing stands out. Do not flag seniority or notice period as risks.
 - headline_claim: the one-line positioning the CV gives itself, if any.
@@ -224,7 +218,7 @@ Return ONLY a JSON object with exactly these keys:
 {
   "headline_claim": string|null,
   "experience_years_from_dates": number|null,
-  "roles": [{"company","title","start","end","is_current","industry","sells","customer_type","segments":[],"motion","buyers":[],"deal_size","quota_or_target","achievement","team_size","evidence","ownership":{"level","scope","has_number","stages":[],"quote"}}],
+  "roles": [{"company","title","start","end","is_current","industry","sells","customer_type","segments":[],"motion","buyers":[],"deal_size","quota_or_target","achievement","team_size","evidence"}],
   "sales": {"primary_motion","customer_type","segments":[],"typical_deal_size","sales_cycle","owned_full_cycle","hunter_or_farmer","leads_team","largest_team_size","best_achievement"},
   "industries": [], "tools": [], "geographies": [], "languages": [],
   "education": [{"degree","institution","year"}],
@@ -381,12 +375,6 @@ export async function pickCandidatesForCvFacts(admin: SupabaseClient, limit: num
     if (ids.length < PAGE) break;
   }
   return picked;
-}
-
-// Sales profiles whose CV was read before jobs carried an ownership read: they are read again (force) so every job gets one.
-export async function pickCandidatesNeedingOwnership(admin: SupabaseClient, limit: number, group: "b2b_sales" | "b2c_sales" | null = null): Promise<string[]> {
-  const { data } = await admin.rpc("cv_facts_needing_ownership", { p_limit: limit, p_group: group });
-  return ((data ?? []) as { candidate_id: string }[]).map((r) => r.candidate_id);
 }
 
 // Service-role client for writing facts (staff sessions can only read them).
