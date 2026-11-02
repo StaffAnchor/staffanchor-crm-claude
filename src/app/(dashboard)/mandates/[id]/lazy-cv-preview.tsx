@@ -7,7 +7,7 @@ import CvActionsBar from "@/components/cv-actions-bar";
 
 // A CV preview for long lists: the link to the file is only fetched when the button is clicked (it is short-lived), so
 // a list of 100+ people does not sign 100+ files up front. Opens the same viewer as the candidate page.
-export default function LazyCvPreview({ candidateId, name }: { candidateId: string; name: string | null }) {
+export default function LazyCvPreview({ candidateId, name, variant = "compact" }: { candidateId: string; name: string | null; variant?: "compact" | "card" }) {
   const [state, setState] = useState<"idle" | "loading" | "open">("idle");
   const [file, setFile] = useState<{ url: string; fileName: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +34,9 @@ export default function LazyCvPreview({ candidateId, name }: { candidateId: stri
         type="button"
         onClick={open}
         disabled={state === "loading"}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/30 dark:text-teal-300"
+        className={variant === "card" ? "inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-teal-600 bg-white text-[13px] font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-60 dark:bg-transparent dark:text-teal-300" : "inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/30 dark:text-teal-300"}
       >
-        {state === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />} Preview CV
+        {state === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} {variant === "card" ? "Preview" : "Preview CV"}
       </button>
       {error && <p className="text-[11px] text-amber-700 dark:text-amber-400">{error}</p>}
       {state === "open" && file && (

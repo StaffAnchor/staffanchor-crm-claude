@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import DismissReasons from "@/components/dismiss-reasons";
-import CandidateFactsStrip from "@/components/candidate-facts-strip";
+import CandidateCardLayout, { CvButtons } from "@/components/candidate-card-layout";
 import Link from "next/link";
-import ResumePreview from "../../candidates/[id]/resume-preview";
 import WhatsAppMenu from "@/components/whatsapp-menu";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import { candidateTemplates } from "@/lib/whatsapp-link";
@@ -150,67 +149,69 @@ function Card({
   }
 
   return (
-    <li className={`rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 ${m.stale ? "opacity-70" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            {onSelect && m.status !== "added" && (
-              <input type="checkbox" checked={selected} onChange={(e) => onSelect(e.target.checked)} aria-label={`Select ${m.name}`} className="h-4 w-4" />
-            )}
-            <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidateId}`} className="text-[14px] font-semibold text-teal-700 dark:text-teal-400 hover:underline">
-              {m.name}
-            </Link>
-            <ProfileRatingBadge row={rating} />
-            {m.pool && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[m.pool]}`}>Pool: {POOL_TIER_LABEL[m.pool]}</span>}
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.cls}`}>{f.label}</span>
-            <span className="text-[12px] text-slate-500 dark:text-slate-400 tabular-nums">{m.score}/100</span>
-            {m.stale && <span className="text-xs text-slate-500 dark:text-slate-400">Requirements changed, re-check</span>}
-          </div>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">
-            {[m.headline, m.years != null ? `${m.years} yrs` : null, m.location].filter(Boolean).join(" · ")}
-          </p>
-          <p className={`text-[12px] ${m.currentCtc == null && m.expectedCtc == null ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-            {m.currentCtc == null && m.expectedCtc == null
-              ? "No CTC available"
-              : [m.currentCtc != null ? `Current ${fmtCtc(m.currentCtc)}` : "Current: not given", m.expectedCtc != null ? `Expected ${fmtCtc(m.expectedCtc)}` : "Expected: not given"].join(" · ")}
-          </p>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">
-            <span className={m.notice ? "" : "text-amber-700 dark:text-amber-300"}>{m.notice ? `Notice ${m.notice}` : "Notice: not given"}</span>
-            {m.readiness != null && <span title="How complete this profile is"> · Profile {m.readiness}/100</span>}
-          </p>
+    <CandidateCardLayout
+      candidateId={m.candidateId}
+      name={m.name}
+      headline={m.headline || "No role on file"}
+      tone={m.fit === "strong" ? "good" : m.fit === "possible" ? "mid" : "none"}
+      dim={m.stale}
+      selected={selected}
+      onSelect={onSelect && m.status !== "added" ? onSelect : undefined}
+      roleText={roleTitle}
+      badges={
+        <>
+          <ProfileRatingBadge row={rating} />
+          {m.pool && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[m.pool]}`}>Pool: {POOL_TIER_LABEL[m.pool]}</span>}
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.cls}`}>{f.label}</span>
+          <span className="text-[12px] text-slate-500 dark:text-slate-400 tabular-nums">{m.score}/100</span>
+          {m.stale && <span className="text-xs text-slate-500 dark:text-slate-400">Requirements changed, re-check</span>}
+        </>
+      }
+      facts={[
+        { label: "Experience", value: m.years != null ? `${m.years} yrs` : null },
+        { label: "Location", value: m.location },
+        { label: "Notice period", value: m.notice },
+        { label: "Current CTC", value: m.currentCtc != null ? fmtCtc(m.currentCtc) : null },
+        { label: "Expected CTC", value: m.expectedCtc != null ? fmtCtc(m.expectedCtc) : null },
+      ]}
+      leftExtra={
+        <>
+          {m.readiness != null && <span className="text-slate-500" title="How complete this profile is">Profile {m.readiness}/100</span>}
           {m.elsewhere.total > 0 && (
-            <p className="text-[12px] text-teal-700 dark:text-teal-300">
+            <span className="text-teal-700 dark:text-teal-300">
               Also in {m.elsewhere.total} other {m.elsewhere.total === 1 ? "pipeline" : "pipelines"}
               {m.elsewhere.rejected > 0 ? ` (rejected in ${m.elsewhere.rejected})` : ""}
-            </p>
+            </span>
           )}
-        </div>
-        {m.status === "added" ? (
-          <span className="shrink-0 text-[12px] font-medium text-emerald-700 dark:text-emerald-300">In pipeline</span>
+        </>
+      }
+      actions={
+        m.status === "added" ? (
+          <span className="inline-flex h-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-[13px] font-semibold text-emerald-700">In pipeline</span>
         ) : (
-          <div className="shrink-0 flex items-center gap-2">
-            {m.resumeUrl && <ResumePreview signedUrl={m.resumeUrl} fileName={(m.resumeName ?? `${m.name}-resume`).replace(/^resumes\//, "")} label="CV" candidateId={m.candidateId} />}
-            <WhatsAppMenu
-              phone={m.phone}
-              templates={candidateTemplates(m.name, { me, candidateId: m.candidateId, missing: m.missing, role: roleTitle }).filter((t) => t.key !== "intro")}
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12.5px] text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-300 dark:ring-emerald-800"
-            />
-            <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-              Not a fit
-            </button>
+          <>
             <button
               onClick={() => decide("add")}
               disabled={busy !== null}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white text-[12.5px] font-medium px-3 py-1.5 hover:bg-slate-800 disabled:opacity-60"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-teal-600 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
             >
               {busy === "add" && <Loader2 className="w-3 h-3 animate-spin" />} Add to pipeline
             </button>
-          </div>
-        )}
-      </div>
-
-      <CandidateFactsStrip candidateId={m.candidateId} roleText={roleTitle} className="mt-2.5" />
-
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="h-9 rounded-lg border border-slate-300 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
+                Not a fit
+              </button>
+              <WhatsAppMenu
+                phone={m.phone}
+                templates={candidateTemplates(m.name, { me, candidateId: m.candidateId, missing: m.missing, role: roleTitle }).filter((t) => t.key !== "intro")}
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-lg text-[13px] text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-300 dark:ring-emerald-800"
+              />
+            </div>
+            <CvButtons candidateId={m.candidateId} name={m.name} />
+          </>
+        )
+      }
+    >
       {m.summary && <p className="mt-2 text-[13px] text-slate-700 dark:text-slate-300">{m.summary}</p>}
 
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -301,7 +302,7 @@ function Card({
           )}
         </div>
       )}
-    </li>
+    </CandidateCardLayout>
   );
 }
 

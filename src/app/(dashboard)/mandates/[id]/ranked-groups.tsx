@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, MessageCircle, UserPlus } from "lucide-react";
-import LazyCvPreview from "./lazy-cv-preview";
-import CandidateFactsStrip from "@/components/candidate-facts-strip";
+import CandidateCardLayout, { CvButtons } from "@/components/candidate-card-layout";
 import NotAFitMenu from "./not-a-fit-menu";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import WriteWhatsAppButton from "./write-whatsapp-button";
@@ -182,62 +180,68 @@ export default function RankedGroups({ mandateId, roleTitle = null, ranked: allR
         {list.slice(0, shown).map((r) => {
           const c = r.row;
           return (
-            <li key={c.candidate_id} className="rounded-ros-xl border border-slate-200 bg-white p-3.5 dark:border-slate-700 dark:bg-slate-900">
-              <div className="flex gap-3">
-                <input type="checkbox" checked={picked.has(c.candidate_id)} onChange={() => toggle(c.candidate_id)} aria-label={`Select ${c.full_name ?? "candidate"}`} className="mt-1.5 h-4 w-4 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.candidate_id}`} className="text-[14px] font-semibold text-teal-700 hover:underline dark:text-teal-400">
-                      {c.full_name ?? "Unnamed"}
-                    </Link>
-                    {c.pool_tier && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[c.pool_tier as PoolTier]}`}>Pool: {POOL_TIER_LABEL[c.pool_tier as PoolTier]}</span>}
-                    <span className="text-[12px] tabular-nums text-slate-400">{r.score}</span>
-                    {c.sub_group && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{c.sub_group}</span>}
-                    {c.readiness_tier && c.readiness_tier !== "ready" && (c.readiness_missing?.length ?? 0) > 0 && (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300" title="Not yet confirmed. Worth checking on the call.">
-                        To confirm: {missingText(c.readiness_missing)}
-                      </span>
-                    )}
-                    {reached[c.candidate_id] && (
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${REACHED_STYLE[reached[c.candidate_id].status] ?? REACHED_STYLE.sent}`}>
-                        {REACHED_LABEL[reached[c.candidate_id].status] ?? "Messaged"}
-                      </span>
-                    )}
+            <CandidateCardLayout
+              key={c.candidate_id}
+              candidateId={c.candidate_id}
+              name={c.full_name ?? "Unnamed"}
+              headline={[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || "No role on file"}
+              tone={r.bucket === "perfect" ? "good" : r.bucket === "close" ? "mid" : "none"}
+              selected={picked.has(c.candidate_id)}
+              onSelect={() => toggle(c.candidate_id)}
+              roleText={roleTitle}
+              badges={
+                <>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-700 dark:bg-slate-800 dark:text-slate-200" title="How well they match this role">Match {r.score}</span>
+                  {c.pool_tier && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[c.pool_tier as PoolTier]}`}>Pool: {POOL_TIER_LABEL[c.pool_tier as PoolTier]}</span>}
+                  {c.sub_group && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{c.sub_group}</span>}
+                  {c.readiness_tier && c.readiness_tier !== "ready" && (c.readiness_missing?.length ?? 0) > 0 && (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300" title="Not yet confirmed. Worth checking on the call.">
+                      To confirm: {missingText(c.readiness_missing)}
+                    </span>
+                  )}
+                  {reached[c.candidate_id] && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${REACHED_STYLE[reached[c.candidate_id].status] ?? REACHED_STYLE.sent}`}>
+                      {REACHED_LABEL[reached[c.candidate_id].status] ?? "Messaged"}
+                    </span>
+                  )}
+                </>
+              }
+              facts={[
+                { label: "Experience", value: c.total_experience_years != null ? `${Number(c.total_experience_years)} yrs` : null },
+                { label: "Location", value: r.metro ?? null },
+                { label: "Notice period", value: c.notice_period ?? null },
+                { label: "Current CTC", value: c.current_fixed_ctc != null ? `${Number(c.current_fixed_ctc)} LPA` : null },
+                { label: "Expected CTC", value: c.expected_fixed_ctc != null ? `${Number(c.expected_fixed_ctc)} LPA` : null },
+              ]}
+              actions={
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NotAFitMenu onPick={(reason) => dismiss(c.candidate_id, reason)} />
+                    <WriteWhatsAppButton candidateId={c.candidate_id} name={c.full_name ?? "there"} role={roleTitle} />
                   </div>
-                  <p className="text-[12.5px] text-slate-500">
-                    {[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || "No role on file"}
-                    {r.metro ? ` · ${r.metro}` : ""}
-                    {c.total_experience_years != null ? ` · ${Number(c.total_experience_years)} yrs` : ""}
-                    {c.expected_fixed_ctc != null ? ` · expects ${Number(c.expected_fixed_ctc)} LPA` : c.current_fixed_ctc != null ? ` · ${Number(c.current_fixed_ctc)} LPA now` : ""}
-                    {c.notice_period ? ` · notice ${c.notice_period}` : ""}
-                  </p>
-                  <CandidateFactsStrip candidateId={c.candidate_id} roleText={roleTitle} className="mt-2" />
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    {(why.has(c.candidate_id) ? r.matched : r.matched.slice(0, 2)).map((m) => (
-                      <span key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800/60">
-                        <Check className="h-3 w-3" /> {m}
-                      </span>
-                    ))}
-                    {(why.has(c.candidate_id) ? r.gaps : r.gaps.slice(0, 1)).map((g) => (
-                      <span key={g} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
-                        ⚠ {g}
-                      </span>
-                    ))}
-                    {(r.matched.length > 2 || r.gaps.length > 1) && (
-                      <button type="button" onClick={() => setWhy((w) => (w.has(c.candidate_id) ? new Set([...w].filter((x) => x !== c.candidate_id)) : new Set(w).add(c.candidate_id)))} className="text-xs font-medium text-teal-600 hover:underline">
-                        {why.has(c.candidate_id) ? "Less" : `+${Math.max(0, r.matched.length - 2) + Math.max(0, r.gaps.length - 1)} more`}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="shrink-0 space-y-2">
-                  <NotAFitMenu onPick={(reason) => dismiss(c.candidate_id, reason)} />
-                  <LazyCvPreview candidateId={c.candidate_id} name={c.full_name} />
-                  <WriteWhatsAppButton candidateId={c.candidate_id} name={c.full_name ?? "there"} role={roleTitle} />
+                  <CvButtons candidateId={c.candidate_id} name={c.full_name} />
                   <PipelineTemplateActions candidateId={c.candidate_id} mandateId={mandateId} stage="sourced" missing={[]} showOpportunity />
-                </div>
+                </>
+              }
+            >
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {(why.has(c.candidate_id) ? r.matched : r.matched.slice(0, 2)).map((m) => (
+                  <span key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800/60">
+                    <Check className="h-3 w-3" /> {m}
+                  </span>
+                ))}
+                {(why.has(c.candidate_id) ? r.gaps : r.gaps.slice(0, 1)).map((g) => (
+                  <span key={g} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
+                    ⚠ {g}
+                  </span>
+                ))}
+                {(r.matched.length > 2 || r.gaps.length > 1) && (
+                  <button type="button" onClick={() => setWhy((w) => (w.has(c.candidate_id) ? new Set([...w].filter((x) => x !== c.candidate_id)) : new Set(w).add(c.candidate_id)))} className="text-xs font-medium text-teal-600 hover:underline">
+                    {why.has(c.candidate_id) ? "Less" : `+${Math.max(0, r.matched.length - 2) + Math.max(0, r.gaps.length - 1)} more`}
+                  </button>
+                )}
               </div>
-            </li>
+            </CandidateCardLayout>
           );
         })}
       </ul>

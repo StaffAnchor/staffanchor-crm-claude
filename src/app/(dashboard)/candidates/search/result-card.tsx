@@ -1,13 +1,10 @@
 "use client";
 
-import CandidateFactsStrip from "@/components/candidate-facts-strip";
+import CandidateCardLayout, { CvButtons } from "@/components/candidate-card-layout";
 import { useState } from "react";
-import Link from "next/link";
 import { Check, HelpCircle, Minus, Plus, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import ResumePreview from "../[id]/resume-preview";
 import AskMissingDetails from "../[id]/ask-missing-details";
 import type { Check as CheckRow } from "@/lib/search-spec";
 
@@ -44,15 +41,6 @@ const STATUS_STYLE: Record<CheckRow["status"], { cls: string; icon: React.ReactN
 
 const lakh = (v: number | null) => (v === null || v === undefined ? null : `${v} LPA`);
 
-function Fact({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="min-w-[88px]">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
-      {value ? <div className="text-[13px] font-medium text-slate-800 dark:text-slate-100">{value}</div> : <div className="text-[12px] text-amber-600">Not on file</div>}
-    </div>
-  );
-}
-
 export default function ResultCard({ m, mandates, mandateId }: { m: Match; mandates: MandateOption[]; mandateId: string | null }) {
   const [target, setTarget] = useState(mandateId ?? "");
   const [state, setState] = useState<"idle" | "adding" | "added" | "exists" | "error">("idle");
@@ -81,30 +69,57 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
   const target_ = mandates.find((x) => x.id === target);
 
   return (
-    <Card className="p-4 transition-colors duration-200 hover:border-teal-300 dark:hover:border-teal-700">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidate_id}`} className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{m.full_name}</p>
-            <Badge tone={tone}>{m.score}</Badge>
-          </div>
-          <p className="mt-0.5 truncate text-[12.5px] text-slate-500 dark:text-slate-400">{[m.current_job_title, m.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</p>
-        </Link>
-        {m.resume_signed_url && (
-          <ResumePreview signedUrl={m.resume_signed_url} fileName={(m.resume_file_url ?? `${m.full_name}-resume`).replace(/^resumes\//, "")} label="CV" candidateId={m.candidate_id} />
-        )}
-      </div>
-
-      <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-2">
-        <Fact label="City" value={m.current_location} />
-        <Fact label="Experience" value={m.total_experience_years !== null ? `${m.total_experience_years} yrs` : null} />
-        <Fact label="Current CTC" value={lakh(m.current_fixed_ctc)} />
-        <Fact label="Expected CTC" value={lakh(m.expected_fixed_ctc)} />
-        <Fact label="Notice" value={m.notice_period} />
-      </div>
-
-      <CandidateFactsStrip candidateId={m.candidate_id} className="mt-2.5" />
-
+    <CandidateCardLayout
+      as="div"
+      candidateId={m.candidate_id}
+      name={m.full_name}
+      headline={[m.current_job_title, m.current_employer].filter(Boolean).join(" at ") || "Role not on file"}
+      tone={m.score >= 75 ? "good" : m.score >= 50 ? "mid" : "none"}
+      badges={
+        <>
+          <Badge tone={tone}>Match {m.score}</Badge>
+          {m.sub_domain && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{m.sub_domain}</span>}
+        </>
+      }
+      facts={[
+        { label: "Experience", value: m.total_experience_years !== null ? `${m.total_experience_years} yrs` : null },
+        { label: "Location", value: m.current_location },
+        { label: "Notice period", value: m.notice_period },
+        { label: "Current CTC", value: lakh(m.current_fixed_ctc) },
+        { label: "Expected CTC", value: lakh(m.expected_fixed_ctc) },
+      ]}
+      actions={
+        <>
+          {mandates.length > 0 &&
+            (state === "added" ? (
+              <span className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 text-[13px] font-semibold text-emerald-700">
+                <Check className="h-3.5 w-3.5" /> Added to {target_?.role_title ?? "the mandate"}
+              </span>
+            ) : state === "exists" ? (
+              <span className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 text-[12.5px] font-medium text-slate-500">Already in the pipeline</span>
+            ) : (
+              <>
+                {!mandateId && (
+                  <select value={target} onChange={(e) => setTarget(e.target.value)} className="h-9 w-full rounded-lg border border-slate-300 bg-transparent px-2 text-[12.5px] dark:border-slate-700">
+                    <option value="">Add to a mandate…</option>
+                    {mandates.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.role_title}
+                        {x.city ? ` · ${x.city}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button onClick={add} disabled={!target || state === "adding"} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-teal-600 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
+                  <Plus className="h-3.5 w-3.5" /> {state === "adding" ? "Adding…" : mandateId ? `Add to ${target_?.role_title ?? "mandate"}` : "Add"}
+                </button>
+                {state === "error" && <span className="text-[12px] text-rose-600">Couldn&apos;t add. Try again.</span>}
+              </>
+            ))}
+          <CvButtons candidateId={m.candidate_id} name={m.full_name} />
+        </>
+      }
+    >
       {m.reason && <p className="mt-2.5 text-[12.5px] leading-snug text-slate-700 dark:text-slate-300">{m.reason}</p>}
 
       {m.checks.length > 0 && (
@@ -144,35 +159,6 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
 
       <AskMissingDetails candidateId={m.candidate_id} missing={m.missing.filter((l) => l !== "CV")} />
 
-      {mandates.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-          {state === "added" ? (
-            <span className="inline-flex items-center gap-1 text-[12px] font-medium text-emerald-700">
-              <Check className="h-3.5 w-3.5" /> Added to {target_?.role_title ?? "the mandate"}
-            </span>
-          ) : state === "exists" ? (
-            <span className="text-[12px] font-medium text-slate-500">Already in that mandate&apos;s pipeline</span>
-          ) : (
-            <>
-              {!mandateId && (
-                <select value={target} onChange={(e) => setTarget(e.target.value)} className="max-w-[240px] rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[12px] dark:border-slate-700">
-                  <option value="">Add to a mandate…</option>
-                  {mandates.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.role_title}
-                      {x.city ? ` · ${x.city}` : ""}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <button onClick={add} disabled={!target || state === "adding"} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
-                <Plus className="h-3 w-3" /> {state === "adding" ? "Adding…" : mandateId ? `Add to ${target_?.role_title ?? "mandate"}` : "Add"}
-              </button>
-              {state === "error" && <span className="text-[12px] text-rose-600">Couldn&apos;t add. Try again.</span>}
-            </>
-          )}
-        </div>
-      )}
-    </Card>
+    </CandidateCardLayout>
   );
 }
