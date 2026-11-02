@@ -13,10 +13,13 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (!me || !["admin", "recruiter", "partner", "freelancer"].includes(me.role)) return NextResponse.json({ error: "Not permitted" }, { status: 403 });
-  const q = (new URL(req.url).searchParams.get("q") ?? "").trim().slice(0, 60);
-  if (q.length < 3) return NextResponse.json({ people: [] });
+  const params = new URL(req.url).searchParams;
+  const q = (params.get("q") ?? "").trim().slice(0, 60);
+  const id = params.get("id") ?? "";
+  const byId = /^[0-9a-f-]{36}$/i.test(id);
+  if (!byId && q.length < 3) return NextResponse.json({ people: [] });
 
-  const { data } = await supabase.rpc("call_person_lookup", { p_q: q });
+  const { data } = await supabase.rpc("call_person_lookup", byId ? { p_id: id } : { p_q: q });
   const rows = (data ?? []) as { id: string }[];
   if (rows.length === 0) return NextResponse.json({ people: [] });
   const { data: extra } = await supabase.from("candidates").select("id, email, profile_group, sub_domain").in("id", rows.map((r) => r.id));

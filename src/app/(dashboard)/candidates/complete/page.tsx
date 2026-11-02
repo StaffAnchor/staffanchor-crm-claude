@@ -63,7 +63,7 @@ function Bar({ done, total, tone = "bg-teal-500" }: { done: number; total: numbe
   );
 }
 
-export default async function CompletionPage({ searchParams }: { searchParams: Promise<{ group?: string; by?: string; sub?: string; city?: string; gap?: string; strength?: string; mode?: string; cluster?: string; metro?: string; pool?: string }> }) {
+export default async function CompletionPage({ searchParams }: { searchParams: Promise<{ group?: string; by?: string; sub?: string; city?: string; gap?: string; strength?: string; mode?: string; cluster?: string; metro?: string; pool?: string; list?: string; open?: string }> }) {
   const sp = await searchParams;
   const group = GROUPS.some((g) => g.key === sp.group) ? (sp.group as string) : "b2b_sales";
   const by = sp.by === "sub_domain" ? "sub_domain" : "sub_group";
@@ -80,6 +80,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const mode = "gate";
 
   const priorityView = sub === "priority";
+  const openId = sp.open && /^[0-9a-f-]{36}$/i.test(sp.open) ? sp.open : null;
   const working = sub !== null;
   const bucketKey = sub && sub !== "*" && !priorityView ? sub : null;
 
@@ -138,7 +139,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const addStrengths = (rs: Row[]) => rs.reduce<Record<string, number>>((a, r) => { for (const [k, v] of Object.entries(r.strengths)) a[k] = (a[k] ?? 0) + v; return a; }, {});
   const groupStrengths = Object.fromEntries(GROUPS.map((g) => [g.key, addStrengths(rows.filter((r) => r.profile_group === g.key))])) as Record<string, Record<string, number>>;
 
-  const url = (o: Partial<{ group: string; by: string; sub: string | null; city: string | null; gap: string | null; strength: string | null; mode: string; cluster: string | null; metro: string | null; pool: boolean }>) => {
+  const url = (o: Partial<{ group: string; by: string; sub: string | null; city: string | null; gap: string | null; strength: string | null; mode: string; cluster: string | null; metro: string | null; pool: boolean; list: string }>) => {
     const q = new URLSearchParams();
     const g = o.group ?? group;
     q.set("group", g);
@@ -159,6 +160,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     const me = "metro" in o ? o.metro : metro;
     if (me) q.set("metro", me);
     if ("pool" in o ? o.pool : pool) q.set("pool", "1");
+    if (o.list) q.set("list", o.list);
     return `/candidates/complete?${q.toString()}`;
   };
 
@@ -191,6 +193,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     return { people, extra };
   };
 
+  const listKind: "priority" | "pay" = sp.list === "pay" ? "pay" : sp.list === "priority" ? "priority" : priority && priority.people.length > 0 ? "priority" : "pay";
+  const payTotal = grand.gate_incomplete;
   let people: CallPerson[] = [];
   let queueError: string | null = null;
   if (working) {
@@ -203,7 +207,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       const ex = rest.extra;
       const prio = priority.people.map((p) => ({ ...p, email: ex.get(p.id)?.email ?? null, profile_group: ex.get(p.id)?.profile_group ?? null, sub_domain: ex.get(p.id)?.sub_domain ?? null }));
       const seen = new Set(prio.map((p) => p.id));
-      people = [...prio, ...rest.people.filter((p) => !seen.has(p.id))];
+      // Two separate lists: the priority people, and everyone else missing pay or CV (without the priority people).
+      people = listKind === "priority" ? prio : rest.people.filter((p) => !seen.has(p.id));
     } else {
       people = rest.people;
     }
@@ -281,23 +286,25 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
 
       {!working && myRole === "admin" && <div className="mb-5"><TeamActivityCard supabase={supabase} /></div>}
 
-      {!working && priority && priority.people.length > 0 && (
-        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
-          <span className="text-[13.5px] text-teal-900 dark:text-teal-100">
-            <b>{priority.people.length} priority {priority.people.length === 1 ? "call" : "calls"} waiting</b>
-            {priority.counts.paid > 0 && ` · ${priority.counts.paid} paid ₹199`}
-            {priority.counts.interested > 0 && ` · ${priority.counts.interested} said yes to a role`}
-            {priority.counts.callbacks > 0 && ` · ${priority.counts.callbacks} call-backs due`}
-            {priority.counts.urgent > 0 && ` · ${priority.counts.urgent} for an urgent role`}
-            <span className="text-teal-800/80 dark:text-teal-200/80"> · then everyone missing current pay or CV</span>
-          </span>
-          <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Start today&apos;s calls <ArrowRight className="h-4 w-4" /></span>
-        </Link>
-      )}
-      {!working && priority && priority.people.length === 0 && (
-        <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
-          Start today&apos;s calls (missing current pay or CV first) <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+      {!working && (
+        <div className="mb-4 grid gap-3 md:grid-cols-2">
+          <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null, list: "priority" })} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
+            <span className="text-[13.5px] text-teal-900 dark:text-teal-100">
+              <b>{priority?.people.length ?? 0} priority {(priority?.people.length ?? 0) === 1 ? "call" : "calls"}</b>
+              <span className="block text-[12px] text-teal-800/80 dark:text-teal-200/80">
+                {[priority && priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199`, priority && priority.counts.interested > 0 && `${priority.counts.interested} said yes to a role`, priority && priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due`, priority && priority.counts.urgent > 0 && `${priority.counts.urgent} for an urgent role`].filter(Boolean).join(" · ") || "Nothing urgent right now"}
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Call them <ArrowRight className="h-4 w-4" /></span>
+          </Link>
+          <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null, list: "pay" })} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/60">
+            <span className="text-[13.5px] text-slate-900 dark:text-slate-100">
+              <b>{n0(payTotal)} missing current pay or CV</b>
+              <span className="block text-[12px] text-slate-500">B2B first, then B2C, then the rest</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-slate-700 dark:text-slate-200">Call them <ArrowRight className="h-4 w-4" /></span>
+          </Link>
+        </div>
       )}
 
       {!working ? (
@@ -408,11 +415,16 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             <div className={`${card} mb-4 p-4`}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">Today&apos;s calls</h2>
+                  <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">{listKind === "priority" ? "Priority calls" : "Missing current pay or CV"}</h2>
                   <p className="mt-0.5 max-w-3xl text-[13px] text-slate-500">
-                    <b>{priority.people.length} priority</b> first{priority.counts.paid > 0 && ` · ${priority.counts.paid} paid ₹199 (soonest deadline first)`}{priority.counts.interested > 0 && ` · ${priority.counts.interested} said yes to a role`}{priority.counts.callbacks > 0 && ` · ${priority.counts.callbacks} call-backs due`}{priority.counts.urgent > 0 && ` · ${priority.counts.urgent} for an urgent role and missing pay or CV`}. Then the next {Math.max(0, people.length - priority.people.length)} people missing current pay or a CV, B2B first.
-                    {priority.urgentRoles.length > 0 && ` Urgent: ${priority.urgentRoles.map((r) => r.title).join(", ")}.`}
-                    {" "}The <b>Today</b> tab on the left lists everyone called since morning, and the search box finds anyone who rings back.
+                    {listKind === "priority" ? (
+                      <>
+                        {priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199 (soonest deadline first) · `}{priority.counts.interested > 0 && `${priority.counts.interested} said yes to a role · `}{priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due · `}{priority.counts.urgent > 0 && `${priority.counts.urgent} for an urgent role and missing pay or CV`}
+                        {priority.urgentRoles.length > 0 && ` Urgent: ${priority.urgentRoles.map((r) => r.title).join(", ")}.`}
+                      </>
+                    ) : (
+                      <>Everyone whose current pay or CV is missing, B2B first, then B2C, then the rest. The priority people are in their own list.</>
+                    )}
                   </p>
                 </div>
                 <div className="text-right text-[12.5px] text-slate-500">
@@ -420,13 +432,18 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                   <p>Team today: {teamCalls.length} calls, {teamCalls.filter((l) => l.outcome === "reached").length} reached</p>
                 </div>
               </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
+                {([{ k: "priority", l: `Priority · ${priority.people.length}` }, { k: "pay", l: `Missing pay or CV · ${n0(payTotal)}` }] as const).map((t) => (
+                  <Link key={t.k} href={url({ sub: "priority", list: t.k })} className={`rounded-full border px-3 py-1 font-medium ${listKind === t.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{t.l}</Link>
+                ))}
+              </div>
             </div>
           )}
           {priorityView && (
             <details className={`${card} mb-4 px-4 py-3 text-[13px] text-slate-600 dark:text-slate-300`}>
               <summary className="cursor-pointer text-[13px] font-semibold text-slate-800 dark:text-slate-100">How the calls work</summary>
               <ol className="mt-2 list-decimal space-y-1 pl-5">
-                <li><b>Who to call:</b> the list on the left, top to bottom. Priority people first, then everyone whose current pay or CV is missing, B2B first.</li>
+                <li><b>Two lists:</b> <b>Priority</b> (paid calls, said yes to a role, call-backs due, urgent roles) and <b>Missing pay or CV</b> (everyone else, B2B first). Switch between them at the top. Work the list on the left from top to bottom.</li>
                 <li><b>Call, then pick one result.</b> The next person opens by itself.</li>
                 <li><b>Spoke:</b> fill in what they tell you. If pay or CV is still missing, they come back after 2 days.</li>
                 <li><b>Did not pick up:</b> they come back the next day, up to 3 tries.</li>
@@ -503,10 +520,10 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           ) : (
             <>
               <p className="mb-3 text-[12.5px] text-slate-500">
-                {people.length} people to call, B2B first. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
+                {people.length} people to call{priorityView && listKind === "priority" ? ", priority first" : ", B2B first"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
-              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}`} people={people} history={history} callBacks={((backsRes as { data: CallBackRow[] | null }).data ?? []) as CallBackRow[]} meId={user.id} />
+              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}|${listKind}`} people={people} openId={openId} history={history} callBacks={((backsRes as { data: CallBackRow[] | null }).data ?? []) as CallBackRow[]} meId={user.id} />
             </>
           )}
         </div>

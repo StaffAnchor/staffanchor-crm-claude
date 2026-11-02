@@ -9,6 +9,7 @@ import SignOutButton from "./sign-out-button";
 import ThemeToggle from "@/components/theme-toggle";
 import NotificationBell from "./notification-bell";
 import CallsFlaggedBell from "./calls-flagged-bell";
+import CallerLookup from "./caller-lookup";
 import WhatsAppNavBadge from "./whatsapp-nav-badge";
 
 type NavLink = { href: string; label: string; enabled: boolean };
@@ -112,6 +113,7 @@ export default function TopNav({
         <div className="flex-1 min-w-2 order-1 md:order-none" />
 
         <div className="order-2 md:order-none flex items-center gap-1.5 md:gap-2 shrink-0">
+          {["admin", "recruiter", "partner", "freelancer"].includes(role) && <CallerLookup />}
           <div className="relative" ref={createRef}>
             <button
               onClick={() => setCreateOpen((v) => !v)}

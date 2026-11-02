@@ -139,7 +139,7 @@ const shownPhone = (p: string | null) => {
 
 // Works the same on a phone: the list folds away behind a bar with Previous / Next, the CV opens on a tap, and the number
 // dials straight from the phone. On a laptop the number can be copied to dial from any phone.
-export default function CallsDesk({ people: listed, history = [], callBacks = [], meId = null }: { people: CallPerson[]; history?: CallHistoryRow[]; callBacks?: CallBackRow[]; meId?: string | null }) {
+export default function CallsDesk({ people: listed, history = [], callBacks = [], meId = null, openId = null }: { people: CallPerson[]; history?: CallHistoryRow[]; callBacks?: CallBackRow[]; meId?: string | null; openId?: string | null }) {
   const [done, setDone] = useState<Record<string, string>>({});
   // People opened from a search or from today's calls who are not on the list (for example someone who rang back).
   const [extra, setExtra] = useState<CallPerson[]>([]);
@@ -213,6 +213,22 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
     setFound(null);
     setQ("");
   };
+  // Picked from the caller lookup in the top bar: open that person straight away.
+  useEffect(() => {
+    if (!openId) return;
+    let off = false;
+    fetch(`/api/calls/lookup?id=${openId}`)
+      .then((r) => r.json())
+      .then((d: { people?: CallPerson[] }) => {
+        const p = d.people?.[0];
+        if (p && !off) openPerson(p);
+      })
+      .catch(() => undefined);
+    return () => {
+      off = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openId]);
   const search = async (text: string) => {
     setQ(text);
     if (text.trim().length < 3) {
