@@ -233,8 +233,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           <h1 className="ros-page-title">{working ? "Calls" : "Profile completion"}</h1>
           {!working && (
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
-            A profile is complete when it has everything needed to present the person to a client: name, phone, email, CV, experience, current and expected pay, notice period,
-            city, relocation, domain, sub-domain, role level, company and job title. Current pay and a CV come before everything: without them a profile cannot be used. Then the vitals (current pay, city, role level and type, relocation, domain, sub-domain, CV, plus the basics); expected pay, notice period and the rest come after. Whether someone is looking for a change is asked on every call and counted separately, because it goes stale after 90 days.
+            One goal for now: every profile has a <b>current pay</b> and a <b>CV</b>. Without them a person cannot be matched or presented. Everything else is asked on the call form.
           </p>
           )}
         </div>
@@ -417,7 +416,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                   <p className="mt-0.5 max-w-3xl text-[13px] text-slate-500">
                     {listKind === "priority" ? (
                       <>
-                        {priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199 (soonest deadline first) · `}{priority.counts.interested > 0 && `${priority.counts.interested} said yes to a role · `}{priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due · `}{priority.counts.urgent > 0 && `${priority.counts.urgent} for an urgent role and missing pay or CV`}
+                        {priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199 (soonest deadline first) · `}{priority.counts.interested > 0 && `${priority.counts.interested} said yes to a role · `}{priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due · `}{priority.counts.urgent > 0 && `${priority.counts.urgent} for an urgent role and missing pay or CV.`}
                         {priority.urgentRoles.length > 0 && ` Urgent: ${priority.urgentRoles.map((r) => r.title).join(", ")}.`}
                       </>
                     ) : (
@@ -527,7 +526,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           ) : (
             <>
               <p className="mb-3 text-[12.5px] text-slate-500">
-                {priorityView && listKind === "pay" ? `The next ${people.length} of ${n0(payTotal)}` : `${people.length} people`} to call{priorityView && listKind === "priority" ? ", priority first" : ", B2B first"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
+                {priorityView && listKind === "pay" ? `The next ${people.length} of ${n0(payTotal)}` : `${people.length} people`} to call{priorityView && listKind === "priority" ? ", priority first" : ", B2B first"}. Get current pay and the CV, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
               <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}|${listKind}`} people={people} openId={openId} history={history} callBacks={((backsRes as { data: CallBackRow[] | null }).data ?? []) as CallBackRow[]} meId={user.id} />

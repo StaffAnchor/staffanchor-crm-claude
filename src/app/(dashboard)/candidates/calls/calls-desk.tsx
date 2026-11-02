@@ -324,7 +324,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
         </button>
         <button type="button" onClick={() => go(1)} className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-700 dark:border-slate-600 dark:text-slate-200">Next</button>
       </div>
-      <aside className={`${showList ? "block" : "hidden"} max-h-[60vh] overflow-y-auto rounded-xl border border-slate-200 bg-white lg:block lg:max-h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
+      <aside className={`${showList ? "block" : "hidden"} max-h-[60vh] overflow-y-auto rounded-xl border border-slate-200 bg-white lg:sticky lg:top-3 lg:block lg:max-h-[calc(100vh-1.5rem)] lg:self-start dark:border-slate-700 dark:bg-slate-900`}>
         <div className="sticky top-0 z-10 border-b border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
           <div className="grid grid-cols-3 gap-1 p-1.5">
             {([{ k: "list", l: "To call", n: left }, { k: "today", l: "Called", n: todayRows.length }, { k: "backs", l: "Call backs", n: backs.length }] as const).map((t) => (
@@ -521,7 +521,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
 
       {active ? (
         <>
-          <section className="max-h-[78vh] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
             <div className="mb-3">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">{active.full_name ?? "Unnamed"}</h2>
@@ -593,7 +593,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
           </section>
 
           {active.resume_file_url && (
-          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 ${cvOff ? "xl:hidden" : "xl:block"} xl:col-span-1 xl:h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
+          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 ${cvOff ? "xl:hidden" : "xl:block"} xl:sticky xl:top-3 xl:col-span-1 xl:h-[calc(100vh-1.5rem)] xl:self-start dark:border-slate-700 dark:bg-slate-900`}>
             {active.resume_file_url && activeCv ? (
               <div className="h-full overflow-auto">
                 <ResumeViewerInline key={active.id} signedUrl={activeCv} fileName={active.resume_file_url.replace(/^resumes\//, "")} />
