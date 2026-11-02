@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LayoutGrid, Rows3, Sparkles, Table2 } from "lucide-react";
 import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
@@ -47,7 +47,23 @@ export default function MandateCandidatesView({
   // reverting to the static "Flag for call" label.
   flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
-  const [view, setView] = useState<"board" | "table" | "cards">("cards");
+  type View = "board" | "table" | "cards";
+  const [view, setViewState] = useState<View>("cards");
+  // Remember the last view per browser (storage can be blocked, so every access is guarded). Read after mount so the server and
+  // browser render the same first paint.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("mandate-pipeline-view");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (saved === "board" || saved === "table" || saved === "cards") setViewState(saved);
+    } catch {}
+  }, []);
+  const setView = (v: View) => {
+    setViewState(v);
+    try {
+      window.localStorage.setItem("mandate-pipeline-view", v);
+    } catch {}
+  };
 
   // "all" plus every pipeline stage -- lets a recruiter narrow either view
   // down to, say, just "client_interview" instead of scrolling/scanning the
