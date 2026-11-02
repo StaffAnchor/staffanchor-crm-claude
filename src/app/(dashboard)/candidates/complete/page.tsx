@@ -261,7 +261,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
             <span>
               <span className="text-[11px] font-medium uppercase tracking-wide text-teal-800/70 dark:text-teal-200/70">Priority</span>
               <span className="mt-1 block text-[22px] font-semibold leading-none text-teal-900 dark:text-teal-100">{priority?.people.length ?? 0} {(priority?.people.length ?? 0) === 1 ? "call" : "calls"}</span>
-              <span className="mt-1 block text-[12px] text-teal-800/80 dark:text-teal-200/80">{[priority && priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199`, priority && priority.counts.interested > 0 && `${priority.counts.interested} said yes`, priority && priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due`, priority && priority.counts.urgent > 0 && `${priority.counts.urgent} urgent ${priority.counts.urgent === 1 ? "role" : "roles"}`].filter(Boolean).join(" · ") || "Nothing urgent right now"}</span>
+              <span className="mt-1 block text-[12px] text-teal-800/80 dark:text-teal-200/80">{[priority && priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199`, priority && priority.counts.interested > 0 && `${priority.counts.interested} said yes`, priority && priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due`, priority && priority.counts.urgent > 0 && `${priority.counts.urgent} for urgent roles`].filter(Boolean).join(" · ") || "Nothing urgent right now"}</span>
             </span>
             <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Start calling <ArrowRight className="h-4 w-4" /></span>
           </Link>
