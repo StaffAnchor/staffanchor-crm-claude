@@ -11,7 +11,7 @@ import type { ApplicationAnswer } from "./application-answers-quick-view";
 import { STAGES } from "@/lib/mandate-stage";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 
-// Thin toggle wrapper -- Board is the new default (matches the reference
+// Thin toggle wrapper -- Cards is the default (profile card per candidate); Board and Table are one click away (Board matches the reference
 // ATS screenshot the user liked). Both views now share the same bulk
 // selection + actions (shortlist, email JD, email to client, add-to-group,
 // reject/remove) via MandateBulkActionsBar, so the full mandateContext
@@ -47,7 +47,7 @@ export default function MandateCandidatesView({
   // reverting to the static "Flag for call" label.
   flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
-  const [view, setView] = useState<"board" | "table" | "cards">("table");
+  const [view, setView] = useState<"board" | "table" | "cards">("cards");
 
   // "all" plus every pipeline stage -- lets a recruiter narrow either view
   // down to, say, just "client_interview" instead of scrolling/scanning the
