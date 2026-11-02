@@ -1,5 +1,6 @@
 "use client";
 
+import CandidateFactsStrip from "@/components/candidate-facts-strip";
 import { useState } from "react";
 import Link from "next/link";
 import { Check, HelpCircle, Minus, Plus, X } from "lucide-react";
@@ -101,6 +102,8 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
         <Fact label="Expected CTC" value={lakh(m.expected_fixed_ctc)} />
         <Fact label="Notice" value={m.notice_period} />
       </div>
+
+      <CandidateFactsStrip candidateId={m.candidate_id} className="mt-2.5" />
 
       {m.reason && <p className="mt-2.5 text-[12.5px] leading-snug text-slate-700 dark:text-slate-300">{m.reason}</p>}
 

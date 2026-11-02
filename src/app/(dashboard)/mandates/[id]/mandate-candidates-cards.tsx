@@ -15,6 +15,7 @@ import ConfirmDetailsModal from "./confirm-details-modal";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import PipelineWhatsApp from "./pipeline-whatsapp";
 import OriginChip from "./origin-chip";
+import { SkillsStrip } from "@/components/candidate-facts-strip";
 import ResumePreview from "../../candidates/[id]/resume-preview";
 
 const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {});
@@ -53,6 +54,8 @@ export default function MandateCandidatesCards({
   const [busy, setBusy] = useState(false);
   const mandateId = mandateContext.mandateId as string;
   const label = `${mandateContext.role_title as string} — ${mandateContext.client_name as string}`;
+  // What the role asks for, so the skills that match it are marked on every card.
+  const roleText = [mandateContext.role_title as string, ...(((mandateContext.must_haves as string[] | undefined) ?? []).slice(0, 8))].filter(Boolean).join(" ");
 
   const toggle = (set: Set<string>, id: string) => (set.has(id) ? new Set([...set].filter((x) => x !== id)) : new Set(set).add(id));
 
@@ -314,6 +317,8 @@ export default function MandateCandidatesCards({
                   {c.email ? <a href={`mailto:${c.email}`} className="inline-flex items-center gap-1.5 font-medium text-teal-700"><Mail className="h-3.5 w-3.5" /> {c.email}</a> : <span className="text-slate-400">No email</span>}
                 </div>
               )}
+
+              <SkillsStrip candidateId={c.id} roleText={roleText} className="mt-3" />
 
               {/* Fit read, same sentence the Table shows */}
               {l.match_assessment && (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import DismissReasons from "@/components/dismiss-reasons";
+import CandidateFactsStrip from "@/components/candidate-facts-strip";
 import Link from "next/link";
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import WhatsAppMenu from "@/components/whatsapp-menu";
@@ -207,6 +208,8 @@ function Card({
           </div>
         )}
       </div>
+
+      <CandidateFactsStrip candidateId={m.candidateId} roleText={roleTitle} className="mt-2.5" />
 
       {m.summary && <p className="mt-2 text-[13px] text-slate-700 dark:text-slate-300">{m.summary}</p>}
 

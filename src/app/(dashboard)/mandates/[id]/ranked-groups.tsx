@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, MessageCircle, UserPlus } from "lucide-react";
 import LazyCvPreview from "./lazy-cv-preview";
+import CandidateFactsStrip from "@/components/candidate-facts-strip";
 import NotAFitMenu from "./not-a-fit-menu";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import WriteWhatsAppButton from "./write-whatsapp-button";
@@ -210,6 +211,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, ranked: allR
                     {c.expected_fixed_ctc != null ? ` · expects ${Number(c.expected_fixed_ctc)} LPA` : c.current_fixed_ctc != null ? ` · ${Number(c.current_fixed_ctc)} LPA now` : ""}
                     {c.notice_period ? ` · notice ${c.notice_period}` : ""}
                   </p>
+                  <CandidateFactsStrip candidateId={c.candidate_id} roleText={roleTitle} className="mt-2" />
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {(why.has(c.candidate_id) ? r.matched : r.matched.slice(0, 2)).map((m) => (
                       <span key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800/60">
