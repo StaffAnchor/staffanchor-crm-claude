@@ -451,46 +451,65 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
             )}
           </div>
         ) : (
-        <ul>
-          {people.map((p, i) => {
-            const prio = p.reason !== "details_missing" && p.reason !== "pay_missing" && !extra.some((e) => e.id === p.id);
-            const prevPrio = i > 0 && people[i - 1].reason !== "details_missing" && people[i - 1].reason !== "pay_missing" && !extra.some((e) => e.id === people[i - 1].id);
-            const nPrio = people.filter((x) => x.reason !== "details_missing" && x.reason !== "pay_missing" && !extra.some((e) => e.id === x.id)).length;
-            const heading = i === 0 ? (prio ? `Priority · ${nPrio}` : `Missing current pay or CV · ${people.length - nPrio}`) : prio === prevPrio ? null : `Missing current pay or CV · ${people.length - nPrio}`;
+        <div className="space-y-3 px-2.5 py-2.5">
+          {([
+            { k: "priority", title: "Priority", hint: "Paid calls, said yes to a role, call-backs due and urgent roles. Do these first.", bar: "border-l-teal-600", tag: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-100" },
+            { k: "pay", title: "Missing current pay or CV", hint: "B2B first. Ask for what is missing; the form covers the rest.", bar: "border-l-amber-500", tag: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-100" },
+          ] as const).map((sec) => {
+            const isPrio = (p: CallPerson) => p.reason !== "details_missing" && p.reason !== "pay_missing" && !extra.some((e) => e.id === p.id);
+            const rows = people.filter((p) => (sec.k === "priority" ? isPrio(p) : !isPrio(p)));
+            if (rows.length === 0) return null;
             return (
-            <li key={p.id}>
-              {heading && <p className="bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800/60">{heading}</p>}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelected(p.id);
-                  setShowList(false);
-                  setShowCv(false);
-                }}
-                className={`w-full border-b border-slate-100 px-3 py-2.5 text-left dark:border-slate-800 ${p.id === selected ? "bg-teal-50/70 dark:bg-teal-950/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"} ${done[p.id] ? "opacity-50" : ""}`}
-              >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{p.full_name ?? "Unnamed"}</span>
-                  {done[p.id] && <span className="shrink-0 text-[11px] font-medium text-emerald-700">{OUT[done[p.id]]}</span>}
-                </span>
-                <span className="block truncate text-[12px] text-slate-500">{[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
-                {(sourceOf(p) || p.profile_created_at) && (
-                  <span className="block truncate text-[11.5px] text-slate-400">
-                    {[sourceOf(p), p.profile_created_at ? `signed up ${new Date(p.profile_created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : null].filter(Boolean).join(" · ")}
-                  </span>
-                )}
-                <span className={`mt-1 inline-block rounded px-1.5 py-px text-[11px] font-medium ${REASON[p.reason].cls}`}>
-                  {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : p.reason === "paid_call" && p.paid_call ? `Paid call · ${p.paid_call.title}${p.paid_call.due ? ` · call by ${new Date(p.paid_call.due).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}` : p.reason === "urgent_role" && p.urgent_role ? `Urgent: ${p.urgent_role.title} (${p.urgent_role.bucket === "perfect" ? "perfect" : "close"} match)` : REASON[p.reason].label}
-                  {(p.reason === "pay_missing" || p.reason === "details_missing") && gapsOf(p).length > 0 && `: ${gapsOf(p).join(", ")}`}
-                  {p.reason === "worth_a_call" && p.pay_ratio != null && ` · ratio ${Number(p.pay_ratio).toFixed(1)}`}
-                </span>
-                {p.strength && <span className={`ml-1.5 inline-block rounded px-1.5 py-px text-[11px] font-medium ${STRENGTH[p.strength]?.cls ?? ""}`}>{STRENGTH[p.strength]?.label ?? p.strength}</span>}
-                {p.tries > 0 && <span className="ml-1.5 text-[11px] text-slate-400">tried {p.tries}×</span>}
-              </button>
-            </li>
+              <section key={sec.k} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <header className={`flex items-start justify-between gap-2 border-b border-l-4 border-slate-100 px-3 py-2 dark:border-slate-800 ${sec.bar}`}>
+                  <div className="min-w-0">
+                    <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">{sec.title}</h3>
+                    <p className="text-[11.5px] leading-snug text-slate-500">{sec.hint}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums ${sec.tag}`}>{rows.filter((p) => !done[p.id]).length}</span>
+                </header>
+                <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {rows.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelected(p.id);
+                          setShowList(false);
+                          setShowCv(false);
+                        }}
+                        className={`flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition ${p.id === selected ? "bg-teal-50 ring-2 ring-inset ring-teal-500 dark:bg-teal-950/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"} ${done[p.id] ? "opacity-50" : ""}`}
+                      >
+                        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold ${sec.tag}`}>{initials(p.full_name)}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-baseline justify-between gap-2">
+                            <span className="truncate text-[13.5px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(p.full_name ?? "Unnamed").toLowerCase()}</span>
+                            {done[p.id] ? <span className="shrink-0 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800">{OUT[done[p.id]]}</span> : p.tries > 0 ? <span className="shrink-0 text-[11px] text-slate-400">tried {p.tries}×</span> : null}
+                          </span>
+                          <span className="block truncate text-[12px] text-slate-500">{[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
+                          <span className="mt-1 flex flex-wrap items-center gap-1">
+                            {sec.k === "priority" && (
+                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${REASON[p.reason].cls}`}>
+                                {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : p.reason === "paid_call" && p.paid_call ? `Paid call · ${p.paid_call.title}${p.paid_call.due ? ` · by ${new Date(p.paid_call.due).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}` : p.reason === "urgent_role" && p.urgent_role ? `Urgent: ${p.urgent_role.title} · ${p.urgent_role.bucket === "perfect" ? "perfect" : "close"} match` : REASON[p.reason].label}
+                              </span>
+                            )}
+                            {gapsOf(p).map((g) => <span key={g} className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">Needs {g}</span>)}
+                            {p.strength && p.strength !== "unrated" && <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${STRENGTH[p.strength]?.cls ?? ""}`}>{STRENGTH[p.strength]?.label ?? p.strength}</span>}
+                          </span>
+                          {(sourceOf(p) || p.profile_created_at) && (
+                            <span className="mt-1 block truncate text-[11px] text-slate-400">
+                              {[sourceOf(p), p.profile_created_at ? `signed up ${new Date(p.profile_created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : null].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             );
           })}
-        </ul>
+        </div>
         )}
       </aside>
 
