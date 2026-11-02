@@ -91,6 +91,8 @@ const STATES: { k: CalledState; title: string; short: string; hint: string; dot:
   { k: "done", title: "Gave pay and CV", short: "Done", hint: "Complete. Nothing more to do.", dot: "bg-emerald-500", bar: "border-l-emerald-500", chip: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200", avatar: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100", tag: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100" },
   { k: "closed", title: "Not interested or wrong number", short: "Closed", hint: "Off the call list.", dot: "bg-slate-400", bar: "border-l-slate-400", chip: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200", avatar: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200", tag: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200" },
 ];
+// A job title short enough to sit on one line of a card.
+const shortTitle = (t: string) => t.replace(/\bSenior\b/g, "Sr").replace(/\bExecutive\b/g, "Exec").replace(/\bManager\b/g, "Mgr").replace(/\bRepresentative\b/g, "Rep");
 const initials = (n: string | null) => (n ?? "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
 const whenLabel = (iso: string) => {
   const d = new Date(iso);
@@ -143,12 +145,12 @@ const shownPhone = (p: string | null) => {
 
 // Works the same on a phone: the list folds away behind a bar with Previous / Next, the CV opens on a tap, and the number
 // dials straight from the phone. On a laptop the number can be copied to dial from any phone.
-export default function CallsDesk({ people: listed, history = [], callBacks = [], meId = null, openId = null }: { people: CallPerson[]; history?: CallHistoryRow[]; callBacks?: CallBackRow[]; meId?: string | null; openId?: string | null }) {
+export default function CallsDesk({ people: listed, history = [], callBacks = [], meId = null, openId = null, initialTab = "list" }: { people: CallPerson[]; history?: CallHistoryRow[]; callBacks?: CallBackRow[]; meId?: string | null; openId?: string | null; initialTab?: "list" | "today" | "backs" }) {
   const [done, setDone] = useState<Record<string, string>>({});
   // People opened from a search or from today's calls who are not on the list (for example someone who rang back).
   const [extra, setExtra] = useState<CallPerson[]>([]);
   const people = useMemo(() => [...extra, ...listed.filter((p) => !extra.some((e) => e.id === p.id))], [extra, listed]);
-  const [tab, setTab] = useState<"list" | "today" | "backs">("list");
+  const [tab, setTab] = useState<"list" | "today" | "backs">(initialTab);
   const [mineOnly, setMineOnly] = useState(true);
   const [calledFilter, setCalledFilter] = useState<CalledState | "all">("all");
   const [session, setSession] = useState<CallHistoryRow[]>([]);
@@ -496,7 +498,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
                           <span className="mt-1 flex flex-wrap items-center gap-1">
                             {sec.k === "priority" && (
                               <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${REASON[p.reason].cls}`}>
-                                {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : p.reason === "paid_call" && p.paid_call ? `Paid call · ${p.paid_call.title}${p.paid_call.due ? ` · by ${new Date(p.paid_call.due).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}` : p.reason === "urgent_role" && p.urgent_role ? `Urgent: ${p.urgent_role.title} · ${p.urgent_role.bucket === "perfect" ? "perfect" : "close"} match` : REASON[p.reason].label}
+                                {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : p.reason === "paid_call" && p.paid_call ? `Paid call · ${p.paid_call.title}${p.paid_call.due ? ` · by ${new Date(p.paid_call.due).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}` : p.reason === "urgent_role" && p.urgent_role ? `Urgent · ${shortTitle(p.urgent_role.title)} · ${p.urgent_role.bucket === "perfect" ? "perfect" : "close"}` : REASON[p.reason].label}
                               </span>
                             )}
                             {gapsOf(p).map((g) => <span key={g} className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">Needs {g}</span>)}
