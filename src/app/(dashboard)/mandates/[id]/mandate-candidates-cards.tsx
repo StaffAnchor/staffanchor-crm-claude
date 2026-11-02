@@ -15,6 +15,7 @@ import ConfirmDetailsModal from "./confirm-details-modal";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import PipelineWhatsApp from "./pipeline-whatsapp";
 import OriginChip from "./origin-chip";
+import ResumePreview from "../../candidates/[id]/resume-preview";
 
 const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {});
 const DONE = ["rejected", "pulled_back"];
@@ -287,9 +288,20 @@ export default function MandateCandidatesCards({
                     />
                   </div>
                   {resumeUrl ? (
-                    <a href={resumeUrl} target="_blank" rel="noopener noreferrer" onClick={() => void markViewed(l)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-teal-600 text-[13px] font-medium text-teal-700 hover:bg-teal-50">
-                      <Download className="h-3.5 w-3.5" /> Download resume
-                    </a>
+                    <div className="grid grid-cols-2 gap-2">
+                      <span className="inline-flex [&>button]:h-9 [&>button]:w-full [&>button]:justify-center [&>button]:rounded-lg [&>button]:border [&>button]:border-teal-600 [&>button]:bg-white [&>button]:text-[13px]">
+                        <ResumePreview
+                          signedUrl={resumeUrl}
+                          fileName={(c.resume_file_url ?? `${c.full_name}-resume`).replace(/^resumes\//, "")}
+                          label="Preview"
+                          candidateId={c.id}
+                          onOpen={() => void markViewed(l)}
+                        />
+                      </span>
+                      <a href={resumeUrl} download target="_blank" rel="noopener noreferrer" onClick={() => void markViewed(l)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-teal-600 text-[13px] font-medium text-teal-700 hover:bg-teal-50">
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </a>
+                    </div>
                   ) : (
                     <span className="inline-flex h-9 items-center justify-center rounded-lg border border-dashed border-slate-300 text-[12.5px] text-slate-400">No resume on file</span>
                   )}
