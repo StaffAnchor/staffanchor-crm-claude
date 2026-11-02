@@ -11,7 +11,7 @@ import { BEST_TIMES, CYCLES, INTERVIEWING, JUDGMENTS, NOTICE_FLEX, QUOTA_BANDS, 
 // call is recorded the same way everywhere. Everything typed here goes onto the profile; the after-the-call note is read
 // by the system (fills blanks, ratings, verdict, client brief, matches); the result is logged in call_log.
 
-export type CallResult = { outcome: string; name: string; candidateId?: string; stillMissing?: string[]; summary: string | null; filled: string[]; tier: string | null; concerns: string[]; reading?: boolean };
+export type CallResult = { outcome: string; callBackAt?: string | null; name: string; candidateId?: string; stillMissing?: string[]; summary: string | null; filled: string[]; tier: string | null; concerns: string[]; reading?: boolean };
 
 export type CallFormPerson = {
   id: string;
@@ -41,6 +41,9 @@ export type CallFormPerson = {
   profile_group?: string | null;
   sub_domain?: string | null;
 };
+
+// N hours from now, as an ISO time.
+const inHours = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
 
 // IST 11:00 on a day N days from now, as an ISO time.
 function callBackAt(days: number): string {
@@ -137,6 +140,7 @@ export default function CallRecordForm({
   mode?: "desk" | "profile";
 }) {
   const [tier, setTier] = useState<PoolTier | null>(null);
+  const [customBack, setCustomBack] = useState("");
   const [ctc, setCtc] = useState(num(p.current_fixed_ctc));
   const [expected, setExpected] = useState(num(p.expected_fixed_ctc));
   const [notice, setNotice] = useState(p.notice_period ?? "");
@@ -236,6 +240,7 @@ export default function CallRecordForm({
       else {
         onDone({
           outcome,
+          callBackAt: typeof extra.callBackAt === "string" ? extra.callBackAt : null,
           name: p.full_name ?? "Candidate",
           candidateId: p.id,
           stillMissing: (d.stillMissing as string[] | undefined) ?? undefined,
@@ -530,6 +535,7 @@ export default function CallRecordForm({
           <div className="flex flex-wrap gap-1.5">
             {[
               { o: "no_answer", label: "No answer" },
+              { o: "call_later", label: "Call back in 2 hours", extra: { callBackAt: inHours(2) }, key: "later2h" },
               { o: "call_later", label: "Call back tomorrow", extra: { callBackAt: callBackAt(1) } },
               { o: "call_later", label: "In 3 days", extra: { callBackAt: callBackAt(3) }, key: "later3" },
               { o: "not_interested", label: "Not interested" },
@@ -540,7 +546,12 @@ export default function CallRecordForm({
               </button>
             ))}
           </div>
-          <p className="text-[11.5px] text-slate-400">No answer brings them back in the call list tomorrow (up to 3 tries). Not interested rests them for 90 days.</p>
+          <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-slate-500">
+            <span>Or pick a time they asked for:</span>
+            <input type="datetime-local" value={customBack} onChange={(e) => setCustomBack(e.target.value)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-600 dark:bg-slate-900" />
+            <button type="button" disabled={!!busy || !customBack} onClick={() => log("call_later", { callBackAt: new Date(customBack).toISOString() })} className="rounded-full border border-slate-300 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">Call back then</button>
+          </div>
+          <p className="text-[11.5px] text-slate-400">No answer: they come back on the list tomorrow, up to 3 tries. Call back: they appear at the top of the list at the time you pick, and under Call backs. Spoke but pay or CV still missing: they come back after 2 days. Not interested or wrong number: off the list.</p>
         </div>
       </Step>
     </div>

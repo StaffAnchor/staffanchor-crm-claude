@@ -6,6 +6,7 @@ import SpecialtiesControl from "./specialties-control";
 import PracticesControl from "./practices-control";
 import ResetPasswordButton from "./reset-password-button";
 import TeamCallsPanel, { type FlaggedCallRow } from "./team-calls-panel";
+import TeamActivityCard from "@/components/team-activity-card";
 import SecondRoundRoutingToggle from "./second-round-routing-toggle";
 
 export default async function TeamPage() {
@@ -116,6 +117,9 @@ export default async function TeamPage() {
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8 grid grid-cols-3 gap-6">
+      <div className="col-span-3">
+        <TeamActivityCard supabase={supabase} />
+      </div>
       <div className="col-span-2">
         <h1 className="ros-page-title mb-1">Team</h1>
         <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">

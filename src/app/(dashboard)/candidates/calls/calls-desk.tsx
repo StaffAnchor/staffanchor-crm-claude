@@ -71,17 +71,36 @@ export type CallHistoryRow = {
   caller_name: string | null;
   has_pay: boolean;
   has_cv: boolean;
+  /** No-answer calls to this person in the last 14 days (they get 3 tries). */
+  tries?: number;
+};
+
+/** Someone whose latest call ended with "call me back", with the time they asked for. */
+export type CallBackRow = { candidate_id: string; full_name: string | null; phone: string | null; current_job_title: string | null; current_employer: string | null; call_back_at: string; asked_at: string; caller_name: string | null; note: string | null };
+
+// Where someone stands after today's calls, in the words the recruiter uses.
+type CalledState = "callback" | "partial" | "noanswer" | "done" | "closed";
+const stateOf = (h: CallHistoryRow): CalledState => (h.outcome === "call_later" ? "callback" : h.outcome === "reached" ? (h.has_pay && h.has_cv ? "done" : "partial") : h.outcome === "no_answer" ? "noanswer" : "closed");
+const STATES: { k: CalledState; title: string; hint: string; dot: string }[] = [
+  { k: "callback", title: "Asked to call back", hint: "They come to the top of your list at the time they asked for.", dot: "bg-violet-500" },
+  { k: "partial", title: "Spoke, but pay or CV still missing", hint: "They come back on the list after 2 days (up to 3 conversations).", dot: "bg-amber-500" },
+  { k: "noanswer", title: "Did not pick up", hint: "They come back on the list the next day, up to 3 tries.", dot: "bg-rose-400" },
+  { k: "done", title: "Gave pay and CV", hint: "Done. Nothing more to do.", dot: "bg-emerald-500" },
+  { k: "closed", title: "Not interested or wrong number", hint: "Off the call list.", dot: "bg-slate-400" },
+];
+const whenLabel = (iso: string) => {
+  const d = new Date(iso);
+  const ms = d.getTime() - Date.now();
+  const day = (x: Date) => x.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+  const time = d.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true });
+  if (ms <= 0) return { text: "Due now", due: true };
+  if (day(d) === day(new Date())) return { text: `Today ${time}`, due: false };
+  if (day(d) === day(new Date(Date.now() + 86_400_000))) return { text: `Tomorrow ${time}`, due: false };
+  return { text: `${d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })} ${time}`, due: false };
 };
 
 const TIME = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true });
 const OUTCOME_LABEL: Record<string, string> = { reached: "Spoke", no_answer: "No answer", call_later: "Call back", not_interested: "Not interested", wrong_number: "Wrong number" };
-const OUTCOME_CLS: Record<string, string> = {
-  reached: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100",
-  no_answer: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100",
-  call_later: "bg-violet-100 text-violet-900 dark:bg-violet-900/40 dark:text-violet-100",
-  not_interested: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
-  wrong_number: "bg-rose-100 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100",
-};
 
 // Where a profile came from, in words a recruiter can say to the person, and how long ago it was created.
 const SOURCE_LABEL: Record<string, string> = { self_registration: "Registered on our site", quick_apply: "Quick apply on a job", bulk_import: "Imported from a CV", IIMJobs: "IIMJobs", Naukri: "Naukri", LinkedIn: "LinkedIn", Other: "Other source" };
@@ -120,12 +139,12 @@ const shownPhone = (p: string | null) => {
 
 // Works the same on a phone: the list folds away behind a bar with Previous / Next, the CV opens on a tap, and the number
 // dials straight from the phone. On a laptop the number can be copied to dial from any phone.
-export default function CallsDesk({ people: listed, history = [], meId = null }: { people: CallPerson[]; history?: CallHistoryRow[]; meId?: string | null }) {
+export default function CallsDesk({ people: listed, history = [], callBacks = [], meId = null }: { people: CallPerson[]; history?: CallHistoryRow[]; callBacks?: CallBackRow[]; meId?: string | null }) {
   const [done, setDone] = useState<Record<string, string>>({});
   // People opened from a search or from today's calls who are not on the list (for example someone who rang back).
   const [extra, setExtra] = useState<CallPerson[]>([]);
   const people = useMemo(() => [...extra, ...listed.filter((p) => !extra.some((e) => e.id === p.id))], [extra, listed]);
-  const [tab, setTab] = useState<"list" | "today">("list");
+  const [tab, setTab] = useState<"list" | "today" | "backs">("list");
   const [mineOnly, setMineOnly] = useState(true);
   const [session, setSession] = useState<CallHistoryRow[]>([]);
   const [q, setQ] = useState("");
@@ -211,7 +230,7 @@ export default function CallsDesk({ people: listed, history = [], meId = null }:
       setSearching(false);
     }
   };
-  const openFromHistory = async (h: CallHistoryRow) => {
+  const openFromHistory = async (h: { candidate_id: string; phone: string | null; full_name: string | null }) => {
     const here = people.find((p) => p.id === h.candidate_id);
     if (here) {
       setDone((d) => Object.fromEntries(Object.entries(d).filter(([k]) => k !== here.id)));
@@ -230,10 +249,19 @@ export default function CallsDesk({ people: listed, history = [], meId = null }:
       /* the person stays in the history; try again */
     }
   };
+  // One line per person: their latest call today (earlier calls to the same person are folded in).
   const todayRows = useMemo(() => {
-    const all = [...session, ...history];
-    return mineOnly && meId ? all.filter((h) => h.caller_id === meId) : all;
+    const all = [...session, ...history].filter((h) => !(mineOnly && meId) || h.caller_id === meId);
+    const seen = new Set<string>();
+    return all.filter((h) => (seen.has(h.candidate_id) ? false : (seen.add(h.candidate_id), true)));
   }, [session, history, mineOnly, meId]);
+  // A call-back made in this session is listed too; one that was redone is dropped.
+  const backs = useMemo(() => {
+    const redone = new Set(session.filter((h) => h.outcome !== "call_later").map((h) => h.candidate_id));
+    const mine: CallBackRow[] = session.filter((h) => h.outcome === "call_later" && h.call_back_at).map((h) => ({ candidate_id: h.candidate_id, full_name: h.full_name, phone: h.phone, current_job_title: h.current_job_title, current_employer: h.current_employer, call_back_at: h.call_back_at as string, asked_at: h.created_at, caller_name: "You", note: null }));
+    const ids = new Set(mine.map((b) => b.candidate_id));
+    return [...mine, ...callBacks.filter((b) => !ids.has(b.candidate_id) && !redone.has(b.candidate_id))].sort((a, b) => a.call_back_at.localeCompare(b.call_back_at));
+  }, [session, callBacks]);
 
   if (people.length === 0) {
     return (
@@ -247,7 +275,7 @@ export default function CallsDesk({ people: listed, history = [], meId = null }:
     if (!active) return;
     setLast(r);
     setSession((l) => [
-      { id: `s-${Date.now()}`, candidate_id: active.id, full_name: r.name || active.full_name, phone: active.phone, current_job_title: active.current_job_title, current_employer: active.current_employer, outcome: r.outcome, note: null, call_back_at: null, created_at: new Date().toISOString(), caller_id: meId, caller_name: "You", has_pay: !(r.stillMissing ?? []).includes("current_ctc"), has_cv: !!active.resume_file_url && !(r.stillMissing ?? []).includes("cv") },
+      { id: `s-${Date.now()}`, candidate_id: active.id, full_name: r.name || active.full_name, phone: active.phone, current_job_title: active.current_job_title, current_employer: active.current_employer, outcome: r.outcome, note: null, call_back_at: r.callBackAt ?? null, created_at: new Date().toISOString(), caller_id: meId, caller_name: "You", has_pay: !(r.stillMissing ?? []).includes("current_ctc"), has_cv: !!active.resume_file_url && !(r.stillMissing ?? []).includes("cv"), tries: r.outcome === "no_answer" ? active.tries + 1 : 0 },
       ...l,
     ]);
     const next = { ...done, [active.id]: r.outcome };
@@ -275,7 +303,7 @@ export default function CallsDesk({ people: listed, history = [], meId = null }:
       <aside className={`${showList ? "block" : "hidden"} max-h-[60vh] overflow-y-auto rounded-xl border border-slate-200 bg-white lg:block lg:max-h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
         <div className="sticky top-0 z-10 border-b border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
           <div className="flex text-[12px] font-medium">
-            {([{ k: "list", l: `To call · ${left} left` }, { k: "today", l: `Today · ${todayRows.length}` }] as const).map((t) => (
+            {([{ k: "list", l: `To call · ${left}` }, { k: "today", l: `Called · ${todayRows.length}` }, { k: "backs", l: `Call backs · ${backs.length}` }] as const).map((t) => (
               <button key={t.k} type="button" onClick={() => setTab(t.k)} className={`flex-1 px-3 py-2 ${tab === t.k ? "border-b-2 border-teal-600 text-teal-700 dark:text-teal-300" : "text-slate-500"}`}>{t.l}</button>
             ))}
           </div>
@@ -298,37 +326,68 @@ export default function CallsDesk({ people: listed, history = [], meId = null }:
               </li>
             ))}
           </ul>
+        ) : tab === "backs" ? (
+          <div>
+            <p className="border-b border-slate-100 px-3 py-1.5 text-[11.5px] text-slate-500 dark:border-slate-800">Everyone who asked to be called later. When the time comes they move to the top of To call.</p>
+            {backs.length === 0 ? (
+              <p className="px-3 py-4 text-[12.5px] text-slate-500">Nobody is waiting for a call back.</p>
+            ) : (
+              <ul>
+                {backs.map((b) => {
+                  const w = whenLabel(b.call_back_at);
+                  return (
+                    <li key={b.candidate_id}>
+                      <button type="button" onClick={() => void openFromHistory(b)} className="w-full border-b border-slate-100 px-3 py-2.5 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="truncate text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{b.full_name ?? "Unnamed"}</span>
+                          <span className={`shrink-0 rounded px-1.5 py-px text-[11px] font-semibold ${w.due ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100" : "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-100"}`}>{w.text}</span>
+                        </span>
+                        <span className="block truncate text-[12px] text-slate-500">{shownPhone(b.phone)}{b.caller_name ? ` · asked ${b.caller_name}` : ""}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         ) : tab === "today" ? (
           <div>
             {meId && (
               <div className="flex items-center justify-between border-b border-slate-100 px-3 py-1.5 text-[11.5px] text-slate-500 dark:border-slate-800">
-                <span>{mineOnly ? "Calls you made" : "Calls by everyone"}</span>
+                <span>{mineOnly ? "Calls you made today" : "Calls by everyone today"}</span>
                 <button type="button" onClick={() => setMineOnly((v) => !v)} className="font-medium text-teal-700 dark:text-teal-300">{mineOnly ? "Show everyone" : "Only mine"}</button>
               </div>
             )}
             {todayRows.length === 0 ? (
               <p className="px-3 py-4 text-[12.5px] text-slate-500">No calls logged yet today.</p>
             ) : (
-              <ul>
-                {todayRows.map((h) => (
-                  <li key={h.id}>
-                    <button type="button" onClick={() => void openFromHistory(h)} className="w-full border-b border-slate-100 px-3 py-2.5 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50" title="Open this person again">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="truncate text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{h.full_name ?? "Unnamed"}</span>
-                        <span className="shrink-0 text-[11px] text-slate-400">{TIME(h.created_at)}</span>
-                      </span>
-                      <span className="block truncate text-[12px] text-slate-500">{shownPhone(h.phone)}{!mineOnly && h.caller_name ? ` · by ${h.caller_name}` : ""}</span>
-                      <span className="mt-1 flex flex-wrap items-center gap-1">
-                        <span className={`rounded px-1.5 py-px text-[11px] font-medium ${OUTCOME_CLS[h.outcome] ?? OUTCOME_CLS.not_interested}`}>{OUTCOME_LABEL[h.outcome] ?? h.outcome}</span>
-                        {h.outcome === "no_answer" && <span className="text-[11px] text-slate-400">tries again tomorrow</span>}
-                        {h.outcome === "call_later" && h.call_back_at && <span className="text-[11px] text-slate-400">call back {new Date(h.call_back_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}</span>}
-                        {h.outcome === "reached" && (!h.has_pay || !h.has_cv) && <span className="text-[11px] text-amber-700 dark:text-amber-300">still missing {[!h.has_pay && "current pay", !h.has_cv && "CV"].filter(Boolean).join(" + ")}</span>}
-                      </span>
-                      {h.note && <span className="mt-0.5 block truncate text-[11.5px] text-slate-400">{h.note}</span>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              STATES.map((st) => {
+                const rows = todayRows.filter((h) => stateOf(h) === st.k);
+                if (rows.length === 0) return null;
+                return (
+                  <div key={st.k}>
+                    <p className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800/60"><span className={`inline-block h-2 w-2 rounded-full ${st.dot}`} />{st.title} · {rows.length}</p>
+                    <p className="px-3 pt-1 text-[11px] text-slate-400">{st.hint}</p>
+                    <ul>
+                      {rows.map((h) => (
+                        <li key={h.id}>
+                          <button type="button" onClick={() => void openFromHistory(h)} className="w-full border-b border-slate-100 px-3 py-2 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50" title="Open this person again">
+                            <span className="flex items-center justify-between gap-2">
+                              <span className="truncate text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{h.full_name ?? "Unnamed"}</span>
+                              <span className="shrink-0 text-[11px] text-slate-400">{TIME(h.created_at)}</span>
+                            </span>
+                            <span className="block truncate text-[12px] text-slate-500">{shownPhone(h.phone)}{!mineOnly && h.caller_name ? ` · by ${h.caller_name}` : ""}</span>
+                            {st.k === "noanswer" && <span className="block text-[11.5px] text-slate-500">{(h.tries ?? 1) >= 3 ? "3 tries, stopped" : `try ${h.tries ?? 1} of 3, next try tomorrow`}</span>}
+                            {st.k === "callback" && h.call_back_at && <span className="block text-[11.5px] text-violet-700 dark:text-violet-300">Call back {whenLabel(h.call_back_at).text}</span>}
+                            {st.k === "partial" && <span className="block text-[11.5px] text-amber-700 dark:text-amber-300">Still missing {[!h.has_pay && "current pay", !h.has_cv && "CV"].filter(Boolean).join(" and ")}</span>}
+                            {h.note && <span className="mt-0.5 block truncate text-[11.5px] text-slate-400">{h.note}</span>}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })
             )}
           </div>
         ) : (

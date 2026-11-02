@@ -13,7 +13,7 @@ export type PriorityCalls = {
 type PaidLink = { candidate_id: string; call_paid_at: string; call_due_at: string | null; mandates: { role_title: string | null } | { role_title: string | null }[] | null; candidates: Record<string, unknown> | Record<string, unknown>[] | null };
 
 export async function loadPriorityCalls(supabase: SupabaseClient, memoKey?: string): Promise<PriorityCalls> {
-  const [{ data: regularRows }, urgent, { data: paidLinks }] = await Promise.all([
+  const [{ data: regularRows }, urgent, { data: paidLinks }, { data: pendingBacks }] = await Promise.all([
     supabase.rpc("calls_today", { p_limit: 100, p_focus: "mixed" }),
     loadUrgentRoleMatches(supabase, memoKey).catch(() => ({ roles: [], matches: [] })),
     supabase
@@ -23,15 +23,20 @@ export async function loadPriorityCalls(supabase: SupabaseClient, memoKey?: stri
       .is("call_refunded_at", null)
       .order("call_due_at", { ascending: true })
       .limit(60),
+    supabase.rpc("call_backs_pending"),
   ]);
 
   // Started now, read later: the call log lookup for paid people does not depend on the urgent-role work below.
   const paidList = (paidLinks ?? []) as unknown as PaidLink[];
   const paidLoggedPromise = paidList.length ? supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", paidList.map((l) => l.candidate_id)) : Promise.resolve({ data: [] as { candidate_id: string; created_at: string }[] });
 
-  const leads = ((regularRows ?? []) as CallPerson[])
-    .filter((p) => p.reason === "call_back" || p.reason === "interested")
-    .map((p) => ({ ...p, resume_url: null as string | null }));
+  // Call-backs are found straight from the call log (whoever asked to be called, whatever kind of profile), so none is lost.
+  const dueBackIds = ((pendingBacks ?? []) as { candidate_id: string; call_back_at: string }[]).filter((b) => new Date(b.call_back_at).getTime() <= Date.now()).map((b) => b.candidate_id);
+  const { data: backRows } = dueBackIds.length ? await supabase.rpc("calls_for_candidates", { p_ids: dueBackIds }) : { data: [] as CallPerson[] };
+  const backPeople = ((backRows ?? []) as CallPerson[]).map((p) => ({ ...p, resume_url: null as string | null, reason: "call_back" as const }));
+  const interestedPeople = ((regularRows ?? []) as CallPerson[]).filter((p) => p.reason === "interested").map((p) => ({ ...p, resume_url: null as string | null }));
+  const backIds = new Set(backPeople.map((p) => p.id));
+  const leads = [...backPeople, ...interestedPeople.filter((p) => !backIds.has(p.id))];
 
   let urgentPeople: CallPerson[] = [];
   if (urgent.matches.length > 0) {

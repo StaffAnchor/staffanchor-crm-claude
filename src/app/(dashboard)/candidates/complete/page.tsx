@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import CandidatesSubNav from "../candidates-sub-nav";
-import CallsDesk, { type CallHistoryRow, type CallPerson } from "../calls/calls-desk";
+import CallsDesk, { type CallBackRow, type CallHistoryRow, type CallPerson } from "../calls/calls-desk";
 import { GAP_LABEL, STRENGTH, isGate, isVital } from "@/lib/completion";
 import { loadPriorityCalls } from "@/lib/priority-calls";
+import TeamActivityCard from "@/components/team-activity-card";
+import CompletionsCard, { type Trend } from "./completions-card";
 import TargetControl, { type Target } from "./target-control";
 import BatchPanel from "../pipeline/batch-panel";
 import { Bot } from "lucide-react";
@@ -16,7 +18,6 @@ export const dynamic = "force-dynamic";
 // many are still to go, by city and by what is missing, with a deadline per practice and a call list to finish them.
 
 type Row = { profile_group: string; bucket: string; total: number; complete: number; incomplete: number; no_phone: number; assessed: number; vitals_incomplete: number; gate_incomplete: number; looking_known: number; gaps: Record<string, number>; strengths: Record<string, number> };
-type Trend = { days: { day: string; gate: number; vitals: number; full: number }[]; mtd: { gate: number; vitals: number; full: number }; people: { name: string; gate: number; vitals: number; full: number }[] };
 type City = { city: string; total: number; complete: number; incomplete: number };
 
 const GROUPS = [
@@ -52,62 +53,6 @@ function StrengthBar({ s, total }: { s: Record<string, number>; total: number })
     </div>
   );
 }
-function TrendCard({ trend, label }: { trend: Trend; label: string }) {
-  const days = trend.days;
-  const max = Math.max(1, ...days.map((d) => d.gate));
-  const today = days[days.length - 1];
-  const yesterday = days[days.length - 2];
-  const tile = (title: string, a: { gate: number; vitals: number; full: number } | undefined) => (
-    <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
-      <p className="mt-0.5 text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{a?.gate ?? 0}<span className="ml-1 text-[11.5px] font-normal text-slate-500">pay + CV done</span></p>
-      <p className="mt-1 text-[11.5px] text-slate-500">{a?.vitals ?? 0} with all vitals · {a?.full ?? 0} fully complete</p>
-    </div>
-  );
-  const shortDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
-  return (
-    <section className={`${card} mb-5 p-4`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Completions · {label}</h2>
-        <p className="text-[11.5px] text-slate-400">Counted each time a profile crosses a line, whoever edits it. Live since 31 Oct 2026; completions made on calls from 25 Oct were added back. Edits made elsewhere before 31 Oct were not recorded and cannot be recovered.</p>
-      </div>
-      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)_minmax(0,260px)]">
-        <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-          {tile("Today", today)}
-          {tile("Yesterday", yesterday)}
-          {tile("Month to date", trend.mtd)}
-        </div>
-        <div>
-          <p className="mb-1 text-[11.5px] text-slate-500">Profiles that got current pay and a CV, per day, last 30 days</p>
-          <div className="flex h-28 items-end gap-[3px]" role="img" aria-label="Daily completions, last 30 days">
-            {days.map((d) => (
-              <div key={d.day} className="flex h-full flex-1 flex-col justify-end" title={`${shortDay(d.day)}: ${d.gate} pay + CV, ${d.vitals} all vitals, ${d.full} fully complete`}>
-                <div className={`w-full rounded-t ${d.gate > 0 ? "bg-teal-500" : "bg-slate-100 dark:bg-slate-800"}`} style={{ height: `${d.gate > 0 ? Math.max(6, (d.gate / max) * 100) : 4}%` }} />
-              </div>
-            ))}
-          </div>
-          <div className="mt-1 flex justify-between text-[10.5px] text-slate-400"><span>{shortDay(days[0].day)}</span><span>{shortDay(days[days.length - 1].day)}</span></div>
-        </div>
-        <div>
-          <p className="mb-1 text-[11.5px] text-slate-500">This month, by person</p>
-          {trend.people.length === 0 ? (
-            <p className="text-[12.5px] text-slate-400">Nobody has completed a profile yet this month.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {trend.people.map((p) => (
-                <li key={p.name} className="flex items-baseline justify-between gap-2 text-[12.5px]">
-                  <span className="truncate text-slate-700 dark:text-slate-200">{p.name}</span>
-                  <span className="shrink-0 tabular-nums text-slate-500"><b className="text-slate-900 dark:text-slate-100">{p.gate}</b> pay + CV · {p.full} full</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 const bucketLabel = (b: string) => (b === "(not set)" ? "Not set yet" : b);
 
 function Bar({ done, total, tone = "bg-teal-500" }: { done: number; total: number; tone?: string }) {
@@ -156,6 +101,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     priority,
     queueRes,
     callsRes,
+    backsRes,
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase.rpc("current_user_role"),
@@ -170,6 +116,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     !sub || priorityView ? loadPriorityCalls(supabase, "staff") : Promise.resolve(null),
     working ? supabase.rpc("completion_queue", queueArgs) : Promise.resolve({ data: null, error: null }),
     working ? supabase.rpc("call_history_today", { p_since: istDayStartIso() }) : Promise.resolve({ data: [] }),
+    working ? supabase.rpc("call_backs_pending") : Promise.resolve({ data: [] }),
   ]);
   const user = authData?.user;
   if (!user) redirect("/login");
@@ -330,7 +277,9 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       </div>
       )}
 
-      {!working && trend && trend.days.length > 0 && <TrendCard trend={trend} label={GROUP_LABEL[group] ?? "All"} />}
+      {!working && trend && trend.days.length > 0 && <CompletionsCard initial={trend} group={["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null} label={GROUP_LABEL[group] ?? "All"} />}
+
+      {!working && myRole === "admin" && <div className="mb-5"><TeamActivityCard supabase={supabase} /></div>}
 
       {!working && priority && priority.people.length > 0 && (
         <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null })} className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
@@ -473,6 +422,20 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
               </div>
             </div>
           )}
+          {priorityView && (
+            <details className={`${card} mb-4 px-4 py-3 text-[13px] text-slate-600 dark:text-slate-300`}>
+              <summary className="cursor-pointer text-[13px] font-semibold text-slate-800 dark:text-slate-100">How the calls work</summary>
+              <ol className="mt-2 list-decimal space-y-1 pl-5">
+                <li><b>Who to call:</b> the list on the left, top to bottom. Priority people first, then everyone whose current pay or CV is missing, B2B first.</li>
+                <li><b>Call, then pick one result.</b> The next person opens by itself.</li>
+                <li><b>Spoke:</b> fill in what they tell you. If pay or CV is still missing, they come back after 2 days.</li>
+                <li><b>Did not pick up:</b> they come back the next day, up to 3 tries.</li>
+                <li><b>Asked to call back:</b> choose the time. At that time they move to the top of the list and also sit under the <b>Call backs</b> tab until then.</li>
+                <li><b>Not interested or wrong number:</b> off the list.</li>
+                <li><b>Who did I call today?</b> The <b>Called</b> tab, grouped by how each call went. <b>Someone rang you?</b> Type their number in the search box.</li>
+              </ol>
+            </details>
+          )}
           {scoped && (
             <div className={`${card} mb-4 p-4`}>
               <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">
@@ -543,7 +506,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 {people.length} people to call, B2B first. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
-              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}`} people={people} history={history} meId={user.id} />
+              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}`} people={people} history={history} callBacks={((backsRes as { data: CallBackRow[] | null }).data ?? []) as CallBackRow[]} meId={user.id} />
             </>
           )}
         </div>
