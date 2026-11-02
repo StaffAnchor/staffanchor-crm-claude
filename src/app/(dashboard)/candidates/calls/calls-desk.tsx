@@ -263,7 +263,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
     return [...mine, ...callBacks.filter((b) => !ids.has(b.candidate_id) && !redone.has(b.candidate_id))].sort((a, b) => a.call_back_at.localeCompare(b.call_back_at));
   }, [session, callBacks]);
 
-  if (people.length === 0) {
+  if (people.length === 0 && history.length === 0 && callBacks.length === 0 && session.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
         Nobody to call right now. Everyone worth calling has been reached, or is due later.
