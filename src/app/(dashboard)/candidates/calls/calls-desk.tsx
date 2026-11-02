@@ -81,13 +81,14 @@ export type CallBackRow = { candidate_id: string; full_name: string | null; phon
 // Where someone stands after today's calls, in the words the recruiter uses.
 type CalledState = "callback" | "partial" | "noanswer" | "done" | "closed";
 const stateOf = (h: CallHistoryRow): CalledState => (h.outcome === "call_later" ? "callback" : h.outcome === "reached" ? (h.has_pay && h.has_cv ? "done" : "partial") : h.outcome === "no_answer" ? "noanswer" : "closed");
-const STATES: { k: CalledState; title: string; hint: string; dot: string }[] = [
-  { k: "callback", title: "Asked to call back", hint: "They come to the top of your list at the time they asked for.", dot: "bg-violet-500" },
-  { k: "partial", title: "Spoke, but pay or CV still missing", hint: "They come back on the list after 2 days (up to 3 conversations).", dot: "bg-amber-500" },
-  { k: "noanswer", title: "Did not pick up", hint: "They come back on the list the next day, up to 3 tries.", dot: "bg-rose-400" },
-  { k: "done", title: "Gave pay and CV", hint: "Done. Nothing more to do.", dot: "bg-emerald-500" },
-  { k: "closed", title: "Not interested or wrong number", hint: "Off the call list.", dot: "bg-slate-400" },
+const STATES: { k: CalledState; title: string; short: string; hint: string; dot: string; bar: string; chip: string; avatar: string; tag: string }[] = [
+  { k: "callback", title: "Asked to call back", short: "Call back", hint: "They move to the top of To call at the time they asked for.", dot: "bg-violet-500", bar: "border-l-violet-500", chip: "border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-900 dark:bg-violet-950/30 dark:text-violet-200", avatar: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-100", tag: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-100" },
+  { k: "partial", title: "Spoke, pay or CV still missing", short: "Spoke, incomplete", hint: "Back on To call after 2 days, up to 3 conversations.", dot: "bg-amber-500", bar: "border-l-amber-500", chip: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200", avatar: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-100", tag: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-100" },
+  { k: "noanswer", title: "Did not pick up", short: "No answer", hint: "Back on To call the next day, up to 3 tries.", dot: "bg-rose-500", bar: "border-l-rose-500", chip: "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200", avatar: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100", tag: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100" },
+  { k: "done", title: "Gave pay and CV", short: "Done", hint: "Complete. Nothing more to do.", dot: "bg-emerald-500", bar: "border-l-emerald-500", chip: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200", avatar: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100", tag: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100" },
+  { k: "closed", title: "Not interested or wrong number", short: "Closed", hint: "Off the call list.", dot: "bg-slate-400", bar: "border-l-slate-400", chip: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200", avatar: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200", tag: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200" },
 ];
+const initials = (n: string | null) => (n ?? "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
 const whenLabel = (iso: string) => {
   const d = new Date(iso);
   const ms = d.getTime() - Date.now();
@@ -146,6 +147,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
   const people = useMemo(() => [...extra, ...listed.filter((p) => !extra.some((e) => e.id === p.id))], [extra, listed]);
   const [tab, setTab] = useState<"list" | "today" | "backs">("list");
   const [mineOnly, setMineOnly] = useState(true);
+  const [calledFilter, setCalledFilter] = useState<CalledState | "all">("all");
   const [session, setSession] = useState<CallHistoryRow[]>([]);
   const [q, setQ] = useState("");
   const [found, setFound] = useState<CallPerson[] | null>(null);
@@ -307,7 +309,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
   const OUT: Record<string, string> = { reached: "Spoke", no_answer: "No answer", call_later: "Call back", not_interested: "Not interested", wrong_number: "Wrong number" };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[270px_minmax(0,1fr)] xl:grid-cols-[270px_minmax(0,400px)_minmax(0,1fr)]">
+    <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,400px)_minmax(0,1fr)]">
       {/* Phone: a bar instead of the list. */}
       <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] lg:hidden dark:border-slate-700 dark:bg-slate-900">
         <button type="button" onClick={() => go(-1)} className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-700 dark:border-slate-600 dark:text-slate-200">Previous</button>
@@ -318,14 +320,17 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
       </div>
       <aside className={`${showList ? "block" : "hidden"} max-h-[60vh] overflow-y-auto rounded-xl border border-slate-200 bg-white lg:block lg:max-h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
         <div className="sticky top-0 z-10 border-b border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex text-[12px] font-medium">
-            {([{ k: "list", l: `To call · ${left}` }, { k: "today", l: `Called · ${todayRows.length}` }, { k: "backs", l: `Call backs · ${backs.length}` }] as const).map((t) => (
-              <button key={t.k} type="button" onClick={() => setTab(t.k)} className={`flex-1 px-3 py-2 ${tab === t.k ? "border-b-2 border-teal-600 text-teal-700 dark:text-teal-300" : "text-slate-500"}`}>{t.l}</button>
+          <div className="grid grid-cols-3 gap-1 p-1.5">
+            {([{ k: "list", l: "To call", n: left }, { k: "today", l: "Called", n: todayRows.length }, { k: "backs", l: "Call backs", n: backs.length }] as const).map((t) => (
+              <button key={t.k} type="button" onClick={() => setTab(t.k)} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[12.5px] font-semibold transition ${tab === t.k ? "bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+                {t.l}
+                <span className={`rounded-full px-1.5 text-[11px] tabular-nums ${tab === t.k ? "bg-white/20 text-white dark:bg-slate-900/15 dark:text-slate-900" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{t.n}</span>
+              </button>
             ))}
           </div>
           <div className="relative border-t border-slate-100 px-2 py-1.5 dark:border-slate-800">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            <input value={q} onChange={(e) => void search(e.target.value)} placeholder="Someone rang? Type their number or name" inputMode="search" className="w-full rounded-md border border-slate-200 bg-white py-1.5 pl-7 pr-2 text-[12.5px] text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+            <input value={q} onChange={(e) => void search(e.target.value)} placeholder="Someone rang? Number or name" inputMode="search" className="w-full rounded-md border border-slate-200 bg-white py-1.5 pl-7 pr-2 text-[12.5px] text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
           </div>
         </div>
         {found !== null ? (
@@ -343,67 +348,106 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
             ))}
           </ul>
         ) : tab === "backs" ? (
-          <div>
-            <p className="border-b border-slate-100 px-3 py-1.5 text-[11.5px] text-slate-500 dark:border-slate-800">Everyone who asked to be called later. When the time comes they move to the top of To call.</p>
-            {backs.length === 0 ? (
-              <p className="px-3 py-4 text-[12.5px] text-slate-500">Nobody is waiting for a call back.</p>
-            ) : (
-              <ul>
-                {backs.map((b) => {
-                  const w = whenLabel(b.call_back_at);
-                  return (
-                    <li key={b.candidate_id}>
-                      <button type="button" onClick={() => void openFromHistory(b)} className="w-full border-b border-slate-100 px-3 py-2.5 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{b.full_name ?? "Unnamed"}</span>
-                          <span className={`shrink-0 rounded px-1.5 py-px text-[11px] font-semibold ${w.due ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100" : "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-100"}`}>{w.text}</span>
-                        </span>
-                        <span className="block truncate text-[12px] text-slate-500">{shownPhone(b.phone)}{b.caller_name ? ` · asked ${b.caller_name}` : ""}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+          <div className="px-2.5 py-2.5">
+            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <header className="flex items-start justify-between gap-2 border-b border-l-4 border-slate-100 border-l-violet-500 px-3 py-2 dark:border-slate-800">
+                <div className="min-w-0">
+                  <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Asked to call back</h3>
+                  <p className="text-[11.5px] leading-snug text-slate-500">At the time they asked for, they move to the top of To call.</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-violet-800 dark:bg-violet-900/40 dark:text-violet-100">{backs.length}</span>
+              </header>
+              {backs.length === 0 ? (
+                <p className="px-3 py-6 text-center text-[12.5px] text-slate-500">Nobody is waiting for a call back.</p>
+              ) : (
+                <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {backs.map((b) => {
+                    const w = whenLabel(b.call_back_at);
+                    return (
+                      <li key={b.candidate_id}>
+                        <button type="button" onClick={() => void openFromHistory(b)} className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11.5px] font-semibold text-violet-800 dark:bg-violet-900/40 dark:text-violet-100">{initials(b.full_name)}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13.5px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(b.full_name ?? "Unnamed").toLowerCase()}</span>
+                            <span className="block truncate text-[12px] text-slate-500">{shownPhone(b.phone)}{b.caller_name ? ` · asked ${b.caller_name}` : ""}</span>
+                            <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${w.due ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100" : "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-100"}`}>{w.due ? "Due now" : `Call back ${w.text}`}</span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
           </div>
         ) : tab === "today" ? (
-          <div>
-            {meId && (
-              <div className="flex items-center justify-between border-b border-slate-100 px-3 py-1.5 text-[11.5px] text-slate-500 dark:border-slate-800">
-                <span>{mineOnly ? "Calls you made today" : "Calls by everyone today"}</span>
-                <button type="button" onClick={() => setMineOnly((v) => !v)} className="font-medium text-teal-700 dark:text-teal-300">{mineOnly ? "Show everyone" : "Only mine"}</button>
-              </div>
-            )}
+          <div className="pb-2">
+            <div className="flex items-center justify-between gap-2 px-3 pt-2.5">
+              <span className="text-[11.5px] font-medium text-slate-500">Calls today</span>
+              {meId && (
+                <span className="inline-flex rounded-full bg-slate-100 p-0.5 text-[11.5px] font-medium dark:bg-slate-800">
+                  {([{ v: true, l: "Mine" }, { v: false, l: "Everyone" }] as const).map((o) => (
+                    <button key={o.l} type="button" onClick={() => setMineOnly(o.v)} className={`rounded-full px-2.5 py-0.5 ${mineOnly === o.v ? "bg-white text-slate-900 shadow-sm dark:bg-slate-600 dark:text-white" : "text-slate-500"}`}>{o.l}</button>
+                  ))}
+                </span>
+              )}
+            </div>
             {todayRows.length === 0 ? (
-              <p className="px-3 py-4 text-[12.5px] text-slate-500">No calls logged yet today.</p>
+              <p className="px-3 py-6 text-center text-[12.5px] text-slate-500">No calls logged yet today.</p>
             ) : (
-              STATES.map((st) => {
-                const rows = todayRows.filter((h) => stateOf(h) === st.k);
-                if (rows.length === 0) return null;
-                return (
-                  <div key={st.k}>
-                    <p className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800/60"><span className={`inline-block h-2 w-2 rounded-full ${st.dot}`} />{st.title} · {rows.length}</p>
-                    <p className="px-3 pt-1 text-[11px] text-slate-400">{st.hint}</p>
-                    <ul>
-                      {rows.map((h) => (
-                        <li key={h.id}>
-                          <button type="button" onClick={() => void openFromHistory(h)} className="w-full border-b border-slate-100 px-3 py-2 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50" title="Open this person again">
-                            <span className="flex items-center justify-between gap-2">
-                              <span className="truncate text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{h.full_name ?? "Unnamed"}</span>
-                              <span className="shrink-0 text-[11px] text-slate-400">{TIME(h.created_at)}</span>
-                            </span>
-                            <span className="block truncate text-[12px] text-slate-500">{shownPhone(h.phone)}{!mineOnly && h.caller_name ? ` · by ${h.caller_name}` : ""}</span>
-                            {st.k === "noanswer" && <span className="block text-[11.5px] text-slate-500">{(h.tries ?? 1) >= 3 ? "3 tries, stopped" : `try ${h.tries ?? 1} of 3, next try tomorrow`}</span>}
-                            {st.k === "callback" && h.call_back_at && <span className="block text-[11.5px] text-violet-700 dark:text-violet-300">Call back {whenLabel(h.call_back_at).text}</span>}
-                            {st.k === "partial" && <span className="block text-[11.5px] text-amber-700 dark:text-amber-300">Still missing {[!h.has_pay && "current pay", !h.has_cv && "CV"].filter(Boolean).join(" and ")}</span>}
-                            {h.note && <span className="mt-0.5 block truncate text-[11.5px] text-slate-400">{h.note}</span>}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })
+              <>
+                <div className="flex flex-wrap gap-1.5 px-3 py-2.5">
+                  <button type="button" onClick={() => setCalledFilter("all")} className={`rounded-full border px-2.5 py-1 text-[11.5px] font-semibold ${calledFilter === "all" ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}>All {todayRows.length}</button>
+                  {STATES.map((st) => {
+                    const n = todayRows.filter((h) => stateOf(h) === st.k).length;
+                    if (n === 0) return null;
+                    return (
+                      <button key={st.k} type="button" onClick={() => setCalledFilter(calledFilter === st.k ? "all" : st.k)} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold ${st.chip} ${calledFilter === st.k ? "ring-2 ring-slate-900/60 dark:ring-white/60" : ""}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
+                        {st.short} {n}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="space-y-3 px-2.5">
+                  {STATES.filter((st) => calledFilter === "all" || calledFilter === st.k).map((st) => {
+                    const rows = todayRows.filter((h) => stateOf(h) === st.k);
+                    if (rows.length === 0) return null;
+                    return (
+                      <section key={st.k} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                        <header className={`flex items-start justify-between gap-2 border-b border-slate-100 border-l-4 px-3 py-2 dark:border-slate-800 ${st.bar}`}>
+                          <div className="min-w-0">
+                            <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">{st.title}</h3>
+                            <p className="text-[11.5px] leading-snug text-slate-500">{st.hint}</p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums ${st.tag}`}>{rows.length}</span>
+                        </header>
+                        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {rows.map((h) => (
+                            <li key={h.id}>
+                              <button type="button" onClick={() => void openFromHistory(h)} className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50" title="Open this person again">
+                                <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold ${st.avatar}`}>{initials(h.full_name)}</span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-baseline justify-between gap-2">
+                                    <span className="truncate text-[13.5px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(h.full_name ?? "Unnamed").toLowerCase()}</span>
+                                    <span className="shrink-0 text-[11px] tabular-nums text-slate-400">{TIME(h.created_at)}</span>
+                                  </span>
+                                  <span className="block truncate text-[12px] text-slate-500">{shownPhone(h.phone)}{!mineOnly && h.caller_name ? ` · by ${h.caller_name}` : ""}</span>
+                                  {st.k === "noanswer" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>{(h.tries ?? 1) >= 3 ? "3 tries, stopped" : `Try ${h.tries ?? 1} of 3 · next try tomorrow`}</span>}
+                                  {st.k === "callback" && h.call_back_at && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>Call back {whenLabel(h.call_back_at).text}</span>}
+                                  {st.k === "partial" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>Still needs {[!h.has_pay && "current pay", !h.has_cv && "CV"].filter(Boolean).join(" + ")}</span>}
+                                  {st.k === "closed" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>{h.outcome === "wrong_number" ? "Wrong number" : "Not interested"}</span>}
+                                  {h.note && <span className="mt-1 block truncate text-[11.5px] italic text-slate-400">{h.note}</span>}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         ) : (
