@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
+import WhatsAppMenu from "@/components/whatsapp-menu";
+import { candidateTemplates } from "@/lib/whatsapp-link";
+import { useMyFirstName } from "@/lib/use-my-name";
 import { cityOptions, employmentStatusOptions, fixedCtcOptions, highestQualificationOptions, level1OptionsForProfileType, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
@@ -37,6 +40,9 @@ export type CallFormPerson = {
   role_type?: string | null;
   email?: string | null;
   current_variable_ctc?: number | string | null;
+  /** Present on the call desk: lets the form show whether a CV is on file. */
+  resume_file_url?: string | null;
+  phone?: string | null;
   /** b2b_sales, b2c_sales or non_sales; empty or "unclear" when not decided yet. */
   profile_group?: string | null;
   sub_domain?: string | null;
@@ -141,6 +147,8 @@ export default function CallRecordForm({
 }) {
   const [tier, setTier] = useState<PoolTier | null>(null);
   const [customBack, setCustomBack] = useState("");
+  const [backOpen, setBackOpen] = useState(false);
+  const me = useMyFirstName();
   const [ctc, setCtc] = useState(num(p.current_fixed_ctc));
   const [expected, setExpected] = useState(num(p.expected_fixed_ctc));
   const [notice, setNotice] = useState(p.notice_period ?? "");
@@ -180,7 +188,6 @@ export default function CallRecordForm({
   const ratio = Number(ctc) > 0 && Number(p.total_experience_years) >= 1 ? Number(ctc) / Number(p.total_experience_years) : null;
   // What still has to be asked on this call. Everything else is already on the profile.
   const toAsk = [
-    !num(p.current_fixed_ctc) && "current pay",
     !num(p.expected_fixed_ctc) && "expected pay",
     !p.notice_period && "notice period",
     !p.current_location && "city",
@@ -189,6 +196,14 @@ export default function CallRecordForm({
   ].filter(Boolean) as string[];
   const blank = (v: unknown) => v === null || v === "";
   const levelLead = yourLevelOptions.find((l) => l.value === level)?.lead;
+
+  // On the call desk the two things that matter come first, in their own box; everything else is folded away below it.
+  const desk = mode === "desk";
+  const cvKnown = p.resume_file_url !== undefined;
+  const needCv = cvKnown && !p.resume_file_url;
+  const gateOpen = desk && (!num(p.current_fixed_ctc) || needCv);
+  const waTemplates = candidateTemplates(p.full_name, { me, candidateId: p.id, missing: [!num(p.current_fixed_ctc) && "current_ctc", needCv && "cv"].filter(Boolean) as string[] }).filter((t) => t.key !== "intro");
+  const waCv = waTemplates.filter((t) => ["tried", "cv", "details", "complete"].includes(t.key));
 
   const isSales = p.profile_group === undefined || p.profile_group === "b2b_sales" || p.profile_group === "b2c_sales";
   const yn = (v: string) => (v === "Yes" ? true : v === "No" ? false : undefined);
@@ -302,7 +317,7 @@ export default function CallRecordForm({
 
   const stepWho = (n: number) => (
     <>
-      <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={8} defaultOpen={!basicsKnown}>
+      <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={8} defaultOpen={!basicsKnown && !desk}>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Current city" missing={!k.city} known={k.city}>
             <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
@@ -371,7 +386,7 @@ export default function CallRecordForm({
   );
   const stepMove = (n: number) => (
     <>
-      <Step n={n} title="Their move" hint="Are they looking, why, how soon, what else is on" filled={moveFilled} total={6}>
+      <Step n={n} title="Their move" hint="Are they looking, why, how soon, what else is on" filled={moveFilled} total={6} defaultOpen={!desk}>
         <Field label="Looking for a new role?" missing={!k.looking} known={k.looking}>
           <Chips known={k.looking} value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
         </Field>
@@ -409,7 +424,7 @@ export default function CallRecordForm({
   );
   const stepPay = (n: number) => (
     <>
-      <Step n={n} title="Pay" hint="What they earn and what they want" filled={payFilled} total={4}>
+      <Step n={n} title="Pay" hint="What they earn and what they want" filled={payFilled} total={4} defaultOpen={!desk}>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Current fixed pay" missing={!k.ctc} known={k.ctc}>{fixedPay(ctc, setCtc, k.ctc)}</Field>
           <Field label="Current variable pay" known={k.currentVar}>{fixedPay(currentVar, setCurrentVar, k.currentVar)}</Field>
@@ -432,11 +447,33 @@ export default function CallRecordForm({
   const order = !k.ctc ? (["pay", "who", "move"] as const) : (["who", "move", "pay"] as const);
   return (
     <div className="space-y-3">
+      {gateOpen && (
+        <div className="rounded-xl border-2 border-teal-600/40 bg-teal-50 p-3 dark:border-teal-700 dark:bg-teal-950/30">
+          <p className="text-[13px] font-semibold text-teal-900 dark:text-teal-100">Get these first</p>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[12px] font-medium text-slate-700 dark:text-slate-200">Current fixed pay</p>
+              {k.ctc ? <p className="mt-1 flex items-center gap-1 text-[13px] font-medium text-emerald-700 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> On file: {p.current_fixed_ctc} LPA</p> : <div className="mt-1">{fixedPay(ctc, setCtc, false)}</div>}
+            </div>
+            <div>
+              <p className="text-[12px] font-medium text-slate-700 dark:text-slate-200">CV</p>
+              {!needCv ? (
+                <p className="mt-1 flex items-center gap-1 text-[13px] font-medium text-emerald-700 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> On file</p>
+              ) : (
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="text-[12.5px] text-rose-700 dark:text-rose-300">Missing: ask them to send it on WhatsApp</span>
+                  <WhatsAppMenu phone={p.phone} templates={waCv} context={{ name: p.full_name }} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[12.5px] font-semibold text-white hover:bg-emerald-700" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {(toAsk.length > 0 || doubts.length > 0) && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
           {toAsk.length > 0 && (
             <p>
-              <b>Ask:</b> {toAsk.join(", ")}. Also listen for how clearly they explain their work.
+              <b>{gateOpen ? "Then, if they have time, ask" : "Ask"}:</b> {toAsk.join(", ")}. Also listen for how clearly they explain their work.
             </p>
           )}
           {doubts.length > 0 && (
@@ -455,10 +492,11 @@ export default function CallRecordForm({
         <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-200 bg-slate-100 align-middle" /> Grey is already on the profile. <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-white align-middle" /> White with an amber edge is missing: ask these.
       </p>
 
+      {desk && <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">More details (optional)</p>}
       {order.map((key, i) => <span key={key} className="contents">{key === "who" ? stepWho(i + 1) : key === "move" ? stepMove(i + 1) : stepPay(i + 1)}</span>)}
 
       {isSales && (
-        <Step n={4} title="Sales depth" hint="Quota, style and cycle: the strongest fit signals for sales roles" filled={salesFilled} total={4} defaultOpen={p.profile_group !== undefined}>
+        <Step n={4} title="Sales depth" hint="Quota, style and cycle: the strongest fit signals for sales roles" filled={salesFilled} total={4} defaultOpen={p.profile_group !== undefined && !desk}>
           <Field label="Do they carry a quota?">
             <Chips value={carriesQuota} options={asOpts(["Yes", "No"])} onChange={setCarriesQuota} />
           </Field>
@@ -476,7 +514,7 @@ export default function CallRecordForm({
         </Step>
       )}
 
-      <Step n={isSales ? 5 : 4} title="Your read of them" hint="Two taps each. This sets their profile strength" filled={rated} total={5}>
+      <Step n={isSales ? 5 : 4} title="Your read of them" hint="Two taps each. This sets their profile strength" filled={rated} total={5} defaultOpen={!desk}>
         <div className="space-y-2">
           {JUDGMENTS.map((j) => (
             <div key={j.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -507,7 +545,7 @@ export default function CallRecordForm({
         </Field>
       </Step>
 
-      <Step n={isSales ? 7 : 6} title="Wrap up" hint="Anything else, your verdict, then the result">
+      <Step n={isSales ? 7 : 6} title="Notes and verdict" hint="Anything else, written like a text to a colleague" defaultOpen={!desk}>
         <Field label="After the call (optional): write it like a text to a colleague">
           <textarea
             value={note}
@@ -527,33 +565,48 @@ export default function CallRecordForm({
           </div>
         </Field>
 
-        {error && <p className="text-[12.5px] font-medium text-rose-600">{error}</p>}
-        <div className="space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-          <button type="button" disabled={!!busy} onClick={() => log("reached")} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
-            <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : mode === "desk" ? "Spoke to them: save and next" : "Spoke to them: save the call"}
-          </button>
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              { o: "no_answer", label: "No answer" },
-              { o: "call_later", label: "Call back in 2 hours", extra: { callBackAt: inHours(2) }, key: "later2h" },
-              { o: "call_later", label: "Call back tomorrow", extra: { callBackAt: callBackAt(1) } },
-              { o: "call_later", label: "In 3 days", extra: { callBackAt: callBackAt(3) }, key: "later3" },
-              { o: "not_interested", label: "Not interested" },
-              { o: "wrong_number", label: "Wrong number" },
-            ].map((b) => (
-              <button key={b.key ?? b.label} type="button" disabled={!!busy} onClick={() => log(b.o, b.extra)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
-                {busy === b.o ? "Saving…" : b.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-slate-500">
-            <span>Or pick a time they asked for:</span>
-            <input type="datetime-local" value={customBack} onChange={(e) => setCustomBack(e.target.value)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-600 dark:bg-slate-900" />
-            <button type="button" disabled={!!busy || !customBack} onClick={() => log("call_later", { callBackAt: new Date(customBack).toISOString() })} className="rounded-full border border-slate-300 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">Call back then</button>
-          </div>
-          <p className="text-[11.5px] text-slate-400">No answer: they come back on the list tomorrow, up to 3 tries. Call back: they appear at the top of the list at the time you pick, and under Call backs. Spoke but pay or CV still missing: they come back after 2 days. Not interested or wrong number: off the list.</p>
-        </div>
       </Step>
+
+      {/* The result of the call: always on screen on the call desk, so "No answer" never needs a scroll. */}
+      <div className={desk ? "sticky bottom-0 z-10 -mx-4 -mb-4 space-y-2 border-t border-slate-200 bg-white/95 px-4 pb-3 pt-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95" : "space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800"}>
+        {error && <p className="text-[12.5px] font-medium text-rose-600">{error}</p>}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button type="button" disabled={!!busy} onClick={() => log("reached")} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
+            <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : desk ? "Spoke: save and next" : "Spoke to them: save the call"}
+          </button>
+          <button type="button" disabled={!!busy} onClick={() => log("no_answer")} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[13px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
+            {busy === "no_answer" ? "Saving…" : "No answer"}
+          </button>
+          <button type="button" disabled={!!busy} onClick={() => setBackOpen((v) => !v)} aria-expanded={backOpen} className={`rounded-lg border px-3 py-2 text-[13px] font-semibold disabled:opacity-50 ${backOpen ? "border-violet-500 bg-violet-100 text-violet-900" : "border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"}`}>
+            Call back ▾
+          </button>
+          <button type="button" disabled={!!busy} onClick={() => log("not_interested")} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+            {busy === "not_interested" ? "Saving…" : "Not interested"}
+          </button>
+          <button type="button" disabled={!!busy} onClick={() => log("wrong_number")} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+            {busy === "wrong_number" ? "Saving…" : "Wrong number"}
+          </button>
+          {p.phone !== undefined && (
+            <WhatsAppMenu phone={p.phone} templates={waTemplates} context={{ name: p.full_name }} className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[13px] font-semibold text-emerald-800 hover:bg-emerald-100" />
+          )}
+        </div>
+        {backOpen && (
+          <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-2 text-[12px] text-violet-900 dark:bg-violet-950/30 dark:text-violet-100">
+            <span className="font-medium">Call them back:</span>
+            {[
+              { label: "In 2 hours", extra: { callBackAt: inHours(2) } },
+              { label: "Tomorrow 11 am", extra: { callBackAt: callBackAt(1) } },
+              { label: "In 3 days", extra: { callBackAt: callBackAt(3) } },
+            ].map((b) => (
+              <button key={b.label} type="button" disabled={!!busy} onClick={() => log("call_later", b.extra)} className="rounded-full border border-violet-300 bg-white px-3 py-1 font-medium text-violet-900 hover:bg-violet-100 disabled:opacity-50 dark:bg-slate-900">{b.label}</button>
+            ))}
+            <span className="ml-1">or</span>
+            <input type="datetime-local" value={customBack} onChange={(e) => setCustomBack(e.target.value)} className="rounded-md border border-violet-300 bg-white px-2 py-1 text-[12px] dark:bg-slate-900" />
+            <button type="button" disabled={!!busy || !customBack} onClick={() => log("call_later", { callBackAt: new Date(customBack).toISOString() })} className="rounded-full bg-violet-600 px-3 py-1 font-semibold text-white hover:bg-violet-700 disabled:opacity-40">Set</button>
+          </div>
+        )}
+        <p className="text-[11px] leading-snug text-slate-400">No answer: back on the list tomorrow, up to 3 tries. Call back: top of the list at the time you pick. Spoke but pay or CV still missing: back after 2 days. Not interested or wrong number: off the list.</p>
+      </div>
     </div>
   );
 }

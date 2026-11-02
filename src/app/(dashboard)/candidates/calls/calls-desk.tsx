@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, FileText, Phone, Search } from "lucide-react";
+import { ExternalLink, Phone, Search } from "lucide-react";
 import ResumeViewerInline from "../[id]/resume-viewer-inline";
 import { POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
 import CallRecordForm, { type CallResult } from "../call-record-form";
 import { GAP_LABEL, STRENGTH } from "@/lib/completion";
 import StillMissing from "@/components/still-missing";
+import WhatsAppMenu from "@/components/whatsapp-menu";
+import { candidateTemplates } from "@/lib/whatsapp-link";
+import { useMyFirstName } from "@/lib/use-my-name";
 
 
 export type CallPerson = {
@@ -157,6 +160,8 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
   const [showCv, setShowCv] = useState(false);
   const [copied, setCopied] = useState(false);
   const [last, setLast] = useState<CallResult | null>(null);
+  const [lastPhone, setLastPhone] = useState<string | null>(null);
+  const me = useMyFirstName();
   // CV links are fetched when a card opens and for the next card in advance (they used to be prepared for all fifty
   // people before the page could appear). The CV panel can also be switched off on a slower computer; that is remembered.
   const [cvUrls, setCvUrls] = useState<Record<string, string | null>>({});
@@ -292,6 +297,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
   function finished(r: CallResult) {
     if (!active) return;
     setLast(r);
+    setLastPhone(active.phone);
     setSession((l) => [
       { id: `s-${Date.now()}`, candidate_id: active.id, full_name: r.name || active.full_name, phone: active.phone, current_job_title: active.current_job_title, current_employer: active.current_employer, outcome: r.outcome, note: null, call_back_at: r.callBackAt ?? null, created_at: new Date().toISOString(), caller_id: meId, caller_name: "You", has_pay: !(r.stillMissing ?? []).includes("current_ctc"), has_cv: !!active.resume_file_url && !(r.stillMissing ?? []).includes("cv"), tries: r.outcome === "no_answer" ? active.tries + 1 : 0 },
       ...l,
@@ -309,7 +315,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
   const OUT: Record<string, string> = { reached: "Spoke", no_answer: "No answer", call_later: "Call back", not_interested: "Not interested", wrong_number: "Wrong number" };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,400px)_minmax(0,1fr)]">
+    <div className={`grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] ${active && !active.resume_file_url ? "xl:grid-cols-[330px_minmax(0,1fr)]" : "xl:grid-cols-[330px_minmax(0,400px)_minmax(0,1fr)]"}`}>
       {/* Phone: a bar instead of the list. */}
       <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] lg:hidden dark:border-slate-700 dark:bg-slate-900">
         <button type="button" onClick={() => go(-1)} className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-700 dark:border-slate-600 dark:text-slate-200">Previous</button>
@@ -570,6 +576,12 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
             {last && (
               <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[12px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
                 <p className="font-semibold">Saved {last.name}.{last.tier ? ` Talent Pool: ${POOL_TIER_LABEL[last.tier as PoolTier] ?? last.tier}.` : ""}</p>
+                {last.outcome === "no_answer" && lastPhone && (
+                  <p className="mt-1 flex flex-wrap items-center gap-2">
+                    <span>Didn&apos;t pick up. A WhatsApp lets them reply with their CV and pay:</span>
+                    <WhatsAppMenu phone={lastPhone} templates={candidateTemplates(last.name, { me, candidateId: last.candidateId, missing: ["current_ctc", "cv"] }).filter((t) => ["tried", "cv", "details"].includes(t.key))} context={{ name: last.name }} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[12px] font-semibold text-white hover:bg-emerald-700" />
+                  </p>
+                )}
                 {last.summary && <p className="mt-0.5">{last.summary}</p>}
                 {last.reading && <p className="mt-0.5">Your note is being read in the background; the details it fills and the client brief update within a minute.</p>}
                 {last.filled.length > 0 && <p className="mt-0.5">Filled in: {last.filled.join(", ")}.</p>}
@@ -580,6 +592,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
             <CallRecordForm key={active.id} p={active} onDone={finished} mode="desk" />
           </section>
 
+          {active.resume_file_url && (
           <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 ${cvOff ? "xl:hidden" : "xl:block"} xl:col-span-1 xl:h-[78vh] dark:border-slate-700 dark:bg-slate-900`}>
             {active.resume_file_url && activeCv ? (
               <div className="h-full overflow-auto">
@@ -587,13 +600,9 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
               </div>
             ) : active.resume_file_url && activeCv === undefined ? (
               <div className="flex h-full items-center justify-center text-[13px] text-slate-500">Opening the CV…</div>
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-[13px] text-slate-500">
-                <FileText className="h-8 w-8 text-slate-300" />
-                No CV on file. Ask them to send it on WhatsApp after the call.
-              </div>
-            )}
+            ) : null}
           </section>
+          )}
         </>
       ) : (
         <div className="col-span-2 flex items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white p-10 text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">

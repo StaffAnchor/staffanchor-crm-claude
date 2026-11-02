@@ -52,8 +52,7 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
   const tile = (title: string, a: { gate: number; vitals: number; full: number } | undefined) => (
     <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
       <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
-      <p className="mt-0.5 text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{a?.gate ?? 0}<span className="ml-1 text-[11.5px] font-normal text-slate-500">pay + CV done</span></p>
-      <p className="mt-1 text-[11.5px] text-slate-500">{a?.vitals ?? 0} with all vitals · {a?.full ?? 0} fully complete</p>
+      <p className="mt-0.5 text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{a?.gate ?? 0}<span className="ml-1 text-[11.5px] font-normal text-slate-500">got pay + CV</span></p>
     </div>
   );
 
@@ -76,7 +75,7 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
           <p className="mb-1 text-[11.5px] text-slate-500">Profiles that got current pay and a CV, per day, last 30 days</p>
           <div className="flex h-28 items-end gap-[3px]" role="img" aria-label="Daily completions, last 30 days">
             {days.map((d) => (
-              <div key={d.day} className="flex h-full flex-1 flex-col justify-end" title={`${shortDay(d.day)}: ${d.gate} pay + CV, ${d.vitals} all vitals, ${d.full} fully complete`}>
+              <div key={d.day} className="flex h-full flex-1 flex-col justify-end" title={`${shortDay(d.day)}: ${d.gate} got pay + CV`}>
                 <div className={`w-full rounded-t ${d.gate > 0 ? "bg-teal-500" : "bg-slate-100 dark:bg-slate-800"}`} style={{ height: `${d.gate > 0 ? Math.max(6, (d.gate / max) * 100) : 4}%` }} />
               </div>
             ))}
@@ -85,11 +84,11 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
           <p className="mb-1 mt-4 text-[11.5px] font-medium text-slate-500">Just now</p>
           {!live ? (
             <p className="text-[12.5px] text-slate-400">Loading…</p>
-          ) : live.feed.length === 0 ? (
-            <p className="text-[12.5px] text-slate-400">No profile has crossed a line yet today.</p>
+          ) : live.feed.filter((f) => f.kind === "gate").length === 0 ? (
+            <p className="text-[12.5px] text-slate-400">No profile has got current pay and a CV yet today.</p>
           ) : (
             <ul className="max-h-40 space-y-1 overflow-y-auto pr-1">
-              {live.feed.map((f, i) => (
+              {live.feed.filter((f) => f.kind === "gate").map((f, i) => (
                 <li key={`${f.at}-${i}`} className="text-[12.5px] text-slate-600 dark:text-slate-300">
                   <span className="tabular-nums text-slate-400">{timeOf(f.at)}</span> · <b className="font-medium text-slate-800 dark:text-slate-100">{f.by}</b>: <Link href={`/candidates/${f.candidate_id}`} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:underline dark:text-teal-300">{f.candidate ?? "A profile"}</Link> {KIND_TEXT[f.kind] ?? f.kind}
                 </li>
@@ -117,9 +116,8 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
                   <tr className="text-left text-[11px] font-medium uppercase tracking-wide text-slate-400">
                     <th className="pb-1 font-medium">Person</th>
                     <th className="pb-1 text-right font-medium" title="Calls logged today">Calls</th>
-                    <th className="pb-1 text-right font-medium" title="Of those, spoke to the person">Spoke</th>
-                    <th className="pb-1 text-right font-medium" title="Got current pay and CV">Pay+CV</th>
-                    <th className="pb-1 text-right font-medium" title="Fully complete">Full</th>
+                    <th className="pb-1 text-right font-medium" title="Share of calls where someone picked up">Picked up</th>
+                    <th className="pb-1 text-right font-medium" title="Profiles that got current pay and a CV">Pay + CV</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,9 +125,8 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
                     <tr key={p.name} className="border-t border-slate-100 dark:border-slate-800">
                       <td className="truncate py-1 pr-2 text-slate-700 dark:text-slate-200">{p.name}</td>
                       <td className="py-1 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.calls}</td>
-                      <td className="py-1 text-right tabular-nums text-slate-500">{p.spoke}</td>
+                      <td className="py-1 text-right tabular-nums text-slate-500">{p.calls > 0 ? `${Math.round((p.spoke / p.calls) * 100)}%` : "–"}</td>
                       <td className="py-1 text-right font-semibold tabular-nums text-slate-900 dark:text-slate-100">{p.gate}</td>
-                      <td className="py-1 text-right tabular-nums text-slate-500">{p.full}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -142,7 +139,7 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
               {trend.people.map((p) => (
                 <li key={p.name} className="flex items-baseline justify-between gap-2 text-[12.5px]">
                   <span className="truncate text-slate-700 dark:text-slate-200">{p.name}</span>
-                  <span className="shrink-0 tabular-nums text-slate-500"><b className="text-slate-900 dark:text-slate-100">{p.gate}</b> pay + CV · {p.full} full</span>
+                  <span className="shrink-0 tabular-nums text-slate-500"><b className="text-slate-900 dark:text-slate-100">{p.gate}</b> got pay + CV</span>
                 </li>
               ))}
             </ul>

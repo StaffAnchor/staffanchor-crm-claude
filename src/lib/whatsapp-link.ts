@@ -107,6 +107,11 @@ export function candidateTemplates(name: string | null | undefined, ctx: Templat
   return [
     ...out,
     {
+      key: "tried",
+      label: "Tried calling: ask for CV and pay",
+      text: `Hi ${n}, ${who}. I just tried calling you about opportunities that match your profile. Could you please reply here with your updated CV and your current CTC? It takes a minute and lets me put you forward. Thanks, ${sign}`,
+    },
+    {
       key: "intro",
       label: "Introduce an opportunity",
       text: `Hi ${n}, ${who}. I came across your profile and have an opportunity I'd like to discuss. Do you have 5 minutes for a quick call today?`,

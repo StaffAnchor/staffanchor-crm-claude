@@ -6,7 +6,6 @@ import CandidatesSubNav from "../candidates-sub-nav";
 import CallsDesk, { type CallBackRow, type CallHistoryRow, type CallPerson } from "../calls/calls-desk";
 import { GAP_LABEL, STRENGTH, isGate, isVital } from "@/lib/completion";
 import { loadPriorityCalls } from "@/lib/priority-calls";
-import TeamActivityCard from "@/components/team-activity-card";
 import CompletionsCard, { type Trend } from "./completions-card";
 import TargetControl, { type Target } from "./target-control";
 import BatchPanel from "../pipeline/batch-panel";
@@ -87,7 +86,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const supabase = await createClient();
   // Everything the page needs is asked for at once: the pages used to wait for each query in turn, which is what made them slow.
   const queueArgs = priorityView
-    ? { p_group: null, p_by: by, p_mode: mode, p_limit: 60 }
+    ? { p_group: null, p_by: by, p_city: city, p_mode: mode, p_limit: 60 }
     : { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_cluster: cluster, p_metro: metro, p_pool: pool, p_limit: 50 };
   const [
     { data: authData },
@@ -116,8 +115,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     supabase.rpc("completion_cities", { p_group: group, p_by: by, p_bucket: bucketKey }),
     !sub || priorityView ? loadPriorityCalls(supabase, "staff") : Promise.resolve(null),
     working ? supabase.rpc("completion_queue", queueArgs) : Promise.resolve({ data: null, error: null }),
-    working ? supabase.rpc("call_history_today", { p_since: istDayStartIso() }) : Promise.resolve({ data: [] }),
-    working ? supabase.rpc("call_backs_pending") : Promise.resolve({ data: [] }),
+    supabase.rpc("call_history_today", { p_since: istDayStartIso() }),
+    supabase.rpc("call_backs_pending"),
   ]);
   const user = authData?.user;
   if (!user) redirect("/login");
@@ -219,6 +218,9 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const todaysCalls = history;
   const mine = todaysCalls.filter((l) => l.caller_id === user.id).length;
   const teamCalls = todaysCalls;
+  const myCalls = todaysCalls.filter((l) => l.caller_id === user.id);
+  const mySpoke = myCalls.filter((l) => l.outcome === "reached").length;
+  const backsDue = priority?.counts.callbacks ?? 0;
 
   const focusGapEntries = focusRow ? Object.entries(focusRow.gaps).filter(([k]) => isGate(k)).sort((a, b) => Number(isGate(b[0])) - Number(isGate(a[0])) || Number(isVital(b[0])) - Number(isVital(a[0])) || b[1] - a[1]) : [];
   const focusTarget = focusRow ? targets.get(`${group}|${focusRow.bucket}`) ?? null : null;
@@ -228,7 +230,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       <CandidatesSubNav />
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="ros-page-title">Profile completion</h1>
+          <h1 className="ros-page-title">{working ? "Calls" : "Profile completion"}</h1>
           {!working && (
           <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
             A profile is complete when it has everything needed to present the person to a client: name, phone, email, CV, experience, current and expected pay, notice period,
@@ -247,6 +249,41 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         </div>
         )}
       </div>
+
+      {/* My day: what to do now, first on the page. */}
+      {!working && (
+        <div className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className={`${card} p-4`}>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">My calls today</p>
+            <p className="mt-1 flex items-baseline gap-2"><span className="text-[30px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{myCalls.length}</span><span className="text-[12.5px] text-slate-500">{myCalls.length > 0 ? `${mySpoke} spoke · ${pct(mySpoke, myCalls.length)}% picked up` : "none yet"}</span></p>
+            {backsDue > 0 && <p className="mt-1.5 text-[12.5px] font-medium text-violet-700 dark:text-violet-300">{backsDue} call {backsDue === 1 ? "back" : "backs"} due now</p>}
+          </div>
+          <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null, list: "priority" })} className="flex flex-col justify-between rounded-xl border border-teal-200 bg-teal-50 p-4 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
+            <span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-teal-800/70 dark:text-teal-200/70">Priority</span>
+              <span className="mt-1 block text-[22px] font-semibold leading-none text-teal-900 dark:text-teal-100">{priority?.people.length ?? 0} {(priority?.people.length ?? 0) === 1 ? "call" : "calls"}</span>
+              <span className="mt-1 block text-[12px] text-teal-800/80 dark:text-teal-200/80">{[priority && priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199`, priority && priority.counts.interested > 0 && `${priority.counts.interested} said yes`, priority && priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due`, priority && priority.counts.urgent > 0 && `${priority.counts.urgent} urgent ${priority.counts.urgent === 1 ? "role" : "roles"}`].filter(Boolean).join(" · ") || "Nothing urgent right now"}</span>
+            </span>
+            <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Start calling <ArrowRight className="h-4 w-4" /></span>
+          </Link>
+          <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null, list: "pay" })} className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/60">
+            <span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Missing current pay or CV</span>
+              <span className="mt-1 block text-[22px] font-semibold leading-none text-slate-900 dark:text-slate-100">{n0(payTotal)} people</span>
+              <span className="mt-1 block text-[12px] text-slate-500">B2B first, then B2C, then the rest</span>
+            </span>
+            <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-slate-800 dark:text-slate-100">Start calling <ArrowRight className="h-4 w-4" /></span>
+          </Link>
+          <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null, list: "priority" })} className="flex flex-col justify-between rounded-xl border border-violet-200 bg-violet-50 p-4 hover:bg-violet-100 dark:border-violet-900 dark:bg-violet-950/30">
+            <span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-violet-800/70 dark:text-violet-200/70">Call backs</span>
+              <span className="mt-1 block text-[22px] font-semibold leading-none text-violet-900 dark:text-violet-100">{backsDue} due now</span>
+              <span className="mt-1 block text-[12px] text-violet-800/80 dark:text-violet-200/80">People who asked to be called later</span>
+            </span>
+            <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-violet-800 dark:text-violet-200">Open <ArrowRight className="h-4 w-4" /></span>
+          </Link>
+        </div>
+      )}
 
       {/* The whole base, split by group. Hidden while working a call list so the calls sit at the top of the page. */}
       {!working && (
@@ -267,16 +304,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
               </p>
               <p className="mb-1 mt-3 flex justify-between text-[11px] font-medium uppercase tracking-wide text-slate-400"><span>Current pay + CV</span><span className="normal-case tracking-normal text-slate-500"><b className="text-amber-700 dark:text-amber-300">{n0(s.gate_incomplete)}</b> to go</span></p>
               <Bar done={s.total - s.gate_incomplete} total={s.total} tone={s.gate_incomplete === 0 ? "bg-emerald-500" : "bg-rose-500"} />
-              <p className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">Vitals</p>
-              <Bar done={s.total - s.vitals_incomplete} total={s.total} tone={s.vitals_incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} />
-              <p className="mt-1.5 flex justify-between text-[12.5px]">
-                <span className="text-emerald-700 dark:text-emerald-300">{n0(s.total - s.vitals_incomplete)} complete</span>
-                <span className="font-semibold text-amber-700 dark:text-amber-300">{n0(s.vitals_incomplete)} to go</span>
-              </p>
-              <p className="mt-1 text-[11.5px] text-slate-500">{n0(s.complete)} fully complete (vitals + other details) · {n0(s.looking_known)} confirmed looking</p>
-              <p className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">Profile strength · {n0(s.assessed)} judged on a call</p>
-              <StrengthBar s={groupStrengths[g.key] ?? {}} total={s.total} />
-            </Link>
+                        </Link>
           );
         })}
       </div>
@@ -284,34 +312,11 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
 
       {!working && trend && trend.days.length > 0 && <CompletionsCard initial={trend} group={["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null} label={GROUP_LABEL[group] ?? "All"} />}
 
-      {!working && myRole === "admin" && <div className="mb-5"><TeamActivityCard supabase={supabase} /></div>}
-
-      {!working && (
-        <div className="mb-4 grid gap-3 md:grid-cols-2">
-          <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null, list: "priority" })} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/30 dark:hover:bg-teal-950/50">
-            <span className="text-[13.5px] text-teal-900 dark:text-teal-100">
-              <b>{priority?.people.length ?? 0} priority {(priority?.people.length ?? 0) === 1 ? "call" : "calls"}</b>
-              <span className="block text-[12px] text-teal-800/80 dark:text-teal-200/80">
-                {[priority && priority.counts.paid > 0 && `${priority.counts.paid} paid ₹199`, priority && priority.counts.interested > 0 && `${priority.counts.interested} said yes to a role`, priority && priority.counts.callbacks > 0 && `${priority.counts.callbacks} call-backs due`, priority && priority.counts.urgent > 0 && `${priority.counts.urgent} for an urgent role`].filter(Boolean).join(" · ") || "Nothing urgent right now"}
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-teal-800 dark:text-teal-200">Call them <ArrowRight className="h-4 w-4" /></span>
-          </Link>
-          <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "priority", city: null, gap: null, list: "pay" })} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/60">
-            <span className="text-[13.5px] text-slate-900 dark:text-slate-100">
-              <b>{n0(payTotal)} missing current pay or CV</b>
-              <span className="block text-[12px] text-slate-500">B2B first, then B2C, then the rest</span>
-            </span>
-            <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-slate-700 dark:text-slate-200">Call them <ArrowRight className="h-4 w-4" /></span>
-          </Link>
-        </div>
-      )}
-
       {!working ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <section>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{GROUP_LABEL[group]}: {n0(byGroup[group].gate_incomplete)} profiles missing current pay or CV · {n0(byGroup[group].vitals_incomplete)} missing a vital</h2>
+              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{GROUP_LABEL[group]}: {n0(byGroup[group].gate_incomplete)} profiles missing current pay or CV</h2>
               {byGroup[group].gate_incomplete > 0 && (
                 <Link target="_blank" rel="noopener noreferrer" href={url({ sub: "*" })} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700">
                   Work on all of {GROUP_LABEL[group]} <ArrowRight className="h-3.5 w-3.5" />
@@ -331,17 +336,10 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                         <div className="min-w-0 flex-1 basis-64">
                           <p className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{bucketLabel(r.bucket)}</p>
                           <p className="mt-0.5 text-[12.5px] text-slate-500">
-                            {n0(r.total)} profiles · pay + CV <b className="text-rose-700 dark:text-rose-300">{n0(r.gate_incomplete)} to go</b> · vitals <span className="text-emerald-700 dark:text-emerald-300">{n0(r.total - r.vitals_incomplete)} complete</span> · <b className="text-amber-700 dark:text-amber-300">{n0(r.vitals_incomplete)} to go</b> · {n0(r.complete)} fully complete
+                            {n0(r.total)} profiles · current pay + CV <span className="text-emerald-700 dark:text-emerald-300">{n0(r.total - r.gate_incomplete)} done</span> · <b className="text-rose-700 dark:text-rose-300">{n0(r.gate_incomplete)} to go</b>
                             {r.no_phone > 0 && <span> · {r.no_phone} have no usable phone</span>}
                           </p>
-                          <div className="mt-2"><Bar done={r.total - r.vitals_incomplete} total={r.total} tone={r.vitals_incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} /></div>
-                          <div className="mt-2.5 max-w-xl">
-                            <StrengthBar s={r.strengths} total={r.total} />
-                            <p className="mt-0.5 text-[11px] text-slate-400">
-                              {r.assessed} of {r.total} judged on a call
-                              {r.total - r.assessed > 0 && <> · <Link target="_blank" rel="noopener noreferrer" href={url({ sub: r.bucket, mode: "assess" })} className="font-medium text-teal-700 hover:underline dark:text-teal-300">assess the rest</Link></>}
-                            </p>
-                          </div>
+                          <div className="mt-2"><Bar done={r.total - r.gate_incomplete} total={r.total} tone={r.gate_incomplete === 0 ? "bg-emerald-500" : "bg-teal-500"} /></div>
                           {top.length > 0 && (
                             <p className="mt-2 flex flex-wrap gap-1.5 text-[11.5px]">
                               {top.map(([k, v]) => (
@@ -356,7 +354,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                           {r.gate_incomplete > 0 && <TargetControl group={group} by={by} bucket={r.bucket} incomplete={r.gate_incomplete} target={target} compact />}
                           {r.gate_incomplete > 0 ? (
                             <Link target="_blank" rel="noopener noreferrer" href={url({ sub: r.bucket })} className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
-                              Start calling <ArrowRight className="h-3.5 w-3.5" />
+                              Call this practice <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
                           ) : (
                             <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Pay + CV complete</span>
@@ -408,7 +406,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
         <div>
           <div className="mb-3">
             <Link href={url({ sub: null, city: null, gap: null })} className="inline-flex items-center gap-1 text-[12.5px] font-medium text-teal-700 hover:underline dark:text-teal-300">
-              <ArrowLeft className="h-3.5 w-3.5" /> {priorityView ? "Profile completion" : `All ${GROUP_LABEL[group]} practices`}
+              <ArrowLeft className="h-3.5 w-3.5" /> {priorityView ? "Back to my day" : `All ${GROUP_LABEL[group]} practices`}
             </Link>
           </div>
           {priorityView && priority && (
@@ -432,6 +430,15 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                   <p>Team today: {teamCalls.length} calls, {teamCalls.filter((l) => l.outcome === "reached").length} reached</p>
                 </div>
               </div>
+              {listKind === "pay" && cities.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
+                  <span className="font-medium text-slate-500">City:</span>
+                  <Link href={url({ sub: "priority", list: "pay", city: null })} className={`rounded-full border px-2.5 py-0.5 font-medium ${!city ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>All cities</Link>
+                  {cities.map((c) => (
+                    <Link key={c.city} href={url({ sub: "priority", list: "pay", city: c.city })} className={`rounded-full border px-2.5 py-0.5 font-medium ${city === c.city ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{c.city} · {c.incomplete}</Link>
+                  ))}
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
                 {([{ k: "priority", l: `Priority · ${priority.people.length}` }, { k: "pay", l: `Missing pay or CV · ${n0(payTotal)}` }] as const).map((t) => (
                   <Link key={t.k} href={url({ sub: "priority", list: t.k })} className={`rounded-full border px-3 py-1 font-medium ${listKind === t.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{t.l}</Link>
@@ -520,7 +527,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
           ) : (
             <>
               <p className="mb-3 text-[12.5px] text-slate-500">
-                {people.length} people to call{priorityView && listKind === "priority" ? ", priority first" : ", B2B first"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
+                {priorityView && listKind === "pay" ? `The next ${people.length} of ${n0(payTotal)}` : `${people.length} people`} to call{priorityView && listKind === "priority" ? ", priority first" : ", B2B first"}. Call, fill in what is missing, rate how they came across, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
               <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}|${listKind}`} people={people} openId={openId} history={history} callBacks={((backsRes as { data: CallBackRow[] | null }).data ?? []) as CallBackRow[]} meId={user.id} />
