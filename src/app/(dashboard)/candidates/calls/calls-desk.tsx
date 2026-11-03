@@ -317,7 +317,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
   const OUT: Record<string, string> = { reached: "Spoke", no_answer: "No answer", call_later: "Call back", not_interested: "Not interested", wrong_number: "Wrong number" };
 
   return (
-    <div className={`grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] ${active && !active.resume_file_url ? "xl:grid-cols-[330px_minmax(0,1fr)]" : "xl:grid-cols-[330px_minmax(0,400px)_minmax(0,1fr)]"}`}>
+    <div className={`grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] ${active && !active.resume_file_url ? "xl:grid-cols-[330px_minmax(0,1fr)]" : cvOff ? "xl:grid-cols-[330px_minmax(0,1fr)]" : "xl:grid-cols-[330px_minmax(0,1fr)] 2xl:grid-cols-[330px_minmax(0,400px)_minmax(0,1fr)]"}`}>
       {/* Phone: a bar instead of the list. */}
       <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] lg:hidden dark:border-slate-700 dark:bg-slate-900">
         <button type="button" onClick={() => go(-1)} className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-700 dark:border-slate-600 dark:text-slate-200">Previous</button>
@@ -564,13 +564,13 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
                   {copied ? "Copied" : "Copy number"}
                 </button>
                 {active.resume_file_url && (
-                  <button type="button" onClick={() => setShowCv((v) => !v)} className="rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 xl:hidden dark:border-slate-600 dark:text-slate-200">
+                  <button type="button" onClick={() => setShowCv((v) => !v)} className="rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 2xl:hidden dark:border-slate-600 dark:text-slate-200">
                     {showCv ? "Hide CV" : "View CV"}
                   </button>
                 )}
                 {active.resume_file_url && (
-                  <button type="button" onClick={toggleCv} className="hidden rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 xl:inline-block dark:border-slate-600 dark:text-slate-200" title="Turn the CV panel off if this page feels slow; it is remembered on this computer">
-                    {cvOff ? "Show CV panel" : "Hide CV panel"}
+                  <button type="button" onClick={toggleCv} className="hidden rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 2xl:inline-block dark:border-slate-600 dark:text-slate-200" title="Turn the CV panel off if this page feels slow; it is remembered on this computer">
+                    {cvOff ? "Show CV side panel" : "Hide CV side panel"}
                   </button>
                 )}
               </div>
@@ -595,7 +595,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
           </section>
 
           {active.resume_file_url && (
-          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 ${cvOff ? "xl:hidden" : "xl:block"} xl:sticky xl:top-3 xl:col-span-1 xl:h-[calc(100vh-1.5rem)] xl:self-start dark:border-slate-700 dark:bg-slate-900`}>
+          <section className={`${showCv ? "block" : "hidden"} h-[75vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50 lg:col-span-2 ${cvOff ? "2xl:hidden" : "2xl:block"} 2xl:sticky 2xl:top-3 2xl:col-span-1 2xl:h-[calc(100vh-1.5rem)] 2xl:self-start dark:border-slate-700 dark:bg-slate-900`}>
             {active.resume_file_url && activeCv ? (
               <div className="h-full overflow-auto">
                 <ResumeViewerInline key={active.id} signedUrl={activeCv} fileName={active.resume_file_url.replace(/^resumes\//, "")} />
