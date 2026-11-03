@@ -288,7 +288,8 @@ ${candidateListHtml}
   for (const link of targetLinks) {
     const cand = link.candidates as unknown as Cand;
     const alreadyFurther = (STAGE_ORDER[link.stage] ?? 0) >= STAGE_ORDER["submitted"];
-    await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).eq("id", link.id);
+    // client_notified_at: this email already told the client, so the automatic share notice must not repeat it.
+    await supabase.from("candidate_mandate_links").update({ in_shortlist: true, client_notified_at: new Date().toISOString() }).eq("id", link.id);
     if (!alreadyFurther) {
       try {
         await applyStageChange(supabase, {
