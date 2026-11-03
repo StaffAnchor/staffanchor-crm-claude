@@ -70,7 +70,7 @@ export default function ResumeViewerInline({
     // is strictly worse than the link-target issue it was meant to fix.
     // Left unsandboxed; the DOCX-side target="_blank" fix below still
     // covers the common case.
-    return <iframe src={signedUrl} className="w-full h-full" title={`Resume — ${fileName}`} />;
+    return <iframe src={`${signedUrl.split("#")[0]}#navpanes=0`} className="w-full h-full" title={`Resume — ${fileName}`} />;
   }
 
   if (isDocx) {
