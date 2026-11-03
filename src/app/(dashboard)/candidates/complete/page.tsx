@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 // many are still to go, by city and by what is missing, with a deadline per practice and a call list to finish them.
 
 type Row = { profile_group: string; bucket: string; total: number; complete: number; incomplete: number; no_phone: number; assessed: number; vitals_incomplete: number; gate_incomplete: number; looking_known: number; gaps: Record<string, number>; strengths: Record<string, number> };
+const EXP_BRACKETS = [{ key: "0-5", label: "0-5 yrs" }, { key: "5-10", label: "5-10 yrs" }, { key: "10-15", label: "10-15 yrs" }, { key: "15+", label: "15+ yrs" }];
 type City = { city: string; total: number; complete: number; incomplete: number };
 
 const GROUPS = [
@@ -62,12 +63,13 @@ function Bar({ done, total, tone = "bg-teal-500" }: { done: number; total: numbe
   );
 }
 
-export default async function CompletionPage({ searchParams }: { searchParams: Promise<{ tab?: string; group?: string; by?: string; sub?: string; city?: string; gap?: string; strength?: string; mode?: string; cluster?: string; metro?: string; pool?: string; list?: string; open?: string }> }) {
+export default async function CompletionPage({ searchParams }: { searchParams: Promise<{ tab?: string; group?: string; by?: string; sub?: string; city?: string; gap?: string; strength?: string; mode?: string; cluster?: string; metro?: string; pool?: string; list?: string; open?: string; exp?: string }> }) {
   const sp = await searchParams;
   const group = GROUPS.some((g) => g.key === sp.group) ? (sp.group as string) : "b2b_sales";
   const by = sp.by === "sub_domain" ? "sub_domain" : "sub_group";
   const sub = sp.sub ?? null; // a bucket name, or "*" for the whole group
   const city = sp.city ?? null;
+  const exp = EXP_BRACKETS.some((b) => b.key === sp.exp) ? (sp.exp as string) : null;
   const gap = sp.gap && GAP_LABEL[sp.gap] ? sp.gap : null;
   const strength = sp.strength && STRENGTH[sp.strength] ? sp.strength : null;
   // Filters that come from the supply map (a kind of role in a city) and the talent pool.
@@ -87,8 +89,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const supabase = await createClient();
   // Everything the page needs is asked for at once: the pages used to wait for each query in turn, which is what made them slow.
   const queueArgs = priorityView
-    ? { p_group: null, p_by: by, p_city: city, p_mode: mode, p_limit: 60 }
-    : { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_gap: gap, p_strength: strength, p_mode: mode, p_cluster: cluster, p_metro: metro, p_pool: pool, p_limit: 50 };
+    ? { p_group: null, p_by: by, p_city: city, p_exp: exp, p_mode: mode, p_limit: 60 }
+    : { p_group: group, p_by: by, p_bucket: bucketKey, p_city: city, p_exp: exp, p_gap: gap, p_strength: strength, p_mode: mode, p_cluster: cluster, p_metro: metro, p_pool: pool, p_limit: 50 };
   const [
     { data: authData },
     { data: myRole },
@@ -99,6 +101,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     clusterRes,
     dupRes,
     { data: cityData },
+    { data: expData },
     priority,
     queueRes,
     callsRes,
@@ -114,6 +117,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     sub ? Promise.resolve({ data: 0 }) : supabase.rpc("duplicate_phone_profiles"),
     // Cities: inside the chosen practice when working, otherwise across the whole group.
     supabase.rpc("completion_cities", { p_group: group, p_by: by, p_bucket: bucketKey }),
+    supabase.rpc("completion_exp_brackets", { p_group: priorityView ? null : group, p_by: by, p_bucket: bucketKey }),
     !sub || priorityView ? loadPriorityCalls(supabase, "staff") : Promise.resolve(null),
     working ? supabase.rpc("completion_queue", queueArgs) : Promise.resolve({ data: null, error: null }),
     supabase.rpc("call_history_today", { p_since: istDayStartIso() }),
@@ -139,7 +143,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
   const addStrengths = (rs: Row[]) => rs.reduce<Record<string, number>>((a, r) => { for (const [k, v] of Object.entries(r.strengths)) a[k] = (a[k] ?? 0) + v; return a; }, {});
   const groupStrengths = Object.fromEntries(GROUPS.map((g) => [g.key, addStrengths(rows.filter((r) => r.profile_group === g.key))])) as Record<string, Record<string, number>>;
 
-  const url = (o: Partial<{ group: string; by: string; sub: string | null; city: string | null; gap: string | null; strength: string | null; mode: string; cluster: string | null; metro: string | null; pool: boolean; list: string; tab: string }>) => {
+  const url = (o: Partial<{ group: string; by: string; sub: string | null; city: string | null; exp: string | null; gap: string | null; strength: string | null; mode: string; cluster: string | null; metro: string | null; pool: boolean; list: string; tab: string }>) => {
     const q = new URLSearchParams();
     const g = o.group ?? group;
     q.set("group", g);
@@ -149,6 +153,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
     if (s) q.set("sub", s);
     const c = "city" in o ? o.city : city;
     if (c) q.set("city", c);
+    const ex = "exp" in o ? o.exp : exp;
+    if (ex) q.set("exp", ex);
     const ga = "gap" in o ? o.gap : gap;
     if (ga) q.set("gap", ga);
     const st = "strength" in o ? o.strength : strength;
@@ -167,6 +173,8 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
 
   const focusRow = working && !priorityView ? (bucketKey ? groupRows.find((r) => r.bucket === bucketKey) : { ...sum(groupRows), profile_group: group, bucket: "*", gaps: groupGaps, strengths: groupStrengths[group] ?? {} }) : null;
 
+  const expCounts = new Map(((expData ?? []) as { bracket: string; n: number }[]).map((r) => [r.bracket, r.n]));
+  const expChip = (on: boolean) => `rounded-full border px-2.5 py-0.5 font-medium ${on ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`;
   const cities = ((cityData ?? []) as City[]).filter((c) => c.incomplete > 0).sort((a, b) => b.incomplete - a.incomplete).slice(0, 14);
 
   // Turns queue rows (ids in order, with their gaps and strength) into people the call desk can show.
@@ -422,6 +430,15 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                   ))}
                 </div>
               )}
+              {listKind === "pay" && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
+                  <span className="font-medium text-slate-500">Experience:</span>
+                  <Link href={url({ sub: "priority", list: "pay", exp: null })} className={expChip(!exp)}>Any</Link>
+                  {EXP_BRACKETS.map((b) => (
+                    <Link key={b.key} href={url({ sub: "priority", list: "pay", exp: b.key })} className={expChip(exp === b.key)}>{b.label} · {expCounts.get(b.key) ?? 0}</Link>
+                  ))}
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
                 {([{ k: "priority", l: `Priority · ${priority.people.length}` }, { k: "pay", l: `Missing pay or CV · ${n0(payTotal)}` }] as const).map((t) => (
                   <Link key={t.k} href={url({ sub: "priority", list: t.k })} className={`rounded-full border px-3 py-1 font-medium ${listKind === t.k ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>{t.l}</Link>
@@ -503,6 +520,13 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                   ))}
                 </div>
               )}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
+                <span className="font-medium text-slate-500">Experience:</span>
+                <Link href={url({ exp: null })} className={expChip(!exp)}>Any</Link>
+                {EXP_BRACKETS.map((b) => (
+                  <Link key={b.key} href={url({ exp: b.key })} className={expChip(exp === b.key)}>{b.label} · {expCounts.get(b.key) ?? 0}</Link>
+                ))}
+              </div>
             </div>
           )}
           {queueError ? (
@@ -513,7 +537,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
                 {priorityView && listKind === "pay" ? `The next ${people.length} of ${n0(payTotal)}` : `${people.length} people`} to call{priorityView && listKind === "priority" ? ", priority first" : ", B2B first"}. Get current pay and the CV, pick the result; the next person opens by itself.
                 People who didn&apos;t answer come back after a day, up to 3 tries.
               </p>
-              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${cluster}|${metro}|${pool}|${listKind}`} people={people} openId={openId} initialTab={initialTab} history={history} callBacks={((backsRes as { data: CallBackRow[] | null }).data ?? []) as CallBackRow[]} meId={user.id} />
+              <CallsDesk key={`${group}|${by}|${sub}|${city}|${gap}|${strength}|${exp}|${cluster}|${metro}|${pool}|${listKind}`} people={people} openId={openId} initialTab={initialTab} history={history} callBacks={((backsRes as { data: CallBackRow[] | null }).data ?? []) as CallBackRow[]} meId={user.id} />
             </>
           )}
         </div>

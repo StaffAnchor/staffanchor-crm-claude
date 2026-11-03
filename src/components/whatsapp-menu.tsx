@@ -34,14 +34,28 @@ export default function WhatsAppMenu({
   const wa = useWhatsAppOpen();
 
   async function copy(key: string, text: string) {
+    let ok = false;
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(key);
-      setTimeout(() => setCopied((c) => (c === key ? null : c)), 1800);
-      onSend?.(key);
+      ok = true;
     } catch {
-      /* clipboard blocked: the Open link still works */
+      // The browser refused the modern clipboard call (focus sits in the CV viewer, or the page is not trusted): use the old way.
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        ok = document.execCommand("copy");
+      } catch {
+        ok = false;
+      }
+      document.body.removeChild(ta);
     }
+    setCopied(ok ? key : `fail:${key}`);
+    setTimeout(() => setCopied((c) => (c === key || c === `fail:${key}` ? null : c)), 1800);
+    if (ok) onSend?.(key);
   }
 
   useEffect(() => {
@@ -113,7 +127,7 @@ export default function WhatsAppMenu({
                 title="Copy this message"
                 className="mr-1 inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-1 text-xs font-medium text-slate-500 hover:bg-white hover:text-slate-800 dark:hover:bg-slate-700 dark:hover:text-slate-100"
               >
-                {copied === t.key ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />} {copied === t.key ? "Copied" : "Copy"}
+                {copied === t.key ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />} {copied === t.key ? "Copied" : copied === `fail:${t.key}` ? "Not copied, click the name" : "Copy"}
               </button>
             </div>
           ))}
