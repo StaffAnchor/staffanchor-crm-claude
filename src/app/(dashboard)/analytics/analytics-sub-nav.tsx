@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Wallet, Users, Activity, Gauge, Video } from "lucide-react";
+import { BarChart3, Wallet, Users, Activity, Gauge, Video, Globe } from "lucide-react";
 
 // Five tabs, not eleven: related views sit together inside one tab (Revenue holds overview, billing and FY targets, and so on).
 // Placements itself lives outside /analytics (it is recruiter-visible), but an admin expects to find it from here too, so it is
@@ -11,6 +11,7 @@ const TABS: { href: string; label: string; icon: typeof Gauge; also?: string[] }
   { href: "/analytics/scoreboard", label: "Scoreboard", icon: Gauge },
   { href: "/analytics/revenue", label: "Revenue", icon: Wallet, also: ["/analytics/billing", "/analytics/performance", "/analytics/targets"] },
   { href: "/analytics/reports", label: "Reports", icon: BarChart3 },
+  { href: "/analytics/website", label: "Website funnel", icon: Globe },
   { href: "/analytics/edge-resume", label: "Edge and resume", icon: Video, also: ["/analytics/edge", "/analytics/resume-orders"] },
   { href: "/analytics/system", label: "System health", icon: Activity, also: ["/analytics/flow"] },
   { href: "/placements", label: "Placements", icon: Users },
