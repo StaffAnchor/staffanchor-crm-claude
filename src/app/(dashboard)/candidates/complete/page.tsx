@@ -7,6 +7,7 @@ import CallsDesk, { type CallBackRow, type CallHistoryRow, type CallPerson } fro
 import { GAP_LABEL, STRENGTH, isGate, isVital } from "@/lib/completion";
 import { loadPriorityCalls } from "@/lib/priority-calls";
 import CompletionsCard, { type Trend } from "./completions-card";
+import ActivityTracker from "./activity-tracker";
 import TargetControl, { type Target } from "./target-control";
 import BatchPanel from "../pipeline/batch-panel";
 import { Bot } from "lucide-react";
@@ -320,6 +321,7 @@ export default async function CompletionPage({ searchParams }: { searchParams: P
       )}
 
       {!working && trend && trend.days.length > 0 && <CompletionsCard initial={trend} group={["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null} label={GROUP_LABEL[group] ?? "All"} />}
+      {!working && <ActivityTracker group={["b2b_sales", "b2c_sales", "non_sales"].includes(group) ? group : null} label={GROUP_LABEL[group] ?? "All"} />}
 
       {!working ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
