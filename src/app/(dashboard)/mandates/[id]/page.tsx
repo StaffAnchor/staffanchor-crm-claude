@@ -21,6 +21,7 @@ import RolePlaybook from "./role-playbook";
 import { SmartSearchProvider, SmartSearchBar, SmartSearchTab, SmartBadge } from "./smart-search";
 import { type MandateCandidateRow } from "./mandate-candidates-table";
 import MandateCandidatesView from "./mandate-candidates-view";
+import SubmittedClientView from "./submitted-client-view";
 import DeleteMandateButton from "./delete-mandate-button";
 import HeaderMenu from "./header-menu";
 import UrgentToggleButton from "./urgent-toggle-button";
@@ -38,7 +39,7 @@ import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
 import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
-import { Sparkles, AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2 } from "lucide-react";
+import { Sparkles, AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2, Send } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
@@ -587,6 +588,14 @@ export default async function MandateDetailPage({
           isAdmin={viewerRole === "admin"}
         />
             ),
+          },
+          {
+            key: "submitted",
+            tone: "indigo",
+            label: "Submitted",
+            icon: <Send className="h-3.5 w-3.5" />,
+            badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{(links ?? []).filter((l) => l.in_shortlist).length}</span>,
+            content: <SubmittedClientView mandateId={id} clientName={mandate.client_name ?? null} />,
           },
           {
             key: "best-matches",
