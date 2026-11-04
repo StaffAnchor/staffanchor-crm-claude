@@ -6,23 +6,25 @@ export type TierKey = "early" | "mid" | "senior";
 
 export const TIERS: Record<TierKey, { label: string; band: string; price: number; revisions: number; finalDelivery: string }> = {
   early: { label: "Early Stage Resume Writing", band: "0-5 years", price: 1199, revisions: 1, finalDelivery: "about 5 working days" },
-  mid: { label: "Mid Level Resume Writing", band: "6-12 years", price: 1799, revisions: 1, finalDelivery: "about 5 working days" },
-  senior: { label: "Senior / CXO Resume Writing", band: "13+ years", price: 2499, revisions: 2, finalDelivery: "about 7 working days" },
+  mid: { label: "Mid Level Resume Writing", band: "6-12 years", price: 1999, revisions: 1, finalDelivery: "about 5 working days" },
+  senior: { label: "Senior / CXO Resume Writing", band: "13+ years", price: 2999, revisions: 2, finalDelivery: "about 7 working days" },
 };
 
 /** The plan, and so the price, depends on years of experience only: 0-5, 6-12, 13 and above. */
 export const tierForYears = (years: number): TierKey => (years <= 5 ? "early" : years <= 12 ? "mid" : "senior");
 
-// Job Strategy + Resume Rebuild: the 45-minute strategy session (999) plus Resume Writing for the experience band, less 20%.
-export const COMBO_STRATEGY_PRICE = 999;
+// Job Strategy + Resume Rebuild: the 45-minute strategy session plus Resume Writing for the experience band, less 20%.
+// The session is priced by band too: 999 early, 1500 mid, 2000 senior.
+export const COMBO_STRATEGY_PRICE: Record<TierKey, number> = { early: 999, mid: 1500, senior: 2000 };
 export const COMBO_DISCOUNT_PCT = 20;
 
 export function comboPrice(years: number) {
   const tier = tierForYears(years);
   const resume = TIERS[tier].price;
-  const subtotal = COMBO_STRATEGY_PRICE + resume;
+  const strategy = COMBO_STRATEGY_PRICE[tier];
+  const subtotal = strategy + resume;
   const total = Math.round((subtotal * (100 - COMBO_DISCOUNT_PCT)) / 100);
-  return { tier, strategy: COMBO_STRATEGY_PRICE, resume, subtotal, discount: subtotal - total, total };
+  return { tier, strategy, resume, subtotal, discount: subtotal - total, total };
 }
 
 export const isTier = (t: unknown): t is TierKey => t === "early" || t === "mid" || t === "senior";

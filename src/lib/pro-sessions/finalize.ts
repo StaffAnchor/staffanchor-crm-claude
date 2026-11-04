@@ -4,7 +4,7 @@ import { createMeetEvent, getAccessToken } from "./google";
 import { sendEmail } from "@/lib/mail";
 import { invoiceEmailHtml } from "@/lib/invoice-email";
 import { ensureServiceInvoice } from "@/lib/service-invoices";
-import { FIRST_DRAFT_DAYS, TIERS, isTier, newToken, type TierKey } from "@/lib/resume-orders/core";
+import { COMBO_STRATEGY_PRICE, FIRST_DRAFT_DAYS, TIERS, isTier, newToken, type TierKey } from "@/lib/resume-orders/core";
 import { INTAKE_BASE } from "@/lib/resume-orders/finalize";
 
 type Booking = {
@@ -144,7 +144,7 @@ async function comboOrderToken(db: SupabaseClient, booking: Booking): Promise<st
   const { data: existing } = await db.from("resume_orders").select("intake_token").eq("booking_id", booking.id).maybeSingle();
   if (existing) return (existing as { intake_token: string }).intake_token;
   const tier: TierKey = booking.resume_tier;
-  const resumeShare = Math.round(TIERS[tier].price * (booking.amount_inr / (999 + TIERS[tier].price)));
+  const resumeShare = Math.round(TIERS[tier].price * (booking.amount_inr / (COMBO_STRATEGY_PRICE[tier] + TIERS[tier].price)));
   const token = newToken();
   const { error } = await db.from("resume_orders").insert({
     tier, amount_inr: resumeShare, name: booking.name, email: booking.email, phone: booking.phone,

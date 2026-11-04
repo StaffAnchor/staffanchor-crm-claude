@@ -12,7 +12,7 @@ export function offers(services: { slug: string; title: string; duration_min: nu
     slug: s.slug,
     title: s.title,
     duration_min: s.duration_min,
-    price: s.price_by_experience ? `starts at ${inr(s.price_inr)} and depends on years of experience: ${inr(s.price_inr)} for 0-5 years, Rs 2,238 for 6-12 years, Rs 2,798 for 13+ years, including GST` : inr(s.price_inr),
+    price: s.price_by_experience ? `starts at ${inr(s.price_inr)} and depends on years of experience: ${inr(s.price_inr)} for 0-5 years, Rs 2,799 for 6-12 years, Rs 3,999 for 13+ years, including GST` : inr(s.price_inr),
     link: `https://jobs.staffanchor.com/edge/book/${s.slug}?src=linkedin_proposal`,
     what:
       s.slug === "mock-interview"
