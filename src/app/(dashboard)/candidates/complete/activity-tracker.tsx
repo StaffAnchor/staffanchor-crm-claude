@@ -175,7 +175,7 @@ export default function ActivityTracker({ group, label }: { group: string | null
               {data.people.length === 0 ? (
                 <p className="text-[12.5px] text-slate-400">No calls or completions in this range.</p>
               ) : (
-                <table className="w-full min-w-[360px] text-[12.5px]">
+                <table className="w-full min-w-[400px] text-[12.5px]">
                   <thead>
                     <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
                       <th className="pb-1.5 text-left font-medium">Person</th>
@@ -183,6 +183,7 @@ export default function ActivityTracker({ group, label }: { group: string | null
                       <th className={th}>Picked up</th>
                       <th className={th}>Not int.</th>
                       <th className={th}>Pay + CV</th>
+                      <th className={th}>Full</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -193,6 +194,7 @@ export default function ActivityTracker({ group, label }: { group: string | null
                         <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.picked}<span className="ml-1 text-[11px] text-slate-400">{p.calls ? pctOf(p.picked, p.calls) : ""}</span></td>
                         <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.not_interested}</td>
                         <td className="py-1.5 text-right font-semibold tabular-nums text-teal-700 dark:text-teal-400">{p.gate}</td>
+                        <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.full}</td>
                       </tr>
                     ))}
                   </tbody>
