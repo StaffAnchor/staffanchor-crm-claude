@@ -33,7 +33,7 @@ const STEPS: { key: string; label: string }[] = [
   { key: "pay_open", label: "Payment window opened" },
   { key: "paid", label: "Paid" },
 ];
-const PROMO_PAGE: Record<string, string> = { "job-page": "Job pages (full card)", "job-top": "Job pages (top strip, phones)", "after-apply": "After applying", "city-page": "City pages", "jobs-list": "Jobs list", "mock-interview-tool": "Free mock interview tool", "ats-score-tool": "Free ATS score tool", footer: "Site footer" };
+const PROMO_PAGE: Record<string, string> = { "job-page": "Job pages (full card)", "job-top": "Job pages (top strip, phones)", "job-side": "Job pages (sidebar strip, desktop)", "after-apply": "After applying", "city-page": "City pages", "jobs-list": "Jobs list", "mock-interview-tool": "Free mock interview tool", "ats-score-tool": "Free ATS score tool", footer: "Site footer" };
 const PROMO_WHAT: Record<string, string> = { "mock-interview": "interview prep", resume: "resume writing", "recruiter-call": "recruiter call", explore: "Explore Edge" };
 const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 const th = "pb-1.5 text-right font-medium";
