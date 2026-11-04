@@ -145,8 +145,8 @@ export function findings(a: Analysis, extra: { onWhatsApp: number; signupCandida
   const out: Finding[] = [];
   const v = a.visitors.length;
   if (v === 0) return out;
-  const conv = pct(a.visitors.filter((x) => x.signedUp).length, v);
-  out.push({ tone: "watch", title: `${conv}% of visitors sign up`, body: `${a.visitors.filter((x) => x.signedUp).length} of ${v} people who visited signed up, and ${a.applies} application${a.applies === 1 ? "" : "s"} came in. Every other number here is a way of explaining where the rest go.` });
+  const made = a.visitors.filter((x) => x.profile).length;
+  out.push({ tone: "watch", title: `${pct(made, v)}% of visitors create a profile`, body: `${made} of ${v} people who visited signed up or applied, and ${a.applies} application${a.applies === 1 ? "" : "s"} came in. Every other number here is a way of explaining where the rest go.` });
 
   if (a.returning.n >= 8 && a.firstTime.n >= 8 && a.returning.rate > a.firstTime.rate) {
     const x = Math.round((a.returning.rate / Math.max(a.firstTime.rate, 0.1)) * 10) / 10;
