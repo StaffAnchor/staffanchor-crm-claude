@@ -41,8 +41,8 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
   const a = analyse(rows);
 
   // Website candidates created in the period: who they are, and who is on WhatsApp.
-  const { data: candRows } = await db.from("candidates").select("id, full_name, email, phone, created_at, acquisition_source, whatsapp_opt_in").not("acquisition_source", "is", null).gte("created_at", since).order("created_at", { ascending: false }).limit(2000);
-  const cands = ((candRows ?? []) as { id: string; full_name: string | null; email: string | null; phone: string | null; created_at: string; acquisition_source: string | null; whatsapp_opt_in: boolean | null }[]).filter((c) => !isTestPerson(c.full_name, c.email, null));
+  const { data: candRows } = await db.from("candidates").select("id, full_name, email, phone, created_at, acquisition_source, whatsapp_opt_in, whatsapp_opt_in_source").not("acquisition_source", "is", null).gte("created_at", since).order("created_at", { ascending: false }).limit(2000);
+  const cands = ((candRows ?? []) as { id: string; full_name: string | null; email: string | null; phone: string | null; created_at: string; acquisition_source: string | null; whatsapp_opt_in: boolean | null; whatsapp_opt_in_source: string | null }[]).filter((c) => !isTestPerson(c.full_name, c.email, null));
   const ids = cands.map((c) => c.id);
   const waIds = new Set<string>();
   for (let i = 0; i < ids.length; i += 200) {
@@ -76,13 +76,14 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
   const onWhatsApp = cands.filter((c) => waIds.has(c.id)).length;
   const optedIn = cands.filter((c) => c.whatsapp_opt_in).length;
   const optedInChatted = cands.filter((c) => c.whatsapp_opt_in && waIds.has(c.id)).length;
+  const activated = cands.filter((c) => c.whatsapp_opt_in_source === "activation_message").length;
   const fs = findings(a, { onWhatsApp, signupCandidates: cands.length, optedIn, optedInChatted, paidCalls: paidCalls ?? 0, edgePaid });
   const profileVisitors = a.visitors.filter((v) => v.profile).length;
   const steps = [
     { label: "Visitors", n: a.visitors.length, note: `${a.sessions} sessions` },
     { label: "Created a profile", n: profileVisitors, note: "signed up or applied" },
     { label: "Applied to a role", n: a.visitors.filter((v) => v.applied).length, note: "at least one application" },
-    { label: "Messaged us on WhatsApp", n: onWhatsApp, note: `of ${cands.length} website candidates; ${optedIn} ticked the WhatsApp box` },
+    { label: "Messaged us on WhatsApp", n: onWhatsApp, note: `of ${cands.length} website candidates; ${optedIn} opted in${activated ? `, ${activated} by sending the activation message` : ""}` },
     { label: "Paid for something", n: (paidCalls ?? 0) + edgePaid, note: "recruiter call, Edge or resume" },
   ];
   const maxStep = Math.max(1, steps[0].n);

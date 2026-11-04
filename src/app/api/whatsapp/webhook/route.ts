@@ -10,6 +10,9 @@ import { downloadWhatsAppMedia } from "@/lib/whatsapp-media";
 // The assistant can read a CV with AI before replying, which takes a while.
 export const maxDuration = 60;
 
+// The message the jobs site pre-fills on its "Activate WhatsApp alerts" button.
+const ACTIVATE = /activate.*(alerts|reminders|whatsapp)/i;
+
 const lastTen = (list: string | undefined) => (list ? list.split(",").map((n) => n.replace(/\D/g, "").slice(-10)).filter(Boolean) : null);
 
 const botEnv = () => ({
@@ -181,6 +184,38 @@ export async function POST(req: NextRequest) {
             meta_message_id: incomingId,
             raw_payload: message,
           });
+
+          // A candidate who sends the activation message from the jobs site ("Please activate my job alerts and
+          // interview reminders on WhatsApp") has agreed to hear from us here. Record that, and confirm inside the
+          // 24-hour window they just opened, so the confirmation is free and not a template.
+          if (candidateId && fromPhone && ACTIVATE.test(shownText ?? "")) {
+            try {
+              const nowIso = new Date().toISOString();
+              await admin.from("candidates").update({ whatsapp_opt_in: true, whatsapp_opt_in_at: nowIso, whatsapp_opt_in_source: "activation_message" }).eq("id", candidateId).is("whatsapp_opt_in_at", null);
+              const bot = botEnv();
+              const botCovers = bot.enabled && (!bot.allowlist || bot.allowlist.includes(fromPhone.slice(-10)));
+              const { data: contact } = await admin.from("whatsapp_contacts").select("opted_out, bot_paused").eq("phone_key", fromPhone.slice(-10)).maybeSingle();
+              const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+              const { data: recentOut } = await admin.from("whatsapp_messages").select("id").eq("direction", "outbound").ilike("to_phone", `%${fromPhone.slice(-10)}`).gte("created_at", since).limit(1);
+              if (!botCovers && !contact?.opted_out && !contact?.bot_paused && (!recentOut || recentOut.length === 0)) {
+                const { data: cand } = await admin.from("candidates").select("full_name").eq("id", candidateId).maybeSingle();
+                const first = (cand?.full_name as string | undefined)?.trim().split(/\s+/)[0] || "there";
+                const confirmBody = `Hi ${first}, you're set. We'll send matching sales roles and interview reminders on this WhatsApp. If you'd like a recruiter to have your details ready, send your latest CV here along with your current CTC, expected CTC and notice period. Reply STOP any time and we'll stop.`;
+                const sent = await sendWhatsAppFreeform({ to: fromPhone, body: confirmBody });
+                await admin.from("whatsapp_messages").insert({
+                  candidate_id: candidateId,
+                  direction: "outbound",
+                  to_phone: fromPhone,
+                  body_preview: confirmBody,
+                  status: sent.ok ? "sent" : sent.status === "not_configured" ? "not_configured" : "failed",
+                  meta_message_id: sent.ok ? sent.metaMessageId : null,
+                  error: sent.ok ? null : sent.error,
+                });
+              }
+            } catch (err) {
+              console.error("WhatsApp activation handling failed", err);
+            }
+          }
 
           // The assistant: sorts the chat (jobseeker / employer / referrer / other) and, for
           // jobseekers only, collects a profile. Employers are never asked profile questions.
