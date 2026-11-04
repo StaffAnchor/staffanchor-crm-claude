@@ -159,12 +159,12 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
           <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Applying on a job page <span className="text-[12px] font-normal text-slate-400">· recorded since 31 Oct</span></h2>
           <table className="mt-3 w-full text-[12.5px]">
             <tbody>
-              {[["Tapped Apply free", "click"], ["Application form opened", "form_opened"], ["Email gate shown to a new visitor", "gate_shown"], ["Application submitted", "submitted"], ["Tapped the recruiter call button", "paid_call_click"]].map(([l, k]) => (
+              {[["Tapped Apply free", "click"], ["Application form opened", "form_opened"], ["Email gate shown to a new visitor", "gate_shown"], ["Application submitted", "submitted"], ["Shown the recruiter call offer", "paid_call_view"], ["Tapped the recruiter call button", "paid_call_click"]].map(([l, k]) => (
                 <tr key={k} className="border-b border-slate-50 dark:border-slate-800/60"><td className="py-1.5">{l}</td><td className="py-1.5 text-right font-semibold tabular-nums">{ev.get(k) ?? 0}</td></tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-[11.5px] text-slate-400">All counted over the same days, so the steps can be compared. Applications through the register page and the 30-second box are not in these lines, so they can be lower than the application total above.</p>
+          <p className="mt-2 text-[11.5px] text-slate-400">All counted over the same days, so the steps can be compared. Applications through the register page and the 30-second box are not in these lines, so they can be lower than the application total above. "Shown the offer" starts counting from the release that added it, so compare it with the taps from that day only.</p>
         </section>
       </div>
 
