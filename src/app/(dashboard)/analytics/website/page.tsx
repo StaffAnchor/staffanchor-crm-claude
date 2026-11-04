@@ -41,8 +41,8 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
   const a = analyse(rows);
 
   // Website candidates created in the period: who they are, and who is on WhatsApp.
-  const { data: candRows } = await db.from("candidates").select("id, full_name, email, phone, created_at, acquisition_source").not("acquisition_source", "is", null).gte("created_at", since).order("created_at", { ascending: false }).limit(2000);
-  const cands = ((candRows ?? []) as { id: string; full_name: string | null; email: string | null; phone: string | null; created_at: string; acquisition_source: string | null }[]).filter((c) => !isTestPerson(c.full_name, c.email, null));
+  const { data: candRows } = await db.from("candidates").select("id, full_name, email, phone, created_at, acquisition_source, whatsapp_opt_in").not("acquisition_source", "is", null).gte("created_at", since).order("created_at", { ascending: false }).limit(2000);
+  const cands = ((candRows ?? []) as { id: string; full_name: string | null; email: string | null; phone: string | null; created_at: string; acquisition_source: string | null; whatsapp_opt_in: boolean | null }[]).filter((c) => !isTestPerson(c.full_name, c.email, null));
   const ids = cands.map((c) => c.id);
   const waIds = new Set<string>();
   for (let i = 0; i < ids.length; i += 200) {
@@ -74,13 +74,15 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
   for (const e of evRows ?? []) ev.set(e.event_type as string, (ev.get(e.event_type as string) ?? 0) + 1);
 
   const onWhatsApp = cands.filter((c) => waIds.has(c.id)).length;
-  const fs = findings(a, { onWhatsApp, signupCandidates: cands.length, paidCalls: paidCalls ?? 0, edgePaid });
-  const signedUpVisitors = a.visitors.filter((v) => v.signedUp).length;
+  const optedIn = cands.filter((c) => c.whatsapp_opt_in).length;
+  const optedInChatted = cands.filter((c) => c.whatsapp_opt_in && waIds.has(c.id)).length;
+  const fs = findings(a, { onWhatsApp, signupCandidates: cands.length, optedIn, optedInChatted, paidCalls: paidCalls ?? 0, edgePaid });
+  const profileVisitors = a.visitors.filter((v) => v.profile).length;
   const steps = [
     { label: "Visitors", n: a.visitors.length, note: `${a.sessions} sessions` },
-    { label: "Signed up", n: signedUpVisitors, note: "created a profile" },
+    { label: "Created a profile", n: profileVisitors, note: "signed up or applied" },
     { label: "Applied to a role", n: a.visitors.filter((v) => v.applied).length, note: "at least one application" },
-    { label: "On WhatsApp", n: onWhatsApp, note: `of ${cands.length} website candidates` },
+    { label: "Messaged us on WhatsApp", n: onWhatsApp, note: `of ${cands.length} website candidates; ${optedIn} ticked the WhatsApp box` },
     { label: "Paid for something", n: (paidCalls ?? 0) + edgePaid, note: "recruiter call, Edge or resume" },
   ];
   const maxStep = Math.max(1, steps[0].n);
@@ -96,7 +98,7 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="ros-page-title">Website funnel</h1>
-          <p className="mt-1 max-w-3xl text-[13px] text-slate-500">Where jobs.staffanchor.com visitors come from, who signs up and applies, who comes back, who is on WhatsApp, and what they buy. Your team&apos;s own testing is left out ({a.internalExcluded} heavy-use browser{a.internalExcluded === 1 ? "" : "s"}, plus anything marked test).</p>
+          <p className="mt-1 max-w-3xl text-[13px] text-slate-500">Where jobs.staffanchor.com visitors come from, who signs up and applies, who comes back, who is on WhatsApp, and what they buy. Left out: our own testing ({a.internalExcluded} heavy-use browser{a.internalExcluded === 1 ? "" : "s"}, plus anything marked test), {a.employerVisitors} employer visit{a.employerVisitors === 1 ? "" : "s"} to the client portal, and {a.existingCandidates} existing candidate{a.existingCandidates === 1 ? "" : "s"} going back to their own account.</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {RANGES.map((x) => (
@@ -129,13 +131,13 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
             <div key={s.label}>
               <div className="flex items-baseline justify-between gap-3 text-[12.5px]">
                 <span className="font-medium text-slate-800 dark:text-slate-200">{s.label} <span className="font-normal text-slate-400">· {s.note}</span></span>
-                <span className="tabular-nums text-slate-700 dark:text-slate-300"><b>{s.n}</b>{i > 0 && steps[i - 1].n > 0 && i !== 3 && <span className="ml-1.5 text-slate-400">{pctOf(s.n, steps[i - 1].n)}% of the step before</span>}</span>
+                <span className="tabular-nums text-slate-700 dark:text-slate-300"><b>{s.n}</b>{i > 0 && i < 3 && steps[i - 1].n > 0 && <span className="ml-1.5 text-slate-400">{pctOf(s.n, steps[i - 1].n)}% of the step before</span>}</span>
               </div>
               <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-teal-500" style={{ width: `${Math.max(1.5, (s.n / maxStep) * 100)}%` }} /></div>
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[11.5px] text-slate-400">Revenue from website candidates in this period: {inr(revenue)}. WhatsApp is counted against all website candidates, not against visitors.</p>
+        <p className="mt-3 text-[11.5px] text-slate-400">Revenue from website candidates in this period: {inr(revenue)}. WhatsApp and paid purchases are counted against website candidates, not against visitors.</p>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">

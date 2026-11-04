@@ -3,7 +3,7 @@
 
 export type Touch = { visitor_id: string | null; kind: "visit" | "register" | "apply"; source: string | null; medium: string | null; landing_path: string | null; candidate_id: string | null; mandate_id: string | null; created_at: string };
 
-export const LANDING_GROUPS = ["Home", "Job page", "Jobs list", "Short link (post)", "City page", "Edge and resume", "Salary and tools", "Other"] as const;
+export const LANDING_GROUPS = ["Home", "Job page", "Jobs list", "Short link (post)", "City page", "Register page", "Edge and resume", "Salary and tools", "Existing candidates (sign-in)", "Employers (client portal)", "Other"] as const;
 export type LandingGroup = (typeof LANDING_GROUPS)[number];
 
 export function landingGroup(path: string | null): LandingGroup {
@@ -13,6 +13,9 @@ export function landingGroup(path: string | null): LandingGroup {
   if (p === "/jobs") return "Jobs list";
   if (/^\/[jl]\//.test(p)) return "Short link (post)";
   if (p.startsWith("/jobs-in")) return "City page";
+  if (p === "/register") return "Register page";
+  if (p.startsWith("/candidate-portal") || p.startsWith("/candidate-login") || p === "/login") return "Existing candidates (sign-in)";
+  if (p.startsWith("/client")) return "Employers (client portal)";
   if (p.startsWith("/edge") || p.startsWith("/resume")) return "Edge and resume";
   if (p.startsWith("/salary") || p.startsWith("/ats-score") || p.startsWith("/mock-interview")) return "Salary and tools";
   return "Other";
@@ -34,11 +37,13 @@ export function sourceName(s: string | null): string {
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
 export const pctOf = pct;
 
-export type Visitor = { id: string; visits: number; days: number; first: string; last: string; source: string; groups: LandingGroup[]; signedUp: boolean; applied: boolean };
+export type Visitor = { id: string; visits: number; days: number; first: string; last: string; source: string; groups: LandingGroup[]; signedUp: boolean; applied: boolean; profile: boolean };
 
 export type Analysis = {
   visitors: Visitor[];
   internalExcluded: number;
+  employerVisitors: number;
+  existingCandidates: number;
   sessions: number;
   signups: number;
   applies: number;
@@ -61,10 +66,23 @@ export function analyse(rows: Touch[], internalAbove = 25): Analysis {
   const internal = new Set([...per.entries()].filter(([, t]) => t.filter((x) => x.kind === "visit").length > internalAbove).map(([id]) => id));
 
   const visitors: Visitor[] = [];
+  let employerVisitors = 0;
+  let existingCandidates = 0;
   for (const [id, t] of per) {
     if (internal.has(id)) continue;
     const visits = t.filter((x) => x.kind === "visit").sort((a, b) => a.created_at.localeCompare(b.created_at));
     if (visits.length === 0) continue;
+    // Someone whose first page was the client portal is an employer, and someone whose first page was their own account or the
+    // sign-in page is a candidate who already signed up. Neither is a prospect, so neither belongs in the funnel.
+    const firstGroup = landingGroup(visits[0].landing_path);
+    if (firstGroup === "Employers (client portal)") {
+      employerVisitors++;
+      continue;
+    }
+    if (firstGroup === "Existing candidates (sign-in)") {
+      existingCandidates++;
+      continue;
+    }
     visitors.push({
       id,
       visits: visits.length,
@@ -75,6 +93,7 @@ export function analyse(rows: Touch[], internalAbove = 25): Analysis {
       groups: [...new Set(visits.map((v) => landingGroup(v.landing_path)))],
       signedUp: t.some((x) => x.kind === "register"),
       applied: t.some((x) => x.kind === "apply"),
+      profile: t.some((x) => x.kind === "register" || x.kind === "apply"),
     });
   }
   const keep = new Set(visitors.map((v) => v.id));
@@ -116,13 +135,13 @@ export function analyse(rows: Touch[], internalAbove = 25): Analysis {
   const lags = visitors.filter((v) => v.signedUp && v.visits >= 2).map((v) => (new Date(v.last).getTime() - new Date(v.first).getTime()) / 86_400_000).sort((a, b) => a - b);
   const medianDaysToSignup = lags.length ? Math.round(lags[Math.floor(lags.length / 2)] * 10) / 10 : null;
 
-  return { visitors, internalExcluded: internal.size, sessions: mine.filter((r) => r.kind === "visit").length, signups, applies: applyKeys.size, signupsNoApply, returning, firstTime, heavyNoSignup, bySource, byLanding, daily, medianDaysToSignup };
+  return { visitors, internalExcluded: internal.size, employerVisitors, existingCandidates, sessions: mine.filter((r) => r.kind === "visit").length, signups, applies: applyKeys.size, signupsNoApply, returning, firstTime, heavyNoSignup, bySource, byLanding, daily, medianDaysToSignup };
 }
 
 export type Finding = { tone: "good" | "watch" | "act"; title: string; body: string };
 
 // The reading of the numbers: what is working, what is leaking, and what to do about it.
-export function findings(a: Analysis, extra: { onWhatsApp: number; signupCandidates: number; paidCalls: number; edgePaid: number }): Finding[] {
+export function findings(a: Analysis, extra: { onWhatsApp: number; signupCandidates: number; optedIn: number; optedInChatted: number; paidCalls: number; edgePaid: number }): Finding[] {
   const out: Finding[] = [];
   const v = a.visitors.length;
   if (v === 0) return out;
@@ -131,7 +150,7 @@ export function findings(a: Analysis, extra: { onWhatsApp: number; signupCandida
 
   if (a.returning.n >= 8 && a.firstTime.n >= 8 && a.returning.rate > a.firstTime.rate) {
     const x = Math.round((a.returning.rate / Math.max(a.firstTime.rate, 0.1)) * 10) / 10;
-    out.push({ tone: "good", title: `People who come back sign up ${x} times as often`, body: `${a.returning.rate}% of the ${a.returning.n} returning visitors signed up, against ${a.firstTime.rate}% of ${a.firstTime.n} first-time visitors${a.medianDaysToSignup !== null ? `, typically within about ${a.medianDaysToSignup} days of their first visit` : ""}. Coming back is a buying signal, so a return visit is the moment to show a clear next step.` });
+    out.push({ tone: "good", title: `People who come back sign up ${x} times as often`, body: `${a.returning.rate}% of the ${a.returning.n} returning visitors signed up, against ${a.firstTime.rate}% of ${a.firstTime.n} first-time visitors${a.medianDaysToSignup !== null ? (a.medianDaysToSignup < 1 ? ", usually on the same day as their first visit" : `, typically about ${a.medianDaysToSignup} days after their first visit`) : ""}. Coming back is a buying signal, so a return visit is the moment to show a clear next step.` });
   }
   if (a.heavyNoSignup > 0) out.push({ tone: "act", title: `${a.heavyNoSignup} people visited three or more times and never signed up`, body: "They are interested but unconvinced. A short save-your-search or WhatsApp-alert prompt on a third visit is the cheapest way to turn them into candidates." });
 
@@ -140,8 +159,13 @@ export function findings(a: Analysis, extra: { onWhatsApp: number; signupCandida
     out.push({ tone: share >= 25 ? "act" : "watch", title: `${share}% of signups registered without applying to any role`, body: `${a.signupsNoApply} of ${a.signups} used the Build your profile route. Until the latest release that route showed no Edge, recruiter call or profile-review offer, so these are the candidates to call and to offer a profile review first.` });
   }
   if (extra.signupCandidates >= 5) {
-    const r = pct(extra.onWhatsApp, extra.signupCandidates);
-    out.push({ tone: r < 25 ? "act" : "watch", title: `Only ${r}% of website candidates are on WhatsApp`, body: `${extra.onWhatsApp} of ${extra.signupCandidates}. Each one who messages us first opens a free 24-hour reply window and gives us a clean opt-in for later messages, so the signup and apply screens should earn that first message.` });
+    const optR = pct(extra.optedIn, extra.signupCandidates);
+    const chatR = pct(extra.onWhatsApp, extra.signupCandidates);
+    out.push({
+      tone: extra.optedIn > 0 && extra.optedInChatted / Math.max(1, extra.optedIn) < 0.5 ? "act" : "watch",
+      title: `${optR}% ticked the WhatsApp box, but only ${chatR}% have messaged us`,
+      body: `${extra.optedIn} of ${extra.signupCandidates} website candidates agreed to WhatsApp updates on the form, so we may send them approved template messages. Only ${extra.onWhatsApp} have actually chatted with us, and ${extra.optedInChatted} of the ${extra.optedIn} who opted in. A first message from them opens a free 24-hour reply window, so the next step is to give the opted-in people a reason to say hello.`,
+    });
   }
   const best = a.bySource.filter((s) => s.visitors >= 10).sort((x, y) => y.rate - x.rate);
   if (best.length >= 2) {
@@ -153,7 +177,11 @@ export function findings(a: Analysis, extra: { onWhatsApp: number; signupCandida
   if (ll.length >= 2) {
     const top = [...ll].sort((x, y) => y.rate - x.rate)[0];
     const big = ll[0];
-    out.push({ tone: "watch", title: `${big.name} is where most people land, and ${top.name} converts best`, body: `${big.visitors} visitors landed on ${big.name.toLowerCase()} (${big.rate}% signed up). ${top.name} converts at ${top.rate}%. Pages that bring traffic but convert poorly are where a clearer first screen pays off.` });
+    out.push(
+      top.name === big.name
+        ? { tone: "good", title: `${big.name} brings the most visitors and converts best`, body: `${big.visitors} visitors landed on ${big.name.toLowerCase()} and ${big.rate}% signed up, the best rate of any entry point. The others convert at ${ll.filter((l) => l.name !== big.name).map((l) => `${l.name.toLowerCase()} ${l.rate}%`).join(", ")}.` }
+        : { tone: "watch", title: `${big.name} is where most people land, but ${top.name} converts best`, body: `${big.visitors} visitors landed on ${big.name.toLowerCase()} (${big.rate}% signed up), while ${top.name.toLowerCase()} converts at ${top.rate}%. A page that brings traffic but converts poorly is where a clearer first screen pays off.` }
+    );
   }
   if (extra.paidCalls + extra.edgePaid === 0 && a.signups >= 10) out.push({ tone: "act", title: "No paid offer has been bought yet from this traffic", body: "Signups are happening but nobody has paid for the recruiter call, an Edge session or a resume. The offers now sit on job pages, after applying, on the register screens and in the footer; judge them after a week of clicks on the Edge scoreboard." });
   else if (extra.paidCalls + extra.edgePaid > 0) out.push({ tone: "good", title: `${extra.paidCalls + extra.edgePaid} paid purchase${extra.paidCalls + extra.edgePaid === 1 ? "" : "s"} from website candidates`, body: `${extra.paidCalls} recruiter call${extra.paidCalls === 1 ? "" : "s"} and ${extra.edgePaid} Edge or resume order${extra.edgePaid === 1 ? "" : "s"} in this period.` });
