@@ -63,7 +63,7 @@ export default function SubmittedClientView({ mandateId, clientName }: { mandate
         <ReadOnlyContext.Provider value>
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#faf8f4] text-slate-900 [color-scheme:light]">
             <p className="border-b border-[#ece7de] bg-[#f4efe6] px-5 py-2 text-[12px] text-slate-600">
-              This is what {clientName ?? "the client"} sees in their portal: the same tabs, cards and wording. It is read only here, because Shortlist, Interview and Pass are the client&apos;s own decisions.
+              {`This is what ${clientName ?? "the client"} sees in their portal: the same tabs, cards and wording. It is read only here, because Shortlist, Interview and Pass are the client's own decisions.`}
             </p>
             <RoleBoardView board={board} onFeedback={async () => {}} getResumeUrl={getResumeUrl} />
           </div>
