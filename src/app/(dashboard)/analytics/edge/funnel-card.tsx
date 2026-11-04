@@ -33,6 +33,8 @@ const STEPS: { key: string; label: string }[] = [
   { key: "pay_open", label: "Payment window opened" },
   { key: "paid", label: "Paid" },
 ];
+const PROMO_PAGE: Record<string, string> = { "job-page": "Job pages", "after-apply": "After applying", "city-page": "City pages", "jobs-list": "Jobs list", "mock-interview-tool": "Free mock interview tool", "ats-score-tool": "Free ATS score tool", footer: "Site footer" };
+const PROMO_WHAT: Record<string, string> = { "mock-interview": "interview prep", resume: "resume writing", "recruiter-call": "recruiter call", explore: "Explore Edge" };
 const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 const th = "pb-1.5 text-right font-medium";
 
@@ -114,8 +116,20 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
   // Steps: distinct visits (sid) reaching each step. A visit tied to one of our test bookings is left out entirely.
   const events = (evs ?? []) as Ev[];
   const clicks = new Map<string, number>();
-  for (const e of events) if (e.step === "click") clicks.set(e.service ?? "", (clicks.get(e.service ?? "") ?? 0) + 1);
+  for (const e of events) if (e.step === "click" && e.flow !== "promo") clicks.set(e.service ?? "", (clicks.get(e.service ?? "") ?? 0) + 1);
   const edgeViews = new Set(events.filter((e) => e.step === "view" && e.service === "edge-page").map((e) => e.sid)).size;
+  // Promotions placed around the site: clicks by placement, split by what was clicked.
+  const promo = new Map<string, { total: number; what: Map<string, number> }>();
+  for (const e of events) {
+    if (e.flow !== "promo" || e.step !== "click" || !e.service) continue;
+    const page = Object.keys(PROMO_PAGE).find((k) => e.service!.startsWith(`${k}-`)) ?? "other";
+    const what = e.service.slice(page.length + 1) || "other";
+    const cur = promo.get(page) ?? { total: 0, what: new Map<string, number>() };
+    cur.total += 1;
+    cur.what.set(what, (cur.what.get(what) ?? 0) + 1);
+    promo.set(page, cur);
+  }
+  const promoTotal = [...promo.values()].reduce((a, v) => a + v.total, 0);
   const homeClicks = [...clicks.entries()].filter(([k]) => k.startsWith("hero-"));
   const homeClickTotal = homeClicks.reduce((a, [, n]) => a + n, 0);
   const testSids = new Set(events.filter((e) => e.booking_id && testBookings.has(e.booking_id)).map((e) => e.sid));
@@ -204,6 +218,32 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
             </table>
           )}
         </div>
+      </div>
+
+      <div className="mt-5 overflow-x-auto">
+        <p className="mb-1 text-[11.5px] font-medium text-slate-500">Promotions around the site: clicks by placement (tracked from 4 Nov 2026)</p>
+        {promo.size === 0 ? (
+          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[12.5px] text-slate-500 dark:bg-slate-800/60">No clicks yet in this period. Edge and recruiter-call promotions now sit on every job page, after applying, on city pages, the jobs list, the free tools and in the footer.</p>
+        ) : (
+          <table className="w-full min-w-[420px] text-[12.5px]">
+            <thead>
+              <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+                <th className="pb-1.5 text-left font-medium">Placement ({promoTotal} clicks)</th>
+                <th className={th}>Clicks</th>
+                <th className="pb-1.5 pl-4 text-left font-medium">What they clicked</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...promo.entries()].sort((a, b) => b[1].total - a[1].total).map(([k, v]) => (
+                <tr key={k} className="border-b border-slate-50 dark:border-slate-800/60">
+                  <td className="py-1.5 pr-2 text-slate-700 dark:text-slate-200">{PROMO_PAGE[k] ?? k}</td>
+                  <td className="py-1.5 text-right font-semibold tabular-nums">{v.total}</td>
+                  <td className="py-1.5 pl-4 text-slate-500">{[...v.what.entries()].sort((a, b) => b[1] - a[1]).map(([w, n]) => `${PROMO_WHAT[w] ?? w} ${n}`).join(", ")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="mt-5 overflow-x-auto">
