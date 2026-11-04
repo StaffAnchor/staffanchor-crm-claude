@@ -7,6 +7,7 @@ import ProposalHelper from "./proposal-helper";
 import InvoiceControls, { type InvoiceInfo } from "../invoice-controls";
 import NewSessionForm from "./new-session-form";
 import NewCvForm from "./new-cv-form";
+import FunnelCard from "./funnel-card";
 import { briefState } from "@/lib/cv-brief/state";
 import { signedInvoiceUrl } from "@/lib/service-invoices";
 
@@ -50,7 +51,7 @@ function nowMs() {
   return Date.now();
 }
 
-export default async function ProSessionsAdmin({ searchParams }: { searchParams: Promise<{ gcal?: string }> }) {
+export default async function ProSessionsAdmin({ searchParams }: { searchParams: Promise<{ gcal?: string; fp?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
   const db = adminDb();
@@ -112,6 +113,8 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
           <p className="text-[12.5px] text-slate-500">paid, worth {inr(paid.reduce((a, b) => a + b.amount_inr, 0))}</p>
         </Card>
       </div>
+
+      {db && <FunnelCard db={db} period={sp.fp} />}
 
       <Card title="Session reports" sub="Open one during the meeting, fill it in as you talk, and it makes a PDF for the candidate. Start it from a booking below, or here for someone who did not book through the site.">
         <NewSessionForm />
