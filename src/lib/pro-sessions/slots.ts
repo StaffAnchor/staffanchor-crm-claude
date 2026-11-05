@@ -14,7 +14,7 @@ export type SlotsResult = {
 // calendars, minus sessions already booked or being paid for, minus the minimum-notice period.
 export async function computeSlots(db: SupabaseClient, durationMin: number, fromDate: string, days: number, stepMin = durationMin): Promise<SlotsResult> {
   const [{ data: rules }, { data: settings }] = await Promise.all([
-    db.from("pro_availability").select("weekday, start_time, end_time").eq("active", true),
+    db.from("pro_availability").select("weekday, start_time, end_time, step_min").eq("active", true),
     db.from("pro_settings").select("min_notice_hours, horizon_days").eq("id", 1).maybeSingle(),
   ]);
   const minNotice = settings?.min_notice_hours ?? 3;
@@ -49,7 +49,7 @@ export async function computeSlots(db: SupabaseClient, durationMin: number, from
     const times: string[] = [];
     for (const r of (rules ?? []).filter((x) => x.weekday === wd)) {
       const windowEnd = fromIst(date, r.end_time);
-      for (let s = fromIst(date, r.start_time); s.getTime() + durationMin * 60000 <= windowEnd.getTime(); s = new Date(s.getTime() + stepMin * 60000)) {
+      for (let s = fromIst(date, r.start_time); s.getTime() + durationMin * 60000 <= windowEnd.getTime(); s = new Date(s.getTime() + (r.step_min ?? stepMin) * 60000)) {
         const e = new Date(s.getTime() + durationMin * 60000);
         if (s < earliest) continue;
         if (busy.some((b) => b.start < e && b.end > s)) continue;
