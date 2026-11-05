@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { EMAIL_RE, HOLD_MINUTES, adminDb, cleanPhone, istDate } from "@/lib/pro-sessions/core";
+import { EMAIL_RE, HOLD_MINUTES, adminDb, cleanPhone, istDate, sessionLength } from "@/lib/pro-sessions/core";
 import { computeSlots } from "@/lib/pro-sessions/slots";
 import { comboPrice } from "@/lib/resume-orders/core";
 import { requireInternal } from "@/lib/pro-sessions/internal-auth";
@@ -30,7 +30,10 @@ export async function POST(req: NextRequest) {
   if (!svc) return NextResponse.json({ ok: false, error: "Unknown service." }, { status: 404 });
 
   // Some services (the strategy + resume combo) are priced by years of experience; the price is worked out here.
-  let amount = svc.price_inr as number;
+  // The length (60, or the longer option where offered) sets the price; the price is worked out here, never taken from the browser.
+  const len = sessionLength(svc.slug, svc.duration_min, svc.price_inr, b.durationMin);
+  if (!len) return NextResponse.json({ ok: false, error: "That session length isn't offered." }, { status: 400 });
+  let amount = len.priceInr;
   let years: number | null = null;
   let resumeTier: string | null = null;
   if (svc.price_by_experience) {
@@ -43,7 +46,7 @@ export async function POST(req: NextRequest) {
   }
 
   // The chosen time must still be free, checked now and not trusted from the browser.
-  const free = await computeSlots(db, svc.duration_min, istDate(slotStart), 2);
+  const free = await computeSlots(db, len.minutes, istDate(slotStart), 2, len.stepMin);
   if (!free.ok) return NextResponse.json({ ok: false, error: free.error ?? "Availability is unavailable." }, { status: 503 });
   if (!Object.values(free.days).some((arr) => arr.includes(slotStart.toISOString()))) {
     return NextResponse.json({ ok: false, error: "That time was just taken. Please pick another." }, { status: 409 });
@@ -61,7 +64,7 @@ export async function POST(req: NextRequest) {
       target_role: str("targetRole", 200) || null,
       notes: str("notes", 1000) || null,
       slot_start: slotStart.toISOString(),
-      slot_end: new Date(slotStart.getTime() + svc.duration_min * 60000).toISOString(),
+      slot_end: new Date(slotStart.getTime() + len.minutes * 60000).toISOString(),
       amount_inr: amount, experience_years: years, resume_tier: resumeTier, status: "pending_payment",
       source: str("src", 60) || null,
     })

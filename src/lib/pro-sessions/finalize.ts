@@ -109,7 +109,7 @@ export async function finalizeBooking(db: SupabaseClient, bookingId: string, pay
     const text = [
       `Hi ${booking.name.split(/\s+/)[0]},`,
       `Your session is confirmed.`,
-      `${service.title}\n${when} IST, ${service.duration_min} minutes, video meeting\nPaid: ${inr(booking.amount_inr)}`,
+      `${service.title}\n${when} IST, ${Math.round((new Date(booking.slot_end).getTime() - new Date(booking.slot_start).getTime()) / 60000) || service.duration_min} minutes, video meeting\nPaid: ${inr(booking.amount_inr)}`,
       meet ? `Join here: ${meet}` : "Your joining link will follow by email shortly.",
       PREP[booking.service_slug] ?? "",
       intakeToken && isTier(booking.resume_tier)

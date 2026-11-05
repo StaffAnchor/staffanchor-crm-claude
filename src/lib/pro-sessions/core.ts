@@ -8,6 +8,22 @@ export const PRO_CC = process.env.PRO_EMAIL_CC || "gagan@staffanchor.com";
 export const BOOKING_ORIGIN = "https://jobs.staffanchor.com";
 export const HOLD_MINUTES = 15;
 
+// A longer length some sessions can be booked for, priced in proportion (the mock interview: 60 minutes, or 90 for 1.5x, rounded).
+// Start times for the longer length are offered every 30 minutes so the weekly window is used well.
+export const LONG_LENGTH: Record<string, { minutes: number; priceInr: number }> = {
+  "mock-interview": { minutes: 90, priceInr: 2999 },
+};
+export const LONG_STEP_MIN = 30;
+
+/** The length and price a booking asks for: the service's own, or its longer option. Null if the length isn't offered. */
+export function sessionLength(slug: string, baseMinutes: number, basePriceInr: number, wanted: unknown): { minutes: number; priceInr: number; stepMin: number } | null {
+  const w = wanted === undefined || wanted === null || wanted === "" ? baseMinutes : Number(wanted);
+  if (w === baseMinutes) return { minutes: baseMinutes, priceInr: basePriceInr, stepMin: baseMinutes };
+  const long = LONG_LENGTH[slug];
+  if (long && w === long.minutes) return { minutes: long.minutes, priceInr: long.priceInr, stepMin: LONG_STEP_MIN };
+  return null;
+}
+
 const IST_MS = 5.5 * 3600 * 1000;
 
 export type ProService = {
