@@ -4,7 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Rocket, Loader2, AlertTriangle, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Rocket, Loader2, AlertTriangle, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
+
+type Suggestion = { mustHaves: { text: string }[]; goodToHaves: { text: string }[]; questionsForClient: string[] };
 
 type PreviewMatch = { candidate_id: string; full_name: string; score: number; reason: string };
 
@@ -26,6 +28,8 @@ export default function PublishMandateButton({
   viewerRole,
   mustHavesCount,
   goodToHavesCount,
+  mustHaves,
+  goodToHaves,
 }: {
   mandateId: string;
   // Internal recruiter/vendor staffing count (mandate_assignments). Required
@@ -41,11 +45,68 @@ export default function PublishMandateButton({
   // clear inline reason instead of a raw Postgres error.
   mustHavesCount: number;
   goodToHavesCount: number;
+  // The lists as they stand, so suggestions are added to them rather than replacing them.
+  mustHaves: string[];
+  goodToHaves: string[];
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // One-click suggestions from the JD, shown right here so the criteria can be filled without opening the Brief tab.
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  const [skipped, setSkipped] = useState<Set<string>>(new Set());
+  const [savingCriteria, setSavingCriteria] = useState(false);
+
+  async function suggest() {
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const res = await fetch(`/api/mandates/${mandateId}/draft-spec`, { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSuggestError(body.error ?? "Couldn't suggest anything just now. Try again.");
+        return;
+      }
+      setSuggestion(body as Suggestion);
+      setSkipped(new Set());
+    } catch {
+      setSuggestError("Couldn't reach the server. Try again.");
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
+  async function saveSuggestion() {
+    if (!suggestion) return;
+    setSavingCriteria(true);
+    setSuggestError(null);
+    const merge = (current: string[], incoming: { text: string }[], kind: string) => {
+      const have = new Set(current.map((c) => c.toLowerCase()));
+      return [...current, ...incoming.map((i) => i.text).filter((t) => !skipped.has(`${kind}:${t}`) && !have.has(t.toLowerCase()))];
+    };
+    const { error: err } = await supabase
+      .from("mandates")
+      .update({ must_haves: merge(mustHaves, suggestion.mustHaves, "m"), good_to_haves: merge(goodToHaves, suggestion.goodToHaves, "g") })
+      .eq("id", mandateId);
+    setSavingCriteria(false);
+    if (err) {
+      setSuggestError(err.message);
+      return;
+    }
+    setSuggestion(null);
+    router.refresh();
+  }
+
+  const toggleSkip = (key: string) =>
+    setSkipped((s) => {
+      const next = new Set(s);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const missingOwner = staffCount === 0;
   const missingCriteria = mustHavesCount === 0 || goodToHavesCount === 0;
   const canPublish = viewerRole !== null && CAN_PUBLISH_ROLES.has(viewerRole);
@@ -120,6 +181,60 @@ export default function PublishMandateButton({
             <p className="text-[12px] text-amber-900 font-medium mt-1">
               Add at least one must-have and one good-to-have (below) before publishing -- required for candidate matching.
             </p>
+          )}
+          {missingCriteria && !suggestion && (
+            <button
+              onClick={suggest}
+              disabled={suggesting}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[12px] font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+            >
+              {suggesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {suggesting ? "Reading the JD..." : "Suggest them from the JD"}
+            </button>
+          )}
+          {suggestError && <p className="text-[12px] text-red-600 mt-1">{suggestError}</p>}
+          {suggestion && (
+            <div className="mt-2 rounded-lg border border-amber-200 bg-white p-3">
+              <p className="text-[12px] font-medium text-slate-800">Untick anything that is wrong, then add them.</p>
+              {[
+                { kind: "m", label: "Must haves", tone: "bg-red-50 text-red-700", items: suggestion.mustHaves },
+                { kind: "g", label: "Good to haves", tone: "bg-teal-50 text-teal-700", items: suggestion.goodToHaves },
+              ].map((g) => (
+                <div key={g.kind} className="mt-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{g.label}</p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {g.items.length === 0 && <span className="text-[12px] text-slate-400">Nothing suggested.</span>}
+                    {g.items.map((it) => {
+                      const key = `${g.kind}:${it.text}`;
+                      const on = !skipped.has(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => toggleSkip(key)}
+                          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] ${on ? g.tone : "bg-slate-100 text-slate-400 line-through"}`}
+                        >
+                          {on && <Check className="h-3 w-3" />} {it.text}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {suggestion.questionsForClient.length > 0 && (
+                <p className="mt-2 text-[11.5px] text-slate-500">Worth asking the client: {suggestion.questionsForClient.join(" · ")}</p>
+              )}
+              <div className="mt-2.5 flex items-center gap-2">
+                <button
+                  onClick={saveSuggestion}
+                  disabled={savingCriteria}
+                  className="rounded-lg bg-amber-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-amber-500 disabled:opacity-60"
+                >
+                  {savingCriteria ? "Saving..." : "Add and save"}
+                </button>
+                <button onClick={() => setSuggestion(null)} className="text-[12px] text-slate-500 hover:text-slate-800">Cancel</button>
+              </div>
+            </div>
           )}
           {!canPublish && (
             <p className="text-[12px] text-amber-900 font-medium mt-1">

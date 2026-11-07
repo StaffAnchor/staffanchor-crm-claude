@@ -433,6 +433,8 @@ export default async function MandateDetailPage({
           viewerRole={viewerRole}
           mustHavesCount={(mandate.must_haves ?? []).length}
           goodToHavesCount={(mandate.good_to_haves ?? []).length}
+          mustHaves={mandate.must_haves ?? []}
+          goodToHaves={mandate.good_to_haves ?? []}
         />
       )}
 
@@ -641,6 +643,7 @@ export default async function MandateDetailPage({
               content: (
                 <>
                   <MustHavesPanel
+                    key={`${(mandate.must_haves ?? []).join("|")}#${(mandate.good_to_haves ?? []).join("|")}`}
                     mandateId={id}
                     initialMustHaves={mandate.must_haves ?? []}
                     initialGoodToHaves={mandate.good_to_haves ?? []}
