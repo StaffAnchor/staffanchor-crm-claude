@@ -115,7 +115,7 @@ CONFIDENTIALITY -- READ CAREFULLY: The recruiter's rough notes below may be a cl
     input.client_name ? ` The client's name is "${input.client_name}" -- this exact name (and close variants of it) must never appear in your output.` : ""
   }
 
-${input.hide_names?.filter((n) => n.trim()).length ? `Also never write these names, or close variants of them, in any field: ${input.hide_names.filter((n) => n.trim()).map((n) => `"${n.trim()}"`).join(", ")}. Leave out the client's website, email addresses and phone numbers too.\n\n` : ""}${input.instructions?.trim() ? `SPECIAL INSTRUCTIONS FROM THE RECRUITER FOR THIS LISTING (follow them, but they never override the confidentiality rule above): ${input.instructions.trim().slice(0, 600)}\n\n` : ""}Known facts about this role:
+${input.hide_names?.filter((n) => n.trim()).length ? `Also never write these names, or close variants of them, in any field: ${input.hide_names.filter((n) => n.trim()).map((n) => `"${n.trim()}"`).join(", ")}. Leave out the client's website, email addresses and phone numbers too.\n\n` : ""}${input.instructions?.trim() ? `SPECIAL INSTRUCTIONS FROM THE RECRUITER FOR THIS LISTING. These take priority over every other rule below except confidentiality. If they say to leave something out (for example salary or pay figures), leave it out of EVERY field, including compensation_benefits, and ignore the budget in the facts for that purpose: ${input.instructions.trim().slice(0, 600)}\n\n` : ""}Known facts about this role:
 ${facts || "(none provided beyond the notes below)"}
 
 Recruiter's rough notes:
@@ -128,7 +128,7 @@ Return ONLY a JSON object (no markdown fence, no commentary) with this exact sha
   "candidate_profile": ["bullet 1", "bullet 2", ...],
   "compensation_benefits": ["bullet 1", "bullet 2", ...]
 }
-Each array should have 3-8 concise bullets (no leading dashes or bullet characters -- just the sentence). If the notes don't mention compensation/benefits beyond what's in "Known facts", it's fine to synthesize a couple of generic-but-plausible bullets from the budget figure given, but do not fabricate specific perks that weren't mentioned.`;
+Each array should have 3-8 concise bullets (no leading dashes or bullet characters -- just the sentence). If the notes don't mention compensation/benefits beyond what's in "Known facts", it's fine to synthesize a couple of generic-but-plausible bullets from the budget figure given (unless the special instructions say not to mention pay, in which case write no figures and keep the bullets generic or leave the list short), but do not fabricate specific perks that weren't mentioned.`;
 
   try {
     const { text: raw } = await generateTextWithFallback(prompt);
