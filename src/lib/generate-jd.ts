@@ -45,19 +45,26 @@ function parseJdJson(raw: string): GeneratedJd | null {
   return null;
 }
 
-// Replaces any occurrence of the client's real name with a neutral stand-in.
-// This runs on the AI output regardless of what the prompt says, so a client
-// name pasted into raw_notes (e.g. a client's own JD pasted verbatim) can
-// never leak into a public job listing even if the model ignores the
-// instruction not to mention it.
-function scrubClientName<T extends string | string[]>(value: T, clientName: string | undefined): T {
-  if (!clientName || !clientName.trim()) return value;
-  const escaped = clientName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`\\b${escaped}\\b`, "gi");
-  if (Array.isArray(value)) {
-    return value.map((v) => v.replace(pattern, "our client")) as T;
-  }
-  return (value as string).replace(pattern, "our client") as T;
+// Replaces any occurrence of the client's real name (and any other names to hide, such as the company name found in an
+// uploaded JD) with a neutral stand-in, and removes email addresses and web links that would point back to the client.
+// This runs on the AI output regardless of what the prompt says, so a client name pasted into raw_notes (e.g. a client's
+// own JD pasted verbatim) can never leak into a public job listing even if the model ignores the instruction not to
+// mention it.
+function scrubClientName<T extends string | string[]>(value: T, clientName: string | undefined, alsoHide: string[] = []): T {
+  // Longest names first, so "Acme Software Pvt Ltd" goes before "Acme" and is not left half-replaced.
+  const names = Array.from(new Set([clientName, ...alsoHide].map((n) => (n ?? "").trim()).filter((n) => n.length >= 2))).sort((a, b) => b.length - a.length);
+  const patterns = names.map((n) => new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"));
+  const clean = (text: string) => {
+    // Links and contact details first, so the client's name inside them goes with them.
+    let out = text
+      .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "")
+      .replace(/\b(?:https?:\/\/|www\.)\S+/gi, "")
+      .replace(/\b[\w-]+(?:\.[\w-]+)*\.(?:com|in|co\.in|io|net|org|ai)\b\S*/gi, "");
+    for (const p of patterns) out = out.replace(p, "our client");
+    return out.replace(/ {2,}/g, " ").trim();
+  };
+  if (Array.isArray(value)) return value.map(clean) as T;
+  return clean(value as string) as T;
 }
 
 export async function generateJdFromNotes(input: {
@@ -71,6 +78,10 @@ export async function generateJdFromNotes(input: {
   budget_max: string;
   raw_notes: string;
   client_name?: string;
+  // Extra names to keep out of the listing (for example the company named inside an uploaded JD) and any special
+  // instructions from the recruiter for this listing.
+  hide_names?: string[];
+  instructions?: string;
 }): Promise<GenerateJdResult> {
   if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
@@ -104,7 +115,7 @@ CONFIDENTIALITY -- READ CAREFULLY: The recruiter's rough notes below may be a cl
     input.client_name ? ` The client's name is "${input.client_name}" -- this exact name (and close variants of it) must never appear in your output.` : ""
   }
 
-Known facts about this role:
+${input.hide_names?.filter((n) => n.trim()).length ? `Also never write these names, or close variants of them, in any field: ${input.hide_names.filter((n) => n.trim()).map((n) => `"${n.trim()}"`).join(", ")}. Leave out the client's website, email addresses and phone numbers too.\n\n` : ""}${input.instructions?.trim() ? `SPECIAL INSTRUCTIONS FROM THE RECRUITER FOR THIS LISTING (follow them, but they never override the confidentiality rule above): ${input.instructions.trim().slice(0, 600)}\n\n` : ""}Known facts about this role:
 ${facts || "(none provided beyond the notes below)"}
 
 Recruiter's rough notes:
@@ -126,10 +137,10 @@ Each array should have 3-8 concise bullets (no leading dashes or bullet characte
       return { ok: false, status: 500, error: "AI JD generation failed. Please try again." };
     }
     const scrubbed: GeneratedJd = {
-      overview: scrubClientName(jd.overview, input.client_name),
-      responsibilities: scrubClientName(jd.responsibilities, input.client_name),
-      candidate_profile: scrubClientName(jd.candidate_profile, input.client_name),
-      compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name),
+      overview: scrubClientName(jd.overview, input.client_name, input.hide_names),
+      responsibilities: scrubClientName(jd.responsibilities, input.client_name, input.hide_names),
+      candidate_profile: scrubClientName(jd.candidate_profile, input.client_name, input.hide_names),
+      compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name, input.hide_names),
     };
     return { ok: true, jd: scrubbed };
   } catch (err) {

@@ -1,5 +1,6 @@
 "use client";
 
+import JdFilePicker, { type JdFileData } from "@/components/jd-file-picker";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -43,6 +44,9 @@ export default function JobDescriptionPanel({
   const router = useRouter();
   const supabase = createClient();
   const [rawNotes, setRawNotes] = useState("");
+  // Names found in an uploaded client JD (kept out of the listing) and any special instructions for the AI.
+  const [hideNames, setHideNames] = useState<string[]>([]);
+  const [instructions, setInstructions] = useState("");
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [editInstruction, setEditInstruction] = useState("");
@@ -81,6 +85,8 @@ export default function JobDescriptionPanel({
           budget_max: context.budget_max ?? "",
           raw_notes: rawNotes,
           client_name: context.client_name ?? "",
+          hide_names: hideNames,
+          instructions,
         }),
       });
       const data = await res.json();
@@ -173,7 +179,9 @@ export default function JobDescriptionPanel({
       {editing ? (
         <div className="space-y-3 mb-2">
           <div className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-3">
-            <p className="text-xs font-medium text-teal-700 mb-1.5">Paste rough notes and let AI structure it</p>
+            <p className="text-xs font-medium text-teal-700 mb-1.5">Upload the client&apos;s JD, or paste rough notes, and let AI structure it</p>
+            <JdFilePicker onLoaded={(d: JdFileData) => { setRawNotes(d.text); setHideNames(d.company_names); }} />
+            {hideNames.length > 0 && <p className="text-[11.5px] text-slate-600 mb-1.5">Kept out of the public listing: <b>{hideNames.join(", ")}</b></p>}
             <textarea
               value={rawNotes}
               onChange={(e) => setRawNotes(e.target.value)}
@@ -181,6 +189,13 @@ export default function JobDescriptionPanel({
               placeholder="Paste a rough JD, bullet notes, or a client email..."
               className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
             />
+            <input
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              placeholder="Instructions for the AI (optional), e.g. don't mention salary"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] bg-white dark:bg-slate-900"
+            />
+            <p className="mt-1 text-[11px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
             <button
               type="button"
               onClick={handleGenerate}

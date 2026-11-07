@@ -24,6 +24,7 @@ import { TagEditor } from "./[id]/must-haves-panel";
 import { useMandateOptionSets } from "@/lib/use-mandate-option-sets";
 import MultiSelectChips from "@/components/ui/multi-select-chips";
 import AlsoRoleTypes from "@/components/also-role-types";
+import JdFilePicker, { type JdFileData } from "@/components/jd-file-picker";
 import { RoleLevelSelect, RoleTypeSelect, useRoleClusters } from "@/components/role-type-fields";
 import WeekOffPicker, { emptyWeekOffValue, type WeekOffValue } from "@/components/ui/week-off-picker";
 
@@ -133,6 +134,9 @@ export default function CreateMandateForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [generatingJd, setGeneratingJd] = useState(false);
+  // Names found in an uploaded client JD (kept out of the listing) and any special instructions for the AI.
+  const [jdHideNames, setJdHideNames] = useState<string[]>([]);
+  const [jdInstructions, setJdInstructions] = useState("");
   const [jdError, setJdError] = useState("");
   const [jdEditInstruction, setJdEditInstruction] = useState("");
   const [refiningJd, setRefiningJd] = useState(false);
@@ -175,6 +179,21 @@ export default function CreateMandateForm({
     return Array.from(new Set([...form.subDomains, ...keywords]));
   }
 
+  // A client's JD file was read: its text becomes the notes, and the role's basic facts fill whatever is still empty.
+  function handleJdFile(d: JdFileData) {
+    setJdHideNames(d.company_names);
+    setForm((f) => ({
+      ...f,
+      jd_raw_notes: d.text,
+      role_title: f.role_title.trim() ? f.role_title : d.role_title,
+      cities: f.cities.length ? f.cities : d.cities,
+      experience_min: f.experience_min || d.experience_min,
+      experience_max: f.experience_max || d.experience_max,
+      budget_min: f.budget_min || d.budget_min,
+      budget_max: f.budget_max || d.budget_max,
+    }));
+  }
+
   async function handleGenerateJd() {
     setJdError("");
     setGeneratingJd(true);
@@ -193,6 +212,8 @@ export default function CreateMandateForm({
           budget_max: form.budget_max,
           raw_notes: form.jd_raw_notes,
           client_name: form.client_name,
+          hide_names: jdHideNames,
+          instructions: jdInstructions,
         }),
       });
       const data = await res.json();
@@ -676,7 +697,11 @@ export default function CreateMandateForm({
         <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Job description (shown to candidates on the public listing)</p>
 
         <div className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-3 mb-2">
-          <p className="text-xs font-medium text-teal-700 mb-1.5">Paste rough notes and let AI structure it</p>
+          <p className="text-xs font-medium text-teal-700 mb-1.5">Upload the client&apos;s JD, or paste rough notes, and let AI structure it</p>
+          <JdFilePicker onLoaded={handleJdFile} />
+          {jdHideNames.length > 0 && (
+            <p className="text-[11.5px] text-slate-600 mb-1.5">Kept out of the public listing: <b>{jdHideNames.join(", ")}</b></p>
+          )}
           <textarea
             placeholder="Paste a rough JD, bullet notes, or a client email -- AI will turn it into a clean Overview / Key Responsibilities / Candidate Profile / Compensation & Benefits format below."
             value={form.jd_raw_notes}
@@ -684,6 +709,13 @@ export default function CreateMandateForm({
             rows={4}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm resize-y bg-white dark:bg-slate-900"
           />
+          <input
+            value={jdInstructions}
+            onChange={(e) => setJdInstructions(e.target.value)}
+            placeholder="Instructions for the AI (optional), e.g. don't mention salary, stress enterprise SaaS experience"
+            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] bg-white dark:bg-slate-900"
+          />
+          <p className="mt-1 text-[11px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
           <button
             type="button"
             onClick={handleGenerateJd}

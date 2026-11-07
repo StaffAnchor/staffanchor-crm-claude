@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
     budget_max: body.budget_max ?? "",
     raw_notes: body.raw_notes ?? "",
     client_name: body.client_name ?? "",
+    hide_names: Array.isArray(body.hide_names) ? body.hide_names.filter((n: unknown) => typeof n === "string").slice(0, 10) : [],
+    instructions: typeof body.instructions === "string" ? body.instructions : "",
   });
 
   if (!result.ok) {
