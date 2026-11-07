@@ -137,6 +137,7 @@ export default function CreateMandateForm({
   // Names found in an uploaded client JD (kept out of the listing) and any special instructions for the AI.
   const [jdHideNames, setJdHideNames] = useState<string[]>([]);
   const [jdInstructions, setJdInstructions] = useState("");
+  const [jdHidePay, setJdHidePay] = useState(false);
   const [jdError, setJdError] = useState("");
   const [jdEditInstruction, setJdEditInstruction] = useState("");
   const [refiningJd, setRefiningJd] = useState(false);
@@ -214,6 +215,7 @@ export default function CreateMandateForm({
           client_name: form.client_name,
           hide_names: jdHideNames,
           instructions: jdInstructions,
+          hide_pay: jdHidePay,
         }),
       });
       const data = await res.json();
@@ -715,6 +717,9 @@ export default function CreateMandateForm({
             placeholder="Instructions for the AI (optional), e.g. don't mention salary, stress enterprise SaaS experience"
             className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] bg-white dark:bg-slate-900"
           />
+          <label className="mt-1.5 flex items-center gap-1.5 text-[12px] text-slate-600">
+            <input type="checkbox" checked={jdHidePay} onChange={(e) => setJdHidePay(e.target.checked)} /> Leave pay figures out of the listing
+          </label>
           <p className="mt-1 text-[11px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
           <button
             type="button"

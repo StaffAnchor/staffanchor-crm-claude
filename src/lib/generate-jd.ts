@@ -82,6 +82,8 @@ export async function generateJdFromNotes(input: {
   // instructions from the recruiter for this listing.
   hide_names?: string[];
   instructions?: string;
+  // Leave pay figures out of the whole listing. Also switched on when the instructions say so in words.
+  hide_pay?: boolean;
 }): Promise<GenerateJdResult> {
   if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY && !process.env.MISTRAL_API_KEY) {
     return {
@@ -94,6 +96,7 @@ export async function generateJdFromNotes(input: {
     return { ok: false, status: 400, error: "Paste some rough notes first." };
   }
 
+  const hidePay = !!input.hide_pay || /\b(?:don'?t|do not|dont|no|not|without|hide|omit|skip|exclude|leave out|remove)\b[^.]{0,30}\b(?:salary|salaries|pay|ctc|compensation|lpa|package)\b/i.test(input.instructions ?? "");
   const facts = [
     input.role_title && `Role title: ${input.role_title}`,
     input.category && `Function / Domain: ${CATEGORY_LABEL[input.category] ?? input.category}`,
@@ -101,7 +104,7 @@ export async function generateJdFromNotes(input: {
     input.cities.length && `Location(s): ${input.cities.join(", ")}`,
     (input.experience_min || input.experience_max) &&
       `Experience: ${input.experience_min || "?"}-${input.experience_max || "?"} years`,
-    (input.budget_min || input.budget_max) &&
+    !hidePay && (input.budget_min || input.budget_max) &&
       `Compensation budget: ₹${input.budget_min || "?"}-${input.budget_max || "?"} LPA`,
   ]
     .filter(Boolean)
@@ -115,7 +118,7 @@ CONFIDENTIALITY -- READ CAREFULLY: The recruiter's rough notes below may be a cl
     input.client_name ? ` The client's name is "${input.client_name}" -- this exact name (and close variants of it) must never appear in your output.` : ""
   }
 
-${input.hide_names?.filter((n) => n.trim()).length ? `Also never write these names, or close variants of them, in any field: ${input.hide_names.filter((n) => n.trim()).map((n) => `"${n.trim()}"`).join(", ")}. Leave out the client's website, email addresses and phone numbers too.\n\n` : ""}${input.instructions?.trim() ? `SPECIAL INSTRUCTIONS FROM THE RECRUITER FOR THIS LISTING. These take priority over every other rule below except confidentiality. If they say to leave something out (for example salary or pay figures), leave it out of EVERY field, including compensation_benefits, and ignore the budget in the facts for that purpose: ${input.instructions.trim().slice(0, 600)}\n\n` : ""}Known facts about this role:
+${input.hide_names?.filter((n) => n.trim()).length ? `Also never write these names, or close variants of them, in any field: ${input.hide_names.filter((n) => n.trim()).map((n) => `"${n.trim()}"`).join(", ")}. Leave out the client's website, email addresses and phone numbers too.\n\n` : ""}${hidePay ? "PAY: do not write any salary, CTC, LPA or pay figures anywhere in the listing. In compensation_benefits write only non-numeric points (for example that pay is competitive and has a variable component, if the notes say so), or an empty list.\n\n" : ""}${input.instructions?.trim() ? `SPECIAL INSTRUCTIONS FROM THE RECRUITER FOR THIS LISTING. These take priority over every other rule below except confidentiality. If they say to leave something out (for example salary or pay figures), leave it out of EVERY field, including compensation_benefits, and ignore the budget in the facts for that purpose: ${input.instructions.trim().slice(0, 600)}\n\n` : ""}Known facts about this role:
 ${facts || "(none provided beyond the notes below)"}
 
 Recruiter's rough notes:
@@ -136,11 +139,14 @@ Each array should have 3-8 concise bullets (no leading dashes or bullet characte
     if (!jd) {
       return { ok: false, status: 500, error: "AI JD generation failed. Please try again." };
     }
+    // When pay is to be left out, drop any line that still states it, whatever the model wrote.
+    const noPay = (lines: string[], strict: boolean) =>
+      hidePay ? lines.filter((l) => !(strict ? /₹|\brs\.?\s*\d|\bLPA\b|\bCTC\b|lakh|crore|\b\d{2,}\b/i : /\bLPA\b|\bCTC\b|per annum|salary of/i).test(l)) : lines;
     const scrubbed: GeneratedJd = {
-      overview: scrubClientName(jd.overview, input.client_name, input.hide_names),
-      responsibilities: scrubClientName(jd.responsibilities, input.client_name, input.hide_names),
-      candidate_profile: scrubClientName(jd.candidate_profile, input.client_name, input.hide_names),
-      compensation_benefits: scrubClientName(jd.compensation_benefits, input.client_name, input.hide_names),
+      overview: hidePay ? scrubClientName(jd.overview, input.client_name, input.hide_names).replace(/[^.]*\b(?:LPA|CTC)\b[^.]*\.?/gi, "").trim() : scrubClientName(jd.overview, input.client_name, input.hide_names),
+      responsibilities: noPay(scrubClientName(jd.responsibilities, input.client_name, input.hide_names), false),
+      candidate_profile: noPay(scrubClientName(jd.candidate_profile, input.client_name, input.hide_names), false),
+      compensation_benefits: noPay(scrubClientName(jd.compensation_benefits, input.client_name, input.hide_names), true),
     };
     return { ok: true, jd: scrubbed };
   } catch (err) {

@@ -47,6 +47,7 @@ export default function JobDescriptionPanel({
   // Names found in an uploaded client JD (kept out of the listing) and any special instructions for the AI.
   const [hideNames, setHideNames] = useState<string[]>([]);
   const [instructions, setInstructions] = useState("");
+  const [hidePay, setHidePay] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [editInstruction, setEditInstruction] = useState("");
@@ -87,6 +88,7 @@ export default function JobDescriptionPanel({
           client_name: context.client_name ?? "",
           hide_names: hideNames,
           instructions,
+          hide_pay: hidePay,
         }),
       });
       const data = await res.json();
@@ -195,6 +197,9 @@ export default function JobDescriptionPanel({
               placeholder="Instructions for the AI (optional), e.g. don't mention salary"
               className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] bg-white dark:bg-slate-900"
             />
+            <label className="mt-1.5 flex items-center gap-1.5 text-[12px] text-slate-600">
+              <input type="checkbox" checked={hidePay} onChange={(e) => setHidePay(e.target.checked)} /> Leave pay figures out of the listing
+            </label>
             <p className="mt-1 text-[11px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
             <button
               type="button"

@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     client_name: body.client_name ?? "",
     hide_names: Array.isArray(body.hide_names) ? body.hide_names.filter((n: unknown) => typeof n === "string").slice(0, 10) : [],
     instructions: typeof body.instructions === "string" ? body.instructions : "",
+    hide_pay: body.hide_pay === true,
   });
 
   if (!result.ok) {
