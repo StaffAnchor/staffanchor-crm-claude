@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RoleCard } from "@/lib/role-card";
 import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
+import { applyRoleInterest, interestForRole } from "@/lib/role-interest";
 
 // For roles marked urgent: the people who match the role best (Perfect, then Close), in order, so Calls today can put the
 // ones who still lack details first. The ranking is the same one the role's Matches tab uses.
@@ -42,12 +43,15 @@ async function computeUrgentRoleMatches(supabase: SupabaseClient): Promise<{ rol
       const also = (m.also_clusters ?? []).filter((c) => c !== m.role_cluster);
       const want = new Set<string>([...card.exact_worlds, ...card.adjacent_worlds.map((a) => a.slug)]);
       for (const ex of card.exact_worlds) for (const [w, v] of edges.get(ex) ?? []) if (v >= 0.5) want.add(w);
-      const [{ data: pool }, { data: dismissed }] = await Promise.all([
+      const [{ data: pool }, { data: dismissed }, roleInterest] = await Promise.all([
         supabase.rpc("role_match_candidates", { p_clusters: clustersFor(card, also), p_worlds: Array.from(want), p_limit: 900 }),
         supabase.from("match_dismissals").select("candidate_id").eq("mandate_id", m.id),
+        interestForRole(supabase, m.id),
       ]);
       const skip = new Set(((dismissed ?? []) as { candidate_id: string }[]).map((d) => d.candidate_id));
-      const ranked = rankCandidates(card, ((pool ?? []) as MatchRow[]).filter((r) => !skip.has(r.candidate_id)), edges, (s) => nameOf.get(s) ?? s, { also })
+      // Someone who said no to this role on a call is not called about it again; someone who said yes comes first.
+      const ranked = applyRoleInterest(rankCandidates(card, ((pool ?? []) as MatchRow[]).filter((r) => !skip.has(r.candidate_id)), edges, (s) => nameOf.get(s) ?? s, { also }), roleInterest)
+        .sort((a, b) => b.score - a.score)
         .filter((r) => r.bucket === "perfect" || r.bucket === "close")
         .slice(0, PER_ROLE);
       return ranked.map((r, i) => ({ candidateId: r.row.candidate_id, roleId: m.id, roleTitle: m.role_title ?? "Role", bucket: r.bucket as "perfect" | "close", score: r.score, order: i }));

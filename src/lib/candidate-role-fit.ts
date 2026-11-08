@@ -8,14 +8,16 @@ export type RoleFit = { mandateId: string; roleTitle: string; clientName: string
 // "no match" just because the slower AI check has not reached them. Only roles with a role type, level and role card
 // can be ranked; people already in a role's pipeline are left out.
 export async function bestRoleFits(admin: SupabaseClient, candidateId: string, limit = 3): Promise<RoleFit[]> {
-  const [{ data: mandates }, { data: links }, { data: cards }, { data: worldRows }, { data: edgeRows }, { data: rows }] = await Promise.all([
+  const [{ data: mandates }, { data: links }, { data: cards }, { data: worldRows }, { data: edgeRows }, { data: rows }, { data: interestRows }] = await Promise.all([
     admin.from("mandates").select("id, role_title, client_name, also_clusters").eq("status", "open").not("role_cluster", "is", null).not("seniority_band", "is", null),
     admin.from("candidate_mandate_links").select("mandate_id").eq("candidate_id", candidateId),
     admin.from("mandate_role_cards").select("mandate_id, card"),
     admin.from("selling_worlds").select("slug, name"),
     admin.from("selling_world_edges").select("a, b, weight"),
     admin.rpc("role_match_rows", { p_ids: [candidateId] }),
+    admin.from("candidate_role_interest").select("mandate_id, interest, reason").eq("candidate_id", candidateId),
   ]);
+  const said = new Map(((interestRows ?? []) as { mandate_id: string; interest: string; reason: string | null }[]).map((r) => [r.mandate_id, r]));
   const row = ((rows ?? []) as MatchRow[])[0];
   if (!row) return [];
   const edges = new Map<string, Map<string, number>>();
@@ -30,11 +32,15 @@ export async function bestRoleFits(admin: SupabaseClient, candidateId: string, l
   const out: RoleFit[] = [];
   for (const m of (mandates ?? []) as { id: string; role_title: string; client_name: string | null; also_clusters: string[] | null }[]) {
     const card = cardOf.get(m.id);
-    if (!card || inPipeline.has(m.id)) continue;
+    // A role they said no to on a call is not offered again.
+    if (!card || inPipeline.has(m.id) || said.get(m.id)?.interest === "not_interested") continue;
     const r = rankCandidates(card, [row], edges, (s) => nameOf.get(s) ?? s, { keepAll: true, also: m.also_clusters ?? [] })[0];
     if (!r) continue;
-    out.push({ mandateId: m.id, roleTitle: m.role_title, clientName: m.client_name, bucket: r.bucket, score: Math.round(r.score), why: r.matched[0] ?? r.gaps[0] ?? "" });
+    const yes = said.get(m.id)?.interest === "interested";
+    out.push({ mandateId: m.id, roleTitle: m.role_title, clientName: m.client_name, bucket: r.bucket, score: Math.round(r.score) + (yes ? 15 : 0), why: yes ? `said yes on a call${said.get(m.id)?.reason ? `: ${said.get(m.id)?.reason}` : ""}` : r.matched[0] ?? r.gaps[0] ?? "" });
   }
   const order = { perfect: 0, close: 1, stretch: 2 };
-  return out.sort((a, b) => order[a.bucket] - order[b.bucket] || b.score - a.score).slice(0, limit);
+  // Roles they said yes to on a call come first, then the best fits.
+  const yesFirst = (id: string) => (said.get(id)?.interest === "interested" ? 0 : 1);
+  return out.sort((a, b) => yesFirst(a.mandateId) - yesFirst(b.mandateId) || order[a.bucket] - order[b.bucket] || b.score - a.score).slice(0, limit);
 }
