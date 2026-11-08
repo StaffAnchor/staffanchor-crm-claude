@@ -108,17 +108,20 @@ export async function POST(req: Request) {
       const { data: old } = await admin.from("candidate_selling_profiles").select("*").eq("candidate_id", candidateId).maybeSingle();
       const o = (old ?? {}) as Record<string, unknown>;
       const s = p.selling;
+      const fresh = s.worlds.length > 0 || s.customer_types.length > 0;
       await admin.from("candidate_selling_profiles").upsert(
         {
           candidate_id: candidateId,
           worlds: s.worlds.length ? s.worlds : o.worlds ?? [],
           customer_types: s.customer_types.length ? s.customer_types : o.customer_types ?? [],
-          buyer_roles: o.buyer_roles ?? [],
+          // A fresh picture of what they sell replaces the old buyer roles and team description, which would otherwise
+          // contradict it.
+          buyer_roles: fresh ? [] : o.buyer_roles ?? [],
           motion: s.motion ?? o.motion ?? null,
           deal_size: s.deal_size ?? o.deal_size ?? null,
           quota: s.quota ?? o.quota ?? null,
           team_size: s.team_size ?? o.team_size ?? null,
-          team_sells: o.team_sells ?? null,
+          team_sells: fresh ? null : o.team_sells ?? null,
           summary: s.sells ?? o.summary ?? null,
           evidence: "Said on a call",
           confidence: 0.9,
