@@ -29,6 +29,7 @@ import SendInviteButton from "./send-invite-button";
 import AskMissingDetails from "./ask-missing-details";
 import ProfileGroupControl from "./profile-group-control";
 import ProfileCallSection, { type PastDebrief } from "./profile-call-section";
+import CallTranscriptPanel from "./call-transcript-panel";
 import BriefCard from "./brief-card";
 import type { Brief } from "@/lib/candidate-brief";
 import { POOL_PRACTICE, type PoolEntry, type PoolTier } from "@/lib/talent-pool";
@@ -667,6 +668,7 @@ export default async function CandidateDetailPage({
               history={pastDebriefs}
             />
           </section>
+          <CallTranscriptPanel candidateId={candidate.id} />
           <details className="rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700" open={!!recommendation}>
             <summary className="cursor-pointer text-[13px] font-semibold text-slate-900 dark:text-slate-100">
               2. Scorecard <span className="font-normal text-slate-500">(optional, internal only)</span>
