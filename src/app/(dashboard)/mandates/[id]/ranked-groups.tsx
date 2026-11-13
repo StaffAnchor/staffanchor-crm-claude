@@ -33,7 +33,7 @@ const REACHED_STYLE: Record<string, string> = {
 type Where = "all" | "here" | "reloc" | "unknown";
 const RELOC_OK = new Set(["Yes", "Maybe", "Depends upon Option"]);
 
-export default function RankedGroups({ mandateId, roleTitle = null, ranked: allRanked, reached = {}, cities = [] }: { mandateId: string; roleTitle?: string | null; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }>; cities?: string[] }) {
+export default function RankedGroups({ mandateId, roleTitle = null, ranked: allRanked, reached = {}, cities = [], memory = {} }: { mandateId: string; roleTitle?: string | null; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }>; cities?: string[]; memory?: Record<string, { at: string; summary: string }> }) {
   const router = useRouter();
   const flags = useWhatsAppTemplates();
   const [reviewing, setReviewing] = useState(false);
@@ -241,6 +241,11 @@ export default function RankedGroups({ mandateId, roleTitle = null, ranked: allR
                   </button>
                 )}
               </div>
+              {memory[c.candidate_id]?.summary && (
+                <p className="mt-2 text-[12px] leading-snug text-slate-500 dark:text-slate-400">
+                  <span className="font-medium text-slate-600 dark:text-slate-300">Spoke {memory[c.candidate_id].at ? new Date(memory[c.candidate_id].at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "earlier"}:</span> {memory[c.candidate_id].summary}
+                </p>
+              )}
             </CandidateCardLayout>
           );
         })}

@@ -12,6 +12,7 @@ import type { RoleCard } from "@/lib/role-card";
 import { notAFitLabel, STRENGTH_FLAGS } from "@/lib/not-a-fit-reasons";
 import { clustersFor, rankCandidates, type MatchRow } from "@/lib/role-match";
 import { applyRoleInterest, interestForRole } from "@/lib/role-interest";
+import { applyCallMemory, loadCallMemory } from "@/lib/call-memory";
 
 // The best people in the whole database for this role, found and ranked automatically: write the role card from the
 // mandate, then rank everyone against it, in three groups with the reasons shown.
@@ -27,7 +28,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const card = cardRow.card as RoleCard;
   const also = ((mandateRow.also_clusters as string[] | null) ?? []).filter((c) => c !== mandateRow.role_cluster);
 
-  const [{ data: clusterRows }, { data: worldRows }, { data: edgeRows }, { data: linkRows }, { data: dismissedRows }, { data: outreachRows }, roleInterest] = await Promise.all([
+  const [{ data: clusterRows }, { data: worldRows }, { data: edgeRows }, { data: linkRows }, { data: dismissedRows }, { data: outreachRows }, roleInterest, callMemory] = await Promise.all([
     supabase.from("role_clusters").select("slug, name").order("sort_order"),
     supabase.from("selling_worlds").select("slug, name").order("sort_order"),
     supabase.from("selling_world_edges").select("a, b, weight"),
@@ -35,6 +36,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
     supabase.from("match_dismissals").select("candidate_id").eq("mandate_id", mandateId),
     supabase.from("mandate_outreach").select("candidate_id, status, sent_at").eq("mandate_id", mandateId),
     interestForRole(supabase, mandateId),
+    loadCallMemory(supabase),
   ]);
   const clusters = (clusterRows ?? []) as { slug: string; name: string }[];
   const worlds = (worldRows ?? []) as { slug: string; name: string }[];
@@ -68,7 +70,9 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const { data: flagRows } = await supabase.from("candidate_sales_flags").select("candidate_id, flag").in("candidate_id", pool.map((r) => r.candidate_id));
   const flagsOf = new Map<string, string[]>();
   for (const f of (flagRows ?? []) as { candidate_id: string; flag: string }[]) (flagsOf.get(f.candidate_id) ?? flagsOf.set(f.candidate_id, []).get(f.candidate_id)!).push(f.flag);
-  const ranked = applyRoleInterest(rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s, { also }), roleInterest)
+  // What people told us on earlier calls: lifts those who want this kind of role, flags those who said they would not accept it.
+  const roleText = [mandateRow.role_title, ...card.cities, clusters.find((c) => c.slug === mandateRow.role_cluster)?.name, ...card.exact_worlds.map((w) => nameOf.get(w) ?? w)].filter(Boolean).join(" ");
+  const ranked = applyCallMemory(applyRoleInterest(rankCandidates(card, pool, edges, (s) => nameOf.get(s) ?? s, { also }), roleInterest), callMemory, roleText)
     .map((r) => {
       const all = flagsOf.get(r.row.candidate_id);
       if (!all?.length) return r;
@@ -89,6 +93,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const seen = new Set(top.map((r) => r.row.candidate_id));
   const local = card.cities.length > 0 ? ranked.filter((r) => !seen.has(r.row.candidate_id) && r.metro && card.cities.includes(r.metro)).slice(0, 150) : [];
   const shownRanked = [...top, ...local];
+  const memoryShown = Object.fromEntries(shownRanked.flatMap((r) => { const m = callMemory.get(r.row.candidate_id); return m ? [[r.row.candidate_id, { at: m.at, summary: m.summary }]] : []; }));
 
   return (
     <div className="space-y-4">
@@ -102,7 +107,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
           templateKey="referralRole"
         />
       )}
-      <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} cities={card.cities} ranked={shownRanked} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
+      <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} cities={card.cities} ranked={shownRanked} memory={memoryShown} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, marked not a fit, or who said no to this role on a call is left out. People who said yes on a call are lifted and say so.
       </p>

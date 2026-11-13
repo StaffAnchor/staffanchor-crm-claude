@@ -1,3 +1,4 @@
+import { memoryText, readMemory } from "@/lib/call-memory";
 import crypto from "crypto";
 import { isAiPaused } from "@/lib/ai-switch";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -172,12 +173,15 @@ export function buildCandidateEmbeddingText(c: CandidateForEmbedding): string {
   if (c.skills) parts.push(`Skills: ${c.skills}.`);
   if (c.segment_data && Object.keys(c.segment_data).length) {
     const seg = Object.entries(c.segment_data)
-      .filter(([, v]) => v !== null && v !== undefined && v !== "")
+      .filter(([, v]) => v !== null && v !== undefined && v !== "" && (typeof v !== "object" || Array.isArray(v)))
       .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join("/") : v}`)
       .join("; ");
     if (seg) parts.push(`Profile details: ${seg}.`);
   }
   if (c.ai_summary) parts.push(c.ai_summary);
+  // What they told us on calls: wants, will-not-accept, strengths, concerns.
+  const memory = readMemory(c.segment_data);
+  if (memory) parts.push(memoryText(memory));
   if (c.resume_text) parts.push(c.resume_text.slice(0, 3000));
   return parts.join(" ");
 }

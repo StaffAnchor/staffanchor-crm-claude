@@ -4,6 +4,7 @@ import { createClient as createAdmin } from "@supabase/supabase-js";
 import { runDebrief } from "@/lib/debrief";
 import { generateBrief } from "@/lib/candidate-brief";
 import { isPoolTier } from "@/lib/talent-pool";
+import { cleanReadBack, mergeCallMemory } from "@/lib/call-memory";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { level1OptionsForProfileType } from "@/lib/candidate-options";
@@ -32,7 +33,12 @@ type Body = {
   callBackAt?: string | null;
   tier?: string | null;
   offer?: { inHand?: boolean; ctc?: number | null } | null;
+  // The confirmed read-back of the note: what the system remembers from this call.
+  readBack?: unknown;
 };
+
+// A spoken call needs a few words about what was discussed, so the person is remembered next time.
+const MIN_NOTE = 30;
 
 const num = (v: unknown): number | null => {
   const n = Number(v);
@@ -53,6 +59,10 @@ export async function POST(req: Request) {
   const id = body.candidateId ?? "";
   const outcome = body.outcome as Outcome;
   if (!UUID.test(id) || !OUTCOMES.includes(outcome)) return NextResponse.json({ error: "Bad request" }, { status: 400 });
+
+  if (outcome === "reached" && (typeof body.note !== "string" || body.note.trim().length < MIN_NOTE)) {
+    return NextResponse.json({ ok: false, error: "Write a few words about what you discussed before saving the call, rough is fine: what they want, what they will not accept, anything to remember." }, { status: 400 });
+  }
 
   const now = new Date();
   const update: Record<string, unknown> = {};
@@ -134,6 +144,14 @@ export async function POST(req: Request) {
       update.whatsapp_opt_in = body.messageOk;
       update.email_opt_out = !body.messageOk;
       filled.push("message_consent");
+    }
+    // What the call taught us about the person is remembered for matching: the confirmed read-back, or the note itself
+    // if the read-back was skipped.
+    const noteText = typeof body.note === "string" ? body.note.trim() : "";
+    const memory = cleanReadBack(body.readBack) ?? (noteText ? { summary: noteText.slice(0, 280) } : null);
+    if (memory) {
+      seg.call_insights = mergeCallMemory(seg.call_insights, memory, now.toISOString());
+      update.updated_at = now.toISOString();
     }
     update.segment_data = seg;
     // A lead whose details are now complete becomes Registered, the same gate the public form uses.

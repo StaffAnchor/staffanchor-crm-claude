@@ -85,6 +85,8 @@ export async function POST(req: Request) {
       if (p.otherOffers) noteParts.push(`Other offers: ${p.otherOffers}.`);
       if (p.unclear.length) noteParts.push(`Still unclear: ${p.unclear.join("; ")}.`);
     }
+    let note = noteParts.filter(Boolean).join(" ").slice(0, 3900);
+    if (note.length < 40) note = `${note} (read from a call transcript)`.trim();
     const logBody = {
       candidateId,
       outcome: "reached",
@@ -94,7 +96,9 @@ export async function POST(req: Request) {
       communication: accept.ratings ? p.ratings.communication ?? null : null,
       messageOk: accept.messageOk && p.messageOk !== null ? p.messageOk : null,
       openness: accept.openness ? p.openness : null,
-      note: noteParts.filter(Boolean).join(" ").slice(0, 3900),
+      note,
+      // What the call taught us is remembered for matching, through the same save the call form uses.
+      readBack: accept.notes !== false ? { summary: p.summary, wants: p.preferred, dealbreakers: p.dealbreakers, other_offers: p.otherOffers, unclear: p.unclear } : { summary: p.summary },
     };
     const headers = new Headers({ "content-type": "application/json", cookie: req.headers.get("cookie") ?? "" });
     const res = await logCall(new Request(new URL("/api/calls/log", req.url), { method: "POST", headers, body: JSON.stringify(logBody) }));
@@ -134,12 +138,6 @@ export async function POST(req: Request) {
     // What they said about this role, so they are not called again for it if they said no.
     if (accept.interest && p.interest && roleId) {
       await admin.from("candidate_role_interest").upsert({ candidate_id: candidateId, mandate_id: roleId, interest: p.interest.level, reason: p.interest.reason, source: "call", updated_at: now }, { onConflict: "candidate_id,mandate_id" });
-    }
-    // Dealbreakers, wishes and other offers stay on the profile for the next time a role is considered for them.
-    if (p.dealbreakers.length || p.preferred.length || p.otherOffers || p.unclear.length) {
-      const { data: c } = await admin.from("candidates").select("segment_data").eq("id", candidateId).maybeSingle();
-      const seg = ((c?.segment_data as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
-      await admin.from("candidates").update({ segment_data: { ...seg, call_insights: { at: now, summary: p.summary, dealbreakers: p.dealbreakers, preferred: p.preferred, other_offers: p.otherOffers, unclear: p.unclear } } }).eq("id", candidateId);
     }
     await admin.from("call_insights").update({ applied_at: now, applied_by: user.id }).eq("id", insightId);
     const fits = await bestRoleFits(admin, candidateId, 3).catch(() => []);

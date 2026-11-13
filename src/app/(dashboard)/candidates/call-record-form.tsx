@@ -182,6 +182,11 @@ export default function CallRecordForm({
   const [canMessage, setCanMessage] = useState("");
   const [openness, setOpenness] = useState("");
   const [note, setNote] = useState("");
+  // The read-back: what the system will remember from the note, shown before the call is saved.
+  type ReadBack = { summary: string; wants: string[]; dealbreakers: string[]; strengths: string[]; concerns: string[] };
+  const [readBack, setReadBack] = useState<ReadBack | null>(null);
+  const [reading, setReading] = useState(false);
+  const MIN_NOTE = 30;
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -223,6 +228,27 @@ export default function CallRecordForm({
     return o;
   };
   const rated = Object.values(ratings).filter(Boolean).length;
+
+  // "Spoke to them": the note is required, and the person sees what will be remembered before the call is saved.
+  async function saveSpoke() {
+    if (note.trim().length < MIN_NOTE) {
+      setError("Write a few words about what you discussed, rough is fine: what they want, what they will not accept, anything to remember.");
+      return;
+    }
+    if (readBack) return log("reached", { readBack });
+    setReading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/calls/readback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidateId: p.id, note }) });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.readBack) setReadBack(d.readBack as ReadBack);
+      else await log("reached"); // the read-back is a courtesy: if it fails, the call still saves with the note as written
+    } catch {
+      await log("reached");
+    } finally {
+      setReading(false);
+    }
+  }
 
   async function log(outcome: string, extra: Record<string, unknown> = {}) {
     if (outcome === "reached" && offer === "Yes" && !offerCtc) {
@@ -269,6 +295,7 @@ export default function CallRecordForm({
           setRatings({ communication: "", seriousness: "", stability: "", salary_realism: "", skill_match: "" });
           setOpenness("");
           setNote("");
+          setReadBack(null);
           setTier(null);
         }
       }
@@ -545,16 +572,27 @@ export default function CallRecordForm({
         </Field>
       </Step>
 
-      <Step n={isSales ? 7 : 6} title="Notes and verdict" hint="Anything else, written like a text to a colleague" defaultOpen={!desk}>
-        <Field label="After the call (optional): write it like a text to a colleague">
+      <Step n={isSales ? 7 : 6} title="What you discussed (required)" hint="A few words, written like a text to a colleague" defaultOpen>
+        <Field label="What did you discuss? Rough is fine: what they want, what they will not accept, anything to remember">
           <textarea
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(e) => { setNote(e.target.value); setReadBack(null); }}
             rows={4}
             placeholder="e.g. Sold ERP to mid-market, closes 25-30L deals, beat quota 3 years. Sharp, great communicator. Leads a team of 6. Worried he moved twice in 2 years."
             className={select}
           />
-          <p className="mt-1 text-[11.5px] text-slate-400">The system reads it, fills any detail still blank, notes strengths and concerns for the client brief, and matches strong people to open roles.</p>
+          <p className="mt-1 text-[11.5px] text-slate-400">Before saving, you see what the system will remember. It fills any detail still blank, keeps what they want and will not accept for future roles, and matches strong people to open roles.</p>
+          {readBack && (
+            <div className="mt-2 space-y-1 rounded-lg border border-teal-200 bg-teal-50/60 p-3 text-[12.5px] text-slate-700 dark:border-teal-900 dark:bg-teal-950/20 dark:text-slate-200">
+              <p className="font-semibold text-teal-900 dark:text-teal-200">This is what I will remember:</p>
+              {readBack.summary && <p>{readBack.summary}</p>}
+              {readBack.wants.length > 0 && <p><b>Wants:</b> {readBack.wants.join("; ")}</p>}
+              {readBack.dealbreakers.length > 0 && <p><b>Will not accept:</b> {readBack.dealbreakers.join("; ")}</p>}
+              {readBack.strengths.length > 0 && <p><b>Strengths:</b> {readBack.strengths.join("; ")}</p>}
+              {readBack.concerns.length > 0 && <p><b>Concerns:</b> {readBack.concerns.join("; ")}</p>}
+              <p className="text-[11.5px] text-slate-500">Wrong? Change your note above and read it again.</p>
+            </div>
+          )}
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="text-[12px] text-slate-500">Your verdict (optional):</span>
             {POOL_TIERS.map((t) => (
@@ -571,8 +609,8 @@ export default function CallRecordForm({
       <div className={desk ? "sticky bottom-0 z-10 -mx-4 -mb-4 space-y-2 border-t border-slate-200 bg-white/95 px-4 pb-3 pt-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95" : "space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800"}>
         {error && <p className="text-[12.5px] font-medium text-rose-600">{error}</p>}
         <div className="flex flex-wrap items-center gap-1.5">
-          <button type="button" disabled={!!busy} onClick={() => log("reached")} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
-            <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : desk ? "Spoke: save and next" : "Spoke to them: save the call"}
+          <button type="button" disabled={!!busy || reading} onClick={() => void saveSpoke()} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
+            <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : reading ? "Reading your note…" : readBack ? (desk ? "Looks right: save and next" : "Looks right: save the call") : desk ? "Spoke: read my note" : "Spoke to them: read my note"}
           </button>
           <button type="button" disabled={!!busy} onClick={() => log("no_answer")} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[13px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
             {busy === "no_answer" ? "Saving…" : "No answer"}

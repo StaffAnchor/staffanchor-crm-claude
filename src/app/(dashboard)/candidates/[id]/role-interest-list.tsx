@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { readMemory } from "@/lib/call-memory";
 
 type Row = { interest: string; reason: string | null; updated_at: string; mandates: { role_title: string | null; client_name: string | null } | { role_title: string | null; client_name: string | null }[] | null };
 
@@ -13,9 +14,24 @@ export default async function RoleInterestList({ candidateId }: { candidateId: s
   const supabase = await createClient();
   const { data } = await supabase.from("candidate_role_interest").select("interest, reason, updated_at, mandates(role_title, client_name)").eq("candidate_id", candidateId).order("updated_at", { ascending: false });
   const rows = (data ?? []) as unknown as Row[];
-  if (rows.length === 0) return null;
+  const { data: cand } = await supabase.from("candidates").select("segment_data").eq("id", candidateId).maybeSingle();
+  const memory = readMemory(cand?.segment_data);
+  if (rows.length === 0 && !memory) return null;
   return (
-    <div className="mt-3 rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700">
+    <div className="mt-3 space-y-3 rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700">
+      {memory && (
+        <div className="space-y-1 text-[12.5px] text-slate-700 dark:text-slate-200">
+          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">What we remember from calls{memory.at ? <span className="ml-1.5 text-xs font-normal text-slate-400">last updated {new Date(memory.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span> : null}</p>
+          {memory.summary && <p>{memory.summary}</p>}
+          {memory.wants.length > 0 && <p><b>Wants:</b> {memory.wants.join("; ")}</p>}
+          {memory.dealbreakers.length > 0 && <p><b>Will not accept:</b> {memory.dealbreakers.join("; ")}</p>}
+          {memory.strengths.length > 0 && <p><b>Strengths:</b> {memory.strengths.join("; ")}</p>}
+          {memory.concerns.length > 0 && <p><b>Concerns:</b> {memory.concerns.join("; ")}</p>}
+          {memory.other_offers && <p><b>Other offers:</b> {memory.other_offers}</p>}
+        </div>
+      )}
+      {rows.length > 0 && (
+      <div>
       <p className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">What they said about roles</p>
       <ul className="space-y-1.5">
         {rows.map((r, i) => {
@@ -31,6 +47,8 @@ export default async function RoleInterestList({ candidateId }: { candidateId: s
           );
         })}
       </ul>
+      </div>
+      )}
     </div>
   );
 }
