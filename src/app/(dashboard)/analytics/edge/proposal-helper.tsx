@@ -6,8 +6,8 @@ type Result = { ok: true; slug: string; proposal: string; fit: "good" | "partial
 
 const SERVICES = [
   { slug: "", label: "Choose for me" },
-  { slug: "mock-interview", label: "Mock interview" },
-  { slug: "job-search-strategy", label: "Job search strategy + resume rebuild" },
+  { slug: "mock-interview", label: "Interview prep + job strategy" },
+  { slug: "job-search-strategy", label: "Interview prep + job strategy + resume rebuild" },
   { slug: "resume-writing", label: "Resume writing" },
 ];
 const FIT: Record<string, string> = {

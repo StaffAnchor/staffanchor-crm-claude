@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { EMAIL_RE, HOLD_MINUTES, adminDb, cleanPhone, istDate, sessionLength } from "@/lib/pro-sessions/core";
+import { EMAIL_RE, FLEX_SLUGS, HOLD_MINUTES, adminDb, cleanPhone, istDate, sessionLength } from "@/lib/pro-sessions/core";
 import { computeSlots } from "@/lib/pro-sessions/slots";
-import { comboPrice } from "@/lib/resume-orders/core";
+import { comboPrice, sessionPrice } from "@/lib/resume-orders/core";
 import { requireInternal } from "@/lib/pro-sessions/internal-auth";
 
 export const dynamic = "force-dynamic";
@@ -36,13 +36,19 @@ export async function POST(req: NextRequest) {
   let amount = len.priceInr;
   let years: number | null = null;
   let resumeTier: string | null = null;
-  if (svc.price_by_experience) {
+  if (svc.price_by_experience || FLEX_SLUGS.has(svc.slug)) {
     const y = Number(b.experienceYears);
-    if (!Number.isFinite(y) || y < 0 || y > 60) return NextResponse.json({ ok: false, error: "Please enter your years of experience." }, { status: 400 });
+    if (!Number.isFinite(y) || y < 0 || y > 60) return NextResponse.json({ ok: false, error: "Please select your years of experience." }, { status: 400 });
     years = Math.floor(y);
-    const c = comboPrice(years);
-    amount = c.total;
-    resumeTier = c.tier;
+    if (svc.slug === "job-search-strategy") {
+      // Interview Preparation + Job Strategy + Resume Rebuild: the session for the length and band, plus the resume, less 20%.
+      const c = comboPrice(years, len.minutes);
+      amount = c.total;
+      resumeTier = c.tier;
+    } else {
+      // Interview Preparation + Job Strategy: priced by experience band and length.
+      amount = sessionPrice(years, len.minutes).price;
+    }
   }
 
   // The chosen time must still be free, checked now and not trusted from the browser.

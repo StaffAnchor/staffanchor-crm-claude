@@ -4,7 +4,7 @@ import { createMeetEvent, getAccessToken } from "./google";
 import { sendEmail } from "@/lib/mail";
 import { invoiceEmailHtml } from "@/lib/invoice-email";
 import { ensureServiceInvoice } from "@/lib/service-invoices";
-import { COMBO_STRATEGY_PRICE, FIRST_DRAFT_DAYS, TIERS, isTier, newToken, type TierKey } from "@/lib/resume-orders/core";
+import { FIRST_DRAFT_DAYS, SESSION_PRICE, TIERS, asSessionMinutes, isTier, newToken, type TierKey } from "@/lib/resume-orders/core";
 import { INTAKE_BASE } from "@/lib/resume-orders/finalize";
 
 type Booking = {
@@ -27,8 +27,8 @@ type Booking = {
 
 // What to do before the session, per service. Taken from the session descriptions.
 const PREP: Record<string, string> = {
-  "mock-interview": "Bring a specific role or job description if you have one, so the interview is built around it.",
-  "job-search-strategy": "Please reply to this email with your resume at least 24 hours before the session, so the time is spent on strategy and not on reading.",
+  "mock-interview": "Bring a specific role or job description if you have one, and your latest resume, so the session is built around them.",
+  "job-search-strategy": "Please reply to this email with your current resume at least 24 hours before the session, and bring a role or job description if you have one, so the time is spent on preparation and strategy and not on reading.",
 };
 
 /**
@@ -144,12 +144,13 @@ async function comboOrderToken(db: SupabaseClient, booking: Booking): Promise<st
   const { data: existing } = await db.from("resume_orders").select("intake_token").eq("booking_id", booking.id).maybeSingle();
   if (existing) return (existing as { intake_token: string }).intake_token;
   const tier: TierKey = booking.resume_tier;
-  const resumeShare = Math.round(TIERS[tier].price * (booking.amount_inr / (COMBO_STRATEGY_PRICE[tier] + TIERS[tier].price)));
+  const minutes = booking.slot_start && booking.slot_end ? Math.round((new Date(booking.slot_end).getTime() - new Date(booking.slot_start).getTime()) / 60000) : 60;
+  const resumeShare = Math.round(TIERS[tier].price * (booking.amount_inr / (SESSION_PRICE[tier][asSessionMinutes(minutes)] + TIERS[tier].price)));
   const token = newToken();
   const { error } = await db.from("resume_orders").insert({
     tier, amount_inr: resumeShare, name: booking.name, email: booking.email, phone: booking.phone,
     status: "paid", paid_at: new Date().toISOString(), intake_token: token, booking_id: booking.id,
-    experience_years: booking.experience_years, source: booking.source, notes: "Part of the Job Strategy + Resume Rebuild package; one invoice, on the booking.",
+    experience_years: booking.experience_years, source: booking.source, notes: "Part of the Interview Preparation + Job Strategy + Resume Rebuild package; one invoice, on the booking.",
   });
   if (error) {
     // Lost a race with the other confirmation path: the order exists now.

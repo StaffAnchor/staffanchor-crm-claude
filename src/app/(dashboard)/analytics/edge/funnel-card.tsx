@@ -12,7 +12,7 @@ const PERIODS = [
   { key: "all", label: "All time", days: 0 },
 ] as const;
 
-const SERVICE_TITLE: Record<string, string> = { "mock-interview": "Interview Prep + Mock Interview", "job-search-strategy": "Job Strategy + Resume Rebuild", "resume-writing": "Resume Writing", "recruiter-call": "Apply + recruiter call (₹199)" };
+const SERVICE_TITLE: Record<string, string> = { "mock-interview": "Interview Preparation + Job Strategy", "job-search-strategy": "Interview Prep + Job Strategy + Resume Rebuild", "resume-writing": "Resume Writing", "recruiter-call": "Apply + recruiter call (₹199)" };
 const CLICK_TEXT: Record<string, string> = {
   "hero-button": "Home card: Explore StaffAnchor Edge button",
   "hero-slot-chip": "Home card: next open slot chip",

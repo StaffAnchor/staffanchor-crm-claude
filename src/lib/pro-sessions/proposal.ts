@@ -12,20 +12,25 @@ export function offers(services: { slug: string; title: string; duration_min: nu
     slug: s.slug,
     title: s.title,
     duration_min: s.duration_min,
-    price: s.price_by_experience ? `starts at ${inr(s.price_inr)} and depends on years of experience: ${inr(s.price_inr)} for 0-5 years, Rs 2,799 for 6-12 years, Rs 3,999 for 13+ years, including GST` : inr(s.price_inr),
+    price:
+      s.slug === "mock-interview"
+        ? "depends on years of experience and length: Rs 2,000 (60 min) or Rs 3,000 (90 min) for 0-5 years, Rs 3,000 or Rs 4,500 for 6-12 years, Rs 5,000 or Rs 7,500 for 13+ years, including GST"
+        : s.slug === "job-search-strategy"
+          ? "depends on years of experience and session length, 20% less than buying the two apart: from Rs 3,200 for 0-5 years (60 min session), up to Rs 9,200 for 13+ years (90 min session), including GST"
+          : inr(s.price_inr),
     link: `https://jobs.staffanchor.com/edge/book/${s.slug}?src=linkedin_proposal`,
     what:
       s.slug === "mock-interview"
-        ? "a full mock interview loop for the role you are targeting, then a plain debrief on where you would have been screened out and how to fix it"
-        : s.price_by_experience
-          ? "a 45-minute 1:1 strategy session on where your next role actually comes from and a sharper LinkedIn headline and About, plus a professionally written resume (Word and PDF), at 20% off when taken together"
+        ? "a 1:1 interview preparation and job strategy session: a full mock interview for the role you are targeting, a plain debrief on where you would have been screened out and how to fix it, and a plan for where your next role comes from"
+        : s.slug === "job-search-strategy"
+          ? "the interview preparation and job strategy session (60 or 90 minutes) plus a professionally written resume (Word and PDF), at 20% off when taken together"
           : "a line-by-line resume rewrite, a sharper LinkedIn headline and About, and a map of where your next role actually comes from",
   }));
   list.push({
     slug: "resume-writing",
     title: "Resume Writing",
     duration_min: null,
-    price: "from Rs 1,199 depending on years of experience",
+    price: "Rs 2,000 for 0-5 years, Rs 3,000 for 6-12 years, Rs 4,000 for 13+ years, including GST",
     link: "https://jobs.staffanchor.com/resume-writing?src=linkedin_proposal",
     what: "a professionally written, ATS-friendly resume delivered as Word and PDF",
   });
