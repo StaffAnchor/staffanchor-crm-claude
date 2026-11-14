@@ -223,6 +223,7 @@ export default function MandateCandidatesCards({
             type="button"
             onClick={() => { setActiveId(l.id); setMobileOpen(true); void markViewed(l); }}
             aria-current={isActive}
+            title={`${c.full_name}: ${src.label}${src.detail ? ` · ${src.detail}` : ""}`}
             className="grid min-w-0 flex-1 grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2.5 text-left"
           >
             <span className={`flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold tabular-nums ring-1 ${FIT_STYLE[rank]}`} title={l.match_assessment?.recommendation ?? "Fit not read yet"}>
@@ -244,7 +245,6 @@ export default function MandateCandidatesCards({
                 </span>
               )}
               <span className="text-[11px] text-slate-400">{ago(l.created_at)}</span>
-              <span className="max-w-[92px] truncate rounded bg-slate-100 px-1 text-[10.5px] text-slate-500 dark:bg-slate-800" title={`${src.label}${src.detail ? ` · ${src.detail}` : ""}`}>{src.label}</span>
             </span>
           </button>
         </div>
@@ -483,7 +483,7 @@ export default function MandateCandidatesCards({
         </span>
       </div>
 
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(310px,380px)_minmax(0,1fr)]">
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(350px,430px)_minmax(0,1fr)]">
         <div className={`${mobileOpen ? "hidden lg:block" : ""} overflow-hidden rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
           {grouped.map((g) => {
             const closed = isCollapsed(g.key);
