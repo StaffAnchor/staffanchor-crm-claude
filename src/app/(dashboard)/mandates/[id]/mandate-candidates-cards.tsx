@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
+import { ArrowLeft, Check, Mic, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./candidate-row";
@@ -37,11 +37,13 @@ export default function MandateCandidatesCards({
   mandateContext,
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
+  voiceByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
   applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
   resumeSignedUrlByCandidate?: Record<string, string>;
+  voiceByCandidate?: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string }>;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -227,6 +229,7 @@ export default function MandateCandidatesCards({
               <span className="flex items-baseline gap-1.5">
                 <span className="max-w-[68%] shrink-0 truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name}</span>
                 {!l.viewed_at && ["sourced", "screened"].includes(l.stage) && <span className="shrink-0 rounded-full bg-teal-600 px-1.5 text-[9.5px] font-semibold text-white">New</span>}
+                {voiceByCandidate[c.id] && <span className="shrink-0 text-teal-600" title="Added a voice note with the application"><Mic className="h-3.5 w-3.5" /></span>}
                 <span className="min-w-0 flex-1 truncate text-[12px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ") || c.category || ""}</span>
               </span>
               <span className="mt-0.5 block truncate text-[12px] tabular-nums text-slate-500">{facts.filter(Boolean).join(" · ") || "No facts yet"}</span>
@@ -260,10 +263,14 @@ export default function MandateCandidatesCards({
     const logged = callLogged(l);
     const a = l.match_assessment;
     const fact = (label: string, value: string | null | undefined) => <FactTile label={label} value={value} />;
+    // What they told us on other roles' application questions, saved on the profile for every later role.
+    const savedAnswers = ((c.segment_data as { application_answers?: Record<string, { q?: string; a?: unknown; mandate_id?: string; at?: string }> } | null)?.application_answers) ?? {};
+    const earlierAnswers = Object.values(savedAnswers).filter((x) => x?.q && x.mandate_id !== mandateId && x.a != null && x.a !== "");
+    const voice = voiceByCandidate[c.id];
     const tabs: { key: "overview" | "details" | "share" | "answers"; label: string; dot?: boolean }[] = [
       { key: "overview", label: "Overview" },
       ...(canAct ? [{ key: "details" as const, label: "Call & details", dot: !ds.done }, { key: "share" as const, label: l.in_shortlist ? "With client" : "Share with client" }] : []),
-      ...(answers && answers.length > 0 ? [{ key: "answers" as const, label: `Answers (${answers.length})` }] : []),
+      ...((answers && answers.length > 0) || earlierAnswers.length > 0 ? [{ key: "answers" as const, label: `Answers (${(answers?.length ?? 0) + earlierAnswers.length})` }] : []),
     ];
     const curTab = tabs.some((t) => t.key === tab) ? tab : "overview";
     const left = readiness[l.id];
@@ -332,6 +339,13 @@ export default function MandateCandidatesCards({
         </div>
         <div className="min-h-0 flex-1 space-y-4 p-5">
           {next && curTab !== "share" && <NextStep tone={next.tone} title={next.title} detail={next.detail}>{next.actions}</NextStep>}
+          {voice && curTab !== "details" && curTab !== "share" && (
+            <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 dark:border-teal-900 dark:bg-teal-950/30">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> Why they say they suit this role{voice.seconds ? ` · ${voice.seconds}s` : ""}</p>
+              <audio controls preload="none" src={voice.url} className="mt-2 h-10 w-full" />
+              {voice.transcript ? <p className="mt-2 text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">&ldquo;{voice.transcript}&rdquo; <span className="text-[11px] text-slate-400">English text, translated if needed</span></p> : <p className="mt-2 text-[12px] text-slate-400">Written version still being prepared.</p>}
+            </div>
+          )}
           {curTab === "overview" && (
             <div className="space-y-4">
               <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -483,10 +497,21 @@ export default function MandateCandidatesCards({
             </div>
           )}
 
-          {curTab === "answers" && answers && (
+          {curTab === "answers" && (
+            <div className="space-y-5">
+              {(answers?.length ?? 0) > 0 && <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">This role&apos;s questions</p>}
             <ul className="space-y-3 text-[13px]">
-              {answers.map((x, i) => (<li key={i}><p className="font-medium text-slate-800 dark:text-slate-100">{x.question_text}</p><p className="text-slate-600 dark:text-slate-300">{x.answer_text ?? (x.answer_number != null ? String(x.answer_number) : x.answer_bool != null ? (x.answer_bool ? "Yes" : "No") : "—")}</p></li>))}
+              {(answers ?? []).map((x, i) => (<li key={i}><p className="font-medium text-slate-800 dark:text-slate-100">{x.question_text}</p><p className="text-slate-600 dark:text-slate-300">{x.answer_text ?? (x.answer_number != null ? String(x.answer_number) : x.answer_bool != null ? (x.answer_bool ? "Yes" : "No") : "—")}</p></li>))}
             </ul>
+              {earlierAnswers.length > 0 && (
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Saved from earlier applications</p>
+                  <ul className="space-y-3 text-[13px]">
+                    {earlierAnswers.map((x, i) => (<li key={i}><p className="font-medium text-slate-800 dark:text-slate-100">{x.q}</p><p className="text-slate-600 dark:text-slate-300">{typeof x.a === "boolean" ? (x.a ? "Yes" : "No") : String(x.a)}</p></li>))}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

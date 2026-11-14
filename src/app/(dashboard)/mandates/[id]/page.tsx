@@ -96,6 +96,7 @@ export default async function MandateDetailPage({
     ),
     screening: Promise.resolve(supabase.from("mandate_screening_answers").select("candidate_id").eq("mandate_id", id)),
     questions: Promise.resolve(supabase.from("mandate_screening_questions").select("id, question_text, answer_type, is_required, display_order").eq("mandate_id", id).order("display_order")),
+    voices: Promise.resolve(supabase.from("application_voice_notes").select("candidate_id, audio_path, seconds, transcript_en, created_at").eq("mandate_id", id)),
     answers: Promise.resolve(supabase.from("mandate_application_answers").select("candidate_id, answer_text, answer_number, answer_bool, mandate_screening_questions(question_text, answer_type)").eq("mandate_id", id)),
     flags: Promise.resolve(supabase.from("recruiter_inbox").select("id, candidate_id, recruiter_id, call_round, profiles(full_name, email)").eq("mandate_id", id).eq("task_type", "CANDIDATE_CALL_REQUEST").eq("status", "open")),
     token: Promise.resolve(supabase.from("shortlist_tokens").select("token, first_opened_at, last_opened_at, open_count").eq("mandate_id", id).maybeSingle()),
@@ -191,6 +192,22 @@ export default async function MandateDetailPage({
     if (!cand?.resume_file_url) continue;
     const signedUrl = resumeUrlByPath[cand.resume_file_url.replace(/^resumes\//, "")];
     if (signedUrl) resumeSignedUrlByCandidate[cand.id] = signedUrl;
+  }
+
+  // Voice notes candidates added when they applied ("why do you suit this role?"), playable from the card.
+  const { data: voiceRows } = await q.voices;
+  const voicePaths = (voiceRows ?? []).map((v) => v.audio_path as string);
+  const voiceUrlByPath: Record<string, string> = {};
+  if (voicePaths.length > 0) {
+    const { data: signedVoice } = await supabase.storage.from("application-voice").createSignedUrls(voicePaths, 60 * 60 * 12);
+    (signedVoice ?? []).forEach((s) => {
+      if (s.signedUrl && !s.error && s.path) voiceUrlByPath[s.path] = s.signedUrl;
+    });
+  }
+  const voiceByCandidate: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string }> = {};
+  for (const v of voiceRows ?? []) {
+    const url = voiceUrlByPath[v.audio_path as string];
+    if (url) voiceByCandidate[v.candidate_id as string] = { url, seconds: (v.seconds as number | null) ?? null, transcript: (v.transcript_en as string | null) ?? null, at: v.created_at as string };
   }
 
   // Open "Flag for call" requests for this mandate, so the flag button can
@@ -565,6 +582,7 @@ export default async function MandateDetailPage({
             })}
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
+          voiceByCandidate={voiceByCandidate}
           flaggedCallByCandidate={flaggedCallByCandidate}
           mandateContext={{
             mandateId: id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, Trash2, ArrowUp, ArrowDown, ListOrdered, Hash, ToggleLeft, MessageSquareText } from "lucide-react";
@@ -51,6 +51,31 @@ export default function ApplicationQuestionsPanel({
   const [type, setType] = useState<ApplicationQuestion["answer_type"]>("short_answer");
   const [required, setRequired] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Questions used on other roles, most used first, so a good one is one click away next time.
+  const [library, setLibrary] = useState<{ text: string; type: ApplicationQuestion["answer_type"]; required: boolean; uses: number }[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("mandate_screening_questions").select("question_text, answer_type, is_required").order("created_at", { ascending: false }).limit(600);
+      if (cancelled || !data) return;
+      const by = new Map<string, { text: string; type: ApplicationQuestion["answer_type"]; required: boolean; uses: number }>();
+      for (const r of data as { question_text: string; answer_type: ApplicationQuestion["answer_type"]; is_required: boolean }[]) {
+        const k = r.question_text.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+        const cur = by.get(k);
+        if (cur) cur.uses += 1;
+        else by.set(k, { text: r.question_text, type: r.answer_type, required: r.is_required, uses: 1 });
+      }
+      setLibrary([...by.values()].sort((a, b) => b.uses - a.uses));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const suggestions = useMemo(() => {
+    const have = new Set(questions.map((q) => q.question_text.toLowerCase().trim()));
+    return library.filter((l) => !have.has(l.text.toLowerCase().trim())).slice(0, 8);
+  }, [library, questions]);
 
   async function addQuestion() {
     const question_text = text.trim();
@@ -122,7 +147,7 @@ export default function ApplicationQuestionsPanel({
       <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
         Candidates answer these on jobs.staffanchor.com when applying to this mandate, before their application is
         recorded — e.g. &quot;What is your current fixed CTC?&quot; (Numeric) or &quot;Are you comfortable with night
-        shifts?&quot; (Yes/No). Applies to new applications going forward.
+        shifts?&quot; (Yes/No). Applies to new applications going forward. Answers about current or expected pay, notice period, total experience, relocation and current city are also saved on the candidate&apos;s profile, and every answer is kept for their later applications.
       </p>
 
       {questions.length === 0 ? (
@@ -188,6 +213,16 @@ export default function ApplicationQuestionsPanel({
 
       <div className="rounded-ros-md border border-dashed border-slate-200 dark:border-slate-700 p-3">
         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Add a question</p>
+        {suggestions.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            <span className="text-[11.5px] text-slate-400">Used on other roles:</span>
+            {suggestions.map((sg) => (
+              <button key={sg.text} type="button" onClick={() => { setText(sg.text); setType(sg.type); setRequired(sg.required); }} title={`Used on ${sg.uses} role${sg.uses === 1 ? "" : "s"}`} className="max-w-[260px] truncate rounded-full border border-slate-200 px-2.5 py-0.5 text-[12px] text-slate-600 hover:border-teal-400 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">
+                {sg.text}
+              </button>
+            ))}
+          </div>
+        )}
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}

@@ -22,6 +22,7 @@ export default function MandateCandidatesView({
   teamMembers = [],
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
+  voiceByCandidate = {},
 }: {
   // Opened from Today with ?stage=shortlisted and similar, so the list lands
   // on the right pile instead of all 149 rows.
@@ -39,6 +40,8 @@ export default function MandateCandidatesView({
   // side), so a "Preview resume" action can open right from the row
   // without navigating to the candidate's profile page.
   resumeSignedUrlByCandidate?: Record<string, string>;
+  // Per-candidate voice note added when they applied (signed audio link plus an English transcript).
+  voiceByCandidate?: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string }>;
   // Per-candidate open "Flag for call" request (if any), so the flag button
   // can render a persistent "Flagged to X" state instead of always
   // reverting to the static "Flag for call" label.
@@ -213,6 +216,7 @@ export default function MandateCandidatesView({
         mandateContext={mandateContext}
         applicationAnswersByCandidate={applicationAnswersByCandidate}
         resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
+        voiceByCandidate={voiceByCandidate}
       />
     </div>
   );
