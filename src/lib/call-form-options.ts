@@ -18,6 +18,14 @@ export const STYLES = ["Hunter", "Farmer", "Hybrid"] as const;
 export const CYCLES = ["Same day", "<1 week", "1-4 weeks", "1-3 months", "3-6 months", "6-12 months", "12+ months"] as const;
 export const BEST_TIMES = ["Morning", "Afternoon", "Evening", "Weekend"] as const;
 
+// Questions for service and other non-sales profiles (the sales set above asks about quota, style and sales cycle).
+export const TEAM_HANDLED = ["Individual contributor", "1 to 5 people", "6 to 15 people", "16 to 50 people", "More than 50"] as const;
+export const SERVICE_TYPES = ["Desk or remote support", "Field service", "Account service and renewals", "Technical support", "Service operations"] as const;
+export const CUSTOMER_KINDS = ["B2B", "B2C", "Both"] as const;
+export const METRICS_OWNED = ["SLA and turnaround", "CSAT or NPS", "Renewals and retention", "Ticket volume", "Upsell or revenue"] as const;
+export const SHIFT_PATTERNS = ["General day shift", "Rotational shifts", "Field travel needed", "Flexible"] as const;
+export const WORK_STYLES = ["Hands-on", "Managing people", "Both"] as const;
+
 /** The five judgments a recruiter makes on a call, each good, okay or weak. */
 export const JUDGMENTS = [
   { key: "communication", label: "Communication", hint: "Clear, confident, to the point" },
@@ -39,4 +47,14 @@ export type CallSegment = {
   cycle?: string;
   best_time_to_call?: string;
   can_refer?: boolean;
+  // Service and other non-sales profiles.
+  team_handled?: string;
+  service_type?: string[];
+  customer_kind?: string;
+  metrics_owned?: string[];
+  shift_pattern?: string;
+  carries_revenue_target?: boolean;
+  work_style?: string;
+  key_tools?: string;
+  certifications?: string;
 };

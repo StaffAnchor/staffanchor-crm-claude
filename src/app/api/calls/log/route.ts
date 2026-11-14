@@ -8,7 +8,7 @@ import { cleanReadBack, mergeCallMemory } from "@/lib/call-memory";
 import { queueProactiveMatchesForCandidate } from "@/lib/proactive-match";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { level1OptionsForProfileType } from "@/lib/candidate-options";
-import { BEST_TIMES, CYCLES, INTERVIEWING, JUDGMENTS, NOTICE_FLEX, QUOTA_BANDS, REASONS, STYLES, type CallSegment } from "@/lib/call-form-options";
+import { BEST_TIMES, CUSTOMER_KINDS, CYCLES, INTERVIEWING, JUDGMENTS, METRICS_OWNED, NOTICE_FLEX, QUOTA_BANDS, REASONS, SERVICE_TYPES, SHIFT_PATTERNS, STYLES, TEAM_HANDLED, WORK_STYLES, type CallSegment } from "@/lib/call-form-options";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -139,6 +139,19 @@ export async function POST(req: Request) {
     if (typeof sg.expected_ctc_negotiable === "boolean") set("expected_ctc_negotiable", sg.expected_ctc_negotiable);
     if (typeof sg.carries_quota === "boolean") set("carries_quota", sg.carries_quota);
     if (typeof sg.can_refer === "boolean") set("can_refer", sg.can_refer);
+    // Service and other non-sales answers.
+    set("team_handled", pick(sg.team_handled, TEAM_HANDLED));
+    set("customer_kind", pick(sg.customer_kind, CUSTOMER_KINDS));
+    set("shift_pattern", pick(sg.shift_pattern, SHIFT_PATTERNS));
+    set("work_style", pick(sg.work_style, WORK_STYLES));
+    const many = (v: unknown, allowed: readonly string[]) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && allowed.includes(x)).slice(0, 3) : []);
+    const svc = many(sg.service_type, SERVICE_TYPES);
+    if (svc.length) { seg.service_type = svc; filled.push("service_type"); }
+    const metrics = many(sg.metrics_owned, METRICS_OWNED);
+    if (metrics.length) { seg.metrics_owned = metrics; filled.push("metrics_owned"); }
+    if (typeof sg.carries_revenue_target === "boolean") set("carries_revenue_target", sg.carries_revenue_target);
+    set("key_tools", text(sg.key_tools));
+    set("certifications", text(sg.certifications));
     // Consent to be messaged about roles: yes switches WhatsApp and email on, no switches both off.
     if (typeof body.messageOk === "boolean") {
       update.whatsapp_opt_in = body.messageOk;

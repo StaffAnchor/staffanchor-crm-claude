@@ -156,6 +156,9 @@ export type MandateCandidateRow = {
     full_name: string;
     email: string | null;
     phone?: string | null;
+    expected_fixed_ctc?: number | null;
+    source_channel?: string | null;
+    acquisition_source?: string | null;
     readiness_missing?: string[] | null;
     category: string | null;
     sub_domain: string | null;
@@ -1188,6 +1191,8 @@ export default function MandateCandidatesTable({
           mandateId={mandateContext.mandateId as string}
           candidateId={confirmRow.candidate.id}
           candidateName={confirmRow.candidate.full_name}
+          roleCluster={(mandateContext.role_cluster as string | null | undefined) ?? null}
+          mandateContext={mandateContext as never}
           blockers={readiness[confirmRow.id] ?? []}
           onRecheck={() => refreshReadiness([confirmRow.id])}
           onShare={() => shareWithClient(confirmRow)}

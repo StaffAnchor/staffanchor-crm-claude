@@ -8,7 +8,8 @@ import { useMyFirstName } from "@/lib/use-my-name";
 import { cityOptions, employmentStatusOptions, fixedCtcOptions, highestQualificationOptions, level1OptionsForProfileType, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
-import { BEST_TIMES, CYCLES, INTERVIEWING, JUDGMENTS, NOTICE_FLEX, QUOTA_BANDS, REASONS, STYLES, type CallSegment, type JudgmentKey } from "@/lib/call-form-options";
+import { BEST_TIMES, CUSTOMER_KINDS, CYCLES, INTERVIEWING, JUDGMENTS, METRICS_OWNED, NOTICE_FLEX, QUOTA_BANDS, REASONS, SERVICE_TYPES, SHIFT_PATTERNS, STYLES, TEAM_HANDLED, WORK_STYLES, type CallSegment, type JudgmentKey } from "@/lib/call-form-options";
+import { KIND_TITLE, profileKind } from "@/lib/profile-kind";
 
 // The one call form, used on Calls today, on the candidate profile and in the role page's confirm-details window, so a
 // call is recorded the same way everywhere. Everything typed here goes onto the profile; the after-the-call note is read
@@ -137,9 +138,12 @@ export default function CallRecordForm({
   onDone,
   doubts = [],
   mode = "desk",
+  roleCluster = null,
 }: {
   p: CallFormPerson;
   onDone: (r: CallResult) => void;
+  /** The role this call is for, when it is made from a role's pipeline: a service role asks service questions, whatever the person's profile says. */
+  roleCluster?: string | null;
   /** Points worth testing, from the CV. */
   doubts?: string[];
   /** desk: Calls today, which moves to the next person; profile: stays on this person. */
@@ -179,6 +183,16 @@ export default function CallRecordForm({
   const [cycle, setCycle] = useState("");
   const [bestTime, setBestTime] = useState("");
   const [canRefer, setCanRefer] = useState("");
+  // Service and other non-sales questions.
+  const [teamHandled, setTeamHandled] = useState("");
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  const [customerKind, setCustomerKind] = useState("");
+  const [metricsOwned, setMetricsOwned] = useState<string[]>([]);
+  const [shiftPattern, setShiftPattern] = useState("");
+  const [revenueTarget, setRevenueTarget] = useState("");
+  const [workStyle, setWorkStyle] = useState("");
+  const [keyTools, setKeyTools] = useState("");
+  const [certifications, setCertifications] = useState("");
   const [canMessage, setCanMessage] = useState("");
   const [openness, setOpenness] = useState("");
   const [note, setNote] = useState("");
@@ -210,7 +224,8 @@ export default function CallRecordForm({
   const waTemplates = candidateTemplates(p.full_name, { me, candidateId: p.id, missing: [!num(p.current_fixed_ctc) && "current_ctc", needCv && "cv"].filter(Boolean) as string[] }).filter((t) => t.key !== "intro");
   const waCv = waTemplates.filter((t) => ["tried", "cv", "details", "complete"].includes(t.key));
 
-  const isSales = p.profile_group === undefined || p.profile_group === "b2b_sales" || p.profile_group === "b2c_sales";
+  // Which "about their work" questions to ask: the role's kind when called from a role, else the person's own profile type.
+  const kind = profileKind(roleCluster, p.profile_group === undefined ? null : p.profile_group);
   const yn = (v: string) => (v === "Yes" ? true : v === "No" ? false : undefined);
   // Everything beyond the vitals that was tapped on this call; blanks are never sent, so nothing already known is overwritten.
   const segment = (): CallSegment => {
@@ -225,6 +240,19 @@ export default function CallRecordForm({
     if (cycle) o.cycle = cycle;
     if (bestTime) o.best_time_to_call = bestTime;
     if (yn(canRefer) !== undefined) o.can_refer = yn(canRefer);
+    if (kind !== "sales") {
+      if (teamHandled) o.team_handled = teamHandled;
+      if (workStyle) o.work_style = workStyle;
+      if (keyTools.trim()) o.key_tools = keyTools.trim();
+      if (certifications.trim()) o.certifications = certifications.trim();
+    }
+    if (kind === "service") {
+      if (serviceTypes.length) o.service_type = serviceTypes;
+      if (customerKind) o.customer_kind = customerKind;
+      if (metricsOwned.length) o.metrics_owned = metricsOwned;
+      if (shiftPattern) o.shift_pattern = shiftPattern;
+      if (yn(revenueTarget) !== undefined) o.carries_revenue_target = yn(revenueTarget);
+    }
     return o;
   };
   const rated = Object.values(ratings).filter(Boolean).length;
@@ -340,6 +368,8 @@ export default function CallRecordForm({
   const moveFilled = [openness, reasons.length ? "x" : "", notice, noticeFlex, interviewing, offer].filter(Boolean).length;
   const payFilled = [ctc, currentVar, expected, payFlex].filter(Boolean).length;
   const salesFilled = [carriesQuota, quotaBand, style, cycle].filter(Boolean).length;
+  const serviceFilled = [teamHandled, serviceTypes.length ? "x" : "", customerKind, metricsOwned.length ? "x" : "", shiftPattern, revenueTarget].filter(Boolean).length;
+  const otherFilled = [teamHandled, workStyle, keyTools.trim(), certifications.trim()].filter(Boolean).length;
   const stayFilled = [canMessage, bestTime, canRefer].filter(Boolean).length;
 
   const stepWho = (n: number) => (
@@ -519,10 +549,11 @@ export default function CallRecordForm({
         <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-200 bg-slate-100 align-middle" /> Grey is already on the profile. <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-white align-middle" /> White with an amber edge is missing: ask these.
       </p>
 
-      {desk && <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">More details (optional)</p>}
+      {desk ? <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">More details (optional)</p> : <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Needed for every profile</p>}
       {order.map((key, i) => <span key={key} className="contents">{key === "who" ? stepWho(i + 1) : key === "move" ? stepMove(i + 1) : stepPay(i + 1)}</span>)}
 
-      {isSales && (
+      <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">{KIND_TITLE[kind]}</p>
+      {kind === "sales" && (
         <Step n={4} title="Sales depth" hint="Quota, style and cycle: the strongest fit signals for sales roles" filled={salesFilled} total={4} defaultOpen={p.profile_group !== undefined && !desk}>
           <Field label="Do they carry a quota?">
             <Chips value={carriesQuota} options={asOpts(["Yes", "No"])} onChange={setCarriesQuota} />
@@ -540,8 +571,47 @@ export default function CallRecordForm({
           </Field>
         </Step>
       )}
+      {kind === "service" && (
+        <Step n={4} title="Service depth" hint="What they handle, for whom, and what they are measured on" filled={serviceFilled} total={6} defaultOpen={!desk}>
+          <Field label="How many people have they managed?">
+            <Chips value={teamHandled} options={asOpts([...TEAM_HANDLED])} onChange={setTeamHandled} />
+          </Field>
+          <Field label="What kind of service work? (up to 3)">
+            <MultiChips value={serviceTypes} options={SERVICE_TYPES} onChange={setServiceTypes} max={3} />
+          </Field>
+          <Field label="Whose customers?">
+            <Chips value={customerKind} options={asOpts([...CUSTOMER_KINDS])} onChange={setCustomerKind} />
+          </Field>
+          <Field label="What were they measured on? (up to 3)">
+            <MultiChips value={metricsOwned} options={METRICS_OWNED} onChange={setMetricsOwned} max={3} />
+          </Field>
+          <Field label="Do they carry an upsell or revenue target?">
+            <Chips value={revenueTarget} options={asOpts(["Yes", "No"])} onChange={setRevenueTarget} />
+          </Field>
+          <Field label="Shifts and travel">
+            <Chips value={shiftPattern} options={asOpts([...SHIFT_PATTERNS])} onChange={setShiftPattern} />
+          </Field>
+        </Step>
+      )}
+      {kind === "other" && (
+        <Step n={4} title="Their kind of work" hint="Hands-on or managing, team size, tools and certifications" filled={otherFilled} total={4} defaultOpen={!desk}>
+          <Field label="Hands-on or managing people?">
+            <Chips value={workStyle} options={asOpts([...WORK_STYLES])} onChange={setWorkStyle} />
+          </Field>
+          <Field label="How many people have they managed?">
+            <Chips value={teamHandled} options={asOpts([...TEAM_HANDLED])} onChange={setTeamHandled} />
+          </Field>
+          <Field label="Key tools they use">
+            <input value={keyTools} onChange={(e) => setKeyTools(e.target.value)} maxLength={80} placeholder="For example SAP, Tally, Power BI" className={select} />
+          </Field>
+          <Field label="Certifications">
+            <input value={certifications} onChange={(e) => setCertifications(e.target.value)} maxLength={80} placeholder="For example CA, PMP, CFA" className={select} />
+          </Field>
+        </Step>
+      )}
 
-      <Step n={isSales ? 5 : 4} title="Your read of them" hint="Two taps each. This sets their profile strength" filled={rated} total={5} defaultOpen={!desk}>
+      <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">After the call</p>
+      <Step n={5} title="Your read of them" hint="Two taps each. This sets their profile strength" filled={rated} total={5} defaultOpen={!desk}>
         <div className="space-y-2">
           {JUDGMENTS.map((j) => (
             <div key={j.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -560,7 +630,7 @@ export default function CallRecordForm({
         {p.comm && !ratings.communication && <p className="text-[11.5px] text-slate-400">Communication last rated {p.comm}.</p>}
       </Step>
 
-      <Step n={isSales ? 6 : 5} title="Stay in touch" hint="Consent, best time, referrals" filled={stayFilled} total={3} defaultOpen={false}>
+      <Step n={6} title="Stay in touch" hint="Consent, best time, referrals" filled={stayFilled} total={3} defaultOpen={false}>
         <Field label="OK to message them on WhatsApp and email about roles?">
           <Chips value={canMessage} options={asOpts(["Yes", "No"])} onChange={setCanMessage} />
         </Field>
@@ -572,7 +642,7 @@ export default function CallRecordForm({
         </Field>
       </Step>
 
-      <Step n={isSales ? 7 : 6} title="What you discussed (required)" hint="A few words, written like a text to a colleague" defaultOpen>
+      <Step n={7} title="What you discussed (required)" hint="A few words, written like a text to a colleague" defaultOpen>
         <Field label="What did you discuss? Rough is fine: what they want, what they will not accept, anything to remember">
           <textarea
             value={note}

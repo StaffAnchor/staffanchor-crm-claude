@@ -9,6 +9,7 @@ import CallRecordForm, { type CallFormPerson } from "../../candidates/call-recor
 // Said they are open to roles in the last 90 days (the same window the top tier uses).
 const openFresh = (iso: unknown) => !!iso && Date.now() - new Date(String(iso)).getTime() < 90 * 86_400_000;
 import RoleFitReview from "./role-fit-review";
+import MandateScreeningPanel, { type MandateScreeningContext, type ScreeningCandidate } from "./mandate-screening-panel";
 
 // What the Call companion itself can fix. Everything else on the checklist is a
 // profile field the recruiter edits on the candidate page.
@@ -16,6 +17,9 @@ const FIXABLE_HERE = new Set(["Expected fixed CTC", "Notice period", "Open to re
 const CONFIRMATION = "Recruiter confirmation of these details (use Call companion)";
 
 export default function ConfirmDetailsModal({
+  mode = "share",
+  roleCluster = null,
+  mandateContext,
   linkId,
   mandateId,
   candidateId,
@@ -25,6 +29,10 @@ export default function ConfirmDetailsModal({
   onShare,
   onClose,
 }: {
+  /** details: opened any time from the pipeline row, to fill in the call and details; share: opened because sharing was blocked. */
+  mode?: "share" | "details";
+  roleCluster?: string | null;
+  mandateContext?: MandateScreeningContext;
   linkId: string;
   mandateId: string;
   candidateId: string;
@@ -38,6 +46,7 @@ export default function ConfirmDetailsModal({
   const [candidate, setCandidate] = useState<Record<string, unknown> | null>(null);
   const [recruiterName, setRecruiterName] = useState("Recruiter");
   const [sharing, setSharing] = useState(false);
+  const [questionsOpen, setQuestionsOpen] = useState(false);
 
   async function loadCandidate() {
     const { data } = await supabase.from("candidates").select("*").eq("id", candidateId).single();
@@ -73,9 +82,11 @@ export default function ConfirmDetailsModal({
       <div className="mt-8 w-full max-w-3xl rounded-xl bg-white dark:bg-slate-900 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-5 py-4">
           <div>
-            <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Confirm before sharing</h2>
+            <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{mode === "details" ? "Call and details" : "Confirm before sharing"}</h2>
             <p className="text-[12.5px] text-slate-500">
-              {candidateName}: the client will see all of this, so a recruiter confirms it first.
+              {mode === "details"
+                ? `${candidateName}: fill this in whenever you speak to them, before or after sharing. The client only sees the profile once everything is complete.`
+                : `${candidateName}: the client will see all of this, so a recruiter confirms it first.`}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
@@ -111,6 +122,18 @@ export default function ConfirmDetailsModal({
             <RoleFitReview linkId={linkId} mandateId={mandateId} candidateId={candidateId} onSaved={onRecheck} />
           </div>
 
+          {candidate && mandateContext && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 p-4 dark:border-slate-800">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Questions for this role</p>
+                <p className="text-[12.5px] text-slate-500">{(mandateContext.screening_questions ?? []).length > 0 ? "Role-specific questions to ask on the call; answers are saved against this role." : "No role-specific questions yet. Add some on the Screening tab."}</p>
+              </div>
+              {(mandateContext.screening_questions ?? []).length > 0 && (
+                <button type="button" onClick={() => setQuestionsOpen(true)} className="rounded-lg border border-teal-600 px-3 py-1.5 text-[13px] font-semibold text-teal-700 hover:bg-teal-50">Answer role questions</button>
+              )}
+            </div>
+          )}
+
           {candidate && (
             <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Call details</p>
@@ -123,6 +146,7 @@ export default function ConfirmDetailsModal({
                   offer_ctc: Number((candidate.segment_data as { offer_ctc?: unknown } | null)?.offer_ctc) || null,
                 }}
                 mode="profile"
+                roleCluster={roleCluster}
                 onDone={async () => {
                   await loadCandidate();
                   await onRecheck();
@@ -131,6 +155,19 @@ export default function ConfirmDetailsModal({
             </div>
           )}
         </div>
+
+        {candidate && mandateContext && (
+          <MandateScreeningPanel
+            open={questionsOpen}
+            onClose={() => setQuestionsOpen(false)}
+            candidate={candidate as unknown as ScreeningCandidate}
+            mandateContext={mandateContext}
+            onSaved={async () => {
+              await loadCandidate();
+              await onRecheck();
+            }}
+          />
+        )}
 
         <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 px-5 py-3">
           <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-100">
