@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Loader2, MessageCircle, Phone, PhoneCall, UserPlus } 
 import { CvButtons } from "@/components/candidate-card-layout";
 import { SkillsStrip } from "@/components/candidate-facts-strip";
 import CandidateCallPanel from "./candidate-call-panel";
+import { FactTile, NextStep, ScoreRing } from "@/components/pipeline-ui";
 import NotAFitMenu from "./not-a-fit-menu";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import WriteWhatsAppButton from "./write-whatsapp-button";
@@ -62,6 +63,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
   const [msg, setMsg] = useState<string | null>(null);
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [q, setQ] = useState("");
   const [paneTab, setPaneTab] = useState<"overview" | "call">("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -111,11 +113,6 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
     fetch("/api/whatsapp/role-opportunity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mandateId, candidateIds: reachIds, ...body }) }).then(async (r) => ({ res: r, d: await r.json().catch(() => ({})) }));
 
   const fmtShort = (iso: string) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "earlier");
-  const FIT_RING: Record<Ranked["bucket"], string> = {
-    perfect: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
-    close: "bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-300",
-    stretch: "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300",
-  };
   const factsOf = (r: Ranked) => {
     const c = r.row;
     return [
@@ -143,15 +140,15 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
     const l3 = lineThree(r);
     const spoke = !!memory[c.candidate_id];
     return (
-      <li key={c.candidate_id} className={`border-b border-slate-100 last:border-b-0 dark:border-slate-800 ${isActive ? "bg-teal-50/70 shadow-[inset_3px_0_0_0] shadow-teal-600 dark:bg-teal-950/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
-        <div className="flex items-start gap-2 px-2.5 py-2.5">
-          <input type="checkbox" checked={picked.has(c.candidate_id)} onChange={() => toggle(c.candidate_id)} aria-label={`Select ${c.full_name ?? "candidate"}`} className="mt-2.5 h-3.5 w-3.5 shrink-0" />
-          <button type="button" aria-current={isActive} onClick={() => { setActiveId(c.candidate_id); setMobileOpen(true); }} className="grid min-w-0 flex-1 grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2.5 text-left">
-            <span className={`flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold tabular-nums ring-1 ${FIT_RING[r.bucket]}`} title="How well they match this role">{r.score}</span>
+      <li key={c.candidate_id} className={`border-b border-slate-100 last:border-b-0 dark:border-slate-800 ${isActive ? "bg-teal-50 shadow-[inset_4px_0_0_0] shadow-teal-600 dark:bg-teal-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+        <div className="flex items-start gap-2 px-3 py-3">
+          <input type="checkbox" checked={picked.has(c.candidate_id)} onChange={() => toggle(c.candidate_id)} aria-label={`Select ${c.full_name ?? "candidate"}`} className="mt-3 h-3.5 w-3.5 shrink-0 accent-teal-600" />
+          <button type="button" aria-current={isActive} onClick={() => { setActiveId(c.candidate_id); setMobileOpen(true); }} className="grid min-w-0 flex-1 grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-3 text-left">
+            <span title="How well they match this role"><ScoreRing score={r.score} rank={r.bucket === "stretch" ? 3 : undefined} /></span>
             <span className="min-w-0">
               <span className="flex items-baseline gap-1.5">
-                <span className="truncate text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name ?? "Unnamed"}</span>
-                <span className="truncate text-[12px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ")}</span>
+                <span className="max-w-[68%] shrink-0 truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name ?? "Unnamed"}</span>
+                <span className="min-w-0 flex-1 truncate text-[12px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ")}</span>
               </span>
               <span className="mt-0.5 block truncate text-[12px] tabular-nums text-slate-500">{factsOf(r).join(" · ") || "No facts yet"}</span>
               <span className={`mt-0.5 block truncate text-[12px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
@@ -171,19 +168,26 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
     const m = memory[c.candidate_id];
     const spoke = !!m;
     const name = c.full_name ?? "Unnamed";
-    const fact = (label: string, value: string | null | undefined) => (
-      <div className="min-w-0">
-        <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-        <dd className={`truncate text-[13px] font-medium ${value ? "text-slate-800 dark:text-slate-100" : "text-slate-300"}`}>{value || "—"}</dd>
-      </div>
-    );
+    const fact = (label: string, value: string | null | undefined) => <FactTile label={label} value={value} />;
+    const toConfirm = [...(c.readiness_missing ?? []).map((k) => MISSING_LABEL[k] ?? k.replace(/_/g, " ")), ...r.gaps.filter((g) => /not known|confirm|not asked/i.test(g))].filter((x, i, arr) => arr.indexOf(x) === i).slice(0, 4);
+    const strongGap = r.gaps.find((g) => /not .*(NCR|Mumbai|Pune|Bengaluru|Hyderabad|Chennai|Kolkata|Ahmedabad)|abroad/i.test(g));
+    const next: { tone: "go" | "warn" | "stop" | "info"; title: string; detail?: string; actions?: React.ReactNode } = reached[c.candidate_id]?.status === "interested"
+      ? { tone: "go", title: "Said yes to this role", detail: "Call to confirm pay, notice and relocation, then add to the pipeline.", actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Open the call form</button> }
+      : spoke
+        ? r.bucket === "stretch"
+          ? { tone: "warn", title: "Spoken to, but a stretch for this role", detail: r.gaps[0], actions: <button type="button" disabled={busy} onClick={() => void addList([r])} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-slate-700">Add anyway</button> }
+          : { tone: "go", title: "Spoken to, a good match: add to the pipeline", detail: m?.summary || undefined, actions: <button type="button" disabled={busy} onClick={() => void addList([r])} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Add to pipeline</button> }
+        : strongGap
+          ? { tone: "warn", title: "Location is the problem", detail: `${strongGap}. Ask if they would move before spending time.`, actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Call and ask</button> }
+          : { tone: "info", title: r.bucket === "perfect" ? "A strong match nobody has spoken to yet" : "Worth a call", detail: toConfirm.length ? `Confirm: ${toConfirm.join(" · ")}` : undefined, actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Open the call form</button> };
     return (
       <div className="flex min-h-0 flex-col">
-        <div className="flex flex-wrap items-start gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
+        <div className="sticky top-0 z-10 bg-white dark:bg-slate-900">
+        <div className="flex flex-wrap items-start gap-4 border-b border-slate-100 p-5 dark:border-slate-800">
           <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[12.5px] lg:hidden"><ArrowLeft className="h-3.5 w-3.5" /> List</button>
-          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums ring-1 ${FIT_RING[r.bucket]}`}>{r.score}</span>
+          <ScoreRing score={r.score} rank={r.bucket === "stretch" ? 3 : undefined} size={52} />
           <div className="min-w-[180px] flex-1">
-            <a href={`/candidates/${c.candidate_id}`} target="_blank" rel="noopener noreferrer" className="text-[17px] font-semibold text-slate-900 hover:underline dark:text-slate-100">{name}</a>
+            <a href={`/candidates/${c.candidate_id}`} target="_blank" rel="noopener noreferrer" className="text-[20px] font-semibold leading-tight tracking-tight text-slate-900 hover:underline dark:text-slate-100">{name}</a>
             <p className="truncate text-[12.5px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || "No role on file"}</p>
             <div className="mt-1 flex flex-wrap gap-1.5">
               {c.pool_tier && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[c.pool_tier as PoolTier]}`}>Pool: {POOL_TIER_LABEL[c.pool_tier as PoolTier]}</span>}
@@ -200,17 +204,19 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
             <NotAFitMenu onPick={(reason) => dismiss(c.candidate_id, reason)} />
           </div>
         </div>
-        <div role="tablist" className="flex gap-0.5 border-b border-slate-100 px-3 dark:border-slate-800">
+        <div role="tablist" className="flex gap-0.5 border-b border-slate-100 px-4 dark:border-slate-800">
           {([["overview", "Overview"], ["call", "Call & details"]] as const).map(([k, label]) => (
             <button key={k} role="tab" type="button" aria-selected={paneTab === k} onClick={() => setPaneTab(k)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] ${paneTab === k ? "border-teal-600 font-semibold text-slate-900 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
               {label}{k === "call" && !spoke && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />}
             </button>
           ))}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        </div>
+        <div className="min-h-0 flex-1 space-y-4 p-5">
+          <NextStep tone={next.tone} title={next.title} detail={next.detail}>{next.actions}</NextStep>
           {paneTab === "overview" ? (
             <div className="space-y-4">
-              <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">
+              <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {fact("Experience", c.total_experience_years != null ? `${Number(c.total_experience_years)} yrs` : null)}
                 {fact("Location", r.metro ?? c.current_location)}
                 {fact("Notice", c.notice_period)}
@@ -218,8 +224,8 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
                 {fact("Expected", c.expected_fixed_ctc != null ? `${Number(c.expected_fixed_ctc)} LPA` : null)}
                 {fact("Relocation", c.open_to_relocation)}
               </dl>
-              <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Why this match</p>
+              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Why this match</p>
                 <div className="flex flex-wrap gap-1.5">
                   {r.matched.map((x) => (<span key={x} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300"><Check className="h-3 w-3" /> {x}</span>))}
                   {r.gaps.map((x) => (<span key={x} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300">⚠ {x}</span>))}
@@ -334,11 +340,16 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
       {list.length === 0 && <p className="rounded-ros-lg border border-dashed border-slate-300 p-6 text-center text-[13px] text-slate-500 dark:border-slate-700">No one in this group yet. The card may be too narrow: try adding more &quot;also fine&quot; worlds or cities.</p>}
 
       {list.length > 0 && (() => {
-        const shownRows = list.slice(0, shown);
+        const needle = q.trim().toLowerCase();
+        const shownRows = (needle ? list.filter((r) => [r.row.full_name, r.row.current_employer, r.row.current_job_title, r.row.current_location, r.metro].filter(Boolean).join(" ").toLowerCase().includes(needle)) : list).slice(0, shown);
         const active = shownRows.find((r) => r.row.candidate_id === activeId) ?? shownRows[0] ?? null;
         return (
           <div className="grid items-start gap-3 lg:grid-cols-[minmax(350px,430px)_minmax(0,1fr)]">
             <ul className={`${mobileOpen ? "hidden lg:block" : ""} overflow-hidden rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
+              <li className="sticky top-0 z-[2] border-b border-slate-100 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, company, city" aria-label="Search this list" className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800" />
+              </li>
+              {shownRows.length === 0 && <li className="p-6 text-center text-[13px] text-slate-400">No one matches that search.</li>}
               {shownRows.map((r) => renderMatchRow(r, active?.row.candidate_id ?? null))}
             </ul>
             <div className={`${mobileOpen ? "" : "hidden lg:block"} rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-3 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>

@@ -1,4 +1,5 @@
 import type { RoleCard } from "@/lib/role-card";
+import { metroOfLocation } from "@/lib/metro";
 
 // Ranks everyone in the database against a role card, in three groups:
 //   Perfect: does the job today, sells in the right world, and nothing important is off.
@@ -212,7 +213,9 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     }
 
     // 5. City: the role's city first, then a nearby city, then someone who says they would move.
-    const metro = cur[0]?.metro ?? row.tags[0]?.metro ?? null;
+    // The stored metro can be missing or "Unknown"; the location text says Delhi, New Delhi, Gurgaon and so on.
+    const tagMetro = cur[0]?.metro ?? row.tags[0]?.metro ?? null;
+    const metro = tagMetro && tagMetro !== "Unknown" && tagMetro !== "Other India" ? tagMetro : (metroOfLocation(row.current_location) ?? tagMetro);
     if (card.cities.length > 0) {
       const near = metro ? card.cities.find((c) => NEARBY[metro]?.includes(c)) : undefined;
       if (metro && card.cities.includes(metro)) {

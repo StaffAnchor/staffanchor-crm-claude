@@ -16,6 +16,7 @@ import PipelineWhatsApp from "./pipeline-whatsapp";
 import { SkillsStrip } from "@/components/candidate-facts-strip";
 import ResumePreview from "../../candidates/[id]/resume-preview";
 import { leadSourceOf } from "@/lib/lead-source";
+import { FactTile, NextStep, ScoreRing } from "@/components/pipeline-ui";
 import { readMemory } from "@/lib/call-memory";
 
 const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {});
@@ -55,7 +56,7 @@ export default function MandateCandidatesCards({
   const [now] = useState(() => Date.now());
   const [q, setQ] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"overview" | "details" | "answers">("overview");
+  const [tab, setTab] = useState<"overview" | "details" | "share" | "answers">("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [wide, setWide] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -181,17 +182,6 @@ export default function MandateCandidatesCards({
   // A call counts as logged once we remember something they said, or the details are complete.
   const callLogged = (l: MandateCandidateRow) => !!readMemory(l.candidate.segment_data) || detailsState(l).done;
 
-  // The fit score drawn as a ring that fills to the score; its colour follows the score band.
-  const ringColor = (score: number | null, rank: number) => (score == null ? "#cbd5e1" : rank === 3 || score < 45 ? "#e11d48" : score < 70 ? "#d97706" : "#059669");
-  function ScoreRing({ score, rank, size = 38 }: { score: number | null; rank: number; size?: number }) {
-    const color = ringColor(score, rank);
-    return (
-      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={{ width: size, height: size, background: score == null ? "transparent" : `conic-gradient(${color} ${Math.max(4, Math.min(100, score)) * 3.6}deg, rgb(226 232 240 / 0.7) 0)`, border: score == null ? "1.5px dashed #cbd5e1" : undefined }}>
-        <span className="flex items-center justify-center rounded-full bg-white font-semibold tabular-nums dark:bg-slate-900" style={{ width: size - 7, height: size - 7, fontSize: size > 40 ? 15 : 12, color: score == null ? "#94a3b8" : color }}>{score != null ? Math.round(score) : "?"}</span>
-      </span>
-    );
-  }
-
   // The line under the facts: what we remember from a call, else the first gap, else the first plus, else where they came from.
   function lineThree(l: MandateCandidateRow): { text: string; cls: string } {
     const m = readMemory(l.candidate.segment_data);
@@ -269,18 +259,26 @@ export default function MandateCandidatesCards({
     const ds = detailsState(l);
     const logged = callLogged(l);
     const a = l.match_assessment;
-    const fact = (label: string, value: string | null | undefined) => (
-      <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/60">
-        <dt className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
-        <dd className={`mt-0.5 truncate text-[15px] font-semibold tabular-nums ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-300"}`}>{value || "—"}</dd>
-      </div>
-    );
-    const tabs: { key: "overview" | "details" | "answers"; label: string; dot?: boolean }[] = [
+    const fact = (label: string, value: string | null | undefined) => <FactTile label={label} value={value} />;
+    const tabs: { key: "overview" | "details" | "share" | "answers"; label: string; dot?: boolean }[] = [
       { key: "overview", label: "Overview" },
-      ...(canAct ? [{ key: "details" as const, label: "Call & details", dot: !ds.done }] : []),
+      ...(canAct ? [{ key: "details" as const, label: "Call & details", dot: !ds.done }, { key: "share" as const, label: l.in_shortlist ? "With client" : "Share with client" }] : []),
       ...(answers && answers.length > 0 ? [{ key: "answers" as const, label: `Answers (${answers.length})` }] : []),
     ];
     const curTab = tabs.some((t) => t.key === tab) ? tab : "overview";
+    const left = readiness[l.id];
+    const toConfirm = [...(left ?? []).map((x) => x.replace(/^Recruiter confirmation.*$/, "Call and confirm details")), ...(a?.missing ?? []).map((x) => x.replace(/ \(confirm on call\)/, ""))].filter((x, i, arr) => arr.indexOf(x) === i).slice(0, 4);
+    const next: { tone: "go" | "warn" | "stop" | "info"; title: string; detail?: string; actions?: React.ReactNode } | null = !canAct
+      ? null
+      : l.in_shortlist
+        ? { tone: "go", title: l.client_feedback ? `Client feedback: ${l.client_feedback.replace(/_/g, " ")}` : "With the client. Waiting for their feedback.", detail: l.client_feedback ? undefined : "Follow up if you hear nothing in a few days." }
+        : rec === "Not a Fit" && !memory
+          ? { tone: "stop", title: "Probably not a fit", detail: a?.red_flags[0] ?? "The fit read says no. If you think the data is wrong, call and confirm.", actions: (<><button type="button" onClick={() => setRejectRow(l)} className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-rose-700">Reject</button><button type="button" onClick={() => setTab("details")} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-slate-700">Call anyway</button></>) }
+          : !logged
+            ? { tone: "info", title: "Call them first", detail: toConfirm.length ? `Confirm: ${toConfirm.join(" · ")}` : "No call on record yet.", actions: <button type="button" onClick={() => setTab("details")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Open the call form</button> }
+            : !ds.done
+              ? { tone: "warn", title: `${left?.length ?? "A few"} thing${left?.length === 1 ? "" : "s"} left before you can share`, detail: toConfirm.join(" · ") || undefined, actions: <button type="button" onClick={() => setTab("details")} className="rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Finish details</button> }
+              : { tone: "go", title: "Ready to share with the client", detail: "The call and every detail the client needs are done.", actions: <button type="button" onClick={() => void shortlist(l)} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Share with client</button> };
     return (
       <div className="flex min-h-0 flex-col">
         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900">
@@ -332,7 +330,8 @@ export default function MandateCandidatesCards({
         </div>
 
         </div>
-        <div className="min-h-0 flex-1 p-5">
+        <div className="min-h-0 flex-1 space-y-4 p-5">
+          {next && curTab !== "share" && <NextStep tone={next.tone} title={next.title} detail={next.detail}>{next.actions}</NextStep>}
           {curTab === "overview" && (
             <div className="space-y-4">
               <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -422,6 +421,15 @@ export default function MandateCandidatesCards({
                 <span className="text-slate-600 dark:text-slate-300">Fill this in whenever you speak to them, before or after sharing. The client sees the profile only when it is complete.</span>
                 {c.phone ? <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 font-semibold text-white"><Phone className="h-3.5 w-3.5" /> {c.phone}</a> : <span className="text-slate-400">No phone</span>}
               </div>
+              {((mandateContext.must_haves as string[] | undefined) ?? []).length > 0 && (
+                <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Ask about, from the JD</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {((mandateContext.must_haves as string[]) ?? []).slice(0, 8).map((m) => (<span key={m} className="rounded-full bg-slate-100 px-2.5 py-1 text-[12px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{m}</span>))}
+                  </div>
+                  <p className="mt-2 text-[12px] text-slate-400">The review below marks each of these. Notes you write, in English or Hindi, are translated and remembered for matching.</p>
+                </div>
+              )}
               <ConfirmDetailsPanel
                 key={l.id}
                 roleCluster={(mandateContext.role_cluster as string | null | undefined) ?? null}
@@ -432,6 +440,46 @@ export default function MandateCandidatesCards({
                 blockers={readiness[l.id] ?? []}
                 onRecheck={async () => { await refreshReadiness([l.id]); router.refresh(); }}
               />
+            </div>
+          )}
+
+          {curTab === "share" && canAct && (
+            <div className="space-y-4">
+              {l.in_shortlist ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-[13.5px] text-emerald-900">
+                  <p className="font-semibold">With the client</p>
+                  <p className="mt-0.5">{l.client_feedback ? `Their feedback: ${l.client_feedback.replace(/_/g, " ")}${l.client_note ? `. "${l.client_note}"` : ""}` : "No feedback yet. Follow up if it has been a few days."}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Before the client sees this person</p>
+                    {left === undefined ? <p className="text-[13px] text-slate-400">Checking…</p> : left.length === 0 ? (
+                      <p className="flex items-center gap-2 text-[13.5px] font-medium text-emerald-700"><Check className="h-4 w-4" /> Everything the client needs is filled in.</p>
+                    ) : (
+                      <ul className="space-y-1.5 text-[13px]">
+                        {left.map((x) => (<li key={x} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />{x.startsWith("Recruiter confirmation") ? "Call them and confirm the details" : x}</li>))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">What the client will see</p>
+                    <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                      {fact("Role now", [c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || null)}
+                      {fact("Experience", c.total_experience_years != null ? `${c.total_experience_years} yrs` : null)}
+                      {fact("Location", c.current_location || null)}
+                      {fact("Current", c.current_fixed_ctc != null ? `${c.current_fixed_ctc} LPA` : null)}
+                      {fact("Expected", c.expected_fixed_ctc != null ? `${c.expected_fixed_ctc} LPA` : null)}
+                      {fact("Notice", c.notice_period)}
+                    </dl>
+                    <p className="mt-2 text-[12px] text-slate-400">Plus your review of each must-have for this role.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" disabled={!ds.done || !logged} onClick={() => void shortlist(l)} className="inline-flex h-9 items-center rounded-lg bg-teal-600 px-4 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">Share with client</button>
+                    {(!ds.done || !logged) && <button type="button" onClick={() => setTab("details")} className="text-[13px] font-medium text-teal-700 hover:underline">Finish the call and details first</button>}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

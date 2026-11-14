@@ -6,6 +6,9 @@ import { rankCandidates, type MatchRow } from "@/lib/role-match";
 // that finds new people, so everyone is judged one way: Perfect, Close or Stretch, with the reasons. The score and
 // reasons are saved on the pipeline link. Needs the mandate's role type, level and role card; without them it does
 // nothing and the caller keeps the older score.
+/** Bump when the scoring rules change; the Matches tab then re-scores older pipeline scores once. 2: Delhi, New Delhi, Noida, Gurgaon and the rest count as Delhi NCR. */
+export const ROLE_SCORE_VERSION = 2;
+
 export async function scoreLinksByRoleCard(admin: SupabaseClient, mandateId: string, candidateIds: string[]): Promise<{ ok: boolean; scored: number; reason?: string }> {
   if (candidateIds.length === 0) return { ok: true, scored: 0 };
   const { data: mandate } = await admin.from("mandates").select("role_cluster, seniority_band, also_clusters").eq("id", mandateId).maybeSingle();
@@ -37,7 +40,7 @@ export async function scoreLinksByRoleCard(admin: SupabaseClient, mandateId: str
       .from("candidate_mandate_links")
       .update({
         match_score: score,
-        match_score_breakdown: { source: "role_card", bucket: r.bucket, matched: r.matched, gaps: r.gaps },
+        match_score_breakdown: { source: "role_card", ver: ROLE_SCORE_VERSION, bucket: r.bucket, matched: r.matched, gaps: r.gaps },
         match_source: "role_card",
         matched_at: new Date().toISOString(),
         match_assessment: { recommendation, positives: r.matched, red_flags: hard, missing: unknown.map((g) => `${g} (confirm on call)`) },
