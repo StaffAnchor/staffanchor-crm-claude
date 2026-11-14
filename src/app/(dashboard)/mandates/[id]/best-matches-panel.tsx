@@ -93,7 +93,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const seen = new Set(top.map((r) => r.row.candidate_id));
   const local = card.cities.length > 0 ? ranked.filter((r) => !seen.has(r.row.candidate_id) && r.metro && card.cities.includes(r.metro)).slice(0, 150) : [];
   const shownRanked = [...top, ...local];
-  const memoryShown = Object.fromEntries(shownRanked.flatMap((r) => { const m = callMemory.get(r.row.candidate_id); return m ? [[r.row.candidate_id, { at: m.at, summary: m.summary }]] : []; }));
+  const memoryShown = Object.fromEntries(shownRanked.flatMap((r) => { const m = callMemory.get(r.row.candidate_id); return m ? [[r.row.candidate_id, { at: m.at, summary: m.summary, wants: m.wants, dealbreakers: m.dealbreakers }]] : []; }));
 
   return (
     <div className="space-y-4">
@@ -107,7 +107,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
           templateKey="referralRole"
         />
       )}
-      <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} cities={card.cities} ranked={shownRanked} memory={memoryShown} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
+      <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} roleCluster={mandateRow.role_cluster} cities={card.cities} ranked={shownRanked} memory={memoryShown} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, marked not a fit, or who said no to this role on a call is left out. People who said yes on a call are lifted and say so.
       </p>
