@@ -4,7 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
-import ResultCard, { type Match } from "../../candidates/search/result-card";
+import type { Match } from "../../candidates/search/result-card";
+import SmartSplit from "./smart-split";
 import { chipsOf, CHIP_CLS } from "@/lib/search-chips";
 import { emptySpec, type SearchSpec } from "@/lib/search-spec";
 
@@ -275,19 +276,7 @@ export function SmartSearchTab() {
           <p className="text-[13px] text-slate-500 dark:text-slate-400">Nobody fit this ask. Remove a filter above to widen it.</p>
         </Card>
       ) : (
-        groups.map((g) => (
-          <section key={g.key}>
-            <h3 className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">
-              {g.title} <span className="font-normal text-slate-400">· {g.items.length}</span>
-            </h3>
-            <p className="mb-2 text-[12px] text-slate-500 dark:text-slate-400">{g.blurb}</p>
-            <div className="space-y-2">
-              {g.items.map((m) => (
-                <ResultCard key={m.candidate_id} m={m} mandates={[{ id: role.id, role_title: role.title, city: role.city }]} mandateId={role.id} />
-              ))}
-            </div>
-          </section>
-        ))
+        <SmartSplit groups={groups} roleId={role.id} roleTitle={role.title} />
       )}
     </div>
   );
