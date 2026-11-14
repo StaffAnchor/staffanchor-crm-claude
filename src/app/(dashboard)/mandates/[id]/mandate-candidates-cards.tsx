@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
-import type { MandateCandidateRow } from "./mandate-candidates-table";
+import type { MandateCandidateRow } from "./candidate-row";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
 import MandateRejectModal from "./mandate-reject-modal";
@@ -28,7 +28,6 @@ const GROUPS = [
 ];
 
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }) : "");
-const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "?";
 
 // The same pipeline as the Table and Board, laid out one person per card: who they are on the left, last jobs and degree in the
 // middle, the fit read and the actions on the right. Every stage pill above the list works here as it does everywhere else.
@@ -54,6 +53,7 @@ export default function MandateCandidatesCards({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [now] = useState(() => Date.now());
+  const [q, setQ] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<"overview" | "details" | "answers">("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -149,7 +149,9 @@ export default function MandateCandidatesCards({
 
   const recOf = (l: MandateCandidateRow) => l.match_assessment?.recommendation;
   const rankOf = (l: MandateCandidateRow) => (DONE.includes(l.stage) ? 3 : recOf(l) === "Strong Fit" ? 0 : recOf(l) === "Fit with Reservations" ? 1 : recOf(l) === "Not a Fit" ? 3 : 2);
-  const grouped = GROUPS.map((g) => ({ ...g, rows: rows.filter((l) => rankOf(l) === g.rank).sort((a, b) => (b.match_score ?? -1) - (a.match_score ?? -1)) })).filter((g) => g.rows.length > 0);
+  const needle = q.trim().toLowerCase();
+  const searched = needle ? rows.filter((l) => [l.candidate.full_name, l.candidate.current_employer, l.candidate.current_job_title, l.candidate.current_location].filter(Boolean).join(" ").toLowerCase().includes(needle)) : rows;
+  const grouped = GROUPS.map((g) => ({ ...g, rows: searched.filter((l) => rankOf(l) === g.rank).sort((a, b) => (b.match_score ?? -1) - (a.match_score ?? -1)) })).filter((g) => g.rows.length > 0);
   const showHeaders = grouped.length > 1;
   const isCollapsed = (key: string) => (collapsedGroups.has(key) ? !collapsedGroups.has(`open:${key}`) || false : key === "notfit" && showHeaders && !collapsedGroups.has(`open:${key}`));
   const flipGroup = (key: string) =>
@@ -179,12 +181,16 @@ export default function MandateCandidatesCards({
   // A call counts as logged once we remember something they said, or the details are complete.
   const callLogged = (l: MandateCandidateRow) => !!readMemory(l.candidate.segment_data) || detailsState(l).done;
 
-  const FIT_STYLE: Record<number, string> = {
-    0: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
-    1: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300",
-    2: "border border-dashed border-slate-300 bg-white text-slate-400 ring-transparent dark:bg-slate-900",
-    3: "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300",
-  };
+  // The fit score drawn as a ring that fills to the score; its colour follows the score band.
+  const ringColor = (score: number | null, rank: number) => (score == null ? "#cbd5e1" : rank === 3 || score < 45 ? "#e11d48" : score < 70 ? "#d97706" : "#059669");
+  function ScoreRing({ score, rank, size = 38 }: { score: number | null; rank: number; size?: number }) {
+    const color = ringColor(score, rank);
+    return (
+      <span className="relative inline-flex shrink-0 items-center justify-center rounded-full" style={{ width: size, height: size, background: score == null ? "transparent" : `conic-gradient(${color} ${Math.max(4, Math.min(100, score)) * 3.6}deg, rgb(226 232 240 / 0.7) 0)`, border: score == null ? "1.5px dashed #cbd5e1" : undefined }}>
+        <span className="flex items-center justify-center rounded-full bg-white font-semibold tabular-nums dark:bg-slate-900" style={{ width: size - 7, height: size - 7, fontSize: size > 40 ? 15 : 12, color: score == null ? "#94a3b8" : color }}>{score != null ? Math.round(score) : "?"}</span>
+      </span>
+    );
+  }
 
   // The line under the facts: what we remember from a call, else the first gap, else the first plus, else where they came from.
   function lineThree(l: MandateCandidateRow): { text: string; cls: string } {
@@ -216,24 +222,22 @@ export default function MandateCandidatesCards({
       c.current_location || null,
     ];
     return (
-      <li key={l.id} className={`border-b border-slate-100 last:border-b-0 dark:border-slate-800 ${isActive ? "bg-teal-50/70 shadow-[inset_3px_0_0_0] shadow-teal-600 dark:bg-teal-950/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"} ${done ? "opacity-70" : ""}`}>
-        <div className="flex items-start gap-2 px-2.5 py-2.5">
-          <input type="checkbox" checked={selected.has(l.id)} onChange={() => setSelected((p) => toggle(p, l.id))} aria-label={`Select ${c.full_name}`} className="mt-2.5 h-3.5 w-3.5 shrink-0" />
+      <li key={l.id} className={`border-b border-slate-100 last:border-b-0 dark:border-slate-800 ${isActive ? "bg-teal-50 shadow-[inset_4px_0_0_0] shadow-teal-600 dark:bg-teal-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"} ${done ? "opacity-70" : ""}`}>
+        <div className="flex items-start gap-2 px-3 py-3">
+          <input type="checkbox" checked={selected.has(l.id)} onChange={() => setSelected((p) => toggle(p, l.id))} aria-label={`Select ${c.full_name}`} className="mt-3 h-3.5 w-3.5 shrink-0 accent-teal-600" />
           <button
             type="button"
             onClick={() => { setActiveId(l.id); setMobileOpen(true); void markViewed(l); }}
             aria-current={isActive}
             title={`${c.full_name}: ${src.label}${src.detail ? ` · ${src.detail}` : ""}`}
-            className="grid min-w-0 flex-1 grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2.5 text-left"
+            className="grid min-w-0 flex-1 grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-3 text-left"
           >
-            <span className={`flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold tabular-nums ring-1 ${FIT_STYLE[rank]}`} title={l.match_assessment?.recommendation ?? "Fit not read yet"}>
-              {l.match_score != null ? Math.round(l.match_score) : "?"}
-            </span>
+            <span title={l.match_assessment?.recommendation ?? "Fit not read yet"}><ScoreRing score={l.match_score != null ? Math.round(l.match_score) : null} rank={rank} /></span>
             <span className="min-w-0">
               <span className="flex items-baseline gap-1.5">
-                <span className="truncate text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name}</span>
+                <span className="max-w-[68%] shrink-0 truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name}</span>
                 {!l.viewed_at && ["sourced", "screened"].includes(l.stage) && <span className="shrink-0 rounded-full bg-teal-600 px-1.5 text-[9.5px] font-semibold text-white">New</span>}
-                <span className="truncate text-[12px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ") || c.category || ""}</span>
+                <span className="min-w-0 flex-1 truncate text-[12px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ") || c.category || ""}</span>
               </span>
               <span className="mt-0.5 block truncate text-[12px] tabular-nums text-slate-500">{facts.filter(Boolean).join(" · ") || "No facts yet"}</span>
               <span className={`mt-0.5 block truncate text-[12px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
@@ -266,9 +270,9 @@ export default function MandateCandidatesCards({
     const logged = callLogged(l);
     const a = l.match_assessment;
     const fact = (label: string, value: string | null | undefined) => (
-      <div className="min-w-0">
-        <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-        <dd className={`truncate text-[13px] font-medium ${value ? "text-slate-800 dark:text-slate-100" : "text-slate-300"}`}>{value || "—"}</dd>
+      <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/60">
+        <dt className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
+        <dd className={`mt-0.5 truncate text-[15px] font-semibold tabular-nums ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-300"}`}>{value || "—"}</dd>
       </div>
     );
     const tabs: { key: "overview" | "details" | "answers"; label: string; dot?: boolean }[] = [
@@ -279,11 +283,12 @@ export default function MandateCandidatesCards({
     const curTab = tabs.some((t) => t.key === tab) ? tab : "overview";
     return (
       <div className="flex min-h-0 flex-col">
-        <div className="flex flex-wrap items-start gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
+        <div className="sticky top-0 z-10 bg-white dark:bg-slate-900">
+        <div className="flex flex-wrap items-start gap-4 border-b border-slate-100 p-5 dark:border-slate-800">
           <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[12.5px] lg:hidden"><ArrowLeft className="h-3.5 w-3.5" /> List</button>
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[14px] font-semibold text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">{initials(c.full_name)}</span>
+          <ScoreRing score={l.match_score != null ? Math.round(l.match_score) : null} rank={rankOf(l)} size={52} />
           <div className="min-w-[180px] flex-1">
-            <Link href={`/candidates/${c.id}`} target="_blank" rel="noopener noreferrer" onClick={() => void markViewed(l)} className="text-[17px] font-semibold text-slate-900 hover:underline dark:text-slate-100">{c.full_name}</Link>
+            <Link href={`/candidates/${c.id}`} target="_blank" rel="noopener noreferrer" onClick={() => void markViewed(l)} className="text-[20px] font-semibold leading-tight tracking-tight text-slate-900 hover:underline dark:text-slate-100">{c.full_name}</Link>
             <p className="truncate text-[12.5px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || c.category || ""}</p>
             <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11.5px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300" title="Where this person came from">
               <Inbox className="h-3 w-3" /> {src.label}{src.detail ? ` · ${src.detail}` : ""}
@@ -318,7 +323,7 @@ export default function MandateCandidatesCards({
           </div>
         </div>
 
-        <div role="tablist" className="flex gap-0.5 overflow-x-auto border-b border-slate-100 px-3 dark:border-slate-800">
+        <div role="tablist" className="flex gap-0.5 overflow-x-auto border-b border-slate-100 px-4 dark:border-slate-800">
           {tabs.map((t) => (
             <button key={t.key} role="tab" type="button" aria-selected={curTab === t.key} onClick={() => setTab(t.key)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] ${curTab === t.key ? "border-teal-600 font-semibold text-slate-900 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
               {t.label}{t.dot && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />}
@@ -326,10 +331,11 @@ export default function MandateCandidatesCards({
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        </div>
+        <div className="min-h-0 flex-1 p-5">
           {curTab === "overview" && (
             <div className="space-y-4">
-              <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">
+              <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {fact("Experience", c.total_experience_years != null ? `${c.total_experience_years} yrs` : null)}
                 {fact("Location", c.current_location ? `${c.current_location}${c.open_to_relocation ? (c.open_to_relocation === "Yes" ? ", will relocate" : c.open_to_relocation === "No" ? ", will not relocate" : ", may relocate") : ""}` : null)}
                 {fact("Notice", c.notice_period)}
@@ -338,13 +344,23 @@ export default function MandateCandidatesCards({
                 {fact(l.origin === "applied" ? "Applied" : "Added", fmtDate(l.created_at))}
               </dl>
 
-              <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Why this fit</p>
+              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Why this fit</p>
                 {a ? (
-                  <div className="space-y-1.5 text-[13px]">
+                  <div className="space-y-3 text-[13px]">
                     <span className={`inline-block rounded-md px-2 py-0.5 text-[12px] font-semibold ${rec === "Strong Fit" ? "bg-emerald-50 text-emerald-700" : rec === "Not a Fit" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-800"}`}>{rec}</span>
-                    {a.positives.slice(0, 4).map((x) => (<p key={x} className="text-slate-700 dark:text-slate-300">✓ {x}</p>))}
-                    {[...a.red_flags, ...a.missing.map((m) => `Missing: ${m}`)].slice(0, 4).map((x) => (<p key={x} className="text-amber-700 dark:text-amber-400">⚠ {x}</p>))}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Going for them</p>
+                        {a.positives.length === 0 && <p className="text-slate-400">Nothing yet.</p>}
+                        {a.positives.slice(0, 5).map((x) => (<p key={x} className="flex gap-1.5 text-slate-700 dark:text-slate-300"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" /> {x}</p>))}
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">To check</p>
+                        {a.red_flags.length + a.missing.length === 0 && <p className="text-slate-400">Nothing to flag.</p>}
+                        {[...a.red_flags, ...a.missing.map((m) => `Missing: ${m}`)].slice(0, 6).map((x) => (<p key={x} className="flex gap-1.5 text-slate-700 dark:text-slate-300"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> {x}</p>))}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-[13px] text-slate-400">Not read yet.</p>
@@ -485,14 +501,18 @@ export default function MandateCandidatesCards({
 
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(350px,430px)_minmax(0,1fr)]">
         <div className={`${mobileOpen ? "hidden lg:block" : ""} overflow-hidden rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
+          <div className="sticky top-0 z-[2] border-b border-slate-100 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, company, city" aria-label="Search this list" className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          {grouped.length === 0 && <p className="p-6 text-center text-[13px] text-slate-400">No one matches that search.</p>}
           {grouped.map((g) => {
             const closed = isCollapsed(g.key);
             return (
               <section key={g.key}>
                 {showHeaders && (
-                  <button type="button" onClick={() => flipGroup(g.key)} aria-expanded={!closed} className="sticky top-0 z-[1] flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-900">
-                    <span>{g.label}</span>
-                    <span className="inline-flex items-center gap-1">{g.rows.length} {closed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}</span>
+                  <button type="button" onClick={() => flipGroup(g.key)} aria-expanded={!closed} className="sticky top-[49px] z-[1] flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:border-slate-800 dark:bg-slate-900">
+                    <span className="inline-flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${g.key === "strong" ? "bg-emerald-500" : g.key === "reservations" ? "bg-amber-500" : g.key === "notfit" ? "bg-rose-400" : "bg-slate-300"}`} />{g.label}</span>
+                    <span className="inline-flex items-center gap-1 tabular-nums">{g.rows.length} {closed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}</span>
                   </button>
                 )}
                 {!closed && <ul>{g.rows.map((l) => renderRow(l, activeRow?.id ?? null))}</ul>}

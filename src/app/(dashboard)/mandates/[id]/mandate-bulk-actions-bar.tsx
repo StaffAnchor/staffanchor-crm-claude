@@ -7,7 +7,7 @@ import { Loader2, Mail, FolderPlus, Send, MessageCircle } from "lucide-react";
 import WhatsAppShareModal from "@/components/whatsapp-share-modal";
 import { STAGES, applyStageChange, type Stage } from "@/lib/mandate-stage";
 import { useWhatsAppTemplates } from "@/lib/use-whatsapp-templates";
-import type { MandateCandidateRow } from "./mandate-candidates-table";
+import type { MandateCandidateRow } from "./candidate-row";
 
 // Shared bulk-action bar (+ its 3 modals: Add to group / Email to Client /
 // Email JD) used from BOTH the Table view (mandate-candidates-table.tsx) and

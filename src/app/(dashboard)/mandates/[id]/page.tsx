@@ -19,7 +19,7 @@ import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
 import RolePlaybook from "./role-playbook";
 import { SmartSearchProvider, SmartSearchBar, SmartSearchTab, SmartBadge } from "./smart-search";
-import { type MandateCandidateRow } from "./mandate-candidates-table";
+import { type MandateCandidateRow } from "./candidate-row";
 import MandateCandidatesView from "./mandate-candidates-view";
 import SubmittedClientView from "./submitted-client-view";
 import DeleteMandateButton from "./delete-mandate-button";

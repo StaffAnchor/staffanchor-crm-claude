@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { LayoutGrid, Rows3, Sparkles, Table2 } from "lucide-react";
-import MandateCandidatesTable, { type MandateCandidateRow } from "./mandate-candidates-table";
-import MandateCandidatesBoard from "./mandate-candidates-board";
+import { Sparkles } from "lucide-react";
+import type { MandateCandidateRow } from "./candidate-row";
 import MandateCandidatesCards from "./mandate-candidates-cards";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
@@ -21,10 +20,8 @@ export default function MandateCandidatesView({
   rows,
   mandateContext,
   teamMembers = [],
-  isAdmin = false,
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
-  flaggedCallByCandidate = {},
 }: {
   // Opened from Today with ?stage=shortlisted and similar, so the list lands
   // on the right pile instead of all 149 rows.
@@ -47,24 +44,6 @@ export default function MandateCandidatesView({
   // reverting to the static "Flag for call" label.
   flaggedCallByCandidate?: Record<string, { flagId: string; recruiterId: string; recruiterName: string; round: string | null }>;
 }) {
-  type View = "board" | "table" | "cards";
-  const [view, setViewState] = useState<View>("cards");
-  // Remember the last view per browser (storage can be blocked, so every access is guarded). Read after mount so the server and
-  // browser render the same first paint.
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("mandate-pipeline-view");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved === "board" || saved === "table" || saved === "cards") setViewState(saved);
-    } catch {}
-  }, []);
-  const setView = (v: View) => {
-    setViewState(v);
-    try {
-      window.localStorage.setItem("mandate-pipeline-view", v);
-    } catch {}
-  };
-
   // "all" plus every pipeline stage -- lets a recruiter narrow either view
   // down to, say, just "client_interview" instead of scrolling/scanning the
   // full pipeline. Board already visually groups by stage as columns, but
@@ -225,70 +204,16 @@ export default function MandateCandidatesView({
             <Sparkles className="h-3 w-3" /> Triage {newCount} new
           </Link>
         )}
-        <div className="inline-flex rounded-ros-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900 shrink-0">
-          <button
-            onClick={() => setView("board")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-ros-md text-xs font-medium transition-all duration-200 ease-ros ${
-              view === "board" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
-            }`}
-          >
-            <LayoutGrid className="w-3 h-3" /> Board
-          </button>
-          <button
-            onClick={() => setView("table")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-ros-md text-xs font-medium transition-all duration-200 ease-ros ${
-              view === "table" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
-            }`}
-          >
-            <Table2 className="w-3 h-3" /> Table
-          </button>
-          <button
-            onClick={() => setView("cards")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-ros-md text-xs font-medium transition-all duration-200 ease-ros ${
-              view === "cards" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
-            }`}
-          >
-            <Rows3 className="w-3 h-3" /> Cards
-          </button>
-        </div>
         </div>
       </div>
 
-      {view === "board" ? (
-        <MandateCandidatesBoard
-          // Keyed on the filters so changing a filter starts the list fresh. New data from
-          // the server is picked up in place (see the comment where rows state is declared),
-          // so a refresh no longer closes a CV preview or window the recruiter has open.
-          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}`}
-          rows={filteredRows}
-          mandateContext={mandateContext}
-          teamMembers={teamMembers}
-          isAdmin={isAdmin}
-          applicationAnswersByCandidate={applicationAnswersByCandidate}
-          resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
-          flaggedCallByCandidate={flaggedCallByCandidate}
-        />
-      ) : view === "cards" ? (
-        <MandateCandidatesCards
-          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}`}
-          rows={filteredRows}
-          mandateContext={mandateContext}
-          applicationAnswersByCandidate={applicationAnswersByCandidate}
-          resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
-        />
-      ) : (
-        <MandateCandidatesTable
-          // Same as Board above: filters reset the list; new server data is picked up in place.
-          key={`${stageFilter}-${sourceFilter}-${recruiterFilter}`}
-          rows={filteredRows}
-          mandateContext={mandateContext}
-          teamMembers={teamMembers}
-          isAdmin={isAdmin}
-          applicationAnswersByCandidate={applicationAnswersByCandidate}
-          resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
-          flaggedCallByCandidate={flaggedCallByCandidate}
-        />
-      )}
+      <MandateCandidatesCards
+        key={`${stageFilter}-${sourceFilter}-${recruiterFilter}`}
+        rows={filteredRows}
+        mandateContext={mandateContext}
+        applicationAnswersByCandidate={applicationAnswersByCandidate}
+        resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
+      />
     </div>
   );
 
