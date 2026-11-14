@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +15,12 @@ import { Button } from "@/components/ui/button";
 // component itself only needs client state for the toggle.
 export default function MandateSplitLayout({ left, right }: { left: ReactNode; right: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  // The pipeline list asks for more room (see "More room" there); this keeps the two buttons in step.
+  useEffect(() => {
+    const on = (e: Event) => setCollapsed(!!(e as CustomEvent<{ collapsed: boolean }>).detail?.collapsed);
+    window.addEventListener("mandate-panel-collapse", on);
+    return () => window.removeEventListener("mandate-panel-collapse", on);
+  }, []);
 
   return (
     <div className="mt-6 relative">

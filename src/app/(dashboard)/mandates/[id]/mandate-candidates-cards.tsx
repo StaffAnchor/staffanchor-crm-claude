@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, Phone, PhoneCall, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./mandate-candidates-table";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
-import ApplicationAnswersQuickView from "./application-answers-quick-view";
 import MandateRejectModal from "./mandate-reject-modal";
-import ConfirmDetailsModal from "./confirm-details-modal";
+import { ConfirmDetailsPanel } from "./confirm-details-modal";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import PipelineWhatsApp from "./pipeline-whatsapp";
 import { SkillsStrip } from "@/components/candidate-facts-strip";
@@ -53,12 +52,14 @@ export default function MandateCandidatesCards({
     setRows(initialRows);
   }
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [confirmMode, setConfirmMode] = useState<"share" | "details">("share");
+  const [now] = useState(() => Date.now());
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"overview" | "details" | "answers">("overview");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [wide, setWide] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [readiness, setReadiness] = useState<Record<string, string[]>>({});
-  const [confirmRow, setConfirmRow] = useState<MandateCandidateRow | null>(null);
   const [rejectRow, setRejectRow] = useState<MandateCandidateRow | null>(null);
   const [busy, setBusy] = useState(false);
   const mandateId = mandateContext.mandateId as string;
@@ -122,8 +123,10 @@ export default function MandateCandidatesCards({
     if (error) {
       if (error.message.includes("NOT_CLIENT_READY")) {
         await refreshReadiness([row.id]);
-        setConfirmMode("share");
-        setConfirmRow(row);
+        setActiveId(row.id);
+        setTab("details");
+        setMobileOpen(true);
+        setMessage({ type: "error", text: `${row.candidate.full_name}: finish the call and details first, then share.` });
       } else {
         setMessage({ type: "error", text: error.message });
       }
@@ -143,7 +146,6 @@ export default function MandateCandidatesCards({
     void move(row, next);
   }
 
-  if (rows.length === 0) return <p className="rounded-ros-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500">No candidates in this stage.</p>;
 
   const recOf = (l: MandateCandidateRow) => l.match_assessment?.recommendation;
   const rankOf = (l: MandateCandidateRow) => (DONE.includes(l.stage) ? 3 : recOf(l) === "Strong Fit" ? 0 : recOf(l) === "Fit with Reservations" ? 1 : recOf(l) === "Not a Fit" ? 3 : 2);
@@ -169,199 +171,287 @@ export default function MandateCandidatesCards({
     return { done: false, text: `Call & details · ${left.length} to do`, title: `Still needed: ${left.join(", ")}` };
   }
 
-  function renderRow(l: MandateCandidateRow) {
+  const ago = (iso: string | null) => {
+    if (!iso) return "";
+    const d = Math.floor((now - new Date(iso).getTime()) / 86_400_000);
+    return d <= 0 ? "today" : d < 14 ? `${d}d` : d < 60 ? `${Math.floor(d / 7)}w` : `${Math.floor(d / 30)}mo`;
+  };
+  // A call counts as logged once we remember something they said, or the details are complete.
+  const callLogged = (l: MandateCandidateRow) => !!readMemory(l.candidate.segment_data) || detailsState(l).done;
+
+  const FIT_STYLE: Record<number, string> = {
+    0: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
+    1: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300",
+    2: "border border-dashed border-slate-300 bg-white text-slate-400 ring-transparent dark:bg-slate-900",
+    3: "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300",
+  };
+
+  // The line under the facts: what we remember from a call, else the first gap, else the first plus, else where they came from.
+  function lineThree(l: MandateCandidateRow): { text: string; cls: string } {
+    const m = readMemory(l.candidate.segment_data);
+    if (m && (m.wants.length || m.dealbreakers.length || m.summary)) {
+      const bits = [m.wants[0] ? `wants ${m.wants[0].toLowerCase()}` : "", m.dealbreakers[0] ? `no ${m.dealbreakers[0].toLowerCase()}` : ""].filter(Boolean);
+      return { text: `Spoke ${m.at ? fmtDate(m.at) : "earlier"}: ${bits.length ? bits.join(" · ") : m.summary}`, cls: "text-sky-700 dark:text-sky-300" };
+    }
+    const a = l.match_assessment;
+    const gap = a?.red_flags[0] ?? (a?.missing[0] ? `Missing: ${a.missing[0]}` : null);
+    if (gap) return { text: gap, cls: "text-amber-700 dark:text-amber-400" };
+    if (a?.positives[0]) return { text: a.positives[0], cls: "text-emerald-700 dark:text-emerald-400" };
+    const src = leadSourceOf(l.candidate, l.origin, l.origin_label, l.uploader_name);
+    return { text: `${src.label}${src.detail ? ` · ${src.detail}` : ""}`, cls: "text-slate-400" };
+  }
+
+  function renderRow(l: MandateCandidateRow, activeRowId: string | null) {
     const c = l.candidate;
     const done = DONE.includes(l.stage);
+    const rank = rankOf(l);
+    const ds = detailsState(l);
+    const l3 = lineThree(l);
+    const src = leadSourceOf(c, l.origin, l.origin_label, l.uploader_name);
+    const isActive = activeRowId === l.id;
+    const facts = [
+      c.total_experience_years != null ? `${c.total_experience_years} yrs` : null,
+      c.current_fixed_ctc != null || c.expected_fixed_ctc != null ? `${c.current_fixed_ctc ?? "—"} → ${c.expected_fixed_ctc ?? "—"} LPA` : null,
+      c.notice_period || null,
+      c.current_location || null,
+    ];
+    return (
+      <li key={l.id} className={`border-b border-slate-100 last:border-b-0 dark:border-slate-800 ${isActive ? "bg-teal-50/70 shadow-[inset_3px_0_0_0] shadow-teal-600 dark:bg-teal-950/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"} ${done ? "opacity-70" : ""}`}>
+        <div className="flex items-start gap-2 px-2.5 py-2.5">
+          <input type="checkbox" checked={selected.has(l.id)} onChange={() => setSelected((p) => toggle(p, l.id))} aria-label={`Select ${c.full_name}`} className="mt-2.5 h-3.5 w-3.5 shrink-0" />
+          <button
+            type="button"
+            onClick={() => { setActiveId(l.id); setMobileOpen(true); void markViewed(l); }}
+            aria-current={isActive}
+            className="grid min-w-0 flex-1 grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2.5 text-left"
+          >
+            <span className={`flex h-[34px] w-[34px] items-center justify-center rounded-full text-[12px] font-semibold tabular-nums ring-1 ${FIT_STYLE[rank]}`} title={l.match_assessment?.recommendation ?? "Fit not read yet"}>
+              {l.match_score != null ? Math.round(l.match_score) : "?"}
+            </span>
+            <span className="min-w-0">
+              <span className="flex items-baseline gap-1.5">
+                <span className="truncate text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name}</span>
+                {!l.viewed_at && ["sourced", "screened"].includes(l.stage) && <span className="shrink-0 rounded-full bg-teal-600 px-1.5 text-[9.5px] font-semibold text-white">New</span>}
+                <span className="truncate text-[12px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ") || c.category || ""}</span>
+              </span>
+              <span className="mt-0.5 block truncate text-[12px] tabular-nums text-slate-500">{facts.filter(Boolean).join(" · ") || "No facts yet"}</span>
+              <span className={`mt-0.5 block truncate text-[12px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
+            </span>
+            <span className="flex flex-col items-end gap-1">
+              {canActRow(l) && (
+                <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${ds.done ? "bg-emerald-600 text-white" : "border-[1.5px] border-amber-500"}`} title={ds.title}>
+                  {ds.done ? <Check className="h-2.5 w-2.5" /> : null}
+                </span>
+              )}
+              <span className="text-[11px] text-slate-400">{ago(l.created_at)}</span>
+              <span className="max-w-[92px] truncate rounded bg-slate-100 px-1 text-[10.5px] text-slate-500 dark:bg-slate-800" title={`${src.label}${src.detail ? ` · ${src.detail}` : ""}`}>{src.label}</span>
+            </span>
+          </button>
+        </div>
+      </li>
+    );
+  }
+  const canActRow = (l: MandateCandidateRow) => !["rejected", "pulled_back", "placed"].includes(l.stage);
+
+  function renderPane(l: MandateCandidateRow) {
+    const c = l.candidate;
     const rec = recOf(l);
-    const edge = done ? "border-l-slate-300" : rec === "Strong Fit" ? "border-l-emerald-500" : rec === "Fit with Reservations" ? "border-l-amber-400" : rec === "Not a Fit" ? "border-l-rose-400" : "border-l-slate-200";
     const answers = applicationAnswersByCandidate[c.id];
     const resumeUrl = resumeSignedUrlByCandidate[c.id];
-    const canAct = !["rejected", "pulled_back", "placed"].includes(l.stage);
+    const canAct = canActRow(l);
     const edu = l.education.filter((e) => e.degree || e.institution).slice(0, 2);
-    const isOpen = expanded.has(l.id);
     const src = leadSourceOf(c, l.origin, l.origin_label, l.uploader_name);
     const memory = readMemory(c.segment_data);
     const ds = detailsState(l);
-    const fit = recOf(l);
+    const logged = callLogged(l);
+    const a = l.match_assessment;
     const fact = (label: string, value: string | null | undefined) => (
-      <span className="whitespace-nowrap">
-        <span className="text-slate-400">{label} </span>
-        <span className={value ? "font-medium text-slate-700 dark:text-slate-200" : "text-slate-300"}>{value || "—"}</span>
-      </span>
+      <div className="min-w-0">
+        <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</dt>
+        <dd className={`truncate text-[13px] font-medium ${value ? "text-slate-800 dark:text-slate-100" : "text-slate-300"}`}>{value || "—"}</dd>
+      </div>
     );
+    const tabs: { key: "overview" | "details" | "answers"; label: string; dot?: boolean }[] = [
+      { key: "overview", label: "Overview" },
+      ...(canAct ? [{ key: "details" as const, label: "Call & details", dot: !ds.done }] : []),
+      ...(answers && answers.length > 0 ? [{ key: "answers" as const, label: `Answers (${answers.length})` }] : []),
+    ];
+    const curTab = tabs.some((t) => t.key === tab) ? tab : "overview";
     return (
-      <li key={l.id} className={`rounded-ros-xl border border-l-4 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 ${edge} ${done ? "opacity-75" : ""}`}>
-        <div className="grid gap-3 p-3.5 md:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="flex min-w-0 items-start gap-3">
-            <input type="checkbox" checked={selected.has(l.id)} onChange={() => setSelected((p) => toggle(p, l.id))} aria-label={`Select ${c.full_name}`} className="mt-2 h-4 w-4 shrink-0" />
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[13px] font-semibold text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">{initials(c.full_name)}</span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <Link href={`/candidates/${c.id}`} target="_blank" rel="noopener noreferrer" onClick={() => void markViewed(l)} className="truncate text-[15px] font-semibold text-teal-700 hover:underline dark:text-teal-300">
-                  {c.full_name}
-                </Link>
-                {!l.viewed_at && ["sourced", "screened"].includes(l.stage) && <span className="rounded-full bg-teal-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">New</span>}
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11.5px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300" title="Where this person came from">
-                  <Inbox className="h-3 w-3" /> {src.label}{src.detail ? ` · ${src.detail}` : ""}
-                </span>
-              </div>
-              <p className="truncate text-[12.5px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || c.category || ""}</p>
+      <div className="flex min-h-0 flex-col">
+        <div className="flex flex-wrap items-start gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
+          <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[12.5px] lg:hidden"><ArrowLeft className="h-3.5 w-3.5" /> List</button>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[14px] font-semibold text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">{initials(c.full_name)}</span>
+          <div className="min-w-[180px] flex-1">
+            <Link href={`/candidates/${c.id}`} target="_blank" rel="noopener noreferrer" onClick={() => void markViewed(l)} className="text-[17px] font-semibold text-slate-900 hover:underline dark:text-slate-100">{c.full_name}</Link>
+            <p className="truncate text-[12.5px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || c.category || ""}</p>
+            <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11.5px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300" title="Where this person came from">
+              <Inbox className="h-3 w-3" /> {src.label}{src.detail ? ` · ${src.detail}` : ""}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={l.stage} disabled={busy} onChange={(e) => pickStage(l, e.target.value as Stage)} aria-label={`Stage for ${c.full_name}`} className={`h-8 min-w-[110px] rounded-full border-0 px-2.5 text-xs font-medium capitalize ${STAGE_COLOR[l.stage] ?? "bg-slate-100 text-slate-700"}`}>
+              {STAGES.map((s) => (<option key={s} value={s}>{s.replace(/_/g, " ")}</option>))}
+            </select>
+            {canAct && (l.in_shortlist ? (
+              <span className="inline-flex h-8 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12.5px] font-semibold text-emerald-700">With client</span>
+            ) : rec === "Not a Fit" ? (
+              <button type="button" onClick={() => setRejectRow(l)} className="inline-flex h-8 items-center gap-1 rounded-lg border border-rose-300 px-3 text-[12.5px] font-semibold text-rose-700 hover:bg-rose-50"><X className="h-3.5 w-3.5" /> Reject</button>
+            ) : logged ? (
+              <button type="button" onClick={() => void shortlist(l)} className="inline-flex h-8 items-center rounded-lg bg-teal-600 px-3 text-[12.5px] font-semibold text-white hover:bg-teal-700" title="Show this person to the client and move them to submitted">Share with client</button>
+            ) : (
+              <button type="button" onClick={() => { setTab("details"); void markViewed(l); }} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-teal-600 px-3 text-[12.5px] font-semibold text-white hover:bg-teal-700" title="Open the call form and the phone number"><PhoneCall className="h-3.5 w-3.5" /> Call now</button>
+            ))}
+            {canAct && (
+              <PipelineWhatsApp candidateId={c.id} candidateName={c.full_name} phone={c.phone} missing={c.readiness_missing} stage={l.stage} roleTitle={mandateContext.role_title ?? null} cities={(mandateContext.cities as string[] | undefined) ?? null} workMode={(mandateContext.work_mode as string | null | undefined) ?? null} />
+            )}
+            {canAct && (
+              <RowMenu label={`More actions for ${c.full_name}`}>
+                {!l.in_shortlist && rec === "Not a Fit" && <MenuItem onClick={() => void shortlist(l)}>Send to client anyway</MenuItem>}
+                {!l.in_shortlist && rec !== "Not a Fit" && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
+                {l.in_shortlist && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
+                {!l.in_shortlist && logged && <MenuItem onClick={() => setTab("details")}>Call &amp; details</MenuItem>}
+                {resumeUrl && <MenuItem href={resumeUrl} download onClick={() => void markViewed(l)}>Download CV</MenuItem>}
+                <MenuItem href={`/candidates/${c.id}`}>Full profile and timeline</MenuItem>
+              </RowMenu>
+            )}
+          </div>
+        </div>
 
-              <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[12.5px]">
+        <div role="tablist" className="flex gap-0.5 overflow-x-auto border-b border-slate-100 px-3 dark:border-slate-800">
+          {tabs.map((t) => (
+            <button key={t.key} role="tab" type="button" aria-selected={curTab === t.key} onClick={() => setTab(t.key)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] ${curTab === t.key ? "border-teal-600 font-semibold text-slate-900 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+              {t.label}{t.dot && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {curTab === "overview" && (
+            <div className="space-y-4">
+              <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">
                 {fact("Experience", c.total_experience_years != null ? `${c.total_experience_years} yrs` : null)}
                 {fact("Location", c.current_location ? `${c.current_location}${c.open_to_relocation ? (c.open_to_relocation === "Yes" ? ", will relocate" : c.open_to_relocation === "No" ? ", will not relocate" : ", may relocate") : ""}` : null)}
                 {fact("Notice", c.notice_period)}
                 {fact("Current", c.current_fixed_ctc != null ? `${c.current_fixed_ctc} LPA` : null)}
                 {fact("Expected", c.expected_fixed_ctc != null ? `${c.expected_fixed_ctc} LPA` : null)}
                 {fact(l.origin === "applied" ? "Applied" : "Added", fmtDate(l.created_at))}
-              </p>
+              </dl>
 
-              {l.match_assessment && (
-                <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px]">
-                  <span className={`rounded-md px-2 py-0.5 text-[12px] font-semibold ${fit === "Strong Fit" ? "bg-emerald-50 text-emerald-700" : fit === "Not a Fit" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-800"}`}>{fit}</span>
-                  {l.match_assessment.positives[0] && <span className="text-slate-600 dark:text-slate-300">✓ {l.match_assessment.positives[0]}</span>}
-                  {(l.match_assessment.red_flags[0] || l.match_assessment.missing[0]) && <span className="text-slate-500">⚠ {l.match_assessment.red_flags[0] ?? `Missing: ${l.match_assessment.missing[0]}`}</span>}
-                </p>
-              )}
-
-              {memory?.summary && (
-                <p className="mt-1.5 flex items-start gap-1.5 text-[12.5px] leading-snug text-slate-500 dark:text-slate-400">
-                  <MessageCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  <span><span className="font-medium text-slate-600 dark:text-slate-300">Spoke {memory.at ? fmtDate(memory.at) : "earlier"}:</span> {memory.summary}</span>
-                </p>
-              )}
-
-              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">
-                {answers && answers.length > 0 && (
-                  <ApplicationAnswersQuickView answers={answers}>
-                    <span className="cursor-pointer text-sky-700 hover:underline">Screening answers ({answers.length})</span>
-                  </ApplicationAnswersQuickView>
+              <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Why this fit</p>
+                {a ? (
+                  <div className="space-y-1.5 text-[13px]">
+                    <span className={`inline-block rounded-md px-2 py-0.5 text-[12px] font-semibold ${rec === "Strong Fit" ? "bg-emerald-50 text-emerald-700" : rec === "Not a Fit" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-800"}`}>{rec}</span>
+                    {a.positives.slice(0, 4).map((x) => (<p key={x} className="text-slate-700 dark:text-slate-300">✓ {x}</p>))}
+                    {[...a.red_flags, ...a.missing.map((m) => `Missing: ${m}`)].slice(0, 4).map((x) => (<p key={x} className="text-amber-700 dark:text-amber-400">⚠ {x}</p>))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-slate-400">Not read yet.</p>
                 )}
+              </div>
+
+              <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">What we remember from calls</p>
+                {memory ? (
+                  <div className="space-y-1.5 text-[13px]">
+                    {memory.summary && <p className="text-slate-700 dark:text-slate-300"><span className="font-medium">Spoke {memory.at ? fmtDate(memory.at) : "earlier"}:</span> {memory.summary}</p>}
+                    <div className="flex flex-wrap gap-1.5">
+                      {memory.wants.map((w) => (<span key={w} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[12px] text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Wants: {w}</span>))}
+                      {memory.dealbreakers.map((w) => (<span key={w} className="rounded-full bg-rose-50 px-2 py-0.5 text-[12px] text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">Will not accept: {w}</span>))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-1.5 text-[13px] text-slate-400"><MessageCircle className="h-3.5 w-3.5" /> Nothing yet. After a call, what they said shows here and feeds matching.</p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-[12px]">
                 {l.call_paid_at && <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800" title="Paid ₹199 for a recruiter call">Paid call{l.call_due_at ? ` · due ${fmtDate(l.call_due_at)}` : ""}</span>}
-                {l.client_feedback && (
-                  <span className={`rounded-full px-2 py-0.5 font-medium ${l.client_feedback === "not_interested" ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>Client: {l.client_feedback.replace(/_/g, " ")}</span>
-                )}
-                {l.stage === "rejected" && l.rejection_category && (
-                  <span className="text-slate-500" title={l.rejection_reason ?? undefined}>{rejectionReasonLabel((l.stage_source as "recruiter" | "client_relayed") ?? "recruiter", l.rejection_category)}</span>
-                )}
-                <button type="button" onClick={() => { setExpanded((p) => toggle(p, l.id)); void markViewed(l); }} aria-expanded={isOpen} className="inline-flex items-center gap-1 font-medium text-teal-700 hover:underline">
-                  {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />} {isOpen ? "Hide details" : "Jobs, education, skills, contact"}
-                </button>
+                {l.client_feedback && <span className={`rounded-full px-2 py-0.5 font-medium ${l.client_feedback === "not_interested" ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>Client: {l.client_feedback.replace(/_/g, " ")}</span>}
+                {l.stage === "rejected" && l.rejection_category && <span className="text-slate-500" title={l.rejection_reason ?? undefined}>{rejectionReasonLabel((l.stage_source as "recruiter" | "client_relayed") ?? "recruiter", l.rejection_category)}</span>}
+              </div>
+
+              <div className="grid gap-4 text-[13px] sm:grid-cols-2">
+                <div className="min-w-0 space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Last jobs</p>
+                  {l.last_roles.length === 0 ? <p className="text-slate-400">Job history not read yet.</p> : l.last_roles.map((r, i) => (
+                    <div key={i}><p className="truncate font-semibold text-slate-900 dark:text-slate-100">{r.company || "Company not given"}</p><p className="truncate text-slate-500">{r.title}</p><p className="text-slate-400">{r.period}</p></div>
+                  ))}
+                </div>
+                <div className="min-w-0 space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Education</p>
+                  {edu.length === 0 ? <p className="text-slate-400">Education not read yet.</p> : edu.map((e, i) => (
+                    <div key={i} className="flex gap-1.5"><GraduationCap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" /><div className="min-w-0"><p className="truncate font-semibold text-slate-900 dark:text-slate-100">{e.institution || e.degree}</p><p className="truncate text-slate-500">{e.institution ? e.degree : ""}</p>{e.year && <p className="text-slate-400">{e.year}</p>}</div></div>
+                  ))}
+                  {(c.stability_score != null || c.sub_domain) && <p className="text-[12.5px] text-slate-500">{[c.sub_domain, c.stability_score != null ? `Stability ${c.stability_score}` : null].filter(Boolean).join(" · ")}</p>}
+                </div>
+              </div>
+              <SkillsStrip candidateId={c.id} roleText={roleText} />
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800/60">
+                {c.phone ? <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 font-medium text-teal-700"><Phone className="h-3.5 w-3.5" /> {c.phone}</a> : <span className="text-slate-400">No phone</span>}
+                {c.email ? <a href={`mailto:${c.email}`} className="inline-flex items-center gap-1.5 font-medium text-teal-700"><Mail className="h-3.5 w-3.5" /> {c.email}</a> : <span className="text-slate-400">No email</span>}
+                {resumeUrl ? (
+                  <span className="inline-flex [&>button]:h-8 [&>button]:rounded-lg [&>button]:border [&>button]:border-teal-600 [&>button]:bg-white [&>button]:px-3 [&>button]:text-[12.5px]">
+                    <ResumePreview signedUrl={resumeUrl} fileName={(c.resume_file_url ?? `${c.full_name}-resume`).replace(/^resumes\//, "")} label="Preview CV" candidateId={c.id} onOpen={() => void markViewed(l)} />
+                  </span>
+                ) : <span className="text-slate-400">No resume on file</span>}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* One line of actions: stage, the call and details, the main action, the rest in the menu */}
-          <div className="flex flex-wrap items-start justify-start gap-2 md:min-w-[250px] md:flex-col md:items-stretch">
-            <select
-              value={l.stage}
-              disabled={busy}
-              onChange={(e) => pickStage(l, e.target.value as Stage)}
-              aria-label={`Stage for ${c.full_name}`}
-              className={`h-8 min-w-[120px] rounded-full border-0 px-2.5 text-xs font-medium capitalize ${STAGE_COLOR[l.stage] ?? "bg-slate-100 text-slate-700"}`}
-            >
-              {STAGES.map((s) => (
-                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-              ))}
-            </select>
-            {canAct && (
-              <button
-                type="button"
-                onClick={() => { setConfirmMode("details"); setConfirmRow(l); void markViewed(l); }}
-                title={ds.title}
-                className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] font-semibold ${ds.done ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"}`}
-              >
-                {ds.done ? <Check className="h-3.5 w-3.5" /> : <PhoneCall className="h-3.5 w-3.5" />} {ds.text}
-              </button>
-            )}
-            {canAct && (
-              <div className="flex items-center gap-2">
-                {l.in_shortlist ? (
-                  <span className="inline-flex h-8 flex-1 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-[12.5px] font-semibold text-emerald-700">With client</span>
-                ) : rec === "Not a Fit" ? (
-                  <button type="button" onClick={() => setRejectRow(l)} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-rose-300 text-[12.5px] font-semibold text-rose-700 hover:bg-rose-50">
-                    <X className="h-3.5 w-3.5" /> Reject
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => void shortlist(l)} className="inline-flex h-8 flex-1 items-center justify-center rounded-lg border border-teal-600 text-[12.5px] font-semibold text-teal-700 hover:bg-teal-50" title="Show this person to the client and move them to submitted">Shortlist</button>
-                )}
-                <PipelineWhatsApp
-                  candidateId={c.id}
-                  candidateName={c.full_name}
-                  phone={c.phone}
-                  missing={c.readiness_missing}
-                  stage={l.stage}
-                  roleTitle={mandateContext.role_title ?? null}
-                  cities={(mandateContext.cities as string[] | undefined) ?? null}
-                  workMode={(mandateContext.work_mode as string | null | undefined) ?? null}
-                />
-                <RowMenu label={`More actions for ${c.full_name}`}>
-                  {!l.in_shortlist && rec === "Not a Fit" && <MenuItem onClick={() => void shortlist(l)}>Send to client anyway</MenuItem>}
-                  {!l.in_shortlist && rec !== "Not a Fit" && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
-                  {l.in_shortlist && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
-                  <MenuItem onClick={() => { setExpanded((p) => new Set(p).add(l.id)); void markViewed(l); }}>View contact details</MenuItem>
-                  {resumeUrl && <MenuItem href={resumeUrl} download onClick={() => void markViewed(l)}>Download CV</MenuItem>}
-                  <MenuItem href={`/candidates/${c.id}`}>Full profile and timeline</MenuItem>
-                </RowMenu>
+          {curTab === "details" && canAct && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800/60">
+                <span className="text-slate-600 dark:text-slate-300">Fill this in whenever you speak to them, before or after sharing. The client sees the profile only when it is complete.</span>
+                {c.phone ? <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 font-semibold text-white"><Phone className="h-3.5 w-3.5" /> {c.phone}</a> : <span className="text-slate-400">No phone</span>}
               </div>
-            )}
-          </div>
+              <ConfirmDetailsPanel
+                key={l.id}
+                roleCluster={(mandateContext.role_cluster as string | null | undefined) ?? null}
+                mandateContext={mandateContext}
+                linkId={l.id}
+                mandateId={mandateId}
+                candidateId={c.id}
+                blockers={readiness[l.id] ?? []}
+                onRecheck={async () => { await refreshReadiness([l.id]); router.refresh(); }}
+              />
+            </div>
+          )}
+
+          {curTab === "answers" && answers && (
+            <ul className="space-y-3 text-[13px]">
+              {answers.map((x, i) => (<li key={i}><p className="font-medium text-slate-800 dark:text-slate-100">{x.question_text}</p><p className="text-slate-600 dark:text-slate-300">{x.answer_text ?? (x.answer_number != null ? String(x.answer_number) : x.answer_bool != null ? (x.answer_bool ? "Yes" : "No") : "—")}</p></li>))}
+            </ul>
+          )}
         </div>
-
-        {isOpen && (
-          <div className="space-y-3 border-t border-slate-100 px-3.5 py-3 dark:border-slate-800">
-            <div className="grid gap-4 text-[13px] md:grid-cols-2">
-              <div className="min-w-0 space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Last jobs</p>
-                {l.last_roles.length === 0 ? (
-                  <p className="text-slate-400">Job history not read yet.</p>
-                ) : (
-                  l.last_roles.map((r, i) => (
-                    <div key={i}>
-                      <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{r.company || "Company not given"}</p>
-                      <p className="truncate text-slate-500">{r.title}</p>
-                      <p className="text-slate-400">{r.period}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="min-w-0 space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Education</p>
-                {edu.length === 0 ? (
-                  <p className="text-slate-400">Education not read yet.</p>
-                ) : (
-                  edu.map((e, i) => (
-                    <div key={i} className="flex gap-1.5">
-                      <GraduationCap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{e.institution || e.degree}</p>
-                        <p className="truncate text-slate-500">{e.institution ? e.degree : ""}</p>
-                        {e.year && <p className="text-slate-400">{e.year}</p>}
-                      </div>
-                    </div>
-                  ))
-                )}
-                {(c.stability_score != null || c.sub_domain) && <p className="text-[12.5px] text-slate-500">{[c.sub_domain, c.stability_score != null ? `Stability ${c.stability_score}` : null].filter(Boolean).join(" · ")}</p>}
-              </div>
-            </div>
-            <SkillsStrip candidateId={c.id} roleText={roleText} />
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800/60">
-              {c.phone ? <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 font-medium text-teal-700"><Phone className="h-3.5 w-3.5" /> {c.phone}</a> : <span className="text-slate-400">No phone</span>}
-              {c.email ? <a href={`mailto:${c.email}`} className="inline-flex items-center gap-1.5 font-medium text-teal-700"><Mail className="h-3.5 w-3.5" /> {c.email}</a> : <span className="text-slate-400">No email</span>}
-              {resumeUrl ? (
-                <span className="inline-flex [&>button]:h-8 [&>button]:rounded-lg [&>button]:border [&>button]:border-teal-600 [&>button]:bg-white [&>button]:px-3 [&>button]:text-[12.5px]">
-                  <ResumePreview signedUrl={resumeUrl} fileName={(c.resume_file_url ?? `${c.full_name}-resume`).replace(/^resumes\//, "")} label="Preview CV" candidateId={c.id} onOpen={() => void markViewed(l)} />
-                </span>
-              ) : (
-                <span className="text-slate-400">No resume on file</span>
-              )}
-            </div>
-            {(l.candidate.readiness_missing?.length ?? 0) > 0 && !l.in_shortlist && (readiness[l.id]?.length ?? 0) > 0 && <p className="text-[12px] text-amber-700">Before sending to the client: {readiness[l.id].join(", ")}</p>}
-          </div>
-        )}
-      </li>
+      </div>
     );
   }
+
+  const visible = grouped.filter((g) => !isCollapsed(g.key)).flatMap((g) => g.rows);
+  const activeRow = rows.find((r) => r.id === activeId) ?? visible[0] ?? null;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)) return;
+      if (t?.isContentEditable || e.metaKey || e.ctrlKey || e.altKey) return;
+      const i = visible.findIndex((r) => r.id === activeRow?.id);
+      if ((e.key === "j" || e.key === "ArrowDown") && visible[i + 1]) { e.preventDefault(); setActiveId(visible[i + 1].id); }
+      if ((e.key === "k" || e.key === "ArrowUp") && i > 0) { e.preventDefault(); setActiveId(visible[i - 1].id); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
+
+  function toggleWide() {
+    const next = !wide;
+    setWide(next);
+    window.dispatchEvent(new CustomEvent("mandate-panel-collapse", { detail: { collapsed: next } }));
+  }
+
+  if (rows.length === 0) return <p className="rounded-ros-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500">No candidates in this stage.</p>;
 
   return (
     <div>
@@ -380,43 +470,42 @@ export default function MandateCandidatesCards({
           mandateContext={mandateContext as { mandateId: string; role_title: string; client_name: string; [key: string]: unknown }}
         />
       </div>
-      <label className="mb-2 inline-flex items-center gap-2 text-[12.5px] text-slate-500">
-        <input type="checkbox" checked={selected.size === rows.length} onChange={() => setSelected(selected.size === rows.length ? new Set() : new Set(rows.map((r) => r.id)))} className="h-4 w-4" />
-        Select all {rows.length}
-      </label>
-      <div className="space-y-4">
-        {grouped.map((g) => {
-          const closed = isCollapsed(g.key);
-          return (
-            <section key={g.key}>
-              {showHeaders && (
-                <button type="button" onClick={() => flipGroup(g.key)} aria-expanded={!closed} className="mb-2 flex w-full items-center gap-2 text-left text-[12.5px] font-semibold text-slate-600 dark:text-slate-300">
-                  {closed ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronUp className="h-4 w-4 text-slate-400" />}
-                  {g.label} <span className="rounded-full bg-slate-100 px-1.5 text-[11px] font-medium text-slate-500 dark:bg-slate-800">{g.rows.length}</span>
-                  {closed && <span className="font-normal text-slate-400">show</span>}
-                </button>
-              )}
-              {!closed && <ul className="space-y-2.5">{g.rows.map((l) => renderRow(l))}</ul>}
-            </section>
-          );
-        })}
+      <div className="mb-2 flex items-center justify-between gap-2 text-[12.5px] text-slate-500">
+        <label className="inline-flex items-center gap-2">
+          <input type="checkbox" checked={selected.size === rows.length} onChange={() => setSelected(selected.size === rows.length ? new Set() : new Set(rows.map((r) => r.id)))} className="h-4 w-4" />
+          Select all {rows.length}
+        </label>
+        <span className="hidden items-center gap-3 lg:inline-flex">
+          <span className="text-slate-400">J / K or arrows to move</span>
+          <button type="button" onClick={toggleWide} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[12px] hover:bg-slate-50 dark:border-slate-700" title="Hide the role details column to get more room">
+            {wide ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />} {wide ? "Show role details" : "More room"}
+          </button>
+        </span>
       </div>
 
-      {confirmRow && (
-        <ConfirmDetailsModal
-          mode={confirmMode}
-          linkId={confirmRow.id}
-          mandateId={mandateId}
-          candidateId={confirmRow.candidate.id}
-          candidateName={confirmRow.candidate.full_name}
-          roleCluster={(mandateContext.role_cluster as string | null | undefined) ?? null}
-          mandateContext={mandateContext}
-          blockers={readiness[confirmRow.id] ?? []}
-          onRecheck={() => refreshReadiness([confirmRow.id])}
-          onShare={() => shortlist(confirmRow)}
-          onClose={() => setConfirmRow(null)}
-        />
-      )}
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(310px,380px)_minmax(0,1fr)]">
+        <div className={`${mobileOpen ? "hidden lg:block" : ""} overflow-hidden rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
+          {grouped.map((g) => {
+            const closed = isCollapsed(g.key);
+            return (
+              <section key={g.key}>
+                {showHeaders && (
+                  <button type="button" onClick={() => flipGroup(g.key)} aria-expanded={!closed} className="sticky top-0 z-[1] flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-900">
+                    <span>{g.label}</span>
+                    <span className="inline-flex items-center gap-1">{g.rows.length} {closed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}</span>
+                  </button>
+                )}
+                {!closed && <ul>{g.rows.map((l) => renderRow(l, activeRow?.id ?? null))}</ul>}
+              </section>
+            );
+          })}
+        </div>
+
+        <div className={`${mobileOpen ? "" : "hidden lg:block"} rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-3 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
+          {activeRow ? renderPane(activeRow) : <p className="p-10 text-center text-sm text-slate-400">Pick someone from the list.</p>}
+        </div>
+      </div>
+
       {rejectRow && (
         <MandateRejectModal
           candidateName={rejectRow.candidate.full_name}

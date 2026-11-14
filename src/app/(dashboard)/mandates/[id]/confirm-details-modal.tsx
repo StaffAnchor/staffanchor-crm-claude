@@ -16,36 +16,20 @@ import MandateScreeningPanel, { type MandateScreeningContext, type ScreeningCand
 const FIXABLE_HERE = new Set(["Expected fixed CTC", "Notice period", "Open to relocation", "Work mode"]);
 const CONFIRMATION = "Recruiter confirmation of these details (use Call companion)";
 
-export default function ConfirmDetailsModal({
-  mode = "share",
-  roleCluster = null,
-  mandateContext,
-  linkId,
-  mandateId,
-  candidateId,
-  candidateName,
-  blockers,
-  onRecheck,
-  onShare,
-  onClose,
-}: {
-  /** details: opened any time from the pipeline row, to fill in the call and details; share: opened because sharing was blocked. */
-  mode?: "share" | "details";
+type PanelProps = {
   roleCluster?: string | null;
   mandateContext?: MandateScreeningContext;
   linkId: string;
   mandateId: string;
   candidateId: string;
-  candidateName: string;
   blockers: string[];
   onRecheck: () => Promise<void>;
-  onShare: () => Promise<boolean>;
-  onClose: () => void;
-}) {
+};
+
+/** Everything needed to fill in a call and the details for one person on one role. Used inside the window and inline in the split view. */
+export function ConfirmDetailsPanel({ roleCluster = null, mandateContext, linkId, mandateId, candidateId, blockers, onRecheck }: PanelProps) {
   const supabase = createClient();
   const [candidate, setCandidate] = useState<Record<string, unknown> | null>(null);
-  const [recruiterName, setRecruiterName] = useState("Recruiter");
-  const [sharing, setSharing] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
 
   async function loadCandidate() {
@@ -58,13 +42,6 @@ export default function ConfirmDetailsModal({
     (async () => {
       const { data } = await supabase.from("candidates").select("*").eq("id", candidateId).single();
       if (!cancelled) setCandidate(data as Record<string, unknown> | null);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: prof } = await supabase.from("profiles").select("full_name, email").eq("id", user.id).single();
-        if (!cancelled) setRecruiterName(prof?.full_name ?? prof?.email ?? "Recruiter");
-      }
     })();
     return () => {
       cancelled = true;
@@ -78,23 +55,7 @@ export default function ConfirmDetailsModal({
   const needsProfileEdit = blockers.filter((b) => !fixableHere(b));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4" onClick={onClose}>
-      <div className="mt-8 w-full max-w-3xl rounded-xl bg-white dark:bg-slate-900 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-5 py-4">
-          <div>
-            <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{mode === "details" ? "Call and details" : "Confirm before sharing"}</h2>
-            <p className="text-[12.5px] text-slate-500">
-              {mode === "details"
-                ? `${candidateName}: fill this in whenever you speak to them, before or after sharing. The client only sees the profile once everything is complete.`
-                : `${candidateName}: the client will see all of this, so a recruiter confirms it first.`}
-            </p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="px-5 py-4">
+    <div>
           {ready ? (
             <p className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[13px] font-medium text-emerald-700">
               <Check className="h-4 w-4" /> Everything is confirmed. This candidate is ready to share.
@@ -154,8 +115,6 @@ export default function ConfirmDetailsModal({
               />
             </div>
           )}
-        </div>
-
         {candidate && mandateContext && (
           <MandateScreeningPanel
             open={questionsOpen}
@@ -168,6 +127,59 @@ export default function ConfirmDetailsModal({
             }}
           />
         )}
+
+    </div>
+  );
+}
+
+export default function ConfirmDetailsModal({
+  mode = "share",
+  roleCluster = null,
+  mandateContext,
+  linkId,
+  mandateId,
+  candidateId,
+  candidateName,
+  blockers,
+  onRecheck,
+  onShare,
+  onClose,
+}: {
+  /** details: opened any time from the pipeline row, to fill in the call and details; share: opened because sharing was blocked. */
+  mode?: "share" | "details";
+  roleCluster?: string | null;
+  mandateContext?: MandateScreeningContext;
+  linkId: string;
+  mandateId: string;
+  candidateId: string;
+  candidateName: string;
+  blockers: string[];
+  onRecheck: () => Promise<void>;
+  onShare: () => Promise<boolean>;
+  onClose: () => void;
+}) {
+  const [sharing, setSharing] = useState(false);
+  const ready = blockers.length === 0;
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4" onClick={onClose}>
+      <div className="mt-8 w-full max-w-3xl rounded-xl bg-white dark:bg-slate-900 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+          <div>
+            <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{mode === "details" ? "Call and details" : "Confirm before sharing"}</h2>
+            <p className="text-[12.5px] text-slate-500">
+              {mode === "details"
+                ? `${candidateName}: fill this in whenever you speak to them, before or after sharing. The client only sees the profile once everything is complete.`
+                : `${candidateName}: the client will see all of this, so a recruiter confirms it first.`}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4">
+          <ConfirmDetailsPanel roleCluster={roleCluster} mandateContext={mandateContext} linkId={linkId} mandateId={mandateId} candidateId={candidateId} blockers={blockers} onRecheck={onRecheck} />
+        </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 px-5 py-3">
           <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-100">
