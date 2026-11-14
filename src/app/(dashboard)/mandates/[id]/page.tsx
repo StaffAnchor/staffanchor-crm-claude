@@ -532,6 +532,7 @@ export default async function MandateDetailPage({
                 created_at: l.created_at,
                 origin: originOf(l as never).origin,
                 origin_label: originOf(l as never).label,
+                ...(((cand as unknown as { created_by_user?: string | null }).created_by_user && staffName.get((cand as unknown as { created_by_user: string }).created_by_user)?.name) ? { uploader_name: staffName.get((cand as unknown as { created_by_user: string }).created_by_user)!.name } : {}),
                 call_paid_at: l.call_paid_at ?? null,
                 call_due_at: l.call_due_at ?? null,
                 match_score: l.match_score ?? null,

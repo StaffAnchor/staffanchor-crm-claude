@@ -179,7 +179,7 @@ export default function MandateCandidatesCards({
     const canAct = !["rejected", "pulled_back", "placed"].includes(l.stage);
     const edu = l.education.filter((e) => e.degree || e.institution).slice(0, 2);
     const isOpen = expanded.has(l.id);
-    const src = leadSourceOf(c, l.origin, l.origin_label);
+    const src = leadSourceOf(c, l.origin, l.origin_label, l.uploader_name);
     const memory = readMemory(c.segment_data);
     const ds = detailsState(l);
     const fit = recOf(l);

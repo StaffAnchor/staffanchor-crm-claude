@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Mic, Square } from "lucide-react";
+import { recordingToWav } from "@/lib/voice-wav";
 import WhatsAppMenu from "@/components/whatsapp-menu";
 import { candidateTemplates } from "@/lib/whatsapp-link";
 import { useMyFirstName } from "@/lib/use-my-name";
@@ -201,6 +202,65 @@ export default function CallRecordForm({
   const [readBack, setReadBack] = useState<ReadBack | null>(null);
   const [reading, setReading] = useState(false);
   const MIN_NOTE = 30;
+  // Voice note: speak the note instead of typing it; it is turned into text in the box, which you can still edit.
+  const [voice, setVoice] = useState<"idle" | "recording" | "converting">("idle");
+  const [voiceSecs, setVoiceSecs] = useState(0);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const MAX_VOICE_SECS = 110;
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    },
+    []
+  );
+  async function startVoice() {
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      mr.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (timerRef.current) clearInterval(timerRef.current);
+        setVoice("converting");
+        try {
+          const wav = await recordingToWav(new Blob(chunks, { type: mr.mimeType || "audio/webm" }));
+          const fd = new FormData();
+          fd.append("audio", wav, "note.wav");
+          const res = await fetch("/api/calls/transcribe", { method: "POST", body: fd });
+          const d = await res.json().catch(() => ({}));
+          if (res.ok && d.text) {
+            setNote((n) => (n.trim() ? `${n.trim()}\n${d.text}` : d.text));
+            setReadBack(null);
+          } else setError(d.error ?? "Couldn't turn that voice note into text. Type it instead.");
+        } catch {
+          setError("Couldn't turn that voice note into text. Type it instead.");
+        } finally {
+          setVoice("idle");
+        }
+      };
+      recRef.current = mr;
+      mr.start();
+      setVoiceSecs(0);
+      setVoice("recording");
+      timerRef.current = setInterval(() => {
+        setVoiceSecs((s) => {
+          if (s + 1 >= MAX_VOICE_SECS && recRef.current?.state === "recording") recRef.current.stop();
+          return s + 1;
+        });
+      }, 1000);
+    } catch {
+      setError("Allow the microphone in your browser to record a voice note.");
+    }
+  }
+  function stopVoice() {
+    if (recRef.current?.state === "recording") recRef.current.stop();
+  }
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -651,6 +711,21 @@ export default function CallRecordForm({
             placeholder="e.g. Sold ERP to mid-market, closes 25-30L deals, beat quota 3 years. Sharp, great communicator. Leads a team of 6. Worried he moved twice in 2 years."
             className={select}
           />
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {voice === "idle" && (
+              <button type="button" onClick={() => void startVoice()} className="inline-flex items-center gap-1.5 rounded-lg border border-teal-600 px-2.5 py-1 text-[12.5px] font-semibold text-teal-700 hover:bg-teal-50">
+                <Mic className="h-3.5 w-3.5" /> Speak your note
+              </button>
+            )}
+            {voice === "recording" && (
+              <button type="button" onClick={stopVoice} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-400 bg-rose-50 px-2.5 py-1 text-[12.5px] font-semibold text-rose-700">
+                <Square className="h-3.5 w-3.5 fill-current" /> Stop <span className="tabular-nums">{Math.floor(voiceSecs / 60)}:{String(voiceSecs % 60).padStart(2, "0")}</span>
+                <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" aria-hidden />
+              </button>
+            )}
+            {voice === "converting" && <span className="text-[12.5px] text-slate-500">Turning your voice into text…</span>}
+            <span className="text-[11.5px] text-slate-400">Hindi, English or both. It goes into the box below and you can edit it. The recording is not kept.</span>
+          </div>
           <p className="mt-1 text-[11.5px] text-slate-400">Before saving, you see what the system will remember. It fills any detail still blank, keeps what they want and will not accept for future roles, and matches strong people to open roles.</p>
           {readBack && (
             <div className="mt-2 space-y-1 rounded-lg border border-teal-200 bg-teal-50/60 p-3 text-[12.5px] text-slate-700 dark:border-teal-900 dark:bg-teal-950/20 dark:text-slate-200">

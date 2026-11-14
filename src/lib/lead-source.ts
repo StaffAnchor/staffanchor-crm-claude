@@ -9,13 +9,13 @@ const ACQ: Record<string, string> = {
 
 export type LeadSource = { label: string; detail: string | null };
 
-export function leadSourceOf(c: Cand, origin?: string | null, originLabel?: string | null): LeadSource {
+export function leadSourceOf(c: Cand, origin?: string | null, originLabel?: string | null, uploaderName?: string | null): LeadSource {
   const channel = c.source_channel && c.source_channel !== "Other" ? c.source_channel : null;
   const acq = c.acquisition_source ? ACQ[c.acquisition_source.toLowerCase()] ?? c.acquisition_source : null;
   const by = (c.created_by ?? "").toLowerCase();
   const src = (c.source ?? "").toLowerCase();
 
-  if (by === "bulk_resume_upload") return { label: "Uploaded by recruiter", detail: channel };
+  if (by === "bulk_resume_upload") return { label: uploaderName ? `Uploaded by ${uploaderName}` : "Uploaded by recruiter", detail: channel };
   if (by === "naukri_export" || src === "naukri_resdex_export") return { label: "Naukri export", detail: null };
   if (by === "zoho_recruit_import" || src === "zoho_recruit_import") return { label: "Imported from Zoho", detail: null };
   if (by === "extension" || by === "linkedin_extension") return { label: "Saved from LinkedIn", detail: null };

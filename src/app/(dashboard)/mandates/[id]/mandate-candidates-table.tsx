@@ -99,6 +99,8 @@ export type MandateCandidateRow = {
   // AI suggestion, a vendor, or the older pipeline whose origin was never recorded).
   origin: "applied" | "team" | "ai" | "vendor" | "earlier";
   origin_label: string;
+  // Who uploaded the profile, when a recruiter did (bulk upload).
+  uploader_name?: string;
   screened: boolean;
   // Set when the candidate paid ₹199 on jobs.staffanchor.com for a recruiter call on this
   // application; the call is promised by call_due_at.
