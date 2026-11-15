@@ -15,6 +15,7 @@ import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import AiMatchesPanel from "./ai-matches-panel";
 import BestMatchesPanel from "./best-matches-panel";
+import VoiceAgentTab from "./voice-agent-tab";
 import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
 import RolePlaybook from "./role-playbook";
@@ -39,7 +40,7 @@ import QuickApplyFunnelPanel from "./quick-apply-funnel-panel";
 import LinkedInSourcedPanel, { type SourcedProfile } from "./linkedin-sourced-panel";
 import FeeSchedulePanel from "./fee-schedule-panel";
 import ApplicationQuestionsPanel, { type ApplicationQuestion } from "./application-questions-panel";
-import { Sparkles, AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2, Send } from "lucide-react";
+import { Phone, Sparkles, AlertTriangle, CalendarDays, Users, ClipboardCheck, ShieldAlert, ListChecks, Share2, ClipboardList, Link2, Send } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
@@ -654,6 +655,17 @@ export default async function MandateDetailPage({
             icon: <Sparkles className="h-3.5 w-3.5" />,
             badge: <SmartBadge />,
             content: <SmartSearchTab />,
+          },
+          {
+            key: "voice",
+            tone: "violet",
+            label: "Voice agent",
+            icon: <Phone className="h-3.5 w-3.5" />,
+            content: (
+              <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}>
+                <VoiceAgentTab mandateId={id} canApprove={viewerRole === "admin" || viewerRole === "recruiter"} />
+              </Suspense>
+            ),
           },
             {
               key: "intake",
