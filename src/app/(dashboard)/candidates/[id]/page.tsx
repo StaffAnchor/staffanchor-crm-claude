@@ -15,6 +15,7 @@ import StatusControl from "./status-control";
 import MandateLinksPanel from "./mandate-links-panel";
 import SuggestedRolesPanel from "./suggested-roles-panel";
 import CheckRolesButton from "./check-roles-button";
+import AddToRoleButton from "./add-to-role-button";
 import { getServiceClient } from "@/lib/cv-facts";
 import { bestRoleFits } from "@/lib/candidate-role-fit";
 import { fillMissingRoleCards } from "@/lib/role-card";
@@ -856,6 +857,7 @@ export default async function CandidateDetailPage({
             <div className="flex flex-col items-end gap-2 shrink-0">
               <div className="flex items-center gap-2">
                 <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
+                <AddToRoleButton candidateId={candidate.id} candidateName={candidate.full_name} roles={(openMandates ?? []) as never} linkedIds={Array.from(alreadyLinkedMandateIds) as string[]} />
                 <RecommendDialog candidateId={candidate.id} candidateName={candidate.full_name ?? "this candidate"} label="Recommend" />
                 <StatusControl candidateId={candidate.id} currentStatus={candidate.status} />
               </div>
