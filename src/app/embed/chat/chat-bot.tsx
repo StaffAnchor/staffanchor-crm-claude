@@ -133,7 +133,8 @@ export default function ChatBot({ site }: { site: "main" | "jobs" }) {
     if (ask && intent) {
       const r = runRules(m);
       const e: Entities = { ...ent, ...r.entities };
-      if (ask === "role" && !e.role) e.role = m.replace(/[^\p{L}\p{N}\s/&+.,-]/gu, "").slice(0, 60).trim() || undefined;
+      // Keep the visitor's own words for the role, so we repeat back what they said, not our label for it.
+      if (ask === "role") e.role = m.replace(/[^\p{L}\p{N}\s/&+.,-]/gu, "").slice(0, 60).trim() || e.role;
       if (ask === "city" && !e.city) e.city = /^(remote|anywhere|any)$/i.test(m) ? "Remote" : m.replace(/[^\p{L}\s.-]/gu, "").slice(0, 40).trim() || undefined;
       // If they changed topic ("actually I want to hire"), read it properly instead.
       if (r.intent && r.intent !== intent && r.confidence >= 0.8) return classify(m);
@@ -172,7 +173,14 @@ export default function ChatBot({ site }: { site: "main" | "jobs" }) {
   }
 
   const showOptions = !intent && !busy;
-  const waText = `Hi StaffAnchor, ${first || "I would like some help"}`;
+  // The WhatsApp message carries what the visitor told us, so the recruiter starts with the full picture.
+  const where = ent.city ? ` in ${ent.city}` : "";
+  const waText =
+    intent === "employer" && ent.role
+      ? `Hi StaffAnchor, I am hiring ${ent.headcount ? `${ent.headcount} ` : "a "}${ent.role}${where}.`
+      : intent === "jobseeker" && ent.role
+      ? `Hi StaffAnchor, I am looking for a ${ent.role} role${where}.`
+      : `Hi StaffAnchor, ${first || "I would like some help"}`;
 
   return (
     <div className="flex h-screen flex-col bg-white text-slate-900">
