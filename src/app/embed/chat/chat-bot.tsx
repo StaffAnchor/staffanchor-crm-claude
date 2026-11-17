@@ -35,7 +35,10 @@ async function call(payload: Record<string, unknown>) {
   return { ok: res.ok, data };
 }
 
-const CHIP_WA = "inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-emerald-700";
+// WhatsApp is an alternative, never the loudest thing: an outlined chip next to the other next steps, and only a
+// quiet text link while a question is waiting for its answer. The reply and the dark primary step lead.
+const CHIP_WA = "inline-flex items-center gap-1.5 rounded-full border border-emerald-600/40 bg-white px-3 py-1 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50";
+const LINK_WA = "inline-flex items-center gap-1.5 text-[12.5px] text-slate-500 hover:text-emerald-700";
 
 const WA_ICON = "M4 20l1.3-3.9A8 8 0 1 1 8.2 19zM9 10c0 3 2 5 5 5l1-1.5-2-1-1 .5c-.8-.4-1.4-1-1.8-1.8l.5-1-1-2z";
 
@@ -262,8 +265,8 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
         )}
 
         {intent && ask && (
-          <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className={CHIP_WA}>
-            <WaIcon /> {waLabel}
+          <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className={LINK_WA}>
+            <WaIcon /> Prefer WhatsApp? {intent === "employer" ? "Talk to our hiring team" : "Chat with a recruiter"}
           </a>
         )}
 
