@@ -27,13 +27,25 @@ const greeting = (job?: string) =>
     ? `Hi, I am the StaffAnchor assistant. Looking at "${job}"? Ask me about it, or tell us what you are looking for.`
     : "Hi, I am the StaffAnchor assistant. Tell us what you are looking for, or pick one below.";
 
+const FEES = /\b(fees?|pricing|prices?|cost|costs|charges?|commission|how much|kitna)\b/i;
+
 async function call(payload: Record<string, unknown>) {
   const res = await fetch("/api/public/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   const data = await res.json().catch(() => ({}));
   return { ok: res.ok, data };
 }
 
+const CHIP_WA = "inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-emerald-700";
+
 const WA_ICON = "M4 20l1.3-3.9A8 8 0 1 1 8.2 19zM9 10c0 3 2 5 5 5l1-1.5-2-1-1 .5c-.8-.4-1.4-1-1.8-1.8l.5-1-1-2z";
+
+function WaIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={WA_ICON} />
+    </svg>
+  );
+}
 
 export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: string }) {
   const [msgs, setMsgs] = useState<Msg[]>([{ from: "bot", text: greeting(job) }]);
@@ -48,6 +60,8 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
   const [contact, setContact] = useState("");
   const [contactDone, setContactDone] = useState(false);
   const [limited, setLimited] = useState(false);
+  const [unsure, setUnsure] = useState(false);
+  const [waOnly, setWaOnly] = useState<string | null>(null); // a plain-answer reply that ends with just a WhatsApp chip
   const startedAt = useRef(0);
   const end = useRef<HTMLDivElement | null>(null);
 
@@ -114,12 +128,15 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
       proceed(r.intent, r.entities, message);
     } else {
       setEnt((prev) => ({ ...prev, ...r.entities }));
+      setUnsure(true);
       say("I want to point you the right way. Which of these is closest?");
     }
   }
 
   function choose(i: Intent, label: string) {
     if (busy) return;
+    setUnsure(false);
+    setSteps([]);
     me(label);
     if (!first) setFirst(label);
     void call({ action: "correct", message: label, site, intent: i, entities: ent });
@@ -132,6 +149,16 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
     setText("");
     me(m);
     if (!first) setFirst(m);
+    // A new message starts a new turn: the previous answer's choices go, so the newest reply is what you see.
+    setSteps([]);
+    setWaOnly(null);
+    setUnsure(false);
+    // Fees and prices are never guessed at; a recruiter answers them.
+    if (!ask && FEES.test(m)) {
+      say("Our fees depend on the role and how we work together, so a recruiter will share them directly rather than me guessing. WhatsApp is the quickest way to ask.");
+      setWaOnly(`Hi StaffAnchor, ${m}`);
+      return;
+    }
     // An answer to a follow-up question is read locally.
     if (ask && intent) {
       const r = runRules(m);
@@ -173,13 +200,15 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
     setContact("");
     setContactDone(false);
     setLimited(false);
+    setUnsure(false);
+    setWaOnly(null);
   }
 
-  const showOptions = !intent && !busy;
+  const showOptions = (!intent || unsure) && !busy;
   // The WhatsApp message carries what the visitor told us, so the recruiter starts with the full picture.
   const where = ent.city ? ` in ${ent.city}` : "";
   const waText =
-    intent === "employer" && ent.role
+    waOnly ? waOnly : intent === "employer" && ent.role
       ? `Hi StaffAnchor, I am hiring ${ent.headcount ? `${ent.headcount} ` : /^[aeiou]/i.test(ent.role) ? "an " : "a "}${ent.role}${where}.`
       : intent === "jobseeker" && ent.role
       ? `Hi StaffAnchor, I am looking for ${/^[aeiou]/i.test(ent.role) ? "an" : "a"} ${ent.role} role${where}.`
@@ -216,15 +245,16 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {msgs.map((m, i) => (
           <div key={i} className={`flex ${m.from === "me" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[14px] leading-snug ${m.from === "me" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-800"}`}>{m.text}</div>
+            <div className={`max-w-[90%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15.5px] leading-relaxed ${m.from === "me" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"}`}>{m.text}</div>
           </div>
         ))}
         {busy && <div className="text-[13px] text-slate-400">Reading…</div>}
 
+        {/* Choices are small chips under the reply: the reply is what matters, these are shortcuts. */}
         {showOptions && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {(site === "jobs" ? [OPTIONS[0], OPTIONS[4], OPTIONS[1], OPTIONS[2], OPTIONS[3]] : OPTIONS).map((o) => (
-              <button key={o.intent} type="button" onClick={() => choose(o.intent, o.label)} className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[13.5px] text-slate-800 hover:bg-slate-50">
+              <button key={o.intent} type="button" onClick={() => choose(o.intent, o.label)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] text-slate-700 hover:bg-slate-50">
                 {o.label}
               </button>
             ))}
@@ -232,35 +262,37 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
         )}
 
         {intent && ask && (
-          <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-emerald-700 hover:underline">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d={WA_ICON} />
-            </svg>
-            Prefer WhatsApp? {waLabel}
+          <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className={CHIP_WA}>
+            <WaIcon /> {waLabel}
+          </a>
+        )}
+
+        {waOnly && (
+          <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className={CHIP_WA}>
+            <WaIcon /> {waLabel}
           </a>
         )}
 
         {steps.length > 0 && !ask && (
           <div className="space-y-2">
-            {steps.slice(0, 3).map((s) => (
-              <a
-                key={s.href}
-                href={s.href.startsWith("https://wa.me") ? whatsappEntryLink(waText) : s.href}
-                onClick={s.href.startsWith("https://wa.me") ? waClicked : undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`block rounded-xl border px-3.5 py-2.5 text-[13.5px] ${s.primary ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"}`}
-              >
-                <div className="font-semibold">{s.label}</div>
-                <div className={`text-[12.5px] ${s.primary ? "text-slate-200" : "text-slate-500"}`}>{s.desc}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {steps.slice(0, 3).map((st) => (
+                <a
+                  key={st.href}
+                  href={st.href.startsWith("https://wa.me") ? whatsappEntryLink(waText) : st.href}
+                  onClick={st.href.startsWith("https://wa.me") ? waClicked : undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={st.desc}
+                  className={`rounded-full border px-3 py-1 text-[12.5px] font-medium ${st.primary ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-700" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+                >
+                  {st.label}
+                </a>
+              ))}
+              <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className={CHIP_WA}>
+                <WaIcon /> {waLabel}
               </a>
-            ))}
-            <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-emerald-700">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d={WA_ICON} />
-              </svg>
-              {waLabel}
-            </a>
+            </div>
             {intent === "employer" && !contactDone && (
               <form
                 className="flex gap-2"
@@ -269,8 +301,8 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
                   void leaveContact();
                 }}
               >
-                <input value={contact} onChange={(e) => setContact(e.target.value.slice(0, 80))} placeholder="Work email or mobile" className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-[13.5px] focus:border-slate-900 focus:outline-none" />
-                <button type="submit" disabled={!contact.trim()} className="rounded-xl border border-slate-900 px-3.5 py-2 text-[13.5px] font-semibold disabled:opacity-40">
+                <input value={contact} onChange={(e) => setContact(e.target.value.slice(0, 80))} placeholder="Work email or mobile, and we call you" className="min-w-0 flex-1 rounded-full border border-slate-300 px-3.5 py-1.5 text-[13px] focus:border-slate-900 focus:outline-none" />
+                <button type="submit" disabled={!contact.trim()} className="rounded-full border border-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold disabled:opacity-40">
                   Call me
                 </button>
               </form>
