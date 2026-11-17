@@ -133,16 +133,18 @@ export function runRules(text: string): RuleResult {
 }
 
 /** One sentence saying what we understood, built only from structured parts, never free text. */
+const aOrAn = (w: string) => (/^[aeiou]/i.test(w) ? "an" : "a");
+
 export function understoodSentence(intent: Intent, e: Entities): string {
   const where = e.city ? ` in ${e.city}` : "";
   const what = e.role ? `${e.role}` : "";
   switch (intent) {
     case "employer": {
-      const who = e.headcount ? ` ${e.headcount} ${what || "people"}` : what ? ` a ${what}` : "";
+      const who = e.headcount ? ` ${e.headcount} ${what || "people"}` : what ? ` ${aOrAn(what)} ${what}` : "";
       return `You are hiring${who}${where}${e.urgent ? ", and it is urgent" : ""}.`;
     }
     case "jobseeker":
-      return `You are looking for ${what ? `a ${what} role` : "a new role"}${where}${e.experienceYears !== undefined ? ` with ${e.experienceYears} years of experience` : ""}.`;
+      return `You are looking for ${what ? `${aOrAn(what)} ${what} role` : "a new role"}${where}${e.experienceYears !== undefined ? ` with ${e.experienceYears} years of experience` : ""}.`;
     case "referrer":
       return "You would like to refer candidates or partner with us.";
     case "vendor":

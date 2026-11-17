@@ -177,9 +177,9 @@ export default function ChatBot({ site }: { site: "main" | "jobs" }) {
   const where = ent.city ? ` in ${ent.city}` : "";
   const waText =
     intent === "employer" && ent.role
-      ? `Hi StaffAnchor, I am hiring ${ent.headcount ? `${ent.headcount} ` : "a "}${ent.role}${where}.`
+      ? `Hi StaffAnchor, I am hiring ${ent.headcount ? `${ent.headcount} ` : /^[aeiou]/i.test(ent.role) ? "an " : "a "}${ent.role}${where}.`
       : intent === "jobseeker" && ent.role
-      ? `Hi StaffAnchor, I am looking for a ${ent.role} role${where}.`
+      ? `Hi StaffAnchor, I am looking for ${/^[aeiou]/i.test(ent.role) ? "an" : "a"} ${ent.role} role${where}.`
       : `Hi StaffAnchor, ${first || "I would like some help"}`;
 
   return (
