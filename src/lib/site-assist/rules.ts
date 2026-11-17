@@ -44,6 +44,8 @@ const ROLES: [RegExp, string][] = [
   [/\b(customer success|csm)\b/i, "Customer Success"],
   [/\bpre-?sales\b/i, "Pre-sales"],
   [/\b(saas|software|tech) sales\b/i, "SaaS sales"],
+  [/\benterprise sales\b/i, "Enterprise sales"],
+  [/\b(field|channel|corporate|b2b|b2c|retail|key account) sales\b/i, "Sales"],
   [/\b(marketing|hr|finance|operations|product|engineer|developer|designer|accountant)\b/i, ""],
 ];
 
