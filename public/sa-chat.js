@@ -1,9 +1,10 @@
 /* StaffAnchor chat launcher. One line on a page:
    <script src="https://clients.staffanchor.com/sa-chat.js" data-site="main" async></script>
    data-site is "main" (staffanchor.com) or "jobs" (jobs.staffanchor.com). Optional data-side="left".
-   It is the site's only floating contact button. On a computer it opens itself once per visit, right as the page
-   appears (the chat is loaded quietly in the background first, so it is ready); on a phone it shows a short
-   invitation instead of covering the page. Optional data-color sets the bubble colour. */
+   It is the site's only floating contact button. It pops up by itself on every landing, computer or phone, right as
+   the page appears (the chat is loaded quietly in the background first, so it is ready). If the visitor closes it,
+   it stays closed for 20 minutes so it never nags. On a phone it is a sheet over the lower part of the screen, so
+   the page stays visible. Optional data-color sets the bubble colour. */
 (function () {
   if (window.__saChat) return;
   window.__saChat = true;
@@ -15,9 +16,12 @@
   var origin = "https://clients.staffanchor.com";
   try { if (s && s.src) origin = new URL(s.src).origin; } catch (e) {}
 
-  var seen = false;
-  try { seen = sessionStorage.getItem("sa_chat_seen") === "1"; } catch (e) {}
-  function markSeen() { seen = true; try { sessionStorage.setItem("sa_chat_seen", "1"); } catch (e) {} }
+  // Closed by the visitor within the last 20 minutes: do not pop up again.
+  var DISMISS_MS = 20 * 60 * 1000;
+  function dismissed() {
+    try { var t = Number(localStorage.getItem("sa_chat_closed") || 0); return t && Date.now() - t < DISMISS_MS; } catch (e) { return false; }
+  }
+  function markDismissed() { try { localStorage.setItem("sa_chat_closed", String(Date.now())); } catch (e) {} }
 
   function mobile() { return window.innerWidth < 520; }
   // On a job page the phone has a sticky "Apply now" bar at the bottom: sit above it.
@@ -29,11 +33,6 @@
   btn.setAttribute("aria-label", "Chat with StaffAnchor");
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
   btn.style.cssText = "position:fixed;bottom:" + bottom() + "px;" + side + ":20px;width:56px;height:56px;border-radius:50%;background:" + color + ";border:3px solid #fff;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:0";
-
-  var tip = document.createElement("div");
-  tip.setAttribute("role", "button");
-  tip.textContent = "Looking for a job or hiring? Chat with us";
-  tip.style.cssText = "position:fixed;bottom:" + (bottom() + 8) + "px;" + side + ":84px;max-width:210px;padding:10px 12px;border-radius:12px;background:#fff;color:#0f172a;font:500 13px/1.3 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:2147483000;display:none;cursor:pointer";
 
   var frame = document.createElement("iframe");
   frame.title = "Chat with StaffAnchor";
@@ -54,20 +53,23 @@
     loaded = true;
   }
   function open() {
-    tip.style.display = "none";
-    markSeen();
     load();
-    if (mobile()) frame.style.cssText += ";top:0;bottom:0;left:0;right:0;width:100%;height:100%;max-height:none;border-radius:0;border:0";
+    // Phone: a sheet over the lower part of the screen, with the page still visible above it.
+    if (mobile()) frame.style.cssText += ";top:auto;bottom:0;left:0;right:0;width:100%;height:78vh;max-height:calc(100vh - 56px);border-radius:16px 16px 0 0;border:0";
     frame.style.display = "block";
     btn.style.display = mobile() ? "none" : "flex";
   }
-  function close() { frame.style.display = "none"; btn.style.display = "flex"; }
+  // fromVisitor: the visitor closed it themselves, so remember that for a while.
+  function close(fromVisitor) {
+    frame.style.display = "none";
+    btn.style.display = "flex";
+    if (fromVisitor) markDismissed();
+  }
 
-  btn.addEventListener("click", function () { frame.style.display === "block" ? close() : open(); });
-  tip.addEventListener("click", open);
+  btn.addEventListener("click", function () { frame.style.display === "block" ? close(true) : open(); });
   window.addEventListener("message", function (e) {
     if (e.origin !== origin || !e.data) return;
-    if (e.data.type === "sa-chat-close") close();
+    if (e.data.type === "sa-chat-close") close(true);
     if (e.data.type === "sa-chat-wa") {
       // Count it in the site's own analytics when it has any, so WhatsApp starts are still measured.
       try { if (window.posthog) window.posthog.capture("whatsapp_entry_click", { source: "site_chat_" + e.data.intent, path: location.pathname }); } catch (err) {}
@@ -77,15 +79,10 @@
   function mount() {
     document.body.appendChild(frame);
     document.body.appendChild(btn);
-    document.body.appendChild(tip);
     load();
-    if (seen) return;
-    // Start by itself, once per visit, right away.
-    setTimeout(function () {
-      if (seen || frame.style.display === "block") return;
-      if (mobile()) { tip.style.display = "block"; setTimeout(function () { tip.style.display = "none"; }, 9000); markSeen(); }
-      else open();
-    }, 400);
+    // Pop up by itself on every landing, unless the visitor closed it a moment ago.
+    if (dismissed()) return;
+    setTimeout(function () { if (frame.style.display !== "block") open(); }, 400);
   }
   if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
 })();
