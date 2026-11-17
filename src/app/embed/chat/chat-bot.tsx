@@ -27,6 +27,12 @@ const greeting = (job?: string) =>
     ? `Hi, I am the StaffAnchor assistant. Looking at "${job}"? Ask me about it, or tell us what you are looking for.`
     : "Hi, I am the StaffAnchor assistant. Tell us what you are looking for, or pick one below.";
 
+// StaffAnchor Edge: paid 1:1 coaching for sales professionals. The wording is the site's own description of it.
+const EDGE = /\b(edge|mock interview|interview prep(?:aration)?|resume writing|cv writing|resume rebuild|job strategy|coaching|resume review)\b/i;
+const EDGE_URL = "https://jobs.staffanchor.com/edge?src=chat";
+const EDGE_REPLY = "StaffAnchor Edge is 1:1 coaching for sales and leadership professionals: interview preparation with job strategy, and resume writing, or both together. Have a look at what is included, or ask a recruiter about it.";
+const EDGE_WA = "Hi StaffAnchor, I'd like to know more about StaffAnchor Edge.";
+
 const FEES = /\b(fees?|pricing|prices?|cost|costs|charges?|commission|how much|kitna)\b/i;
 
 async function call(payload: Record<string, unknown>) {
@@ -136,6 +142,21 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
     }
   }
 
+  // chipLabel is given when the visitor tapped the Edge chip; typed messages are already on screen.
+  function showEdge(chipLabel?: string) {
+    setIntent("jobseeker");
+    setUnsure(false);
+    setAsk(null);
+    if (chipLabel) {
+      me(chipLabel);
+      if (!first) setFirst(chipLabel);
+    }
+    say(EDGE_REPLY);
+    setSteps([{ label: "Explore Edge", desc: "What is included and how it works.", href: EDGE_URL, icon: "interview", primary: true }]);
+    setWaOnly(EDGE_WA);
+    void call({ action: "confirm", message: chipLabel ?? first ?? "edge", site, intent: "jobseeker", entities: ent });
+  }
+
   function choose(i: Intent, label: string) {
     if (busy) return;
     setUnsure(false);
@@ -156,6 +177,11 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
     setSteps([]);
     setWaOnly(null);
     setUnsure(false);
+    // Questions about Edge coaching get its own reply and link, no AI needed.
+    if (!ask && EDGE.test(m) && !FEES.test(m)) {
+      showEdge();
+      return;
+    }
     // Fees and prices are never guessed at; a recruiter answers them.
     if (!ask && FEES.test(m)) {
       say("Our fees depend on the role and how we work together, so a recruiter will share them directly rather than me guessing. WhatsApp is the quickest way to ask.");
@@ -256,10 +282,18 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
         {/* Choices are small chips under the reply: the reply is what matters, these are shortcuts. */}
         {showOptions && (
           <div className="flex flex-wrap gap-1.5">
-            {(site === "jobs" ? [OPTIONS[0], OPTIONS[4], OPTIONS[1], OPTIONS[2], OPTIONS[3]] : OPTIONS).map((o) => (
-              <button key={o.intent} type="button" onClick={() => choose(o.intent, o.label)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] text-slate-700 hover:bg-slate-50">
-                {o.label}
-              </button>
+            {(site === "jobs" ? [OPTIONS[0], OPTIONS[4], OPTIONS[1], OPTIONS[2], OPTIONS[3]] : OPTIONS).map((o, idx) => (
+              <span key={o.intent} className="contents">
+                <button type="button" onClick={() => choose(o.intent, o.label)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] text-slate-700 hover:bg-slate-50">
+                  {o.label}
+                </button>
+                {/* On the jobs site, Edge sits right beside the first choice: most visitors there are job seekers. */}
+                {site === "jobs" && idx === 0 && !intent && (
+                  <button type="button" onClick={() => showEdge("Explore StaffAnchor Edge")} className="rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-[12.5px] font-medium text-indigo-700 hover:bg-indigo-100">
+                    Explore StaffAnchor Edge
+                  </button>
+                )}
+              </span>
             ))}
           </div>
         )}
@@ -270,7 +304,7 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
           </a>
         )}
 
-        {waOnly && (
+        {waOnly && steps.length === 0 && (
           <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className={CHIP_WA}>
             <WaIcon /> {waLabel}
           </a>

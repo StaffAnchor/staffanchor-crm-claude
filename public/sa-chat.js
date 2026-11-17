@@ -4,7 +4,8 @@
    It is the site's only floating contact button. It pops up by itself on every landing, computer or phone, right as
    the page appears (the chat is loaded quietly in the background first, so it is ready). If the visitor closes it,
    it stays closed for 20 minutes so it never nags. On a phone it is a sheet over the lower part of the screen, so
-   the page stays visible. Optional data-color sets the bubble colour. */
+   the page stays visible. On jobs.staffanchor.com (computer) it greets with a small card above the bubble instead of
+   opening the panel, so the page's own Edge section stays visible. Optional data-color sets the bubble colour. */
 (function () {
   if (window.__saChat) return;
   window.__saChat = true;
@@ -34,6 +35,20 @@
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
   btn.style.cssText = "position:fixed;bottom:" + bottom() + "px;" + side + ":20px;width:56px;height:56px;border-radius:50%;background:" + color + ";border:3px solid #fff;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:0";
 
+  // A small greeting card above the bubble, for pages where the full panel would cover something important.
+  var tip = document.createElement("div");
+  tip.style.cssText = "position:fixed;bottom:" + (bottom() + 68) + "px;" + side + ":20px;width:260px;padding:12px 30px 12px 14px;border-radius:14px;background:#fff;color:#0f172a;font:500 14px/1.35 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:2147483000;display:none;cursor:pointer";
+  tip.textContent = "Looking for a sales role, or curious about StaffAnchor Edge? Ask me anything.";
+  var tipX = document.createElement("button");
+  tipX.type = "button"; tipX.setAttribute("aria-label", "Dismiss"); tipX.textContent = "\u00d7";
+  tipX.style.cssText = "position:absolute;top:4px;right:6px;border:0;background:none;color:#64748b;font:20px/1 system-ui,sans-serif;cursor:pointer;padding:2px 6px";
+  tip.appendChild(tipX);
+  var tipTimer = 0;
+  function hideTip() { tip.style.display = "none"; if (tipTimer) { clearTimeout(tipTimer); tipTimer = 0; } }
+  function showTip() { tip.style.display = "block"; tipTimer = setTimeout(hideTip, 15000); }
+  tip.addEventListener("click", function () { open(); });
+  tipX.addEventListener("click", function (e) { e.stopPropagation(); hideTip(); markDismissed(); });
+
   var frame = document.createElement("iframe");
   frame.title = "Chat with StaffAnchor";
   frame.style.cssText = "position:fixed;bottom:" + (bottom() + 68) + "px;" + side + ":20px;width:380px;height:560px;max-height:calc(100vh - " + (bottom() + 88) + "px);border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);background:#fff;z-index:2147483000;display:none";
@@ -53,6 +68,7 @@
     loaded = true;
   }
   function open() {
+    hideTip();
     load();
     // Phone: a sheet over the lower part of the screen, with the page still visible above it.
     if (mobile()) frame.style.cssText += ";top:auto;bottom:0;left:0;right:0;width:100%;height:78vh;max-height:calc(100vh - 56px);border-radius:16px 16px 0 0;border:0";
@@ -79,9 +95,12 @@
   function mount() {
     document.body.appendChild(frame);
     document.body.appendChild(btn);
+    document.body.appendChild(tip);
     load();
     // Pop up by itself on every landing, unless the visitor closed it a moment ago.
     if (dismissed()) return;
+    // Jobs site on a computer: a small card, so the Edge section on the page is not covered.
+    if (site === "jobs" && !mobile()) { setTimeout(function () { if (frame.style.display !== "block") showTip(); }, 400); return; }
     setTimeout(function () { if (frame.style.display !== "block") open(); }, 400);
   }
   if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);

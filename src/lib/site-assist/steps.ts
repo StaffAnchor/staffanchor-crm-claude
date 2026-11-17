@@ -28,6 +28,7 @@ export function stepsFor(intent: Intent, e: Entities, message: string): Step[] {
       return [
         { label: "Create your profile", desc: "About a minute. Upload your CV and we fill it in for you.", href: `${JOBS}/register?${params(e)}`, icon: "profile", primary: true, note: "We match you to roles from this, and you are not asked twice." },
         { label: "See open roles", desc: "Live sales roles, ranked by fit once you have a profile.", href: `${JOBS}/jobs?${params(e)}`, icon: "roles" },
+        { label: "Explore Edge coaching", desc: "1:1 interview preparation, job strategy and resume writing for sales professionals.", href: `${JOBS}/edge?src=assist`, icon: "interview" },
         { label: "Check your resume score", desc: "See how your CV reads to hiring teams, free.", href: `${JOBS}/ats-score`, icon: "score" },
         { label: "Practise an interview", desc: "A mock sales interview with feedback.", href: `${JOBS}/mock-interview`, icon: "interview" },
         { label: "Continue on WhatsApp", desc: "Prefer chat? Send this message to a recruiter.", href: whatsappEntryLink(`Hi StaffAnchor, ${typed}`), icon: "whatsapp" },
