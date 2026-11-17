@@ -45,7 +45,7 @@ export default function LazyCvPreview({ candidateId, name, variant = "compact" }
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
               <p className="truncate pr-4 text-[13px] font-medium text-slate-800 dark:text-slate-200">{name ? `${name} · ` : ""}{file.fileName}</p>
               <div className="flex shrink-0 items-center gap-2">
-                <a href={file.url} download={file.fileName} className="flex items-center gap-1 px-2 py-1 text-[12px] text-slate-600 hover:text-slate-900 dark:text-slate-400">
+                <a href={file.url} download={file.fileName} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 text-[12px] text-slate-600 hover:text-slate-900 dark:text-slate-400">
                   <Download className="h-3.5 w-3.5" /> Download
                 </a>
                 <button type="button" onClick={() => setState("idle")} aria-label="Close" className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">

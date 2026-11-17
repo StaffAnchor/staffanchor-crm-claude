@@ -697,7 +697,7 @@ export default function EditProfileButton({
                   <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{resumeFileName}</p>
                   <a
                     href={resumeSignedUrl!}
-                    download={resumeFileName!}
+                    download={resumeFileName!} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[12px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" /> Download

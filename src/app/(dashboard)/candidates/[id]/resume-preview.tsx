@@ -56,7 +56,7 @@ export default function ResumePreview({
               <div className="flex items-center gap-2 shrink-0">
                 <a
                   href={signedUrl}
-                  download={fileName}
+                  download={fileName} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1 text-[12px] text-slate-600 dark:text-slate-400 hover:text-slate-900 px-2 py-1"
                 >
                   <Download className="w-3.5 h-3.5" /> Download

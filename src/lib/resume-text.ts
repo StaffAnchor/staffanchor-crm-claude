@@ -76,5 +76,15 @@ export async function extractResumeText(buffer: ArrayBuffer, fileName: string): 
       return null;
     }
   }
+  if (/\.doc$/i.test(fileName)) {
+    try {
+      const { default: WordExtractor } = await import("word-extractor");
+      const doc = await new WordExtractor().extract(Buffer.from(buffer));
+      return doc.getBody()?.trim() || null;
+    } catch (err) {
+      console.error("Old Word (.doc) text extraction failed", err);
+      return null;
+    }
+  }
   return null;
 }
