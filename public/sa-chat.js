@@ -1,13 +1,16 @@
 /* StaffAnchor chat launcher. One line on a page:
    <script src="https://clients.staffanchor.com/sa-chat.js" data-site="main" async></script>
    data-site is "main" (staffanchor.com) or "jobs" (jobs.staffanchor.com). Optional data-side="left".
-   It is the site's only floating contact button. On a computer it opens itself once per visit, a few seconds
-   after the page loads; on a phone it shows a short invitation instead of covering the page. */
+   It is the site's only floating contact button. On a computer it opens itself once per visit, right as the page
+   appears (the chat is loaded quietly in the background first, so it is ready); on a phone it shows a short
+   invitation instead of covering the page. Optional data-color sets the bubble colour. */
 (function () {
   if (window.__saChat) return;
   window.__saChat = true;
   var s = document.currentScript;
   var site = (s && s.getAttribute("data-site")) === "jobs" ? "jobs" : "main";
+  var color = (s && s.getAttribute("data-color")) || (site === "jobs" ? "#4C7BFF" : "#4F46E5");
+  if (!/^#[0-9a-fA-F]{3,8}$/.test(color)) color = "#4F46E5";
   var side = (s && s.getAttribute("data-side")) === "left" ? "left" : "right";
   var origin = "https://clients.staffanchor.com";
   try { if (s && s.src) origin = new URL(s.src).origin; } catch (e) {}
@@ -25,7 +28,7 @@
   btn.type = "button";
   btn.setAttribute("aria-label", "Chat with StaffAnchor");
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
-  btn.style.cssText = "position:fixed;bottom:" + bottom() + "px;" + side + ":20px;width:56px;height:56px;border-radius:50%;border:0;background:#0f172a;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:0";
+  btn.style.cssText = "position:fixed;bottom:" + bottom() + "px;" + side + ":20px;width:56px;height:56px;border-radius:50%;background:" + color + ";border:3px solid #fff;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:0";
 
   var tip = document.createElement("div");
   tip.setAttribute("role", "button");
@@ -43,14 +46,17 @@
   }
 
   var loaded = false;
+  // Load the chat page in the background (still hidden) so that opening it shows a finished window, not a blank one.
+  function load() {
+    if (loaded) return;
+    var j = jobTitle();
+    frame.src = origin + "/embed/chat?site=" + site + (j ? "&job=" + encodeURIComponent(j) : "");
+    loaded = true;
+  }
   function open() {
     tip.style.display = "none";
     markSeen();
-    if (!loaded) {
-      var j = jobTitle();
-      frame.src = origin + "/embed/chat?site=" + site + (j ? "&job=" + encodeURIComponent(j) : "");
-      loaded = true;
-    }
+    load();
     if (mobile()) frame.style.cssText += ";top:0;bottom:0;left:0;right:0;width:100%;height:100%;max-height:none;border-radius:0;border:0";
     frame.style.display = "block";
     btn.style.display = mobile() ? "none" : "flex";
@@ -72,13 +78,14 @@
     document.body.appendChild(frame);
     document.body.appendChild(btn);
     document.body.appendChild(tip);
+    load();
     if (seen) return;
-    // Start by itself, once per visit.
+    // Start by itself, once per visit, right away.
     setTimeout(function () {
       if (seen || frame.style.display === "block") return;
       if (mobile()) { tip.style.display = "block"; setTimeout(function () { tip.style.display = "none"; }, 9000); markSeen(); }
       else open();
-    }, 4000);
+    }, 400);
   }
   if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
 })();
