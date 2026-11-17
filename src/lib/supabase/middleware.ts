@@ -105,6 +105,8 @@ export async function updateSession(request: NextRequest) {
     // The website message box: a public page shown in an iframe on the two public sites and the
     // public endpoint behind it, which protects itself (rate limit, size cap, honeypot).
     request.nextUrl.pathname.startsWith("/embed/") ||
+    // The one-line loader for the floating chat on the two public sites.
+    request.nextUrl.pathname === "/sa-chat.js" ||
     // Pro Sessions: public free-time and service lists (payments are taken on jobs.staffanchor.com, which calls the
     // secret-protected /api/internal/pro endpoints).
     request.nextUrl.pathname === "/api/pro/slots" ||

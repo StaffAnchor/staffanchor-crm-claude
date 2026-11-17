@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://staffanchor.com https://www.staffanchor.com https://*.vercel.app http://localhost:3000 http://localhost:3111",
+            value: "frame-ancestors 'self' https://staffanchor.com https://www.staffanchor.com https://jobs.staffanchor.com https://*.vercel.app http://localhost:3000 http://localhost:3111",
           },
         ],
       },

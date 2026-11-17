@@ -30,6 +30,10 @@ const ipHash = (ip: string) => crypto.createHash("sha256").update(`${ip}|${proce
 function originAllowed(req: NextRequest): boolean {
   const o = req.headers.get("origin");
   if (!o) return true;
+  // The chat page calls this from its own host, including Vercel preview builds of the CRM.
+  try {
+    if (new URL(o).host === req.headers.get("host")) return true;
+  } catch {}
   const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://clients.staffanchor.com").replace(/\/$/, "");
   return [base, "https://clients.staffanchor.com", "http://localhost:3000", "http://localhost:3111"].includes(o);
 }
