@@ -24,7 +24,7 @@ const OPTIONS: { intent: Intent; label: string }[] = [
 
 const greeting = (job?: string) =>
   job
-    ? `Hi, I am the StaffAnchor assistant. Interested in the ${job} role? Ask me about it, or tell us what you are looking for.`
+    ? `Hi, I am the StaffAnchor assistant. Looking at "${job}"? Ask me about it, or tell us what you are looking for.`
     : "Hi, I am the StaffAnchor assistant. Tell us what you are looking for, or pick one below.";
 
 async function call(payload: Record<string, unknown>) {
@@ -187,7 +187,7 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
       ? "Hi StaffAnchor, I'd like to hire sales talent. Could someone get in touch?"
       : intent === "jobseeker"
       ? job
-        ? `Hi StaffAnchor, I'm interested in the ${job} role. Could you tell me more?`
+        ? `Hi StaffAnchor, I'm interested in the role "${job}". Could you tell me more?`
         : "Hi StaffAnchor, I'm a sales professional looking for new roles. Could you help?"
       : `Hi StaffAnchor, ${first || "I would like some help"}`;
   const waLabel = intent === "employer" ? "Chat with our hiring team on WhatsApp" : intent === "jobseeker" ? "Chat with a recruiter on WhatsApp" : "Continue on WhatsApp";
