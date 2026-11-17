@@ -22,7 +22,10 @@ const OPTIONS: { intent: Intent; label: string }[] = [
   { intent: "status", label: "Check my application" },
 ];
 
-const GREETING = "Hi, I am the StaffAnchor assistant. Tell us what you are looking for, or pick one below.";
+const greeting = (job?: string) =>
+  job
+    ? `Hi, I am the StaffAnchor assistant. Interested in the ${job} role? Ask me about it, or tell us what you are looking for.`
+    : "Hi, I am the StaffAnchor assistant. Tell us what you are looking for, or pick one below.";
 
 async function call(payload: Record<string, unknown>) {
   const res = await fetch("/api/public/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -32,8 +35,8 @@ async function call(payload: Record<string, unknown>) {
 
 const WA_ICON = "M4 20l1.3-3.9A8 8 0 1 1 8.2 19zM9 10c0 3 2 5 5 5l1-1.5-2-1-1 .5c-.8-.4-1.4-1-1.8-1.8l.5-1-1-2z";
 
-export default function ChatBot({ site }: { site: "main" | "jobs" }) {
-  const [msgs, setMsgs] = useState<Msg[]>([{ from: "bot", text: GREETING }]);
+export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: string }) {
+  const [msgs, setMsgs] = useState<Msg[]>([{ from: "bot", text: greeting(job) }]);
   const [text, setText] = useState("");
   const [hp, setHp] = useState("");
   const [busy, setBusy] = useState(false);
@@ -161,7 +164,7 @@ export default function ChatBot({ site }: { site: "main" | "jobs" }) {
   }
 
   function restart() {
-    setMsgs([{ from: "bot", text: GREETING }]);
+    setMsgs([{ from: "bot", text: greeting(job) }]);
     setIntent(null);
     setEnt({});
     setAsk(null);
@@ -180,7 +183,16 @@ export default function ChatBot({ site }: { site: "main" | "jobs" }) {
       ? `Hi StaffAnchor, I am hiring ${ent.headcount ? `${ent.headcount} ` : /^[aeiou]/i.test(ent.role) ? "an " : "a "}${ent.role}${where}.`
       : intent === "jobseeker" && ent.role
       ? `Hi StaffAnchor, I am looking for ${/^[aeiou]/i.test(ent.role) ? "an" : "a"} ${ent.role} role${where}.`
+      : intent === "employer"
+      ? "Hi StaffAnchor, I'd like to hire sales talent. Could someone get in touch?"
+      : intent === "jobseeker"
+      ? job
+        ? `Hi StaffAnchor, I'm interested in the ${job} role. Could you tell me more?`
+        : "Hi StaffAnchor, I'm a sales professional looking for new roles. Could you help?"
       : `Hi StaffAnchor, ${first || "I would like some help"}`;
+  const waLabel = intent === "employer" ? "Chat with our hiring team on WhatsApp" : intent === "jobseeker" ? "Chat with a recruiter on WhatsApp" : "Continue on WhatsApp";
+  // Tell the page the visitor chose WhatsApp, so the site's own analytics can count it.
+  const waClicked = () => window.parent.postMessage({ type: "sa-chat-wa", intent: intent ?? "other" }, "*");
 
   return (
     <div className="flex h-screen flex-col bg-white text-slate-900">
@@ -219,12 +231,22 @@ export default function ChatBot({ site }: { site: "main" | "jobs" }) {
           </div>
         )}
 
+        {intent && ask && (
+          <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-emerald-700 hover:underline">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d={WA_ICON} />
+            </svg>
+            Prefer WhatsApp? {waLabel}
+          </a>
+        )}
+
         {steps.length > 0 && !ask && (
           <div className="space-y-2">
             {steps.slice(0, 3).map((s) => (
               <a
                 key={s.href}
                 href={s.href.startsWith("https://wa.me") ? whatsappEntryLink(waText) : s.href}
+                onClick={s.href.startsWith("https://wa.me") ? waClicked : undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`block rounded-xl border px-3.5 py-2.5 text-[13.5px] ${s.primary ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"}`}
@@ -233,11 +255,11 @@ export default function ChatBot({ site }: { site: "main" | "jobs" }) {
                 <div className={`text-[12.5px] ${s.primary ? "text-slate-200" : "text-slate-500"}`}>{s.desc}</div>
               </a>
             ))}
-            <a href={whatsappEntryLink(waText)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-emerald-700">
+            <a href={whatsappEntryLink(waText)} onClick={waClicked} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-emerald-700">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d={WA_ICON} />
               </svg>
-              Continue on WhatsApp
+              {waLabel}
             </a>
             {intent === "employer" && !contactDone && (
               <form
