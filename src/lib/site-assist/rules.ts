@@ -133,7 +133,12 @@ export function runRules(text: string): RuleResult {
 }
 
 /** One sentence saying what we understood, built only from structured parts, never free text. */
-const aOrAn = (w: string) => (/^[aeiou]/i.test(w) ? "an" : "a");
+// "an SDR", "an HR manager", "a BDM": acronyms are read letter by letter, so the first letter's sound decides.
+export const aOrAn = (w: string) => {
+  const first = w.trim();
+  const acronym = /^[A-Z]{2,5}\b/.exec(first);
+  return acronym ? (/^[AEFHILMNORSX]/.test(first) ? "an" : "a") : /^[aeiou]/i.test(first) ? "an" : "a";
+};
 
 export function understoodSentence(intent: Intent, e: Entities): string {
   const where = e.city ? ` in ${e.city}` : "";

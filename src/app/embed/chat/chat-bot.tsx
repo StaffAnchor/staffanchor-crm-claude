@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { AssistResult } from "@/lib/site-assist/classify";
-import { runRules, understoodSentence, type Entities, type Intent } from "@/lib/site-assist/rules";
+import { aOrAn, runRules, understoodSentence, type Entities, type Intent } from "@/lib/site-assist/rules";
 import { stepsFor, type Step } from "@/lib/site-assist/steps";
 import { whatsappEntryLink } from "@/lib/whatsapp-entry";
 
@@ -209,9 +209,9 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
   const where = ent.city ? ` in ${ent.city}` : "";
   const waText =
     waOnly ? waOnly : intent === "employer" && ent.role
-      ? `Hi StaffAnchor, I am hiring ${ent.headcount ? `${ent.headcount} ` : /^[aeiou]/i.test(ent.role) ? "an " : "a "}${ent.role}${where}.`
+      ? `Hi StaffAnchor, I am hiring ${ent.headcount ? `${ent.headcount} ` : `${aOrAn(ent.role)} `}${ent.role}${where}.`
       : intent === "jobseeker" && ent.role
-      ? `Hi StaffAnchor, I am looking for ${/^[aeiou]/i.test(ent.role) ? "an" : "a"} ${ent.role} role${where}.`
+      ? `Hi StaffAnchor, I am looking for ${aOrAn(ent.role)} ${ent.role} role${where}.`
       : intent === "employer"
       ? "Hi StaffAnchor, I'd like to hire sales talent. Could someone get in touch?"
       : intent === "jobseeker"
