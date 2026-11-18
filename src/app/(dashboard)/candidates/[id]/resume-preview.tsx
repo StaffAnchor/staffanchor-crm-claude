@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { FileText, X, Download } from "lucide-react";
 import ResumeViewerInline from "./resume-viewer-inline";
 import CvActionsBar from "@/components/cv-actions-bar";
@@ -42,9 +43,10 @@ export default function ResumePreview({
         <FileText className="w-3 h-3" /> {label ?? "Preview resume"}
       </button>
 
-      {open && (
+      {/* Drawn at the top level of the page: inside a scrolling side panel the dark overlay would stop at the panel's edge and the page's sticky bars would show on top of the CV. */}
+      {open && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6"
+          className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-6"
           onClick={() => setOpen(false)}
         >
           <div
@@ -71,7 +73,8 @@ export default function ResumePreview({
               <ResumeViewerInline signedUrl={signedUrl} fileName={fileName} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
