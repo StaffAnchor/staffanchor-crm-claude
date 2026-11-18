@@ -86,6 +86,9 @@
   window.addEventListener("message", function (e) {
     if (e.origin !== origin || !e.data) return;
     if (e.data.type === "sa-chat-close") close(true);
+    if (e.data.type === "sa-chat-channel") {
+      try { if (window.posthog) window.posthog.capture("whatsapp_channel_click", { source: "site_chat_" + site, path: location.pathname }); } catch (err) {}
+    }
     if (e.data.type === "sa-chat-wa") {
       // Count it in the site's own analytics when it has any, so WhatsApp starts are still measured.
       try { if (window.posthog) window.posthog.capture("whatsapp_entry_click", { source: "site_chat_" + e.data.intent, path: location.pathname }); } catch (err) {}

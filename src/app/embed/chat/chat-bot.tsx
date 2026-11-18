@@ -31,6 +31,9 @@ const greeting = (job?: string) =>
 const EDGE = /\b(edge|mock interview|interview prep(?:aration)?|resume writing|cv writing|resume rebuild|job strategy|coaching|resume review)\b/i;
 const EDGE_URL = "https://jobs.staffanchor.com/edge?src=chat";
 const EDGE_REPLY = "StaffAnchor Edge is 1:1 coaching for sales and leadership professionals: interview preparation with job strategy, and resume writing, or both together. Have a look at what is included, or ask a recruiter about it.";
+const CHANNEL = /\b(whatsapp channel|(?:your|the|join|join the) channel|daily jobs?|job alerts?|jobs? updates?|whatsapp group)\b/i;
+const CHANNEL_URL = "https://whatsapp.com/channel/0029VbASKh5KmCPRj6oejX2u";
+const CHANNEL_REPLY = "We post fresh sales roles on our WhatsApp channel, so you see new openings without chatting with anyone. It is free, and other members cannot see who you are. Join it, and apply to anything that fits.";
 const EDGE_WA = "Hi StaffAnchor, I'd like to know more about StaffAnchor Edge.";
 
 const FEES = /\b(fees?|pricing|prices?|cost|costs|charges?|commission|how much|kitna)\b/i;
@@ -157,6 +160,19 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
     void call({ action: "confirm", message: chipLabel ?? first ?? "edge", site, intent: "jobseeker", entities: ent });
   }
 
+  function showChannel() {
+    setIntent("jobseeker");
+    setUnsure(false);
+    setAsk(null);
+    say(CHANNEL_REPLY);
+    setSteps([
+      { label: "Join the channel", desc: "New sales roles, posted as they open.", href: CHANNEL_URL, icon: "roles", primary: true },
+      { label: "See open roles", desc: "Live sales roles on our site.", href: "https://jobs.staffanchor.com/jobs?src=chat", icon: "roles" },
+    ]);
+    setWaOnly(null);
+    void call({ action: "confirm", message: "job alerts channel", site, intent: "jobseeker", entities: ent });
+  }
+
   function choose(i: Intent, label: string) {
     if (busy) return;
     setUnsure(false);
@@ -180,6 +196,11 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
     // Questions about Edge coaching get its own reply and link, no AI needed.
     if (!ask && EDGE.test(m) && !FEES.test(m)) {
       showEdge();
+      return;
+    }
+    // Asking for job alerts or the channel gets the channel link.
+    if (!ask && CHANNEL.test(m) && !FEES.test(m)) {
+      showChannel();
       return;
     }
     // Fees and prices are never guessed at; a recruiter answers them.
@@ -251,6 +272,7 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
   const waLabel = intent === "employer" ? "Chat with our hiring team on WhatsApp" : intent === "jobseeker" ? "Chat with a recruiter on WhatsApp" : "Continue on WhatsApp";
   // Tell the page the visitor chose WhatsApp, so the site's own analytics can count it.
   const waClicked = () => window.parent.postMessage({ type: "sa-chat-wa", intent: intent ?? "other" }, "*");
+  const channelClicked = () => window.parent.postMessage({ type: "sa-chat-channel", intent: intent ?? "other" }, "*");
 
   return (
     <div className="flex h-screen flex-col bg-white text-slate-900">
@@ -317,7 +339,7 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
                 <a
                   key={st.href}
                   href={st.href.startsWith("https://wa.me") ? whatsappEntryLink(waText) : st.href}
-                  onClick={st.href.startsWith("https://wa.me") ? waClicked : undefined}
+                  onClick={st.href.startsWith("https://wa.me") ? waClicked : st.href === CHANNEL_URL ? channelClicked : undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={st.desc}
@@ -330,6 +352,11 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
                 <WaIcon /> {waLabel}
               </a>
             </div>
+            {intent === "jobseeker" && !steps.some((st) => st.href === CHANNEL_URL) && (
+              <a href={CHANNEL_URL} onClick={channelClicked} target="_blank" rel="noopener noreferrer" className={LINK_WA}>
+                <WaIcon /> Want new sales roles daily? Join our WhatsApp channel
+              </a>
+            )}
             {intent === "employer" && !contactDone && (
               <form
                 className="flex gap-2"

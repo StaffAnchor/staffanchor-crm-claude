@@ -40,6 +40,10 @@
       "schedule": "0 4 * * *"
     },
     {
+      "path": "/api/cron/role-alerts",
+      "schedule": "30 4 * * *"
+    },
+    {
       "path": "/api/cron/profile-nudge-sweep",
       "schedule": "0 8 * * *"
     },
