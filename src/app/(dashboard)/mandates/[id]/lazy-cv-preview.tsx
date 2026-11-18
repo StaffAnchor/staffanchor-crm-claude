@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, FileText, Loader2, X } from "lucide-react";
 import ResumeViewerInline from "../../candidates/[id]/resume-viewer-inline";
 import CvActionsBar from "@/components/cv-actions-bar";
@@ -9,7 +10,10 @@ import CvActionsBar from "@/components/cv-actions-bar";
 // a list of 100+ people does not sign 100+ files up front. Opens the same viewer as the candidate page.
 export default function LazyCvPreview({ candidateId, name, variant = "compact" }: { candidateId: string; name: string | null; variant?: "compact" | "card" }) {
   const [state, setState] = useState<"idle" | "loading" | "open">("idle");
-  const [file, setFile] = useState<{ url: string; fileName: string } | null>(null);
+  // The link is remembered with the person it belongs to. A list or side panel can keep this component on screen
+  // while the selected person changes, and a link kept from the first person must never open for the next one.
+  const [fetched, setFetched] = useState<{ forId: string; url: string; fileName: string } | null>(null);
+  const file = fetched && fetched.forId === candidateId ? fetched : null;
   const [error, setError] = useState<string | null>(null);
 
   async function open() {
@@ -20,7 +24,7 @@ export default function LazyCvPreview({ candidateId, name, variant = "compact" }
       const res = await fetch(`/api/candidates/${candidateId}/cv-url`, { cache: "no-store" });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || !j.url) throw new Error(j.error ?? "Couldn't open the CV.");
-      setFile({ url: j.url, fileName: j.fileName ?? `${name ?? "candidate"}-cv` });
+      setFetched({ forId: candidateId, url: j.url, fileName: j.fileName ?? `${name ?? "candidate"}-cv` });
       setState("open");
     } catch (e) {
       setState("idle");
@@ -39,8 +43,8 @@ export default function LazyCvPreview({ candidateId, name, variant = "compact" }
         {state === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} {variant === "card" ? "Preview" : "Preview CV"}
       </button>
       {error && <p className="text-[11px] text-amber-700 dark:text-amber-400">{error}</p>}
-      {state === "open" && file && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onClick={() => setState("idle")}>
+      {state === "open" && file && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-6" onClick={() => setState("idle")}>
           <div className="flex h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-ros-lg bg-white shadow-ros-md dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
               <p className="truncate pr-4 text-[13px] font-medium text-slate-800 dark:text-slate-200">{name ? `${name} · ` : ""}{file.fileName}</p>
@@ -58,7 +62,8 @@ export default function LazyCvPreview({ candidateId, name, variant = "compact" }
               <ResumeViewerInline signedUrl={file.url} fileName={file.fileName} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
