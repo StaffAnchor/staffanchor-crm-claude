@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Check, Mic, Square } from "lucide-react";
 import { recordingToWav } from "@/lib/voice-wav";
 import WhatsAppMenu from "@/components/whatsapp-menu";
@@ -170,6 +171,22 @@ export default function CallRecordForm({
   const [email, setEmail] = useState(p.email ?? "");
   const [group, setGroup] = useState(["b2b_sales", "b2c_sales", "non_sales"].includes(p.profile_group ?? "") ? (p.profile_group as string) : "");
   const [subDomain, setSubDomain] = useState(p.sub_domain ?? "");
+  // What they sell: the product world the matching reads. Loaded once, pre-filled from what we already hold.
+  const [sellsWorld, setSellsWorld] = useState("");
+  const [worldKnown, setWorldKnown] = useState(false);
+  const [worlds, setWorlds] = useState<{ slug: string; name: string; family: string }[]>([]);
+  useEffect(() => {
+    let off = false;
+    const sb = createClient();
+    void (async () => {
+      const [{ data: w }, { data: sp }] = await Promise.all([sb.from("selling_worlds").select("slug, name, family").order("sort_order"), sb.from("candidate_selling_profiles").select("worlds").eq("candidate_id", p.id).maybeSingle()]);
+      if (off) return;
+      setWorlds((w ?? []) as { slug: string; name: string; family: string }[]);
+      const first = ((sp?.worlds ?? []) as { slug: string }[])[0]?.slug;
+      if (first) { setSellsWorld(first); setWorldKnown(true); }
+    })();
+    return () => { off = true; };
+  }, [p.id]);
   const [offer, setOffer] = useState(p.offer_in_hand === true ? "Yes" : p.offer_in_hand === false ? "No" : "");
   const [offerCtc, setOfferCtc] = useState(p.offer_ctc ? String(p.offer_ctc) : "");
   const [ratings, setRatings] = useState<Record<JudgmentKey, string>>({ communication: "", seriousness: "", stability: "", salary_realism: "", skill_match: "" });
@@ -357,6 +374,7 @@ export default function CallRecordForm({
           communication: ratings.communication || null,
           ratings: Object.fromEntries(Object.entries(ratings).filter(([, v]) => v)),
           segment: segment(),
+          sellsWorld: sellsWorld || null,
           messageOk: canMessage === "Yes" ? true : canMessage === "No" ? false : null,
           openness: openness || null,
           note,
@@ -424,7 +442,7 @@ export default function CallRecordForm({
     </select>
   );
   const basicsKnown = [k.city, k.years, k.group, k.sub, k.level, k.employer, k.title, k.status, k.qualification, k.name].every(Boolean);
-  const basicsFilled = [ctc, city, relocation, years, level, group, subDomain, name].filter(Boolean).length;
+  const basicsFilled = [ctc, city, relocation, years, level, group, subDomain, name, sellsWorld].filter(Boolean).length;
   const moveFilled = [openness, reasons.length ? "x" : "", notice, noticeFlex, interviewing, offer].filter(Boolean).length;
   const payFilled = [ctc, currentVar, expected, payFlex].filter(Boolean).length;
   const salesFilled = [carriesQuota, quotaBand, style, cycle].filter(Boolean).length;
@@ -434,7 +452,7 @@ export default function CallRecordForm({
 
   const stepWho = (n: number) => (
     <>
-      <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={8} defaultOpen={!basicsKnown && !desk}>
+      <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={9} defaultOpen={!basicsKnown && !desk}>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Current city" missing={!k.city} known={k.city}>
             <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
@@ -459,6 +477,16 @@ export default function CallRecordForm({
                 <option value="">{group ? "Select" : "Pick the domain first"}</option>
                 {subDomain && !level1OptionsForProfileType(group).includes(subDomain) && <option value={subDomain}>{subDomain}</option>}
                 {level1OptionsForProfileType(group).map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </Field>
+          )}
+          {kind !== "other" && worlds.length > 0 && (
+            <Field label="What do they sell?" missing={!worldKnown} known={worldKnown}>
+              <select value={sellsWorld} onChange={(e) => setSellsWorld(e.target.value)} className={sel(worldKnown)}>
+                <option value="">Select the closest</option>
+                {Array.from(new Set(worlds.map((w) => w.family))).map((fam) => (
+                  <optgroup key={fam} label={fam}>{worlds.filter((w) => w.family === fam).map((w) => <option key={w.slug} value={w.slug}>{w.name}</option>)}</optgroup>
+                ))}
               </select>
             </Field>
           )}

@@ -332,7 +332,7 @@ export default function MandateCandidatesCards({
         : rec === "Not a Fit" && !memory
           ? { tone: "stop", title: "Probably not a fit", detail: a?.red_flags[0] ?? "The fit read says no. If you think the data is wrong, call and confirm.", actions: (<><button type="button" onClick={() => setRejectRow(l)} className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-[13px] font-semibold text-rose-700">Reject</button><button type="button" onClick={() => setTab("details")} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700">Call anyway</button></>) }
           : !logged
-            ? { tone: "info", title: "Call them first", detail: toConfirm.length ? `Confirm: ${toConfirm.join(" · ")}` : "No call on record yet.", actions: <button type="button" onClick={() => setTab("details")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white">Open the call form</button> }
+            ? { tone: "info", title: "Call them first", detail: toConfirm.length ? `Confirm: ${toConfirm.join(" · ")}` : "No call on record yet." }
             : !ds.done
               ? { tone: "warn", title: `${left?.length ?? "A few"} thing${left?.length === 1 ? "" : "s"} left before you can share`, detail: toConfirm.join(" · ") || undefined, actions: <button type="button" onClick={() => setTab("details")} className="rounded-lg bg-amber-600 px-3 py-1.5 text-[13px] font-semibold text-white">Finish details</button> }
               : { tone: "go", title: "Ready to share with the client", detail: "The call and every detail the client needs are done.", actions: <button type="button" onClick={() => void shortlist(l)} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white">Share with client</button> };
@@ -382,7 +382,7 @@ export default function MandateCandidatesCards({
           {logged ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-200"><PhoneCall className="h-3.5 w-3.5" /> Called{memory?.at ? ` ${fmtDate(memory.at)}` : ""}</span>
           ) : (
-            <button type="button" onClick={() => { setTab("details"); void markViewed(l); }} className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100"><Phone className="h-3.5 w-3.5" /> Not called yet. Call now</button>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 ring-1 ring-amber-200"><Phone className="h-3.5 w-3.5" /> Not called yet</span>
           )}
           {c.stability_score != null && (() => { const n = Math.round(Number(c.stability_score)); const r = stabilityRead(n); return <span className={`rounded-full px-3 py-1 font-semibold ${r.cls}`} title="Out of 100, read from how long they stayed in each job">Stability {n}/100 · {r.word}</span>; })()}
           {(voice || waVoiceByCandidate[c.id]) && <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-3 py-1 font-semibold text-teal-800 ring-1 ring-teal-200"><Mic className="h-3.5 w-3.5" /> {voice ? "Voice note below" : "WhatsApp voice note. Listen on the profile"}</span>}

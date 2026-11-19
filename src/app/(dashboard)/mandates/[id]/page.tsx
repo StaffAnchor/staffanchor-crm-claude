@@ -15,6 +15,7 @@ import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import AiMatchesPanel from "./ai-matches-panel";
 import BestMatchesPanel from "./best-matches-panel";
+import { passReasonLabel } from "@/components/client-view/PassReasonDialog";
 import VoiceAgentTab from "./voice-agent-tab";
 import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";
@@ -690,6 +691,12 @@ export default async function MandateDetailPage({
                   </div>
                 </div>
             <div className="space-y-6">
+              {passRefs.length >= 2 && (() => {
+                const n = new Map<string, number>();
+                for (const r of passRefs) n.set(r.reason, (n.get(r.reason) ?? 0) + 1);
+                const top = Array.from(n.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, c]) => `${passReasonLabel(k) ?? k.replace(/_/g, " ")} (${c})`);
+                return <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-[14px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{mandate.client_name} has passed on {passRefs.length} {passRefs.length === 1 ? "person" : "people"} so far. Most often: {top.join(", ")}. Keep that in mind before you share.</p>;
+              })()}
               <div id="best-matches"><Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}><BestMatchesPanel mandateId={id} /></Suspense></div>
               <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
                 <summary className="cursor-pointer text-[14px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>

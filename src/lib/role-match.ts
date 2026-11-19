@@ -340,11 +340,16 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
         score += 4;
         nears++;
         gaps.push(`Expects ${pay} LPA, a little above budget ${card.budget_max}`);
-      } else if (pay <= card.budget_max * 1.25) {
+      } else if (card.budget_flex === "flexible" && pay <= card.budget_max * 1.4) {
+        // The client said the budget can stretch for the right person: over budget is a check, not a miss.
+        score -= 1;
+        nears++;
+        gaps.push(`Expects ${pay} LPA, budget ${card.budget_max} (client can stretch)`);
+      } else if (pay <= card.budget_max * (card.budget_flex === "firm" ? 1.1 : 1.25)) {
         score -= 4;
         misses++;
         borderline++;
-        gaps.push(`Expects ${pay} LPA, budget ${card.budget_max}`);
+        gaps.push(`Expects ${pay} LPA, budget ${card.budget_max}${card.budget_flex === "firm" ? " (firm)" : ""}`);
       } else {
         score -= 10;
         misses++;

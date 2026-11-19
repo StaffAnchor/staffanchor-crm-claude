@@ -27,6 +27,8 @@ type Body = {
   communication?: string | null;
   ratings?: Record<string, string>;
   segment?: CallSegment;
+  // What they sell, picked from the product worlds on the call form (slug). Stored as a call-sourced selling profile.
+  sellsWorld?: string | null;
   messageOk?: boolean | null;
   openness?: string | null;
   note?: string | null;
@@ -196,6 +198,18 @@ export async function POST(req: Request) {
       if (v === "good" || v === "okay" || v === "weak") row[j.key] = v;
     }
     if (Object.keys(row).length) await supabase.from("candidate_call_ratings").insert({ candidate_id: id, rated_by: user.id, ...row });
+  }
+  if (outcome === "reached" && typeof body.sellsWorld === "string" && /^[a-z0-9_]{2,60}$/.test(body.sellsWorld) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const adm = createAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+    const { data: ok } = await adm.from("selling_worlds").select("slug").eq("slug", body.sellsWorld).maybeSingle();
+    if (ok) {
+      const { data: old } = await adm.from("candidate_selling_profiles").select("*").eq("candidate_id", id).maybeSingle();
+      const o = (old ?? {}) as Record<string, unknown>;
+      await adm.from("candidate_selling_profiles").upsert(
+        { candidate_id: id, worlds: [{ slug: body.sellsWorld, confidence: 1 }], customer_types: o.customer_types ?? [], buyer_roles: o.buyer_roles ?? [], motion: o.motion ?? null, deal_size: o.deal_size ?? null, quota: o.quota ?? null, team_size: o.team_size ?? null, team_sells: o.team_sells ?? null, summary: o.summary ?? null, evidence: "Picked on a call", confidence: 1, source: "call", generated_at: new Date().toISOString() },
+        { onConflict: "candidate_id" }
+      );
+    }
   }
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 4000) : "";
   // "After the call": the same reading the profile page does. The note fills any detail still blank (never overwriting

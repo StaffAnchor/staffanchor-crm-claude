@@ -21,6 +21,8 @@ export type RoleCard = {
   exp_min: number | null;
   exp_max: number | null;
   budget_max: number | null;
+  /** Can the client stretch the budget for the right person? null = not asked yet (treated as a little room). */
+  budget_flex: "firm" | "flexible" | null;
   motion: "hunter" | "farmer" | "both" | null;
   must: string[];
 };
@@ -55,6 +57,7 @@ export function cleanCard(raw: unknown, clusters: Set<string>, worlds: Set<strin
     exp_min: numOrNull(o.exp_min),
     exp_max: numOrNull(o.exp_max),
     budget_max: numOrNull(o.budget_max),
+    budget_flex: o.budget_flex === "firm" || o.budget_flex === "flexible" ? o.budget_flex : null,
     motion: ["hunter", "farmer", "both"].includes(String(o.motion)) ? (o.motion as RoleCard["motion"]) : null,
     must: (Array.isArray(o.must) ? o.must : []).filter((m): m is string => typeof m === "string").map((m) => m.slice(0, 120)).slice(0, 6),
   };

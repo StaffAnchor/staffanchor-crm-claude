@@ -266,7 +266,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
                 {called || spoke ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-200"><PhoneCall className="h-3.5 w-3.5" /> Called{called ? ` ${fmtShort(called.at)}${called.outcome && called.outcome !== "reached" ? ` (${called.outcome.replace(/_/g, " ")})` : ""}` : spoke ? ` ${fmtShort(m!.at)}` : ""}</span>
                 ) : (
-                  <button type="button" onClick={() => setPaneTab("call")} className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100"><Phone className="h-3.5 w-3.5" /> Not called yet. Call now</button>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 ring-1 ring-amber-200"><Phone className="h-3.5 w-3.5" /> Not called yet</span>
                 )}
                 {sr && stab != null && <span className={`rounded-full px-3 py-1 font-semibold ${sr.cls}`} title="Out of 100, read from how long they stayed in each job">Stability {stab}/100 · {sr.word}</span>}
                 {ex?.voice && <a href={`/candidates/${c.candidate_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-3 py-1 font-semibold text-teal-800 ring-1 ring-teal-200"><Mic className="h-3.5 w-3.5" /> Voice note. Listen on the profile</a>}
@@ -284,7 +284,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
         </div>
         </div>
         <div className="min-h-0 flex-1 space-y-4 p-5">
-          <NextStep tone={next.tone} title={next.title} detail={next.detail}>{next.actions}</NextStep>
+          <NextStep tone={next.tone} title={next.title} detail={next.detail}>{paneTab === "call" ? null : next.actions}</NextStep>
           {paneTab === "overview" ? (
             <div className="space-y-4">
               <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -315,7 +315,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
                     </div>
                   </div>
                 ) : (
-                  <p className="flex items-center gap-1.5 text-[14px] text-slate-400"><MessageCircle className="h-3.5 w-3.5" /> Nothing yet. Press Call now, and what they say shows here and feeds matching.</p>
+                  <p className="flex items-center gap-1.5 text-[14px] text-slate-400"><MessageCircle className="h-3.5 w-3.5" /> Nothing yet. Fill in the call form, and what they say shows here and feeds matching.</p>
                 )}
               </div>
               <details className="group rounded-xl bg-slate-50/70 px-4 py-3 dark:bg-slate-800/40">

@@ -99,7 +99,7 @@ export default function RoleCardEditor({
           </span>
         ))}
         {(c.exp_min != null || c.exp_max != null) && <span className={`${chip} bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200`}>{c.exp_min ?? 0}-{c.exp_max ?? "+"} yrs</span>}
-        {c.budget_max != null && <span className={`${chip} bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200`}>Up to {c.budget_max} LPA</span>}
+        {c.budget_max != null && <span className={`${chip} bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200`}>Up to {c.budget_max} LPA{c.budget_flex === "flexible" ? ", flexible" : c.budget_flex === "firm" ? ", firm" : ""}</span>}
       </div>
 
       {open && (
@@ -214,6 +214,14 @@ export default function RoleCardEditor({
             <label className="text-slate-500">
               Budget up to (LPA)
               <input value={num(c.budget_max)} onChange={(e) => setC({ ...c, budget_max: parse(e.target.value) })} inputMode="decimal" className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label className="text-slate-500 col-span-2 sm:col-span-4">
+              Can the client stretch the budget for the right person?
+              <select value={c.budget_flex ?? ""} onChange={(e) => setC({ ...c, budget_flex: e.target.value === "firm" || e.target.value === "flexible" ? e.target.value : null })} className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+                <option value="">Not asked yet (a little room)</option>
+                <option value="flexible">Yes, flexible for the right person</option>
+                <option value="firm">No, the budget is firm</option>
+              </select>
             </label>
           </div>
 
