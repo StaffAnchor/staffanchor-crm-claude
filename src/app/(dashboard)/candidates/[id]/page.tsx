@@ -136,8 +136,8 @@ export default async function CandidateDetailPage({
     viewer: Promise.resolve(supabase.auth.getUser()).then(async ({ data: { user } }) => (user ? { user, profile: (await supabase.from("profiles").select("full_name, email").eq("id", user.id).single()).data } : { user: null, profile: null })),
     passport: Promise.resolve(supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle()),
     cvFacts: Promise.resolve(supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle()),
-    voiceNotes: Promise.resolve(supabase.from("application_voice_notes").select("seconds, mandate_id").eq("candidate_id", id)),
-    waVoiceNotes: Promise.resolve(supabase.from("whatsapp_messages").select("id").eq("candidate_id", id).eq("direction", "inbound").eq("raw_payload->>type", "audio").limit(1)),
+    voiceNotes: Promise.resolve(supabase.from("application_voice_notes").select("audio_path, seconds, transcript_en, created_at, mandates(role_title, client_name)").eq("candidate_id", id).order("created_at", { ascending: false })),
+    waVoiceNotes: Promise.resolve(supabase.from("whatsapp_messages").select("id, created_at").eq("candidate_id", id).eq("direction", "inbound").eq("raw_payload->>type", "audio").order("created_at", { ascending: false }).limit(10)),
     notes: Promise.resolve(supabase.from("recruiter_notes").select("id, note_type, content, created_at, author_id").eq("candidate_id", id).order("created_at", { ascending: false })),
     audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
     pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
@@ -406,6 +406,20 @@ export default async function CandidateDetailPage({
   const { data: links } = await q.links;
   const { data: voiceNoteRows } = await q.voiceNotes;
   const { data: waVoiceRows } = await q.waVoiceNotes;
+  // Apply-form voice notes are in a private bucket: sign a link for each so the profile can play them.
+  const applyVoice: { url: string; seconds: number | null; transcript: string | null; at: string; role: string | null }[] = [];
+  {
+    const rows = (voiceNoteRows ?? []) as unknown as { audio_path: string; seconds: number | null; transcript_en: string | null; created_at: string; mandates: { role_title: string | null; client_name: string | null } | null }[];
+    if (rows.length > 0) {
+      const { data: signedVoice } = await supabase.storage.from("application-voice").createSignedUrls(rows.map((r) => r.audio_path), 60 * 60 * 12);
+      const urlByPath = new Map((signedVoice ?? []).filter((x) => x.signedUrl && !x.error && x.path).map((x) => [x.path as string, x.signedUrl as string]));
+      for (const r of rows) {
+        const url = urlByPath.get(r.audio_path);
+        if (url) applyVoice.push({ url, seconds: r.seconds ?? null, transcript: r.transcript_en ?? null, at: r.created_at, role: r.mandates?.role_title ? `${r.mandates.role_title}${r.mandates.client_name ? ` at ${r.mandates.client_name}` : ""}` : null });
+      }
+    }
+  }
+  const waVoice = ((waVoiceRows ?? []) as { id: string; created_at: string }[]);
 
   const linkedMandateCities = Array.from(
     new Set(
@@ -570,6 +584,28 @@ export default async function CandidateDetailPage({
       tone: "teal" as const,
       content: (
         <div className="space-y-5">
+          {(applyVoice.length > 0 || waVoice.length > 0) && (
+            <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 dark:border-teal-900 dark:bg-teal-950/30">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> Voice notes</p>
+              <div className="mt-2 space-y-3">
+                {applyVoice.map((v, i) => (
+                  <div key={`a${i}`}>
+                    <p className="text-[12px] text-slate-500 dark:text-slate-400">
+                      With an application{v.role ? ` for ${v.role}` : ""} · {new Date(v.at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}{v.seconds ? ` · ${v.seconds}s` : ""}
+                    </p>
+                    <audio controls preload="none" src={v.url} className="mt-1 h-10 w-full" />
+                    {v.transcript ? <p className="mt-1.5 text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">&ldquo;{v.transcript}&rdquo; <span className="text-[11px] text-slate-400">English text, translated if needed</span></p> : <p className="mt-1.5 text-[12px] text-slate-400">Written version still being prepared.</p>}
+                  </div>
+                ))}
+                {waVoice.map((v) => (
+                  <div key={v.id}>
+                    <p className="text-[12px] text-slate-500 dark:text-slate-400">Sent on WhatsApp · {new Date(v.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    <audio controls preload="none" src={`/api/whatsapp/media?id=${v.id}`} className="mt-1 h-10 w-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <BriefCard
             candidateId={candidate.id}
             brief={(briefRow?.brief as Brief | undefined) ?? null}
@@ -836,7 +872,7 @@ export default async function CandidateDetailPage({
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {((voiceNoteRows ?? []).length > 0 || (waVoiceRows ?? []).length > 0) && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Sent a voice note (on WhatsApp or with an application). WhatsApp ones play in the WhatsApp inbox; application ones on the role's page.">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Sent a voice note (on WhatsApp or with an application). It plays in the Overview tab.">
                       <Mic className="h-3.5 w-3.5" /> Voice note
                     </span>
                   )}
