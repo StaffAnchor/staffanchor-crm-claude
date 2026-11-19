@@ -1,8 +1,8 @@
 // Which metro a free-text location belongs to. "Delhi NCR" is the whole region, so Delhi, New Delhi, Noida, Gurgaon,
 // Faridabad, Ghaziabad and the towns around them all count as the same place for a role in Delhi NCR.
 
-const NCR = ["delhi", "new delhi", "ncr", "noida", "greater noida", "gurgaon", "gurugram", "faridabad", "ghaziabad", "dwarka", "rohini", "janakpuri", "saket", "vasant", "okhla", "kapashera", "manesar", "sonipat", "bahadurgarh", "sahibabad", "indirapuram", "vaishali", "kaushambi", "noida extension", "greater faridabad", "palwal", "bhiwadi"];
-const MMR = ["mumbai", "navi mumbai", "thane", "kalyan", "dombivli", "dombivali", "vasai", "virar", "panvel", "mira road", "bhayandar", "mulund", "borivali", "andheri", "powai", "vashi", "belapur", "kharghar", "ulhasnagar", "bombay"];
+const NCR = ["delhi", "new delhi", "newdelhi", "ncr", "noida", "greater noida", "gurgaon", "gurugram", "faridabad", "ghaziabad", "dwarka", "rohini", "janakpuri", "saket", "vasant", "okhla", "kapashera", "manesar", "sonipat", "bahadurgarh", "sahibabad", "indirapuram", "vaishali", "kaushambi", "noida extension", "greater faridabad", "palwal", "bhiwadi"];
+const MMR = ["mumbai", "navi mumbai", "navimumbai", "newmumbai", "thane", "kalyan", "dombivli", "dombivali", "vasai", "virar", "panvel", "mira road", "bhayandar", "mulund", "borivali", "andheri", "powai", "vashi", "belapur", "kharghar", "ulhasnagar", "bombay"];
 const PUNE = ["pune", "pimpri", "chinchwad", "hinjewadi", "hinjawadi", "kharadi", "wakad", "baner", "hadapsar"];
 const BLR = ["bengaluru", "bangalore", "whitefield", "electronic city", "marathahalli"];
 const HYD = ["hyderabad", "secunderabad", "gachibowli", "hitec city", "madhapur"];

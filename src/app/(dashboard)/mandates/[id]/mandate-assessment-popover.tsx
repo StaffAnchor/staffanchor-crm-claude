@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Sparkles, Loader2, ShieldAlert, CircleCheck, HelpCircle, RotateCw } from "lucide-react";
 
 export type MandateAssessment = {
-  recommendation: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
+  recommendation: "Strong Fit" | "Fit with Reservations" | "Not a Fit" | "Needs a call";
   positives: string[];
   red_flags: string[];
   missing: string[];
@@ -14,6 +14,7 @@ const RECOMMENDATION_STYLE: Record<MandateAssessment["recommendation"], string> 
   "Strong Fit": "bg-emerald-50 text-emerald-700 border-emerald-200",
   "Fit with Reservations": "bg-amber-50 text-amber-700 border-amber-200",
   "Not a Fit": "bg-rose-50 text-rose-700 border-rose-200",
+  "Needs a call": "bg-slate-50 text-slate-700 border-slate-200",
 };
 
 const POPOVER_WIDTH = 340;

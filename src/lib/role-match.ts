@@ -46,6 +46,12 @@ export type Ranked = {
   gaps: string[];
   level: string;
   metro: string | null;
+  /** Real reasons this person cannot do this role, named. Only these may make a verdict "Not a Fit". */
+  knockouts: string[];
+  /** Facts we do not know yet (function, level, what they sell, experience, pay). Unknown is never a negative. */
+  unknown: string[];
+  /** How many real gaps (not unknowns, not small give-and-takes) were counted. */
+  misses: number;
 };
 
 // How close one kind of job is to another (0 to 1). Only listed pairs count.
@@ -56,7 +62,8 @@ const NEAR: Record<string, Record<string, number>> = {
   inside_sales: { sdr_bdr: 0.5, account_exec: 0.5, bd_exec: 0.5 },
   field_sales: { account_exec: 0.5, bd_exec: 0.5 },
   solution_eng: { account_exec: 0.2 },
-  customer_success: { account_mgmt: 0.7 },
+  customer_success: { account_mgmt: 0.7, cust_support: 0.5 },
+  cust_support: { customer_success: 0.5, account_mgmt: 0.3 },
   account_mgmt: { customer_success: 0.6, account_exec: 0.5 },
   channel_partner: { bd_exec: 0.4 },
   sales_leadership: { sales_manager: 0.6 },
@@ -85,6 +92,26 @@ function noticeDays(t: string | null): number | null {
   return /month/.test(s) ? v * 30 : v;
 }
 
+// When a person has no role tags yet, the job title still says what they do. Used only as a fallback.
+const TITLE_CLUSTERS: [RegExp, string][] = [
+  [/customer success|client success|\bcsm\b/i, "customer_success"],
+  [/key account|strategic account|account manag/i, "account_mgmt"],
+  [/account executive|\bae\b/i, "account_exec"],
+  [/business development|\bbde\b|\bbdm\b|\bbd\b/i, "bd_exec"],
+  [/\bsdr\b|\bbdr\b|lead gen/i, "sdr_bdr"],
+  [/inside sales|telesales|tele sales/i, "inside_sales"],
+  [/field sales|territory/i, "field_sales"],
+  [/pre.?sales|solution(s)? (engineer|consultant)/i, "solution_eng"],
+  [/channel|alliances?|partnerships?/i, "channel_partner"],
+  [/customer support|customer service|service desk|help ?desk/i, "cust_support"],
+  [/sales (manager|head|lead)|team lead.*sales/i, "sales_manager"],
+];
+function tagsFromTitle(title: string | null): MatchRow["tags"] {
+  const t = title ?? "";
+  const hit = TITLE_CLUSTERS.find(([re]) => re.test(t));
+  return hit ? [{ slug: hit[1], seniority: "unclear", metro: null, current: true }] : [];
+}
+
 export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<string, Map<string, number>>, name: (slug: string) => string, opts: { keepAll?: boolean; also?: string[] } = {}): Ranked[] {
   const exact = new Set(card.exact_worlds);
   // The main role type, plus any the mandate also accepts as a full fit.
@@ -93,15 +120,18 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
   const out: Ranked[] = [];
 
   for (const row of rows) {
+    const tags = row.tags.length > 0 ? row.tags : tagsFromTitle(row.current_job_title);
+    const knockouts: string[] = [];
+    const unknown: string[] = [];
     const matched: string[] = [];
     const gaps: string[] = [];
     let score = 0;
 
     // 1. What they do.
-    const cur = row.tags.filter((t) => t.current);
+    const cur = tags.filter((t) => t.current);
     const exactNow = cur.find((t) => wanted.has(t.slug));
-    const exactPast = row.tags.find((t) => wanted.has(t.slug) && !t.current);
-    let fn: "exact" | "near" | "past" | "none" = "none";
+    const exactPast = tags.find((t) => wanted.has(t.slug) && !t.current);
+    let fn: "exact" | "near" | "past" | "none" | "unknown" = tags.length === 0 ? "unknown" : "none";
     let levelTag = exactNow ?? exactPast ?? null;
     if (exactNow) {
       score += 30;
@@ -138,7 +168,15 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     else if (fn === "past") {
       misses++;
       borderline++;
-    } else if (fn === "none") misses++;
+    } else if (fn === "none") {
+      misses++;
+      const g = `Does a different job (${row.current_job_title ?? cur[0]?.slug?.replace(/_/g, " ") ?? "current role"})`;
+      gaps.push(g);
+      knockouts.push(g);
+    } else if (fn === "unknown") {
+      gaps.push("What they do is not clear yet");
+      unknown.push("What they do is not clear yet");
+    }
 
     // 2. Level.
     const level = levelTag?.seniority ?? "unclear";
@@ -146,6 +184,7 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       if (level === "unclear") {
         score += 4;
         gaps.push("Level not clear");
+        unknown.push("Level not clear");
       } else {
         const d = Math.abs(LEVEL_ORDER.indexOf(level) - LEVEL_ORDER.indexOf(card.level));
         if (d === 0) {
@@ -202,6 +241,7 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     } else if (row.worlds.length === 0) {
       worldFit = "unknown";
       gaps.push("What they sell is not known yet");
+      unknown.push("What they sell is not known yet");
     }
     if (row.summary) matched.push(row.summary);
     if (row.team_sells) matched.push(`Their team sells: ${row.team_sells}`);
@@ -214,7 +254,7 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
 
     // 5. City: the role's city first, then a nearby city, then someone who says they would move.
     // The stored metro can be missing or "Unknown"; the location text says Delhi, New Delhi, Gurgaon and so on.
-    const tagMetro = cur[0]?.metro ?? row.tags[0]?.metro ?? null;
+    const tagMetro = cur[0]?.metro ?? tags[0]?.metro ?? null;
     const metro = tagMetro && tagMetro !== "Unknown" && tagMetro !== "Other India" ? tagMetro : (metroOfLocation(row.current_location) ?? tagMetro);
     if (card.cities.length > 0) {
       const near = metro ? card.cities.find((c) => NEARBY[metro]?.includes(c)) : undefined;
@@ -225,6 +265,7 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
         score -= 20;
         misses++;
         gaps.push("Based abroad");
+        knockouts.push("Based abroad");
       } else if (near) {
         score += 7;
         nears++;
@@ -239,7 +280,11 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
         gaps.push(`In ${metro ?? "another city"}, might relocate`);
       } else {
         misses++;
-        gaps.push(`In ${metro ?? "another city"}, not ${card.cities.join(" / ")}`);
+        const g = `In ${metro ?? "another city"}, not ${card.cities.join(" / ")}`;
+        gaps.push(g);
+        // Only a clear "no" to moving is a knockout. Not asked yet, or a city we cannot read, is something to find out.
+        if (row.open_to_relocation === "No" && metro) knockouts.push(`${g}, and will not relocate`);
+        else unknown.push(metro ? "Not asked if they would relocate" : "City not clear");
       }
     }
 
@@ -247,7 +292,10 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     // A recorded 0 is almost always "not filled in" rather than a fresher, so it is treated as unknown, not as a close fit.
     const expRaw = row.total_experience_years != null ? Number(row.total_experience_years) : null;
     const exp = expRaw && expRaw > 0 ? expRaw : null;
-    if (exp == null && (card.exp_min != null || card.exp_max != null)) gaps.push("Experience not known yet, confirm on a call");
+    if (exp == null && (card.exp_min != null || card.exp_max != null)) {
+      gaps.push("Experience not known yet, confirm on a call");
+      unknown.push("Experience not known yet");
+    }
     if (exp != null && (card.exp_min != null || card.exp_max != null)) {
       const lo = card.exp_min ?? 0;
       const hi = card.exp_max ?? 99;
@@ -259,7 +307,12 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
         score += 6;
         nears++;
         gaps.push(`${exp} years, role wants ${want} (close enough)`);
-      } else if (exp >= lo - 3 && exp <= hi + 3) {
+      } else if (exp > hi + 2) {
+        // More experience than asked is something to check (level, pay, will they stay), not a reason to say no.
+        score -= 3;
+        nears++;
+        gaps.push(`${exp} years, more than the ${want} asked (check level and pay)`);
+      } else if (exp >= lo - 3) {
         score += 1;
         misses++;
         borderline++;
@@ -267,7 +320,9 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       } else {
         score -= 10;
         misses++;
-        gaps.push(`${exp} years, role wants ${want}`);
+        const g = `${exp} years, role wants ${want}`;
+        gaps.push(g);
+        knockouts.push(g);
       }
     }
 
@@ -279,6 +334,7 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
         payUnknown = true;
         score += 2;
         gaps.push("Pay expectation not known yet, confirm on a call");
+        unknown.push("Pay expectation not known yet");
       } else if (pay <= card.budget_max) score += 8;
       else if (pay <= card.budget_max + tol) {
         score += 4;
@@ -292,7 +348,9 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
       } else {
         score -= 10;
         misses++;
-        gaps.push(`Expects ${pay} LPA, budget ${card.budget_max}`);
+        const g = `Expects ${pay} LPA, budget ${card.budget_max}`;
+        gaps.push(g);
+        knockouts.push(g);
       }
     }
 
@@ -339,6 +397,7 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     if (weak) {
       score -= 6;
       gaps.push("Communication rated weak on a call");
+      knockouts.push("Communication rated weak on a call");
     }
 
     // Perfect: everything lines up. Close: nothing is really off, a few small give-and-takes, or pay still to confirm; one
@@ -351,7 +410,7 @@ export function rankCandidates(card: RoleCard, rows: MatchRow[], edges: Map<stri
     if (weak && !opts.keepAll) continue;
     // Search results hide weak matches; people who already applied are always scored, however low.
     if (score < 35 && bucket === "stretch" && !opts.keepAll) continue;
-    out.push({ row, score, bucket, matched, gaps, level, metro });
+    out.push({ row, score, bucket, matched, gaps, level, metro, knockouts, unknown, misses });
   }
   return out.sort((a, b) => b.score - a.score);
 }

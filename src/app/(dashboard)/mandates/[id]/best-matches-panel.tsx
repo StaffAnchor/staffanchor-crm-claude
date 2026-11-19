@@ -32,7 +32,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
     supabase.from("role_clusters").select("slug, name").order("sort_order"),
     supabase.from("selling_worlds").select("slug, name").order("sort_order"),
     supabase.from("selling_world_edges").select("a, b, weight"),
-    supabase.from("candidate_mandate_links").select("candidate_id, match_source, match_score_breakdown").eq("mandate_id", mandateId),
+    supabase.from("candidate_mandate_links").select("candidate_id, match_source, match_score_breakdown, matched_at").eq("mandate_id", mandateId),
     supabase.from("match_dismissals").select("candidate_id").eq("mandate_id", mandateId),
     supabase.from("mandate_outreach").select("candidate_id, status, sent_at").eq("mandate_id", mandateId),
     interestForRole(supabase, mandateId),
@@ -51,10 +51,22 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   for (const ex of card.exact_worlds) for (const [w, v] of edges.get(ex) ?? []) if (v >= 0.5) want.add(w);
 
   const { data: rows } = await supabase.rpc("role_match_candidates", { p_clusters: clustersFor(card, also), p_worlds: Array.from(want), p_limit: 900 });
-  const links = (linkRows ?? []) as { candidate_id: string; match_source: string | null; match_score_breakdown: { ver?: number } | null }[];
+  const links = (linkRows ?? []) as { candidate_id: string; match_source: string | null; match_score_breakdown: { ver?: number } | null; matched_at: string | null }[];
   const inPipeline = new Set(links.map((l) => l.candidate_id));
-  // People already on the pipeline (applicants included) get scored by this same ranking, once, in the background.
-  const toScore = links.filter((l) => l.match_source !== "role_card" || l.match_score_breakdown?.ver !== ROLE_SCORE_VERSION).map((l) => l.candidate_id);
+  // A read is a snapshot. When the person's profile changed, or they were called, after it was made, it is made again.
+  const linkIds = links.map((l) => l.candidate_id);
+  const [{ data: changedRows }, { data: callAfterRows }] = linkIds.length
+    ? await Promise.all([
+        supabase.from("candidates").select("id, updated_at").in("id", linkIds),
+        supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", linkIds).order("created_at", { ascending: false }),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const lastChange = new Map<string, number>();
+  for (const r of (changedRows ?? []) as { id: string; updated_at: string | null }[]) if (r.updated_at) lastChange.set(r.id, new Date(r.updated_at).getTime());
+  for (const r of (callAfterRows ?? []) as { candidate_id: string; created_at: string }[]) lastChange.set(r.candidate_id, Math.max(lastChange.get(r.candidate_id) ?? 0, new Date(r.created_at).getTime()));
+  const stale = (l: (typeof links)[number]) => !!l.matched_at && (lastChange.get(l.candidate_id) ?? 0) > new Date(l.matched_at).getTime() + 60_000;
+  // People already on the pipeline (applicants included) get scored by this same ranking in the background.
+  const toScore = links.filter((l) => l.match_source !== "role_card" || l.match_score_breakdown?.ver !== ROLE_SCORE_VERSION || stale(l)).map((l) => l.candidate_id);
   if (toScore.length > 0) {
     after(async () => {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

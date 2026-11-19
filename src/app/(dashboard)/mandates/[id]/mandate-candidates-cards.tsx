@@ -26,7 +26,7 @@ const DONE = ["rejected", "pulled_back"];
 const GROUPS = [
   { rank: 0, key: "strong", label: "Strong fit" },
   { rank: 1, key: "reservations", label: "Fit with reservations" },
-  { rank: 2, key: "unread", label: "No fit read yet" },
+  { rank: 2, key: "unread", label: "Can't tell yet: needs a call" },
   { rank: 3, key: "notfit", label: "Not a fit" },
 ];
 
@@ -418,7 +418,14 @@ export default function MandateCandidatesCards({
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Why this fit</p>
                 {a ? (
                   <div className="space-y-3 text-[13px]">
-                    <span className={`inline-block rounded-md px-2 py-0.5 text-[12px] font-semibold ${rec === "Strong Fit" ? "bg-emerald-50 text-emerald-700" : rec === "Not a Fit" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-800"}`}>{rec}</span>
+                    {["placed", "offer"].includes(l.stage) || l.client_feedback === "interested" ? (
+                      <span className="inline-flex flex-wrap items-center gap-2">
+                        <span className="inline-block rounded-md bg-emerald-50 px-2 py-0.5 text-[12px] font-semibold text-emerald-700">{l.stage === "placed" ? "Placed" : l.stage === "offer" ? "Offer made" : "Client shortlisted"}</span>
+                        <span className="text-[12px] text-slate-400">Our early read said: {rec}</span>
+                      </span>
+                    ) : (
+                      <span className={`inline-block rounded-md px-2 py-0.5 text-[12px] font-semibold ${rec === "Strong Fit" ? "bg-emerald-50 text-emerald-700" : rec === "Not a Fit" ? "bg-rose-50 text-rose-700" : rec === "Needs a call" ? "bg-slate-100 text-slate-700" : "bg-amber-50 text-amber-800"}`}>{rec === "Needs a call" ? "Can't tell yet: needs a call" : rec}</span>
+                    )}
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Going for them</p>

@@ -43,7 +43,7 @@ export type MandateCandidateRow = {
   // and a field left blank (e.g. CTC not disclosed) should read as
   // "missing", never as a red flag.
   match_assessment: {
-    recommendation: "Strong Fit" | "Fit with Reservations" | "Not a Fit";
+    recommendation: "Strong Fit" | "Fit with Reservations" | "Not a Fit" | "Needs a call";
     positives: string[];
     red_flags: string[];
     missing: string[];
