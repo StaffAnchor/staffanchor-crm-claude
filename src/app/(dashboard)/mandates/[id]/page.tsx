@@ -432,10 +432,12 @@ export default async function MandateDetailPage({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <HeaderMenu label="Share" icon={<Share2 className="h-3.5 w-3.5" />} primary>
+            <p className="px-3 pb-0.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Find candidates</p>
             {mandate.status === "open" && mandate.short_code && <CopyShareLinkButton shortCode={mandate.short_code} />}
-            <CopyForLinkedinButton mandate={mandate} />
             <LinkedinPostButton mandateId={id} />
+            <CopyForLinkedinButton mandate={mandate} />
             <DownloadJdButton mandateId={id} />
+            <p className="px-3 pb-0.5 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Show the client</p>
             <Link href="#sharing" className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
               Client link and portal
             </Link>
@@ -447,6 +449,7 @@ export default async function MandateDetailPage({
             ) : (
               <ArchiveMandateButton mandateId={id} currentStatus={mandate.status} headcount={mandate.headcount} placedCount={placedCount} />
             )}
+            <div className="my-1 border-t border-slate-100 pt-1 dark:border-slate-800" />
             <DeleteMandateButton mandateId={id} roleTitle={mandate.role_title} />
           </HeaderMenu>
         </div>
@@ -490,35 +493,20 @@ export default async function MandateDetailPage({
           </div>
         )}
 
-      {/* Health strip -- everything a recruiter needs to answer "is this
-          mandate in trouble" without opening a single panel below. */}
-      <p className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
-        <span className={daysOpenNum >= 21 ? "font-semibold text-amber-600" : ""}>
-          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{daysOpenNum}</span> days open
-        </span>
-        <span>
-          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{pipelineCount}</span> in pipeline
-        </span>
-        <span>
-          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{submittedCount}</span> sent to client
-        </span>
-        <span>
-          <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">{pipelineCount > 0 ? `${screenedCount}/${pipelineCount}` : "0"}</span> screened
-        </span>
-        {mandate.headcount > 1 && (
-          <span>
-            <span className="font-semibold tabular-nums text-slate-800 dark:text-slate-100">
-              {placedCount}/{mandate.headcount}
-            </span>{" "}
-            filled
-          </span>
-        )}
-        {fillProbability && (
-          <span title={`Driver: ${fillProbability.driver}`}>
-            <span className={`font-semibold tabular-nums ${fillProbability.bucket === "high" ? "text-emerald-600" : fillProbability.bucket === "medium" ? "text-amber-600" : "text-rose-600"}`}>{fillProbability.score}%</span> likely to fill
-          </span>
-        )}
-      </p>
+      {/* Four numbers, in plain words. Screened and the other counts live inside the tabs. */}
+      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {[
+          { label: "In the pipeline", value: String(pipelineCount), cls: "" },
+          { label: "Shared with the client", value: String(submittedCount), cls: "" },
+          { label: mandate.headcount > 1 ? "Positions filled" : "Days open", value: mandate.headcount > 1 ? `${placedCount}/${mandate.headcount}` : String(daysOpenNum), cls: mandate.headcount <= 1 && daysOpenNum >= 21 ? "text-amber-600" : "" },
+          ...(fillProbability ? [{ label: "Chance of filling", value: `${fillProbability.score}%`, cls: fillProbability.bucket === "high" ? "text-emerald-600" : fillProbability.bucket === "medium" ? "text-amber-600" : "text-rose-600", title: `Main driver: ${fillProbability.driver}` }] : []),
+        ].map((t) => (
+          <div key={t.label} title={(t as { title?: string }).title} className="rounded-xl bg-slate-50 px-4 py-2.5 dark:bg-slate-800/60">
+            <p className={`text-[22px] font-semibold leading-7 tabular-nums text-slate-900 dark:text-slate-100 ${t.cls}`}>{t.value}</p>
+            <p className="text-[12px] text-slate-500 dark:text-slate-400">{t.label}</p>
+          </div>
+        ))}
+      </div>
 
       <NextAction item={nextAction} />
       {mandate.status === "open" && !mandate.is_archived && (
@@ -528,7 +516,7 @@ export default async function MandateDetailPage({
         </details>
       )}
 
-      {blockers.length > 0 && (
+      {!nextAction && blockers.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <ShieldAlert className="h-3.5 w-3.5 text-slate-400" />
           {blockers.map((b) => (
