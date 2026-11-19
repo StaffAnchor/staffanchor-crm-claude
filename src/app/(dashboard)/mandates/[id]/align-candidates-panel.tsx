@@ -82,16 +82,16 @@ export default function AlignCandidatesPanel({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search candidates by name, employer, sub-domain..."
-          className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-1.5 text-[13px]"
+          className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-1.5 text-[14px]"
         />
       </div>
 
       <div className="max-h-64 overflow-y-auto space-y-1 mb-3">
-        {filtered.length === 0 && <p className="text-[12px] text-slate-400 py-3 text-center">No matching candidates.</p>}
+        {filtered.length === 0 && <p className="text-[13px] text-slate-400 py-3 text-center">No matching candidates.</p>}
         {filtered.map((c) => (
           <label
             key={c.id}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px]"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[14px]"
           >
             <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
             <span className="flex-1 truncate">
@@ -102,18 +102,18 @@ export default function AlignCandidatesPanel({
         ))}
       </div>
 
-      {error && <p className="text-[12px] text-red-600 mb-2">{error}</p>}
+      {error && <p className="text-[13px] text-red-600 mb-2">{error}</p>}
 
       <button
         onClick={handleLink}
         disabled={saving || selected.size === 0}
-        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2 disabled:opacity-40"
+        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2 disabled:opacity-40"
       >
         <UserPlus className="w-3.5 h-3.5" />
         {saving ? "Linking..." : `Link ${selected.size || ""} candidate${selected.size === 1 ? "" : "s"}`}
       </button>
 
-      <Link href="/candidates/new" className="block text-center text-[12px] text-teal-600 hover:underline mt-2">
+      <Link href="/candidates/new" className="block text-center text-[13px] text-teal-600 hover:underline mt-2">
         Or create a brand new candidate profile
       </Link>
     </div>

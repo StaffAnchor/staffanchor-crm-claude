@@ -134,7 +134,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 
   const grandTotal = rows.reduce((a, r) => a + r.total, 0);
   const chip = (on: boolean) =>
-    `rounded-full px-3 py-1.5 text-[12.5px] font-medium ${on ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"}`;
+    `rounded-full px-3 py-1.5 text-[13px] font-medium ${on ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"}`;
   const exportHref = p.cluster && p.cluster !== "none" ? `/api/inventory/export?${new URLSearchParams({ track: p.track, ...(p.domain ? { domain: p.domain } : {}), scope: p.scope, level: p.level, cluster: p.cluster, ...(p.metro ? { metro: p.metro } : {}) }).toString()}` : null;
 
   return (
@@ -143,7 +143,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="ros-page-title">Supply map</h1>
-          <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
+          <p className="mt-1 max-w-3xl text-[14px] text-slate-500 dark:text-slate-400">
             What you hold against what is open: by kind of role and city, how many are ready to call and match today, and where open roles are short of ready people. Click a number to see the people behind it, or a button to fix the gap.
           </p>
         </div>
@@ -160,7 +160,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <section id="open-roles" className="space-y-2">
           <div>
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Open roles: are we ready?</h2>
-            <p className="text-[12.5px] text-slate-500">Urgent first, then the roles with the fewest ready people in their city. &quot;Ready&quot; means every vital is on file, so they can be called and matched today.</p>
+            <p className="text-[13px] text-slate-500">Urgent first, then the roles with the fewest ready people in their city. &quot;Ready&quot; means every vital is on file, so they can be called and matched today.</p>
           </div>
           <ul className="grid gap-3 lg:grid-cols-2">
             {visibleGaps.map((g) => {
@@ -173,24 +173,24 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                 <li key={g.mandate_id} className={`rounded-ros-xl border bg-white p-4 dark:bg-slate-900 ${tone}`}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${g.mandate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
+                      <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${g.mandate_id}`} className="text-[15px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
                         {g.role_title ?? "Role"}
                       </Link>
-                      {g.is_urgent && <span className="ml-2 rounded bg-orange-100 px-1.5 py-px text-[11px] font-semibold text-orange-900 dark:bg-orange-900/40 dark:text-orange-100">Urgent</span>}
-                      <p className="text-[12px] text-slate-500">{[g.client_name, g.city, clusterNameOf.get(g.role_cluster)].filter(Boolean).join(" · ")}</p>
+                      {g.is_urgent && <span className="ml-2 rounded bg-orange-100 px-1.5 py-px text-[12px] font-semibold text-orange-900 dark:bg-orange-900/40 dark:text-orange-100">Urgent</span>}
+                      <p className="text-[13px] text-slate-500">{[g.client_name, g.city, clusterNameOf.get(g.role_cluster)].filter(Boolean).join(" · ")}</p>
                     </div>
-                    <p className="text-right text-[12px] text-slate-500"><b className="text-[20px] tabular-nums text-slate-900 dark:text-slate-100">{g.ready_n}</b> ready<br />of {g.total_n} in {g.metro === "Unknown" ? "the city" : g.metro}</p>
+                    <p className="text-right text-[13px] text-slate-500"><b className="text-[20px] tabular-nums text-slate-900 dark:text-slate-100">{g.ready_n}</b> ready<br />of {g.total_n} in {g.metro === "Unknown" ? "the city" : g.metro}</p>
                   </div>
-                  <p className="mt-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+                  <p className="mt-2 text-[13px] text-slate-600 dark:text-slate-300">
                     {incomplete > 0 ? `${g.gate_missing_n} missing current pay or CV, ${g.vitals_missing_n} missing a vital.` : "Everyone we hold here has their vitals."}
                     {g.reloc_ready_n > 0 && ` ${g.reloc_ready_n} more ready people elsewhere would relocate.`} {g.in_pipeline_n} already in this role&apos;s pipeline.
                   </p>
                   {firstCalls.length > 0 && (
                     <ul className="mt-2 space-y-1">
                       {firstCalls.map((b) => (
-                        <li key={b.candidate_id} className="flex flex-wrap items-baseline gap-x-2 text-[12.5px]">
+                        <li key={b.candidate_id} className="flex flex-wrap items-baseline gap-x-2 text-[13px]">
                           <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${b.candidate_id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-300">{b.full_name ?? "Unnamed"}</Link>
-                          {b.pool_tier && <span className={`rounded-full px-1.5 text-[10.5px] font-semibold ring-1 ${POOL_TIER_PILL[b.pool_tier]}`}>{POOL_TIER_LABEL[b.pool_tier]}</span>}
+                          {b.pool_tier && <span className={`rounded-full px-1.5 text-[12px] font-semibold ring-1 ${POOL_TIER_PILL[b.pool_tier]}`}>{POOL_TIER_LABEL[b.pool_tier]}</span>}
                           <span className="text-slate-400">{b.strength}{b.in_pipeline ? " · in pipeline" : ""}</span>
                           <span className={(b.blockers ?? []).length === 0 ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}>
                             {(b.blockers ?? []).length === 0 ? "ready to send" : `needs ${(b.blockers ?? []).length} to send`}
@@ -201,11 +201,11 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                   )}
                   <div className="mt-3 flex flex-wrap gap-2">
                     {incomplete > 0 && (
-                      <Link target="_blank" rel="noopener noreferrer" href={fixHref} className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[12px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
+                      <Link target="_blank" rel="noopener noreferrer" href={fixHref} className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[13px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900">
                         Complete these {incomplete}
                       </Link>
                     )}
-                    <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${g.mandate_id}`} className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${g.mandate_id}`} className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200">
                       Open the role
                     </Link>
                   </div>
@@ -214,7 +214,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             })}
           </ul>
           {gaps.length > TOP_ROLES && (
-            <p className="text-[12.5px] text-slate-500">
+            <p className="text-[13px] text-slate-500">
               Showing {visibleGaps.length} of {gaps.length} open roles.{" "}
               <Link href={withRoles(showAllRoles ? null : "all")} className="font-semibold text-teal-700 hover:underline dark:text-teal-300">
                 {showAllRoles ? `Show the top ${TOP_ROLES}` : `Show all ${gaps.length}`}
@@ -226,11 +226,11 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 
       {pitch.length > 0 && (
         <section className="rounded-ros-xl border border-teal-200 bg-teal-50/50 p-4 dark:border-teal-900 dark:bg-teal-950/20">
-          <h2 className="text-[14px] font-semibold text-teal-900 dark:text-teal-100">Supply with no open role: take it to clients</h2>
-          <p className="text-[12.5px] text-teal-900/80 dark:text-teal-200/80">Kinds of role we hold ready people for in a city where no mandate is open. These are the easiest conversations to start with a client.</p>
+          <h2 className="text-[15px] font-semibold text-teal-900 dark:text-teal-100">Supply with no open role: take it to clients</h2>
+          <p className="text-[13px] text-teal-900/80 dark:text-teal-200/80">Kinds of role we hold ready people for in a city where no mandate is open. These are the easiest conversations to start with a client.</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {pitch.map((c) => (
-              <Link key={`${c.cluster_slug}|${c.metro}`} href={inventoryHref(p, { cluster: c.cluster_slug, metro: c.metro })} className="rounded-full bg-white px-3 py-1 text-[12.5px] font-medium text-slate-800 ring-1 ring-teal-200 hover:bg-teal-50 dark:bg-slate-900 dark:text-slate-100 dark:ring-teal-800">
+              <Link key={`${c.cluster_slug}|${c.metro}`} href={inventoryHref(p, { cluster: c.cluster_slug, metro: c.metro })} className="rounded-full bg-white px-3 py-1 text-[13px] font-medium text-slate-800 ring-1 ring-teal-200 hover:bg-teal-50 dark:bg-slate-900 dark:text-slate-100 dark:ring-teal-800">
                 {clusterNameOf.get(c.cluster_slug) ?? c.cluster_slug} · {c.metro} · <b>{Number(c.ready)}</b> ready
               </Link>
             ))}
@@ -281,7 +281,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="overflow-x-auto rounded-ros-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <thead>
             <tr className="border-b border-slate-100 text-left text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <th className="sticky left-0 z-10 bg-white px-4 py-2.5 font-medium dark:bg-slate-900">Kind of role</th>
@@ -323,7 +323,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
           )}
         </table>
       </div>
-      <p className="text-[12px] text-slate-500 dark:text-slate-400">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400">
         <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle" /> an open role in that cell, <span className="mx-1 inline-block h-1.5 w-1.5 rounded-full bg-rose-500 align-middle" /> an urgent one, <b>0!</b> an open role with nobody ready. {" "}A person can appear in more than one row (for example someone who is both an Account Executive and a Solution Engineer), so totals are counts of roles, not people.{" "}
         {unclassifiedCount > 0 && (
           <Link href={inventoryHref(p, { cluster: "none", metro: null })} className="font-medium text-teal-600 hover:underline">
@@ -339,7 +339,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
               {drillTitle} <span className="font-normal text-slate-400">({people.length}{people.length >= 400 ? "+" : ""})</span>
             </h2>
             {p.metro && (
-              <Link href={inventoryHref(p, { metro: null })} className="text-[12px] text-teal-600 hover:underline">
+              <Link href={inventoryHref(p, { metro: null })} className="text-[13px] text-teal-600 hover:underline">
                 Show all cities
               </Link>
             )}
@@ -348,22 +348,22 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                 target="_blank"
                 rel="noopener noreferrer"
                 href={`/candidates/complete?${new URLSearchParams({ group: p.track, sub: "*", mode: "vitals", cluster: p.cluster, ...(p.metro ? { metro: p.metro } : {}) }).toString()}`}
-                className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[12px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+                className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[13px] font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
               >
                 Call the {incompleteHere} missing vitals
               </Link>
             )}
             {exportHref && (
-              <a href={exportHref} className="text-[12px] font-medium text-teal-600 hover:underline">
+              <a href={exportHref} className="text-[13px] font-medium text-teal-600 hover:underline">
                 Download as CSV
               </a>
             )}
-            <Link href={inventoryHref(p, { cluster: null, metro: null })} className="ml-auto text-[12px] text-slate-500 hover:underline">
+            <Link href={inventoryHref(p, { cluster: null, metro: null })} className="ml-auto text-[13px] text-slate-500 hover:underline">
               Close
             </Link>
           </div>
           <div className="overflow-x-auto rounded-ros-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-slate-500 dark:border-slate-800">
                   <th className="px-4 py-2 font-medium">Name</th>
@@ -401,9 +401,9 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                           const r = readyBy.get(x.candidate_id);
                           if (!r) return null;
                           return r.vgaps.length === 0 ? (
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11.5px] font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Ready</span>
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[12px] font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">Ready</span>
                           ) : (
-                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11.5px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200" title={`Missing: ${r.vgaps.map((g) => GAP_LABEL[g] ?? g).join(", ")}`}>
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[12px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200" title={`Missing: ${r.vgaps.map((g) => GAP_LABEL[g] ?? g).join(", ")}`}>
                               {r.vgaps.length} missing
                             </span>
                           );
@@ -432,7 +432,7 @@ function FamilyBlock({ family, rows, p, max, demand }: { family: string; rows: {
   return (
     <>
       <tr className="bg-slate-50/70 dark:bg-slate-800/30">
-        <td colSpan={METROS.length + 2} className="sticky left-0 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <td colSpan={METROS.length + 2} className="sticky left-0 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
           {family}
         </td>
       </tr>
@@ -457,7 +457,7 @@ function FamilyBlock({ family, rows, p, max, demand }: { family: string; rows: {
                     {dot}
                   </Link>
                 ) : d ? (
-                  <span className="block rounded-md bg-rose-50 px-2 py-1 text-[12px] font-semibold text-rose-700 dark:bg-rose-950/30 dark:text-rose-300" title={`${d.open_roles} open ${d.open_roles === 1 ? "role" : "roles"} here and nobody ready`}>0!</span>
+                  <span className="block rounded-md bg-rose-50 px-2 py-1 text-[13px] font-semibold text-rose-700 dark:bg-rose-950/30 dark:text-rose-300" title={`${d.open_roles} open ${d.open_roles === 1 ? "role" : "roles"} here and nobody ready`}>0!</span>
                 ) : (
                   <span className={shade(0, max)}>·</span>
                 )}

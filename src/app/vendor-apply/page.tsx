@@ -257,7 +257,7 @@ export default function VendorApplyPage() {
         </div>
 
         <div className="relative mx-auto max-w-3xl px-4 pt-14 pb-28 sm:px-6">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-300 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-xs font-medium uppercase tracking-wide text-blue-300 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
             StaffAnchor Vendor Network
           </div>
@@ -265,7 +265,7 @@ export default function VendorApplyPage() {
           <h1 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight text-white text-balance">
             Freelance recruiters, expert in B2B sales hiring
           </h1>
-          <p className="mt-3 max-w-xl text-sm sm:text-[15px] leading-relaxed text-slate-300">
+          <p className="mt-3 max-w-xl text-sm sm:text-[16px] leading-relaxed text-slate-300">
             Work mandates from StaffAnchor&apos;s client roster on your own schedule -- submit candidates, get paid
             per placement.
           </p>

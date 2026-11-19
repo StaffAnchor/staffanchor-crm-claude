@@ -163,7 +163,7 @@ function Card({
           <ProfileRatingBadge row={rating} />
           {m.pool && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[m.pool]}`}>Pool: {POOL_TIER_LABEL[m.pool]}</span>}
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.cls}`}>{f.label}</span>
-          <span className="text-[12px] text-slate-500 dark:text-slate-400 tabular-nums">{m.score}/100</span>
+          <span className="text-[13px] text-slate-500 dark:text-slate-400 tabular-nums">{m.score}/100</span>
           {m.stale && <span className="text-xs text-slate-500 dark:text-slate-400">Requirements changed, re-check</span>}
         </>
       }
@@ -187,24 +187,24 @@ function Card({
       }
       actions={
         m.status === "added" ? (
-          <span className="inline-flex h-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-[13px] font-semibold text-emerald-700">In pipeline</span>
+          <span className="inline-flex h-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-[14px] font-semibold text-emerald-700">In pipeline</span>
         ) : (
           <>
             <button
               onClick={() => decide("add")}
               disabled={busy !== null}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-teal-600 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-teal-600 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
             >
               {busy === "add" && <Loader2 className="w-3 h-3 animate-spin" />} Add to pipeline
             </button>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="h-9 rounded-lg border border-slate-300 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
+              <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="h-9 rounded-lg border border-slate-300 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
                 Not a fit
               </button>
               <WhatsAppMenu
                 phone={m.phone}
                 templates={candidateTemplates(m.name, { me, candidateId: m.candidateId, missing: m.missing, role: roleTitle }).filter((t) => t.key !== "intro")}
-                className="inline-flex h-9 items-center justify-center gap-1 rounded-lg text-[13px] text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-300 dark:ring-emerald-800"
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-lg text-[14px] text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-300 dark:ring-emerald-800"
               />
             </div>
             <CvButtons candidateId={m.candidateId} name={m.name} />
@@ -212,7 +212,7 @@ function Card({
         )
       }
     >
-      {m.summary && <p className="mt-2 text-[13px] text-slate-700 dark:text-slate-300">{m.summary}</p>}
+      {m.summary && <p className="mt-2 text-[14px] text-slate-700 dark:text-slate-300">{m.summary}</p>}
 
       <div className="mt-2 flex flex-wrap gap-1.5">
         {checks.must.map((c, i) => (
@@ -220,7 +220,7 @@ function Card({
         ))}
       </div>
       {(m.checks.experience === "below" || m.checks.experience === "above" || m.checks.location === "other" || m.checks.location === "relocate") && (
-        <p className="mt-1.5 text-[12px] text-slate-500 dark:text-slate-400">
+        <p className="mt-1.5 text-[13px] text-slate-500 dark:text-slate-400">
           {[
             m.checks.experience === "below" ? "Below the experience asked" : m.checks.experience === "above" ? "Above the experience asked" : null,
             m.checks.location === "other" ? "Based elsewhere" : m.checks.location === "relocate" ? "Based elsewhere, open to relocate" : null,
@@ -234,7 +234,7 @@ function Card({
       <div className="mt-2">
         <PipelineTemplateActions candidateId={m.candidateId} mandateId={mandateId} missing={m.missing} showOpportunity />
       </div>
-      {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-red-600">{error}</p>}
 
       {doubts.some((d) => d.question) && (
         <button
@@ -248,17 +248,17 @@ function Card({
               /* clipboard blocked: nothing to do */
             }
           }}
-          className="mt-2 mr-3 inline-flex items-center gap-1 text-[12px] font-medium text-teal-700 dark:text-teal-300 hover:underline"
+          className="mt-2 mr-3 inline-flex items-center gap-1 text-[13px] font-medium text-teal-700 dark:text-teal-300 hover:underline"
         >
           {copied ? "Copied" : "Copy the questions to ask"}
         </button>
       )}
-      <button onClick={() => setOpen((o) => !o)} className="mt-2 inline-flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+      <button onClick={() => setOpen((o) => !o)} className="mt-2 inline-flex items-center gap-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
         {open ? "Hide" : "Show"} evidence{doubts.length > 0 ? ` and ${doubts.length} to confirm` : ""}
       </button>
       {open && (
-        <div className="mt-2 space-y-3 text-[12.5px]">
+        <div className="mt-2 space-y-3 text-[13px]">
           {([
             ["Must haves", checks.must],
             ["Good to haves", checks.good],
@@ -433,15 +433,15 @@ export default function AiMatchesList({
     <div>
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="flex items-center gap-2 text-[16px] font-semibold text-slate-900 dark:text-slate-100">
             <Sparkles className="w-4 h-4 text-teal-600" aria-hidden /> AI matches from your candidate bank
           </h2>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             Candidates whose CVs have been read ({cvsRead} of {cvsTotal}), checked against this role&apos;s must-haves. A doubt isn&apos;t a no: it&apos;s something to confirm with the candidate.
             {lastRunAt ? ` Last checked ${new Date(lastRunAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}.` : ""}
           </p>
           {!fullPage && (
-            <Link href={`/mandates/${mandateId}/ai-matches`} className="mt-1.5 inline-block text-[12.5px] font-medium text-teal-700 dark:text-teal-300 hover:underline">
+            <Link href={`/mandates/${mandateId}/ai-matches`} className="mt-1.5 inline-block text-[13px] font-medium text-teal-700 dark:text-teal-300 hover:underline">
               Open full screen
             </Link>
           )}
@@ -449,50 +449,50 @@ export default function AiMatchesList({
         <button
           onClick={run}
           disabled={running || !roleOpen || !hasMustHaves}
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white text-[13px] font-medium px-3 py-2 hover:bg-slate-800 disabled:opacity-50"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-teal-600 text-white text-[14px] font-medium px-3 py-2 hover:bg-teal-700 disabled:opacity-50"
         >
           {running && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {running ? "Checking..." : suggested.length > 0 ? "Find more matches" : "Find matches"}
         </button>
       </div>
 
-      {!roleOpen && <p className="text-[13px] text-slate-600 dark:text-slate-300 mb-3">This role isn&apos;t open, so it isn&apos;t being matched.</p>}
+      {!roleOpen && <p className="text-[14px] text-slate-600 dark:text-slate-300 mb-3">This role isn&apos;t open, so it isn&apos;t being matched.</p>}
       {roleOpen && !hasMustHaves && (
-        <p className="text-[13px] text-amber-800 dark:text-amber-300 mb-3">Set the must-haves first (Basic details, then Draft from the JD). Matching checks candidates against them.</p>
+        <p className="text-[14px] text-amber-800 dark:text-amber-300 mb-3">Set the must-haves first (Basic details, then Draft from the JD). Matching checks candidates against them.</p>
       )}
-      {message && <p className="text-[13px] text-slate-700 dark:text-slate-300 mb-3">{message}</p>}
-      {error && <p className="text-[13px] text-red-600 mb-3">{error}</p>}
+      {message && <p className="text-[14px] text-slate-700 dark:text-slate-300 mb-3">{message}</p>}
+      {error && <p className="text-[14px] text-red-600 mb-3">{error}</p>}
 
       {suggested.length > 0 && (
         <div className="mb-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 p-3">
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">CTC min (lakhs)</label>
-              <input value={ctcMin} onChange={(e) => setCtcMin(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]" />
+              <input value={ctcMin} onChange={(e) => setCtcMin(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[14px]" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">CTC max (lakhs)</label>
-              <input value={ctcMax} onChange={(e) => setCtcMax(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]" />
+              <input value={ctcMax} onChange={(e) => setCtcMax(e.target.value)} inputMode="decimal" placeholder="Any" className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[14px]" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Judge on</label>
-              <select value={ctcBasis} onChange={(e) => setCtcBasis(e.target.value as CtcBasis)} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]">
+              <select value={ctcBasis} onChange={(e) => setCtcBasis(e.target.value as CtcBasis)} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[14px]">
                 <option value="expected_else_current">Expected CTC, else current</option>
                 <option value="current">Current CTC</option>
                 <option value="expected">Expected CTC only</option>
               </select>
             </div>
-            <label className="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-300 pb-1.5">
+            <label className="flex items-center gap-2 text-[14px] text-slate-700 dark:text-slate-300 pb-1.5">
               <input type="checkbox" checked={includeNoCtc} onChange={(e) => setIncludeNoCtc(e.target.checked)} />
               Include candidates with no CTC ({noCtcCount})
             </label>
             {(ctcMin || ctcMax) && (
-              <button onClick={() => { setCtcMin(""); setCtcMax(""); }} className="text-[12.5px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 pb-1.5">
+              <button onClick={() => { setCtcMin(""); setCtcMax(""); }} className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 pb-1.5">
                 Clear CTC range
               </button>
             )}
           </div>
-          <p className="mt-2 text-[12px] text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
             {budgetMin != null || budgetMax != null ? `Role budget: ${budgetMin ?? "?"} to ${budgetMax ?? "?"} lakhs. ` : "No budget set on this role. "}
             {ctcActive && hiddenByCtc > 0 ? `${hiddenByCtc} ${hiddenByCtc === 1 ? "candidate is" : "candidates are"} hidden by the CTC filter.` : ""}
           </p>
@@ -501,15 +501,15 @@ export default function AiMatchesList({
 
       {visible.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <label className="flex items-center gap-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">
             Sort by
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as "best" | "ctc" | "notice")} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[12.5px]">
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as "best" | "ctc" | "notice")} className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[13px]">
               <option value="best">Best fit first</option>
               <option value="ctc">Lowest expected CTC</option>
               <option value="notice">Shortest notice</option>
             </select>
           </label>
-          <div className="flex items-center gap-3 text-[12.5px]">
+          <div className="flex items-center gap-3 text-[13px]">
             <button onClick={() => setPicked(new Set(visible.map((i) => i.candidateId)))} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
               Select all {visible.length}
             </button>
@@ -528,7 +528,7 @@ export default function AiMatchesList({
       )}
 
       {visible.length === 0 && roleOpen && hasMustHaves ? (
-        <p className="text-[13px] text-slate-500 dark:text-slate-400 py-6">
+        <p className="text-[14px] text-slate-500 dark:text-slate-400 py-6">
           {suggested.length > 0 && hiddenByCtc > 0 ? "Everyone is hidden by the CTC filter. Widen the range or clear it." : "Nothing to show yet. Press Find matches to check the best candidates from your bank."}
         </p>
       ) : (
@@ -540,14 +540,14 @@ export default function AiMatchesList({
       )}
 
       {weakCount > 0 && (
-        <button onClick={() => setShowWeak((s) => !s)} className="mt-3 text-[12.5px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+        <button onClick={() => setShowWeak((s) => !s)} className="mt-3 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
           {showWeak ? "Hide" : "Show"} {weakCount} weak {weakCount === 1 ? "match or profile" : "matches or profiles"}
         </button>
       )}
 
       {added.length > 0 && (
         <details className="mt-4">
-          <summary className="cursor-pointer text-[13px] font-medium text-slate-700 dark:text-slate-200">Already added to the pipeline ({added.length})</summary>
+          <summary className="cursor-pointer text-[14px] font-medium text-slate-700 dark:text-slate-200">Already added to the pipeline ({added.length})</summary>
           <ul className="mt-2 space-y-3">
             {added.map((m) => (
               <Card key={m.candidateId} roleTitle={roleTitle} m={m} mandateId={mandateId} confirmations={confirmations} rating={ratings.get(m.candidateId)} onChanged={() => router.refresh()} />

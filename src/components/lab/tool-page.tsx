@@ -22,7 +22,7 @@ export function ToolFrame({ me, eyebrow, title, intro, wide, children }: { me: {
       <main className={`mx-auto space-y-5 px-4 py-6 ${wide ? "max-w-5xl" : "max-w-4xl"}`}>
         <Link href="/lab/home" className="text-sm text-slate-500 hover:text-slate-800">← My progress</Link>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">{eyebrow}</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-teal-700">{eyebrow}</p>
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{intro}</p>
         </div>

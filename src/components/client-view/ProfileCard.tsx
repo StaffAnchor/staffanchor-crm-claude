@@ -113,12 +113,12 @@ export default function ProfileCard({
         {/* Who they are */}
         <div className="min-w-0">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f1e9dc] text-[13px] font-semibold text-[#7a5b34]">{initials(c.full_name)}</div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f1e9dc] text-[14px] font-semibold text-[#7a5b34]">{initials(c.full_name)}</div>
             <div className="min-w-0">
               <button type="button" onClick={onOpen} className="block max-w-full truncate text-left text-[16px] font-semibold text-[#1f6f5c] hover:underline">
                 {c.full_name}
               </button>
-              <p className="truncate text-[12.5px] text-slate-500">
+              <p className="truncate text-[13px] text-slate-500">
                 {c.current_job_title ?? "—"}
                 {c.current_employer ? ` · ${c.current_employer}` : ""}
               </p>
@@ -129,7 +129,7 @@ export default function ProfileCard({
             {c.recommendation === "Strong Fit" && <Chip tone="good">Recommended</Chip>}
             {c.confirmed_on_call_at && <Chip tone="info">Confirmed on a call</Chip>}
           </div>
-          <dl className="mt-3 space-y-1 text-[13px]">
+          <dl className="mt-3 space-y-1 text-[14px]">
             {facts.map(([k, v]) =>
               v ? (
                 <div key={k} className="flex gap-1.5">
@@ -151,7 +151,7 @@ export default function ProfileCard({
         </div>
 
         {/* Last jobs */}
-        <div className="min-w-0 space-y-3 text-[13px]">
+        <div className="min-w-0 space-y-3 text-[14px]">
           {jobs.length === 0 ? (
             <p className="text-slate-400">Job history is not available yet.</p>
           ) : (
@@ -164,15 +164,15 @@ export default function ProfileCard({
             ))
           )}
           {more > 0 && (
-            <button type="button" onClick={onOpen} className="text-[12.5px] font-medium text-[#2563a8] hover:underline">
+            <button type="button" onClick={onOpen} className="text-[13px] font-medium text-[#2563a8] hover:underline">
               {more} more work experience &rsaquo;
             </button>
           )}
-          {c.selling?.sells_now?.length ? <p className="text-[12.5px] text-slate-500">Sells: {c.selling.sells_now.slice(0, 3).join(", ")}</p> : null}
+          {c.selling?.sells_now?.length ? <p className="text-[13px] text-slate-500">Sells: {c.selling.sells_now.slice(0, 3).join(", ")}</p> : null}
         </div>
 
         {/* Education */}
-        <div className="min-w-0 space-y-3 text-[13px]">
+        <div className="min-w-0 space-y-3 text-[14px]">
           {edu.length === 0 ? (
             <p className="text-slate-400">Education is not available yet.</p>
           ) : (
@@ -187,18 +187,18 @@ export default function ProfileCard({
               </div>
             ))
           )}
-          {c.cv_certifications && c.cv_certifications.length > 0 && <p className="text-[12.5px] text-slate-500">{c.cv_certifications.slice(0, 2).join(" · ")}</p>}
+          {c.cv_certifications && c.cv_certifications.length > 0 && <p className="text-[13px] text-slate-500">{c.cv_certifications.slice(0, 2).join(" · ")}</p>}
         </div>
       </div>
 
       {/* Against what you asked for: the recruiter's own review when they wrote one, otherwise the automatic comparison */}
       {reviewRows.length > 0 ? (
         <div className="mt-4 rounded-xl border border-[#ece7de] bg-[#faf7f1] px-3 py-2.5">
-          <p className="text-[12.5px] font-semibold text-slate-800">
+          <p className="text-[13px] font-semibold text-slate-800">
             {reviewMet} of {reviewRows.length} requirements met
             {c.share_review?.reviewer_name ? <span className="font-normal text-slate-500"> &middot; reviewed by {c.share_review.reviewer_name}</span> : null}
           </p>
-          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[12.5px]">
+          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[13px]">
             {reviewRows.slice(0, 6).map((r, i) => {
               const st = STATE_ICON[r.status === "met" ? "met" : r.status === "partial" ? "partial" : "unmet"];
               return (
@@ -217,10 +217,10 @@ export default function ProfileCard({
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-[#ece7de] bg-[#faf7f1] px-3 py-2.5">
           <FitRing fit={fit} size={44} />
           <div className="min-w-0 flex-1">
-            <p className="text-[12.5px] font-semibold text-slate-800">
+            <p className="text-[13px] font-semibold text-slate-800">
               {fit.pct === null ? "Not enough information to compare yet" : `${fit.points} of ${fit.total} things you asked for are met`}
             </p>
-            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[12.5px]">
+            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[13px]">
               {fit.rows.slice(0, 6).map((r) => (
                 <li key={r.key} className={`inline-flex items-center gap-1 ${STATE_ICON[r.state].cls}`} title={`You asked for ${r.asked}. They have ${r.got}.`}>
                   {STATE_ICON[r.state].icon}
@@ -233,9 +233,9 @@ export default function ProfileCard({
           </div>
         </div>
       )}
-      {summary && <p className="mt-3 line-clamp-2 text-[12.5px] leading-5 text-slate-600">{summary}</p>}
+      {summary && <p className="mt-3 line-clamp-2 text-[13px] leading-5 text-slate-600">{summary}</p>}
       {c.client_note && (
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[12.5px] leading-5 text-amber-900">
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[13px] leading-5 text-amber-900">
           <span className="font-semibold">Note from StaffAnchor:</span> {c.client_note}
         </p>
       )}
@@ -245,16 +245,16 @@ export default function ProfileCard({
         <div className="flex flex-wrap items-center gap-2">
           {c.resume_file_url && getResumeUrl ? (
             <>
-              <button type="button" onClick={() => void cv("preview")} disabled={!!cvBusy} className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4dccd] bg-[#faf7f1] px-3 py-1.5 text-[12.5px] font-medium text-slate-700 hover:bg-[#f3eee4] disabled:opacity-60">
+              <button type="button" onClick={() => void cv("preview")} disabled={!!cvBusy} className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4dccd] bg-[#faf7f1] px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-[#f3eee4] disabled:opacity-60">
                 <FileText className="h-3.5 w-3.5" /> {cvBusy === "preview" ? "Opening…" : "Preview CV"}
               </button>
-              <button type="button" onClick={() => void cv("download")} disabled={!!cvBusy} className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4dccd] bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-700 hover:bg-[#f3eee4] disabled:opacity-60">
+              <button type="button" onClick={() => void cv("download")} disabled={!!cvBusy} className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4dccd] bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-[#f3eee4] disabled:opacity-60">
                 <Download className="h-3.5 w-3.5" /> {cvBusy === "download" ? "Preparing…" : "Download CV"}
               </button>
             </>
           ) : null}
-          {cvError && <span className="text-[11.5px] text-amber-700">Couldn&apos;t open. Ask your recruiter.</span>}
-          <button type="button" onClick={onOpen} className="text-[12.5px] font-medium text-[#7a5b34] underline-offset-2 hover:underline">
+          {cvError && <span className="text-[12px] text-amber-700">Couldn&apos;t open. Ask your recruiter.</span>}
+          <button type="button" onClick={onOpen} className="text-[13px] font-medium text-[#7a5b34] underline-offset-2 hover:underline">
             Full profile &rarr;
           </button>
         </div>

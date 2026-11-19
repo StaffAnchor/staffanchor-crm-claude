@@ -51,16 +51,16 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
   const yesterday = days[days.length - 2];
   const tile = (title: string, a: { gate: number; vitals: number; full: number } | undefined) => (
     <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
-      <p className="mt-0.5 text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{a?.gate ?? 0}<span className="ml-1 text-[11.5px] font-normal text-slate-500">got pay + CV</span></p>
+      <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
+      <p className="mt-0.5 text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{a?.gate ?? 0}<span className="ml-1 text-[12px] font-normal text-slate-500">got pay + CV</span></p>
     </div>
   );
 
   return (
     <section className={`${card} mb-5 p-4`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Completions · {label}</h2>
-        <p className="flex items-center gap-1.5 text-[11.5px] text-slate-400">
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Completions · {label}</h2>
+        <p className="flex items-center gap-1.5 text-[12px] text-slate-400">
           <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
           Live{updated ? `, updated ${updated.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true })}` : ""}. Counted each time a profile crosses a line, whoever edits it. Edits made elsewhere before 31 Oct 2026 were not recorded.
         </p>
@@ -72,7 +72,7 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
           {tile("Month to date", trend.mtd)}
         </div>
         <div>
-          <p className="mb-1 text-[11.5px] text-slate-500">Profiles that got current pay and a CV, per day, last 30 days</p>
+          <p className="mb-1 text-[12px] text-slate-500">Profiles that got current pay and a CV, per day, last 30 days</p>
           <div className="flex h-28 items-end gap-[3px]" role="img" aria-label="Daily completions, last 30 days">
             {days.map((d) => (
               <div key={d.day} className="flex h-full flex-1 flex-col justify-end" title={`${shortDay(d.day)}: ${d.gate} got pay + CV`}>
@@ -80,16 +80,16 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
               </div>
             ))}
           </div>
-          <div className="mt-1 flex justify-between text-[10.5px] text-slate-400"><span>{shortDay(days[0].day)}</span><span>{shortDay(days[days.length - 1].day)}</span></div>
-          <p className="mb-1 mt-4 text-[11.5px] font-medium text-slate-500">Just now</p>
+          <div className="mt-1 flex justify-between text-[12px] text-slate-400"><span>{shortDay(days[0].day)}</span><span>{shortDay(days[days.length - 1].day)}</span></div>
+          <p className="mb-1 mt-4 text-[12px] font-medium text-slate-500">Just now</p>
           {!live ? (
-            <p className="text-[12.5px] text-slate-400">Loading…</p>
+            <p className="text-[13px] text-slate-400">Loading…</p>
           ) : live.feed.filter((f) => f.kind === "gate").length === 0 ? (
-            <p className="text-[12.5px] text-slate-400">No profile has got current pay and a CV yet today.</p>
+            <p className="text-[13px] text-slate-400">No profile has got current pay and a CV yet today.</p>
           ) : (
             <ul className="max-h-40 space-y-1 overflow-y-auto pr-1">
               {live.feed.filter((f) => f.kind === "gate").map((f, i) => (
-                <li key={`${f.at}-${i}`} className="text-[12.5px] text-slate-600 dark:text-slate-300">
+                <li key={`${f.at}-${i}`} className="text-[13px] text-slate-600 dark:text-slate-300">
                   <span className="tabular-nums text-slate-400">{timeOf(f.at)}</span> · <b className="font-medium text-slate-800 dark:text-slate-100">{f.by}</b>: <Link href={`/candidates/${f.candidate_id}`} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:underline dark:text-teal-300">{f.candidate ?? "A profile"}</Link> {KIND_TEXT[f.kind] ?? f.kind}
                 </li>
               ))}
@@ -98,22 +98,22 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
         </div>
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <p className="text-[11.5px] text-slate-500">Who did what</p>
-            <span className="flex gap-1 text-[11.5px]">
+            <p className="text-[12px] text-slate-500">Who did what</p>
+            <span className="flex gap-1 text-[12px]">
               {(["today", "month"] as const).map((v) => (
-                <button key={v} type="button" onClick={() => setView(v)} className={`rounded-full px-2.5 py-0.5 font-medium ${view === v ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}>{v === "today" ? "Today" : "This month"}</button>
+                <button key={v} type="button" onClick={() => setView(v)} className={`rounded-full px-2.5 py-0.5 font-medium ${view === v ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}>{v === "today" ? "Today" : "This month"}</button>
               ))}
             </span>
           </div>
           {view === "today" ? (
             !live ? (
-              <p className="text-[12.5px] text-slate-400">Loading…</p>
+              <p className="text-[13px] text-slate-400">Loading…</p>
             ) : live.people.length === 0 ? (
-              <p className="text-[12.5px] text-slate-400">No calls or completions yet today.</p>
+              <p className="text-[13px] text-slate-400">No calls or completions yet today.</p>
             ) : (
-              <table className="w-full text-[12.5px]">
+              <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="text-left text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  <tr className="text-left text-[12px] font-medium uppercase tracking-wide text-slate-400">
                     <th className="pb-1 font-medium">Person</th>
                     <th className="pb-1 text-right font-medium" title="Calls logged today">Calls</th>
                     <th className="pb-1 text-right font-medium" title="Share of calls where someone picked up">Picked up</th>
@@ -133,11 +133,11 @@ export default function CompletionsCard({ initial, group, label }: { initial: Tr
               </table>
             )
           ) : trend.people.length === 0 ? (
-            <p className="text-[12.5px] text-slate-400">Nobody has completed a profile yet this month.</p>
+            <p className="text-[13px] text-slate-400">Nobody has completed a profile yet this month.</p>
           ) : (
             <ul className="space-y-1.5">
               {trend.people.map((p) => (
-                <li key={p.name} className="flex items-baseline justify-between gap-2 text-[12.5px]">
+                <li key={p.name} className="flex items-baseline justify-between gap-2 text-[13px]">
                   <span className="truncate text-slate-700 dark:text-slate-200">{p.name}</span>
                   <span className="shrink-0 tabular-nums text-slate-500"><b className="text-slate-900 dark:text-slate-100">{p.gate}</b> got pay + CV</span>
                 </li>

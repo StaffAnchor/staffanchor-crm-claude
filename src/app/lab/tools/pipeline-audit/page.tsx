@@ -24,7 +24,7 @@ export default async function PipelineAuditPage() {
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
         <Link href="/lab/home" className="text-sm text-slate-500 hover:text-slate-800">← My progress</Link>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">Session 1</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-teal-700">Session 1</p>
           <h1 className="text-2xl font-semibold tracking-tight">Pipeline Audit</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Pick 10 open deals from your CRM view. Enter the CRM deal ID only, then answer Y or N for each of the nine checks. The score is worked out for you. Do not enter deal values or customer names here.</p>
         </div>

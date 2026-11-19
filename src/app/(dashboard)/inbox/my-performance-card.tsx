@@ -36,7 +36,7 @@ export default function MyPerformanceCard({
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-5 mb-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">My performance</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">My performance</p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
         <div>

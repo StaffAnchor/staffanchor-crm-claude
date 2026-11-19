@@ -7,8 +7,8 @@ export default function StatusChip({ c, className = "" }: { c: BoardCandidate; c
   const detail = statusDetail(c);
   return (
     <span className={`inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 ${className}`}>
-      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11.5px] font-semibold ${STATUS_TONE[s]}`}>{STATUS_NAME[s]}</span>
-      {detail && <span className="text-[12px] text-slate-500">{detail}</span>}
+      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[12px] font-semibold ${STATUS_TONE[s]}`}>{STATUS_NAME[s]}</span>
+      {detail && <span className="text-[13px] text-slate-500">{detail}</span>}
     </span>
   );
 }

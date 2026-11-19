@@ -71,25 +71,25 @@ export default function SmartSplit({ groups, roleId, roleTitle, roleCluster = nu
       <div className="flex min-h-0 flex-col">
         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900">
           <div className="flex flex-wrap items-start gap-4 border-b border-slate-100 p-5 dark:border-slate-800">
-            <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[12.5px] lg:hidden"><ArrowLeft className="h-3.5 w-3.5" /> List</button>
+            <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[13px] lg:hidden"><ArrowLeft className="h-3.5 w-3.5" /> List</button>
             <ScoreRing score={m.score} size={52} />
             <div className="min-w-[180px] flex-1">
               <a href={`/candidates/${m.candidate_id}`} target="_blank" rel="noopener noreferrer" className="text-[20px] font-semibold leading-tight tracking-tight text-slate-900 hover:underline dark:text-slate-100">{m.full_name}</a>
-              <p className="truncate text-[12.5px] text-slate-500">{[m.current_job_title, m.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</p>
+              <p className="truncate text-[13px] text-slate-500">{[m.current_job_title, m.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {st === "added" || st === "exists" ? (
-                <span className="inline-flex h-8 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12.5px] font-semibold text-emerald-700">{st === "added" ? "Added" : "In the pipeline"}</span>
+                <span className="inline-flex h-8 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-700">{st === "added" ? "Added" : "In the pipeline"}</span>
               ) : (
-                <button type="button" disabled={st === "adding"} onClick={() => void add(m)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-teal-600 px-3 text-[12.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {st === "adding" ? "Adding…" : `Add to ${roleTitle}`}</button>
+                <button type="button" disabled={st === "adding"} onClick={() => void add(m)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-teal-600 px-3 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50"><Plus className="h-3.5 w-3.5" /> {st === "adding" ? "Adding…" : `Add to ${roleTitle}`}</button>
               )}
-              <button type="button" onClick={() => setTab("call")} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-[12.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200"><PhoneCall className="h-3.5 w-3.5" /> Call now</button>
-              {st === "error" && <span className="text-[12px] text-rose-600">Couldn&apos;t add. Try again.</span>}
+              <button type="button" onClick={() => setTab("call")} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200"><PhoneCall className="h-3.5 w-3.5" /> Call now</button>
+              {st === "error" && <span className="text-[13px] text-rose-600">Couldn&apos;t add. Try again.</span>}
             </div>
           </div>
           <div role="tablist" className="flex gap-0.5 border-b border-slate-100 px-4 dark:border-slate-800">
             {([["overview", "Overview"], ["call", "Call & details"]] as const).map(([k, label]) => (
-              <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] ${tab === k ? "border-teal-600 font-semibold text-slate-900 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-700"}`}>{label}</button>
+              <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[14px] ${tab === k ? "border-teal-600 font-semibold text-slate-900 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-700"}`}>{label}</button>
             ))}
           </div>
         </div>
@@ -106,8 +106,8 @@ export default function SmartSplit({ groups, roleId, roleTitle, roleCluster = nu
                 <FactTile label="Practice" value={m.sub_domain} />
               </dl>
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Why they came up</p>
-                {m.reason && <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">{m.reason}</p>}
+                <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-slate-500">Why they came up</p>
+                {m.reason && <p className="text-[14px] leading-relaxed text-slate-700 dark:text-slate-300">{m.reason}</p>}
                 {m.checks.length > 0 && (
                   <div className="mt-3">
                     <div className="flex flex-wrap gap-1.5">
@@ -115,7 +115,7 @@ export default function SmartSplit({ groups, roleId, roleTitle, roleCluster = nu
                     </div>
                     <button type="button" onClick={() => setShowEvidence((v) => !v)} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:underline">{showEvidence ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />} {showEvidence ? "Hide the evidence" : "Show the evidence"}</button>
                     {showEvidence && (
-                      <ul className="mt-1 space-y-1 text-[12.5px] text-slate-600 dark:text-slate-300">
+                      <ul className="mt-1 space-y-1 text-[13px] text-slate-600 dark:text-slate-300">
                         {m.checks.map((c) => (<li key={c.key}><span className="font-medium">{c.label}:</span> {STATUS[c.status].word}. {c.evidence}</li>))}
                       </ul>
                     )}
@@ -128,7 +128,7 @@ export default function SmartSplit({ groups, roleId, roleTitle, roleCluster = nu
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800/60">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[14px] dark:bg-slate-800/60">
                 <span className="text-slate-600 dark:text-slate-300">Fill this in when you speak to them. What they say is remembered and used for every future search and match.</span>
                 <a href={`/candidates/${m.candidate_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 font-medium"><Phone className="h-3.5 w-3.5" /> Phone is on the profile</a>
               </div>
@@ -144,7 +144,7 @@ export default function SmartSplit({ groups, roleId, roleTitle, roleCluster = nu
     <div className="grid items-start gap-3 lg:grid-cols-[minmax(350px,430px)_minmax(0,1fr)]">
       <div className={`${mobileOpen ? "hidden lg:block" : ""} overflow-hidden rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
         <div className="sticky top-0 z-[2] border-b border-slate-100 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, company, city" aria-label="Search this list" className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, company, city" aria-label="Search this list" className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[14px] outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800" />
         </div>
         {groups.map((g) => {
           const isClosed = closed.has(g.key);
@@ -152,7 +152,7 @@ export default function SmartSplit({ groups, roleId, roleTitle, roleCluster = nu
           if (rows.length === 0) return null;
           return (
             <section key={g.key}>
-              <button type="button" aria-expanded={!isClosed} onClick={() => setClosed((p) => { const n = new Set(p); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); return n; })} title={g.blurb} className="sticky top-[49px] z-[1] flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:border-slate-800 dark:bg-slate-900">
+              <button type="button" aria-expanded={!isClosed} onClick={() => setClosed((p) => { const n = new Set(p); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); return n; })} title={g.blurb} className="sticky top-[49px] z-[1] flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-left text-[12px] font-medium uppercase tracking-wide text-slate-600 dark:border-slate-800 dark:bg-slate-900">
                 <span className="inline-flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${g.key === "right" ? "bg-emerald-500" : g.key === "close" ? "bg-amber-500" : "bg-slate-300"}`} />{g.title}</span>
                 <span className="inline-flex items-center gap-1 tabular-nums">{rows.length} {isClosed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}</span>
               </button>
@@ -167,9 +167,9 @@ export default function SmartSplit({ groups, roleId, roleTitle, roleCluster = nu
                         <button type="button" aria-current={isActive} onClick={() => { setActiveId(m.candidate_id); setTab("overview"); setMobileOpen(true); }} className="grid w-full grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-left">
                           <ScoreRing score={m.score} />
                           <span className="min-w-0">
-                            <span className="flex items-baseline gap-1.5"><span className="max-w-[68%] shrink-0 truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{m.full_name}</span><span className="min-w-0 flex-1 truncate text-[12px] text-slate-500">{[m.current_job_title, m.current_employer].filter(Boolean).join(" · ")}</span></span>
-                            <span className="mt-0.5 block truncate text-[12px] tabular-nums text-slate-500">{facts.join(" · ") || "No facts yet"}</span>
-                            <span className={`mt-0.5 block truncate text-[12px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
+                            <span className="flex items-baseline gap-1.5"><span className="max-w-[68%] shrink-0 truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">{m.full_name}</span><span className="min-w-0 flex-1 truncate text-[13px] text-slate-500">{[m.current_job_title, m.current_employer].filter(Boolean).join(" · ")}</span></span>
+                            <span className="mt-0.5 block truncate text-[13px] tabular-nums text-slate-500">{facts.join(" · ") || "No facts yet"}</span>
+                            <span className={`mt-0.5 block truncate text-[13px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
                           </span>
                           {(added[m.candidate_id] === "added" || added[m.candidate_id] === "exists") && <Check className="h-4 w-4 text-emerald-600" />}
                         </button>

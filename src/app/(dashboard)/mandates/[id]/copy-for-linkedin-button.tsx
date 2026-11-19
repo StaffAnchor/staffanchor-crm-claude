@@ -31,7 +31,7 @@ export default function CopyForLinkedinButton({ mandate }: { mandate: LinkedinJd
       type="button"
       onClick={copy}
       title="Copies the job post with headers, ready to paste into LinkedIn"
-      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12.5px] font-medium px-3 py-1.5 transition-colors"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px] font-medium px-3 py-1.5 transition-colors"
     >
       {done ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
       {done ? "Copied" : failed ? "Copy failed, try again" : "Copy for LinkedIn"}

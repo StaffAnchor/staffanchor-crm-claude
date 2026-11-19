@@ -67,7 +67,7 @@ function Chips({ value, options, onChange, tone, known }: { value: string; optio
           key={o.v}
           type="button"
           onClick={() => onChange(value === o.v ? "" : o.v)}
-          className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${
+          className={`rounded-full border px-3 py-1 text-[13px] font-medium transition-colors ${
             value === o.v ? (known ? "border-slate-300 bg-slate-200 text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300" : tone?.(o.v) ?? "border-teal-600 bg-teal-600 text-white") : known ? "border-slate-100 text-slate-400 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-500" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           }`}
         >
@@ -81,9 +81,9 @@ function Chips({ value, options, onChange, tone, known }: { value: string; optio
 function Field({ label, missing, known, children }: { label: string; missing?: boolean; known?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <p className={`mb-1 flex items-center gap-1.5 text-[12px] font-medium ${known ? "text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-200"}`}>
+      <p className={`mb-1 flex items-center gap-1.5 text-[13px] font-medium ${known ? "text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-200"}`}>
         {label}
-        {missing && <span className="rounded bg-amber-100 px-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">ask</span>}
+        {missing && <span className="rounded bg-amber-100 px-1.5 text-[12px] font-medium uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">ask</span>}
       </p>
       {children}
     </div>
@@ -95,13 +95,13 @@ function Step({ n, title, hint, filled, total, children, defaultOpen = true }: {
   return (
     <details open={defaultOpen} className="group rounded-xl border border-slate-200 dark:border-slate-700">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold text-white dark:bg-slate-100 dark:text-slate-900">{n}</span>
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[12px] font-semibold text-white dark:bg-slate-100 dark:text-slate-900">{n}</span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">{title}</span>
-          <span className="block text-[11.5px] text-slate-500">{hint}</span>
+          <span className="block text-[14px] font-semibold text-slate-900 dark:text-slate-100">{title}</span>
+          <span className="block text-[12px] text-slate-500">{hint}</span>
         </span>
         {total !== undefined && filled !== undefined && (
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${filled >= total ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{filled}/{total}</span>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-medium ${filled >= total ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{filled}/{total}</span>
         )}
         <span className="text-slate-400 transition-transform group-open:rotate-180" aria-hidden>▾</span>
       </summary>
@@ -117,7 +117,7 @@ function MultiChips({ value, options, onChange, max }: { value: string[]; option
       {options.map((o) => {
         const on = value.includes(o);
         return (
-          <button key={o} type="button" onClick={() => onChange(on ? value.filter((x) => x !== o) : value.length >= max ? value : [...value, o])} className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${on ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"}`}>
+          <button key={o} type="button" onClick={() => onChange(on ? value.filter((x) => x !== o) : value.length >= max ? value : [...value, o])} className={`rounded-full border px-3 py-1 text-[13px] font-medium transition-colors ${on ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"}`}>
             {o}
           </button>
         );
@@ -129,9 +129,9 @@ function MultiChips({ value, options, onChange, max }: { value: string[]; option
 const length3 = (v: string | null | undefined) => (v ?? "").trim().length > 2;
 const asOpts = (xs: string[]) => xs.map((x) => ({ v: x, label: x }));
 // What is already on the profile is shown grey and quiet; what is missing stays white with an amber edge, so the eye goes there.
-const selectKnown = "w-full rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[13px] text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400";
-const selectMissing = "w-full rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-[13px] shadow-sm dark:border-amber-700 dark:bg-slate-900";
-const select = "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] dark:border-slate-700 dark:bg-slate-900";
+const selectKnown = "w-full rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[14px] text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400";
+const selectMissing = "w-full rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-[14px] shadow-sm dark:border-amber-700 dark:bg-slate-900";
+const select = "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[14px] dark:border-slate-700 dark:bg-slate-900";
 const num = (v: number | string | null | undefined) => (v !== null && v !== undefined && v !== "" && Number(v) > 0 ? String(Number(v)) : "");
 
 export default function CallRecordForm({
@@ -495,7 +495,7 @@ export default function CallRecordForm({
             </Field>
           )}
         </div>
-        <p className="text-[11.5px] text-slate-400">
+        <p className="text-[12px] text-slate-400">
           Role type: {level ? (levelLead ? "Leads a team" : "Individual contributor") : p.role_type ?? "set by the level"}. Only changes are saved.
         </p>
       </Step>
@@ -551,7 +551,7 @@ export default function CallRecordForm({
           </Field>
         </div>
         {ratio !== null && (
-          <p className={`text-[12px] ${ratio >= 1.5 ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>
+          <p className={`text-[13px] ${ratio >= 1.5 ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>
             Pay-to-experience ratio {ratio.toFixed(2)} {ratio >= 1.5 ? "(meets the top-tier bar of 1.5)" : "(below the top-tier bar of 1.5)"}
             {ratio > 6 ? ". Very high: double-check the number." : ""}
           </p>
@@ -566,20 +566,20 @@ export default function CallRecordForm({
     <div className="space-y-3">
       {gateOpen && (
         <div className="rounded-xl border-2 border-teal-600/40 bg-teal-50 p-3 dark:border-teal-700 dark:bg-teal-950/30">
-          <p className="text-[13px] font-semibold text-teal-900 dark:text-teal-100">Get these first</p>
+          <p className="text-[14px] font-semibold text-teal-900 dark:text-teal-100">Get these first</p>
           <div className="mt-2 grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[12px] font-medium text-slate-700 dark:text-slate-200">Current fixed pay</p>
-              {k.ctc ? <p className="mt-1 flex items-center gap-1 text-[13px] font-medium text-emerald-700 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> On file: {p.current_fixed_ctc} LPA</p> : <div className="mt-1">{fixedPay(ctc, setCtc, false)}</div>}
+              <p className="text-[13px] font-medium text-slate-700 dark:text-slate-200">Current fixed pay</p>
+              {k.ctc ? <p className="mt-1 flex items-center gap-1 text-[14px] font-medium text-emerald-700 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> On file: {p.current_fixed_ctc} LPA</p> : <div className="mt-1">{fixedPay(ctc, setCtc, false)}</div>}
             </div>
             <div>
-              <p className="text-[12px] font-medium text-slate-700 dark:text-slate-200">CV</p>
+              <p className="text-[13px] font-medium text-slate-700 dark:text-slate-200">CV</p>
               {!needCv ? (
-                <p className="mt-1 flex items-center gap-1 text-[13px] font-medium text-emerald-700 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> On file</p>
+                <p className="mt-1 flex items-center gap-1 text-[14px] font-medium text-emerald-700 dark:text-emerald-300"><Check className="h-3.5 w-3.5" /> On file</p>
               ) : (
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <span className="text-[12.5px] text-rose-700 dark:text-rose-300">Missing: ask them to send it on WhatsApp</span>
-                  <WhatsAppMenu phone={p.phone} templates={waCv} context={{ name: p.full_name }} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[12.5px] font-semibold text-white hover:bg-emerald-700" />
+                  <span className="text-[13px] text-rose-700 dark:text-rose-300">Missing: ask them to send it on WhatsApp</span>
+                  <WhatsAppMenu phone={p.phone} templates={waCv} context={{ name: p.full_name }} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[13px] font-semibold text-white hover:bg-emerald-700" />
                 </div>
               )}
             </div>
@@ -587,7 +587,7 @@ export default function CallRecordForm({
         </div>
       )}
       {(toAsk.length > 0 || doubts.length > 0) && (
-        <div className="rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+        <div className="rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
           {toAsk.length > 0 && (
             <p>
               <b>{gateOpen ? "Then, if they have time, ask" : "Ask"}:</b> {toAsk.join(", ")}. Also listen for how clearly they explain their work.
@@ -605,14 +605,14 @@ export default function CallRecordForm({
           )}
         </div>
       )}
-      <p className="text-[11.5px] text-slate-400">
+      <p className="text-[12px] text-slate-400">
         <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-200 bg-slate-100 align-middle" /> Grey is already on the profile. <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-white align-middle" /> White with an amber edge is missing: ask these.
       </p>
 
-      {desk ? <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">More details (optional)</p> : <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Needed for every profile</p>}
+      {desk ? <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">More details (optional)</p> : <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">Needed for every profile</p>}
       {order.map((key, i) => <span key={key} className="contents">{key === "who" ? stepWho(i + 1) : key === "move" ? stepMove(i + 1) : stepPay(i + 1)}</span>)}
 
-      <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">{KIND_TITLE[kind]}</p>
+      <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">{KIND_TITLE[kind]}</p>
       {kind === "sales" && (
         <Step n={4} title="Sales depth" hint="Quota, style and cycle: the strongest fit signals for sales roles" filled={salesFilled} total={4} defaultOpen={p.profile_group !== undefined && !desk}>
           <Field label="Do they carry a quota?">
@@ -670,12 +670,12 @@ export default function CallRecordForm({
         </Step>
       )}
 
-      <p className="pt-1 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">After the call</p>
+      <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">After the call</p>
       <Step n={5} title="Your read of them" hint="Two taps each. This sets their profile strength" filled={rated} total={5} defaultOpen={!desk}>
         <div className="space-y-2">
           {JUDGMENTS.map((j) => (
             <div key={j.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <p className="min-w-0 text-[12.5px] font-medium text-slate-700 dark:text-slate-200">
+              <p className="min-w-0 text-[13px] font-medium text-slate-700 dark:text-slate-200">
                 {j.label} <span className="font-normal text-slate-400">· {j.hint}</span>
               </p>
               <Chips
@@ -687,7 +687,7 @@ export default function CallRecordForm({
             </div>
           ))}
         </div>
-        {p.comm && !ratings.communication && <p className="text-[11.5px] text-slate-400">Communication last rated {p.comm}.</p>}
+        {p.comm && !ratings.communication && <p className="text-[12px] text-slate-400">Communication last rated {p.comm}.</p>}
       </Step>
 
       <Step n={6} title="Stay in touch" hint="Consent, best time, referrals" filled={stayFilled} total={3} defaultOpen={false}>
@@ -713,35 +713,35 @@ export default function CallRecordForm({
           />
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             {voice === "idle" && (
-              <button type="button" onClick={() => void startVoice()} className="inline-flex items-center gap-1.5 rounded-lg border border-teal-600 px-2.5 py-1 text-[12.5px] font-semibold text-teal-700 hover:bg-teal-50">
+              <button type="button" onClick={() => void startVoice()} className="inline-flex items-center gap-1.5 rounded-lg border border-teal-600 px-2.5 py-1 text-[13px] font-semibold text-teal-700 hover:bg-teal-50">
                 <Mic className="h-3.5 w-3.5" /> Speak your note
               </button>
             )}
             {voice === "recording" && (
-              <button type="button" onClick={stopVoice} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-400 bg-rose-50 px-2.5 py-1 text-[12.5px] font-semibold text-rose-700">
+              <button type="button" onClick={stopVoice} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-400 bg-rose-50 px-2.5 py-1 text-[13px] font-semibold text-rose-700">
                 <Square className="h-3.5 w-3.5 fill-current" /> Stop <span className="tabular-nums">{Math.floor(voiceSecs / 60)}:{String(voiceSecs % 60).padStart(2, "0")}</span>
                 <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" aria-hidden />
               </button>
             )}
-            {voice === "converting" && <span className="text-[12.5px] text-slate-500">Turning your voice into text…</span>}
-            <span className="text-[11.5px] text-slate-400">Hindi, English or both. It goes into the box below and you can edit it. The recording is not kept.</span>
+            {voice === "converting" && <span className="text-[13px] text-slate-500">Turning your voice into text…</span>}
+            <span className="text-[12px] text-slate-400">Hindi, English or both. It goes into the box below and you can edit it. The recording is not kept.</span>
           </div>
-          <p className="mt-1 text-[11.5px] text-slate-400">Before saving, you see what the system will remember. It fills any detail still blank, keeps what they want and will not accept for future roles, and matches strong people to open roles.</p>
+          <p className="mt-1 text-[12px] text-slate-400">Before saving, you see what the system will remember. It fills any detail still blank, keeps what they want and will not accept for future roles, and matches strong people to open roles.</p>
           {readBack && (
-            <div className="mt-2 space-y-1 rounded-lg border border-teal-200 bg-teal-50/60 p-3 text-[12.5px] text-slate-700 dark:border-teal-900 dark:bg-teal-950/20 dark:text-slate-200">
+            <div className="mt-2 space-y-1 rounded-lg border border-teal-200 bg-teal-50/60 p-3 text-[13px] text-slate-700 dark:border-teal-900 dark:bg-teal-950/20 dark:text-slate-200">
               <p className="font-semibold text-teal-900 dark:text-teal-200">This is what I will remember:</p>
               {readBack.summary && <p>{readBack.summary}</p>}
               {readBack.wants.length > 0 && <p><b>Wants:</b> {readBack.wants.join("; ")}</p>}
               {readBack.dealbreakers.length > 0 && <p><b>Will not accept:</b> {readBack.dealbreakers.join("; ")}</p>}
               {readBack.strengths.length > 0 && <p><b>Strengths:</b> {readBack.strengths.join("; ")}</p>}
               {readBack.concerns.length > 0 && <p><b>Concerns:</b> {readBack.concerns.join("; ")}</p>}
-              <p className="text-[11.5px] text-slate-500">Wrong? Change your note above and read it again.</p>
+              <p className="text-[12px] text-slate-500">Wrong? Change your note above and read it again.</p>
             </div>
           )}
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-[12px] text-slate-500">Your verdict (optional):</span>
+            <span className="text-[13px] text-slate-500">Your verdict (optional):</span>
             {POOL_TIERS.map((t) => (
-              <button key={t} type="button" aria-pressed={tier === t} onClick={() => setTier(tier === t ? null : t)} className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${tier === t ? "border-amber-500 bg-amber-100 text-amber-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
+              <button key={t} type="button" aria-pressed={tier === t} onClick={() => setTier(tier === t ? null : t)} className={`rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tier === t ? "border-amber-500 bg-amber-100 text-amber-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`}>
                 {POOL_TIER_LABEL[t]}
               </button>
             ))}
@@ -752,29 +752,29 @@ export default function CallRecordForm({
 
       {/* The result of the call: always on screen on the call desk, so "No answer" never needs a scroll. */}
       <div className={desk ? "sticky bottom-0 z-10 -mx-4 -mb-4 space-y-2 border-t border-slate-200 bg-white/95 px-4 pb-3 pt-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95" : "space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800"}>
-        {error && <p className="text-[12.5px] font-medium text-rose-600">{error}</p>}
+        {error && <p className="text-[13px] font-medium text-rose-600">{error}</p>}
         <div className="flex flex-wrap items-center gap-1.5">
-          <button type="button" disabled={!!busy || reading} onClick={() => void saveSpoke()} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
+          <button type="button" disabled={!!busy || reading} onClick={() => void saveSpoke()} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
             <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : reading ? "Reading your note…" : readBack ? (desk ? "Looks right: save and next" : "Looks right: save the call") : desk ? "Spoke: read my note" : "Spoke to them: read my note"}
           </button>
-          <button type="button" disabled={!!busy} onClick={() => log("no_answer")} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[13px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
+          <button type="button" disabled={!!busy} onClick={() => log("no_answer")} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[14px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
             {busy === "no_answer" ? "Saving…" : "No answer"}
           </button>
-          <button type="button" disabled={!!busy} onClick={() => setBackOpen((v) => !v)} aria-expanded={backOpen} className={`rounded-lg border px-3 py-2 text-[13px] font-semibold disabled:opacity-50 ${backOpen ? "border-violet-500 bg-violet-100 text-violet-900" : "border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"}`}>
+          <button type="button" disabled={!!busy} onClick={() => setBackOpen((v) => !v)} aria-expanded={backOpen} className={`rounded-lg border px-3 py-2 text-[14px] font-semibold disabled:opacity-50 ${backOpen ? "border-violet-500 bg-violet-100 text-violet-900" : "border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100"}`}>
             Call back ▾
           </button>
-          <button type="button" disabled={!!busy} onClick={() => log("not_interested")} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+          <button type="button" disabled={!!busy} onClick={() => log("not_interested")} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[14px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
             {busy === "not_interested" ? "Saving…" : "Not interested"}
           </button>
-          <button type="button" disabled={!!busy} onClick={() => log("wrong_number")} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+          <button type="button" disabled={!!busy} onClick={() => log("wrong_number")} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[14px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
             {busy === "wrong_number" ? "Saving…" : "Wrong number"}
           </button>
           {p.phone !== undefined && (
-            <WhatsAppMenu phone={p.phone} templates={waTemplates} context={{ name: p.full_name }} className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[13px] font-semibold text-emerald-800 hover:bg-emerald-100" />
+            <WhatsAppMenu phone={p.phone} templates={waTemplates} context={{ name: p.full_name }} className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[14px] font-semibold text-emerald-800 hover:bg-emerald-100" />
           )}
         </div>
         {backOpen && (
-          <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-2 text-[12px] text-violet-900 dark:bg-violet-950/30 dark:text-violet-100">
+          <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-2 text-[13px] text-violet-900 dark:bg-violet-950/30 dark:text-violet-100">
             <span className="font-medium">Call them back:</span>
             {[
               { label: "In 2 hours", extra: { callBackAt: inHours(2) } },
@@ -784,11 +784,11 @@ export default function CallRecordForm({
               <button key={b.label} type="button" disabled={!!busy} onClick={() => log("call_later", b.extra)} className="rounded-full border border-violet-300 bg-white px-3 py-1 font-medium text-violet-900 hover:bg-violet-100 disabled:opacity-50 dark:bg-slate-900">{b.label}</button>
             ))}
             <span className="ml-1">or</span>
-            <input type="datetime-local" value={customBack} onChange={(e) => setCustomBack(e.target.value)} className="rounded-md border border-violet-300 bg-white px-2 py-1 text-[12px] dark:bg-slate-900" />
+            <input type="datetime-local" value={customBack} onChange={(e) => setCustomBack(e.target.value)} className="rounded-md border border-violet-300 bg-white px-2 py-1 text-[13px] dark:bg-slate-900" />
             <button type="button" disabled={!!busy || !customBack} onClick={() => log("call_later", { callBackAt: new Date(customBack).toISOString() })} className="rounded-full bg-violet-600 px-3 py-1 font-semibold text-white hover:bg-violet-700 disabled:opacity-40">Set</button>
           </div>
         )}
-        <p className="text-[11px] leading-snug text-slate-400">No answer: back on the list tomorrow, up to 3 tries. Call back: top of the list at the time you pick. Spoke but pay or CV still missing: back after 2 days. Not interested or wrong number: off the list.</p>
+        <p className="text-[12px] leading-snug text-slate-400">No answer: back on the list tomorrow, up to 3 tries. Call back: top of the list at the time you pick. Spoke but pay or CV still missing: back after 2 days. Not interested or wrong number: off the list.</p>
       </div>
     </div>
   );

@@ -103,7 +103,7 @@ export default function VettingScorePanel({
       </div>
       {liveOverall !== null && (
         <div className="flex items-center justify-between rounded-lg bg-teal-50 dark:bg-teal-950/30 px-3 py-2">
-          <span className="text-[12px] text-teal-700 dark:text-teal-300 font-medium">Overall vetting score</span>
+          <span className="text-[13px] text-teal-700 dark:text-teal-300 font-medium">Overall vetting score</span>
           <span className="text-lg font-bold text-teal-800 dark:text-teal-200 tabular-nums">{liveOverall}/100</span>
         </div>
       )}

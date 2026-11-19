@@ -241,7 +241,7 @@ export default function CopilotPalette({ role }: { role: string }) {
             onKeyDown={onInputKeyDown}
             placeholder="Jump to a page, or search candidates by meaning -- e.g. 'senior SaaS sales rep in Bangalore'"
             aria-label="Search candidates or jump to a page"
-            className="flex-1 text-[14px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-transparent text-slate-900 dark:text-slate-100"
+            className="flex-1 text-[15px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-transparent text-slate-900 dark:text-slate-100"
           />
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 shrink-0" />}
           <kbd className="hidden sm:inline text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-slate-400 shrink-0">
@@ -250,10 +250,10 @@ export default function CopilotPalette({ role }: { role: string }) {
         </div>
 
         <div className="max-h-[50vh] overflow-y-auto">
-          {error && <div className="px-4 py-3 text-[13px] text-red-600 dark:text-red-400">{error}</div>}
+          {error && <div className="px-4 py-3 text-[14px] text-red-600 dark:text-red-400">{error}</div>}
 
           {!error && !loading && !showingCommands && results.length === 0 && (
-            <div className="px-4 py-6 text-center text-[13px] text-slate-400">
+            <div className="px-4 py-6 text-center text-[14px] text-slate-400">
               No matching candidates yet.
             </div>
           )}
@@ -272,7 +272,7 @@ export default function CopilotPalette({ role }: { role: string }) {
                   }`}
                 >
                   <Icon className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="flex-1 text-[13px] font-medium text-slate-800 dark:text-slate-200 dark:text-slate-200">{cmd.label}</span>
+                  <span className="flex-1 text-[14px] font-medium text-slate-800 dark:text-slate-200 dark:text-slate-200">{cmd.label}</span>
                   {isCurrent && (
                     <span className="text-xs font-semibold text-teal-600 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 ring-1 ring-teal-200 dark:ring-teal-800/60 rounded-full px-1.5 py-0.5">
                       current
@@ -297,7 +297,7 @@ export default function CopilotPalette({ role }: { role: string }) {
               >
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">{r.full_name}</span>
+                    <span className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">{r.full_name}</span>
                     <span className="text-xs shrink-0 font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-200 dark:ring-emerald-800/60 rounded-full px-1.5 py-0.5">
                       {Math.round(r.similarity * 100)}% match
                     </span>

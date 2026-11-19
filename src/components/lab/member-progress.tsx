@@ -18,7 +18,7 @@ export default function MemberProgress({ m, data, assignments }: { m: MemberMetr
     <div className="space-y-5">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-end justify-between">
-          <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Programme progress</p><p className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{m.progress}%</p></div>
+          <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Programme progress</p><p className="text-3xl font-medium text-slate-900 dark:text-slate-100">{m.progress}%</p></div>
           <p className="text-xs text-slate-500">Cohort average {data.kpis.avgProgress ?? "–"}%</p>
         </div>
         <div className="mt-3"><Bar pct={m.progress} tone={toneFor(m.progress)} /></div>

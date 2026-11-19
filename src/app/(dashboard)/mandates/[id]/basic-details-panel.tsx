@@ -171,7 +171,7 @@ export default function BasicDetailsPanel({
         </div>
         {!collapsed && (
           <>
-            <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
               Budget: {initial.budget_min ?? "—"}
               {initial.budget_max ? ` – ${initial.budget_max}` : ""} L · Experience: {initial.experience_min ?? "—"}
               {initial.experience_max ? ` – ${initial.experience_max}` : ""} yrs · Status:{" "}
@@ -236,7 +236,7 @@ export default function BasicDetailsPanel({
           {isMultiSubDomain ? (
             <div className="grid gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
               {subDomainOptions.map((o) => (
-                <label key={o} className="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-300">
+                <label key={o} className="flex items-center gap-2 text-[14px] text-slate-700 dark:text-slate-300">
                   <input type="checkbox" checked={form.subDomains.includes(o)} onChange={() => toggleSubDomain(o)} />
                   {o}
                 </label>
@@ -266,7 +266,7 @@ export default function BasicDetailsPanel({
             {form.cities.map((c) => (
               <span
                 key={c}
-                className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-2.5 py-1"
+                className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[13px] font-medium px-2.5 py-1"
               >
                 {c}
                 <button type="button" onClick={() => removeCity(c)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
@@ -312,7 +312,7 @@ export default function BasicDetailsPanel({
               addCity(form.cityOther);
               setForm((f) => ({ ...f, cityOther: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[13px] font-medium px-3"
           >
             Add
           </button>
@@ -414,7 +414,7 @@ export default function BasicDetailsPanel({
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2 disabled:opacity-60"
       >
         {saving ? "Saving..." : "Save"}
       </button>

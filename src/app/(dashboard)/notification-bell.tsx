@@ -113,7 +113,7 @@ export default function NotificationBell() {
           className="ros-glass absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-ros-lg shadow-ros-xl border py-1 animate-fade-in z-40"
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-            <p className="text-[12px] font-semibold text-slate-900 dark:text-slate-100">Notifications</p>
+            <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Notifications</p>
             {unreadCount > 0 && (
               <button
                 onMouseDown={(e) => e.preventDefault()}
@@ -125,9 +125,9 @@ export default function NotificationBell() {
             )}
           </div>
           {!loaded ? (
-            <p className="px-3 py-6 text-center text-[12px] text-slate-400">Loading…</p>
+            <p className="px-3 py-6 text-center text-[13px] text-slate-400">Loading…</p>
           ) : notifications.length === 0 ? (
-            <p className="px-3 py-6 text-center text-[12px] text-slate-400">Nothing yet.</p>
+            <p className="px-3 py-6 text-center text-[13px] text-slate-400">Nothing yet.</p>
           ) : (
             notifications.map((n) => (
               <button
@@ -141,7 +141,7 @@ export default function NotificationBell() {
                 <div className="flex items-start gap-1.5">
                   {!n.read_at && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" />}
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{n.title}</p>
+                    <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">{n.title}</p>
                     {n.body && (
                       <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">{n.body}</p>
                     )}

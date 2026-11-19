@@ -77,7 +77,7 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
         <h1 className="flex items-center gap-2 text-[20px] font-semibold text-slate-900 dark:text-slate-100">
           <FileText className="h-5 w-5 text-slate-400" /> CV files not attached to a profile
         </h1>
-        <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-[14px] text-slate-500 dark:text-slate-400">
           Files uploaded in bulk upload that never became a profile (duplicates, failed rows, re-uploads). {files.length} files, {mb(totalMb)}, across {totalProfiles.toLocaleString("en-IN")} profiles.
           Files from the last 24 hours are left out, so uploads in progress are safe. Nothing is deleted until you confirm.
         </p>
@@ -91,14 +91,14 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
               setTab(k);
               setPicked(new Set());
             }}
-            className={`rounded-full px-3 py-1 text-[12.5px] font-medium ring-1 transition-colors ${tab === k ? "bg-slate-900 text-white ring-slate-900 dark:bg-slate-100 dark:text-slate-900" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700"}`}
+            className={`rounded-full px-3 py-1 text-[13px] font-medium ring-1 transition-colors ${tab === k ? "bg-teal-600 text-white ring-slate-900 dark:bg-slate-100 dark:text-slate-900" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700"}`}
           >
             {KIND_LABEL[k]} <span className="tabular-nums opacity-70">{byKind[k].length}</span>
           </button>
         ))}
       </div>
 
-      <p className="mb-3 text-[12.5px] text-slate-500 dark:text-slate-400">
+      <p className="mb-3 text-[13px] text-slate-500 dark:text-slate-400">
         {tab === "duplicate_file" && "These are the same file as one already attached to a profile. Safe to delete."}
         {tab === "name_match" && "The file name matches a profile. If that profile has no CV yet, attach it; otherwise it is most likely a duplicate."}
         {tab === "unknown" && "No match found. Open each one: if it is a real candidate, re-upload it in Bulk upload; otherwise delete it."}
@@ -106,30 +106,30 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
 
       {isAdmin && rows.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <button onClick={selectAll} className="text-[12.5px] font-medium text-teal-600 hover:underline">
+          <button onClick={selectAll} className="text-[13px] font-medium text-teal-600 hover:underline">
             Select all {rows.length}
           </button>
           {picked.size > 0 && (
-            <button onClick={() => setPicked(new Set())} className="text-[12.5px] text-slate-500 hover:underline">
+            <button onClick={() => setPicked(new Set())} className="text-[13px] text-slate-500 hover:underline">
               Clear
             </button>
           )}
           <button
             onClick={deleteSelected}
             disabled={picked.size === 0 || busy !== null}
-            className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-rose-500 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-rose-500 disabled:opacity-50"
           >
             {busy === "delete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Delete selected ({picked.size})
           </button>
         </div>
       )}
-      {!isAdmin && <p className="mb-3 text-[12.5px] text-amber-700">Only an admin can delete files. You can preview them and attach a file to a profile.</p>}
-      {message && <p className="mb-3 rounded-lg bg-slate-100 px-3 py-2 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{message}</p>}
+      {!isAdmin && <p className="mb-3 text-[13px] text-amber-700">Only an admin can delete files. You can preview them and attach a file to a profile.</p>}
+      {message && <p className="mb-3 rounded-lg bg-slate-100 px-3 py-2 text-[14px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{message}</p>}
 
       <div className="overflow-hidden rounded-lg border border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
-        {rows.length === 0 && <p className="p-4 text-[13px] text-slate-400">Nothing here.</p>}
+        {rows.length === 0 && <p className="p-4 text-[14px] text-slate-400">Nothing here.</p>}
         {rows.map((f) => (
-          <div key={f.path} className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-3 py-2.5 text-[13px] last:border-b-0 dark:border-slate-800">
+          <div key={f.path} className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-3 py-2.5 text-[14px] last:border-b-0 dark:border-slate-800">
             {isAdmin && <input type="checkbox" checked={picked.has(f.path)} onChange={() => toggle(f.path)} aria-label={`Select ${f.file}`} />}
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-slate-800 dark:text-slate-200">{f.file}</p>
@@ -147,14 +147,14 @@ export default function FilesView({ files, isAdmin, totalProfiles }: { files: Or
                 )}
               </p>
             </div>
-            <a href={`/api/candidates/files/preview?path=${encodeURIComponent(f.path)}`} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-teal-600 hover:underline">
+            <a href={`/api/candidates/files/preview?path=${encodeURIComponent(f.path)}`} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-teal-600 hover:underline">
               Preview
             </a>
             {f.kind === "name_match" && f.match_candidate_id && !f.match_has_cv && (
               <button
                 onClick={() => attach(f)}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
               >
                 {busy === f.path && <Loader2 className="h-3 w-3 animate-spin" />} Attach to {f.match_name}
               </button>

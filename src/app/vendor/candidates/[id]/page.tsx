@@ -43,12 +43,12 @@ export default async function VendorCandidateDetailPage({ params }: { params: Pr
 
   return (
     <div className="max-w-[900px] mx-auto px-5 py-6">
-      <Link href="/vendor/candidates" className="inline-flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-slate-700 mb-4">
+      <Link href="/vendor/candidates" className="inline-flex items-center gap-1.5 text-[14px] text-slate-500 hover:text-slate-700 mb-4">
         <ArrowLeft className="w-3.5 h-3.5" /> My Candidates
       </Link>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[14px] text-red-700">
           {friendlyVendorError(error.message, "vendor-candidate-detail")}
         </div>
       )}
@@ -58,7 +58,7 @@ export default async function VendorCandidateDetailPage({ params }: { params: Pr
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
               <h1 className="text-[20px] font-semibold text-slate-900">{candidate.full_name}</h1>
-              <p className="text-[13px] text-slate-500 mt-0.5">{candidate.email}</p>
+              <p className="text-[14px] text-slate-500 mt-0.5">{candidate.email}</p>
             </div>
             {signedUrl && (
               <ResumePreview signedUrl={signedUrl} fileName={`${candidate.full_name}-resume`} label="View resume" />
@@ -66,23 +66,23 @@ export default async function VendorCandidateDetailPage({ params }: { params: Pr
           </div>
 
           <div className="mb-6">
-            <h2 className="text-[13px] font-semibold text-slate-900 mb-2">Mandates this candidate is on</h2>
+            <h2 className="text-[14px] font-semibold text-slate-900 mb-2">Mandates this candidate is on</h2>
             <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
               {candidate.mandates.map((m) => (
                 <div key={m.mandate_id} className="px-4 py-3 border-b border-slate-100 last:border-b-0">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[13px] font-medium text-slate-900">
+                    <span className="text-[14px] font-medium text-slate-900">
                       {m.role_title} <span className="text-slate-400 font-normal">· {m.client_display}</span>
                     </span>
-                    <span className={`text-[11px] font-semibold rounded-full px-2.5 py-1 ${STAGE_TINT[m.stage] ?? "bg-slate-100 text-slate-600"}`}>
+                    <span className={`text-[12px] font-semibold rounded-full px-2.5 py-1 ${STAGE_TINT[m.stage] ?? "bg-slate-100 text-slate-600"}`}>
                       {m.stage}
                     </span>
                   </div>
                   {m.stage === "rejected" && m.rejection_reason && (
-                    <p className="text-[12px] text-rose-600 mt-1">Client feedback: {m.rejection_reason}</p>
+                    <p className="text-[13px] text-rose-600 mt-1">Client feedback: {m.rejection_reason}</p>
                   )}
                   {m.vendor_update_note && (
-                    <p className="text-[12px] text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5 mt-2">
+                    <p className="text-[13px] text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5 mt-2">
                       Note from StaffAnchor: {m.vendor_update_note}
                     </p>
                   )}
@@ -91,7 +91,7 @@ export default async function VendorCandidateDetailPage({ params }: { params: Pr
             </div>
           </div>
 
-          <h2 className="text-[13px] font-semibold text-slate-900 mb-2">Edit profile</h2>
+          <h2 className="text-[14px] font-semibold text-slate-900 mb-2">Edit profile</h2>
           <VendorCandidateEditForm candidate={candidate} />
         </>
       )}

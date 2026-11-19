@@ -49,7 +49,7 @@ export default function FeeSchedulePanel({ mandateId, initial }: { mandateId: st
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Fee schedule</h2>
-      <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-3">
         How this mandate&apos;s placement fee splits across milestones. Applied automatically (against the
         candidate&apos;s CTC and the client&apos;s fee %) the moment a candidate here is marked placed.
       </p>
@@ -60,18 +60,18 @@ export default function FeeSchedulePanel({ mandateId, initial }: { mandateId: st
               value={t.label}
               onChange={(e) => update(i, { label: e.target.value })}
               placeholder="Label"
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[12.5px]"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
             />
             <input
               type="number"
               value={t.split_pct}
               onChange={(e) => update(i, { split_pct: Number(e.target.value) })}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[12.5px]"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
             />
             <select
               value={t.trigger}
               onChange={(e) => update(i, { trigger: e.target.value })}
-              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[12.5px]"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
             >
               {Object.entries(TRIGGER_LABEL).map(([val, label]) => (
                 <option key={val} value={val}>
@@ -86,17 +86,17 @@ export default function FeeSchedulePanel({ mandateId, initial }: { mandateId: st
         ))}
       </div>
       <div className="flex items-center justify-between mt-2">
-        <button onClick={addTranche} className="flex items-center gap-1 text-[12px] text-teal-600 hover:underline">
+        <button onClick={addTranche} className="flex items-center gap-1 text-[13px] text-teal-600 hover:underline">
           <Plus className="w-3 h-3" /> Add tranche
         </button>
-        <span className={`text-[12px] font-medium ${total === 100 ? "text-slate-400" : "text-amber-600"}`}>
+        <span className={`text-[13px] font-medium ${total === 100 ? "text-slate-400" : "text-amber-600"}`}>
           Total: {total}% {total !== 100 && "(should be 100)"}
         </span>
       </div>
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full mt-3 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-[13px] font-medium py-2"
+        className="w-full mt-3 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-[14px] font-medium py-2"
       >
         {saving ? "Saving..." : "Save fee schedule"}
       </button>

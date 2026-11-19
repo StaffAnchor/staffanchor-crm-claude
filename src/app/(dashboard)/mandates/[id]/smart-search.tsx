@@ -102,7 +102,7 @@ export function SmartBadge() {
   const { current, running } = useSmart();
   if (running) return <Loader2 className="ml-1 h-3 w-3 animate-spin text-teal-600" />;
   if (!current) return null;
-  return <span className="ml-1 rounded-full bg-teal-600 px-1.5 text-[11px] tabular-nums text-white">{current.matches.length}</span>;
+  return <span className="ml-1 rounded-full bg-teal-600 px-1.5 text-[12px] tabular-nums text-white">{current.matches.length}</span>;
 }
 
 export function SmartSearchBar() {
@@ -131,7 +131,7 @@ export function SmartSearchBar() {
       }}
     >
       {expanded && (
-        <div className="mb-1.5 flex items-center gap-1.5 px-0.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+        <div className="mb-1.5 flex items-center gap-1.5 px-0.5 text-[13px] text-slate-500 dark:text-slate-400">
           <Sparkles className="h-3.5 w-3.5 text-teal-600" />
           <span><span className="font-semibold text-slate-700 dark:text-slate-200">Smart search</span> · tell it who you want in plain words. The best people in the whole database are kept under the Smart tab, with why each one fits.</span>
         </div>
@@ -149,9 +149,9 @@ export function SmartSearchBar() {
           }}
           rows={expanded ? 2 : 1}
           placeholder="Smart search: who do you want? e.g. Hunters from B2B SaaS, 5-8 years, comfortable with Pune or Mumbai"
-          className="min-h-[40px] flex-1 resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-teal-800"
+          className="min-h-[40px] flex-1 resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2 text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-teal-800"
         />
-        <button onClick={go} disabled={running || !prompt.trim()} className="flex shrink-0 items-center justify-center gap-1.5 rounded-ros-md bg-teal-600 px-4 py-2 text-[13px] font-medium text-white hover:bg-teal-500 disabled:opacity-50">
+        <button onClick={go} disabled={running || !prompt.trim()} className="flex shrink-0 items-center justify-center gap-1.5 rounded-ros-md bg-teal-600 px-4 py-2 text-[14px] font-medium text-white hover:bg-teal-500 disabled:opacity-50">
           {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
           {running ? "Searching…" : "Find people"}
         </button>
@@ -171,9 +171,9 @@ export function SmartSearchBar() {
         </label>
       </div>
       )}
-      {error && <p className="mt-2 text-[12.5px] text-rose-600">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-rose-600">{error}</p>}
       {justRan && !running && !error && current && (
-        <p className="mt-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+        <p className="mt-2 text-[13px] text-slate-600 dark:text-slate-300">
           {current.matches.length === 0 ? "Nobody fit this ask. Open the Smart tab to widen it." : `${current.matches.length} ${current.matches.length === 1 ? "person" : "people"} found.`}{" "}
           <a href="#smart" className="font-semibold text-teal-700 hover:underline dark:text-teal-300">
             Open the Smart tab →
@@ -205,7 +205,7 @@ export function SmartSearchTab() {
   if (!current) {
     return (
       <Card className="p-6 text-center">
-        <p className="text-[13px] text-slate-500 dark:text-slate-400">No smart search yet. Type who you want in the box above and press Find people.</p>
+        <p className="text-[14px] text-slate-500 dark:text-slate-400">No smart search yet. Type who you want in the box above and press Find people.</p>
       </Card>
     );
   }
@@ -219,11 +219,11 @@ export function SmartSearchTab() {
       <Card className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[12px] uppercase tracking-wide text-slate-400">You asked</p>
-            <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-100">{current.prompt}</p>
+            <p className="text-[13px] uppercase tracking-wide text-slate-400">You asked</p>
+            <p className="text-[14px] font-medium text-slate-800 dark:text-slate-100">{current.prompt}</p>
           </div>
           {runs.length > 1 && (
-            <select value={current.id} onChange={(e) => pick(e.target.value)} className="max-w-[260px] rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[12px] dark:border-slate-700">
+            <select value={current.id} onChange={(e) => pick(e.target.value)} className="max-w-[260px] rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[13px] dark:border-slate-700">
               {runs.map((r) => (
                 <option key={r.id} value={r.id}>
                   {new Date(r.at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} · {r.prompt.slice(0, 40)}
@@ -232,14 +232,14 @@ export function SmartSearchTab() {
             </select>
           )}
         </div>
-        <p className="mb-2 mt-3 text-[12px] font-medium text-slate-600 dark:text-slate-300">
+        <p className="mb-2 mt-3 text-[13px] font-medium text-slate-600 dark:text-slate-300">
           {current.understood ? "How I read it" : "I couldn't break this down automatically, so it ran on meaning alone"}
           <span className="ml-1 font-normal text-slate-400">· remove a filter to widen the search, or add a requirement</span>
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
-          {chips.length === 0 && <span className="text-[12px] text-slate-400">No specific filters found.</span>}
+          {chips.length === 0 && <span className="text-[13px] text-slate-400">No specific filters found.</span>}
           {chips.map((c) => (
-            <span key={c.id} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium ring-1 ${CHIP_CLS[c.kind]}`}>
+            <span key={c.id} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium ring-1 ${CHIP_CLS[c.kind]}`}>
               {c.text}
               <button disabled={running} onClick={() => rerun(c.remove(current.spec))} aria-label={`Remove ${c.text}`} className="rounded-full hover:bg-black/10">
                 <X className="h-3 w-3" />
@@ -256,24 +256,24 @@ export function SmartSearchTab() {
               rerun({ ...(current.spec ?? emptySpec()), must: [...current.spec.must, t].slice(0, 8) });
             }}
           >
-            <input value={newMust} onChange={(e) => setNewMust(e.target.value)} placeholder="Add a requirement" className="w-40 rounded-full border border-dashed border-slate-300 bg-transparent px-2.5 py-1 text-[12px] dark:border-slate-600" />
+            <input value={newMust} onChange={(e) => setNewMust(e.target.value)} placeholder="Add a requirement" className="w-40 rounded-full border border-dashed border-slate-300 bg-transparent px-2.5 py-1 text-[13px] dark:border-slate-600" />
             <button type="submit" disabled={running} aria-label="Add requirement" className="rounded-full p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
               <Plus className="h-3.5 w-3.5" />
             </button>
           </form>
           {running && <Loader2 className="h-4 w-4 animate-spin text-teal-600" />}
         </div>
-        <p className="mt-2 text-[12px] text-slate-500 dark:text-slate-400">
+        <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
           {current.matches.length} {current.matches.length === 1 ? "person" : "people"} · looked at {current.scanned} in the database
           {total > 0 && <> · {total} left out for not fitting ({Object.entries(current.hidden).map(([k, n]) => `${n} on ${HIDDEN_LABEL[k] ?? k}`).join(", ")})</>}
           {current.inPipelineSkipped > 0 && <> · {current.inPipelineSkipped} already in this pipeline</>}
         </p>
-        {current.partial && <p className="mt-1 text-[12px] text-amber-700">Part of the AI review failed, so some people may be missing. Search again to retry.</p>}
+        {current.partial && <p className="mt-1 text-[13px] text-amber-700">Part of the AI review failed, so some people may be missing. Search again to retry.</p>}
       </Card>
 
       {current.matches.length === 0 ? (
         <Card className="p-6 text-center">
-          <p className="text-[13px] text-slate-500 dark:text-slate-400">Nobody fit this ask. Remove a filter above to widen it.</p>
+          <p className="text-[14px] text-slate-500 dark:text-slate-400">Nobody fit this ask. Remove a filter above to widen it.</p>
         </Card>
       ) : (
         <SmartSplit groups={groups} roleId={role.id} roleTitle={role.title} />

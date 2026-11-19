@@ -9,7 +9,7 @@ import {
 type Initial = { name: string; email: string; phone: string; track: Track; level: Level; data: SessionData; status: "draft" | "final"; sentAt: string | null; sentTo: string | null };
 type Booking = { service: string; slot: string | null; notes: string | null; targetRole: string | null; source: string | null } | null;
 
-const input = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[14px] outline-none focus:border-teal-600 dark:border-slate-700 dark:bg-slate-900";
+const input = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[15px] outline-none focus:border-teal-600 dark:border-slate-700 dark:bg-slate-900";
 const card = "rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900";
 const lbl = "mb-1 block text-xs font-medium text-slate-500";
 
@@ -124,10 +124,10 @@ export default function Workspace({ id, initial, booking, intake }: { id: string
             <button onClick={() => setRunning(!running)} className="text-xs font-medium text-teal-700 hover:underline">{running ? "Pause" : secs ? "Resume" : "Start 45 min"}</button>
             {current && <span className="text-xs text-slate-500">· now: {current.label}</span>}
           </div>
-          <button onClick={() => openPdf(false)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-medium hover:bg-slate-50 dark:border-slate-700">Preview PDF</button>
-          <button onClick={() => openPdf(true)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-medium hover:bg-slate-50 dark:border-slate-700">Download</button>
-          <button onClick={() => setMailOpen(true)} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700">Email to candidate</button>
-          <button onClick={() => mark(status === "final" ? "reopen" : "final")} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-medium hover:bg-slate-50 dark:border-slate-700">{status === "final" ? "Reopen" : "Mark final"}</button>
+          <button onClick={() => openPdf(false)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] font-medium hover:bg-slate-50 dark:border-slate-700">Preview PDF</button>
+          <button onClick={() => openPdf(true)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] font-medium hover:bg-slate-50 dark:border-slate-700">Download</button>
+          <button onClick={() => setMailOpen(true)} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700">Email to candidate</button>
+          <button onClick={() => mark(status === "final" ? "reopen" : "final")} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] font-medium hover:bg-slate-50 dark:border-slate-700">{status === "final" ? "Reopen" : "Mark final"}</button>
         </div>
       </div>
 
@@ -137,12 +137,12 @@ export default function Workspace({ id, initial, booking, intake }: { id: string
           <ul className="flex gap-1.5 overflow-x-auto lg:block lg:space-y-1">
             {SECTIONS.map((s, i) => (
               <li key={s.key} className="shrink-0">
-                <a href={`#sec-${s.key}`} className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-[13px] hover:bg-slate-100 dark:hover:bg-slate-800 ${current?.key === s.key ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950/30" : "text-slate-700 dark:text-slate-300"}`}>
+                <a href={`#sec-${s.key}`} className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-[14px] hover:bg-slate-100 dark:hover:bg-slate-800 ${current?.key === s.key ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950/30" : "text-slate-700 dark:text-slate-300"}`}>
                   <span>{i + 1}. {s.label}</span><span className={f[s.key] ? "text-emerald-600" : "text-slate-300"}>{f[s.key] ? "✓" : "○"}</span>
                 </a>
               </li>
             ))}
-            <li className="shrink-0"><a href="#sec-private" className="block rounded-lg px-3 py-2 text-[13px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Private notes</a></li>
+            <li className="shrink-0"><a href="#sec-private" className="block rounded-lg px-3 py-2 text-[14px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Private notes</a></li>
           </ul>
         </nav>
 
@@ -158,19 +158,19 @@ export default function Workspace({ id, initial, booking, intake }: { id: string
               <div>
                 <span className={lbl}>Kind of role</span>
                 <div className="inline-flex overflow-hidden rounded-lg ring-1 ring-slate-300">
-                  {TRACKS.map((t) => <button key={t.key} onClick={() => setTrack(t.key)} className={`px-3.5 py-1.5 text-[13px] ${track === t.key ? "bg-teal-600 font-semibold text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.label}</button>)}
+                  {TRACKS.map((t) => <button key={t.key} onClick={() => setTrack(t.key)} className={`px-3.5 py-1.5 text-[14px] ${track === t.key ? "bg-teal-600 font-semibold text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.label}</button>)}
                 </div>
               </div>
               <div>
                 <span className={lbl}>Level</span>
                 <div className="inline-flex overflow-hidden rounded-lg ring-1 ring-slate-300">
-                  {LEVELS.map((t) => <button key={t.key} onClick={() => setLevel(t.key)} className={`px-3.5 py-1.5 text-[13px] ${level === t.key ? "bg-teal-600 font-semibold text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.label}</button>)}
+                  {LEVELS.map((t) => <button key={t.key} onClick={() => setLevel(t.key)} className={`px-3.5 py-1.5 text-[14px] ${level === t.key ? "bg-teal-600 font-semibold text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.label}</button>)}
                 </div>
               </div>
               <p className="max-w-md text-xs text-slate-500">This changes the prompts in Positioning (for example team size and revenue owned for leaders), not the report layout.</p>
             </div>
             {(booking || intake.length > 0) && (
-              <details className="mt-4 rounded-lg bg-slate-50 p-3 text-[13px] dark:bg-slate-800/50">
+              <details className="mt-4 rounded-lg bg-slate-50 p-3 text-[14px] dark:bg-slate-800/50">
                 <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">What they told us when they booked (for you only, never in the report)</summary>
                 <div className="mt-2 space-y-1.5 text-slate-600 dark:text-slate-300">
                   {booking?.targetRole && <p><span className="text-slate-400">Target role:</span> {booking.targetRole}</p>}
@@ -220,7 +220,7 @@ export default function Workspace({ id, initial, booking, intake }: { id: string
                         {RATINGS.map((x) => {
                           const on = row.rating === x.key;
                           const tone = x.key === "strong" ? "bg-emerald-600" : x.key === "ok" ? "bg-amber-500" : "bg-rose-600";
-                          return <button key={x.key} onClick={() => setRow({ rating: (on ? null : x.key) as Rating })} className={`px-3 py-1.5 text-[13px] ${on ? `${tone} font-semibold text-white` : "bg-white text-slate-600 hover:bg-slate-50"}`}>{x.label}</button>;
+                          return <button key={x.key} onClick={() => setRow({ rating: (on ? null : x.key) as Rating })} className={`px-3 py-1.5 text-[14px] ${on ? `${tone} font-semibold text-white` : "bg-white text-slate-600 hover:bg-slate-50"}`}>{x.label}</button>;
                         })}
                       </div>
                     </div>
@@ -247,7 +247,7 @@ export default function Workspace({ id, initial, booking, intake }: { id: string
                   </div>
                 );
               })}
-              <button onClick={() => patch("market", { ...d.market, targets: [...d.market.targets, { company: "", why: "", route: "" }].slice(0, 15) })} className="text-[13px] font-medium text-teal-700 hover:underline">+ Add a company or segment</button>
+              <button onClick={() => patch("market", { ...d.market, targets: [...d.market.targets, { company: "", why: "", route: "" }].slice(0, 15) })} className="text-[14px] font-medium text-teal-700 hover:underline">+ Add a company or segment</button>
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {text("Recruiters and search firms to approach", d.market.recruiters, (v) => patch("market", { ...d.market, recruiters: v }), "", 2)}
@@ -308,7 +308,7 @@ export default function Workspace({ id, initial, booking, intake }: { id: string
                   </div>
                 );
               })}
-              <button onClick={() => patch("actions", { ...d.actions, items: [...d.actions.items, { action: "", due: "" }].slice(0, 8) })} className="text-[13px] font-medium text-teal-700 hover:underline">+ Add an action</button>
+              <button onClick={() => patch("actions", { ...d.actions, items: [...d.actions.items, { action: "", due: "" }].slice(0, 8) })} className="text-[14px] font-medium text-teal-700 hover:underline">+ Add an action</button>
             </div>
             <div className="mt-3">{text("In short (two or three lines for the candidate, shown at the top of the report)", d.actions.inShort, (v) => patch("actions", { ...d.actions, inShort: v }), "", 3)}</div>
           </section>
@@ -351,8 +351,8 @@ function MailModal({ id, to: to0, name, onClose, onSent, persist }: { id: string
         <label className="mt-3 block"><span className={lbl}>Your note (they see this above your signature)</span><textarea className={input} rows={4} value={msg} onChange={(e) => setMsg(e.target.value)} /></label>
         {err && <p className="mt-2 text-sm text-red-600">{err}</p>}
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-[13px] font-medium hover:bg-slate-50">Cancel</button>
-          <button onClick={send} disabled={busy || !to.trim()} className="rounded-lg bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
+          <button onClick={onClose} className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-[14px] font-medium hover:bg-slate-50">Cancel</button>
+          <button onClick={send} disabled={busy || !to.trim()} className="rounded-lg bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
         </div>
       </div>
     </div>

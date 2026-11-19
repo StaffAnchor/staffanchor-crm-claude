@@ -548,7 +548,7 @@ export default function NewCandidatePage() {
               if (!visibleOptions.length) return null;
               return (
                 <div key={group}>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{group}</p>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">{group}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {visibleOptions.map((o) => {
                       const active = form.secondary_sub_domains.includes(o);
@@ -566,7 +566,7 @@ export default function NewCandidatePage() {
                           }
                           className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                             active
-                              ? "border-slate-900 bg-slate-900 text-white"
+                              ? "border-slate-900 bg-teal-600 text-white"
                               : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
                           }`}
                         >
@@ -983,7 +983,7 @@ export default function NewCandidatePage() {
                       }
                       className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                         active
-                          ? "border-slate-900 bg-slate-900 text-white"
+                          ? "border-slate-900 bg-teal-600 text-white"
                           : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
                       }`}
                     >

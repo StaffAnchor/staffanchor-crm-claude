@@ -157,13 +157,13 @@ function ReviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
       <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white shadow-xl">
         <div className="border-b border-slate-100 px-5 py-4">
-          <h3 className="text-[15px] font-semibold text-slate-900">{live ? "Edit listing" : "Review before publishing"}</h3>
-          <p className="mt-0.5 text-[12px] text-slate-500">{roleTitle}</p>
+          <h3 className="text-[16px] font-semibold text-slate-900">{live ? "Edit listing" : "Review before publishing"}</h3>
+          <p className="mt-0.5 text-[13px] text-slate-500">{roleTitle}</p>
         </div>
 
         <div className="space-y-4 px-5 py-4">
           {warnings.length > 0 && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
               Referrers will see &ldquo;To be confirmed&rdquo; for: {warnings.join(", ")}. Fill these in on the mandate first for a clearer listing.
             </p>
           )}
@@ -173,16 +173,16 @@ function ReviewModal({
               Payout for this role (₹) <span className="text-rose-500">*</span>
             </label>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-[13px] text-slate-500">₹</span>
+              <span className="text-[14px] text-slate-500">₹</span>
               <input
                 value={payout}
                 onChange={(e) => setPayout(e.target.value.replace(/[^\d,]/g, ""))}
                 inputMode="numeric"
                 placeholder="e.g. 30000"
-                className="w-40 rounded-lg border border-slate-200 px-3 py-2 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="w-40 rounded-lg border border-slate-200 px-3 py-2 text-[15px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
               {suggestedPayout != null && Number(payout.replace(/,/g, "")) !== suggestedPayout && (
-                <button type="button" onClick={() => setPayout(String(suggestedPayout))} className="text-[12px] font-medium text-teal-600 hover:underline">
+                <button type="button" onClick={() => setPayout(String(suggestedPayout))} className="text-[13px] font-medium text-teal-600 hover:underline">
                   Use slab suggestion ₹{suggestedPayout.toLocaleString("en-IN")}
                 </button>
               )}
@@ -200,9 +200,9 @@ function ReviewModal({
               onChange={(e) => setAdminNotes(e.target.value)}
               rows={2}
               placeholder="e.g. emphasize hunting over farming, must have handled enterprise deal cycles..."
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
-            <button type="button" disabled={generating} onClick={generate} className="mt-2 rounded-lg bg-slate-900 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
+            <button type="button" disabled={generating} onClick={generate} className="mt-2 rounded-lg bg-slate-900 px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-50">
               {generating ? "Drafting..." : summary ? "Regenerate with AI" : "Generate with AI"}
             </button>
           </div>
@@ -216,23 +216,23 @@ function ReviewModal({
               onChange={(e) => setSummary(e.target.value)}
               rows={6}
               placeholder="Write or generate a crisp summary for referrers. Don't name the client company."
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
             <p className="mt-1 text-xs text-slate-400">The company name is never shown to referrers. Saving is blocked if this text mentions it.</p>
           </div>
 
-          {error && <p className="text-[12px] text-rose-600">{error}</p>}
+          {error && <p className="text-[13px] text-rose-600">{error}</p>}
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-4">
-          <button type="button" onClick={onClose} className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-slate-500 hover:text-slate-800">
+          <button type="button" onClick={onClose} className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-slate-500 hover:text-slate-800">
             Cancel
           </button>
           <button
             type="button"
             disabled={saving || !summary.trim() || !payoutOk}
             onClick={confirm}
-            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-50"
           >
             {saving ? "Saving..." : live ? "Save changes" : "Publish to referrers"}
           </button>

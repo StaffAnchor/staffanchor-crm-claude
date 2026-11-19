@@ -92,7 +92,7 @@ export default function VerifiedFactsPanel({
           <Plus className="w-3 h-3" /> Add
         </button>
       </div>
-      <p className="text-[12px] text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-400 mb-3">
         Durable, recruiter-confirmed signals about this candidate as a person — not tied to any one mandate. These
         feed future mandate matching directly. Don&apos;t add a mandate-specific rejection reason here (e.g. missing
         one language); only add something genuinely true about the candidate in general.
@@ -103,7 +103,7 @@ export default function VerifiedFactsPanel({
           <select
             value={factType}
             onChange={(e) => setFactType(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
           >
             {FACT_TYPES.map((f) => (
               <option key={f.value} value={f.value}>
@@ -116,19 +116,19 @@ export default function VerifiedFactsPanel({
             onChange={(e) => setNote(e.target.value)}
             rows={2}
             placeholder="Optional note — what did you verify, and how?"
-            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px] resize-none"
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px] resize-none"
           />
           <div className="flex gap-2">
             <button
               onClick={handleAdd}
               disabled={saving}
-              className="rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+              className="rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium px-3 py-1.5 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>
             <button
               onClick={() => setAdding(false)}
-              className="text-[12px] text-slate-500 dark:text-slate-400 px-3 py-1.5"
+              className="text-[13px] text-slate-500 dark:text-slate-400 px-3 py-1.5"
             >
               Cancel
             </button>
@@ -137,14 +137,14 @@ export default function VerifiedFactsPanel({
       )}
 
       {facts.length === 0 ? (
-        <p className="text-[12px] text-slate-400">No verified facts recorded yet.</p>
+        <p className="text-[13px] text-slate-400">No verified facts recorded yet.</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {facts.map((f) => (
             <span
               key={f.id}
               title={f.note ?? undefined}
-              className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-800 px-2.5 py-1 text-[12px]"
+              className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-800 px-2.5 py-1 text-[13px]"
             >
               {factLabel(f.fact_type)}
               <button

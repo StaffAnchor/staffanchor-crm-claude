@@ -34,7 +34,7 @@ export default async function OutreachLogPage() {
             <ArrowLeft className="w-3 h-3" /> Back to Sales
           </Link>
           <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">Outreach Log</h1>
-          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
             A record of LinkedIn/email outreach sent outside the CRM — this isn&apos;t connected to LinkedIn, so nothing logs
             itself. Log it here so a follow-up date doesn&apos;t get lost. Not every entry needs to become a Sales lead.
           </p>

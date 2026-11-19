@@ -7,7 +7,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f4f6f9;
+  --background: #f6f7f4;
   --foreground: #0f172a;
 
   /* --- ROS design tokens (Phase 0) ---
@@ -118,6 +118,7 @@
    components still use explicit `dark:` Tailwind utilities for their own
    surfaces (Card/Badge/etc.); this covers the page-level canvas. */
 .dark {
+  --color-slate-400: #8b9bb0;
   --background: #0b1120;
   --foreground: #e2e8f0;
 
@@ -158,7 +159,143 @@
   --color-slate-100: #eef2f7;
   --color-slate-200: #e1e7ef;
   --color-slate-300: #bcc6d4;
-  --color-slate-400: #8191a7;
+  --color-slate-400: #66768b;
+
+  /* One palette. Teal is the brand and every action; emerald is good, amber is check, rose is bad; everything else is grey.
+     The other hues used to colour every tab and chip; they now read as these, so nothing needs editing page by page. */
+  --color-violet-50: var(--color-teal-50);
+  --color-violet-100: var(--color-teal-100);
+  --color-violet-200: var(--color-teal-200);
+  --color-violet-300: var(--color-teal-300);
+  --color-violet-400: var(--color-teal-400);
+  --color-violet-500: var(--color-teal-500);
+  --color-violet-600: var(--color-teal-600);
+  --color-violet-700: var(--color-teal-700);
+  --color-violet-800: var(--color-teal-800);
+  --color-violet-900: var(--color-teal-900);
+  --color-violet-950: var(--color-teal-950);
+  --color-indigo-50: var(--color-teal-50);
+  --color-indigo-100: var(--color-teal-100);
+  --color-indigo-200: var(--color-teal-200);
+  --color-indigo-300: var(--color-teal-300);
+  --color-indigo-400: var(--color-teal-400);
+  --color-indigo-500: var(--color-teal-500);
+  --color-indigo-600: var(--color-teal-600);
+  --color-indigo-700: var(--color-teal-700);
+  --color-indigo-800: var(--color-teal-800);
+  --color-indigo-900: var(--color-teal-900);
+  --color-indigo-950: var(--color-teal-950);
+  --color-purple-50: var(--color-teal-50);
+  --color-purple-100: var(--color-teal-100);
+  --color-purple-200: var(--color-teal-200);
+  --color-purple-300: var(--color-teal-300);
+  --color-purple-400: var(--color-teal-400);
+  --color-purple-500: var(--color-teal-500);
+  --color-purple-600: var(--color-teal-600);
+  --color-purple-700: var(--color-teal-700);
+  --color-purple-800: var(--color-teal-800);
+  --color-purple-900: var(--color-teal-900);
+  --color-purple-950: var(--color-teal-950);
+  --color-fuchsia-50: var(--color-teal-50);
+  --color-fuchsia-100: var(--color-teal-100);
+  --color-fuchsia-200: var(--color-teal-200);
+  --color-fuchsia-300: var(--color-teal-300);
+  --color-fuchsia-400: var(--color-teal-400);
+  --color-fuchsia-500: var(--color-teal-500);
+  --color-fuchsia-600: var(--color-teal-600);
+  --color-fuchsia-700: var(--color-teal-700);
+  --color-fuchsia-800: var(--color-teal-800);
+  --color-fuchsia-900: var(--color-teal-900);
+  --color-fuchsia-950: var(--color-teal-950);
+  --color-blue-50: var(--color-teal-50);
+  --color-blue-100: var(--color-teal-100);
+  --color-blue-200: var(--color-teal-200);
+  --color-blue-300: var(--color-teal-300);
+  --color-blue-400: var(--color-teal-400);
+  --color-blue-500: var(--color-teal-500);
+  --color-blue-600: var(--color-teal-600);
+  --color-blue-700: var(--color-teal-700);
+  --color-blue-800: var(--color-teal-800);
+  --color-blue-900: var(--color-teal-900);
+  --color-blue-950: var(--color-teal-950);
+  --color-sky-50: var(--color-teal-50);
+  --color-sky-100: var(--color-teal-100);
+  --color-sky-200: var(--color-teal-200);
+  --color-sky-300: var(--color-teal-300);
+  --color-sky-400: var(--color-teal-400);
+  --color-sky-500: var(--color-teal-500);
+  --color-sky-600: var(--color-teal-600);
+  --color-sky-700: var(--color-teal-700);
+  --color-sky-800: var(--color-teal-800);
+  --color-sky-900: var(--color-teal-900);
+  --color-sky-950: var(--color-teal-950);
+  --color-cyan-50: var(--color-teal-50);
+  --color-cyan-100: var(--color-teal-100);
+  --color-cyan-200: var(--color-teal-200);
+  --color-cyan-300: var(--color-teal-300);
+  --color-cyan-400: var(--color-teal-400);
+  --color-cyan-500: var(--color-teal-500);
+  --color-cyan-600: var(--color-teal-600);
+  --color-cyan-700: var(--color-teal-700);
+  --color-cyan-800: var(--color-teal-800);
+  --color-cyan-900: var(--color-teal-900);
+  --color-cyan-950: var(--color-teal-950);
+  --color-orange-50: var(--color-amber-50);
+  --color-orange-100: var(--color-amber-100);
+  --color-orange-200: var(--color-amber-200);
+  --color-orange-300: var(--color-amber-300);
+  --color-orange-400: var(--color-amber-400);
+  --color-orange-500: var(--color-amber-500);
+  --color-orange-600: var(--color-amber-600);
+  --color-orange-700: var(--color-amber-700);
+  --color-orange-800: var(--color-amber-800);
+  --color-orange-900: var(--color-amber-900);
+  --color-orange-950: var(--color-amber-950);
+  --color-yellow-50: var(--color-amber-50);
+  --color-yellow-100: var(--color-amber-100);
+  --color-yellow-200: var(--color-amber-200);
+  --color-yellow-300: var(--color-amber-300);
+  --color-yellow-400: var(--color-amber-400);
+  --color-yellow-500: var(--color-amber-500);
+  --color-yellow-600: var(--color-amber-600);
+  --color-yellow-700: var(--color-amber-700);
+  --color-yellow-800: var(--color-amber-800);
+  --color-yellow-900: var(--color-amber-900);
+  --color-yellow-950: var(--color-amber-950);
+  --color-lime-50: var(--color-emerald-50);
+  --color-lime-100: var(--color-emerald-100);
+  --color-lime-200: var(--color-emerald-200);
+  --color-lime-300: var(--color-emerald-300);
+  --color-lime-400: var(--color-emerald-400);
+  --color-lime-500: var(--color-emerald-500);
+  --color-lime-600: var(--color-emerald-600);
+  --color-lime-700: var(--color-emerald-700);
+  --color-lime-800: var(--color-emerald-800);
+  --color-lime-900: var(--color-emerald-900);
+  --color-lime-950: var(--color-emerald-950);
+  --color-green-50: var(--color-emerald-50);
+  --color-green-100: var(--color-emerald-100);
+  --color-green-200: var(--color-emerald-200);
+  --color-green-300: var(--color-emerald-300);
+  --color-green-400: var(--color-emerald-400);
+  --color-green-500: var(--color-emerald-500);
+  --color-green-600: var(--color-emerald-600);
+  --color-green-700: var(--color-emerald-700);
+  --color-green-800: var(--color-emerald-800);
+  --color-green-900: var(--color-emerald-900);
+  --color-green-950: var(--color-emerald-950);
+  --color-red-50: var(--color-rose-50);
+  --color-red-100: var(--color-rose-100);
+  --color-red-200: var(--color-rose-200);
+  --color-red-300: var(--color-rose-300);
+  --color-red-400: var(--color-rose-400);
+  --color-red-500: var(--color-rose-500);
+  --color-red-600: var(--color-rose-600);
+  --color-red-700: var(--color-rose-700);
+  --color-red-800: var(--color-rose-800);
+  --color-red-900: var(--color-rose-900);
+  --color-red-950: var(--color-rose-950);
+
 
   --radius-md: 0.5rem;
   --radius-lg: 0.875rem;
@@ -314,14 +451,12 @@ body {
 .ros-canvas {
   background:
     radial-gradient(1200px 600px at 15% -10%, rgb(11 127 117 / 0.06), transparent 60%),
-    radial-gradient(1000px 500px at 100% 0%, rgb(79 70 229 / 0.04), transparent 55%),
     var(--background);
 }
 
 .dark .ros-canvas {
   background:
     radial-gradient(1200px 600px at 15% -10%, rgb(20 184 166 / 0.06), transparent 60%),
-    radial-gradient(1000px 500px at 100% 0%, rgb(59 130 246 / 0.05), transparent 55%),
     var(--background);
 }
 

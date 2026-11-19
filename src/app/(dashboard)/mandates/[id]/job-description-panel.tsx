@@ -176,36 +176,36 @@ export default function JobDescriptionPanel({
       </div>
       {!collapsed && (
       <>
-      <p className="text-[12px] text-slate-400 mb-3">Shown to candidates on the public job listing.</p>
+      <p className="text-[13px] text-slate-400 mb-3">Shown to candidates on the public job listing.</p>
 
       {editing ? (
         <div className="space-y-3 mb-2">
           <div className="rounded-lg border border-dashed border-teal-200 bg-teal-50/50 p-3">
             <p className="text-xs font-medium text-teal-700 mb-1.5">Upload the client&apos;s JD, or paste rough notes, and let AI structure it</p>
             <JdFilePicker onLoaded={(d: JdFileData) => { setRawNotes(d.text); setHideNames(d.company_names); }} />
-            {hideNames.length > 0 && <p className="text-[11.5px] text-slate-600 mb-1.5">Kept out of the public listing: <b>{hideNames.join(", ")}</b></p>}
+            {hideNames.length > 0 && <p className="text-[12px] text-slate-600 mb-1.5">Kept out of the public listing: <b>{hideNames.join(", ")}</b></p>}
             <textarea
               value={rawNotes}
               onChange={(e) => setRawNotes(e.target.value)}
               rows={3}
               placeholder="Paste a rough JD, bullet notes, or a client email..."
-              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] resize-y bg-white dark:bg-slate-900"
             />
             <input
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               placeholder="Instructions for the AI (optional), e.g. don't mention salary"
-              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] bg-white dark:bg-slate-900"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] bg-white dark:bg-slate-900"
             />
-            <label className="mt-1.5 flex items-center gap-1.5 text-[12px] text-slate-600">
+            <label className="mt-1.5 flex items-center gap-1.5 text-[13px] text-slate-600">
               <input type="checkbox" checked={hidePay} onChange={(e) => setHidePay(e.target.checked)} /> Leave pay figures out of the listing
             </label>
-            <p className="mt-1 text-[11px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
+            <p className="mt-1 text-[12px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
             <button
               type="button"
               onClick={handleGenerate}
               disabled={generating || !rawNotes.trim()}
-              className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+              className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium px-3 py-1.5 disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" /> {generating ? "Generating..." : "Generate with AI"}
             </button>
@@ -218,7 +218,7 @@ export default function JobDescriptionPanel({
               onChange={(e) => setOverview(e.target.value)}
               rows={2}
               placeholder="1-2 sentence intro to the role/company"
-              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] resize-y"
             />
           </div>
           <div>
@@ -227,7 +227,7 @@ export default function JobDescriptionPanel({
               value={responsibilities}
               onChange={(e) => setResponsibilities(e.target.value)}
               rows={4}
-              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] resize-y"
             />
           </div>
           <div>
@@ -236,7 +236,7 @@ export default function JobDescriptionPanel({
               value={candidateProfile}
               onChange={(e) => setCandidateProfile(e.target.value)}
               rows={4}
-              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] resize-y"
             />
           </div>
           <div>
@@ -245,7 +245,7 @@ export default function JobDescriptionPanel({
               value={benefits}
               onChange={(e) => setBenefits(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] resize-y"
             />
           </div>
           {(overview || responsibilities || candidateProfile || benefits) && (
@@ -262,13 +262,13 @@ export default function JobDescriptionPanel({
                 onChange={(e) => setEditInstruction(e.target.value)}
                 rows={2}
                 placeholder="Describe the specific edit you want..."
-                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] resize-y bg-white dark:bg-slate-900"
               />
               <button
                 type="button"
                 onClick={handleRefine}
                 disabled={refining || !editInstruction.trim()}
-                className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+                className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium px-3 py-1.5 disabled:opacity-50"
               >
                 <Sparkles className="w-3.5 h-3.5" /> {refining ? "Applying..." : "Apply this edit"}
               </button>
@@ -278,13 +278,13 @@ export default function JobDescriptionPanel({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2 disabled:opacity-60"
           >
             {saving ? "Saving..." : "Save"}
           </button>
         </div>
       ) : (
-        <div className="text-[13px] text-slate-700 dark:text-slate-300 space-y-3">
+        <div className="text-[14px] text-slate-700 dark:text-slate-300 space-y-3">
           {overview && <p className="whitespace-pre-wrap">{overview}</p>}
           {responsibilities && (
             <div>

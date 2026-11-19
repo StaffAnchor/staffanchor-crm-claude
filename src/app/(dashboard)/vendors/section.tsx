@@ -90,7 +90,7 @@ export default async function VendorsPage() {
     <div className="max-w-[1500px] mx-auto px-5 py-8 space-y-6">
       <div>
         <h1 className="ros-page-title mb-1">Vendor agencies</h1>
-        <p className="text-[13px] text-slate-500 dark:text-slate-400">
+        <p className="text-[14px] text-slate-500 dark:text-slate-400">
           External staffing partners who submit candidates through the vendor portal, managed as companies rather
           than loose individual accounts.
         </p>
@@ -106,7 +106,7 @@ export default async function VendorsPage() {
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Applications ({applicationsWithResume.length})
           </h2>
-          <p className="text-[12px] text-slate-400">
+          <p className="text-[13px] text-slate-400">
             Self-applied via vendors.staffanchor.com. Approving emails them a signup link, same as an invite.
           </p>
         </div>
@@ -170,7 +170,7 @@ export default async function VendorsPage() {
               <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
                 Legacy vendor accounts without an agency
               </h2>
-              <p className="text-[12px] text-slate-400 mb-3">
+              <p className="text-[13px] text-slate-400 mb-3">
                 Created before agency tracking existed — assign each to the agency they actually belong to.
               </p>
               <div className="space-y-2">
@@ -179,7 +179,7 @@ export default async function VendorsPage() {
                     key={p.id}
                     className="flex items-center justify-between gap-2 border border-slate-100 dark:border-slate-800 rounded-lg px-3 py-2"
                   >
-                    <div className="text-[13px]">
+                    <div className="text-[14px]">
                       <span className="font-medium text-slate-900 dark:text-slate-100">{p.full_name}</span>
                       <span className="text-slate-400 ml-1.5">{p.email}</span>
                     </div>
@@ -194,7 +194,7 @@ export default async function VendorsPage() {
         <div className="space-y-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Invite a vendor agency</h2>
-            <p className="text-[12px] text-slate-400 mb-3">
+            <p className="text-[13px] text-slate-400 mb-3">
               Sends a self-serve signup link — no more manually generating and handing off a password.
             </p>
             <InviteAgencyForm />

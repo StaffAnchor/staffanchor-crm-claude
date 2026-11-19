@@ -40,7 +40,7 @@ function Fact({ label, value }: { label: string; value: string | null | undefine
   return (
     <div className="min-w-[96px]">
       <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`text-[12.5px] ${value ? "text-slate-800 dark:text-slate-200" : "text-slate-300 dark:text-slate-600"}`}>{value || "Not known"}</p>
+      <p className={`text-[13px] ${value ? "text-slate-800 dark:text-slate-200" : "text-slate-300 dark:text-slate-600"}`}>{value || "Not known"}</p>
     </div>
   );
 }
@@ -358,7 +358,7 @@ export default function BenchTable({
     setCvLoading(false);
   }
 
-  const select = "rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[12.5px]";
+  const select = "rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px]";
   const tab = (m: Mode, label: string, n: number) => (
     <button
       key={m}
@@ -367,8 +367,8 @@ export default function BenchTable({
         setMode(m);
         setShown(PAGE);
       }}
-      className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
-        mode === m ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+      className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
+        mode === m ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
       }`}
     >
       {label} <span className="opacity-70">{n}</span>
@@ -379,7 +379,7 @@ export default function BenchTable({
     <div className="space-y-3">
       <div className="rounded-ros-xl border border-teal-100 dark:border-teal-900/50 bg-teal-50/40 dark:bg-teal-950/20 p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200">Find people for a role</p>
+          <p className="text-[14px] font-medium text-slate-800 dark:text-slate-200">Find people for a role</p>
           <select value={roleId} onChange={(e) => pickRole(e.target.value)} className={`${select} min-w-[260px]`}>
             <option value="">Pick an open B2B role…</option>
             {roles.map((r) => (
@@ -392,13 +392,13 @@ export default function BenchTable({
           </select>
           {role && (
             <>
-              <button type="button" onClick={() => pickRole(role.id)} className="text-[12px] text-teal-600 hover:underline">
+              <button type="button" onClick={() => pickRole(role.id)} className="text-[13px] text-teal-600 hover:underline">
                 Reset to the role
               </button>
-              <button type="button" onClick={() => pickRole("")} className="text-[12px] text-slate-500 hover:underline">
+              <button type="button" onClick={() => pickRole("")} className="text-[13px] text-slate-500 hover:underline">
                 Back to the whole bench
               </button>
-              <Link href={`/mandates/${role.id}`} className="text-[12px] text-slate-500 hover:underline">
+              <Link href={`/mandates/${role.id}`} className="text-[13px] text-slate-500 hover:underline">
                 Open the role
               </Link>
             </>
@@ -475,7 +475,7 @@ export default function BenchTable({
                 <option value="ready_almost">Ready or almost</option>
               </select>
             </label>
-            <label className="col-span-2 flex items-end gap-1.5 text-[12px] text-slate-600 dark:text-slate-300 pb-1.5">
+            <label className="col-span-2 flex items-end gap-1.5 text-[13px] text-slate-600 dark:text-slate-300 pb-1.5">
               <input type="checkbox" checked={rf.relocate} onChange={(e) => setRf({ ...rf, relocate: e.target.checked })} />
               Count people open to relocating
             </label>
@@ -486,14 +486,14 @@ export default function BenchTable({
             <button
               type="button"
               onClick={() => setRoleView("fits")}
-              className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium ${roleView === "fits" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-800"}`}
+              className={`rounded-full px-3 py-1.5 text-[13px] font-medium ${roleView === "fits" ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-800"}`}
             >
               Fit the role <span className="opacity-70">{roleFits.length}</span>
             </button>
             <button
               type="button"
               onClick={() => setRoleView("close")}
-              className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium ${roleView === "close" ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-800"}`}
+              className={`rounded-full px-3 py-1.5 text-[13px] font-medium ${roleView === "close" ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-800"}`}
             >
               Miss one requirement <span className="opacity-70">{roleClose.length}</span>
             </button>
@@ -501,7 +501,7 @@ export default function BenchTable({
           </div>
         )}
         {addMsg && (
-          <p className={`text-[12.5px] flex items-center gap-1.5 ${addMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
+          <p className={`text-[13px] flex items-center gap-1.5 ${addMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
             {addMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />} {addMsg.text}
           </p>
         )}
@@ -515,7 +515,7 @@ export default function BenchTable({
 
       {!role && mode === "needs" && gapCounts.length > 0 && (
         <div className="rounded-ros-xl border border-amber-100 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3">
-          <p className="text-[12.5px] text-slate-700 dark:text-slate-300 mb-2">
+          <p className="text-[13px] text-slate-700 dark:text-slate-300 mb-2">
             <span className="font-medium">What is missing most.</span> Tap one to list those people, then ask a recruiter to collect it.
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -527,7 +527,7 @@ export default function BenchTable({
                   setGap(gap === g ? "all" : g);
                   setShown(PAGE);
                 }}
-                className={`rounded-full border px-2.5 py-1 text-[12px] ${
+                className={`rounded-full border px-2.5 py-1 text-[13px] ${
                   gap === g ? "border-amber-600 bg-amber-600 text-white" : "border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100/60 dark:hover:bg-amber-900/30"
                 }`}
               >
@@ -548,7 +548,7 @@ export default function BenchTable({
               setShown(PAGE);
             }}
             placeholder="Name, company, city"
-            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-8 pr-2 py-1.5 text-[12.5px] w-52"
+            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-8 pr-2 py-1.5 text-[13px] w-52"
           />
         </div>
         <select value={fit} onChange={(e) => setFit(e.target.value)} className={select}>
@@ -564,7 +564,7 @@ export default function BenchTable({
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 dark:text-slate-300">
+        <label className="flex items-center gap-1.5 text-[13px] text-slate-600 dark:text-slate-300">
           <input type="checkbox" checked={matchOnly} onChange={(e) => setMatchOnly(e.target.checked)} />
           Strong match for an open role
         </label>
@@ -574,7 +574,7 @@ export default function BenchTable({
           <option value="out">Not in the pool yet</option>
         </select>
         {gap !== "all" && (
-          <button type="button" onClick={() => setGap("all")} className="text-[12px] text-teal-600 hover:underline">
+          <button type="button" onClick={() => setGap("all")} className="text-[13px] text-teal-600 hover:underline">
             Clear &quot;{gap}&quot;
           </button>
         )}
@@ -587,14 +587,14 @@ export default function BenchTable({
 
       {/* Ask a recruiter to collect details */}
       <div className="sticky top-2 z-10 rounded-ros-xl border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur px-3 py-2.5 flex flex-wrap items-center gap-2">
-        <span className="text-[12.5px] text-slate-600 dark:text-slate-300">
+        <span className="text-[13px] text-slate-600 dark:text-slate-300">
           <span className="font-medium">{picked.size}</span> selected
         </span>
-        <button type="button" onClick={pickAllFiltered} className="text-[12px] text-teal-600 hover:underline">
+        <button type="button" onClick={pickAllFiltered} className="text-[13px] text-teal-600 hover:underline">
           Select the {Math.min(listRows.filter((r) => !r.openTask && !assigned.has(r.candidate_id)).length, MAX_ASSIGN)} shown by the filters
         </button>
         {picked.size > 0 && (
-          <button type="button" onClick={() => setPicked(new Set())} className="text-[12px] text-slate-500 hover:underline">
+          <button type="button" onClick={() => setPicked(new Set())} className="text-[13px] text-slate-500 hover:underline">
             Clear
           </button>
         )}
@@ -611,7 +611,7 @@ export default function BenchTable({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optional)"
-            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[12.5px] w-44"
+            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[13px] w-44"
           />
           <SaveShortlist
             ids={picked.size > 0 ? Array.from(picked) : listRows.map((r) => r.candidate_id)}
@@ -625,7 +625,7 @@ export default function BenchTable({
               type="button"
               onClick={() => addToRole(Array.from(picked))}
               disabled={adding || picked.size === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 disabled:opacity-50"
             >
               {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
               Add {picked.size || ""} to this role
@@ -637,7 +637,7 @@ export default function BenchTable({
               onClick={() => whatsappOpportunity(Array.from(picked))}
               disabled={waSending || picked.size === 0}
               title="Automatic: StaffAnchor's WhatsApp sends each selected person the approved role-opportunity template to ask if they are interested. The client is never named. Meta charges per message."
-              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 px-3 py-1.5 text-[12.5px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 px-3 py-1.5 text-[13px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-50"
             >
               {waSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               WhatsApp the opportunity (auto, template)
@@ -647,7 +647,7 @@ export default function BenchTable({
             type="button"
             onClick={assign}
             disabled={assigning || !assignee || picked.size === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
           >
             {assigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
             Send as tasks
@@ -657,25 +657,25 @@ export default function BenchTable({
             onClick={() => emailAsk(Array.from(picked))}
             disabled={emailing || picked.size === 0}
             title="Email the selected people asking for the sales details their profile lacks"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-[13px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
           >
             {emailing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
             Email the ask
           </button>
         </div>
         {emailMsg && (
-          <p className={`basis-full text-[12.5px] flex items-center gap-1.5 ${emailMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
+          <p className={`basis-full text-[13px] flex items-center gap-1.5 ${emailMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
             {emailMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />} {emailMsg.text}
           </p>
         )}
         {assignMsg && (
-          <p className={`basis-full text-[12.5px] flex items-center gap-1.5 ${assignMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
+          <p className={`basis-full text-[13px] flex items-center gap-1.5 ${assignMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
             {assignMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />} {assignMsg.text}
           </p>
         )}
       </div>
 
-      <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400">
         {role ? `${roleVisible.length} ${roleView === "fits" ? "fit" : "miss one requirement for"} ${role.title}` : `${filtered.length} of ${rows.length} candidates`}
       </p>
 
@@ -696,12 +696,12 @@ export default function BenchTable({
                   aria-label={`Select ${r.full_name ?? "candidate"}`}
                   className="mt-1.5 h-4 w-4 shrink-0"
                 />
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-[12px] font-semibold text-slate-600 dark:text-slate-300">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-[13px] font-semibold text-slate-600 dark:text-slate-300">
                   {initials(r.full_name)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 hover:text-teal-600">
+                    <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 hover:text-teal-600">
                       {r.full_name ?? "Unnamed"}
                     </Link>
                     {r.practice_fit && <Badge tone="accent">{FIT_LABEL[r.practice_fit]}</Badge>}
@@ -710,7 +710,7 @@ export default function BenchTable({
                     {taskSent && <Badge tone="info">Details requested</Badge>}
                     {askedOn && <Badge tone="neutral">Emailed {askedOn}</Badge>}
                   </div>
-                  <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                     {[r.current_job_title, r.current_employer].filter(Boolean).join(" at ") || "No role on file"}
                     {r.city ? ` · ${r.city}` : ""}
                     {r.total_experience_years != null ? ` · ${Number(r.total_experience_years)} yrs` : ""}
@@ -761,7 +761,7 @@ export default function BenchTable({
                     </div>
                   )}
                   {r.strongRoles.length > 0 && (
-                    <p className="mt-2 text-[12px] text-emerald-700 dark:text-emerald-400">Strong match for: {r.strongRoles.join(", ")}</p>
+                    <p className="mt-2 text-[13px] text-emerald-700 dark:text-emerald-400">Strong match for: {r.strongRoles.join(", ")}</p>
                   )}
                 </div>
 
@@ -772,14 +772,14 @@ export default function BenchTable({
                     onClick={() => openCv(r)}
                     disabled={!r.has_cv}
                     title={r.has_cv ? "Read the CV here" : "No CV on file"}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-[12px] font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-40 dark:bg-teal-950/40 dark:text-teal-300"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-[13px] font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-40 dark:bg-teal-950/40 dark:text-teal-300"
                   >
                     <FileText className="h-3.5 w-3.5" /> CV
                   </button>
                   <WhatsAppMenu
                     phone={r.phone}
                     templates={candidateTemplates(r.full_name, { me, candidateId: r.candidate_id, missing: gapKeys(r) }).filter((t) => t.key !== "intro")}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                   />
                   {role &&
                     (() => {
@@ -794,7 +794,7 @@ export default function BenchTable({
                           type="button"
                           onClick={() => addToRole([r.candidate_id])}
                           disabled={adding}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 disabled:opacity-50"
                         >
                           <UserPlus className="h-3.5 w-3.5" /> Add to role
                         </button>
@@ -806,14 +806,14 @@ export default function BenchTable({
                       onClick={() => emailAsk([r.candidate_id])}
                       disabled={emailing}
                       title="Email this person asking for the sales details their profile lacks"
-                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[12px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
                     >
                       <Mail className="h-3.5 w-3.5" /> Email the ask
                     </button>
                   )}
                   <Link
                     target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> Profile
                   </Link>
@@ -823,13 +823,13 @@ export default function BenchTable({
           );
         })}
         {listRows.length === 0 && (
-          <li className="rounded-ros-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-10 text-center text-[13px] text-slate-500">
+          <li className="rounded-ros-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-10 text-center text-[14px] text-slate-500">
             Nobody matches these filters.
           </li>
         )}
       </ul>
       {listRows.length > shown && (
-        <button type="button" onClick={() => setShown((n) => n + PAGE)} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[12.5px] hover:bg-slate-50 dark:hover:bg-slate-800">
+        <button type="button" onClick={() => setShown((n) => n + PAGE)} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] hover:bg-slate-50 dark:hover:bg-slate-800">
           Show {Math.min(PAGE, listRows.length - shown)} more
         </button>
       )}
@@ -838,7 +838,7 @@ export default function BenchTable({
         {cvFor && (
           <div className="-mx-5 -my-5 flex h-[calc(100vh-3.5rem)] flex-col">
             <div className="border-b border-slate-100 dark:border-slate-800 px-5 py-3 space-y-2">
-              <p className="text-[12.5px] text-slate-500">
+              <p className="text-[13px] text-slate-500">
                 {[cvFor.current_job_title, cvFor.current_employer].filter(Boolean).join(" at ") || "No role on file"}
                 {cvFor.city ? ` · ${cvFor.city}` : ""}
               </p>
@@ -850,15 +850,15 @@ export default function BenchTable({
                 <Fact label="CTC" value={ctcText(cvFor)} />
                 <Fact label="Notice" value={cvFor.notice_period} />
               </div>
-              {gapLabels(cvFor).length > 0 && <p className="text-[12px] text-amber-700 dark:text-amber-400">Not on the profile yet: {gapLabels(cvFor).join(", ")}. Check the CV for these.</p>}
+              {gapLabels(cvFor).length > 0 && <p className="text-[13px] text-amber-700 dark:text-amber-400">Not on the profile yet: {gapLabels(cvFor).join(", ")}. Check the CV for these.</p>}
             </div>
             <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
               {cvLoading && (
-                <div className="flex items-center gap-2 p-6 text-[13px] text-slate-500">
+                <div className="flex items-center gap-2 p-6 text-[14px] text-slate-500">
                   <Loader2 className="h-4 w-4 animate-spin" /> Opening the CV…
                 </div>
               )}
-              {cvError && <p className="p-6 text-[13px] text-rose-600">{cvError}</p>}
+              {cvError && <p className="p-6 text-[14px] text-rose-600">{cvError}</p>}
               {cv && <ResumeViewerInline signedUrl={cv.url} fileName={cv.fileName} />}
             </div>
           </div>

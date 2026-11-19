@@ -23,8 +23,8 @@ export default function RecalculateButton() {
   }
   return (
     <div className="flex items-center gap-2">
-      {msg && <span className="text-[12px] text-slate-500">{msg}</span>}
-      <button type="button" onClick={go} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12.5px] font-medium hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800">
+      {msg && <span className="text-[13px] text-slate-500">{msg}</span>}
+      <button type="button" onClick={go} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] font-medium hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800">
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Recalculate now
       </button>
     </div>

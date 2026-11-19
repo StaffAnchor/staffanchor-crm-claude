@@ -30,7 +30,7 @@ export default function RoleCardAuto({ mandateId }: { mandateId: string }) {
   }, []);
 
   return (
-    <div className="rounded-ros-xl border border-teal-200 bg-teal-50/40 p-5 text-[13px] dark:border-teal-900 dark:bg-teal-950/10">
+    <div className="rounded-ros-xl border border-teal-200 bg-teal-50/40 p-5 text-[14px] dark:border-teal-900 dark:bg-teal-950/10">
       {error ? (
         <div className="space-y-2">
           <p className="text-rose-600">{error}</p>

@@ -22,7 +22,7 @@ export default function MandateDiscussions({ entries }: { entries: MandateDiscus
 
   return (
     <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
-      <h2 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+      <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
         <MessagesSquare className="w-3.5 h-3.5 text-slate-400" /> Mandate discussions
       </h2>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
@@ -32,14 +32,14 @@ export default function MandateDiscussions({ entries }: { entries: MandateDiscus
         {sorted.map((entry, i) => (
           <div key={`${entry.mandate_id}-${i}`} className="rounded-ros-lg border border-slate-200 dark:border-slate-700 p-2.5">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <p className="text-[12px] font-medium text-slate-800 dark:text-slate-200 truncate">
+              <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">
                 {entry.role_title} <span className="text-slate-400 font-normal">· {entry.client_name}</span>
               </p>
               <p className="text-xs text-slate-400 shrink-0">
                 {new Date(entry.created_at).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric" })}
               </p>
             </div>
-            <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-snug">{entry.summary}</p>
+            <p className="text-[13px] text-slate-600 dark:text-slate-400 leading-snug">{entry.summary}</p>
             {entry.tags?.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {entry.tags.map((tag) => (

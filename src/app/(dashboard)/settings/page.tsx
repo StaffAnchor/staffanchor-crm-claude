@@ -24,13 +24,13 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-xl mx-auto px-5 py-8">
       <h1 className="ros-page-title mb-1">Settings</h1>
-      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
+      <p className="text-[14px] text-slate-500 dark:text-slate-400 mb-4">
         {profile?.full_name ?? profile?.email ?? "Your account"}
       </p>
 
       <Card>
-        <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-200 mb-1">AI outreach persona</p>
-        <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
+        <p className="text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-1">AI outreach persona</p>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-3">
           Used when generating Sales outreach drafts (LinkedIn DMs and cold emails) so the message sounds like you,
           not the founder, if you're the one sending it. Leave blank to keep the default founder voice.
         </p>

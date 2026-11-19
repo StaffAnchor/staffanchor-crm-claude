@@ -30,9 +30,9 @@ export default function DismissReasons({
               type="button"
               onClick={() => toggle(r.code)}
               aria-pressed={on}
-              className={`rounded-full border px-2.5 py-1 text-[12px] transition-colors ${
+              className={`rounded-full border px-2.5 py-1 text-[13px] transition-colors ${
                 on
-                  ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                  ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
               }`}
             >
@@ -46,7 +46,7 @@ export default function DismissReasons({
           type="button"
           onClick={onConfirm}
           disabled={busy}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-medium hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           {busy ? "Saving..." : value.length ? "Dismiss" : "Dismiss without a reason"}
         </button>

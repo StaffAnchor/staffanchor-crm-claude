@@ -98,7 +98,7 @@ export default async function ClientPassportPage({
       )}
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-3xl mx-auto px-6 py-4">
-          <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">
+          <p className="text-xs font-medium tracking-wide text-blue-600 uppercase">
             StaffAnchor Talent Solutions
           </p>
           <Link

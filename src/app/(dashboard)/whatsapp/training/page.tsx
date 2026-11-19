@@ -46,11 +46,11 @@ export default async function TrainingPage() {
 
   return (
     <div className="mx-auto max-w-[1000px] px-5 py-8">
-      <Link href="/whatsapp" className="text-[12px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-100">
+      <Link href="/whatsapp" className="text-[13px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-100">
         ← WhatsApp
       </Link>
       <h1 className="ros-page-title mt-2">Teach the assistant</h1>
-      <p className="mt-1 max-w-2xl text-[13px] text-slate-500">When a candidate asks something the assistant can&apos;t answer, it hands the chat to a person and the question lands here. Answer it once and the assistant replies the same way next time. It only answers a question that is clearly the same as one you taught it; anything else still comes to you.</p>
+      <p className="mt-1 max-w-2xl text-[14px] text-slate-500">When a candidate asks something the assistant can&apos;t answer, it hands the chat to a person and the question lands here. Answer it once and the assistant replies the same way next time. It only answers a question that is clearly the same as one you taught it; anything else still comes to you.</p>
       <TrainingView groups={out} saved={saved} />
     </div>
   );

@@ -46,8 +46,8 @@ async function call(payload: Record<string, unknown>) {
 
 // WhatsApp is an alternative, never the loudest thing: an outlined chip next to the other next steps, and only a
 // quiet text link while a question is waiting for its answer. The reply and the dark primary step lead.
-const CHIP_WA = "inline-flex items-center gap-1.5 rounded-full border border-emerald-600/40 bg-white px-3 py-1 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50";
-const LINK_WA = "inline-flex items-center gap-1.5 text-[12.5px] text-slate-500 hover:text-emerald-700";
+const CHIP_WA = "inline-flex items-center gap-1.5 rounded-full border border-emerald-600/40 bg-white px-3 py-1 text-[13px] font-medium text-emerald-700 hover:bg-emerald-50";
+const LINK_WA = "inline-flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-emerald-700";
 
 const WA_ICON = "M4 20l1.3-3.9A8 8 0 1 1 8.2 19zM9 10c0 3 2 5 5 5l1-1.5-2-1-1 .5c-.8-.4-1.4-1-1.8-1.8l.5-1-1-2z";
 
@@ -279,11 +279,11 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div>
           <div className="text-[14.5px] font-semibold">StaffAnchor</div>
-          <div className="text-[12px] text-slate-500">Ask us anything about jobs or hiring</div>
+          <div className="text-[13px] text-slate-500">Ask us anything about jobs or hiring</div>
         </div>
         <div className="flex items-center gap-1">
           {intent && (
-            <button type="button" onClick={restart} className="rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100">
+            <button type="button" onClick={restart} className="rounded-md px-2 py-1 text-[13px] text-slate-500 hover:bg-slate-100">
               Start over
             </button>
           )}
@@ -296,22 +296,22 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {msgs.map((m, i) => (
           <div key={i} className={`flex ${m.from === "me" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[90%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15.5px] leading-relaxed ${m.from === "me" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"}`}>{m.text}</div>
+            <div className={`max-w-[90%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15.5px] leading-relaxed ${m.from === "me" ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-900"}`}>{m.text}</div>
           </div>
         ))}
-        {busy && <div className="text-[13px] text-slate-400">Reading…</div>}
+        {busy && <div className="text-[14px] text-slate-400">Reading…</div>}
 
         {/* Choices are small chips under the reply: the reply is what matters, these are shortcuts. */}
         {showOptions && (
           <div className="flex flex-wrap gap-1.5">
             {(site === "jobs" ? [OPTIONS[0], OPTIONS[4], OPTIONS[1], OPTIONS[2], OPTIONS[3]] : OPTIONS).map((o, idx) => (
               <span key={o.intent} className="contents">
-                <button type="button" onClick={() => choose(o.intent, o.label)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] text-slate-700 hover:bg-slate-50">
+                <button type="button" onClick={() => choose(o.intent, o.label)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[13px] text-slate-700 hover:bg-slate-50">
                   {o.label}
                 </button>
                 {/* On the jobs site, Edge sits right beside the first choice: most visitors there are job seekers. */}
                 {site === "jobs" && idx === 0 && !intent && (
-                  <button type="button" onClick={() => showEdge("Explore StaffAnchor Edge")} className="rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-[12.5px] font-medium text-indigo-700 hover:bg-indigo-100">
+                  <button type="button" onClick={() => showEdge("Explore StaffAnchor Edge")} className="rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-[13px] font-medium text-indigo-700 hover:bg-indigo-100">
                     Explore StaffAnchor Edge
                   </button>
                 )}
@@ -343,7 +343,7 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
                   target="_blank"
                   rel="noopener noreferrer"
                   title={st.desc}
-                  className={`rounded-full border px-3 py-1 text-[12.5px] font-medium ${st.primary ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-700" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+                  className={`rounded-full border px-3 py-1 text-[13px] font-medium ${st.primary ? "border-slate-900 bg-teal-600 text-white hover:bg-slate-700" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
                 >
                   {st.label}
                 </a>
@@ -365,8 +365,8 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
                   void leaveContact();
                 }}
               >
-                <input value={contact} onChange={(e) => setContact(e.target.value.slice(0, 80))} placeholder="Work email or mobile, and we call you" className="min-w-0 flex-1 rounded-full border border-slate-300 px-3.5 py-1.5 text-[13px] focus:border-slate-900 focus:outline-none" />
-                <button type="submit" disabled={!contact.trim()} className="rounded-full border border-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold disabled:opacity-40">
+                <input value={contact} onChange={(e) => setContact(e.target.value.slice(0, 80))} placeholder="Work email or mobile, and we call you" className="min-w-0 flex-1 rounded-full border border-slate-300 px-3.5 py-1.5 text-[14px] focus:border-slate-900 focus:outline-none" />
+                <button type="submit" disabled={!contact.trim()} className="rounded-full border border-slate-900 px-3.5 py-1.5 text-[13px] font-semibold disabled:opacity-40">
                   Call me
                 </button>
               </form>
@@ -389,9 +389,9 @@ export default function ChatBot({ site, job }: { site: "main" | "jobs"; job?: st
           onChange={(e) => setText(e.target.value.slice(0, 500))}
           disabled={limited}
           placeholder={ask === "city" ? "Type a city" : ask === "role" ? "Type a role" : "Type your message"}
-          className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-[14px] focus:border-slate-900 focus:outline-none"
+          className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-[15px] focus:border-slate-900 focus:outline-none"
         />
-        <button type="submit" disabled={busy || !text.trim() || limited} className="rounded-xl bg-slate-900 px-4 py-2.5 text-[14px] font-semibold text-white disabled:opacity-50">
+        <button type="submit" disabled={busy || !text.trim() || limited} className="rounded-xl bg-slate-900 px-4 py-2.5 text-[15px] font-semibold text-white disabled:opacity-50">
           Send
         </button>
       </form>

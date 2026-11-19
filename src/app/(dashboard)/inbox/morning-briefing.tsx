@@ -91,7 +91,7 @@ export default function MorningBriefing({
           );
         })}
       </div>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-[12.5px] text-slate-600 dark:text-slate-400">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-[13px] text-slate-600 dark:text-slate-400">
         <span className="flex items-center gap-1.5">
           <IndianRupee className="w-3.5 h-3.5 text-teal-600" />
           Predicted billing this month:{" "}

@@ -77,13 +77,13 @@ export default async function MyReferralsPage() {
   return (
     <div className="mx-auto max-w-[900px] px-5 py-8">
       <h1 className="text-[22px] font-semibold tracking-tight text-slate-900">My referrals</h1>
-      <p className="mt-1 text-[14px] text-slate-500">Everyone you&apos;ve referred and exactly where they are. Open a name to see their full journey.</p>
+      <p className="mt-1 text-[15px] text-slate-500">Everyone you&apos;ve referred and exactly where they are. Open a name to see their full journey.</p>
 
       {journeyData.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-          <p className="text-[15px] font-medium text-slate-700">You haven&apos;t referred anyone yet</p>
-          <p className="mt-1 text-[13px] text-slate-400">Pick a role that fits someone you know, and we&apos;ll take it from there.</p>
-          <Link href="/referrer/roles" className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white hover:bg-slate-700">
+          <p className="text-[16px] font-medium text-slate-700">You haven&apos;t referred anyone yet</p>
+          <p className="mt-1 text-[14px] text-slate-400">Pick a role that fits someone you know, and we&apos;ll take it from there.</p>
+          <Link href="/referrer/roles" className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-[14px] font-semibold text-white hover:bg-slate-700">
             See open roles
           </Link>
         </div>

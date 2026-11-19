@@ -49,7 +49,7 @@ export default function TargetControl({ group, by, bucket, incomplete, target, c
     const late = left < 0 && !finished;
     const perDay = left > 0 ? Math.ceil(incomplete / left) : incomplete;
     return (
-      <div className={`text-[12px] ${late ? "text-rose-700 dark:text-rose-300" : "text-slate-600 dark:text-slate-300"}`}>
+      <div className={`text-[13px] ${late ? "text-rose-700 dark:text-rose-300" : "text-slate-600 dark:text-slate-300"}`}>
         <p className="flex flex-wrap items-center gap-1.5 font-medium">
           <CalendarClock className="h-3.5 w-3.5" aria-hidden />
           {finished ? "Target met" : late ? `Overdue by ${-left} ${-left === 1 ? "day" : "days"}` : left === 0 ? "Due today" : `Due ${pretty(target.due_on)} · ${left} ${left === 1 ? "day" : "days"} left`}
@@ -64,13 +64,13 @@ export default function TargetControl({ group, by, bucket, incomplete, target, c
   }
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-[12px] font-medium text-teal-700 hover:underline dark:text-teal-300">
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-[13px] font-medium text-teal-700 hover:underline dark:text-teal-300">
         <CalendarClock className="h-3.5 w-3.5" aria-hidden /> Set a deadline
       </button>
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
+    <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
       <span className="text-slate-600 dark:text-slate-300">Finish {incomplete} in</span>
       <input type="number" min={1} max={60} value={days} onChange={(e) => setDays(e.target.value)} className="w-14 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 dark:border-slate-600 dark:bg-slate-900" aria-label="Days to finish" />
       <span className="text-slate-600 dark:text-slate-300">days</span>

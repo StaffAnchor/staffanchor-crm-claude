@@ -82,7 +82,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm bg-white/90 border border-slate-200/80 rounded-xl shadow-lg shadow-slate-200/60 backdrop-blur-sm p-8">
         <div className="mb-6">
-          <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">
+          <p className="text-xs font-medium tracking-wide text-blue-600 uppercase">
             StaffAnchor
           </p>
           <h1 className="text-xl font-semibold text-slate-900 mt-1">Sign in</h1>

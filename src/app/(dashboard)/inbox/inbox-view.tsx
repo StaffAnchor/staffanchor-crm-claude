@@ -583,7 +583,7 @@ export default function InboxView({
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="ros-page-title">My Desk</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1">
             {recruiterScopedItems.length === 0
               ? "You're all caught up."
               : `${recruiterScopedItems.length} open item${recruiterScopedItems.length === 1 ? "" : "s"} across the three boxes below`}
@@ -607,7 +607,7 @@ export default function InboxView({
       </div>
 
       {fetchError && (
-        <div className="mb-4 rounded-ros-lg border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700 shadow-sm">
+        <div className="mb-4 rounded-ros-lg border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-700 shadow-sm">
           Couldn&apos;t load your inbox: {fetchError}
         </div>
       )}
@@ -632,12 +632,12 @@ export default function InboxView({
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className={`flex items-center gap-1.5 text-[13px] font-semibold ${active ? "" : "text-slate-900 dark:text-slate-100"}`}>
+                <span className={`flex items-center gap-1.5 text-[14px] font-semibold ${active ? "" : "text-slate-900 dark:text-slate-100"}`}>
                   <Icon className="w-4 h-4" />
                   {meta.label}
                 </span>
                 <span
-                  className={`text-[12px] font-bold tabular-nums rounded-full px-2 py-0.5 ${
+                  className={`text-[13px] font-bold tabular-nums rounded-full px-2 py-0.5 ${
                     active ? "bg-white/70" : count > 0 ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300" : "bg-slate-50 dark:bg-slate-800/50 text-slate-400"
                   }`}
                 >
@@ -653,7 +653,7 @@ export default function InboxView({
       {activeBox === "pipeline" && (
         <div className="bg-teal-50/60 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4 mb-4">
           {!hasActiveMandates && (
-            <p className="text-[12px] text-teal-800 dark:text-teal-300 mb-3">
+            <p className="text-[13px] text-teal-800 dark:text-teal-300 mb-3">
               No active mandate assigned to you right now -- this is exactly the time to build pipeline ahead of the
               next one landing.
             </p>
@@ -664,14 +664,14 @@ export default function InboxView({
               className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-lg border border-teal-100 dark:border-teal-900 px-3 py-2.5 hover:bg-teal-50/50 dark:hover:bg-teal-900/20"
             >
               <UserPlus className="w-4 h-4 text-teal-600 shrink-0" />
-              <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-300">Add a new candidate</span>
+              <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Add a new candidate</span>
             </Link>
             <Link
               href="/candidates/bulk-upload"
               className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-lg border border-teal-100 dark:border-teal-900 px-3 py-2.5 hover:bg-teal-50/50 dark:hover:bg-teal-900/20"
             >
               <UploadCloud className="w-4 h-4 text-teal-600 shrink-0" />
-              <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-300">Bulk upload resumes</span>
+              <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Bulk upload resumes</span>
             </Link>
           </div>
         </div>
@@ -708,7 +708,7 @@ export default function InboxView({
               <select
                 value={recruiterFilter}
                 onChange={(e) => setRecruiterFilter(e.target.value)}
-                className="text-[12px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 ring-1 ring-slate-200 rounded-full pl-3 pr-7 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 outline-none appearance-none cursor-pointer"
+                className="text-[13px] font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 ring-1 ring-slate-200 rounded-full pl-3 pr-7 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 outline-none appearance-none cursor-pointer"
                 style={{
                   backgroundImage:
                     "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e\")",
@@ -775,7 +775,7 @@ export default function InboxView({
                       }`}
                     >
                       <GroupIcon className="w-3 h-3 text-slate-400" />
-                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         {GROUP_META[group].label}
                       </span>
                       <span className="text-xs text-slate-400">· {groupCounts.get(group) ?? 0}</span>
@@ -792,7 +792,7 @@ export default function InboxView({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">{item.title}</span>
+                        <span className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">{item.title}</span>
                         {item.priority === "high" && (
                           <Badge tone="warning" size="sm">
                             High
@@ -858,7 +858,7 @@ export default function InboxView({
                 resolving={resolvingId === focused.id}
               />
             ) : (
-              <p className="text-[13px] text-slate-400">Select an item to see details.</p>
+              <p className="text-[14px] text-slate-400">Select an item to see details.</p>
             )}
           </Card>
         </div>
@@ -890,7 +890,7 @@ function SnoozeMenu({ onSnooze, disabled }: { onSnooze: (until: Date) => void; d
       <button
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}
-        className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 disabled:opacity-60"
+        className="flex items-center justify-center gap-1.5 text-[13px] font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 disabled:opacity-60"
       >
         <Clock className="w-3.5 h-3.5" />
         Snooze
@@ -905,7 +905,7 @@ function SnoozeMenu({ onSnooze, disabled }: { onSnooze: (until: Date) => void; d
                 onSnooze(opt.getDate());
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-1.5 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
+              className="w-full text-left px-3 py-1.5 text-[13px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             >
               {opt.label}
             </button>
@@ -1039,7 +1039,7 @@ function ContextDrawer({
           <Icon className="w-5 h-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
             {meta.label}
             {item.is_unassigned ? (
               <Badge tone="success" size="sm" icon={<Users className="w-2.5 h-2.5" />}>
@@ -1051,14 +1051,14 @@ function ContextDrawer({
               </Badge>
             ) : null}
           </p>
-          <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 leading-snug">{item.title}</p>
+          <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 leading-snug">{item.title}</p>
         </div>
       </div>
 
       {item.task_type === "INCOMPLETE_PROFILE" &&
         (item.candidate_category || item.candidate_sub_domain || item.candidate_experience_years != null || item.candidate_current_job_title) && (
           <div className="rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2.5 mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1.5">At a glance</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-1.5">At a glance</p>
             <div className="flex flex-wrap items-center gap-1.5">
               {item.candidate_category && (
                 <Badge tone="neutral" size="sm" className="!bg-teal-50 !text-teal-700 dark:!bg-teal-950/40 dark:!text-teal-300 normal-case tracking-normal">
@@ -1082,14 +1082,14 @@ function ContextDrawer({
               )}
             </div>
             {(item.candidate_current_job_title || item.candidate_current_employer) && (
-              <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-1.5">
+              <p className="text-[13px] text-slate-600 dark:text-slate-400 mt-1.5">
                 {[item.candidate_current_job_title, item.candidate_current_employer].filter(Boolean).join(" at ")}
               </p>
             )}
           </div>
         )}
 
-      {item.detail && <p className="text-[13px] text-slate-600 dark:text-slate-400 mb-4">{item.detail}</p>}
+      {item.detail && <p className="text-[14px] text-slate-600 dark:text-slate-400 mb-4">{item.detail}</p>}
 
       {/* Manual recruiter assignment -- writes straight to recruiter_inbox.recruiter_id.
           No auto-assign logic (future item); this is the only assignment control in the
@@ -1100,7 +1100,7 @@ function ContextDrawer({
         <select
           value={item.recruiter_id ?? ""}
           onChange={(e) => onAssign(item.id, e.target.value || null)}
-          className="flex-1 text-[12px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-slate-700 dark:text-slate-300"
+          className="flex-1 text-[13px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-slate-700 dark:text-slate-300"
         >
           <option value="">Unassigned</option>
           {recruiters.map((r) => (
@@ -1117,11 +1117,11 @@ function ContextDrawer({
       <div className="flex items-start gap-2 rounded-ros-md bg-teal-50/70 border border-teal-100 px-3 py-2.5 mb-4">
         <Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0 mt-0.5" />
         {!aiInsight || aiInsight.status === "loading" ? (
-          <span className="text-[12px] text-slate-400 italic">Thinking...</span>
+          <span className="text-[13px] text-slate-400 italic">Thinking...</span>
         ) : aiInsight.status === "error" ? (
-          <span className="text-[12px] text-slate-400">{aiInsight.text}</span>
+          <span className="text-[13px] text-slate-400">{aiInsight.text}</span>
         ) : (
-          <p className="text-[12.5px] text-slate-700 dark:text-slate-300 leading-snug">{aiInsight.text}</p>
+          <p className="text-[13px] text-slate-700 dark:text-slate-300 leading-snug">{aiInsight.text}</p>
         )}
       </div>
 
@@ -1140,7 +1140,7 @@ function ContextDrawer({
                 ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}&back=inbox&box=${box}`
                 : `/candidates/${item.candidate_id}?back=inbox&box=${box}`
             }
-            className="flex items-center justify-between rounded-lg bg-teal-600 hover:bg-teal-700 px-3 py-2.5 text-[12.5px] text-white transition-colors"
+            className="flex items-center justify-between rounded-lg bg-teal-600 hover:bg-teal-700 px-3 py-2.5 text-[13px] text-white transition-colors"
           >
             <span className="font-medium">
               Open profile to complete: {item.candidate_name ?? "this candidate"}
@@ -1155,7 +1155,7 @@ function ContextDrawer({
                   ? `/candidates/${item.candidate_id}?mandateId=${item.mandate_id}`
                   : `/candidates/${item.candidate_id}?back=inbox&box=${box}`
               }
-              className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
+              className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             >
               <span>
                 Candidate: <span className="font-medium">{item.candidate_name ?? "View profile"}</span>
@@ -1175,7 +1175,7 @@ function ContextDrawer({
                 ? `/mandates/${item.mandate_id}/matches?back=inbox&box=${box}`
                 : `/mandates/${item.mandate_id}?back=inbox&box=${box}`
             }
-            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[12px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
+            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
           >
             <span>
               Mandate:{" "}

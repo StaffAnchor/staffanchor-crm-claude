@@ -64,7 +64,7 @@ export default function ResumeMismatchesPanel({
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mb-1">
         <FileWarning className="w-3.5 h-3.5 text-amber-600" /> Resume vs. profile mismatches
       </h2>
-      <p className="text-[12px] text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-400 mb-3">
         The AI read this candidate&apos;s resume as ground truth and compared it against what they self-reported in
         their profile. Only material conflicts are shown -- worth a quick double-check before presenting this
         candidate.
@@ -77,8 +77,8 @@ export default function ResumeMismatchesPanel({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[12.5px] font-medium text-amber-900 dark:text-amber-300">{m.field}</p>
-                <p className="text-[12px] text-slate-700 dark:text-slate-300 mt-0.5">
+                <p className="text-[13px] font-medium text-amber-900 dark:text-amber-300">{m.field}</p>
+                <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5">
                   Profile says <span className="font-medium">&ldquo;{m.self_reported}&rdquo;</span> — resume says{" "}
                   <span className="font-medium">&ldquo;{m.resume_says}&rdquo;</span>
                 </p>

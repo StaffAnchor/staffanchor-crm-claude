@@ -64,22 +64,22 @@ export default function BatchPanel() {
     <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="flex items-center gap-2 text-[16px] font-semibold text-slate-900 dark:text-slate-100">
             <MessageCircle className="h-4 w-4 text-teal-600" /> Today&apos;s batch
           </h2>
-          <p className="mt-0.5 text-[13px] text-slate-500">The next 20 people to ask for their missing details, best first: people who fit an open role, then those closest to ready.</p>
+          <p className="mt-0.5 text-[14px] text-slate-500">The next 20 people to ask for their missing details, best first: people who fit an open role, then those closest to ready.</p>
         </div>
-        <button type="button" onClick={prepare} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+        <button type="button" onClick={prepare} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
           {busy && !recipients ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Prepare today&apos;s batch
         </button>
       </div>
-      {msg && <p className="mt-3 text-[13px] text-slate-700 dark:text-slate-200">{msg}</p>}
+      {msg && <p className="mt-3 text-[14px] text-slate-700 dark:text-slate-200">{msg}</p>}
       {recipients && (
         <div className="mt-4">
           {skipped && <p className="mb-2 text-xs text-slate-500">{skipped}</p>}
           <ul className="max-h-96 space-y-2 overflow-y-auto">
             {recipients.map((r) => (
-              <li key={r.id} className="rounded-lg border border-slate-100 p-3 text-[13px] dark:border-slate-800">
+              <li key={r.id} className="rounded-lg border border-slate-100 p-3 text-[14px] dark:border-slate-800">
                 <label className="flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
                   <input type="checkbox" checked={!left.has(r.id)} onChange={() => setLeft((s) => { const n = new Set(s); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); return n; })} />
                   {r.name}
@@ -91,7 +91,7 @@ export default function BatchPanel() {
             ))}
           </ul>
           <div className="mt-3 flex items-center gap-3">
-            <button type="button" onClick={send} disabled={busy || recipients.length === left.size} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
+            <button type="button" onClick={send} disabled={busy || recipients.length === left.size} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-5 py-2 text-[14px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send to {recipients.length - left.size}
             </button>
             <span className="text-xs text-slate-500">Sent from StaffAnchor&apos;s number. Meta charges per template message.</span>

@@ -82,10 +82,10 @@ export default function SystemHealthCard() {
             <ShieldAlert className={`w-4 h-4 mt-0.5 shrink-0 ${criticalCount > 0 ? "text-red-600" : "text-amber-600"}`} />
           )}
           <div>
-            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200">
+            <p className="text-[14px] font-medium text-slate-800 dark:text-slate-200">
               System health {isHealthy ? "— all clear" : `— ${alerts.length} issue${alerts.length > 1 ? "s" : ""} flagged`}
             </p>
-            <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
               {metrics.embeddingCoveragePct}% embedded · {metrics.aiSummaryCoveragePct}% summarized ·{" "}
               {metrics.skillInventoryCoveragePct}% skill-mapped · {metrics.verifiedFactsCount} verified facts recorded ·{" "}
               {metrics.crons.filter((c) => c.overdue).length} of {metrics.crons.length} scheduled jobs overdue
@@ -106,7 +106,7 @@ export default function SystemHealthCard() {
               {alerts.map((a, i) => (
                 <p
                   key={i}
-                  className={`text-[12px] ${a.severity === "critical" ? "text-red-600 dark:text-red-400" : "text-amber-700 dark:text-amber-400"}`}
+                  className={`text-[13px] ${a.severity === "critical" ? "text-red-600 dark:text-red-400" : "text-amber-700 dark:text-amber-400"}`}
                 >
                   <span className="font-medium">{a.area}</span>: {a.message}
                 </p>
@@ -117,7 +117,7 @@ export default function SystemHealthCard() {
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Scheduled jobs</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
               {metrics.crons.map((c) => (
-                <div key={c.jobName} className="flex items-center justify-between text-[12px] py-0.5">
+                <div key={c.jobName} className="flex items-center justify-between text-[13px] py-0.5">
                   <span className="text-slate-600 dark:text-slate-300">{c.jobName}</span>
                   <span
                     className={

@@ -21,7 +21,7 @@ export default function BillingTabs({ liveTranches }: { liveTranches: ReactNode 
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
               tab === t.key
                 ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"

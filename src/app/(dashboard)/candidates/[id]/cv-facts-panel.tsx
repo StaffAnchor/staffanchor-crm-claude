@@ -16,14 +16,14 @@ function Chip({ children, tone = "slate" }: { children: React.ReactNode; tone?: 
     tone === "teal"
       ? "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200"
       : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
-  return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] ${cls}`}>{children}</span>;
+  return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[13px] ${cls}`}>{children}</span>;
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 py-1.5">
-      <p className="text-[12px] text-slate-500 dark:text-slate-400 pt-0.5">{label}</p>
-      <div className="min-w-0 text-[13px] text-slate-800 dark:text-slate-200">{children}</div>
+      <p className="text-[13px] text-slate-500 dark:text-slate-400 pt-0.5">{label}</p>
+      <div className="min-w-0 text-[14px] text-slate-800 dark:text-slate-200">{children}</div>
     </div>
   );
 }
@@ -34,10 +34,10 @@ function RoleLine({ r }: { r: CvRole }) {
   const facts = [r.deal_size && `Deal size: ${r.deal_size}`, r.quota_or_target && `Target: ${r.quota_or_target}`, r.achievement && `Result: ${r.achievement}`, r.team_size != null && `Team: ${r.team_size}`].filter(Boolean) as string[];
   return (
     <li className="py-2.5 border-t border-slate-100 dark:border-slate-800 first:border-t-0">
-      <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100">
+      <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100">
         {r.title ?? "Role"} {r.company ? <span className="font-normal text-slate-600 dark:text-slate-300">at {r.company}</span> : null}
       </p>
-      <p className="text-[12px] text-slate-500 dark:text-slate-400">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400">
         {[dates, r.industry].filter(Boolean).join(" · ")}
         {r.sells ? ` · Sells: ${r.sells}` : ""}
       </p>
@@ -48,7 +48,7 @@ function RoleLine({ r }: { r: CvRole }) {
           ))}
         </div>
       )}
-      {facts.length > 0 && <p className="text-[12px] text-slate-600 dark:text-slate-300 mt-1">{facts.join(" · ")}</p>}
+      {facts.length > 0 && <p className="text-[13px] text-slate-600 dark:text-slate-300 mt-1">{facts.join(" · ")}</p>}
     </li>
   );
 }
@@ -63,7 +63,7 @@ export default async function CvFactsPanel({ candidateId }: { candidateId: strin
   const header = (
     <div className="flex items-center gap-2 mb-2">
       <FileSearch className="w-4 h-4 text-teal-600" aria-hidden />
-      <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Read from the CV</h3>
+      <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Read from the CV</h3>
     </div>
   );
 
@@ -71,7 +71,7 @@ export default async function CvFactsPanel({ candidateId }: { candidateId: strin
     return (
       <div>
         {header}
-        <p className="text-[13px] text-slate-500 dark:text-slate-400">
+        <p className="text-[14px] text-slate-500 dark:text-slate-400">
           Not read yet. A CV is read automatically when the candidate&apos;s summary is generated, or by an admin from Analytics, then Reports.
         </p>
       </div>
@@ -92,16 +92,16 @@ export default async function CvFactsPanel({ candidateId }: { candidateId: strin
   return (
     <div>
       {header}
-      <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-2">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-2">
         Read on {new Date(data.extracted_at as string).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}. Only what the CV states is shown.
       </p>
 
       {f.flags.length > 0 && (
         <div className="mb-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-3">
-          <p className="text-[12px] font-medium text-amber-900 dark:text-amber-200 mb-1">Worth checking on the call</p>
+          <p className="text-[13px] font-medium text-amber-900 dark:text-amber-200 mb-1">Worth checking on the call</p>
           <ul className="space-y-1">
             {f.flags.map((fl, i) => (
-              <li key={i} className="text-[13px] text-amber-900 dark:text-amber-100">
+              <li key={i} className="text-[14px] text-amber-900 dark:text-amber-100">
                 <span className="font-medium">{FLAG_LABEL[fl.kind] ?? "Note"}:</span> {fl.detail}
               </li>
             ))}
@@ -122,7 +122,7 @@ export default async function CvFactsPanel({ candidateId }: { candidateId: strin
               ))}
             </div>
             {(s.typical_deal_size || s.sales_cycle || s.best_achievement) && (
-              <p className="mt-1.5 text-[12px] text-slate-600 dark:text-slate-300">
+              <p className="mt-1.5 text-[13px] text-slate-600 dark:text-slate-300">
                 {[s.typical_deal_size && `Deal size: ${s.typical_deal_size}`, s.sales_cycle && `Cycle: ${s.sales_cycle}`, s.best_achievement && `Best: ${s.best_achievement}`].filter(Boolean).join(" · ")}
               </p>
             )}
@@ -138,7 +138,7 @@ export default async function CvFactsPanel({ candidateId }: { candidateId: strin
 
       {f.roles.length > 0 && (
         <details className="mt-3" open>
-          <summary className="cursor-pointer text-[13px] font-medium text-slate-700 dark:text-slate-200">Job by job ({f.roles.length})</summary>
+          <summary className="cursor-pointer text-[14px] font-medium text-slate-700 dark:text-slate-200">Job by job ({f.roles.length})</summary>
           <ul className="mt-1">
             {f.roles.map((r, i) => (
               <RoleLine key={i} r={r} />

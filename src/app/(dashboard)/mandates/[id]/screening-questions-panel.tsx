@@ -119,7 +119,7 @@ export default function ScreeningQuestionsPanel({
           <Sparkles className="w-3.5 h-3.5" /> {generating ? "Generating..." : "Generate with AI"}
         </button>
       </div>
-      <p className="text-[12px] text-slate-400 mb-2">
+      <p className="text-[13px] text-slate-400 mb-2">
         Targeted questions for screening calls against this mandate. Recruiters answer these per-candidate from the
         Screen action in the candidate table below -- answers become structured, searchable profile data, not just
         notes.
@@ -128,7 +128,7 @@ export default function ScreeningQuestionsPanel({
 
       <div className="space-y-1.5 mb-2">
         {questions.length === 0 && (
-          <p className="text-[12px] text-slate-400 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2">
+          <p className="text-[13px] text-slate-400 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2">
             No questions yet -- generate with AI or add your own below.
           </p>
         )}
@@ -138,7 +138,7 @@ export default function ScreeningQuestionsPanel({
             className="flex items-start gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5"
           >
             <span className="text-xs text-slate-400 mt-0.5">{i + 1}.</span>
-            <span className="flex-1 text-[13px] text-slate-700 dark:text-slate-300">{q.text}</span>
+            <span className="flex-1 text-[14px] text-slate-700 dark:text-slate-300">{q.text}</span>
             {q.source === "ai" && (
               <span className="shrink-0 rounded-full bg-teal-50 text-teal-600 text-xs font-medium px-1.5 py-0.5">AI</span>
             )}
@@ -168,7 +168,7 @@ export default function ScreeningQuestionsPanel({
             }
           }}
           placeholder="Add your own question..."
-          className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-[12px]"
+          className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-[13px]"
         />
         <button
           onClick={addManual}

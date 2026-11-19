@@ -42,11 +42,11 @@ export default async function RoleSummariesPage({ params }: { params: Promise<{ 
     <div className="mx-auto max-w-[1000px] px-5 py-8">
       <Link href={`/mandates/${id}`} className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400">← {mandate.role_title ?? "Role"}</Link>
       <h1 className="ros-page-title mt-2">Client summaries</h1>
-      <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
+      <p className="mt-1 max-w-3xl text-[14px] text-slate-500 dark:text-slate-400">
         {mandate.client_name ? `${mandate.client_name} ` : "The client "}sees a one-page summary for each person you share, once you approve it. The system writes the draft from the CV and your call notes; read it, and approve only what you are happy for the client to read.
       </p>
       {list.length === 0 ? (
-        <p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+        <p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-[15px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
           Nobody is on this role&apos;s client shortlist yet. Share people from the pipeline first.
         </p>
       ) : (

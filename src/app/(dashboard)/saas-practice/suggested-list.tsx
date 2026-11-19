@@ -16,7 +16,7 @@ export default function SuggestedList({ items }: { items: Suggestion[] }) {
     <section className="space-y-2">
       <div>
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Speak to these next</h2>
-        <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">
           Ranked by: a fit for a role that is open today, what they have sold, how long they stay in jobs, and companies you rate. They have not had a call logged. Call them, then write the note on their profile and the system does the rest.
         </p>
       </div>
@@ -24,10 +24,10 @@ export default function SuggestedList({ items }: { items: Suggestion[] }) {
         {items.map(({ row: r, reasons, cautions }) => (
           <li key={r.candidate_id} className="flex gap-3 rounded-ros-xl border border-teal-100 bg-teal-50/40 p-3 dark:border-teal-900/40 dark:bg-teal-950/10">
             <div className="min-w-0 flex-1">
-              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[13.5px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
+              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
                 {r.full_name ?? "Unnamed"}
               </Link>
-              <p className="text-[12px] text-slate-500">
+              <p className="text-[13px] text-slate-500">
                 {[r.current_job_title, r.current_employer].filter(Boolean).join(" at ") || "No role on file"}
                 {r.city ? ` · ${r.city}` : ""}
               </p>
@@ -45,13 +45,13 @@ export default function SuggestedList({ items }: { items: Suggestion[] }) {
               </div>
             </div>
             <div className="flex shrink-0 flex-col gap-1.5">
-              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-emerald-500">
+              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-500">
                 <Phone className="h-3.5 w-3.5" /> Call &amp; log
               </Link>
               <WhatsAppMenu
                 phone={r.phone}
                 templates={candidateTemplates(r.full_name, { me, candidateId: r.candidate_id, missing: gapKeys(r) }).filter((t) => t.key !== "intro")}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               />
             </div>
           </li>

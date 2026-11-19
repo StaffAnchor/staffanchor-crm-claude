@@ -111,7 +111,7 @@ export default function CallsFlaggedTable({
   if (rows.length === 0) {
     return (
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-10 text-center">
-        <p className="text-[13px] text-slate-400">Nothing flagged right now.</p>
+        <p className="text-[14px] text-slate-400">Nothing flagged right now.</p>
       </div>
     );
   }
@@ -161,20 +161,20 @@ export default function CallsFlaggedTable({
               </td>
               <td className="px-4 py-3">
                 {r.mandate_id ? (
-                  <Link href={`/mandates/${r.mandate_id}`} className="text-[12.5px] font-medium text-teal-600 dark:text-teal-400 hover:underline">
+                  <Link href={`/mandates/${r.mandate_id}`} className="text-[13px] font-medium text-teal-600 dark:text-teal-400 hover:underline">
                     {r.mandate_role_title}
                     {r.mandate_client_name ? ` — ${r.mandate_client_name}` : ""}
                   </Link>
                 ) : (
-                  <span className="text-[12.5px] text-slate-400">—</span>
+                  <span className="text-[13px] text-slate-400">—</span>
                 )}
               </td>
-              <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-[12.5px]">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-[13px]">
                 <div>{r.candidate_current_fixed_ctc ? `₹${r.candidate_current_fixed_ctc}L` : "—"}</div>
                 {r.candidate_notice_period && <div className="text-xs text-slate-400">Notice: {r.candidate_notice_period}</div>}
               </td>
               <td className="px-4 py-3">
-                <span className="text-xs font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
+                <span className="text-xs font-medium uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
                   {roundLabel(r.call_round)}
                 </span>
                 <div className="text-xs text-slate-400 mt-1">{timeAgo(r.created_at)}</div>

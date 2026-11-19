@@ -69,7 +69,7 @@ export default function RecommendDialog({
 
   return (
     <>
-      <button type="button" onClick={show} title={iconOnly ? label : undefined} aria-label={iconOnly ? label : undefined} className={className ?? "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"}>
+      <button type="button" onClick={show} title={iconOnly ? label : undefined} aria-label={iconOnly ? label : undefined} className={className ?? "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"}>
         <Send className="h-3.5 w-3.5" /> {iconOnly ? null : label}
       </button>
       {open && (
@@ -78,48 +78,48 @@ export default function RecommendDialog({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Recommend {candidateName}</h3>
-                <p className="mt-0.5 text-[12.5px] text-slate-500">It goes to their Recommended page and their bell.</p>
+                <p className="mt-0.5 text-[13px] text-slate-500">It goes to their Recommended page and their bell.</p>
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
                 <X className="h-4 w-4" />
               </button>
             </div>
             {done ? (
-              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-[14px] text-emerald-900">
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-[15px] text-emerald-900">
                 <p className="flex items-center gap-1.5 font-semibold">
                   <Check className="h-4 w-4" /> Sent to {done}
                 </p>
-                <p className="mt-1 text-[13px]">They&apos;ll see it in Recommended and get a bell notification.</p>
-                <button type="button" onClick={() => setOpen(false)} className="mt-3 rounded-lg bg-emerald-700 px-3 py-1.5 text-[13px] font-medium text-white">Done</button>
+                <p className="mt-1 text-[14px]">They&apos;ll see it in Recommended and get a bell notification.</p>
+                <button type="button" onClick={() => setOpen(false)} className="mt-3 rounded-lg bg-emerald-700 px-3 py-1.5 text-[14px] font-medium text-white">Done</button>
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                <label className="block text-[12.5px] font-medium text-slate-600 dark:text-slate-300">
+                <label className="block text-[13px] font-medium text-slate-600 dark:text-slate-300">
                   Recruiter
-                  <select value={toUser} onChange={(e) => setToUser(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900">
+                  <select value={toUser} onChange={(e) => setToUser(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[15px] dark:border-slate-700 dark:bg-slate-900">
                     <option value="">Choose a recruiter…</option>
                     {people.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
                 </label>
-                <label className="block text-[12.5px] font-medium text-slate-600 dark:text-slate-300">
+                <label className="block text-[13px] font-medium text-slate-600 dark:text-slate-300">
                   For which role
-                  <select value={mandateId} onChange={(e) => setMandateId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900">
+                  <select value={mandateId} onChange={(e) => setMandateId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[15px] dark:border-slate-700 dark:bg-slate-900">
                     <option value="">Choose a role…</option>
                     {roles.map((r) => (
                       <option key={r.id} value={r.id}>{r.label}</option>
                     ))}
                   </select>
                 </label>
-                <label className="block text-[12.5px] font-medium text-slate-600 dark:text-slate-300">
+                <label className="block text-[13px] font-medium text-slate-600 dark:text-slate-300">
                   Why you like them (optional)
-                  <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} placeholder="e.g. Sold to CISOs for 6 years, wants Pune, call her first" className="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900" />
+                  <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} placeholder="e.g. Sold to CISOs for 6 years, wants Pune, call her first" className="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-2 text-[15px] dark:border-slate-700 dark:bg-slate-900" />
                 </label>
-                {err && <p className="text-[13px] text-rose-600">{err}</p>}
+                {err && <p className="text-[14px] text-rose-600">{err}</p>}
                 <div className="flex justify-end gap-2 pt-1">
-                  <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
-                  <button type="button" onClick={send} disabled={busy || !toUser || !mandateId} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13px] font-medium text-white hover:bg-teal-500 disabled:opacity-50">
+                  <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-[14px] text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                  <button type="button" onClick={send} disabled={busy || !toUser || !mandateId} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[14px] font-medium text-white hover:bg-teal-500 disabled:opacity-50">
                     {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Send
                   </button>
                 </div>

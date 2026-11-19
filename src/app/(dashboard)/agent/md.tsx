@@ -37,5 +37,5 @@ export default function Md({ text }: { text: string }) {
     blocks.push(head ? <p key={k} className="mt-2 font-semibold">{inline(head[1], `h${k}`)}</p> : <p key={k} className="my-1">{inline(line, `p${k}`)}</p>);
   });
   flush(9999);
-  return <div className="text-[14px] leading-relaxed">{blocks}</div>;
+  return <div className="text-[15px] leading-relaxed">{blocks}</div>;
 }

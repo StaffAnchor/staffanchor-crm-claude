@@ -41,7 +41,7 @@ export default async function ShortlistPage({ params }: { params: Promise<{ id: 
   return (
     <div className="mx-auto max-w-[1500px] px-5 py-8">
       <CandidatesSubNav />
-      <Link href="/candidates/lists" className="mb-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-teal-600 hover:underline">
+      <Link href="/candidates/lists" className="mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-teal-600 hover:underline">
         <ArrowLeft className="h-3.5 w-3.5" /> All shortlists
       </Link>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -49,7 +49,7 @@ export default async function ShortlistPage({ params }: { params: Promise<{ id: 
           <h1 className="flex items-center gap-2 text-[20px] font-semibold text-slate-900 dark:text-slate-100">
             <Bookmark className="h-5 w-5 shrink-0 text-slate-400" /> <span className="truncate">{list.name}</span>
           </h1>
-          <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-[14px] text-slate-500 dark:text-slate-400">
             {cards.length} {cards.length === 1 ? "person" : "people"}
             {list.owner_name ? ` · made by ${list.owner_name}` : ""}
           </p>
@@ -64,7 +64,7 @@ export default async function ShortlistPage({ params }: { params: Promise<{ id: 
       </div>
 
       {cards.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[13.5px] text-slate-500 dark:border-slate-700">
+        <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[14px] text-slate-500 dark:border-slate-700">
           Nobody in this shortlist yet. Open the{" "}
           <Link href="/candidates/inventory" className="font-medium text-teal-600 hover:underline">
             Inventory

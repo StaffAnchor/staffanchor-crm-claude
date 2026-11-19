@@ -335,7 +335,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                   setSubDomain("");
                   setSubDomainOther("");
                 }}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
               >
                 <option value="auto">Not sure -- read it from each CV</option>
                 {profileTypeOptions.map((o) => (
@@ -359,7 +359,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 <select
                   value={subDomain}
                   onChange={(e) => setSubDomain(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
                 >
                   <option value="">Not sure -- read it from each CV</option>
                   {(profileType === "b2c_sales" ? b2cSoldGroups : b2bSoldGroups).map((g) => (
@@ -386,7 +386,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     setSubDomain(e.target.value);
                     if (e.target.value !== "Other") setSubDomainOther("");
                   }}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
                 >
                   <option value="">Not sure -- leave blank</option>
                   {subDomainOptions.map((d) => (
@@ -400,7 +400,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     value={subDomainOther}
                     onChange={(e) => setSubDomainOther(e.target.value)}
                     placeholder="Please specify"
-                    className="w-full mt-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                    className="w-full mt-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
                   />
                 )}
               </div>
@@ -413,7 +413,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               <select
                 value={sourceChannel}
                 onChange={(e) => setSourceChannel(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
               >
                 <option value="">Select...</option>
                 {SOURCE_CHANNEL_OPTIONS.map((o) => (
@@ -427,7 +427,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
 
           <label className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 px-4 py-8 cursor-pointer hover:border-teal-300 hover:bg-teal-50/40 transition-colors">
             <UploadCloud className="w-6 h-6 text-slate-400" />
-            <span className="text-[13px] font-medium text-slate-600 dark:text-slate-300">
+            <span className="text-[14px] font-medium text-slate-600 dark:text-slate-300">
               Click to choose resumes, or drag them here
             </span>
             <span className="text-xs text-slate-400">PDF or DOCX -- up to {MAX_FILES} files at a time</span>
@@ -449,7 +449,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                   key={f.name}
                   className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5"
                 >
-                  <span className="flex items-center gap-2 text-[12.5px] text-slate-700 dark:text-slate-300 truncate">
+                  <span className="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-300 truncate">
                     <FileText className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                     {f.name}
                   </span>
@@ -465,7 +465,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           )}
 
           {extractError && (
-            <p className="flex items-center gap-1.5 text-[12.5px] text-rose-600">
+            <p className="flex items-center gap-1.5 text-[13px] text-rose-600">
               <AlertTriangle className="w-3.5 h-3.5" /> {extractError}
             </p>
           )}
@@ -474,7 +474,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             type="button"
             onClick={handleExtract}
             disabled={files.length === 0 || !profileType || !sourceChannel || extracting}
-            className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
+            className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[14px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
           >
             {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
             {extracting ? `Reading resumes (${extractProgress}/${files.length})...` : "Extract & review"}
@@ -485,7 +485,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
       {rows && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+            <p className="text-[13px] text-slate-500 dark:text-slate-400">
               {rows.length} resume{rows.length === 1 ? "" : "s"} processed -- review and fix anything below before saving.
             </p>
             <button
@@ -494,7 +494,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                 setRows(null);
                 setFiles([]);
               }}
-              className="text-[12px] font-medium text-slate-500 hover:text-slate-800"
+              className="text-[13px] font-medium text-slate-500 hover:text-slate-800"
             >
               Start over
             </button>
@@ -503,13 +503,13 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           {mandates.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-3 py-2">
               <Link2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span className="text-[12px] text-slate-500 dark:text-slate-400">
+              <span className="text-[13px] text-slate-500 dark:text-slate-400">
                 Link all uploaded candidates to a mandate (optional):
               </span>
               <select
                 value={bulkMandateId}
                 onChange={(e) => setBulkMandateId(e.target.value)}
-                className="rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12px] max-w-[16rem]"
+                className="rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[13px] max-w-[16rem]"
               >
                 <option value="">No mandate -- general pipeline</option>
                 {mandates.map((m) => (
@@ -521,7 +521,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               <button
                 type="button"
                 onClick={() => setRows((prev) => (prev ? prev.map((r) => ({ ...r, mandate_id: bulkMandateId })) : prev))}
-                className="text-[12px] font-medium text-teal-600 hover:text-teal-700"
+                className="text-[13px] font-medium text-teal-600 hover:text-teal-700"
               >
                 Apply to all
               </button>
@@ -531,7 +531,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
           {rows
             .filter((row) => row.notResume)
             .map((row) => (
-              <div key={row.fileName} className="flex items-start gap-2 rounded-ros-lg border border-rose-200 bg-rose-50/60 p-3 text-[12.5px] dark:border-rose-900 dark:bg-rose-950/20">
+              <div key={row.fileName} className="flex items-start gap-2 rounded-ros-lg border border-rose-200 bg-rose-50/60 p-3 text-[13px] dark:border-rose-900 dark:bg-rose-950/20">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-600" />
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-800 dark:text-slate-200">{row.fileName}</p>
@@ -568,14 +568,14 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     />
                   )}
                   <FileText className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                  <span className="text-[12.5px] font-medium text-slate-700 dark:text-slate-300 truncate">
+                  <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300 truncate">
                     {row.fileName}
                   </span>
                 </div>
                 {row.createState === "saved" && row.createdCandidateId && (
                   <Link
                     target="_blank" rel="noopener noreferrer" href={`/candidates/${row.createdCandidateId}`}
-                    className="flex items-center gap-1 text-[12px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 shrink-0"
+                    className="flex items-center gap-1 text-[13px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 shrink-0"
                   >
                     <Check className="w-3 h-3" /> {row.mandate_id && !row.linkError ? "Created & linked" : "Created"}
                   </Link>
@@ -583,13 +583,13 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               </div>
 
               {!row.ok && (
-                <p className="flex items-center gap-1.5 text-[12px] text-rose-600 mb-2">
+                <p className="flex items-center gap-1.5 text-[13px] text-rose-600 mb-2">
                   <AlertTriangle className="w-3.5 h-3.5" /> {row.error ?? "Couldn't process this file."}
                 </p>
               )}
 
               {row.createState !== "saved" && !row.email.trim() && (
-                <p className="flex items-center gap-1.5 text-[12px] text-amber-700 mb-2.5">
+                <p className="flex items-center gap-1.5 text-[13px] text-amber-700 mb-2.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   {row.phone.replace(/\D/g, "").length >= 10
                     ? "No email found on this CV. It will be saved with the mobile number only, with no email sent. Add the email later, or here now."
@@ -598,7 +598,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               )}
 
               {row.duplicate && (
-                <p className="flex items-center gap-1.5 text-[12px] text-amber-700 mb-2.5">
+                <p className="flex items-center gap-1.5 text-[13px] text-amber-700 mb-2.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Looks like this email already exists --{" "}
                   <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${row.duplicate.candidateId}`} className="underline font-medium">
@@ -665,7 +665,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                         value={row.mandate_id}
                         onChange={(e) => updateRow(row.fileName, { mandate_id: e.target.value })}
                         disabled={row.createState === "saved"}
-                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px] disabled:opacity-60"
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[13px] disabled:opacity-60"
                       >
                         <option value="">Not linked</option>
                         {mandates.map((m) => (
@@ -688,7 +688,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                           languages_known: Array.from(e.target.selectedOptions).map((o) => o.value),
                         })
                       }
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12px] h-[62px]"
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[13px] h-[62px]"
                     >
                       {languageOptions.map((l) => (
                         <option key={l} value={l}>
@@ -706,7 +706,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     value={row.category}
                     onChange={(e) => updateRow(row.fileName, { category: e.target.value, sells_now: [], sells_before: [], customer_segments: [] })}
                     disabled={row.createState === "saved"}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[13px]"
                   >
                     <option value="">Not sure</option>
                     {profileTypeOptions.map((o) => (
@@ -722,7 +722,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                     value={row.role_level}
                     onChange={(e) => updateRow(row.fileName, { role_level: e.target.value, team_size: "" })}
                     disabled={row.createState === "saved"}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[13px]"
                   >
                     <option value="">Not sure</option>
                     {yourLevelOptions.map((l) => (
@@ -739,7 +739,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
                       value=""
                       onChange={(e) => e.target.value && updateRow(row.fileName, { sells_now: [...row.sells_now, e.target.value].slice(0, 3) })}
                       disabled={row.createState === "saved"}
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[12.5px]"
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[13px]"
                     >
                       <option value="">Choose...</option>
                       {(row.category === "b2c_sales" ? b2cSoldGroups : b2bSoldGroups).map((g) => (
@@ -765,15 +765,15 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               </div>
 
               {row.createState === "error" && (
-                <p className="mt-2 text-[12px] text-rose-600">{row.createError}</p>
+                <p className="mt-2 text-[13px] text-rose-600">{row.createError}</p>
               )}
-              {row.linkError && <p className="mt-2 text-[12px] text-amber-600">{row.linkError}</p>}
+              {row.linkError && <p className="mt-2 text-[13px] text-amber-600">{row.linkError}</p>}
             </div>
           ))}
 
           {!allDone ? (
             <>
-            <label className="mb-2 flex items-start gap-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+            <label className="mb-2 flex items-start gap-2 text-[13px] text-slate-600 dark:text-slate-300">
               <input type="checkbox" className="mt-0.5" checked={emailThem} onChange={(e) => setEmailThem(e.target.checked)} />
               <span>
                 Email them to confirm their profile and add CTC and notice period. Emails are queued and go out gradually (up to 30 a day at first),
@@ -784,7 +784,7 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
               type="button"
               onClick={handleCreateAll}
               disabled={creating || includedCount === 0}
-              className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
+              className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[14px] font-medium px-3.5 py-2 transition-all duration-200 ease-ros"
             >
               {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               {creating
@@ -794,14 +794,14 @@ export default function BulkUploadView({ mandates }: { mandates: MandateOption[]
             </>
           ) : (
             <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-3.5 py-2.5">
-              <p className="text-[13px] font-medium text-emerald-800">
+              <p className="text-[14px] font-medium text-emerald-800">
                 {savedCount} candidate{savedCount === 1 ? "" : "s"} created.{" "}
                 {emailThem ? "Their confirmation emails are queued and go out gradually." : "No emails were queued."}
               </p>
               <button
                 type="button"
                 onClick={() => router.push("/candidates?origin=bulk_resume_upload")}
-                className="text-[12.5px] font-medium text-emerald-700 underline"
+                className="text-[13px] font-medium text-emerald-700 underline"
               >
                 View them
               </button>
@@ -847,7 +847,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
-        className={`w-full rounded-lg border px-2 py-1 text-[12.5px] ${invalid ? "border-rose-300" : "border-slate-200 dark:border-slate-700"}`}
+        className={`w-full rounded-lg border px-2 py-1 text-[13px] ${invalid ? "border-rose-300" : "border-slate-200 dark:border-slate-700"}`}
       />
       {invalid && <p className="mt-0.5 text-xs text-rose-600">Enter a number in lakhs, like 18 or 18.5</p>}
     </div>

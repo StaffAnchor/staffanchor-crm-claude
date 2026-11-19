@@ -30,7 +30,7 @@ export default function RestoreMandateButton({ trashId, roleTitle }: { trashId: 
       <button
         onClick={handleRestore}
         disabled={restoring}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-1.5 disabled:opacity-60 transition-colors"
+        className="flex items-center gap-1.5 text-[13px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-1.5 disabled:opacity-60 transition-colors"
       >
         {restoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
         Restore

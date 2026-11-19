@@ -106,10 +106,10 @@ export default function InvoiceImportView() {
   return (
     <div className="space-y-6">
       <div className="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-5 text-center">
-        <p className="text-[13px] text-slate-600 dark:text-slate-400 mb-2">
+        <p className="text-[14px] text-slate-600 dark:text-slate-400 mb-2">
           Upload past invoice PDFs to backfill billing history. Each one is parsed automatically -- client, amount, GST split, date.
         </p>
-        <label className="inline-block cursor-pointer text-[12.5px] font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-ros-md px-4 py-2 transition-colors">
+        <label className="inline-block cursor-pointer text-[13px] font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-ros-md px-4 py-2 transition-colors">
           {uploading ? "Importing…" : "Choose PDF files"}
           <input
             type="file"
@@ -123,7 +123,7 @@ export default function InvoiceImportView() {
         {files.length > 0 && (
           <div className="mt-4 text-left max-w-xl mx-auto space-y-1">
             {files.map((f, i) => (
-              <div key={i} className="flex items-center justify-between text-[12px] gap-2">
+              <div key={i} className="flex items-center justify-between text-[13px] gap-2">
                 <span className="truncate text-slate-600 dark:text-slate-400">{f.name}</span>
                 <span
                   className={
@@ -144,12 +144,12 @@ export default function InvoiceImportView() {
 
       {!loading && annual.length > 0 && (
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Annual</p>
+          <p className="text-[13px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Annual</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {annual.map((y) => (
               <div key={y.year} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
                 <p className="text-xs text-slate-400">{y.year} · {y.count} invoices</p>
-                <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 mt-0.5">{fmt(y.gross)}</p>
+                <p className="text-[16px] font-bold text-slate-900 dark:text-slate-100 mt-0.5">{fmt(y.gross)}</p>
                 <p className="text-xs text-slate-500">net {fmt(y.net)}</p>
               </div>
             ))}
@@ -159,9 +159,9 @@ export default function InvoiceImportView() {
 
       {!loading && monthly.length > 0 && (
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Month on month</p>
+          <p className="text-[13px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Month on month</p>
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
                   <th className="py-2 pr-3">Month</th>
@@ -187,13 +187,13 @@ export default function InvoiceImportView() {
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <p className="text-[13px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Imported invoices {reviewRows.length > 0 && `(${reviewRows.length} need review)`}
           </p>
           {reviewRows.length > 0 && (
             <button
               onClick={() => setShowOnlyReview((v) => !v)}
-              className="text-[12px] text-teal-600 hover:underline"
+              className="text-[13px] text-teal-600 hover:underline"
             >
               {showOnlyReview ? "Show all" : "Show only needs-review"}
             </button>
@@ -205,7 +205,7 @@ export default function InvoiceImportView() {
           <p className="text-sm text-slate-400 py-6 text-center">No invoices imported yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
                   <th className="py-2 pr-3">Client</th>
@@ -251,7 +251,7 @@ function InvoiceLine({
           <input
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
-            className="w-32 rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[12px]"
+            className="w-32 rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[13px]"
             placeholder="Client name (unlinked)"
           />
         </td>
@@ -261,14 +261,14 @@ function InvoiceLine({
             type="date"
             value={invoiceDate}
             onChange={(e) => setInvoiceDate(e.target.value)}
-            className="rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[12px]"
+            className="rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[13px]"
           />
         </td>
         <td className="py-1.5 pr-3">
           <input
             value={gross}
             onChange={(e) => setGross(e.target.value)}
-            className="w-20 rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[12px]"
+            className="w-20 rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[13px]"
           />
         </td>
         <td className="py-1.5 pr-3 text-slate-500">{row.gst_amount ?? "—"}</td>
@@ -276,7 +276,7 @@ function InvoiceLine({
           <input
             value={net}
             onChange={(e) => setNet(e.target.value)}
-            className="w-20 rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[12px]"
+            className="w-20 rounded border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[13px]"
           />
         </td>
         <td className="py-1.5 pr-3 text-slate-400">{row.original_filename ?? "—"}</td>
@@ -290,11 +290,11 @@ function InvoiceLine({
               });
               setEditing(false);
             }}
-            className="text-[12px] text-teal-600 hover:underline mr-2"
+            className="text-[13px] text-teal-600 hover:underline mr-2"
           >
             Save
           </button>
-          <button onClick={() => setEditing(false)} className="text-[12px] text-slate-400 hover:underline">
+          <button onClick={() => setEditing(false)} className="text-[13px] text-slate-400 hover:underline">
             Cancel
           </button>
         </td>
@@ -324,7 +324,7 @@ function InvoiceLine({
       <td className="py-1.5 pr-3 text-slate-500 tabular-nums">{fmt(row.net_amount)}</td>
       <td className="py-1.5 pr-3 text-slate-400 truncate max-w-[140px]">{row.original_filename ?? "—"}</td>
       <td className="py-1.5 pr-3">
-        <button onClick={() => setEditing(true)} className="text-[12px] text-teal-600 hover:underline">
+        <button onClick={() => setEditing(true)} className="text-[13px] text-teal-600 hover:underline">
           Edit
         </button>
       </td>

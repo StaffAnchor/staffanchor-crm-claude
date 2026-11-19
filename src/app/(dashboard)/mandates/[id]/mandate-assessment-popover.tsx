@@ -120,7 +120,7 @@ export default function MandateAssessmentPopover({
           className="z-50 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden"
         >
           <div className={`px-3.5 py-2.5 flex items-center justify-between border-b ${RECOMMENDATION_STYLE[recommendation]}`}>
-            <span className="text-[12.5px] font-bold">{recommendation}</span>
+            <span className="text-[13px] font-bold">{recommendation}</span>
             <span className="text-xs font-medium opacity-70 uppercase tracking-wide">This mandate only</span>
           </div>
 
@@ -132,7 +132,7 @@ export default function MandateAssessmentPopover({
                 </p>
                 <ul className="space-y-1">
                   {redFlags.map((f, i) => (
-                    <li key={i} className="text-[12px] text-rose-900 dark:text-rose-200 leading-snug pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-rose-400">
+                    <li key={i} className="text-[13px] text-rose-900 dark:text-rose-200 leading-snug pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-rose-400">
                       {f}
                     </li>
                   ))}
@@ -147,7 +147,7 @@ export default function MandateAssessmentPopover({
                 </p>
                 <ul className="space-y-1">
                   {positives.map((f, i) => (
-                    <li key={i} className="text-[12px] text-emerald-900 dark:text-emerald-200 leading-snug pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-emerald-400">
+                    <li key={i} className="text-[13px] text-emerald-900 dark:text-emerald-200 leading-snug pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-emerald-400">
                       {f}
                     </li>
                   ))}
@@ -162,7 +162,7 @@ export default function MandateAssessmentPopover({
                 </p>
                 <ul className="space-y-1">
                   {missing.map((f, i) => (
-                    <li key={i} className="text-[12px] text-slate-700 dark:text-slate-300 leading-snug pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400">
+                    <li key={i} className="text-[13px] text-slate-700 dark:text-slate-300 leading-snug pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400">
                       {f}
                     </li>
                   ))}
@@ -171,7 +171,7 @@ export default function MandateAssessmentPopover({
             )}
 
             {redFlags.length === 0 && positives.length === 0 && missing.length === 0 && (
-              <p className="px-3.5 py-3 text-[12px] text-slate-400">No detailed reasoning recorded for this run.</p>
+              <p className="px-3.5 py-3 text-[13px] text-slate-400">No detailed reasoning recorded for this run.</p>
             )}
           </div>
 

@@ -98,7 +98,7 @@ export default function MarketingClient({ rows, sources, salary }: { rows: Pipel
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <h2 className="text-sm font-semibold">Salary pages for search</h2>
-        <p className="mt-1 text-[13px] text-slate-500">
+        <p className="mt-1 text-[14px] text-slate-500">
           Public pages like &quot;Sales Manager salary in Delhi NCR&quot; bring in employed sellers who are not job hunting. Only role-and-city groups with at least 20 profiles are listed, and a page shows only the typical figure and the middle range, never a person. Figures are self-reported fixed pay in LPA, so check each one looks right before publishing it.
         </p>
         {salary.length === 0 ? (
@@ -139,7 +139,7 @@ export default function MarketingClient({ rows, sources, salary }: { rows: Pipel
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <h2 className="text-sm font-semibold">Where candidates come from, last 30 days</h2>
-        <p className="mt-1 text-[13px] text-slate-500">
+        <p className="mt-1 text-[14px] text-slate-500">
           Visits are counted from when tracking went live. &quot;Untracked&quot; rows are people who registered before then, or through an import.
         </p>
         {sources.length === 0 ? (
@@ -186,7 +186,7 @@ export default function MarketingClient({ rows, sources, salary }: { rows: Pipel
             </button>
           </div>
           {custom && (
-            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800">
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[14px] dark:bg-slate-800">
               <span className="break-all">{custom}</span>
               <button type="button" onClick={() => navigator.clipboard.writeText(custom).catch(() => {})} className="inline-flex items-center gap-1 font-semibold text-teal-700 hover:underline">
                 <Copy className="h-3.5 w-3.5" /> Copy
@@ -200,7 +200,7 @@ export default function MarketingClient({ rows, sources, salary }: { rows: Pipel
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Sparkles className="h-4 w-4 text-teal-600" /> Generate pipeline roles
         </h2>
-        <p className="mt-1 text-[13px] leading-6 text-slate-500">
+        <p className="mt-1 text-[14px] leading-6 text-slate-500">
           Drafts B2B SaaS, AI and tech-sales roles for the top metros, publishes them to jobs.staffanchor.com with a &quot;Pipeline role&quot; label (no client named, no pay figure), and writes a short LinkedIn post with the apply link for each. You copy and post them yourself.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -226,24 +226,24 @@ export default function MarketingClient({ rows, sources, salary }: { rows: Pipel
           <article key={r.id} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
             <div className="flex flex-wrap items-start gap-3">
               <div className="mr-auto min-w-0">
-                <h3 className="text-[15px] font-semibold">{r.role_title}</h3>
-                <p className="mt-0.5 text-[13px] text-slate-500">
+                <h3 className="text-[16px] font-semibold">{r.role_title}</h3>
+                <p className="mt-0.5 text-[14px] text-slate-500">
                   {[r.city, r.experience, r.sub_domain].filter(Boolean).join(" · ")} · {r.visits} visits · {r.registrations} registered · {r.applicants} applied
                 </p>
               </div>
               {r.link && (
-                <a href={r.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[13px] font-medium text-teal-700 hover:underline">
+                <a href={r.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[14px] font-medium text-teal-700 hover:underline">
                   Open listing <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               )}
-              <button onClick={() => act("takedown", r.id)} className="inline-flex items-center gap-1 text-[13px] font-medium text-slate-500 hover:text-red-600">
+              <button onClick={() => act("takedown", r.id)} className="inline-flex items-center gap-1 text-[14px] font-medium text-slate-500 hover:text-red-600">
                 <EyeOff className="h-3.5 w-3.5" /> Take down
               </button>
             </div>
             {r.post && (
               <div className="mt-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
-                <p className="whitespace-pre-wrap text-[13.5px] leading-6">{r.post}</p>
-                <button onClick={() => copy(r)} className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900">
+                <p className="whitespace-pre-wrap text-[14px] leading-6">{r.post}</p>
+                <button onClick={() => copy(r)} className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-[14px] font-semibold hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900">
                   {copiedId === r.id ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                   {copiedId === r.id ? "Copied" : r.copied ? "Copy again" : "Copy post"}
                 </button>
@@ -263,7 +263,7 @@ export default function MarketingClient({ rows, sources, salary }: { rows: Pipel
                 <span className="mr-auto">
                   {r.role_title} · {r.city}
                 </span>
-                <button onClick={() => act("restore", r.id)} className="inline-flex items-center gap-1 text-[13px] font-medium text-teal-700 hover:underline">
+                <button onClick={() => act("restore", r.id)} className="inline-flex items-center gap-1 text-[14px] font-medium text-teal-700 hover:underline">
                   <Undo2 className="h-3.5 w-3.5" /> Bring back
                 </button>
               </div>

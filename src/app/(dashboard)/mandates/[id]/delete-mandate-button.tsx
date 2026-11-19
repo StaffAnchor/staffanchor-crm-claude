@@ -35,7 +35,7 @@ export default function DeleteMandateButton({ mandateId, roleTitle }: { mandateI
       <button
         onClick={handleDelete}
         disabled={deleting}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg px-3 py-1.5 disabled:opacity-60 transition-colors"
+        className="flex items-center gap-1.5 text-[13px] font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg px-3 py-1.5 disabled:opacity-60 transition-colors"
       >
         {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
         Delete mandate

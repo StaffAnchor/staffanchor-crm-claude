@@ -81,12 +81,12 @@ export default function ReferrersTable({ referrers }: { referrers: Referrer[] })
   }
 
   if (referrers.length === 0) {
-    return <p className="text-[13px] text-slate-500 dark:text-slate-400">No referrers yet.</p>;
+    return <p className="text-[14px] text-slate-500 dark:text-slate-400">No referrers yet.</p>;
   }
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[14px]">
         <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
           <tr>
             <th className="text-left font-medium px-3 py-2">Name</th>
@@ -115,7 +115,7 @@ export default function ReferrersTable({ referrers }: { referrers: Referrer[] })
                     disabled={busyId === r.id}
                     value={r.tier}
                     onChange={(e) => setTier(r.id, e.target.value)}
-                    className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+                    className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
                   >
                     <option value="member">Member</option>
                     <option value="trusted">Trusted</option>
@@ -129,14 +129,14 @@ export default function ReferrersTable({ referrers }: { referrers: Referrer[] })
                   <span className="text-slate-400">—</span>
                 ) : (
                   <div className="space-y-1">
-                    <p className={`text-[12px] ${linkState(r).tone}`} suppressHydrationWarning>
+                    <p className={`text-[13px] ${linkState(r).tone}`} suppressHydrationWarning>
                       {linkState(r).label}
                     </p>
                     {!r.tos_accepted_at && (
                       <button
                         disabled={busyId === r.id}
                         onClick={() => resendLink(r.id)}
-                        className="rounded-md border border-slate-300 px-2 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                        className="rounded-md border border-slate-300 px-2 py-1 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                       >
                         {busyId === r.id ? "Sending…" : "Resend joining link"}
                       </button>
@@ -144,11 +144,11 @@ export default function ReferrersTable({ referrers }: { referrers: Referrer[] })
                     {(() => {
                       const out = resent[r.id];
                       if (!out) return null;
-                      if ("error" in out) return <p className="text-[12px] text-rose-600">{out.error}</p>;
+                      if ("error" in out) return <p className="text-[13px] text-rose-600">{out.error}</p>;
                       return out.emailSent ? (
-                        <p className="text-[12px] text-emerald-700">Sent to {out.email ?? r.email}. The old link no longer works.</p>
+                        <p className="text-[13px] text-emerald-700">Sent to {out.email ?? r.email}. The old link no longer works.</p>
                       ) : (
-                        <p className="text-[12px] text-amber-700">
+                        <p className="text-[13px] text-amber-700">
                           New link created but the email couldn&apos;t be sent.{" "}
                           <button className="font-medium underline" onClick={() => copyLink(r.id, out.signupUrl)}>
                             {copied === r.id ? "Copied" : "Copy link"}

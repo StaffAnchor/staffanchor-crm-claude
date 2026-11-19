@@ -62,7 +62,7 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
             </div>
             <div>
               <h1 className="text-ros-heading font-semibold tracking-tight text-slate-900 dark:text-slate-100">{row.company_name}</h1>
-              <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
                 {row.contact_name}
                 {row.contact_name && row.contact_title ? " · " : ""}
                 {row.contact_title}
@@ -92,7 +92,7 @@ export default async function SalesLeadDetailPage({ params }: { params: Promise<
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-[12.5px]">
+        <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-[13px]">
           {row.contact_email && (
             <a href={`mailto:${row.contact_email}`} className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
               <Mail className="w-3.5 h-3.5 shrink-0" /> {row.contact_email}

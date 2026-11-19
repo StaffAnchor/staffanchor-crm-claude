@@ -36,7 +36,7 @@ export default function RoleCard({
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[17px] font-semibold leading-snug tracking-tight text-slate-900">{role.role_title}</h2>
               {isNew && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-emerald-700">
                   <Sparkles className="h-3 w-3" /> New
                 </span>
               )}
@@ -49,7 +49,7 @@ export default function RoleCard({
                 </span>
               )}
             </div>
-            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-slate-500">
               <span className="inline-flex items-center gap-1">
                 <Building2 className="h-3.5 w-3.5" />
                 Company confidential
@@ -64,14 +64,14 @@ export default function RoleCard({
 
           {payout != null ? (
             <div className="shrink-0 rounded-xl bg-emerald-50 px-4 py-2.5 text-right ring-1 ring-emerald-100">
-              <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700/70">You earn</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-emerald-700/70">You earn</div>
               <div className="text-[20px] font-bold leading-tight text-emerald-700">{inr(payout)}</div>
               <div className="text-xs text-emerald-700/70">per successful hire</div>
             </div>
           ) : (
             <div className="shrink-0 rounded-xl bg-slate-50 px-4 py-2.5 text-right ring-1 ring-slate-100">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Payout</div>
-              <div className="text-[13px] font-medium text-slate-500">To be confirmed</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Payout</div>
+              <div className="text-[14px] font-medium text-slate-500">To be confirmed</div>
             </div>
           )}
         </div>
@@ -79,20 +79,20 @@ export default function RoleCard({
         <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {facts.map((f) => (
             <div key={f.label} className="rounded-lg bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">{f.label}</dt>
-              <dd className={`mt-0.5 text-[13px] font-medium ${f.muted ? "text-slate-400" : "text-slate-800"}`}>{f.value}</dd>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{f.label}</dt>
+              <dd className={`mt-0.5 text-[14px] font-medium ${f.muted ? "text-slate-400" : "text-slate-800"}`}>{f.value}</dd>
             </div>
           ))}
         </dl>
 
-        {role.referral_summary && <p className="mt-4 text-[13.5px] leading-relaxed text-slate-600">{role.referral_summary}</p>}
+        {role.referral_summary && <p className="mt-4 text-[14px] leading-relaxed text-slate-600">{role.referral_summary}</p>}
 
         {mustHaves.length > 0 && (
           <div className="mt-4">
-            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Must have</div>
+            <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">Must have</div>
             <ul className="flex flex-wrap gap-1.5">
               {mustHaves.map((m) => (
-                <li key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[12px] text-emerald-800">
+                <li key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[13px] text-emerald-800">
                   <Check className="h-3 w-3 shrink-0" /> {m}
                 </li>
               ))}
@@ -101,10 +101,10 @@ export default function RoleCard({
         )}
         {niceToHaves.length > 0 && (
           <div className="mt-3">
-            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Nice to have</div>
+            <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">Nice to have</div>
             <ul className="flex flex-wrap gap-1.5">
               {niceToHaves.map((m) => (
-                <li key={m} className="rounded-full bg-slate-100 px-2.5 py-1 text-[12px] text-slate-600">
+                <li key={m} className="rounded-full bg-slate-100 px-2.5 py-1 text-[13px] text-slate-600">
                   {m}
                 </li>
               ))}
@@ -113,13 +113,13 @@ export default function RoleCard({
         )}
 
         <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <p className="text-[12px] text-slate-400">The recruiter screens every referral. You only need to know someone who could fit.</p>
+          <p className="text-[13px] text-slate-400">The recruiter screens every referral. You only need to know someone who could fit.</p>
           {preview ? (
-            <span className="shrink-0 rounded-lg bg-slate-900/90 px-4 py-2 text-[13px] font-semibold text-white opacity-60">Refer someone →</span>
+            <span className="shrink-0 rounded-lg bg-slate-900/90 px-4 py-2 text-[14px] font-semibold text-white opacity-60">Refer someone →</span>
           ) : (
             <Link
               href={`/referrer/refer?mandate=${role.id}`}
-              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-slate-700"
+              className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-slate-700"
             >
               Refer someone →
             </Link>

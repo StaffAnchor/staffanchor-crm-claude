@@ -44,7 +44,7 @@ export default function Tabs({
             <button
               key={tab.label}
               onClick={() => setActive(i)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-medium ring-1 transition-colors duration-150 ${
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[14px] font-medium ring-1 transition-colors duration-150 ${
                 on ? `${tone.on} shadow-sm` : "text-slate-600 ring-transparent hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60"
               }`}
             >

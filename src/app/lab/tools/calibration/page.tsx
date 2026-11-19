@@ -30,7 +30,7 @@ export default async function CalibrationPage() {
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
         <Link href="/lab/home" className="text-sm text-slate-500 hover:text-slate-800">← My progress</Link>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">Session 4</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-teal-700">Session 4</p>
           <h1 className="text-2xl font-semibold tracking-tight">Calibration</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Two managers score the same call, then compare. A gap of 2 or more means you disagree on the standard, so talk it through before you score more calls. Use the call ID only: no names, recordings or transcripts.</p>
         </div>

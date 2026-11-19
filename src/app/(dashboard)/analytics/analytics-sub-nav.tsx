@@ -31,7 +31,7 @@ export default function AnalyticsSubNav() {
           <Link
             key={t.href}
             href={t.href}
-            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-medium px-3 py-2 rounded-t-lg border border-b-0 transition-colors duration-200 ease-ros ${
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[14px] font-medium px-3 py-2 rounded-t-lg border border-b-0 transition-colors duration-200 ease-ros ${
               active
                 ? "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"

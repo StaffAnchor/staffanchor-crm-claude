@@ -196,21 +196,21 @@ export default function InvoicePreviewModal({
               <input
                 value={form?.candidateName ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, candidateName: e.target.value } : f))}
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
               />
             </Field>
             <Field label="Designation">
               <input
                 value={form?.designation ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, designation: e.target.value } : f))}
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
               />
             </Field>
             <Field label="Location">
               <input
                 value={form?.location ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, location: e.target.value } : f))}
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
               />
             </Field>
             <Field label="Date of joining">
@@ -218,7 +218,7 @@ export default function InvoicePreviewModal({
                 type="date"
                 value={form?.dateOfJoining ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, dateOfJoining: e.target.value } : f))}
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
               />
             </Field>
             <div className="grid grid-cols-2 gap-3">
@@ -226,18 +226,18 @@ export default function InvoicePreviewModal({
                 <input
                   value={form?.annualCtc ?? ""}
                   onChange={(e) => setForm((f) => (f ? withFee({ ...f, annualCtc: e.target.value }) : f))}
-                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
                 />
               </Field>
               <Field label="Commission %">
                 <input
                   value={form?.commissionPct ?? ""}
                   onChange={(e) => setForm((f) => (f ? withFee({ ...f, commissionPct: e.target.value }) : f))}
-                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
                 />
               </Field>
             </div>
-            <p className="text-[11.5px] text-slate-400 -mt-1">
+            <p className="text-[12px] text-slate-400 -mt-1">
               Fee = CTC × commission %. GST 18% is added on top
               {form?.billingAmount && Number(form.billingAmount) > 0
                 ? ` → ₹${Math.round(Number(form.billingAmount) * 1.18).toLocaleString("en-IN")} payable`
@@ -248,7 +248,7 @@ export default function InvoicePreviewModal({
               <input
                 value={form?.billingAmount ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, billingAmount: e.target.value } : f))}
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
               />
             </Field>
             <Field label="Line text (leave blank for the standard wording)">
@@ -257,7 +257,7 @@ export default function InvoicePreviewModal({
                 value={form?.description ?? ""}
                 onChange={(e) => setForm((f) => (f ? { ...f, description: e.target.value } : f))}
                 placeholder="Name (Hired for Full-time role) - Commission of x% of the Annual CTC - Joined on date"
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
               />
             </Field>
             <Field label="Bill from (GST registration)">
@@ -268,7 +268,7 @@ export default function InvoicePreviewModal({
                   setForm((f) => (f ? { ...f, registrationId } : f));
                   fetchPreview({ registrationId });
                 }}
-                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]"
+                className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]"
               >
                 {registrations.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -278,26 +278,26 @@ export default function InvoicePreviewModal({
               </select>
             </Field>
 
-            {error && <p className="text-[12px] text-red-600">{error}</p>}
+            {error && <p className="text-[13px] text-red-600">{error}</p>}
 
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => fetchPreview()}
                 disabled={loading}
-                className="rounded-md border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12.5px] font-medium px-3 py-1.5 disabled:opacity-50"
+                className="rounded-md border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px] font-medium px-3 py-1.5 disabled:opacity-50"
               >
                 {loading ? "Refreshing…" : "Refresh preview"}
               </button>
               <button
                 onClick={handleGenerate}
                 disabled={generating || loading}
-                className="rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[12.5px] font-medium px-3 py-1.5"
+                className="rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[13px] font-medium px-3 py-1.5"
               >
                 {generating ? "Generating…" : kind === "proforma" ? "Generate Proforma" : "Generate Tax Invoice"}
               </button>
               <button
                 onClick={onClose}
-                className="rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-100 text-[12.5px] font-medium px-3 py-1.5"
+                className="rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-100 text-[13px] font-medium px-3 py-1.5"
               >
                 Cancel
               </button>
@@ -312,7 +312,7 @@ export default function InvoicePreviewModal({
                 className="w-full h-full min-h-[500px] rounded-md border border-slate-200 dark:border-slate-800 bg-white"
               />
             ) : (
-              <div className="w-full h-full min-h-[500px] flex items-center justify-center text-[12.5px] text-slate-400">
+              <div className="w-full h-full min-h-[500px] flex items-center justify-center text-[13px] text-slate-400">
                 {loading ? "Rendering preview…" : "No preview yet"}
               </div>
             )}

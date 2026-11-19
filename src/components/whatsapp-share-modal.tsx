@@ -125,10 +125,10 @@ export default function WhatsAppShareModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-xl bg-white shadow-xl dark:bg-slate-900">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
-          <h3 className="flex items-center gap-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
             <MessageCircle className="h-4 w-4 text-emerald-600" />
             Share an opportunity on WhatsApp
-            <span className="text-[12px] font-normal text-slate-400">
+            <span className="text-[13px] font-normal text-slate-400">
               {candidateIds.length} candidate{candidateIds.length === 1 ? "" : "s"}
             </span>
           </h3>
@@ -138,19 +138,19 @@ export default function WhatsAppShareModal({
         </div>
 
         <div className="space-y-4 overflow-y-auto px-5 py-4">
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-[12px] leading-5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-[13px] leading-5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <span className="font-semibold">Manual, not automatic.</span> Each name below opens WhatsApp Web in your browser with this message typed in. You
             press Send yourself from your own WhatsApp. For an automatic send with a Meta-approved template, close this and use the Auto button.
           </p>
           <div>
-            <label className="mb-1 block text-[12px] font-medium text-slate-600 dark:text-slate-300">Which opportunity?</label>
+            <label className="mb-1 block text-[13px] font-medium text-slate-600 dark:text-slate-300">Which opportunity?</label>
             <select
               value={mandateId}
               onChange={(e) => {
                 setMandateId(e.target.value);
                 setCustom(null);
               }}
-              className="w-full rounded-ros-md border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] dark:border-slate-700 dark:bg-slate-900"
+              className="w-full rounded-ros-md border border-slate-200 bg-white px-2.5 py-1.5 text-[14px] dark:border-slate-700 dark:bg-slate-900"
             >
               <option value="">None, just a general introduction</option>
               {mandates.map((m) => (
@@ -162,7 +162,7 @@ export default function WhatsAppShareModal({
               ))}
             </select>
             {mandate && (
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-600 dark:text-slate-300">
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-slate-600 dark:text-slate-300">
                 <label className="flex items-center gap-1.5">
                   <input type="checkbox" checked={withCtc} onChange={(e) => { setWithCtc(e.target.checked); setCustom(null); }} /> Mention CTC
                 </label>
@@ -178,7 +178,7 @@ export default function WhatsAppShareModal({
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <label className="text-[12px] font-medium text-slate-600 dark:text-slate-300">
+              <label className="text-[13px] font-medium text-slate-600 dark:text-slate-300">
                 Message <span className="font-normal text-slate-400">({"{name}"} becomes each person&apos;s first name)</span>
               </label>
               {custom !== null && (
@@ -191,7 +191,7 @@ export default function WhatsAppShareModal({
               value={message}
               onChange={(e) => setCustom(e.target.value)}
               rows={5}
-              className="w-full rounded-ros-md border border-slate-200 bg-white px-2.5 py-2 text-[13px] leading-relaxed dark:border-slate-700 dark:bg-slate-900"
+              className="w-full rounded-ros-md border border-slate-200 bg-white px-2.5 py-2 text-[14px] leading-relaxed dark:border-slate-700 dark:bg-slate-900"
             />
             <p className="mt-1 text-xs text-slate-400">
               {sender ? `Sent as ${sender}.` : "Sent as StaffAnchor."} You can still edit the text in WhatsApp before pressing Send.
@@ -199,11 +199,11 @@ export default function WhatsAppShareModal({
           </div>
 
           <div>
-            <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">
+            <p className="mb-1.5 text-[13px] font-medium text-slate-600 dark:text-slate-300">
               {candidateIds.length > 1 ? "Click each name to open their chat with this message ready" : "Open the chat"}
             </p>
             {loading ? (
-              <p className="py-3 text-[12.5px] text-slate-400">Loading…</p>
+              <p className="py-3 text-[13px] text-slate-400">Loading…</p>
             ) : (
               <>
               <WhatsAppOpenSwitch className="mb-2" />
@@ -214,7 +214,7 @@ export default function WhatsAppShareModal({
                   return (
                     <li key={r.id} className="flex items-center justify-between gap-3 px-3 py-2">
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-medium text-slate-800 dark:text-slate-100">{r.full_name}</p>
+                        <p className="truncate text-[14px] font-medium text-slate-800 dark:text-slate-100">{r.full_name}</p>
                         <p className="text-xs text-slate-400">{r.phone || "No phone number on file"}</p>
                       </div>
                       {href ? (
@@ -223,7 +223,7 @@ export default function WhatsAppShareModal({
                           target={wa.target}
                           rel="noreferrer"
                           onClick={() => markSent(r)}
-                          className={`flex shrink-0 items-center gap-1 rounded-ros-md px-2.5 py-1.5 text-[12px] font-medium ${
+                          className={`flex shrink-0 items-center gap-1 rounded-ros-md px-2.5 py-1.5 text-[13px] font-medium ${
                             done ? "bg-slate-100 text-slate-500 dark:bg-slate-800" : "bg-emerald-600 text-white hover:bg-emerald-500"
                           }`}
                         >
@@ -243,10 +243,10 @@ export default function WhatsAppShareModal({
         </div>
 
         <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 dark:border-slate-800">
-          <p className="text-[12px] text-slate-500">
+          <p className="text-[13px] text-slate-500">
             {allDone ? "All chats opened." : `${sent.size} of ${withPhone.length} opened`}
           </p>
-          <button onClick={onClose} className="rounded-ros-md bg-slate-900 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
+          <button onClick={onClose} className="rounded-ros-md bg-slate-900 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
             {allDone ? "Done" : "Close"}
           </button>
         </div>

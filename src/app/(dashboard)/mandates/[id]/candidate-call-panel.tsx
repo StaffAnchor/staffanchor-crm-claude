@@ -26,7 +26,7 @@ export default function CandidateCallPanel({ candidateId, roleCluster = null, on
     };
   }, [candidateId]);
 
-  if (!candidate) return <p className="text-[13px] text-slate-400">Loading…</p>;
+  if (!candidate) return <p className="text-[14px] text-slate-400">Loading…</p>;
   const seg = candidate.segment_data as { offer_in_hand?: unknown; offer_ctc?: unknown } | null;
   return (
     <CallRecordForm

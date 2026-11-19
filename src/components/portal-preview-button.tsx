@@ -34,11 +34,11 @@ export default function PortalPreviewButton({ clientId, className = "", label = 
         type="button"
         onClick={open}
         disabled={busy}
-        className={`inline-flex items-center gap-1.5 rounded-ros-md bg-teal-600 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-60 ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-ros-md bg-teal-600 px-3.5 py-2 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-60 ${className}`}
       >
         {busy ? "Opening…" : label} <ExternalLink className="h-3.5 w-3.5" />
       </button>
-      {err && <span className="text-[12px] text-rose-600">{err}</span>}
+      {err && <span className="text-[13px] text-rose-600">{err}</span>}
     </span>
   );
 }

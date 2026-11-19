@@ -49,7 +49,7 @@ function Row({ r }: { r: WebsiteMessage }) {
       </td>
       <td className="px-4 py-3">
         <Badge tone={r.intent === "employer" ? "accent" : r.intent === "privacy" ? "warning" : "neutral"}>{INTENT_LABEL[r.intent ?? "other"] ?? r.intent}</Badge>
-        {bits.length > 0 && <p className="mt-1 text-[12px] text-slate-500">{bits.join(", ")}</p>}
+        {bits.length > 0 && <p className="mt-1 text-[13px] text-slate-500">{bits.join(", ")}</p>}
       </td>
       <td className="px-4 py-3 max-w-md">
         <p className="text-slate-800 dark:text-slate-200">{r.message ?? "—"}</p>
@@ -58,7 +58,7 @@ function Row({ r }: { r: WebsiteMessage }) {
         {r.contact ? (
           <div className="flex flex-col gap-1">
             <span className="font-medium text-slate-900 dark:text-slate-100">{r.contact}</span>
-            <div className="flex gap-3 text-[12px]">
+            <div className="flex gap-3 text-[13px]">
               {isEmail(r.contact) ? (
                 <a href={`mailto:${r.contact}`} className="inline-flex items-center gap-1 text-teal-600 hover:underline">
                   <Mail className="h-3 w-3" /> Email
@@ -90,7 +90,7 @@ function Row({ r }: { r: WebsiteMessage }) {
               if (res.ok) setH(!handled);
             })
           }
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-[12px] hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-[13px] hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
         >
           {handled ? (
             <>
@@ -121,9 +121,9 @@ export default function MessagesView({ rows }: { rows: WebsiteMessage[] }) {
       </div>
 
       <Card padded={false} className="overflow-x-auto">
-        <p className="px-4 pt-3 pb-1 text-[13px] font-medium text-slate-800 dark:text-slate-200">Visitors who left an email or mobile number</p>
-        <p className="px-4 pb-2 text-[12px] text-slate-500">From the message box on staffanchor.com, newest first. Hiring enquiries also arrive as an email to the info@ mailbox.</p>
-        <table className="w-full text-[13px]">
+        <p className="px-4 pt-3 pb-1 text-[14px] font-medium text-slate-800 dark:text-slate-200">Visitors who left an email or mobile number</p>
+        <p className="px-4 pb-2 text-[13px] text-slate-500">From the message box on staffanchor.com, newest first. Hiring enquiries also arrive as an email to the info@ mailbox.</p>
+        <table className="w-full text-[14px]">
           <thead>
             <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
               <th className="px-4 py-2 font-medium">When</th>
@@ -150,9 +150,9 @@ export default function MessagesView({ rows }: { rows: WebsiteMessage[] }) {
 
       {taps.length > 0 && (
         <Card padded={false} className="overflow-x-auto">
-          <p className="px-4 pt-3 pb-1 text-[13px] font-medium text-slate-800 dark:text-slate-200">Tapped the main next step, no details left</p>
-          <p className="px-4 pb-2 text-[12px] text-slate-500">They went on to the form or WhatsApp. Useful for seeing what people ask for, not for follow-up.</p>
-          <table className="w-full text-[13px]">
+          <p className="px-4 pt-3 pb-1 text-[14px] font-medium text-slate-800 dark:text-slate-200">Tapped the main next step, no details left</p>
+          <p className="px-4 pb-2 text-[13px] text-slate-500">They went on to the form or WhatsApp. Useful for seeing what people ask for, not for follow-up.</p>
+          <table className="w-full text-[14px]">
             <tbody>
               {taps.map((r) => (
                 <Row key={r.id} r={r} />

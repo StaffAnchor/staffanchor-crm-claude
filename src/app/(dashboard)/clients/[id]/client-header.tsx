@@ -21,9 +21,9 @@ const digits = (p: string | null) => (p ?? "").replace(/\D/g, "").slice(-10);
 function Stat({ label, value, sub, tone = "neutral" }: { label: string; value: string; sub?: string | null; tone?: "neutral" | "warn" | "good" }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
-      <p className="text-[12px] text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="text-[13px] text-slate-500 dark:text-slate-400">{label}</p>
       <p className={`mt-1 text-[22px] font-semibold leading-none tabular-nums ${tone === "warn" ? "text-amber-700 dark:text-amber-300" : tone === "good" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-900 dark:text-slate-100"}`}>{value}</p>
-      {sub && <p className="mt-1.5 text-[12px] leading-4 text-slate-500 dark:text-slate-400">{sub}</p>}
+      {sub && <p className="mt-1.5 text-[13px] leading-4 text-slate-500 dark:text-slate-400">{sub}</p>}
     </div>
   );
 }
@@ -104,20 +104,20 @@ export default function ClientHeader({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[13px] dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[14px] dark:border-slate-700 dark:bg-slate-900">
         <span className={`h-2 w-2 shrink-0 rounded-full ${attention ? "bg-amber-500" : "bg-emerald-500"}`} aria-hidden />
         <span className="min-w-0 flex-1 text-slate-700 dark:text-slate-200">
           {next ? <><b className="font-semibold">Next:</b> {next.text}</> : <span className="text-slate-500">Nothing needs doing for this client right now.</span>}
-          {bits.length > 0 && <span className="block text-[12px] text-slate-400">{bits.join(" · ")}</span>}
+          {bits.length > 0 && <span className="block text-[13px] text-slate-400">{bits.join(" · ")}</span>}
         </span>
         {next && (
           <a href={next.href.startsWith("#") ? next.href : undefined} className="shrink-0">
-            {next.href.startsWith("#") ? <span className="rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-700">{next.cta}</span> : <Link href={next.href} className="rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-700">{next.cta}</Link>}
+            {next.href.startsWith("#") ? <span className="rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-700">{next.cta}</span> : <Link href={next.href} className="rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-700">{next.cta}</Link>}
           </a>
         )}
         {contact && (
           <span className="flex shrink-0 items-center gap-1.5 border-l border-slate-200 pl-4 dark:border-slate-700">
-            <span className="mr-1 hidden text-[12px] text-slate-500 sm:inline">{contact.name}</span>
+            <span className="mr-1 hidden text-[13px] text-slate-500 sm:inline">{contact.name}</span>
             {phone.length === 10 && (
               <>
                 <a href={`tel:+91${phone}`} title="Call" className="rounded-full border border-slate-300 p-1.5 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"><Phone className="h-3.5 w-3.5" /></a>

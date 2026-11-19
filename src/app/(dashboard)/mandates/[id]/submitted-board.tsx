@@ -68,7 +68,7 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
     }
   }
 
-  const btn = "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12.5px] font-semibold disabled:opacity-50";
+  const btn = "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-semibold disabled:opacity-50";
   function action(r: SubmittedRow, pile: Pile) {
     const busy = busyId === r.id;
     const spin = busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null;
@@ -82,7 +82,7 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
 
   const shown = PILES.map((p) => ({ ...p, items: rows.filter((r) => pileOf(r) === p.key) })).filter((p) => p.items.length > 0);
   if (rows.length === 0) {
-    return <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-[14px] text-slate-500 dark:border-slate-700">Nobody has been shared with the client yet. Share people from the Pipeline or Matches tab and they appear here.</p>;
+    return <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-[15px] text-slate-500 dark:border-slate-700">Nobody has been shared with the client yet. Share people from the Pipeline or Matches tab and they appear here.</p>;
   }
 
   return (
@@ -93,18 +93,18 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
           return (
             <a key={p.key} href={`#pile-${p.key}`} className={`rounded-xl px-3 py-2.5 ${n ? "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60" : "bg-slate-50/50 opacity-60 dark:bg-slate-800/30"}`}>
               <p className="text-[22px] font-semibold leading-7 tabular-nums text-slate-900 dark:text-slate-100">{n}</p>
-              <p className="text-[12px] text-slate-500 dark:text-slate-400">{p.title}</p>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400">{p.title}</p>
             </a>
           );
         })}
       </div>
-      {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-[13px] text-rose-700">{error}</p>}
+      {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-[14px] text-rose-700">{error}</p>}
       {shown.map((p) => (
         <section key={p.key} id={`pile-${p.key}`} className="scroll-mt-24">
-          <h3 className="mb-2 flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="mb-2 flex items-center gap-2 text-[16px] font-semibold text-slate-900 dark:text-slate-100">
             <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${p.tone}`}><p.icon className="h-4 w-4" /></span>
             {p.title} <span className="text-slate-400">{p.items.length}</span>
-            <span className="text-[12.5px] font-normal text-slate-400">{p.hint}</span>
+            <span className="text-[13px] font-normal text-slate-400">{p.hint}</span>
           </h3>
           <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
             {p.items.map((r) => {
@@ -114,9 +114,9 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
                 <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
                   <div className="min-w-[200px] flex-1">
                     <Link href={`/candidates/${r.candidateId}`} target="_blank" className="text-[14.5px] font-semibold text-slate-900 hover:underline dark:text-slate-100">{r.name}</Link>
-                    <p className="truncate text-[12.5px] text-slate-500">{r.headline}</p>
+                    <p className="truncate text-[13px] text-slate-500">{r.headline}</p>
                   </div>
-                  <div className="min-w-[180px] text-[13px] text-slate-600 dark:text-slate-300">
+                  <div className="min-w-[180px] text-[14px] text-slate-600 dark:text-slate-300">
                     {p.key === "waiting" && <span className={waited != null && waited >= 4 ? "font-medium text-amber-700" : ""}>Shared {waited === 0 ? "today" : waited != null ? `${waited}d ago` : ""}{waited != null && waited >= 4 ? ". Follow up." : ""}</span>}
                     {p.key === "shortlisted" && <span className="inline-flex items-center gap-1 text-emerald-700"><Check className="h-3.5 w-3.5" /> Shortlisted {fmt(r.decisionAt)}</span>}
                     {p.key === "interview" && <span>In interviews</span>}

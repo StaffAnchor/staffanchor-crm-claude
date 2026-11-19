@@ -51,7 +51,7 @@ export default function ReferralsStatusControl({ referralId, currentStatus }: { 
       disabled={busy}
       value={currentStatus}
       onChange={(e) => updateStatus(e.target.value)}
-      className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+      className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
     >
       {STATUS_OPTIONS.map((s) => (
         <option key={s} value={s}>

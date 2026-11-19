@@ -37,7 +37,7 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-[13px] text-slate-400">No mandates raised for this client yet.</p>
+        <p className="text-[14px] text-slate-400">No mandates raised for this client yet.</p>
       ) : (
         <div className="divide-y divide-slate-100">
           {rows.map((m) => (
@@ -48,7 +48,7 @@ export default function ClientMandatesRollup({ rows }: { rows: ClientMandateRow[
             >
               <div>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{m.role_title}</p>
-                <div className="flex items-center gap-3 text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <div className="flex items-center gap-3 text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                   {m.city && (
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {m.city}

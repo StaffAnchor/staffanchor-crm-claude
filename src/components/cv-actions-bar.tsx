@@ -75,12 +75,12 @@ export default function CvActionsBar({ candidateId, showCategory = true }: { can
     setMsg(`Marked ${POOL_TIER_LABEL[tier]}.`);
   }
 
-  const sel = "rounded-lg border border-slate-300 bg-white px-2 py-1 text-[12px] text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200";
-  if (!st) return <div className="border-b border-slate-100 px-4 py-2 text-[12px] text-slate-400 dark:border-slate-800">Loading actions…</div>;
+  const sel = "rounded-lg border border-slate-300 bg-white px-2 py-1 text-[13px] text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200";
+  if (!st) return <div className="border-b border-slate-100 px-4 py-2 text-[13px] text-slate-400 dark:border-slate-800">Loading actions…</div>;
   return (
     <div className="border-b border-slate-100 px-4 py-2 dark:border-slate-800">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <label className="flex items-center gap-1.5 text-[12px] text-slate-500">
+        <label className="flex items-center gap-1.5 text-[13px] text-slate-500">
           Role
           <select className={sel} value="" disabled={busy} onChange={(e) => void addRole(e.target.value)}>
             <option value="">Add to a role…</option>
@@ -93,7 +93,7 @@ export default function CvActionsBar({ candidateId, showCategory = true }: { can
         </label>
         {showCategory && (
           <>
-            <label className="flex items-center gap-1.5 text-[12px] text-slate-500">
+            <label className="flex items-center gap-1.5 text-[13px] text-slate-500">
               Category
               <select className={sel} value={st.category && CATEGORIES.some((c) => c.key === st.category) ? st.category : ""} disabled={busy} onChange={(e) => void setCategory(e.target.value, e.target.value === st.category ? st.subcategory : null)}>
                 <option value="">{st.category === "unclear" ? "Needs a look…" : "Choose…"}</option>
@@ -105,7 +105,7 @@ export default function CvActionsBar({ candidateId, showCategory = true }: { can
               </select>
             </label>
             {st.category && st.subcategories[st.category] && (
-              <label className="flex items-center gap-1.5 text-[12px] text-slate-500">
+              <label className="flex items-center gap-1.5 text-[13px] text-slate-500">
                 Sub-category
                 <select className={sel} value={st.subcategory ?? ""} disabled={busy} onChange={(e) => void setCategory(st.category as string, e.target.value || null)}>
                   <option value="">Choose…</option>
@@ -119,7 +119,7 @@ export default function CvActionsBar({ candidateId, showCategory = true }: { can
             )}
           </>
         )}
-        <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+        <div className="flex items-center gap-1.5 text-[13px] text-slate-500">
           Quality
           {POOL_TIERS.map((t) => (
             <button
@@ -127,13 +127,13 @@ export default function CvActionsBar({ candidateId, showCategory = true }: { can
               type="button"
               disabled={busy}
               onClick={() => (reasonRequired(t) ? setPending(pending === t ? null : t) : void setTier(t, ""))}
-              className={`rounded-full px-2.5 py-0.5 text-[12px] font-medium ring-1 ${st.tier === t || pending === t ? POOL_TIER_PILL[t] : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700"}`}
+              className={`rounded-full px-2.5 py-0.5 text-[13px] font-medium ring-1 ${st.tier === t || pending === t ? POOL_TIER_PILL[t] : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700"}`}
             >
               {POOL_TIER_LABEL[t]}
             </button>
           ))}
         </div>
-        {msg && <span className="text-[12px] text-emerald-700 dark:text-emerald-300">{msg}</span>}
+        {msg && <span className="text-[13px] text-emerald-700 dark:text-emerald-300">{msg}</span>}
       </div>
       {pending && (
         <div className="mt-2 flex items-center gap-2">
@@ -142,9 +142,9 @@ export default function CvActionsBar({ candidateId, showCategory = true }: { can
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder={`Why ${POOL_TIER_LABEL[pending]}? A few words`}
-            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[12px] dark:border-slate-600 dark:bg-slate-900"
+            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[13px] dark:border-slate-600 dark:bg-slate-900"
           />
-          <button type="button" disabled={busy || reason.trim().length < 5} onClick={() => void setTier(pending, reason)} className="rounded-lg bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white disabled:opacity-40">
+          <button type="button" disabled={busy || reason.trim().length < 5} onClick={() => void setTier(pending, reason)} className="rounded-lg bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white disabled:opacity-40">
             Save
           </button>
         </div>

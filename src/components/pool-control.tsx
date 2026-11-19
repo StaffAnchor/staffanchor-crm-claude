@@ -88,7 +88,7 @@ export default function PoolControl({
           onClick={() => setOpen((o) => !o)}
           title="Add this person to the Talent Pool"
           className={`inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200 ${
-            compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-[12px]"
+            compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-[13px]"
           }`}
         >
           <Star className="h-3.5 w-3.5" /> Add to pool
@@ -98,7 +98,7 @@ export default function PoolControl({
       {open && (
         <div className="absolute right-0 z-40 mt-1.5 w-80 rounded-xl border border-slate-200 bg-white p-3.5 text-left shadow-xl dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">{entry ? "Talent Pool" : "Add to Talent Pool"}</p>
+            <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{entry ? "Talent Pool" : "Add to Talent Pool"}</p>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="text-slate-400 hover:text-slate-600">
               <X className="h-4 w-4" />
             </button>
@@ -109,14 +109,14 @@ export default function PoolControl({
               <label key={t} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-2 ${tier === t ? "border-amber-400 bg-amber-50/60 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-700"}`}>
                 <input type="radio" name={`tier-${candidateId}`} checked={tier === t} onChange={() => setTier(t)} className="mt-0.5" />
                 <span>
-                  <span className="block text-[12.5px] font-semibold text-slate-800 dark:text-slate-100">{POOL_TIER_LABEL[t]}</span>
+                  <span className="block text-[13px] font-semibold text-slate-800 dark:text-slate-100">{POOL_TIER_LABEL[t]}</span>
                   <span className="block text-xs text-slate-500">{POOL_TIER_HELP[t]}</span>
                 </span>
               </label>
             ))}
           </div>
 
-          <p className="mb-1 mt-3 text-[12px] font-semibold text-slate-700 dark:text-slate-200">What makes them good</p>
+          <p className="mb-1 mt-3 text-[13px] font-semibold text-slate-700 dark:text-slate-200">What makes them good</p>
           <div className="flex flex-wrap gap-1.5">
             {POOL_TAGS.map((t) => (
               <button
@@ -139,19 +139,19 @@ export default function PoolControl({
             onChange={(e) => setReason(e.target.value)}
             rows={3}
             placeholder={reasonRequired(tier) ? "Why? e.g. Hit 120% quota 3 years running selling to BFSI" : "Optional note"}
-            className="mt-3 w-full resize-y rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[12.5px] dark:border-slate-700 dark:bg-slate-900"
+            className="mt-3 w-full resize-y rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[13px] dark:border-slate-700 dark:bg-slate-900"
           />
-          {error && <p className="mt-1.5 text-[12px] text-rose-600">{error}</p>}
+          {error && <p className="mt-1.5 text-[13px] text-rose-600">{error}</p>}
 
           <div className="mt-3 flex items-center justify-between gap-2">
             {entry ? (
-              <button type="button" onClick={remove} disabled={busy} className="text-[12px] font-medium text-rose-600 hover:underline disabled:opacity-50">
+              <button type="button" onClick={remove} disabled={busy} className="text-[13px] font-medium text-rose-600 hover:underline disabled:opacity-50">
                 Remove from pool
               </button>
             ) : (
               <span />
             )}
-            <button type="button" onClick={save} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-60">
+            <button type="button" onClick={save} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-60">
               {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} {entry ? "Save" : "Add to pool"}
             </button>
           </div>

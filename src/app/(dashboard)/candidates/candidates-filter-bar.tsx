@@ -32,7 +32,7 @@ function Pill({
   children: React.ReactNode;
 }) {
   const on: Record<string, string> = {
-    slate: "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 ring-slate-900",
+    slate: "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800 ring-slate-900",
     blue: "bg-teal-600 text-white ring-teal-600",
     amber: "bg-amber-500 text-white ring-amber-500",
     emerald: "bg-emerald-600 text-white ring-emerald-600",
@@ -50,7 +50,7 @@ function Pill({
       href={href}
       prefetch
       aria-current={active ? "true" : undefined}
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12.5px] font-medium ring-1 transition-colors duration-150 ${active ? on[tone] : off[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium ring-1 transition-colors duration-150 ${active ? on[tone] : off[tone]}`}
     >
       {children}
       {count !== undefined && (

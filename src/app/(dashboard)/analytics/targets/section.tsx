@@ -60,7 +60,7 @@ export default async function TargetsPage() {
     return (
       <div className="max-w-[1200px] mx-auto px-5 py-8">
         <h1 className="ros-page-title">FY Targets</h1>
-        <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-2">No targets configured yet.</p>
+        <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-2">No targets configured yet.</p>
       </div>
     );
   }
@@ -185,7 +185,7 @@ export default async function TargetsPage() {
   return (
     <div className="max-w-[1200px] mx-auto px-5 py-8">
       <h1 className="ros-page-title mb-1">FY Targets</h1>
-      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-6">
+      <p className="text-[14px] text-slate-500 dark:text-slate-400 mb-6">
         Placement targets for the remaining months of FY2026-27 ({monthLabel(fyStart)} – {monthLabel(months[months.length - 1].month_start as string)}), tracked weekly. Admin-only.
       </p>
 
@@ -210,7 +210,7 @@ export default async function TargetsPage() {
 
       <Card className="p-4 mb-4">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Clients onboarded (FY to date)</h2>
+          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Clients onboarded (FY to date)</h2>
           <span className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{totalClients}</span>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">No fixed target set for client onboarding -- tracked for visibility alongside placements.</p>
@@ -218,7 +218,7 @@ export default async function TargetsPage() {
 
       <Card className="mb-6" padded={false}>
         <div className="p-4 pb-2">
-          <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Monthly targets</h2>
+          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Monthly targets</h2>
         </div>
         <table className="w-full text-sm">
           <thead className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide border-y border-slate-100 dark:border-slate-800">
@@ -266,7 +266,7 @@ export default async function TargetsPage() {
 
       <Card padded={false}>
         <div className="p-4 pb-2">
-          <h2 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Weekly breakdown</h2>
+          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Weekly breakdown</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Each week is grouped under the month its Monday falls in.
           </p>

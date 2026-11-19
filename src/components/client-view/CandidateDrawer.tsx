@@ -19,8 +19,8 @@ const STATE_ICON: Record<FitState, { icon: React.ReactNode; cls: string }> = {
 function Section({ n, title, children }: { n?: number; title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border border-[#ece7de] bg-white p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-slate-900">
-        {n !== undefined && <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#e8896a] text-[11px] font-bold text-white">{n}</span>}
+      <h3 className="mb-3 flex items-center gap-2 text-[16px] font-semibold text-slate-900">
+        {n !== undefined && <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#e8896a] text-[12px] font-bold text-white">{n}</span>}
         {title}
       </h3>
       {children}
@@ -33,7 +33,7 @@ function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <p className={LABEL}>{label}</p>
-      <p className="mt-0.5 text-[13.5px] text-slate-800">{value}</p>
+      <p className="mt-0.5 text-[14px] text-slate-800">{value}</p>
     </div>
   );
 }
@@ -134,14 +134,14 @@ export default function CandidateDrawer({
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-slate-900/40" />
       <div className="relative flex h-full w-full max-w-[640px] flex-col bg-[#faf8f4] shadow-2xl">
         <div className="flex items-start gap-4 border-b border-[#ece7de] bg-white px-6 py-5">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1e9dc] text-[15px] font-semibold text-[#7a5b34]">{initials(c.full_name)}</div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1e9dc] text-[16px] font-semibold text-[#7a5b34]">{initials(c.full_name)}</div>
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-[20px] font-semibold tracking-tight text-slate-900">{c.full_name}</h2>
-            <p className="text-[13px] text-slate-500">
+            <p className="text-[14px] text-slate-500">
               {c.current_job_title ?? "—"}
               {c.current_employer ? ` at ${c.current_employer}` : ""}
             </p>
-            <p className="mt-0.5 text-[12px] text-slate-400">
+            <p className="mt-0.5 text-[13px] text-slate-400">
               {[c.current_location, c.total_experience_years !== null && c.total_experience_years !== "" ? `${Number(c.total_experience_years)} yrs experience` : null].filter(Boolean).join(" · ")}
             </p>
             {c.resume_file_url && getResumeUrl && (
@@ -149,13 +149,13 @@ export default function CandidateDrawer({
                 {resumeState === "ok" && resumeUrl ? (
                   <ResumePreview signedUrl={resumeUrl} fileName={c.resume_file_url.replace(/^resumes\//, "")} label="View resume" />
                 ) : resumeState === "error" ? (
-                  <p className="text-[12px] text-amber-700">Resume can&apos;t be opened right now. Ask your StaffAnchor recruiter to send it.</p>
+                  <p className="text-[13px] text-amber-700">Resume can&apos;t be opened right now. Ask your StaffAnchor recruiter to send it.</p>
                 ) : (
-                  <p className="text-[12px] text-slate-400">Loading resume…</p>
+                  <p className="text-[13px] text-slate-400">Loading resume…</p>
                 )}
               </div>
             )}
-            {!c.resume_file_url && <p className="mt-2 text-[12px] text-slate-400">No resume on file yet.</p>}
+            {!c.resume_file_url && <p className="mt-2 text-[13px] text-slate-400">No resume on file yet.</p>}
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-5 w-5" />
@@ -169,15 +169,15 @@ export default function CandidateDrawer({
 
           {c.client_note && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-amber-800">Note from StaffAnchor</p>
-              <p className="mt-1 whitespace-pre-line text-[14px] leading-6 text-amber-950">{c.client_note}</p>
+              <p className="text-[13px] font-medium uppercase tracking-wide text-amber-800">Note from StaffAnchor</p>
+              <p className="mt-1 whitespace-pre-line text-[15px] leading-6 text-amber-950">{c.client_note}</p>
             </div>
           )}
 
           {onePager && (
             <Section title="Summary from your StaffAnchor recruiter">
-              <p className="text-[15px] font-semibold text-slate-900">{onePager.brief.headline}</p>
-              <p className="mt-1.5 text-[13.5px] leading-6 text-slate-700">{onePager.brief.summary}</p>
+              <p className="text-[16px] font-semibold text-slate-900">{onePager.brief.headline}</p>
+              <p className="mt-1.5 text-[14px] leading-6 text-slate-700">{onePager.brief.summary}</p>
               {onePager.brief.signals.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {onePager.brief.signals.map((x) => (
@@ -189,28 +189,28 @@ export default function CandidateDrawer({
                 {onePager.brief.selling.length > 0 && (
                   <div>
                     <p className={LABEL}>What they have sold</p>
-                    <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-slate-700">{onePager.brief.selling.map((x) => <li key={x}>{x}</li>)}</ul>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-[14px] text-slate-700">{onePager.brief.selling.map((x) => <li key={x}>{x}</li>)}</ul>
                   </div>
                 )}
                 {onePager.brief.strengths.length > 0 && (
                   <div>
                     <p className={LABEL}>Strengths</p>
-                    <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-slate-700">{onePager.brief.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-[14px] text-slate-700">{onePager.brief.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
                   </div>
                 )}
               </div>
               {onePager.brief.recruiter_take && (
-                <p className="mt-4 rounded-lg bg-[#faf6ee] px-3 py-2 text-[13px] text-slate-700">
+                <p className="mt-4 rounded-lg bg-[#faf6ee] px-3 py-2 text-[14px] text-slate-700">
                   <span className="font-semibold text-slate-900">Our view:</span> {onePager.brief.recruiter_take}
                 </p>
               )}
               {onePager.brief.probe.length > 0 && (
                 <div className="mt-4">
                   <p className={LABEL}>To confirm on the call</p>
-                  <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-slate-700">{onePager.brief.probe.map((x) => <li key={x}>{x}</li>)}</ul>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-[14px] text-slate-700">{onePager.brief.probe.map((x) => <li key={x}>{x}</li>)}</ul>
                 </div>
               )}
-              <p className="mt-3 text-[12px] text-slate-500">
+              <p className="mt-3 text-[13px] text-slate-500">
                 {[onePager.brief.logistics.city && `Based in ${onePager.brief.logistics.city}`, onePager.brief.logistics.notice && `Notice ${onePager.brief.logistics.notice}`, onePager.brief.logistics.relocation && `Relocation: ${onePager.brief.logistics.relocation}`].filter(Boolean).join(" · ")}
               </p>
             </Section>
@@ -218,7 +218,7 @@ export default function CandidateDrawer({
 
           <Section n={1} title="How they match your brief">
             {reqSummary && (
-              <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-[12.5px] text-emerald-800">
+              <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-[13px] text-emerald-800">
                 <span className="font-semibold">
                   {reqSummary.met} of {reqSummary.total} requirements confirmed
                 </span>
@@ -233,7 +233,7 @@ export default function CandidateDrawer({
               </p>
             )}
             {fit.rows.length === 0 ? (
-              <p className="text-[13px] text-slate-500">This role has no filters to compare against yet.</p>
+              <p className="text-[14px] text-slate-500">This role has no filters to compare against yet.</p>
             ) : (
               <div className="overflow-hidden rounded-xl border border-[#ece7de]">
                 <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_28px] gap-3 bg-[#faf8f4] px-3.5 py-2">
@@ -244,12 +244,12 @@ export default function CandidateDrawer({
                 {fit.rows.map((r) => (
                   <div key={r.key} className={`grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_28px] items-start gap-3 border-t border-[#f1ece3] px-3.5 py-2.5 `}>
                     <div>
-                      <p className="text-[11px] text-slate-400">{r.label}</p>
-                      <p className="text-[13px] text-slate-700">{r.asked}</p>
+                      <p className="text-[12px] text-slate-400">{r.label}</p>
+                      <p className="text-[14px] text-slate-700">{r.asked}</p>
                     </div>
                     <div>
-                      <p className="text-[13px] font-medium text-slate-900">{r.got}</p>
-                      {r.note && <p className="text-[11.5px] text-slate-500">{r.note}</p>}
+                      <p className="text-[14px] font-medium text-slate-900">{r.got}</p>
+                      {r.note && <p className="text-[12px] text-slate-500">{r.note}</p>}
                     </div>
                     <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full ${STATE_ICON[r.state].cls}`}>{STATE_ICON[r.state].icon}</span>
                   </div>
@@ -257,7 +257,7 @@ export default function CandidateDrawer({
               </div>
             )}
             {unchecked.length > 0 && (
-              <p className="mt-3 text-[12px] text-slate-500">
+              <p className="mt-3 text-[13px] text-slate-500">
                 <span className="font-medium text-slate-700">Also on your list:</span> {unchecked.join(" · ")}. Your recruiter will confirm these on the call.
               </p>
             )}
@@ -269,7 +269,7 @@ export default function CandidateDrawer({
               {highlights.length > 0 && (
                 <ul className="mt-3 space-y-2">
                   {highlights.map((h, i) => (
-                    <li key={i} className="flex gap-2.5 text-[13px] leading-5 text-slate-700">
+                    <li key={i} className="flex gap-2.5 text-[14px] leading-5 text-slate-700">
                       <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#e8896a]" />
                       {clip(h)}
                     </li>
@@ -278,10 +278,10 @@ export default function CandidateDrawer({
               )}
               {hasMore && (
                 <div className="mt-3">
-                  <button type="button" onClick={() => setShowFull((v) => !v)} className="text-[12px] font-medium text-indigo-700 hover:text-indigo-900">
+                  <button type="button" onClick={() => setShowFull((v) => !v)} className="text-[13px] font-medium text-indigo-700 hover:text-indigo-900">
                     {showFull ? "Hide full summary" : "Show full summary"}
                   </button>
-                  {showFull && <p className="mt-2 text-[12.5px] leading-6 text-slate-500">{fullSummary}</p>}
+                  {showFull && <p className="mt-2 text-[13px] leading-6 text-slate-500">{fullSummary}</p>}
                 </div>
               )}
             </Section>
@@ -300,7 +300,7 @@ export default function CandidateDrawer({
               <Fact label="Tools" value={tools.join(", ")} />
             </div>
             {!s.sells_now && !s.motion && !deal && !s.quota && !target && tools.length === 0 && (
-              <p className="text-[13px] text-slate-500">Selling details will appear here once your recruiter has confirmed them with the candidate.</p>
+              <p className="text-[14px] text-slate-500">Selling details will appear here once your recruiter has confirmed them with the candidate.</p>
             )}
           </Section>
 
@@ -312,11 +312,11 @@ export default function CandidateDrawer({
                   return (
                     <div key={i} className="relative border-l-2 border-[#ece7de] pl-4">
                       <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-[#e8896a]" />
-                      <p className="text-[14px] font-semibold text-slate-900">{r.title ?? "Role"}</p>
-                      <p className="text-[12.5px] text-slate-500">
+                      <p className="text-[15px] font-semibold text-slate-900">{r.title ?? "Role"}</p>
+                      <p className="text-[13px] text-slate-500">
                         {[r.company, dates(r)].filter(Boolean).join(" · ")}
                       </p>
-                      {r.sells && <p className="mt-1 text-[12.5px] text-slate-600">Sold: {r.sells}</p>}
+                      {r.sells && <p className="mt-1 text-[13px] text-slate-600">Sold: {r.sells}</p>}
                       {numbers.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {numbers.map((n) => (
@@ -326,7 +326,7 @@ export default function CandidateDrawer({
                           ))}
                         </div>
                       )}
-                      {r.evidence && <p className="mt-1.5 text-[12.5px] leading-5 text-slate-500">{r.evidence}</p>}
+                      {r.evidence && <p className="mt-1.5 text-[13px] leading-5 text-slate-500">{r.evidence}</p>}
                     </div>
                   );
                 })}
@@ -335,7 +335,7 @@ export default function CandidateDrawer({
           )}
 
           <Section n={5} title="Details">
-            <p className="mb-3 text-[12px] text-slate-500">
+            <p className="mb-3 text-[13px] text-slate-500">
               {c.confirmed_on_call_at
                 ? `Confirmed by StaffAnchor on a call, ${new Date(c.confirmed_on_call_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}.`
                 : "As entered by the candidate. Your recruiter can confirm anything that matters to you."}
@@ -348,7 +348,7 @@ export default function CandidateDrawer({
                     <span className="inline-flex items-center gap-1.5">
                       {c.notice_period}
                       {c.verified_notice === "Yes" && (
-                        <span className="inline-flex items-center gap-0.5 text-[11px] text-emerald-700">
+                        <span className="inline-flex items-center gap-0.5 text-[12px] text-emerald-700">
                           <BadgeCheck className="h-3.5 w-3.5" /> confirmed on call
                         </span>
                       )}
@@ -363,7 +363,7 @@ export default function CandidateDrawer({
                     <span className="inline-flex items-center gap-1.5">
                       {c.open_to_relocation}
                       {c.verified_relocation === "Yes" && (
-                        <span className="inline-flex items-center gap-0.5 text-[11px] text-emerald-700">
+                        <span className="inline-flex items-center gap-0.5 text-[12px] text-emerald-700">
                           <BadgeCheck className="h-3.5 w-3.5" /> confirmed on call
                         </span>
                       )}
@@ -380,7 +380,7 @@ export default function CandidateDrawer({
 
         <div className="border-t border-[#ece7de] bg-white px-6 py-4">
           <FeedbackBar candidate={c} onFeedback={onFeedback} />
-          {c.shortlisted_at && <p className="mt-2 text-[11px] text-slate-400">Shared with you {formatSlot(c.shortlisted_at)}</p>}
+          {c.shortlisted_at && <p className="mt-2 text-[12px] text-slate-400">Shared with you {formatSlot(c.shortlisted_at)}</p>}
         </div>
       </div>
     </div>

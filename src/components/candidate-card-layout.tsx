@@ -43,11 +43,11 @@ export function CvButtons({ candidateId, name }: { candidateId: string; name: st
     <div>
       <div className="grid grid-cols-2 gap-2">
         <LazyCvPreview candidateId={candidateId} name={name} variant="card" />
-        <button type="button" onClick={download} disabled={busy} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-teal-600 text-[13px] font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-60 dark:text-teal-300 dark:hover:bg-teal-950/30">
+        <button type="button" onClick={download} disabled={busy} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-teal-600 text-[14px] font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-60 dark:text-teal-300 dark:hover:bg-teal-950/30">
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Download
         </button>
       </div>
-      {error && <p className="mt-1 text-[11.5px] text-amber-700 dark:text-amber-400">{error}</p>}
+      {error && <p className="mt-1 text-[12px] text-amber-700 dark:text-amber-400">{error}</p>}
     </div>
   );
 }
@@ -92,14 +92,14 @@ export default function CandidateCardLayout({
         <div className="min-w-0">
           <div className="flex items-start gap-3">
             {onSelect && <input type="checkbox" checked={!!selected} onChange={(e) => onSelect(e.target.checked)} aria-label={`Select ${name}`} className="mt-1.5 h-4 w-4 shrink-0" />}
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[13px] font-semibold text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">{initials(name)}</span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[14px] font-semibold text-teal-700 dark:bg-teal-950/40 dark:text-teal-300">{initials(name)}</span>
             <div className="min-w-0">
-              <Link href={`/candidates/${candidateId}`} target="_blank" rel="noopener noreferrer" className="block truncate text-[15px] font-semibold text-teal-700 hover:underline dark:text-teal-300">{name}</Link>
-              <p className="truncate text-[12.5px] text-slate-500">{headline}</p>
+              <Link href={`/candidates/${candidateId}`} target="_blank" rel="noopener noreferrer" className="block truncate text-[16px] font-semibold text-teal-700 hover:underline dark:text-teal-300">{name}</Link>
+              <p className="truncate text-[13px] text-slate-500">{headline}</p>
             </div>
           </div>
           {badges && <div className="mt-2 flex flex-wrap items-center gap-1.5">{badges}</div>}
-          <dl className="mt-2 space-y-0.5 text-[13px] text-slate-700 dark:text-slate-300">
+          <dl className="mt-2 space-y-0.5 text-[14px] text-slate-700 dark:text-slate-300">
             {facts.map((f) => (
               <p key={f.label} className="flex items-center gap-1">
                 {f.label === "Location" && <MapPin className="h-3 w-3 text-slate-400" />}
@@ -108,10 +108,10 @@ export default function CandidateCardLayout({
               </p>
             ))}
           </dl>
-          {leftExtra && <div className="mt-2 flex flex-wrap items-center gap-2 text-[12.5px]">{leftExtra}</div>}
+          {leftExtra && <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">{leftExtra}</div>}
         </div>
 
-        <div className="min-w-0 space-y-2 text-[13px]">
+        <div className="min-w-0 space-y-2 text-[14px]">
           {!cv ? (
             <div className="space-y-2">{[0, 1].map((i) => <div key={i} className="h-10 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />)}</div>
           ) : cv.roles.length === 0 ? (
@@ -125,10 +125,10 @@ export default function CandidateCardLayout({
               </div>
             ))
           )}
-          <Link href={`/candidates/${candidateId}`} target="_blank" rel="noopener noreferrer" className="text-[12.5px] text-sky-700 hover:underline">Full profile and timeline</Link>
+          <Link href={`/candidates/${candidateId}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-sky-700 hover:underline">Full profile and timeline</Link>
         </div>
 
-        <div className="min-w-0 space-y-2 text-[13px]">
+        <div className="min-w-0 space-y-2 text-[14px]">
           {!cv ? (
             <div className="h-10 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
           ) : cv.education.length === 0 ? (

@@ -13,7 +13,7 @@ export default function DownloadJdButton({ mandateId }: { mandateId: string }) {
   return (
     <a
       href={`/api/mandates/${mandateId}/jd-pdf`}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12.5px] font-medium px-3 py-1.5 transition-colors"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px] font-medium px-3 py-1.5 transition-colors"
     >
       <FileDown className="w-3.5 h-3.5" />
       Download JD PDF

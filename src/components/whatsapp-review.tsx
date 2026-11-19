@@ -115,8 +115,8 @@ export default function WhatsAppReview({
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl bg-white shadow-xl dark:bg-slate-900" role="dialog" aria-modal="true" aria-label="Review before sending">
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
           <div>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Review before sending</h3>
-            <p className="mt-0.5 text-[12px] text-slate-500">
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Review before sending</h3>
+            <p className="mt-0.5 text-[13px] text-slate-500">
               {title}
               {recipient ? ` · ${recipient}` : ""}
             </p>
@@ -128,11 +128,11 @@ export default function WhatsAppReview({
 
         <div className="space-y-4 overflow-y-auto px-5 py-4">
           {loading && !preview && (
-            <p className="flex items-center gap-2 text-[13px] text-slate-500">
+            <p className="flex items-center gap-2 text-[14px] text-slate-500">
               <Loader2 className="h-4 w-4 animate-spin" /> Preparing the message…
             </p>
           )}
-          {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-[13px] text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{error}</p>}
+          {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-[14px] text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{error}</p>}
 
           {preview && !result && (
             <>
@@ -147,12 +147,12 @@ export default function WhatsAppReview({
 
               {tickable.length > 0 && (
                 <div>
-                  <p className="mb-1.5 text-[12px] font-semibold text-slate-700 dark:text-slate-200">Ask for</p>
+                  <p className="mb-1.5 text-[13px] font-semibold text-slate-700 dark:text-slate-200">Ask for</p>
                   <div className="flex flex-wrap gap-1.5">
                     {tickable.map((i) => (
                       <label
                         key={i.key}
-                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] ${
+                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] ${
                           i.selected ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200" : "border-slate-200 text-slate-500 dark:border-slate-700"
                         } ${i.fixed ? "opacity-70" : ""}`}
                         title={i.fixed ? "Always asked in the chat" : undefined}
@@ -166,25 +166,25 @@ export default function WhatsAppReview({
               )}
 
               <div className={loading ? "opacity-60" : ""}>
-                <p className="mb-1.5 text-[12px] font-semibold text-slate-700 dark:text-slate-200">
+                <p className="mb-1.5 text-[13px] font-semibold text-slate-700 dark:text-slate-200">
                   {preview.messages.length > 1 ? "The messages" : "The message"}
                   {preview.recipients && preview.recipients > 1 ? ` (example of ${preview.recipients})` : ""}
                 </p>
                 <div className="space-y-2">
                   {preview.messages.map((m, idx) => (
-                    <div key={idx} className="rounded-xl rounded-tl-sm bg-[#dcf8c6] px-3 py-2 text-[13px] leading-5 text-slate-800 dark:bg-emerald-900/40 dark:text-slate-100">
+                    <div key={idx} className="rounded-xl rounded-tl-sm bg-[#dcf8c6] px-3 py-2 text-[14px] leading-5 text-slate-800 dark:bg-emerald-900/40 dark:text-slate-100">
                       <p className="whitespace-pre-wrap">{m}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <p className="text-[12px] leading-5 text-slate-500">{preview.note}</p>
+              <p className="text-[13px] leading-5 text-slate-500">{preview.note}</p>
             </>
           )}
 
           {result && (
-            <p className={`flex items-start gap-2 rounded-lg px-3 py-2 text-[13px] ${result.ok ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300" : "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"}`}>
+            <p className={`flex items-start gap-2 rounded-lg px-3 py-2 text-[14px] ${result.ok ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300" : "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"}`}>
               {result.ok && <Check className="mt-0.5 h-4 w-4 shrink-0" />} {result.text}
             </p>
           )}
@@ -192,18 +192,18 @@ export default function WhatsAppReview({
 
         <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-3 dark:border-slate-800">
           {result ? (
-            <button onClick={onClose} className="rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white hover:bg-slate-700">
+            <button onClick={onClose} className="rounded-lg bg-slate-900 px-4 py-2 text-[14px] font-semibold text-white hover:bg-slate-700">
               Close
             </button>
           ) : (
             <>
-              <button onClick={onClose} disabled={sending} className="rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+              <button onClick={onClose} disabled={sending} className="rounded-lg px-3 py-2 text-[14px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
                 Cancel
               </button>
               <button
                 onClick={doSend}
                 disabled={!preview || loading || sending || nothingPicked}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
               >
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                 {preview?.route === "email" ? "Send email" : "Send on WhatsApp"}

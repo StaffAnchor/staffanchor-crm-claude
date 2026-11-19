@@ -12,9 +12,9 @@ export function SkillsStrip({ candidateId, roleText, className = "" }: { candida
   if (!facts || facts.skills.length === 0) return null;
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`} aria-label="Key skills">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Key skills</span>
+      <span className="text-[12px] font-medium uppercase tracking-wide text-slate-400">Key skills</span>
       {facts.skills.map((s) => (
-        <span key={s.text} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium ${s.match ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-200 dark:ring-emerald-800" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
+        <span key={s.text} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-medium ${s.match ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-200 dark:ring-emerald-800" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
           {s.match && <Check className="h-3 w-3" />}
           {s.text}
         </span>
@@ -29,7 +29,7 @@ export default function CandidateFactsStrip({ candidateId, roleText, className =
     <div className={`space-y-2 ${className}`}>
       <SkillsStrip candidateId={candidateId} roleText={roleText} />
       {facts && (facts.roles.length > 0 || facts.education.length > 0) && (
-        <div className="grid gap-x-6 gap-y-2 rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] sm:grid-cols-2 dark:bg-slate-800/40">
+        <div className="grid gap-x-6 gap-y-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] sm:grid-cols-2 dark:bg-slate-800/40">
           <div className="min-w-0 space-y-1">
             {facts.roles.length === 0 ? (
               <p className="text-slate-400">Job history not read yet.</p>

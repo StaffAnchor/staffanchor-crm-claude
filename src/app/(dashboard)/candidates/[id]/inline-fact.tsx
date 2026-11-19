@@ -21,7 +21,7 @@ export function FactTile({ label, icon, tone, children }: { label: string; icon:
     <div className={`flex min-w-0 items-start gap-3 rounded-ros-lg px-4 py-3.5 ${t.box}`}>
       <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${t.icon}`}>{icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{label}</p>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">{label}</p>
         {children}
       </div>
     </div>
@@ -57,7 +57,7 @@ export default function InlineFact({ candidateId, label, icon, fields, display, 
     router.refresh();
   }
 
-  const input = "w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-[13px] dark:border-slate-600 dark:bg-slate-900";
+  const input = "w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-[14px] dark:border-slate-600 dark:bg-slate-900";
   return (
     <FactTile label={label} icon={icon} tone={tone}>
       {editing ? (
@@ -72,27 +72,27 @@ export default function InlineFact({ candidateId, label, icon, fields, display, 
             <input
               key={f.key}
               autoFocus={i === 0}
-              className={f.kind === "text" ? "w-32 rounded-md border border-slate-300 bg-white px-2 py-1 text-[13px] dark:border-slate-600 dark:bg-slate-900" : input}
+              className={f.kind === "text" ? "w-32 rounded-md border border-slate-300 bg-white px-2 py-1 text-[14px] dark:border-slate-600 dark:bg-slate-900" : input}
               placeholder={f.kind === "lakhs" ? (f.key === "current_fixed_ctc" ? "Now, L" : "Expected, L") : "e.g. 30 days"}
               value={vals[f.key] ?? ""}
               onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
               onKeyDown={(e) => e.key === "Escape" && setEditing(false)}
             />
           ))}
-          <button type="submit" disabled={busy} className="rounded-md bg-teal-600 px-2.5 py-1 text-[12.5px] font-semibold text-white disabled:opacity-50">
+          <button type="submit" disabled={busy} className="rounded-md bg-teal-600 px-2.5 py-1 text-[13px] font-semibold text-white disabled:opacity-50">
             Save
           </button>
-          <button type="button" onClick={() => setEditing(false)} className="text-[12.5px] text-slate-500">
+          <button type="button" onClick={() => setEditing(false)} className="text-[13px] text-slate-500">
             Cancel
           </button>
-          {err && <span className="basis-full text-[12px] text-rose-600">{err}</span>}
+          {err && <span className="basis-full text-[13px] text-rose-600">{err}</span>}
         </form>
       ) : (
         <button type="button" onClick={() => setEditing(true)} className="group mt-0.5 flex items-center gap-1.5 text-left" title="Click to edit">
           {display ? (
             <span className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{display}</span>
           ) : (
-            <span className="text-[14px] font-medium text-amber-700 dark:text-amber-300">Add it</span>
+            <span className="text-[15px] font-medium text-amber-700 dark:text-amber-300">Add it</span>
           )}
           <Pencil className="h-3 w-3 text-slate-300 group-hover:text-slate-500" />
         </button>

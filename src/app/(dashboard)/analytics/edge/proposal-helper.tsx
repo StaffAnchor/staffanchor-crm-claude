@@ -46,7 +46,7 @@ export default function ProposalHelper() {
   const lenOk = len >= 100 && len <= 1500;
 
   return (
-    <div className="space-y-3 text-[13px]">
+    <div className="space-y-3 text-[14px]">
       <textarea
         rows={5}
         value={text}
@@ -61,19 +61,19 @@ export default function ProposalHelper() {
             <option key={s.slug} value={s.slug}>{s.label}</option>
           ))}
         </select>
-        <button onClick={make} disabled={busy} className="rounded-md bg-teal-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">
+        <button onClick={make} disabled={busy} className="rounded-md bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">
           {busy ? "Drafting…" : "Draft proposal"}
         </button>
       </div>
       {res && !res.ok && <p className="text-red-600">{res.error}</p>}
       {res && res.ok && (
         <div className="space-y-2">
-          <p className={`text-[12.5px] ${res.fit === "good" ? "text-emerald-700" : "text-amber-700"}`}>
+          <p className={`text-[13px] ${res.fit === "good" ? "text-emerald-700" : "text-amber-700"}`}>
             {FIT[res.fit]} {res.fitNote}
           </p>
           <textarea rows={12} value={draft} onChange={(e) => setDraft(e.target.value)} className="w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 dark:border-slate-700" />
           <div className="flex items-center gap-3">
-            <button onClick={copy} disabled={!lenOk} className="rounded-md bg-slate-900 px-3 py-1.5 text-[12.5px] font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
+            <button onClick={copy} disabled={!lenOk} className="rounded-md bg-slate-900 px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
               {copied ? "Copied" : "Copy for LinkedIn"}
             </button>
             <span className={`text-xs tabular-nums ${lenOk ? "text-slate-500" : "text-red-600"}`}>{len} / 1,500 characters (LinkedIn needs at least 100)</span>

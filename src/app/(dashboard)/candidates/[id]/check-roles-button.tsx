@@ -27,10 +27,10 @@ export default function CheckRolesButton({ candidateId }: { candidateId: string 
 
   return (
     <div className="mt-1">
-      <button type="button" onClick={run} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-teal-300 px-2.5 py-0.5 text-[12px] font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/30">
+      <button type="button" onClick={run} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-teal-300 px-2.5 py-0.5 text-[13px] font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/30">
         {busy && <Loader2 className="h-3 w-3 animate-spin" />} {busy ? "Checking…" : "Check against open roles"}
       </button>
-      {msg && <p className="mt-1 text-[11.5px] text-amber-700">{msg}</p>}
+      {msg && <p className="mt-1 text-[12px] text-amber-700">{msg}</p>}
     </div>
   );
 }

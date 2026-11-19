@@ -13,13 +13,13 @@ export default async function VoiceAgentTab(props: { mandateId: string; canAppro
     return await render(props);
   } catch (e) {
     console.error("Voice agent tab failed", e);
-    return <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">The voice agent could not load just now. Reload the page to try again.</p>;
+    return <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] text-amber-900">The voice agent could not load just now. Reload the page to try again.</p>;
   }
 }
 
 async function render({ mandateId, canApprove }: { mandateId: string; canApprove: boolean }) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) return <p className="text-[13px] text-slate-500">The voice agent needs the server key to be set up.</p>;
+  if (!key) return <p className="text-[14px] text-slate-500">The voice agent needs the server key to be set up.</p>;
   const admin = createAdmin(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, { auth: { persistSession: false } });
   const supabase = await createClient();
   const mandate = await loadMandate(admin, mandateId);

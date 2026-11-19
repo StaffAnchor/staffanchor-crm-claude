@@ -144,7 +144,7 @@ function ReferForm() {
           href={whatsappEntryLink("Hi StaffAnchor, I'm a Sales Circle referrer and I just submitted a referral. Could you confirm you received it?")}
           target="_blank"
           rel="noreferrer"
-          className="mt-5 inline-block text-[13px] font-medium text-emerald-700 underline underline-offset-2"
+          className="mt-5 inline-block text-[14px] font-medium text-emerald-700 underline underline-offset-2"
         >
           Questions? Message us on WhatsApp
         </a>
@@ -168,8 +168,8 @@ function ReferForm() {
       {mandate && (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
           <div className="min-w-0">
-            <div className="text-[14px] font-semibold text-slate-900">{mandate.role_title}</div>
-            <div className="mt-0.5 text-[12.5px] text-slate-500">
+            <div className="text-[15px] font-semibold text-slate-900">{mandate.role_title}</div>
+            <div className="mt-0.5 text-[13px] text-slate-500">
               {[locationText(mandate), roleCategoryLabel(mandate.category), ctcBand(mandate.budget_min, mandate.budget_max), experienceBand(mandate.experience_min, mandate.experience_max)]
                 .filter(Boolean)
                 .join(" · ")}
@@ -177,7 +177,7 @@ function ReferForm() {
           </div>
           {mandate.payout_amount != null && (
             <div className="rounded-lg bg-emerald-50 px-3 py-1.5 text-right ring-1 ring-emerald-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700/70">You earn</div>
+              <div className="text-[10px] font-medium uppercase tracking-wide text-emerald-700/70">You earn</div>
               <div className="text-[16px] font-bold text-emerald-700">{inr(mandate.payout_amount)}</div>
             </div>
           )}
@@ -187,7 +187,7 @@ function ReferForm() {
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 mt-6">
         {error && <div className="rounded-lg bg-rose-50 text-rose-700 text-sm px-3 py-2">{error}</div>}
 
-        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide pt-1">Candidate details</div>
+        <div className="text-[12px] font-medium text-slate-400 uppercase tracking-wide pt-1">Candidate details</div>
         <Field label="Candidate name" value={form.candidateName} onChange={(v) => set("candidateName", v)} required />
         <Field label="Phone" value={form.candidatePhone} onChange={(v) => set("candidatePhone", v)} type="tel" />
         <Field label="Email" value={form.candidateEmail} onChange={(v) => set("candidateEmail", v)} type="email" />
@@ -218,8 +218,8 @@ function ReferForm() {
           />
         </div>
 
-        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide pt-2">Fit questionnaire</div>
-        <p className="text-[12px] text-slate-400 -mt-2">
+        <div className="text-[12px] font-medium text-slate-400 uppercase tracking-wide pt-2">Fit questionnaire</div>
+        <p className="text-[13px] text-slate-400 -mt-2">
           Same standardized questions for every role -- helps the recruiter triage faster.
         </p>
 
@@ -257,7 +257,7 @@ function ReferForm() {
         {hints.length > 0 && (
           <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1.5">
             {hints.map((h, i) => (
-              <div key={i} className={`text-[12px] flex items-start gap-1.5 ${h.ok ? "text-emerald-700" : "text-amber-700"}`}>
+              <div key={i} className={`text-[13px] flex items-start gap-1.5 ${h.ok ? "text-emerald-700" : "text-amber-700"}`}>
                 <span>{h.ok ? "✓" : "⚠"}</span>
                 <span>{h.text}</span>
               </div>

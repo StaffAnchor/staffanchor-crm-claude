@@ -111,7 +111,7 @@ export default function PracticeTagsPanel({
     <div className="space-y-4">
       {grouped.map(({ group, practices }) => (
         <div key={group}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
             {GROUP_LABEL[group]}
           </p>
           <div className="space-y-1.5">
@@ -123,12 +123,12 @@ export default function PracticeTagsPanel({
                     <button
                       type="button"
                       onClick={() => toggle(p.id)}
-                      className={`text-[12.5px] text-left flex-1 ${active ? "text-teal-700 dark:text-teal-300 font-medium" : "text-slate-600 dark:text-slate-400"}`}
+                      className={`text-[13px] text-left flex-1 ${active ? "text-teal-700 dark:text-teal-300 font-medium" : "text-slate-600 dark:text-slate-400"}`}
                     >
                       {p.name}
                       {active && isAiTagged(p.id) && (
                         <span
-                          className="ml-1.5 text-[9.5px] font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400"
+                          className="ml-1.5 text-[9.5px] font-medium uppercase tracking-wide text-teal-600 dark:text-teal-400"
                           title="Assigned by AI from the resume -- verify and Save to confirm"
                         >
                           AI

@@ -49,11 +49,11 @@ export default function JdFilePicker({ onLoaded }: { onLoaded: (data: JdFileData
         type="button"
         onClick={() => input.current?.click()}
         disabled={busy}
-        className="flex items-center gap-1.5 rounded-lg border border-teal-300 bg-white px-3 py-1.5 text-[12px] font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-lg border border-teal-300 bg-white px-3 py-1.5 text-[13px] font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-50"
       >
         <FileUp className="w-3.5 h-3.5" /> {busy ? "Reading the file..." : "Upload the client's JD (PDF, Word, text or photo)"}
       </button>
-      {fileName && !error && <p className="mt-1 text-[11.5px] text-slate-500">Loaded {fileName}. Check the notes below, then generate.</p>}
+      {fileName && !error && <p className="mt-1 text-[12px] text-slate-500">Loaded {fileName}. Check the notes below, then generate.</p>}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );

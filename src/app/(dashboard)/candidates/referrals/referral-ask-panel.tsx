@@ -63,25 +63,25 @@ export default function ReferralAskPanel({
           <Gift className="h-4 w-4 text-teal-600" /> {heading}
         </h2>
         <span className="ml-auto"><ChannelToggle value={channel} onChange={(c) => { setChannel(c); setPreview(null); setNeedsTemplate(false); }} /></span>
-        <button type="button" onClick={find} disabled={busy} className=" inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+        <button type="button" onClick={find} disabled={busy} className=" inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
           {busy && !preview ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Find who to ask
         </button>
       </div>
-      <p className="mt-1 text-[13px] text-slate-500">{blurb}</p>
-      {msg && <p className="mt-3 text-[13px] text-slate-700 dark:text-slate-200">{msg}</p>}
+      <p className="mt-1 text-[14px] text-slate-500">{blurb}</p>
+      {msg && <p className="mt-3 text-[14px] text-slate-700 dark:text-slate-200">{msg}</p>}
       {needsTemplate && <TemplateSetup which={templateKey} />}
       {preview && (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div>
             {preview.people.length === 0 ? (
-              <p className="text-[13px] text-slate-400">Nobody is ready to be asked right now.</p>
+              <p className="text-[14px] text-slate-400">Nobody is ready to be asked right now.</p>
             ) : (
               <>
-                <p className="mb-2 text-[13px] text-slate-700 dark:text-slate-200">{preview.people.length} people are ready.{preview.channel === "email" ? ` ${preview.room} left under today's limit of ${preview.cap}.` : ` Up to ${preview.perPress} go per press. Meta charges per message.`}</p>
+                <p className="mb-2 text-[14px] text-slate-700 dark:text-slate-200">{preview.people.length} people are ready.{preview.channel === "email" ? ` ${preview.room} left under today's limit of ${preview.cap}.` : ` Up to ${preview.perPress} go per press. Meta charges per message.`}</p>
                 <ul className="max-h-80 space-y-1 overflow-y-auto">
                   {preview.people.map((p) => (
                     <li key={p.id}>
-                      <label className="flex items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-[13px] dark:border-slate-800">
+                      <label className="flex items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-[14px] dark:border-slate-800">
                         <input type="checkbox" checked={picked.has(p.id)} onChange={() => toggle(p.id)} className="mt-1" />
                         <span>
                           <span className="font-medium text-slate-900 dark:text-slate-100">{p.name}</span>
@@ -91,7 +91,7 @@ export default function ReferralAskPanel({
                     </li>
                   ))}
                 </ul>
-                <button type="button" onClick={send} disabled={busy || picked.size === 0} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
+                <button type="button" onClick={send} disabled={busy || picked.size === 0} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Send to {picked.size}
                 </button>
               </>

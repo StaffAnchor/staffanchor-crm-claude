@@ -110,9 +110,9 @@ export default function CreateClientForm() {
           placeholder="Add it to fetch the name and address"
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-500"
         />
-        {gst && !gst.ok && <p className="text-[11.5px] text-red-600 mt-1">{gst.error}</p>}
+        {gst && !gst.ok && <p className="text-[12px] text-red-600 mt-1">{gst.error}</p>}
         {gst && gst.ok && (
-          <p className="text-[11.5px] text-emerald-600 mt-1">
+          <p className="text-[12px] text-emerald-600 mt-1">
             Valid · {gst.stateName} ({gst.stateCode}) ·{" "}
             <button type="button" onClick={fetchOnline} disabled={looking} className="underline disabled:opacity-50">
               {looking ? "Fetching…" : "Fetch name & address"}
@@ -120,16 +120,16 @@ export default function CreateClientForm() {
           </p>
         )}
         {fetched && (
-          <div className="mt-2 rounded-md border border-teal-200 bg-teal-50 dark:bg-teal-950/20 dark:border-teal-900 p-2.5 text-[12px] space-y-0.5">
+          <div className="mt-2 rounded-md border border-teal-200 bg-teal-50 dark:bg-teal-950/20 dark:border-teal-900 p-2.5 text-[13px] space-y-0.5">
             <div className="font-medium text-slate-800 dark:text-slate-100">{fetched.legalName ?? "—"}</div>
             {fetched.status && <div className="text-slate-500">Status: {fetched.status}</div>}
             <div className="text-slate-600 dark:text-slate-300">{fetched.address ?? "No address returned"}</div>
-            <button type="button" onClick={useFetched} className="mt-1 rounded-md bg-teal-600 text-white text-[12px] px-2 py-1">
+            <button type="button" onClick={useFetched} className="mt-1 rounded-md bg-teal-600 text-white text-[13px] px-2 py-1">
               Looks right, use this
             </button>
           </div>
         )}
-        {applied && <p className="text-[11.5px] text-slate-400 mt-1">Name, city and billing address filled in from the GST record.</p>}
+        {applied && <p className="text-[12px] text-slate-400 mt-1">Name, city and billing address filled in from the GST record.</p>}
       </div>
       <div>
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Client name *</label>

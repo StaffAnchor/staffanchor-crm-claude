@@ -78,26 +78,26 @@ export default function ClientInfoPanel({
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Client details</h2>
           <button
             onClick={() => setEditing(true)}
-            className="flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100"
+            className="flex items-center gap-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100"
           >
             <Pencil className="w-3 h-3" /> Edit
           </button>
         </div>
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between gap-3">
-            <dt className="text-slate-400 text-[12px]">Owner (Partner)</dt>
+            <dt className="text-slate-400 text-[13px]">Owner (Partner)</dt>
             <dd className="text-slate-700 dark:text-slate-300 text-right">{ownerLabel || "Unassigned"}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-slate-400 text-[12px]">Industry</dt>
+            <dt className="text-slate-400 text-[13px]">Industry</dt>
             <dd className="text-slate-700 dark:text-slate-300 text-right">{initialIndustry || "—"}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-slate-400 text-[12px]">HQ city</dt>
+            <dt className="text-slate-400 text-[13px]">HQ city</dt>
             <dd className="text-slate-700 dark:text-slate-300 text-right">{initialHqCity || "—"}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-slate-400 text-[12px]">Website</dt>
+            <dt className="text-slate-400 text-[13px]">Website</dt>
             <dd className="text-slate-700 dark:text-slate-300 text-right truncate max-w-[180px]">
               {initialWebsite ? (
                 <a href={initialWebsite} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline">
@@ -109,12 +109,12 @@ export default function ClientInfoPanel({
             </dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-slate-400 text-[12px]">Placement fee</dt>
+            <dt className="text-slate-400 text-[13px]">Placement fee</dt>
             <dd className="text-slate-700 dark:text-slate-300 text-right">{(initialFeePercentage ?? 8.33)}% of CTC</dd>
           </div>
           {initialNotes && (
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <dt className="text-slate-400 text-[12px] mb-1">Notes</dt>
+              <dt className="text-slate-400 text-[13px] mb-1">Notes</dt>
               <dd className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{initialNotes}</dd>
             </div>
           )}

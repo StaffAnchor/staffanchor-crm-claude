@@ -33,7 +33,7 @@ const WHEN: { v: string; label: string }[] = [
 ];
 
 const chip = (on: boolean) =>
-  `rounded-full border px-4 py-2.5 text-[14px] font-medium transition ${on ? "border-teal-600 bg-teal-600 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"}`;
+  `rounded-full border px-4 py-2.5 text-[15px] font-medium transition ${on ? "border-teal-600 bg-teal-600 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"}`;
 
 // Appears after a call started from the CRM, wherever the recruiter is. Three taps: how it went, how interested they
 // were, what happens next. A note is optional. Works on a phone: big buttons, sits at the bottom of the screen.
@@ -120,13 +120,13 @@ export default function CallSheet() {
     <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-3 sm:pb-5" role="dialog" aria-label="How did the call go?">
       <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         {saved ? (
-          <p className="flex items-center justify-center gap-2 py-6 text-[15px] font-semibold text-emerald-700">
+          <p className="flex items-center justify-center gap-2 py-6 text-[16px] font-semibold text-emerald-700">
             <Check className="h-5 w-5" /> Saved. Nice work.
           </p>
         ) : (
           <>
-            <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">How did the call with {call.candidateName ?? "them"} go?</p>
-            {call.role && <p className="mt-0.5 text-[12.5px] text-slate-500">About {call.role}</p>}
+            <p className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">How did the call with {call.candidateName ?? "them"} go?</p>
+            {call.role && <p className="mt-0.5 text-[13px] text-slate-500">About {call.role}</p>}
 
             <div className="mt-4 flex flex-wrap gap-2">
               {OUTCOMES.map((o) => (
@@ -138,7 +138,7 @@ export default function CallSheet() {
 
             {outcome === "spoke" && (
               <>
-                <p className="mt-4 text-[12.5px] font-medium text-slate-500">Interest</p>
+                <p className="mt-4 text-[13px] font-medium text-slate-500">Interest</p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   {INTERESTS.map((o) => (
                     <button key={o.v} type="button" onClick={() => setInterest(o.v)} className={chip(interest === o.v)}>
@@ -146,7 +146,7 @@ export default function CallSheet() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-4 text-[12.5px] font-medium text-slate-500">What next</p>
+                <p className="mt-4 text-[13px] font-medium text-slate-500">What next</p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   {NEXTS.map((o) => (
                     <button key={o.v} type="button" onClick={() => setNext(o.v)} className={chip(next === o.v)}>
@@ -159,7 +159,7 @@ export default function CallSheet() {
 
             {showWhen && (
               <>
-                <p className="mt-4 text-[12.5px] font-medium text-slate-500">{outcome === "spoke" ? "Call back" : "Try again"}</p>
+                <p className="mt-4 text-[13px] font-medium text-slate-500">{outcome === "spoke" ? "Call back" : "Try again"}</p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   {WHEN.map((o) => (
                     <button key={o.v} type="button" onClick={() => setWhen(o.v)} className={chip(when === o.v)}>
@@ -176,19 +176,19 @@ export default function CallSheet() {
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
                 placeholder="Anything worth remembering. Type, or use your keyboard's microphone."
-                className="mt-4 w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-[14px] dark:border-slate-600 dark:bg-slate-900"
+                className="mt-4 w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-[15px] dark:border-slate-600 dark:bg-slate-900"
               />
             )}
 
-            {error && <p className="mt-2 text-[13px] text-rose-600">{error}</p>}
+            {error && <p className="mt-2 text-[14px] text-rose-600">{error}</p>}
             <div className="mt-4 flex items-center gap-3">
-              <button type="button" onClick={save} disabled={busy || !outcome || needsMore} className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2.5 text-[14px] font-semibold text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
+              <button type="button" onClick={save} disabled={busy || !outcome || needsMore} className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2.5 text-[15px] font-semibold text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save
               </button>
-              <button type="button" onClick={discard} className="text-[13px] text-slate-500 hover:underline">
+              <button type="button" onClick={discard} className="text-[14px] text-slate-500 hover:underline">
                 I didn&apos;t call
               </button>
-              <button type="button" onClick={reset} className="ml-auto text-[13px] text-slate-500 hover:underline">
+              <button type="button" onClick={reset} className="ml-auto text-[14px] text-slate-500 hover:underline">
                 Later
               </button>
             </div>

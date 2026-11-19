@@ -57,34 +57,34 @@ export default function VendorCandidateEditForm({ candidate }: { candidate: Vend
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
       {error && (
-        <div className="sm:col-span-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</div>
+        <div className="sm:col-span-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{error}</div>
       )}
-      <label className="text-[12px] text-slate-500">
+      <label className="text-[13px] text-slate-500">
         Full name *
         <input
           required
           value={form.full_name}
           onChange={(e) => update("full_name", e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
       </label>
-      <label className="text-[12px] text-slate-500">
+      <label className="text-[13px] text-slate-500">
         Phone
         <input
           value={form.phone}
           onChange={(e) => update("phone", e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
       </label>
-      <label className="text-[12px] text-slate-500">
+      <label className="text-[13px] text-slate-500">
         Current location
         <input
           value={form.current_location}
           onChange={(e) => update("current_location", e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
       </label>
-      <label className="text-[12px] text-slate-500">
+      <label className="text-[13px] text-slate-500">
         Total experience (years)
         <input
           type="number"
@@ -92,31 +92,31 @@ export default function VendorCandidateEditForm({ candidate }: { candidate: Vend
           min="0"
           value={form.total_experience_years}
           onChange={(e) => update("total_experience_years", e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
       </label>
-      <label className="text-[12px] text-slate-500">
+      <label className="text-[13px] text-slate-500">
         Current employer
         <input
           value={form.current_employer}
           onChange={(e) => update("current_employer", e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
       </label>
-      <label className="text-[12px] text-slate-500">
+      <label className="text-[13px] text-slate-500">
         Current job title
         <input
           value={form.current_job_title}
           onChange={(e) => update("current_job_title", e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
       </label>
-      <label className="text-[12px] text-slate-500 sm:col-span-2">
+      <label className="text-[13px] text-slate-500 sm:col-span-2">
         LinkedIn URL
         <input
           value={form.linkedin_url}
           onChange={(e) => update("linkedin_url", e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
       </label>
 
@@ -124,11 +124,11 @@ export default function VendorCandidateEditForm({ candidate }: { candidate: Vend
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-4 py-2 disabled:opacity-60"
+          className="rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium px-4 py-2 disabled:opacity-60"
         >
           {saving ? "Saving..." : "Save changes"}
         </button>
-        {saved && <span className="text-[12px] text-teal-700">Saved.</span>}
+        {saved && <span className="text-[13px] text-teal-700">Saved.</span>}
       </div>
     </form>
   );

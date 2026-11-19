@@ -57,12 +57,12 @@ export default function PayoutsPanel({ payouts }: { payouts: Payout[] }) {
   }
 
   if (payouts.length === 0) {
-    return <p className="text-[13px] text-slate-500 dark:text-slate-400">No payouts yet -- these get created automatically when a referral reaches &quot;Joined&quot;.</p>;
+    return <p className="text-[14px] text-slate-500 dark:text-slate-400">No payouts yet -- these get created automatically when a referral reaches &quot;Joined&quot;.</p>;
   }
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[14px]">
         <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
           <tr>
             <th className="text-left font-medium px-3 py-2">Candidate</th>
@@ -85,7 +85,7 @@ export default function PayoutsPanel({ payouts }: { payouts: Payout[] }) {
                     value={form.feeReceivedAmount}
                     onChange={(e) => setForm({ ...form, feeReceivedAmount: e.target.value })}
                     placeholder="Fee received"
-                    className="w-28 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+                    className="w-28 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
                   />
                 </td>
                 <td className="px-3 py-2 text-slate-400">auto</td>
@@ -94,14 +94,14 @@ export default function PayoutsPanel({ payouts }: { payouts: Payout[] }) {
                     value={form.tdsAmount}
                     onChange={(e) => setForm({ ...form, tdsAmount: e.target.value })}
                     placeholder="TDS"
-                    className="w-24 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+                    className="w-24 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
                   />
                 </td>
                 <td className="px-3 py-2">
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+                    className="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
                   >
                     <option value="pending">Pending</option>
                     <option value="eligible">Eligible</option>
@@ -109,10 +109,10 @@ export default function PayoutsPanel({ payouts }: { payouts: Payout[] }) {
                   </select>
                 </td>
                 <td className="px-3 py-2 text-right space-x-2">
-                  <button disabled={busy} onClick={() => save(p.id)} className="rounded-md bg-teal-600 px-2.5 py-1 text-[12px] font-medium text-white disabled:opacity-50">
+                  <button disabled={busy} onClick={() => save(p.id)} className="rounded-md bg-teal-600 px-2.5 py-1 text-[13px] font-medium text-white disabled:opacity-50">
                     Save
                   </button>
-                  <button onClick={() => setEditingId(null)} className="text-[12px] text-slate-500">
+                  <button onClick={() => setEditingId(null)} className="text-[13px] text-slate-500">
                     Cancel
                   </button>
                 </td>
@@ -130,7 +130,7 @@ export default function PayoutsPanel({ payouts }: { payouts: Payout[] }) {
                   </span>
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <button onClick={() => startEdit(p)} className="text-[12px] font-medium text-teal-600">
+                  <button onClick={() => startEdit(p)} className="text-[13px] font-medium text-teal-600">
                     Edit
                   </button>
                 </td>

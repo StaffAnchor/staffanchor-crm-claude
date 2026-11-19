@@ -126,7 +126,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
               filter === f
                 ? "bg-teal-600 text-white"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -140,7 +140,7 @@ export default function BillingView({ initialRows, fetchError }: { initialRows: 
         <p className="text-sm text-slate-400 py-8 text-center">No tranches here yet -- they&apos;re generated automatically once a candidate is marked placed.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead>
               <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
                 <th className="py-2 pr-3">Candidate</th>
@@ -262,12 +262,12 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
             </button>
           )}
           {row.proforma_invoice_number && (
-            <button onClick={() => setEmailKind("proforma")} className="text-[12px] text-teal-600 hover:underline">
+            <button onClick={() => setEmailKind("proforma")} className="text-[13px] text-teal-600 hover:underline">
               {row.proforma_emailed_at ? "Re-email Proforma" : "Email Proforma"}
             </button>
           )}
           {row.final_invoice_number && (
-            <button onClick={() => setEmailKind("final")} className="text-[12px] text-teal-600 hover:underline">
+            <button onClick={() => setEmailKind("final")} className="text-[13px] text-teal-600 hover:underline">
               {row.final_emailed_at ? "Re-email Tax Invoice" : "Email Tax Invoice"}
             </button>
           )}
@@ -278,19 +278,19 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
               <button
                 onClick={advance}
                 disabled={saving}
-                className="text-[12px] text-teal-600 hover:underline disabled:opacity-40"
+                className="text-[13px] text-teal-600 hover:underline disabled:opacity-40"
               >
                 {saving ? "..." : buttonLabel}
               </button>
             )
           )}
           {canGoDirect && (
-            <button onClick={() => setModalKind("final")} className="text-[12px] text-teal-600 hover:underline">
+            <button onClick={() => setModalKind("final")} className="text-[13px] text-teal-600 hover:underline">
               Tax Invoice directly
             </button>
           )}
           {reminderDue && (
-            <button onClick={() => setReminderOpen(true)} className="text-[12px] font-medium text-amber-600 hover:underline">
+            <button onClick={() => setReminderOpen(true)} className="text-[13px] font-medium text-amber-600 hover:underline">
               Send payment reminder
             </button>
           )}
@@ -300,19 +300,19 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
                 await supabase.from("placement_fee_tranches").update({ payment_received_at: new Date().toISOString() }).eq("id", row.id);
                 router.refresh();
               }}
-              className="text-[12px] text-teal-600 hover:underline"
+              className="text-[13px] text-teal-600 hover:underline"
             >
               Mark paid
             </button>
           )}
           {canConvert && (
-            <button onClick={() => setModalKind("final")} className="text-[12px] font-medium text-teal-700 hover:underline">
+            <button onClick={() => setModalKind("final")} className="text-[13px] font-medium text-teal-700 hover:underline">
               Payment received → Tax Invoice
             </button>
           )}
         </div>
         {reminderDue && (
-          <p className="text-[11px] text-amber-600 mt-1">
+          <p className="text-[12px] text-amber-600 mt-1">
             Proforma raised {daysSinceProforma} days ago, payment not received
             {row.proforma_reminder_count > 0 && row.proforma_last_reminder_at
               ? ` · ${row.proforma_reminder_count} reminder${row.proforma_reminder_count > 1 ? "s" : ""} sent, last ${new Date(row.proforma_last_reminder_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })}`
@@ -320,7 +320,7 @@ function TrancheRowLine({ row }: { row: TrancheRow }) {
           </p>
         )}
         {(row.proforma_emailed_at || row.final_emailed_at) && (
-          <p className="text-[11px] text-slate-400 mt-1">
+          <p className="text-[12px] text-slate-400 mt-1">
             {row.proforma_emailed_at && <>Proforma emailed {new Date(row.proforma_emailed_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })} to {row.proforma_emailed_to}. </>}
             {row.final_emailed_at && <>Tax Invoice emailed {new Date(row.final_emailed_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short" })} to {row.final_emailed_to}.</>}
           </p>
@@ -382,11 +382,11 @@ function SampleEmailButton() {
       <button
         onClick={send}
         disabled={state === "sending"}
-        className="text-[12px] text-teal-600 hover:underline disabled:opacity-50"
+        className="text-[13px] text-teal-600 hover:underline disabled:opacity-50"
       >
         {state === "sending" ? "Sending…" : "Send a sample invoice email to me"}
       </button>
-      {msg && <span className="text-[12px] text-slate-500">{msg}</span>}
+      {msg && <span className="text-[13px] text-slate-500">{msg}</span>}
     </div>
   );
 }

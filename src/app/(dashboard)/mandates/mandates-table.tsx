@@ -396,7 +396,7 @@ export default function MandatesTable({
         </p>
         <button
           onClick={() => setPanelOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
         >
           <Settings2 className="w-3.5 h-3.5" /> Customize columns
         </button>
@@ -406,7 +406,7 @@ export default function MandatesTable({
             <div className="fixed inset-0 z-40" onClick={() => setPanelOpen(false)} />
             <div className="absolute right-4 top-11 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-3">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">Columns</p>
+                <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">Columns</p>
                 <button onClick={() => setPanelOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -435,7 +435,7 @@ export default function MandatesTable({
                     >
                       <GripVertical className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                       <input type="checkbox" checked={!isHidden} onChange={() => toggle(key)} className="shrink-0" />
-                      <span className="text-[12px] text-slate-700 dark:text-slate-300 flex-1 truncate">{col.label}</span>
+                      <span className="text-[13px] text-slate-700 dark:text-slate-300 flex-1 truncate">{col.label}</span>
                       <button
                         onClick={() => move(key, -1)}
                         disabled={i === 0}
@@ -467,7 +467,7 @@ export default function MandatesTable({
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
-          <p className="text-[12px] font-semibold text-teal-800">{selected.size} selected</p>
+          <p className="text-[13px] font-semibold text-teal-800">{selected.size} selected</p>
           <Button variant="secondary" size="sm" onClick={() => setStatusModalOpen(true)} disabled={bulkBusy}>
             Set status
           </Button>
@@ -481,7 +481,7 @@ export default function MandatesTable({
           >
             Delete
           </Button>
-          <button onClick={clearSelection} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 ml-auto">
+          <button onClick={clearSelection} className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 ml-auto">
             Clear selection
           </button>
         </div>
@@ -489,20 +489,20 @@ export default function MandatesTable({
 
       {bulkMessage && (
         <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">{bulkMessage}</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">{bulkMessage}</p>
         </div>
       )}
 
       {statusModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setStatusModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
               Set status for {selected.size} mandate{selected.size === 1 ? "" : "s"}
             </h3>
             <select
               value={chosenStatus}
               onChange={(e) => setChosenStatus(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-3 mt-3"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px] mb-3 mt-3"
             >
               <option value="">Select a status...</option>
               {STATUS_OPTIONS.map((s) => (
@@ -514,14 +514,14 @@ export default function MandatesTable({
             <div className="flex gap-2">
               <button
                 onClick={() => setStatusModalOpen(false)}
-                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[14px] font-medium py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBulkStatus}
                 disabled={!chosenStatus || bulkBusy}
-                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium py-2 disabled:opacity-50"
               >
                 {bulkBusy ? "Updating..." : "Apply"}
               </button>
@@ -531,8 +531,8 @@ export default function MandatesTable({
       )}
 
       <div className="overflow-auto max-h-[calc(100vh-13rem)]">
-        <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        <table className="w-full text-[14px]">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-medium uppercase tracking-wide">
             <tr>
               <th className="px-4 py-2.5 w-8 sticky left-0 top-0 z-30 bg-slate-50 dark:bg-slate-800/50">
                 <input
@@ -609,7 +609,7 @@ export default function MandatesTable({
             <button
               onClick={() => setPageNum((p) => Math.max(1, p - 1))}
               disabled={safePageNum === 1}
-              className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Prev
             </button>
@@ -622,14 +622,14 @@ export default function MandatesTable({
               }, [])
               .map((p, i) =>
                 p === "ellipsis" ? (
-                  <span key={`e${i}`} className="text-[12px] text-slate-300 px-1">
+                  <span key={`e${i}`} className="text-[13px] text-slate-300 px-1">
                     …
                   </span>
                 ) : (
                   <button
                     key={p}
                     onClick={() => setPageNum(p)}
-                    className={`text-[12px] font-medium rounded-lg px-2.5 py-1 tabular-nums ${
+                    className={`text-[13px] font-medium rounded-lg px-2.5 py-1 tabular-nums ${
                       p === safePageNum
                         ? "bg-teal-600 text-white"
                         : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900"
@@ -642,7 +642,7 @@ export default function MandatesTable({
             <button
               onClick={() => setPageNum((p) => Math.min(totalPages, p + 1))}
               disabled={safePageNum === totalPages}
-              className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Next
             </button>

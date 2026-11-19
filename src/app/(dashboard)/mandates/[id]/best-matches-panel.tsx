@@ -128,7 +128,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
     <div className="space-y-4">
       <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} roleCluster={mandateRow.role_cluster} cities={card.cities} ranked={shownRanked} memory={memoryShown} extra={extra} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <details className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-        <summary className="cursor-pointer text-[13.5px] font-semibold text-slate-700 dark:text-slate-200">Change what we look for <span className="font-normal text-slate-400">(role type, cities, pay, other roles that also count)</span></summary>
+        <summary className="cursor-pointer text-[14px] font-semibold text-slate-700 dark:text-slate-200">Change what we look for <span className="font-normal text-slate-400">(role type, cities, pay, other roles that also count)</span></summary>
         <div className="mt-3 space-y-4">
           <RoleCardEditor key={JSON.stringify(card)} mandateId={mandateId} card={card} confirmed={!!cardRow.confirmed} clusters={clusters} worlds={worlds} />
           <AlsoTypesBar mandateId={mandateId} main={mandateRow.role_cluster} initial={also} />
@@ -136,7 +136,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
       </details>
       {mandateRow.status === "open" && !mandateRow.is_archived && mandateRow.listing_kind !== "pipeline" && mandateRow.short_code && (
         <details className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-          <summary className="cursor-pointer text-[13.5px] font-semibold text-slate-700 dark:text-slate-200">Ask people for referrals <span className="font-normal text-slate-400">(optional)</span></summary>
+          <summary className="cursor-pointer text-[14px] font-semibold text-slate-700 dark:text-slate-200">Ask people for referrals <span className="font-normal text-slate-400">(optional)</span></summary>
           <div className="mt-3">
             <ReferralAskPanel
               endpoint={`/api/mandates/${mandateId}/referral-ask`}
@@ -147,7 +147,7 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
           </div>
         </details>
       )}
-      <p className="text-[12px] text-slate-400">
+      <p className="text-[13px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, marked not a fit, or who said no to this role on a call is left out. People who said yes on a call are lifted and say so.
       </p>
     </div>

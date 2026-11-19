@@ -61,10 +61,10 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
         <PhoneCall className="w-4 h-4 text-slate-500" />
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Team calls</h2>
       </div>
-      <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">Open call flags, by who they&apos;re on.</p>
+      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-3">Open call flags, by who they&apos;re on.</p>
 
       {teammates.length === 0 ? (
-        <p className="text-[12px] text-slate-400 py-4 text-center">Nothing flagged for anyone right now.</p>
+        <p className="text-[13px] text-slate-400 py-4 text-center">Nothing flagged for anyone right now.</p>
       ) : (
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {teammates.map((t) => (
@@ -74,7 +74,7 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                 onClick={() => setExpanded((cur) => (cur === t.id ? null : t.id))}
                 className="w-full flex items-center justify-between py-2.5 text-left"
               >
-                <span className="text-[13px] font-medium text-slate-800 dark:text-slate-200">{t.name}</span>
+                <span className="text-[14px] font-medium text-slate-800 dark:text-slate-200">{t.name}</span>
                 <span className="flex items-center gap-1.5">
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/30 px-1.5 text-xs font-semibold text-teal-700 dark:text-teal-400">
                     {t.calls.length}
@@ -124,7 +124,7 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                       >
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                            <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300 truncate">
+                            <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300 truncate">
                               {c.candidate_name ?? "Candidate"}
                             </p>
                             {c.link_stage && (
@@ -135,7 +135,7 @@ export default function TeamCallsPanel({ rows }: { rows: FlaggedCallRow[] }) {
                               </span>
                             )}
                           </div>
-                          <span className="shrink-0 text-[9.5px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
+                          <span className="shrink-0 text-[9.5px] font-medium uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
                             {roundLabel(c.call_round)}
                           </span>
                         </div>

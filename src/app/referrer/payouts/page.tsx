@@ -44,7 +44,7 @@ export default async function ReferrerPayoutsPage() {
   return (
     <div className="mx-auto max-w-[900px] px-5 py-8">
       <h1 className="text-[22px] font-semibold tracking-tight text-slate-900">Payouts</h1>
-      <p className="mt-1 text-[14px] text-slate-500">Your Sales Circle earnings, and where each payout stands.</p>
+      <p className="mt-1 text-[15px] text-slate-500">Your Sales Circle earnings, and where each payout stands.</p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         {tiles.map((t) => (
@@ -53,7 +53,7 @@ export default async function ReferrerPayoutsPage() {
               <span className={`flex h-7 w-7 items-center justify-center rounded-full ${t.bg} ${t.tone}`}>
                 <t.icon className="h-4 w-4" />
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t.label}</span>
+              <span className="text-[12px] font-medium uppercase tracking-wide text-slate-400">{t.label}</span>
             </div>
             <div className={`mt-2 text-[26px] font-bold leading-none ${t.tone}`}>{inr(t.value)}</div>
           </div>
@@ -62,9 +62,9 @@ export default async function ReferrerPayoutsPage() {
 
       {rows.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-          <p className="text-[15px] font-medium text-slate-700">No payouts yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-[13px] text-slate-400">A payout appears here the moment someone you referred joins. Each open role shows what you&apos;d earn.</p>
-          <Link href="/referrer/roles" className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white hover:bg-slate-700">
+          <p className="text-[16px] font-medium text-slate-700">No payouts yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-[14px] text-slate-400">A payout appears here the moment someone you referred joins. Each open role shows what you&apos;d earn.</p>
+          <Link href="/referrer/roles" className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-[14px] font-semibold text-white hover:bg-slate-700">
             See open roles
           </Link>
         </div>
@@ -79,17 +79,17 @@ export default async function ReferrerPayoutsPage() {
               <div key={p.id} className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-slate-100 px-5 py-4 last:border-b-0">
                 <div className="min-w-0">
                   <div className="truncate text-[14.5px] font-semibold text-slate-900">{referral?.candidate_name ?? "—"}</div>
-                  <div className="mt-0.5 text-[12.5px] text-slate-500">
+                  <div className="mt-0.5 text-[13px] text-slate-500">
                     {role ? `${role} · ` : ""}
                     {paid && p.paid_date ? `Paid on ${new Date(p.paid_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}` : copy.note}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={`rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${copy.pill}`}>{copy.label}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${copy.pill}`}>{copy.label}</span>
                   <div className="text-right">
-                    <div className="text-[15px] font-bold text-slate-900">{inr(paid ? p.net_amount ?? p.computed_payout_amount : gross(p) || null)}</div>
+                    <div className="text-[16px] font-bold text-slate-900">{inr(paid ? p.net_amount ?? p.computed_payout_amount : gross(p) || null)}</div>
                     {paid && p.tds_amount != null && (
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-[12px] text-slate-400">
                         {inr(p.computed_payout_amount)} less {inr(p.tds_amount)} TDS
                       </div>
                     )}

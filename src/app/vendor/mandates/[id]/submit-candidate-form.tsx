@@ -119,12 +119,12 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
             setOpen(true);
             setJustSubmitted(false);
           }}
-          className="w-full sm:w-auto rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-4 py-2.5"
+          className="w-full sm:w-auto rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium px-4 py-2.5"
         >
           + Submit a candidate
         </button>
         {justSubmitted && (
-          <span className="text-[12px] text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-2.5 py-1.5">
+          <span className="text-[13px] text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-2.5 py-1.5">
             Candidate submitted -- it&apos;ll show up in your submissions list right away.
           </span>
         )}
@@ -135,14 +135,14 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[14px] font-semibold text-slate-900">Submit a candidate</h3>
+        <h3 className="text-[15px] font-semibold text-slate-900">Submit a candidate</h3>
         <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {error && (
-        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</div>
+        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -151,7 +151,7 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
           placeholder="Full name *"
           value={form.full_name}
           onChange={(e) => update("full_name", e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
         <input
           required
@@ -159,19 +159,19 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
           placeholder="Email *"
           value={form.email}
           onChange={(e) => update("email", e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
         <input
           placeholder="Phone"
           value={form.phone}
           onChange={(e) => update("phone", e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
         <input
           placeholder="Current location"
           value={form.current_location}
           onChange={(e) => update("current_location", e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
         <input
           type="number"
@@ -180,30 +180,30 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
           placeholder="Total experience (years)"
           value={form.total_experience_years}
           onChange={(e) => update("total_experience_years", e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
         <input
           placeholder="Current employer"
           value={form.current_employer}
           onChange={(e) => update("current_employer", e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px]"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
         />
         <input
           placeholder="Current job title"
           value={form.current_job_title}
           onChange={(e) => update("current_job_title", e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px] sm:col-span-2"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px] sm:col-span-2"
         />
         <textarea
           placeholder="Note for the recruiter (optional)"
           value={form.note}
           onChange={(e) => update("note", e.target.value)}
           rows={2}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-[13px] sm:col-span-2"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-[14px] sm:col-span-2"
         />
 
         <div className="sm:col-span-2">
-          <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-[13px] text-slate-500 cursor-pointer hover:bg-slate-50">
+          <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-[14px] text-slate-500 cursor-pointer hover:bg-slate-50">
             <UploadCloud className="w-4 h-4 shrink-0" />
             <span className="truncate">
               {uploadingResume
@@ -236,14 +236,14 @@ export default function SubmitCandidateForm({ mandateId }: { mandateId: string }
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 sm:flex-none rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-4 py-2 disabled:opacity-60"
+            className="flex-1 sm:flex-none rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium px-4 py-2 disabled:opacity-60"
           >
             {uploadingResume ? "Uploading resume..." : saving ? "Submitting..." : "Submit candidate"}
           </button>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="text-[13px] text-slate-500 hover:text-slate-700"
+            className="text-[14px] text-slate-500 hover:text-slate-700"
           >
             Cancel
           </button>

@@ -22,7 +22,7 @@ export default async function RepBandingPage() {
       <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
         <Link href="/lab/home" className="text-sm text-slate-500 hover:text-slate-800">← My progress</Link>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">Session 5</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-teal-700">Session 5</p>
           <h1 className="text-2xl font-semibold tracking-tight">Rep Banding by tenure</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Compare reps with others of similar tenure, not with the whole team. A new rep and a three-year veteran should not be judged on the same number. Use rep IDs, and a monthly output figure you already report.</p>
         </div>

@@ -96,18 +96,18 @@ export default function CallTranscriptPanel({ candidateId }: { candidateId: stri
   const segEntries = p ? Object.entries(p.segment).filter(([, v]) => v !== undefined && !(Array.isArray(v) && v.length === 0)) : [];
   const ratingEntries = p ? Object.entries(p.ratings) : [];
   const roleName = roles.find((r) => r.id === roleId)?.role_title;
-  const row = "flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] dark:bg-slate-800/50";
+  const row = "flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800/50";
 
   return (
     <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between px-4 py-3 text-left text-[13px] font-semibold text-slate-900 dark:text-slate-100">
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between px-4 py-3 text-left text-[14px] font-semibold text-slate-900 dark:text-slate-100">
         <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-teal-600" /> Read a call <span className="font-normal text-slate-500">(paste a transcript or your notes)</span></span>
         <span className="text-slate-400">{open ? "Hide" : "Open"}</span>
       </button>
       {open && (
         <div className="space-y-3 border-t border-slate-100 p-4 dark:border-slate-800">
           {done && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[12.5px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[13px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
               <p className="flex items-center gap-1.5 font-semibold"><Check className="h-4 w-4" /> Saved to the profile.</p>
               {done.filled.length > 0 && <p className="mt-0.5">Updated: {done.filled.join(", ").replace(/_/g, " ")}.</p>}
               {done.stillMissing.length > 0 && <p className="mt-0.5">Still missing: {done.stillMissing.join(", ")}.</p>}
@@ -133,16 +133,16 @@ export default function CallTranscriptPanel({ candidateId }: { candidateId: stri
                 onChange={(e) => setText(e.target.value)}
                 rows={7}
                 placeholder="Paste the call transcript, or type what the candidate told you: pay, notice, location, what they sell, why they are looking, what they want and won't accept."
-                className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-[13px] dark:bg-slate-900"
+                className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-[14px] dark:bg-slate-900"
               />
               <div className="flex flex-wrap items-center gap-2">
-                <select value={roleId} onChange={(e) => setRoleId(e.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border border-slate-300 px-2 text-[12.5px] dark:bg-slate-900">
+                <select value={roleId} onChange={(e) => setRoleId(e.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border border-slate-300 px-2 text-[13px] dark:bg-slate-900">
                   <option value="">The call was not about one role</option>
                   {roles.map((r) => (
                     <option key={r.id} value={r.id}>{r.role_title}{r.client_name ? ` — ${r.client_name}` : ""}</option>
                   ))}
                 </select>
-                <button onClick={read} disabled={busy !== null || text.trim().length < 40} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-2 text-[12.5px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">
+                <button onClick={read} disabled={busy !== null || text.trim().length < 40} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-2 text-[13px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">
                   {busy === "read" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {busy === "read" ? "Reading…" : "Read the call"}
                 </button>
               </div>
@@ -151,17 +151,17 @@ export default function CallTranscriptPanel({ candidateId }: { candidateId: stri
 
           {p && reading && (
             <div className="space-y-2.5">
-              {p.summary && <p className="rounded-lg bg-teal-50/60 px-3 py-2 text-[12.5px] text-slate-700 dark:bg-teal-950/20 dark:text-slate-200">{p.summary}</p>}
-              <p className="text-[12px] text-slate-500">Untick anything that is wrong, then apply. Nothing is saved until you do.</p>
+              {p.summary && <p className="rounded-lg bg-teal-50/60 px-3 py-2 text-[13px] text-slate-700 dark:bg-teal-950/20 dark:text-slate-200">{p.summary}</p>}
+              <p className="text-[13px] text-slate-500">Untick anything that is wrong, then apply. Nothing is saved until you do.</p>
 
               {reading.changes.length > 0 && (
                 <div className="space-y-1.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Profile details</p>
+                  <p className="text-[12px] font-medium uppercase tracking-wide text-slate-500">Profile details</p>
                   {reading.changes.map((c) => (
                     <label key={c.key} className={row}>
                       <input type="checkbox" className="mt-0.5" checked={fieldOn.has(c.key)} onChange={(e) => setFieldOn((s) => { const n = new Set(s); if (e.target.checked) n.add(c.key); else n.delete(c.key); return n; })} />
                       <span className="flex-1"><b>{c.label}</b>: {c.current !== null && c.current !== "" ? <><s className="text-slate-400">{String(c.current)}</s> → </> : null}<b>{String(c.next)}</b></span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${c.kind === "new" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>{c.kind === "new" ? "New" : "Changes"}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${c.kind === "new" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>{c.kind === "new" ? "New" : "Changes"}</span>
                     </label>
                   ))}
                 </div>
@@ -169,7 +169,7 @@ export default function CallTranscriptPanel({ candidateId }: { candidateId: stri
 
               {(segEntries.length > 0 || ratingEntries.length > 0 || p.messageOk !== null || p.openness || p.selling || (p.interest && roleId)) && (
                 <div className="space-y-1.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Also from the call</p>
+                  <p className="text-[12px] font-medium uppercase tracking-wide text-slate-500">Also from the call</p>
                   {segEntries.length > 0 && (
                     <label className={row}><input type="checkbox" className="mt-0.5" checked={on.segment} onChange={(e) => setOn({ ...on, segment: e.target.checked })} />
                       <span><b>Quick answers:</b> {segEntries.map(([k, v]) => `${SEGMENT_LABEL[k] ?? k}: ${show(v)}`).join(" · ")}</span></label>
@@ -209,14 +209,14 @@ export default function CallTranscriptPanel({ candidateId }: { candidateId: stri
               )}
 
               <div className="flex items-center gap-2 pt-1">
-                <button onClick={apply} disabled={busy !== null} className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[12.5px] font-medium text-white hover:bg-slate-800 disabled:opacity-60">
+                <button onClick={apply} disabled={busy !== null} className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[13px] font-medium text-white hover:bg-slate-800 disabled:opacity-60">
                   {busy === "apply" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} {busy === "apply" ? "Saving…" : "Apply to profile"}
                 </button>
-                <button onClick={() => setReading(null)} disabled={busy !== null} className="text-[12.5px] text-slate-500 hover:text-slate-800">Back</button>
+                <button onClick={() => setReading(null)} disabled={busy !== null} className="text-[13px] text-slate-500 hover:text-slate-800">Back</button>
               </div>
             </div>
           )}
-          {error && <p className="text-[12.5px] text-red-600">{error}</p>}
+          {error && <p className="text-[13px] text-red-600">{error}</p>}
         </div>
       )}
     </div>

@@ -36,7 +36,7 @@ export function TourTooltip({
     <div className="relative inline-block">
       {children}
       <div
-        className={`absolute z-50 left-0 w-64 rounded-ros-lg bg-slate-900 text-white p-3 shadow-xl animate-in fade-in slide-in-from-top-1 duration-200 ${
+        className={`absolute z-50 left-0 w-64 rounded-ros-lg bg-teal-600 text-white p-3 shadow-xl animate-in fade-in slide-in-from-top-1 duration-200 ${
           side === "bottom" ? "top-full mt-2" : "bottom-full mb-2"
         }`}
       >
@@ -44,7 +44,7 @@ export function TourTooltip({
           className={`absolute left-4 w-2 h-2 bg-slate-900 rotate-45 ${side === "bottom" ? "-top-1" : "-bottom-1"}`}
         />
         <div className="flex items-start justify-between gap-2">
-          <p className="text-[12.5px] font-semibold">{title}</p>
+          <p className="text-[13px] font-semibold">{title}</p>
           <button
             onClick={dismiss}
             className="text-slate-400 hover:text-white shrink-0 -mt-0.5 -mr-0.5"

@@ -64,25 +64,25 @@ export default function Board({ roles, candidates }: { roles: BoardRole[]; candi
   return (
     <div>
       <div className="sticky top-16 z-20 -mx-1 mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
-        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-200">{sel.size} selected</span>
-        <button disabled={!sel.size || busy} onClick={toBest} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-40">
+        <span className="text-[14px] font-medium text-slate-700 dark:text-slate-200">{sel.size} selected</span>
+        <button disabled={!sel.size || busy} onClick={toBest} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-40">
           Add to their best-fit role
         </button>
-        <button disabled={!sel.size || busy} onClick={toAll} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
+        <button disabled={!sel.size || busy} onClick={toAll} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
           Add to every role they fit
         </button>
         {ask ? (
-          <Link href={`/agent?ask=${encodeURIComponent(ask)}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
+          <Link href={`/agent?ask=${encodeURIComponent(ask)}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
             Draft messages (you approve first)
           </Link>
         ) : null}
-        {msg ? <span className="text-[13px] text-slate-600 dark:text-slate-300">{msg}</span> : null}
+        {msg ? <span className="text-[14px] text-slate-600 dark:text-slate-300">{msg}</span> : null}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <table className="w-full min-w-[760px] text-left text-[13px]">
+        <table className="w-full min-w-[760px] text-left text-[14px]">
           <thead>
-            <tr className="border-b border-slate-200 text-[12px] text-slate-500 dark:border-slate-700">
+            <tr className="border-b border-slate-200 text-[13px] text-slate-500 dark:border-slate-700">
               <th className="w-8 px-3 py-2" />
               <th className="px-3 py-2">Candidate</th>
               {roles.map((r) => (
@@ -91,7 +91,7 @@ export default function Board({ roles, candidates }: { roles: BoardRole[]; candi
                     {r.title}
                   </Link>
                   <span className="block font-normal text-slate-500">{[r.client, r.city].filter(Boolean).join(" · ")}</span>
-                  <button disabled={!sel.size || busy} onClick={() => toRole(r.id)} className="mt-1 text-[12px] font-medium text-teal-700 underline disabled:opacity-40 dark:text-teal-300">
+                  <button disabled={!sel.size || busy} onClick={() => toRole(r.id)} className="mt-1 text-[13px] font-medium text-teal-700 underline disabled:opacity-40 dark:text-teal-300">
                     Add selected
                   </button>
                 </th>
@@ -116,13 +116,13 @@ export default function Board({ roles, candidates }: { roles: BoardRole[]; candi
                     {c.name}
                   </Link>
                   <span className="block text-slate-500">{c.headline}</span>
-                  <span className="block text-[12px] text-slate-400">{[c.city, c.years != null ? `${c.years} yrs` : "", c.ctc, c.notice].filter(Boolean).join(" · ")}</span>
+                  <span className="block text-[13px] text-slate-400">{[c.city, c.years != null ? `${c.years} yrs` : "", c.ctc, c.notice].filter(Boolean).join(" · ")}</span>
                   {c.hasCv ? (
                     <div className="mt-1.5 w-28">
                       <LazyCvPreview candidateId={c.id} name={c.name} />
                     </div>
                   ) : (
-                    <span className="mt-1.5 block text-[12px] text-slate-400">No CV on file</span>
+                    <span className="mt-1.5 block text-[13px] text-slate-400">No CV on file</span>
                   )}
                 </td>
                 {roles.map((r) => {
@@ -131,11 +131,11 @@ export default function Board({ roles, candidates }: { roles: BoardRole[]; candi
                   const added = done[`${c.id}:${r.id}`] || cell.inPipelineStage;
                   return (
                     <td key={r.id} className="px-3 py-2.5">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold ring-1 ${FIT[cell.fit]}`}>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-semibold ring-1 ${FIT[cell.fit]}`}>
                         {cell.score}
                         {c.bestRoleId === r.id ? <span title="Best fit">★</span> : null}
                       </span>
-                      {added ? <span className="mt-1 block text-[12px] text-slate-500">{cell.inPipelineStage ? `In pipeline: ${cell.inPipelineStage.replace(/_/g, " ")}` : "Added"}</span> : null}
+                      {added ? <span className="mt-1 block text-[13px] text-slate-500">{cell.inPipelineStage ? `In pipeline: ${cell.inPipelineStage.replace(/_/g, " ")}` : "Added"}</span> : null}
                     </td>
                   );
                 })}

@@ -192,7 +192,7 @@ export default async function CallsFlaggedPage({
   return (
     <div className="max-w-[1400px] mx-auto px-5 py-8">
       <h1 className="ros-page-title mb-1">{heading}</h1>
-      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
+      <p className="text-[14px] text-slate-500 dark:text-slate-400 mb-4">
         {showAll
           ? "Every call ever flagged here -- open and closed, with the outcome recorded on each -- for reviewing how they were handled."
           : "Open call flags across every mandate -- record the outcome right here, same as the mandate pipeline."}
@@ -208,9 +208,9 @@ export default async function CallsFlaggedPage({
             it guarantees the row set actually matches the tab shown. */}
         <a
           href={tabHref("open")}
-          className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
+          className={`px-3 py-1.5 rounded-full text-[13px] font-medium ${
             !showAll
-              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+              ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800"
               : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           }`}
         >
@@ -218,9 +218,9 @@ export default async function CallsFlaggedPage({
         </a>
         <a
           href={tabHref("all")}
-          className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium ${
+          className={`px-3 py-1.5 rounded-full text-[13px] font-medium ${
             showAll
-              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+              ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800"
               : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           }`}
         >

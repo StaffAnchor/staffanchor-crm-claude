@@ -92,7 +92,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
     return (
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-8 text-center">
         <Users className="w-6 h-6 text-slate-300 mx-auto mb-2" />
-        <p className="text-[13px] text-slate-500">
+        <p className="text-[14px] text-slate-500">
           No candidates in this group yet. Add some from the{" "}
           <Link href="/candidates" className="text-teal-600 underline">
             Candidates table
@@ -104,7 +104,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
   }
 
   const selectClass =
-    "text-[12px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-400";
+    "text-[13px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-400";
 
   return (
     <div>
@@ -113,7 +113,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search name, email, mobile, employer..."
-          className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-teal-400"
+          className="text-[13px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-teal-400"
         />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClass}>
           <option value="">All statuses</option>
@@ -150,7 +150,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
           value={minExp}
           onChange={(e) => setMinExp(e.target.value)}
           placeholder="Min exp (yrs)"
-          className="text-[12.5px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-28 focus:outline-none focus:ring-1 focus:ring-teal-400"
+          className="text-[13px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-28 focus:outline-none focus:ring-1 focus:ring-teal-400"
         />
         <span className="text-xs text-slate-400">
           {filtered.length} of {members.length}
@@ -158,8 +158,8 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg shadow-ros-sm overflow-x-auto">
-        <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        <table className="w-full text-[14px]">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-medium uppercase tracking-wide">
             <tr>
               <th className="text-left px-4 py-2.5 whitespace-nowrap">Name</th>
               <th className="text-left px-3 py-2.5 whitespace-nowrap">Email</th>
@@ -203,7 +203,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   <ResumeCell candidateId={m.id} resumeFileUrl={m.resume_file_url} resumeSignedUrl={m.resume_signed_url} />
                 </td>
-                <td className="px-3 py-2.5 text-slate-400 text-[12px] whitespace-nowrap">{new Date(m.addedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</td>
+                <td className="px-3 py-2.5 text-slate-400 text-[13px] whitespace-nowrap">{new Date(m.addedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</td>
                 <td className="px-3 py-2.5">
                   <button
                     type="button"
@@ -218,7 +218,7 @@ export default function GroupMembersView({ groupId, members }: { groupId: string
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={15} className="px-4 py-6 text-center text-slate-400 text-[12.5px]">
+                <td colSpan={15} className="px-4 py-6 text-center text-slate-400 text-[13px]">
                   No candidates match these filters.
                 </td>
               </tr>

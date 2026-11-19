@@ -88,7 +88,7 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
               {i > 0 && <span className="h-px w-3 bg-slate-200 dark:bg-slate-700" aria-hidden />}
               <span
                 title={s.line}
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] ${
                   s.key === next
                     ? "bg-teal-50 font-semibold text-teal-800 ring-1 ring-teal-300 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800"
                     : s.done
@@ -104,15 +104,15 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
           <span className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap">
             {nextStep.cta &&
               (nextStep.href.startsWith("#") ? (
-                <a href={nextStep.href} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-700">
+                <a href={nextStep.href} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-700">
                   {nextStep.cta} <ArrowRight className="h-3 w-3" />
                 </a>
               ) : (
-                <Link href={nextStep.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-700">
+                <Link href={nextStep.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-700">
                   {nextStep.cta} <ArrowRight className="h-3 w-3" />
                 </Link>
               ))}
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[13px] font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
               Guide <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
             </span>
           </span>
@@ -122,26 +122,26 @@ export default async function RolePlaybook({ mandateId }: { mandateId: string })
             const isNext = s.key === next;
             const Cta = s.cta ? (
               s.href.startsWith("#") ? (
-                <a href={s.href} className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
+                <a href={s.href} className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[13px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
                   {s.cta} <ArrowRight className="h-3 w-3" />
                 </a>
               ) : (
-                <Link href={s.href} target="_blank" rel="noopener noreferrer" className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
+                <Link href={s.href} target="_blank" rel="noopener noreferrer" className={`mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[13px] font-semibold ${isNext ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"}`}>
                   {s.cta} <ArrowRight className="h-3 w-3" />
                 </Link>
               )
             ) : null;
             return (
               <div key={s.key} className={`rounded-lg border px-3 py-2.5 ${isNext ? "border-teal-400 bg-teal-50/60 dark:border-teal-700 dark:bg-teal-950/20" : "border-slate-100 dark:border-slate-800"}`}>
-                <p className="flex items-center justify-between text-[12px] font-semibold text-slate-600 dark:text-slate-300">
+                <p className="flex items-center justify-between text-[13px] font-semibold text-slate-600 dark:text-slate-300">
                   {s.title}
                   {s.done && <Check className="h-3.5 w-3.5 text-emerald-600" aria-label="done" />}
                 </p>
                 <p className="mt-1 flex items-baseline gap-1.5">
                   <span className="text-[22px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{s.big}</span>
-                  <span className="text-[12px] text-slate-500">{s.label}</span>
+                  <span className="text-[13px] text-slate-500">{s.label}</span>
                 </p>
-                <p className="mt-1 text-[11.5px] leading-4 text-slate-500 dark:text-slate-400">{s.line}</p>
+                <p className="mt-1 text-[12px] leading-4 text-slate-500 dark:text-slate-400">{s.line}</p>
                 {Cta}
                 {s.key === "reach" && p.nudgeable > 0 && <RoleNudgeButton mandateId={mandateId} count={p.nudgeable} />}
               </div>

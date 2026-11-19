@@ -76,30 +76,30 @@ export default function ListActions({ listId, name, canEdit, mandates, rows }: {
       <div className="flex flex-wrap items-center justify-end gap-2">
         {editing ? (
           <>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && rename()} maxLength={80} className="w-56 rounded-full border border-slate-300 px-3 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
-            <button onClick={rename} disabled={busy !== null} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white">
+            <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && rename()} maxLength={80} className="w-56 rounded-full border border-slate-300 px-3 py-1 text-[14px] dark:border-slate-700 dark:bg-slate-900" />
+            <button onClick={rename} disabled={busy !== null} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white">
               {busy === "rename" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save name
             </button>
           </>
         ) : (
           canEdit && (
-            <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700">
+            <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[13px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700">
               <Pencil className="h-3 w-3" /> Rename
             </button>
           )
         )}
-        <button onClick={exportCsv} disabled={rows.length === 0} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:ring-slate-700">
+        <button onClick={exportCsv} disabled={rows.length === 0} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[13px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:ring-slate-700">
           <Download className="h-3 w-3" /> Export CSV
         </button>
         {canEdit && (
-          <button onClick={remove} disabled={busy !== null} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12.5px] font-medium text-rose-700 ring-1 ring-rose-200 hover:bg-rose-50 disabled:opacity-50">
+          <button onClick={remove} disabled={busy !== null} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[13px] font-medium text-rose-700 ring-1 ring-rose-200 hover:bg-rose-50 disabled:opacity-50">
             {busy === "delete" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />} Delete list
           </button>
         )}
       </div>
       {mandates.length > 0 && rows.length > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <select value={mandate} onChange={(e) => setMandate(e.target.value)} className="max-w-[240px] rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[12.5px] dark:border-slate-700">
+          <select value={mandate} onChange={(e) => setMandate(e.target.value)} className="max-w-[240px] rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[13px] dark:border-slate-700">
             <option value="">Add everyone to a mandate…</option>
             {mandates.map((m) => (
               <option key={m.id} value={m.id}>
@@ -108,12 +108,12 @@ export default function ListActions({ listId, name, canEdit, mandates, rows }: {
               </option>
             ))}
           </select>
-          <button onClick={addAll} disabled={!mandate || busy !== null} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+          <button onClick={addAll} disabled={!mandate || busy !== null} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
             {busy === "mandate" && <Loader2 className="h-3 w-3 animate-spin" />} Add all ({rows.length})
           </button>
         </div>
       )}
-      {message && <p className="text-[12.5px] text-slate-600 dark:text-slate-300">{message}</p>}
+      {message && <p className="text-[13px] text-slate-600 dark:text-slate-300">{message}</p>}
     </div>
   );
 }

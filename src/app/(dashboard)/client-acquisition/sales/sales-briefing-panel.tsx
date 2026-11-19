@@ -128,7 +128,7 @@ export default function SalesBriefingPanel({
       >
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-teal-500" />
-          <h2 className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">Today&apos;s Briefing</h2>
+          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Today&apos;s Briefing</h2>
           {open.length > 0 && (
             <Badge tone="accent" size="sm">
               {open.length} to work
@@ -140,9 +140,9 @@ export default function SalesBriefingPanel({
 
       {!collapsed && (
         <div className="px-5 pb-4 border-t border-slate-100 dark:border-slate-800 pt-3">
-          {fetchError && <p className="text-[12px] text-rose-500">Couldn&apos;t load briefing: {fetchError}</p>}
+          {fetchError && <p className="text-[13px] text-rose-500">Couldn&apos;t load briefing: {fetchError}</p>}
           {!fetchError && open.length === 0 && (
-            <p className="text-[12.5px] text-slate-400">
+            <p className="text-[13px] text-slate-400">
               Nothing needs your attention right now — follow-ups, referral asks, and client check-ins will show up here as they come due.
             </p>
           )}
@@ -160,7 +160,7 @@ export default function SalesBriefingPanel({
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200">
+                      <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200">
                         {item.lead_id ? (
                           <Link href={`/client-acquisition/sales/${item.lead_id}`} className="hover:text-teal-600 transition-colors duration-200 ease-ros">
                             {item.title}

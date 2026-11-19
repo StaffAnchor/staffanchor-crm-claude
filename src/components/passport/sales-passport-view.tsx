@@ -69,7 +69,7 @@ function Stat({ label, value, title }: { label: string; value?: string | number 
   return (
     <div className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2" title={title}>
       <p className="text-xs text-slate-400 uppercase tracking-wide">{label}</p>
-      <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
+      <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value || "—"}</p>
     </div>
   );
 }
@@ -167,13 +167,13 @@ export function SalesPassportView(props: SalesPassportProps) {
       <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-teal-600">Sales Passport</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-teal-600">Sales Passport</p>
             <h1 className="text-[19px] font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{fullName}</h1>
-            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
               {currentJobTitle}
               {currentEmployer ? ` at ${currentEmployer}` : ""}
             </p>
-            <p className="text-[12px] text-slate-400 mt-0.5">
+            <p className="text-[13px] text-slate-400 mt-0.5">
               {currentLocation ?? "—"} · {formatExperience(totalExperienceYears)} experience
             </p>
           </div>
@@ -246,7 +246,7 @@ export function SalesPassportView(props: SalesPassportProps) {
       {/* --- Recruiter-only: assessment scores + recommendation --- */}
       {viewer === "recruiter" && ((scores && scores.length > 0) || (redFlags && redFlags.length > 0)) && (
         <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
-          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Recruiter assessment</p>
+          <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Recruiter assessment</p>
           <p className="text-xs text-slate-400 mb-4">Internal only, never shown to clients.</p>
           {scores && scores.length > 0 && (
             <div className="flex items-center gap-6 mb-4">
@@ -276,12 +276,12 @@ export function SalesPassportView(props: SalesPassportProps) {
       {/* --- Sales identity (motion, persona, segment data) --- */}
       {segmentEntries.length > 0 && (
         <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
-          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-3">Sales identity</p>
+          <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-3">Sales identity</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
             {segmentEntries.map(([label, v]) => (
               <div key={label}>
                 <p className="text-xs text-slate-400">{label}</p>
-                <p className="text-[13px] text-slate-700 dark:text-slate-300">
+                <p className="text-[14px] text-slate-700 dark:text-slate-300">
                   {Array.isArray(v) ? v.join(", ") : String(v)}
                 </p>
               </div>
@@ -293,7 +293,7 @@ export function SalesPassportView(props: SalesPassportProps) {
       {/* --- Current role: quarterly target vs achievement --- */}
       {hasQuarterlyGrid && currentRole && (
         <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
-          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-3">
+          <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-3">
             Current role performance
             {currentRole.target_currency ? ` (${currentRole.target_currency})` : ""}
           </p>
@@ -305,7 +305,7 @@ export function SalesPassportView(props: SalesPassportProps) {
               return (
                 <div key={q} className="rounded-ros-md bg-slate-50 dark:bg-slate-800/50 px-2 py-2.5">
                   <p className="text-xs text-slate-400 uppercase tracking-wide">{q.toUpperCase()}</p>
-                  <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mt-1">
+                  <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mt-1">
                     {achieved || "—"}
                   </p>
                   <p className="text-xs text-slate-400">of {target || "—"} target</p>
@@ -318,13 +318,13 @@ export function SalesPassportView(props: SalesPassportProps) {
               {currentRole.best_win && (
                 <div>
                   <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide mb-1">Best win</p>
-                  <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{currentRole.best_win}</p>
+                  <p className="text-[14px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{currentRole.best_win}</p>
                 </div>
               )}
               {currentRole.tough_loss && (
                 <div>
                   <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">Tough loss</p>
-                  <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{currentRole.tough_loss}</p>
+                  <p className="text-[14px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{currentRole.tough_loss}</p>
                 </div>
               )}
             </div>
@@ -334,7 +334,7 @@ export function SalesPassportView(props: SalesPassportProps) {
               {revenueDetailFields.map(([label, value]) => (
                 <div key={label}>
                   <p className="text-xs text-slate-400">{label}</p>
-                  <p className="text-[13px] text-slate-700 dark:text-slate-300">{value}</p>
+                  <p className="text-[14px] text-slate-700 dark:text-slate-300">{value}</p>
                 </div>
               ))}
             </div>
@@ -346,7 +346,7 @@ export function SalesPassportView(props: SalesPassportProps) {
       {timelineEntries.length > 0 && (
         <div className="rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Revenue Journey</p>
+            <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Revenue Journey</p>
             {viewer === "recruiter" && stabilityLabel && (
               <Badge tone={stabilityLabel === "Stable" ? "success" : stabilityLabel === "Some Movement" ? "warning" : "danger"} size="sm">
                 {stabilityLabel}
@@ -365,7 +365,7 @@ export function SalesPassportView(props: SalesPassportProps) {
 
       {timelineEntries.length === 0 && (
         <div className="rounded-ros-lg border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center">
-          <p className="text-[13px] text-slate-400">No career timeline entries yet.</p>
+          <p className="text-[14px] text-slate-400">No career timeline entries yet.</p>
         </div>
       )}
     </div>

@@ -40,7 +40,7 @@ export default function UnarchiveMandateButton({ mandateId }: { mandateId: strin
       <button
         onClick={handleUnarchive}
         disabled={saving}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg px-3 py-1.5 disabled:opacity-60 transition-colors"
+        className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg px-3 py-1.5 disabled:opacity-60 transition-colors"
       >
         {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArchiveRestore className="w-3 h-3" />}
         Reactivate mandate

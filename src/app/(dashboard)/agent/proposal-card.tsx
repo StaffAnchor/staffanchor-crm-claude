@@ -51,31 +51,31 @@ export default function ProposalCard({ p: initial, onChange }: { p: Proposal; on
   }
 
   const tone = p.status === "approved" ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-900/10" : p.status === "rejected" ? "border-slate-200 bg-slate-50 opacity-70 dark:border-slate-700 dark:bg-slate-900" : p.status === "failed" ? "border-red-300 bg-red-50/60 dark:border-red-800 dark:bg-red-900/10" : "border-teal-300 bg-white dark:border-teal-800 dark:bg-slate-900";
-  const input = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900";
+  const input = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900";
 
   return (
     <div className={`my-2 rounded-xl border p-4 ${tone}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-semibold text-teal-800 dark:bg-teal-900/40 dark:text-teal-200">{LABEL[p.kind] ?? p.kind}</span>
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{p.status === "pending" ? "Waiting for you" : p.status === "approved" ? "Done" : p.status === "rejected" ? "Rejected" : "Didn't go through"}</span>
+        <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[12px] font-semibold text-teal-800 dark:bg-teal-900/40 dark:text-teal-200">{LABEL[p.kind] ?? p.kind}</span>
+        <span className="text-[12px] font-medium uppercase tracking-wide text-slate-400">{p.status === "pending" ? "Waiting for you" : p.status === "approved" ? "Done" : p.status === "rejected" ? "Rejected" : "Didn't go through"}</span>
       </div>
       <p className="mt-1.5 text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{p.title}</p>
-      {p.summary && <p className="mt-0.5 text-[13px] text-slate-600 dark:text-slate-300">{p.summary}</p>}
+      {p.summary && <p className="mt-0.5 text-[14px] text-slate-600 dark:text-slate-300">{p.summary}</p>}
 
       {count > 0 && (
         <p className="mt-2 flex flex-wrap gap-1.5">
           {prev.recipients!.slice(0, 20).map((r) => (
-            <Link key={r.id} href={p.kind === "email" && p.payload.to === "client_contact" ? "#" : `/candidates/${r.id}`} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[12px] text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200">{r.name}</Link>
+            <Link key={r.id} href={p.kind === "email" && p.payload.to === "client_contact" ? "#" : `/candidates/${r.id}`} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[13px] text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200">{r.name}</Link>
           ))}
         </p>
       )}
       {(prev.skipped?.length ?? 0) > 0 && (
-        <p className="mt-1.5 text-[12px] text-amber-800 dark:text-amber-300">Left out: {prev.skipped!.map((s) => `${s.name} (${s.why})`).join("; ")}</p>
+        <p className="mt-1.5 text-[13px] text-amber-800 dark:text-amber-300">Left out: {prev.skipped!.map((s) => `${s.name} (${s.why})`).join("; ")}</p>
       )}
 
       {prev.fields && (
-        <dl className="mt-2 grid gap-x-4 gap-y-1 text-[13px] sm:grid-cols-2">
-          {Object.entries(prev.fields).filter(([, v]) => v).map(([k, v]) => <div key={k}><dt className="text-[11px] text-slate-400">{k}</dt><dd className="text-slate-800 dark:text-slate-200">{v}</dd></div>)}
+        <dl className="mt-2 grid gap-x-4 gap-y-1 text-[14px] sm:grid-cols-2">
+          {Object.entries(prev.fields).filter(([, v]) => v).map(([k, v]) => <div key={k}><dt className="text-[12px] text-slate-400">{k}</dt><dd className="text-slate-800 dark:text-slate-200">{v}</dd></div>)}
         </dl>
       )}
 
@@ -87,25 +87,25 @@ export default function ProposalCard({ p: initial, onChange }: { p: Proposal; on
       ) : (
         (prev.messages?.length ?? 0) > 0 && (
           <div className="mt-2 space-y-1.5">
-            {prev.messages!.slice(0, 2).map((m, i) => <p key={i} className="whitespace-pre-wrap rounded-lg bg-slate-50 px-3 py-2 text-[13px] text-slate-800 dark:bg-slate-800/60 dark:text-slate-200">{m}</p>)}
-            {prev.messages!.length > 2 && <p className="text-[12px] text-slate-400">and {prev.messages!.length - 2} more like it, with each person&apos;s name</p>}
+            {prev.messages!.slice(0, 2).map((m, i) => <p key={i} className="whitespace-pre-wrap rounded-lg bg-slate-50 px-3 py-2 text-[14px] text-slate-800 dark:bg-slate-800/60 dark:text-slate-200">{m}</p>)}
+            {prev.messages!.length > 2 && <p className="text-[13px] text-slate-400">and {prev.messages!.length - 2} more like it, with each person&apos;s name</p>}
           </div>
         )
       )}
-      {prev.note && <p className="mt-1.5 text-[12px] text-slate-500">{prev.note}</p>}
+      {prev.note && <p className="mt-1.5 text-[13px] text-slate-500">{prev.note}</p>}
 
-      {p.result?.message && <p className={`mt-2 text-[13px] font-medium ${p.result.ok ? "text-emerald-800 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}>{p.result.message}</p>}
-      {p.status === "failed" && !p.result?.message && p.error && <p className="mt-2 text-[13px] font-medium text-red-700">{p.error}</p>}
-      {p.result?.links?.map((l) => <Link key={l.href} href={l.href} className="mr-3 mt-1 inline-block text-[13px] font-medium text-teal-700 underline dark:text-teal-300">{l.label}</Link>)}
-      {err && <p className="mt-2 text-[13px] text-red-600">{err}</p>}
+      {p.result?.message && <p className={`mt-2 text-[14px] font-medium ${p.result.ok ? "text-emerald-800 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}>{p.result.message}</p>}
+      {p.status === "failed" && !p.result?.message && p.error && <p className="mt-2 text-[14px] font-medium text-red-700">{p.error}</p>}
+      {p.result?.links?.map((l) => <Link key={l.href} href={l.href} className="mr-3 mt-1 inline-block text-[14px] font-medium text-teal-700 underline dark:text-teal-300">{l.label}</Link>)}
+      {err && <p className="mt-2 text-[14px] text-red-600">{err}</p>}
 
       {(p.status === "pending" || p.status === "failed") && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button onClick={() => decide("approve")} disabled={!!busy} className="rounded-lg bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
+          <button onClick={() => decide("approve")} disabled={!!busy} className="rounded-lg bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
             {busy === "approve" ? "Working…" : p.status === "failed" ? "Try again" : `${ACTION[p.kind] ?? "Approve"}${count > 1 ? ` (${count})` : ""}`}
           </button>
-          <button onClick={() => decide("reject")} disabled={!!busy} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">Reject</button>
-          {editable && <span className="text-[12px] text-slate-400">You can edit the text above first.</span>}
+          <button onClick={() => decide("reject")} disabled={!!busy} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">Reject</button>
+          {editable && <span className="text-[13px] text-slate-400">You can edit the text above first.</span>}
         </div>
       )}
     </div>

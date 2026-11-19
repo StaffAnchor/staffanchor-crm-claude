@@ -133,7 +133,7 @@ export default async function TriagePage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="max-w-[820px] mx-auto px-5 py-6">
-      <Link href={`/mandates/${id}`} className="inline-flex items-center gap-1.5 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 mb-3">
+      <Link href={`/mandates/${id}`} className="inline-flex items-center gap-1.5 text-[14px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 mb-3">
         <ArrowLeft className="w-3.5 h-3.5" aria-hidden /> Back to the role
       </Link>
       <TriageDeck

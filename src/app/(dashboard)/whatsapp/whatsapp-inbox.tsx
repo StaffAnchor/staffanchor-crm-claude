@@ -277,7 +277,7 @@ export default function WhatsAppInbox({
               }}
               className={`rounded-xl border px-4 py-3 text-left transition ${tone.tile} ${on ? "ring-2 ring-slate-900/70 dark:ring-slate-100/70" : "hover:shadow-sm"}`}
             >
-              <span className="flex items-center gap-2 text-[12px] font-medium text-slate-600 dark:text-slate-300">
+              <span className="flex items-center gap-2 text-[13px] font-medium text-slate-600 dark:text-slate-300">
                 <span className={`h-2 w-2 rounded-full ${tone.dot}`} /> {meta.label}
               </span>
               <span className="mt-1 block text-[26px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{counts[st]}</span>
@@ -285,11 +285,11 @@ export default function WhatsAppInbox({
           );
         })}
       </div>
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-[13px]">
         <span className="text-slate-500">{view === "all" ? "Every open conversation, newest first." : STATE_META[view].blurb}</span>
         <span className="ml-auto flex flex-wrap items-center gap-1">
           {(["all", "jobseeker", "employer", "other"] as Who[]).map((w) => (
-            <button key={w} type="button" onClick={() => { setWho(w); setSelected(null); }} className={`rounded-full border px-2.5 py-1 font-medium ${who === w ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"}`}>
+            <button key={w} type="button" onClick={() => { setWho(w); setSelected(null); }} className={`rounded-full border px-2.5 py-1 font-medium ${who === w ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"}`}>
               {w === "all" ? "Everyone" : w === "jobseeker" ? "Jobseekers" : w === "employer" ? "Employers" : "Other"} <span className="opacity-60">{whoCounts[w]}</span>
             </button>
           ))}
@@ -305,8 +305,8 @@ export default function WhatsAppInbox({
       {conversations.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
           <MessageCircle className="mx-auto h-8 w-8 text-slate-300" />
-          <p className="mt-3 text-[14px] font-medium text-slate-700 dark:text-slate-200">No WhatsApp conversations yet</p>
-          <p className="mx-auto mt-1 max-w-md text-[12.5px] text-slate-400">When someone taps &ldquo;Message us on WhatsApp&rdquo; on the jobs site, the website or an email, their message appears here.</p>
+          <p className="mt-3 text-[15px] font-medium text-slate-700 dark:text-slate-200">No WhatsApp conversations yet</p>
+          <p className="mx-auto mt-1 max-w-md text-[13px] text-slate-400">When someone taps &ldquo;Message us on WhatsApp&rdquo; on the jobs site, the website or an email, their message appears here.</p>
         </div>
       ) : (
         <div className="grid min-h-[560px] gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -314,8 +314,8 @@ export default function WhatsAppInbox({
             {shown.length === 0 && (
               <div className="px-4 py-10 text-center">
                 <Check className="mx-auto h-6 w-6 text-emerald-500" />
-                <p className="mt-2 text-[13px] font-medium text-slate-700 dark:text-slate-200">{view === "needs_you" ? "You're all caught up" : "Nothing here"}</p>
-                <p className="mt-0.5 text-[12px] text-slate-400">{view === "needs_you" ? "No one is waiting on a person right now." : "Try another view above."}</p>
+                <p className="mt-2 text-[14px] font-medium text-slate-700 dark:text-slate-200">{view === "needs_you" ? "You're all caught up" : "Nothing here"}</p>
+                <p className="mt-0.5 text-[13px] text-slate-400">{view === "needs_you" ? "No one is waiting on a person right now." : "Try another view above."}</p>
               </div>
             )}
             {shown.map((c) => {
@@ -331,16 +331,16 @@ export default function WhatsAppInbox({
                   }}
                   className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 dark:border-slate-800 ${isActive ? "bg-slate-50 dark:bg-slate-800/60" : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"}`}
                 >
-                  <span className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[12px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  <span className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[13px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                     {initials}
                     {st.state === "needs_you" && <span className={`absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 ${st.urgency === "late" ? "bg-rose-500" : st.urgency === "soon" ? "bg-amber-500" : "bg-emerald-500"}`} />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-2">
-                      <span className={`truncate text-[13.5px] ${st.state === "needs_you" ? "font-semibold" : "font-medium"} text-slate-900 dark:text-slate-100`}>{nameOf(c)}</span>
+                      <span className={`truncate text-[14px] ${st.state === "needs_you" ? "font-semibold" : "font-medium"} text-slate-900 dark:text-slate-100`}>{nameOf(c)}</span>
                       <span className="shrink-0 text-xs text-slate-400" suppressHydrationWarning>{ago(Math.max(0, now - new Date(c.lastAt).getTime()))}</span>
                     </span>
-                    <span className={`mt-0.5 block truncate text-[12px] ${st.state === "needs_you" ? "text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{st.why}</span>
+                    <span className={`mt-0.5 block truncate text-[13px] ${st.state === "needs_you" ? "text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{st.why}</span>
                     {st.state !== "needs_you" && (() => {
                       const last = c.messages[c.messages.length - 1];
                       const text = (last.body_preview ?? "").replace(/\s+/g, " ").trim();
@@ -365,9 +365,9 @@ export default function WhatsAppInbox({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                 <div className="min-w-0">
                   <div className="truncate text-[14.5px] font-semibold text-slate-900 dark:text-slate-100">{nameOf(active)}</div>
-                  <div className="text-[12px] text-slate-400">{formatPhone(active.phone)} · {KIND_LABEL[info?.kind ?? "unsorted"]}</div>
+                  <div className="text-[13px] text-slate-400">{formatPhone(active.phone)} · {KIND_LABEL[info?.kind ?? "unsorted"]}</div>
                 </div>
-                <div className="flex items-center gap-3 text-[12px]">
+                <div className="flex items-center gap-3 text-[13px]">
                   {active.candidateId ? (
                     <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${active.candidateId}`} className="font-medium text-teal-600 hover:underline">
                       Open candidate
@@ -385,10 +385,10 @@ export default function WhatsAppInbox({
                     <summary className="flex cursor-pointer list-none items-center rounded-full p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Manage this chat">
                       <MoreHorizontal className="h-4 w-4" />
                     </summary>
-                    <div className="absolute right-0 z-30 mt-1 w-64 space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-[12px] shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                    <div className="absolute right-0 z-30 mt-1 w-64 space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-[13px] shadow-lg dark:border-slate-700 dark:bg-slate-900">
                       <label className="flex items-center justify-between gap-2 text-slate-500">
                         Type
-                        <select value={info?.kind ?? "unsorted"} onChange={(e) => control("set_kind", e.target.value)} className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] dark:border-slate-700 dark:bg-slate-900">
+                        <select value={info?.kind ?? "unsorted"} onChange={(e) => control("set_kind", e.target.value)} className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[13px] dark:border-slate-700 dark:bg-slate-900">
                           {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
                             <option key={k} value={k}>{KIND_LABEL[k]}</option>
                           ))}
@@ -423,7 +423,7 @@ export default function WhatsAppInbox({
               </div>
 
               {/* Why this chat is here, and the one thing to do. */}
-              <div className={`flex flex-wrap items-center gap-3 border-b px-4 py-2.5 text-[12.5px] ${TONE[STATE_META[status.state].tone].banner}`}>
+              <div className={`flex flex-wrap items-center gap-3 border-b px-4 py-2.5 text-[13px] ${TONE[STATE_META[status.state].tone].banner}`}>
                 <span className="font-semibold">{STATE_META[status.state].label}</span>
                 <span className="min-w-0 flex-1">{status.why}</span>
                 {info?.needsHuman && (
@@ -442,7 +442,7 @@ export default function WhatsAppInbox({
               </div>
 
               {!active.candidateId && suggestions[active.key] && (
-                <div className="flex flex-wrap items-center gap-2 border-b border-amber-100 bg-amber-50/70 px-4 py-2 text-[12.5px] dark:border-amber-900 dark:bg-amber-950/20">
+                <div className="flex flex-wrap items-center gap-2 border-b border-amber-100 bg-amber-50/70 px-4 py-2 text-[13px] dark:border-amber-900 dark:bg-amber-950/20">
                   <span className="text-amber-900 dark:text-amber-200">
                     Possible match: <strong>{suggestions[active.key].name}</strong>
                     {suggestions[active.key].phone ? ` (profile number ${formatPhone(suggestions[active.key].phone)})` : ""}. Same person, different number?
@@ -465,16 +465,16 @@ export default function WhatsAppInbox({
                         setLinking(false);
                       }
                     }}
-                    className="rounded-full bg-amber-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
+                    className="rounded-full bg-amber-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
                   >
                     Link this chat and save the number
                   </button>
-                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${suggestions[active.key].candidateId}`} className="text-[12px] font-medium text-teal-600 hover:underline">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${suggestions[active.key].candidateId}`} className="text-[13px] font-medium text-teal-600 hover:underline">
                     Open profile
                   </Link>
                 </div>
               )}
-              {linkMessage && <p className="border-b border-slate-100 bg-emerald-50 px-4 py-1.5 text-[12px] text-emerald-800">{linkMessage}</p>}
+              {linkMessage && <p className="border-b border-slate-100 bg-emerald-50 px-4 py-1.5 text-[13px] text-emerald-800">{linkMessage}</p>}
 
               {active.candidateId && (missing[active.candidateId]?.length ?? 0) > 0 && (
                 <div className="border-b border-slate-100 px-4 pb-2 dark:border-slate-800">
@@ -486,7 +486,7 @@ export default function WhatsAppInbox({
                           setDraft(drafts[active.candidateId as string]);
                           setEmailedOk(false);
                         }}
-                        className="mt-2 inline-flex items-center gap-1 rounded-full border border-slate-300 px-2.5 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"
+                        className="mt-2 inline-flex items-center gap-1 rounded-full border border-slate-300 px-2.5 py-1 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"
                       >
                         Suggest message
                       </button>
@@ -500,13 +500,13 @@ export default function WhatsAppInbox({
                   const mine = m.direction === "outbound";
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[13px] leading-snug ${mine ? "bg-emerald-600 text-white" : "bg-white text-slate-800 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"}`}>
+                      <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[14px] leading-snug ${mine ? "bg-emerald-600 text-white" : "bg-white text-slate-800 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"}`}>
                         {mine && m.template_name?.startsWith("bot:") && <p className="mb-0.5 text-xs font-medium uppercase tracking-wide text-emerald-100">Assistant</p>}
                         {!mine && m.body_preview === "Voice note" && (
                           <audio controls preload="none" src={`/api/whatsapp/media?id=${m.id}`} className="mb-1 h-9 w-56 max-w-full" />
                         )}
                         {(m.media_path || (!mine && /^(Document|Photo)/.test(m.body_preview ?? ""))) && !(!mine && m.body_preview === "Voice note") && (
-                          <a href={`/api/whatsapp/media?id=${m.id}`} target="_blank" rel="noreferrer" className={`mb-1 inline-flex items-center gap-1 text-[12px] font-medium underline ${mine ? "text-white" : "text-teal-600"}`}>
+                          <a href={`/api/whatsapp/media?id=${m.id}`} target="_blank" rel="noreferrer" className={`mb-1 inline-flex items-center gap-1 text-[13px] font-medium underline ${mine ? "text-white" : "text-teal-600"}`}>
                             <Paperclip className="h-3 w-3" /> Open {m.media_name || m.body_preview?.replace(/^Document:\s*/, "").replace(/\s*\(.*\)$/, "") || "file"}
                           </a>
                         )}
@@ -556,12 +556,12 @@ export default function WhatsAppInbox({
                         onChange={(e) => setDraft(e.target.value)}
                         rows={2}
                         placeholder="Write a reply"
-                        className="flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900"
+                        className="flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900"
                       />
                       <button
                         onClick={send}
                         disabled={sending || !draft.trim()}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-emerald-600 px-4 text-[13px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-emerald-600 px-4 text-[14px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
                       >
                         <Send className="h-3.5 w-3.5" /> {sending ? "Sending…" : "Send"}
                       </button>
@@ -569,12 +569,12 @@ export default function WhatsAppInbox({
                   </>
                 ) : (
                   <div>
-                    <p className="text-[12.5px] text-slate-500">
+                    <p className="text-[13px] text-slate-500">
                       Their 24-hour free-reply window has closed. WhatsApp now allows only an approved template. Send a short follow-up asking them to reply, and when they do, the chat reopens and you can write freely.
                       {active.candidateId ? " Or email the candidate instead." : ""}
                     </p>
                     {templateFlags?.followUp ? (
-                      <button type="button" onClick={() => setFollowUp(true)} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-emerald-500">
+                      <button type="button" onClick={() => setFollowUp(true)} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-emerald-500">
                         <MessageCircle className="h-4 w-4" /> Review and send a follow-up
                       </button>
                     ) : templateFlags ? (
@@ -582,18 +582,18 @@ export default function WhatsAppInbox({
                     ) : null}
                     {active.candidateId && draft && (
                       <div className="mt-2 flex items-end gap-2">
-                        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} className="flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
-                        <button onClick={emailDraft} disabled={emailing || !draft.trim()} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-slate-800 px-4 text-[13px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+                        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} className="flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900" />
+                        <button onClick={emailDraft} disabled={emailing || !draft.trim()} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-slate-800 px-4 text-[14px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
                           {emailing ? "Sending…" : "Send by email"}
                         </button>
                       </div>
                     )}
-                    {emailedOk && <p className="mt-2 text-[12px] text-emerald-700">Email sent.</p>}
+                    {emailedOk && <p className="mt-2 text-[13px] text-emerald-700">Email sent.</p>}
                   </div>
                 )}
-                {error && <p className="mt-2 text-[12px] text-rose-600">{error}</p>}
+                {error && <p className="mt-2 text-[13px] text-rose-600">{error}</p>}
                 {reading?.found && (
-                  <div className="mt-2 rounded-lg border border-teal-200 bg-teal-50/60 p-3 text-[12.5px] dark:border-teal-900 dark:bg-teal-950/30">
+                  <div className="mt-2 rounded-lg border border-teal-200 bg-teal-50/60 p-3 text-[13px] dark:border-teal-900 dark:bg-teal-950/30">
                     <p className="font-medium text-slate-800 dark:text-slate-100">Found in their reply. Save these to the profile?</p>
                     <ul className="mt-1 space-y-0.5 text-slate-700 dark:text-slate-300">
                       {reading.found.map((f) => (
@@ -613,7 +613,7 @@ export default function WhatsAppInbox({
                   </div>
                 )}
                 {reading?.saved && (
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
                     <span className="text-emerald-700">Saved to the profile: {reading.saved.join(", ")}.</span>
                     <button
                       onClick={() => {
@@ -629,7 +629,7 @@ export default function WhatsAppInbox({
                   </div>
                 )}
                 {created && (
-                  <p className="mt-2 text-[12px] text-emerald-700">
+                  <p className="mt-2 text-[13px] text-emerald-700">
                     {created.isNew ? "Profile created" : "CV added to the existing profile (matched by the email on the CV)"}{created.alt ? ", and this WhatsApp number was saved as an alternate number" : ""}
                     {created.name ? ` for ${created.name}` : ""}.{" "}
                     <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${created.id}`} className="font-medium underline">
@@ -640,7 +640,7 @@ export default function WhatsAppInbox({
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[13px] text-slate-400 dark:border-slate-700">Select a conversation.</div>
+            <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-[14px] text-slate-400 dark:border-slate-700">Select a conversation.</div>
           )}
         </div>
       )}

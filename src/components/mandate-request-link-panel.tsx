@@ -52,7 +52,7 @@ export default function MandateRequestLinkPanel({
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1 flex items-center gap-1.5">
         <Link2 className="w-3.5 h-3.5 text-slate-400" /> Share a hiring-brief link
       </h2>
-      <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-3">
         Send this to the client so they can fill in role details themselves -- lands here in Employer Inquiries for
         you to review, same as any other submission. Nothing goes live without you clicking &quot;Create Mandate&quot;.
       </p>
@@ -63,7 +63,7 @@ export default function MandateRequestLinkPanel({
           </div>
           <button
             onClick={handleCopy}
-            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2"
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {copied ? "Copied!" : "Copy link"}
           </button>
@@ -72,7 +72,7 @@ export default function MandateRequestLinkPanel({
         <button
           onClick={handleGenerate}
           disabled={creating}
-          className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+          className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[14px] font-medium py-2 disabled:opacity-60"
         >
           {creating ? "Generating..." : "Generate link"}
         </button>

@@ -290,7 +290,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
 
   if (people.length === 0 && history.length === 0 && callBacks.length === 0 && session.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-[15px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
         Nobody to call right now. Everyone worth calling has been reached, or is due later.
       </div>
     );
@@ -319,7 +319,7 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
   return (
     <div className={`grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] ${active && !active.resume_file_url ? "xl:grid-cols-[330px_minmax(0,1fr)]" : cvOff ? "xl:grid-cols-[330px_minmax(0,1fr)]" : "xl:grid-cols-[330px_minmax(0,1fr)] 2xl:grid-cols-[330px_minmax(0,400px)_minmax(0,1fr)]"}`}>
       {/* Phone: a bar instead of the list. */}
-      <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] lg:hidden dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[14px] lg:hidden dark:border-slate-700 dark:bg-slate-900">
         <button type="button" onClick={() => go(-1)} className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-700 dark:border-slate-600 dark:text-slate-200">Previous</button>
         <button type="button" onClick={() => setShowList((v) => !v)} className="font-medium text-teal-700 dark:text-teal-300">
           {index + 1} of {people.length} · {left} left {showList ? "▴" : "▾"}
@@ -330,27 +330,27 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
         <div className="sticky top-0 z-10 border-b border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
           <div className="grid grid-cols-3 gap-1 p-1.5">
             {([{ k: "list", l: "To call", n: left }, { k: "today", l: "Called", n: todayRows.length }, { k: "backs", l: "Call backs", n: backs.length }] as const).map((t) => (
-              <button key={t.k} type="button" onClick={() => setTab(t.k)} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[12.5px] font-semibold transition ${tab === t.k ? "bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+              <button key={t.k} type="button" onClick={() => setTab(t.k)} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold transition ${tab === t.k ? "bg-teal-600 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-teal-700"}`}>
                 {t.l}
-                <span className={`rounded-full px-1.5 text-[11px] tabular-nums ${tab === t.k ? "bg-white/20 text-white dark:bg-slate-900/15 dark:text-slate-900" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{t.n}</span>
+                <span className={`rounded-full px-1.5 text-[12px] tabular-nums ${tab === t.k ? "bg-white/20 text-white dark:bg-slate-900/15 dark:text-slate-900" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{t.n}</span>
               </button>
             ))}
           </div>
           <div className="relative border-t border-slate-100 px-2 py-1.5 dark:border-slate-800">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            <input value={q} onChange={(e) => void search(e.target.value)} placeholder="Someone rang? Number or name" inputMode="search" className="w-full rounded-md border border-slate-200 bg-white py-1.5 pl-7 pr-2 text-[12.5px] text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+            <input value={q} onChange={(e) => void search(e.target.value)} placeholder="Someone rang? Number or name" inputMode="search" className="w-full rounded-md border border-slate-200 bg-white py-1.5 pl-7 pr-2 text-[13px] text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
           </div>
         </div>
         {found !== null ? (
           <ul>
-            {searching && <li className="px-3 py-2 text-[12px] text-slate-400">Searching…</li>}
-            {!searching && found.length === 0 && <li className="px-3 py-3 text-[12.5px] text-slate-500">No profile with that number or name.</li>}
+            {searching && <li className="px-3 py-2 text-[13px] text-slate-400">Searching…</li>}
+            {!searching && found.length === 0 && <li className="px-3 py-3 text-[13px] text-slate-500">No profile with that number or name.</li>}
             {found.map((p) => (
               <li key={p.id}>
                 <button type="button" onClick={() => openPerson(p)} className="w-full border-b border-slate-100 px-3 py-2.5 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
-                  <span className="block truncate text-[13.5px] font-medium text-slate-900 dark:text-slate-100">{p.full_name ?? "Unnamed"}</span>
-                  <span className="block truncate text-[12px] text-slate-500">{shownPhone(p.phone)} · {[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
-                  {p.last_outcome && <span className="block text-[11.5px] text-slate-400">Last call: {OUTCOME_LABEL[p.last_outcome] ?? p.last_outcome}</span>}
+                  <span className="block truncate text-[14px] font-medium text-slate-900 dark:text-slate-100">{p.full_name ?? "Unnamed"}</span>
+                  <span className="block truncate text-[13px] text-slate-500">{shownPhone(p.phone)} · {[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
+                  {p.last_outcome && <span className="block text-[12px] text-slate-400">Last call: {OUTCOME_LABEL[p.last_outcome] ?? p.last_outcome}</span>}
                 </button>
               </li>
             ))}
@@ -360,13 +360,13 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
             <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <header className="flex items-start justify-between gap-2 border-b border-l-4 border-slate-100 border-l-violet-500 px-3 py-2 dark:border-slate-800">
                 <div className="min-w-0">
-                  <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Asked to call back</h3>
-                  <p className="text-[11.5px] leading-snug text-slate-500">At the time they asked for, they move to the top of To call.</p>
+                  <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Asked to call back</h3>
+                  <p className="text-[12px] leading-snug text-slate-500">At the time they asked for, they move to the top of To call.</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-violet-800 dark:bg-violet-900/40 dark:text-violet-100">{backs.length}</span>
+                <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[13px] font-semibold tabular-nums text-violet-800 dark:bg-violet-900/40 dark:text-violet-100">{backs.length}</span>
               </header>
               {backs.length === 0 ? (
-                <p className="px-3 py-6 text-center text-[12.5px] text-slate-500">Nobody is waiting for a call back.</p>
+                <p className="px-3 py-6 text-center text-[13px] text-slate-500">Nobody is waiting for a call back.</p>
               ) : (
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                   {backs.map((b) => {
@@ -374,11 +374,11 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
                     return (
                       <li key={b.candidate_id}>
                         <button type="button" onClick={() => void openFromHistory(b)} className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11.5px] font-semibold text-violet-800 dark:bg-violet-900/40 dark:text-violet-100">{initials(b.full_name)}</span>
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[12px] font-semibold text-violet-800 dark:bg-violet-900/40 dark:text-violet-100">{initials(b.full_name)}</span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13.5px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(b.full_name ?? "Unnamed").toLowerCase()}</span>
-                            <span className="block truncate text-[12px] text-slate-500">{shownPhone(b.phone)}{b.caller_name ? ` · asked ${b.caller_name}` : ""}</span>
-                            <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${w.due ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100" : "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-100"}`}>{w.due ? "Due now" : `Call back ${w.text}`}</span>
+                            <span className="block truncate text-[14px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(b.full_name ?? "Unnamed").toLowerCase()}</span>
+                            <span className="block truncate text-[13px] text-slate-500">{shownPhone(b.phone)}{b.caller_name ? ` · asked ${b.caller_name}` : ""}</span>
+                            <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${w.due ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100" : "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-100"}`}>{w.due ? "Due now" : `Call back ${w.text}`}</span>
                           </span>
                         </button>
                       </li>
@@ -391,9 +391,9 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
         ) : tab === "today" ? (
           <div className="pb-2">
             <div className="flex items-center justify-between gap-2 px-3 pt-2.5">
-              <span className="text-[11.5px] font-medium text-slate-500">Calls today</span>
+              <span className="text-[12px] font-medium text-slate-500">Calls today</span>
               {meId && (
-                <span className="inline-flex rounded-full bg-slate-100 p-0.5 text-[11.5px] font-medium dark:bg-slate-800">
+                <span className="inline-flex rounded-full bg-slate-100 p-0.5 text-[12px] font-medium dark:bg-slate-800">
                   {([{ v: true, l: "Mine" }, { v: false, l: "Everyone" }] as const).map((o) => (
                     <button key={o.l} type="button" onClick={() => setMineOnly(o.v)} className={`rounded-full px-2.5 py-0.5 ${mineOnly === o.v ? "bg-white text-slate-900 shadow-sm dark:bg-slate-600 dark:text-white" : "text-slate-500"}`}>{o.l}</button>
                   ))}
@@ -401,16 +401,16 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
               )}
             </div>
             {todayRows.length === 0 ? (
-              <p className="px-3 py-6 text-center text-[12.5px] text-slate-500">No calls logged yet today.</p>
+              <p className="px-3 py-6 text-center text-[13px] text-slate-500">No calls logged yet today.</p>
             ) : (
               <>
                 <div className="flex flex-wrap gap-1.5 px-3 py-2.5">
-                  <button type="button" onClick={() => setCalledFilter("all")} className={`rounded-full border px-2.5 py-1 text-[11.5px] font-semibold ${calledFilter === "all" ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}>All {todayRows.length}</button>
+                  <button type="button" onClick={() => setCalledFilter("all")} className={`rounded-full border px-2.5 py-1 text-[12px] font-semibold ${calledFilter === "all" ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}>All {todayRows.length}</button>
                   {STATES.map((st) => {
                     const n = todayRows.filter((h) => stateOf(h) === st.k).length;
                     if (n === 0) return null;
                     return (
-                      <button key={st.k} type="button" onClick={() => setCalledFilter(calledFilter === st.k ? "all" : st.k)} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold ${st.chip} ${calledFilter === st.k ? "ring-2 ring-slate-900/60 dark:ring-white/60" : ""}`}>
+                      <button key={st.k} type="button" onClick={() => setCalledFilter(calledFilter === st.k ? "all" : st.k)} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-semibold ${st.chip} ${calledFilter === st.k ? "ring-2 ring-slate-900/60 dark:ring-white/60" : ""}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                         {st.short} {n}
                       </button>
@@ -425,27 +425,27 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
                       <section key={st.k} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
                         <header className={`flex items-start justify-between gap-2 border-b border-slate-100 border-l-4 px-3 py-2 dark:border-slate-800 ${st.bar}`}>
                           <div className="min-w-0">
-                            <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">{st.title}</h3>
-                            <p className="text-[11.5px] leading-snug text-slate-500">{st.hint}</p>
+                            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{st.title}</h3>
+                            <p className="text-[12px] leading-snug text-slate-500">{st.hint}</p>
                           </div>
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums ${st.tag}`}>{rows.length}</span>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[13px] font-semibold tabular-nums ${st.tag}`}>{rows.length}</span>
                         </header>
                         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                           {rows.map((h) => (
                             <li key={h.id}>
                               <button type="button" onClick={() => void openFromHistory(h)} className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50" title="Open this person again">
-                                <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold ${st.avatar}`}>{initials(h.full_name)}</span>
+                                <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${st.avatar}`}>{initials(h.full_name)}</span>
                                 <span className="min-w-0 flex-1">
                                   <span className="flex items-baseline justify-between gap-2">
-                                    <span className="truncate text-[13.5px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(h.full_name ?? "Unnamed").toLowerCase()}</span>
-                                    <span className="shrink-0 text-[11px] tabular-nums text-slate-400">{TIME(h.created_at)}</span>
+                                    <span className="truncate text-[14px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(h.full_name ?? "Unnamed").toLowerCase()}</span>
+                                    <span className="shrink-0 text-[12px] tabular-nums text-slate-400">{TIME(h.created_at)}</span>
                                   </span>
-                                  <span className="block truncate text-[12px] text-slate-500">{shownPhone(h.phone)}{!mineOnly && h.caller_name ? ` · by ${h.caller_name}` : ""}</span>
-                                  {st.k === "noanswer" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>{(h.tries ?? 1) >= 3 ? "3 tries, stopped" : `Try ${h.tries ?? 1} of 3 · next try tomorrow`}</span>}
-                                  {st.k === "callback" && h.call_back_at && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>Call back {whenLabel(h.call_back_at).text}</span>}
-                                  {st.k === "partial" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>Still needs {[!h.has_pay && "current pay", !h.has_cv && "CV"].filter(Boolean).join(" + ")}</span>}
-                                  {st.k === "closed" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium ${st.tag}`}>{h.outcome === "wrong_number" ? "Wrong number" : "Not interested"}</span>}
-                                  {h.note && <span className="mt-1 block truncate text-[11.5px] italic text-slate-400">{h.note}</span>}
+                                  <span className="block truncate text-[13px] text-slate-500">{shownPhone(h.phone)}{!mineOnly && h.caller_name ? ` · by ${h.caller_name}` : ""}</span>
+                                  {st.k === "noanswer" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[12px] font-medium ${st.tag}`}>{(h.tries ?? 1) >= 3 ? "3 tries, stopped" : `Try ${h.tries ?? 1} of 3 · next try tomorrow`}</span>}
+                                  {st.k === "callback" && h.call_back_at && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[12px] font-medium ${st.tag}`}>Call back {whenLabel(h.call_back_at).text}</span>}
+                                  {st.k === "partial" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[12px] font-medium ${st.tag}`}>Still needs {[!h.has_pay && "current pay", !h.has_cv && "CV"].filter(Boolean).join(" + ")}</span>}
+                                  {st.k === "closed" && <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[12px] font-medium ${st.tag}`}>{h.outcome === "wrong_number" ? "Wrong number" : "Not interested"}</span>}
+                                  {h.note && <span className="mt-1 block truncate text-[12px] italic text-slate-400">{h.note}</span>}
                                 </span>
                               </button>
                             </li>
@@ -471,10 +471,10 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
               <section key={sec.k} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
                 <header className={`flex items-start justify-between gap-2 border-b border-l-4 border-slate-100 px-3 py-2 dark:border-slate-800 ${sec.bar}`}>
                   <div className="min-w-0">
-                    <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">{sec.title}</h3>
-                    <p className="text-[11.5px] leading-snug text-slate-500">{sec.hint}</p>
+                    <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{sec.title}</h3>
+                    <p className="text-[12px] leading-snug text-slate-500">{sec.hint}</p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums ${sec.tag}`}>{rows.filter((p) => !done[p.id]).length}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[13px] font-semibold tabular-nums ${sec.tag}`}>{rows.filter((p) => !done[p.id]).length}</span>
                 </header>
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                   {rows.map((p) => (
@@ -488,24 +488,24 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
                         }}
                         className={`flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition ${p.id === selected ? "bg-teal-50 ring-2 ring-inset ring-teal-500 dark:bg-teal-950/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"} ${done[p.id] ? "opacity-50" : ""}`}
                       >
-                        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold ${sec.tag}`}>{initials(p.full_name)}</span>
+                        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${sec.tag}`}>{initials(p.full_name)}</span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-baseline justify-between gap-2">
-                            <span className="truncate text-[13.5px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(p.full_name ?? "Unnamed").toLowerCase()}</span>
-                            {done[p.id] ? <span className="shrink-0 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800">{OUT[done[p.id]]}</span> : p.tries > 0 ? <span className="shrink-0 text-[11px] text-slate-400">tried {p.tries}×</span> : null}
+                            <span className="truncate text-[14px] font-semibold capitalize text-slate-900 dark:text-slate-100">{(p.full_name ?? "Unnamed").toLowerCase()}</span>
+                            {done[p.id] ? <span className="shrink-0 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[12px] font-semibold text-emerald-800">{OUT[done[p.id]]}</span> : p.tries > 0 ? <span className="shrink-0 text-[12px] text-slate-400">tried {p.tries}×</span> : null}
                           </span>
-                          <span className="block truncate text-[12px] text-slate-500">{[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
+                          <span className="block truncate text-[13px] text-slate-500">{[p.current_job_title, p.current_employer].filter(Boolean).join(" at ") || "Role not on file"}</span>
                           <span className="mt-1 flex flex-wrap items-center gap-1">
                             {sec.k === "priority" && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${REASON[p.reason].cls}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${REASON[p.reason].cls}`}>
                                 {p.reason === "interested" && p.interested_role ? `Said yes: ${p.interested_role}` : p.reason === "paid_call" && p.paid_call ? `Paid call · ${p.paid_call.title}${p.paid_call.due ? ` · by ${new Date(p.paid_call.due).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" })}` : ""}` : p.reason === "urgent_role" && p.urgent_role ? `Urgent · ${shortTitle(p.urgent_role.title)} · ${p.urgent_role.bucket === "perfect" ? "perfect" : "close"}` : REASON[p.reason].label}
                               </span>
                             )}
-                            {gapsOf(p).map((g) => <span key={g} className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">Needs {g}</span>)}
-                            {p.strength && p.strength !== "unrated" && <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${STRENGTH[p.strength]?.cls ?? ""}`}>{STRENGTH[p.strength]?.label ?? p.strength}</span>}
+                            {gapsOf(p).map((g) => <span key={g} className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[12px] font-medium text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">Needs {g}</span>)}
+                            {p.strength && p.strength !== "unrated" && <span className={`rounded-md px-1.5 py-0.5 text-[12px] font-medium ${STRENGTH[p.strength]?.cls ?? ""}`}>{STRENGTH[p.strength]?.label ?? p.strength}</span>}
                           </span>
                           {(sourceOf(p) || p.profile_created_at) && (
-                            <span className="mt-1 block truncate text-[11px] text-slate-400">
+                            <span className="mt-1 block truncate text-[12px] text-slate-400">
                               {[sourceOf(p), p.profile_created_at ? `signed up ${new Date(p.profile_created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : null].filter(Boolean).join(" · ")}
                             </span>
                           )}
@@ -527,30 +527,30 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
             <div className="mb-3">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">{active.full_name ?? "Unnamed"}</h2>
-                <Link href={`/candidates/${active.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-teal-700 hover:underline dark:text-teal-300">
+                <Link href={`/candidates/${active.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 text-[13px] font-medium text-teal-700 hover:underline dark:text-teal-300">
                   Profile <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>
-              <p className="text-[12.5px] text-slate-500">
+              <p className="text-[13px] text-slate-500">
                 {[active.current_job_title, active.current_employer].filter(Boolean).join(" at ") || "Role not on file"}
                 {active.total_experience_years ? ` · ${Number(active.total_experience_years)} yrs` : ""}
               </p>
               {active.strength && (
-                <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px]">
+                <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[13px]">
                   <span className={`rounded px-2 py-0.5 font-semibold ${STRENGTH[active.strength]?.cls ?? ""}`}>Profile: {STRENGTH[active.strength]?.label ?? active.strength}</span>
                   {(active.why ?? []).map((w) => <span key={w} className="text-slate-500">{w}</span>)}
                   {active.strength === "unrated" && <span className="text-slate-500">Nothing to judge from yet: your call rating will set it.</span>}
                 </p>
               )}
               {(sourceOf(active) || createdOf(active)) && (
-                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px]">
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[13px]">
                   {sourceOf(active) && <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">Source: {sourceOf(active)}</span>}
                   {createdOf(active) && <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">Profile created {createdOf(active)}</span>}
                   {active.profile_status && ["awaiting_input", "lead"].includes(active.profile_status) && <span className="rounded bg-amber-50 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">Profile not complete</span>}
                 </div>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <a href={`tel:${tel(active.phone)}`} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-teal-700">
+                <a href={`tel:${tel(active.phone)}`} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[15px] font-semibold text-white hover:bg-teal-700">
                   <Phone className="h-4 w-4" /> {shownPhone(active.phone)}
                 </a>
                 <button
@@ -558,30 +558,30 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
                   onClick={() => {
                     void navigator.clipboard?.writeText(shownPhone(active.phone).replace(/\s/g, "")).then(() => setCopied(true));
                   }}
-                  className="rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"
+                  className="rounded-full border border-slate-300 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200"
                   title="Copy, then dial from any phone"
                 >
                   {copied ? "Copied" : "Copy number"}
                 </button>
                 {active.resume_file_url && (
-                  <button type="button" onClick={() => setShowCv((v) => !v)} className="rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 2xl:hidden dark:border-slate-600 dark:text-slate-200">
+                  <button type="button" onClick={() => setShowCv((v) => !v)} className="rounded-full border border-slate-300 px-3 py-1.5 text-[13px] font-medium text-slate-700 2xl:hidden dark:border-slate-600 dark:text-slate-200">
                     {showCv ? "Hide CV" : "View CV"}
                   </button>
                 )}
                 {active.resume_file_url && (
-                  <button type="button" onClick={toggleCv} className="hidden rounded-full border border-slate-300 px-3 py-1.5 text-[12.5px] font-medium text-slate-700 2xl:inline-block dark:border-slate-600 dark:text-slate-200" title="Turn the CV panel off if this page feels slow; it is remembered on this computer">
+                  <button type="button" onClick={toggleCv} className="hidden rounded-full border border-slate-300 px-3 py-1.5 text-[13px] font-medium text-slate-700 2xl:inline-block dark:border-slate-600 dark:text-slate-200" title="Turn the CV panel off if this page feels slow; it is remembered on this computer">
                     {cvOff ? "Show CV side panel" : "Hide CV side panel"}
                   </button>
                 )}
               </div>
             </div>
             {last && (
-              <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[12px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
+              <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[13px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
                 <p className="font-semibold">Saved {last.name}.{last.tier ? ` Talent Pool: ${POOL_TIER_LABEL[last.tier as PoolTier] ?? last.tier}.` : ""}</p>
                 {last.outcome === "no_answer" && lastPhone && (
                   <p className="mt-1 flex flex-wrap items-center gap-2">
                     <span>Didn&apos;t pick up. A WhatsApp lets them reply with their CV and pay:</span>
-                    <WhatsAppMenu phone={lastPhone} templates={candidateTemplates(last.name, { me, candidateId: last.candidateId, missing: ["current_ctc", "cv"] }).filter((t) => ["tried", "cv", "details"].includes(t.key))} context={{ name: last.name }} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[12px] font-semibold text-white hover:bg-emerald-700" />
+                    <WhatsAppMenu phone={lastPhone} templates={candidateTemplates(last.name, { me, candidateId: last.candidateId, missing: ["current_ctc", "cv"] }).filter((t) => ["tried", "cv", "details"].includes(t.key))} context={{ name: last.name }} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[13px] font-semibold text-white hover:bg-emerald-700" />
                   </p>
                 )}
                 {last.summary && <p className="mt-0.5">{last.summary}</p>}
@@ -601,13 +601,13 @@ export default function CallsDesk({ people: listed, history = [], callBacks = []
                 <ResumeViewerInline key={active.id} signedUrl={activeCv} fileName={active.resume_file_url.replace(/^resumes\//, "")} />
               </div>
             ) : active.resume_file_url && activeCv === undefined ? (
-              <div className="flex h-full items-center justify-center text-[13px] text-slate-500">Opening the CV…</div>
+              <div className="flex h-full items-center justify-center text-[14px] text-slate-500">Opening the CV…</div>
             ) : null}
           </section>
           )}
         </>
       ) : (
-        <div className="col-span-2 flex items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white p-10 text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+        <div className="col-span-2 flex items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white p-10 text-[15px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
           Done for today. Refresh for the next people due.
         </div>
       )}

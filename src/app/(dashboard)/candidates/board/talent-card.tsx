@@ -55,7 +55,7 @@ function Fact({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="min-w-0">
       <div className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</div>
-      {value ? <div className="truncate text-[13px] font-semibold text-slate-800 dark:text-slate-100">{value}</div> : <div className="text-[13px] text-slate-300 dark:text-slate-600" title="Not on file">—</div>}
+      {value ? <div className="truncate text-[14px] font-semibold text-slate-800 dark:text-slate-100">{value}</div> : <div className="text-[14px] text-slate-300 dark:text-slate-600" title="Not on file">—</div>}
     </div>
   );
 }
@@ -89,13 +89,13 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
   return (
     <article className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-ros-sm transition duration-150 hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-teal-700">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-100 to-teal-100 text-[14px] font-bold text-teal-700 dark:from-teal-950 dark:to-teal-950 dark:text-teal-300">{initials(c.full_name)}</div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-100 to-teal-100 text-[15px] font-bold text-teal-700 dark:from-teal-950 dark:to-teal-950 dark:text-teal-300">{initials(c.full_name)}</div>
         <div className="min-w-0 flex-1">
-          <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.id}`} className="block truncate text-[15px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
+          <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.id}`} className="block truncate text-[16px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
             {c.full_name}
           </Link>
-          <p className="truncate text-[12.5px] text-slate-500 dark:text-slate-400">{c.headline || "Role not on file"}</p>
-          <p className="truncate text-[12px] text-slate-400">{[c.city, c.candidate_number ? `C-${String(c.candidate_number).padStart(6, "0")}` : null].filter(Boolean).join(" · ")}</p>
+          <p className="truncate text-[13px] text-slate-500 dark:text-slate-400">{c.headline || "Role not on file"}</p>
+          <p className="truncate text-[13px] text-slate-400">{[c.city, c.candidate_number ? `C-${String(c.candidate_number).padStart(6, "0")}` : null].filter(Boolean).join(" · ")}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span
@@ -128,11 +128,11 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
         <Fact label="Notice" value={c.notice} />
       </div>
 
-      {c.highlight && <p className="mt-3 line-clamp-2 text-[12.5px] leading-snug text-slate-700 dark:text-slate-300">{c.highlight}</p>}
+      {c.highlight && <p className="mt-3 line-clamp-2 text-[13px] leading-snug text-slate-700 dark:text-slate-300">{c.highlight}</p>}
 
       {c.role_fit && c.role_fit.roles.length > 0 && (
         <div className="mt-2.5 rounded-lg bg-teal-50/70 px-2.5 py-2 dark:bg-teal-950/20">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-teal-700 dark:text-teal-300">
             Fits {c.role_fit.count} open {c.role_fit.count === 1 ? "role" : "roles"}
             {c.role_fit.strong > 0 ? ` · ${c.role_fit.strong} strong` : ""}
           </p>
@@ -170,9 +170,9 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
         <WhatsAppMenu
           phone={c.phone}
           templates={candidateTemplates(c.full_name, { me, candidateId: c.id, missing: c.readiness_missing }).filter((t) => t.key !== "intro")}
-          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
+          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
         />
-        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.id}`} className="inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700">
+        <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${c.id}`} className="inline-flex items-center rounded-full px-2.5 py-1 text-[13px] font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-700">
           Open
         </Link>
       </div>
@@ -180,14 +180,14 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
       {mandates.length > 0 && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           {state === "added" ? (
-            <span className="inline-flex items-center gap-1 text-[12px] font-medium text-emerald-700">
+            <span className="inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700">
               <Check className="h-3.5 w-3.5" /> Added to {targetRole ?? "the mandate"}
             </span>
           ) : state === "exists" ? (
-            <span className="text-[12px] text-slate-500">Already in that pipeline</span>
+            <span className="text-[13px] text-slate-500">Already in that pipeline</span>
           ) : (
             <>
-              <select value={target} onChange={(e) => setTarget(e.target.value)} className="min-w-0 max-w-[190px] flex-1 rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[12px] dark:border-slate-700">
+              <select value={target} onChange={(e) => setTarget(e.target.value)} className="min-w-0 max-w-[190px] flex-1 rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[13px] dark:border-slate-700">
                 <option value="">Add to a mandate…</option>
                 {mandates.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -196,10 +196,10 @@ export default function TalentCard({ c, mandates, lists = [], memberOf = [] }: {
                   </option>
                 ))}
               </select>
-              <button onClick={add} disabled={!target || state === "adding"} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+              <button onClick={add} disabled={!target || state === "adding"} className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
                 <Plus className="h-3 w-3" /> {state === "adding" ? "Adding…" : "Add"}
               </button>
-              {state === "error" && <span className="text-[12px] text-rose-600">Couldn&apos;t add</span>}
+              {state === "error" && <span className="text-[13px] text-rose-600">Couldn&apos;t add</span>}
             </>
           )}
         </div>

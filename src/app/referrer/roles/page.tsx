@@ -15,7 +15,7 @@ export default async function ReferrerRolesPage() {
   return (
     <div className="mx-auto max-w-[1000px] px-5 py-8">
       <h1 className="text-[22px] font-semibold tracking-tight text-slate-900">Open roles</h1>
-      <p className="mt-1 text-[14px] text-slate-500">
+      <p className="mt-1 text-[15px] text-slate-500">
         Real sales roles from StaffAnchor&apos;s clients. The company name stays confidential. Everything else is here, so you can tell at a glance who in
         your network fits.
       </p>
@@ -27,14 +27,14 @@ export default async function ReferrerRolesPage() {
           { icon: CircleDollarSign, title: "Get paid", text: "Paid after they join, complete 90 days and the client's payment reaches us." },
         ].map((s, i) => (
           <li key={s.title} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white">
               <s.icon className="h-4 w-4" />
             </span>
             <div>
-              <div className="text-[13px] font-semibold text-slate-900">
+              <div className="text-[14px] font-semibold text-slate-900">
                 {i + 1}. {s.title}
               </div>
-              <div className="text-[12px] leading-snug text-slate-500">{s.text}</div>
+              <div className="text-[13px] leading-snug text-slate-500">{s.text}</div>
             </div>
           </li>
         ))}
@@ -45,8 +45,8 @@ export default async function ReferrerRolesPage() {
           <p className="text-sm text-rose-600">We couldn&apos;t load the roles just now. Please refresh in a moment.</p>
         ) : roles.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-            <p className="text-[15px] font-medium text-slate-700">No open roles right now</p>
-            <p className="mt-1 text-[13px] text-slate-400">New roles are added regularly. Check back soon.</p>
+            <p className="text-[16px] font-medium text-slate-700">No open roles right now</p>
+            <p className="mt-1 text-[14px] text-slate-400">New roles are added regularly. Check back soon.</p>
           </div>
         ) : (
           <RolesBoard roles={roles} />

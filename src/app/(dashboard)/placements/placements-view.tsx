@@ -285,7 +285,7 @@ export default function PlacementsView({
             onClick={() => setStatusFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
               statusFilter === f.key
-                ? "bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900"
+                ? "bg-teal-600 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900"
                 : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
             }`}
           >
@@ -343,7 +343,7 @@ export default function PlacementsView({
                   </td>
                   <td className="px-3 py-2.5">
                     <p className="text-slate-800 dark:text-slate-200">{row.clientName}</p>
-                    <Link href={`/mandates/${row.mandateId}`} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline">
+                    <Link href={`/mandates/${row.mandateId}`} className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-teal-600 hover:underline">
                       {row.roleTitle}
                     </Link>
                     {!row.hasClientLink && (
@@ -356,7 +356,7 @@ export default function PlacementsView({
                         type="date"
                         value={dojDraft}
                         onChange={(e) => setDojDrafts((prev) => ({ ...prev, [row.linkId]: e.target.value }))}
-                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[12px]"
+                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[13px]"
                       />
                       {dojDirty && (
                         <button
@@ -393,7 +393,7 @@ export default function PlacementsView({
                           placeholder={row.fallbackCtc != null ? String(row.fallbackCtc) : "—"}
                           value={ctcDraft}
                           onChange={(e) => setCtcDrafts((prev) => ({ ...prev, [row.linkId]: e.target.value }))}
-                          className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[12px]"
+                          className="w-24 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-1 text-[13px]"
                         />
                         {ctcDirty && (
                           <button
@@ -416,7 +416,7 @@ export default function PlacementsView({
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <p className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{breakdown ? inr(breakdown.total) : "—"}</p>
-                    <p className="text-[11.5px] tabular-nums text-slate-500 dark:text-slate-400">
+                    <p className="text-[12px] tabular-nums text-slate-500 dark:text-slate-400">
                       {row.feePercentage != null ? (
                         breakdown ? `${row.feePercentage}% = ${inr(breakdown.billing)} + GST ${inr(breakdown.gst)}` : `${row.feePercentage}% fee`
                       ) : (
@@ -438,7 +438,7 @@ export default function PlacementsView({
             })}
             {visibleRows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-slate-400 text-[12.5px]">
+                <td colSpan={7} className="px-3 py-8 text-center text-slate-400 text-[13px]">
                   No placements in this view.
                 </td>
               </tr>
@@ -464,7 +464,7 @@ function RetentionCheckins({
   onSaveOutcome: (row: PlacementRow, checkinId: string, outcome: string, notes: string) => void;
 }) {
   if (row.checkins.length === 0) {
-    return <p className="text-[12px] text-slate-400">No retention check-ins yet -- these auto-generate once a joining date is on file.</p>;
+    return <p className="text-[13px] text-slate-400">No retention check-ins yet -- these auto-generate once a joining date is on file.</p>;
   }
 
   return (

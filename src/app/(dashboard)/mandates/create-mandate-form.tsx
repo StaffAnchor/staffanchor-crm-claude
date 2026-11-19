@@ -496,13 +496,13 @@ export default function CreateMandateForm({
           Sub-domain{isMultiSubDomain ? " (select all this client would accept)" : ""}
         </p>
         {!form.category ? (
-          <p className="text-[12px] text-slate-400 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2">
+          <p className="text-[13px] text-slate-400 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2">
             Pick a Function / Domain above first.
           </p>
         ) : isMultiSubDomain ? (
           <div className="grid gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             {subDomainOptions.map((o) => (
-              <label key={o} className="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-300">
+              <label key={o} className="flex items-center gap-2 text-[14px] text-slate-700 dark:text-slate-300">
                 <input type="checkbox" checked={form.subDomains.includes(o)} onChange={() => toggleSubDomain(o)} />
                 {o}
               </label>
@@ -537,7 +537,7 @@ export default function CreateMandateForm({
             {form.cities.map((c) => (
               <span
                 key={c}
-                className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-2.5 py-1"
+                className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[13px] font-medium px-2.5 py-1"
               >
                 {c}
                 <button type="button" onClick={() => removeCity(c)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
@@ -581,7 +581,7 @@ export default function CreateMandateForm({
               addCity(form.cityOther);
               setForm((f) => ({ ...f, cityOther: "" }));
             }}
-            className="shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[12px] font-medium px-3"
+            className="shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[13px] font-medium px-3"
           >
             Add
           </button>
@@ -702,7 +702,7 @@ export default function CreateMandateForm({
           <p className="text-xs font-medium text-teal-700 mb-1.5">Upload the client&apos;s JD, or paste rough notes, and let AI structure it</p>
           <JdFilePicker onLoaded={handleJdFile} />
           {jdHideNames.length > 0 && (
-            <p className="text-[11.5px] text-slate-600 mb-1.5">Kept out of the public listing: <b>{jdHideNames.join(", ")}</b></p>
+            <p className="text-[12px] text-slate-600 mb-1.5">Kept out of the public listing: <b>{jdHideNames.join(", ")}</b></p>
           )}
           <textarea
             placeholder="Paste a rough JD, bullet notes, or a client email -- AI will turn it into a clean Overview / Key Responsibilities / Candidate Profile / Compensation & Benefits format below."
@@ -715,17 +715,17 @@ export default function CreateMandateForm({
             value={jdInstructions}
             onChange={(e) => setJdInstructions(e.target.value)}
             placeholder="Instructions for the AI (optional), e.g. don't mention salary, stress enterprise SaaS experience"
-            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[12.5px] bg-white dark:bg-slate-900"
+            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] bg-white dark:bg-slate-900"
           />
-          <label className="mt-1.5 flex items-center gap-1.5 text-[12px] text-slate-600">
+          <label className="mt-1.5 flex items-center gap-1.5 text-[13px] text-slate-600">
             <input type="checkbox" checked={jdHidePay} onChange={(e) => setJdHidePay(e.target.checked)} /> Leave pay figures out of the listing
           </label>
-          <p className="mt-1 text-[11px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
+          <p className="mt-1 text-[12px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
           <button
             type="button"
             onClick={handleGenerateJd}
             disabled={generatingJd || !form.jd_raw_notes.trim()}
-            className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+            className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium px-3 py-1.5 disabled:opacity-50"
           >
             <Sparkles className="w-3.5 h-3.5" /> {generatingJd ? "Generating..." : "Generate with AI"}
           </button>
@@ -783,7 +783,7 @@ export default function CreateMandateForm({
               type="button"
               onClick={handleRefineJd}
               disabled={refiningJd || !jdEditInstruction.trim()}
-              className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50"
+              className="mt-2 flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium px-3 py-1.5 disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" /> {refiningJd ? "Applying..." : "Apply this edit"}
             </button>
@@ -807,7 +807,7 @@ export default function CreateMandateForm({
           onClick={() => setBriefOpen((v) => !v)}
           className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 text-left"
         >
-          <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+          <span className="text-[14px] font-medium text-slate-700 dark:text-slate-300">
             Gold Standard Brief <span className="font-normal text-slate-400">(recommended -- recruiter-only, never shown publicly)</span>
           </span>
           {briefOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
@@ -1057,7 +1057,7 @@ export default function CreateMandateForm({
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800/50">
-        <label className="flex items-start gap-2 text-[12px] text-slate-700 dark:text-slate-300">
+        <label className="flex items-start gap-2 text-[13px] text-slate-700 dark:text-slate-300">
           <input
             type="checkbox"
             checked={form.hide_client}

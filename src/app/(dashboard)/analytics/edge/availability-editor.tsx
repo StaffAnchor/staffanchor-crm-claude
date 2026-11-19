@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type W = { weekday: number; start: string; end: string };
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const input = "rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-[13px]";
+const input = "rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-[14px]";
 
 export default function AvailabilityEditor({ initial, minNoticeHours, horizonDays }: { initial: W[]; minNoticeHours: number; horizonDays: number }) {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function AvailabilityEditor({ initial, minNoticeHours, horizonDay
   }
 
   return (
-    <div className="space-y-3 text-[13px]">
+    <div className="space-y-3 text-[14px]">
       {rows.map((r, i) => (
         <div key={DAYS[i]} className="flex items-center gap-3">
           <label className="flex w-32 items-center gap-2">
@@ -48,7 +48,7 @@ export default function AvailabilityEditor({ initial, minNoticeHours, horizonDay
       <div className="flex flex-wrap items-center gap-4 pt-1">
         <label className="flex items-center gap-2">Minimum notice (hours) <input type="number" className={`${input} w-20`} value={notice} onChange={(e) => setNotice(Number(e.target.value))} /></label>
         <label className="flex items-center gap-2">Open for the next (days) <input type="number" className={`${input} w-20`} value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} /></label>
-        <button onClick={save} disabled={saving} className="rounded-md bg-teal-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
+        <button onClick={save} disabled={saving} className="rounded-md bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
         {msg && <span className="text-slate-500">{msg}</span>}
       </div>
     </div>

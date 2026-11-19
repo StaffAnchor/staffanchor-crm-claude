@@ -202,9 +202,9 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
         {!collapsed && (
           <>
             {summaryLines.length > 0 ? (
-              <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">{summaryLines.join(" · ")}</p>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">{summaryLines.join(" · ")}</p>
             ) : (
-              <p className="text-[12px] text-slate-400 mt-1">
+              <p className="text-[13px] text-slate-400 mt-1">
                 Not filled in yet -- add sales-cycle, work arrangement, and expectation details so recruiters have enough
                 context for candidate conversations.
               </p>
@@ -514,7 +514,7 @@ export default function GoldStandardPanel({ mandateId, initial }: { mandateId: s
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2 disabled:opacity-60"
       >
         {saving ? "Saving..." : "Save"}
       </button>

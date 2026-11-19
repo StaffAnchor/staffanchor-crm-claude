@@ -90,7 +90,7 @@ export default function ActivityLogPanel({
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as Activity["kind"])}
-          className="rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[12px] bg-slate-50 dark:bg-slate-800/50 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className="rounded-ros-md border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-[13px] bg-slate-50 dark:bg-slate-800/50 transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         >
           {KIND_OPTIONS.map((k) => (
             <option key={k} value={k}>
@@ -103,7 +103,7 @@ export default function ActivityLogPanel({
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           placeholder="What happened? e.g. Called, no answer -- will retry tomorrow"
-          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className="flex-1 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[14px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         />
         <Button onClick={handleAdd} disabled={saving}>
           Log
@@ -131,11 +131,11 @@ export default function ActivityLogPanel({
                 {i < activities.length - 1 && <div className="w-px flex-1 bg-slate-200 dark:bg-slate-700 my-1" />}
               </div>
               <div className="pb-5">
-                <p className="text-[13px] text-slate-800 dark:text-slate-200">
+                <p className="text-[14px] text-slate-800 dark:text-slate-200">
                   {KIND_LABEL[a.kind]}
                   {a.actor_name ? ` by ${a.actor_name}` : ""}
                 </p>
-                {a.body && <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{a.body}</p>}
+                {a.body && <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{a.body}</p>}
                 <p className="text-xs text-slate-400 mt-1">{new Date(a.created_at).toLocaleString()}</p>
               </div>
             </div>

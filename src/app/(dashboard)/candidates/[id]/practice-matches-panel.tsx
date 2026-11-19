@@ -25,7 +25,7 @@ export default function PracticeMatchesPanel({
 }) {
   if (candidatePractices.length === 0) {
     return (
-      <p className="text-[12px] text-slate-400">
+      <p className="text-[13px] text-slate-400">
         Not tagged into a practice yet -- add one above to surface matching open mandates here.
       </p>
     );
@@ -42,7 +42,7 @@ export default function PracticeMatchesPanel({
   const totalMatches = groups.reduce((sum, g) => sum + g.exact.length + g.near.length, 0);
 
   if (totalMatches === 0) {
-    return <p className="text-[12px] text-slate-400">No open mandates match this candidate&apos;s practice(s) right now.</p>;
+    return <p className="text-[13px] text-slate-400">No open mandates match this candidate&apos;s practice(s) right now.</p>;
   }
 
   return (

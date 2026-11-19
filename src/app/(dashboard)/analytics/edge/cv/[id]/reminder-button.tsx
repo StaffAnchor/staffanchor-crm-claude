@@ -30,8 +30,8 @@ export default function ReminderButton({ id, name, to: to0, message: message0, r
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <button onClick={() => { setOpen(true); setSent(null); }} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700">{recent ? "Send another reminder" : "Send a reminder"}</button>
-        {sent && <span className="text-[13px] text-emerald-700 dark:text-emerald-300">Reminder sent to {sent}</span>}
+        <button onClick={() => { setOpen(true); setSent(null); }} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700">{recent ? "Send another reminder" : "Send a reminder"}</button>
+        {sent && <span className="text-[14px] text-emerald-700 dark:text-emerald-300">Reminder sent to {sent}</span>}
       </div>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
@@ -43,8 +43,8 @@ export default function ReminderButton({ id, name, to: to0, message: message0, r
             <label className="mt-3 block"><span className={lbl}>Message (they see &quot;Hi {name.split(/\s+/)[0] || "there"},&quot; above it and your signature below)</span><textarea className={input} rows={9} value={msg} onChange={(e) => setMsg(e.target.value)} /></label>
             {err && <p className="mt-2 text-sm text-red-600">{err}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setOpen(false)} className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-[13px] font-medium hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800">Cancel</button>
-              <button onClick={send} disabled={busy || !to.trim() || msg.trim().length < 10} className="rounded-lg bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
+              <button onClick={() => setOpen(false)} className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-[14px] font-medium hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800">Cancel</button>
+              <button onClick={send} disabled={busy || !to.trim() || msg.trim().length < 10} className="rounded-lg bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
             </div>
           </div>
         </div>

@@ -48,7 +48,7 @@ export default function EditCommissionControl({
     return (
       <button
         onClick={() => setEditing(true)}
-        className="inline-flex items-center gap-1 text-[12px] text-slate-600 hover:text-teal-600 tabular-nums"
+        className="inline-flex items-center gap-1 text-[13px] text-slate-600 hover:text-teal-600 tabular-nums"
       >
         {currentValue !== null ? `${currentValue}%` : <span className="text-slate-300">Not set</span>}
         <Pencil className="w-3 h-3 text-slate-300" />
@@ -70,7 +70,7 @@ export default function EditCommissionControl({
           if (e.key === "Enter") save();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="w-16 text-[12px] rounded-lg border border-slate-300 px-1.5 py-0.5"
+        className="w-16 text-[13px] rounded-lg border border-slate-300 px-1.5 py-0.5"
         placeholder="%"
       />
       <button onClick={save} disabled={saving} className="text-emerald-600 hover:text-emerald-700 disabled:opacity-50">

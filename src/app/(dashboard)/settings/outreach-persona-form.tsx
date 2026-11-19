@@ -18,7 +18,7 @@ export default function OutreachPersonaForm({
   const [saved, setSaved] = useState(false);
 
   const inputClass =
-    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
+    "w-full text-[14px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
   const labelClass = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block";
 
   async function handleSave() {

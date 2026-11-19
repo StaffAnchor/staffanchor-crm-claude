@@ -3,7 +3,7 @@
 import type { Fit } from "./fit";
 
 export const INK = "text-slate-900";
-export const LABEL = "font-mono text-[10.5px] uppercase tracking-[0.12em] text-slate-500";
+export const LABEL = "font-mono text-[12px] uppercase tracking-[0.12em] text-slate-500";
 
 export function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -51,7 +51,7 @@ export function FitRing({ fit, size = 52 }: { fit: Fit; size?: number }) {
             <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={t.ring} strokeWidth={5} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} />
           )}
         </svg>
-        <span className={`absolute inset-0 flex items-center justify-center font-mono text-[13px] font-semibold ${t.text}`}>
+        <span className={`absolute inset-0 flex items-center justify-center font-mono text-[14px] font-semibold ${t.text}`}>
           {fit.pct === null ? "—" : `${fit.pct}`}
         </span>
       </div>
@@ -73,5 +73,5 @@ export function Chip({ children, tone = "neutral" }: { children: React.ReactNode
         : tone === "info"
           ? "bg-indigo-50 text-indigo-700 border-indigo-100"
           : "bg-[#f4efe6] text-slate-600 border-[#ece7de]";
-  return <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${cls}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[12px] font-medium ${cls}`}>{children}</span>;
 }

@@ -127,7 +127,7 @@ export default function AssistBox() {
     <div ref={root} className="mx-auto w-full max-w-2xl p-1">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-[17px] font-semibold text-slate-900">{copy.heading}</h2>
-        <p className="mt-1 text-[13.5px] text-slate-500">{copy.sub}</p>
+        <p className="mt-1 text-[14px] text-slate-500">{copy.sub}</p>
 
         <form
           className="mt-4"
@@ -154,7 +154,7 @@ export default function AssistBox() {
                   setText(ex);
                   void submit(ex);
                 }}
-                className="rounded-full border border-slate-200 px-3 py-1 text-[12.5px] text-slate-600 hover:bg-slate-50"
+                className="rounded-full border border-slate-200 px-3 py-1 text-[13px] text-slate-600 hover:bg-slate-50"
               >
                 {ex}
               </button>
@@ -162,7 +162,7 @@ export default function AssistBox() {
             <button
               type="submit"
               disabled={busy || !text.trim()}
-              className="ml-auto rounded-xl bg-slate-900 px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+              className="ml-auto rounded-xl bg-slate-900 px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
             >
               {busy ? "Reading…" : "Send"}
             </button>
@@ -171,13 +171,13 @@ export default function AssistBox() {
 
         {error && (
           <div className="mt-3">
-            <p className={`text-[13px] ${limited ? "text-slate-600" : "text-rose-600"}`}>{error}</p>
+            <p className={`text-[14px] ${limited ? "text-slate-600" : "text-rose-600"}`}>{error}</p>
             {limited && (
               <a
                 href="https://wa.me/911204128963?text=Hi%20StaffAnchor"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-emerald-700"
+                className="mt-2 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-emerald-700"
               >
                 Message us on WhatsApp
               </a>
@@ -189,10 +189,10 @@ export default function AssistBox() {
           <div className="mt-5 rounded-xl bg-slate-50 p-4">
             {result.clarify ? (
               <>
-                <p className="text-[14px] font-medium text-slate-900">{result.clarify.question}</p>
+                <p className="text-[15px] font-medium text-slate-900">{result.clarify.question}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {result.clarify.options.map((o) => (
-                    <button key={o.intent} type="button" onClick={() => void correct(o.intent)} className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[13.5px] text-slate-800 hover:bg-slate-100">
+                    <button key={o.intent} type="button" onClick={() => void correct(o.intent)} className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[14px] text-slate-800 hover:bg-slate-100">
                       {o.label}
                     </button>
                   ))}
@@ -200,20 +200,20 @@ export default function AssistBox() {
               </>
             ) : !result.sure && !okd ? (
               <>
-                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Is this right?</p>
-                <p className="mt-1 text-[15px] font-medium text-slate-900">{result.understood}</p>
+                <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">Is this right?</p>
+                <p className="mt-1 text-[16px] font-medium text-slate-900">{result.understood}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setOkd(true)} className="rounded-full bg-slate-900 px-4 py-1.5 text-[13.5px] font-semibold text-white hover:bg-slate-700">
+                  <button type="button" onClick={() => setOkd(true)} className="rounded-full bg-slate-900 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-slate-700">
                     Yes, that is right
                   </button>
-                  <button type="button" onClick={() => setShowFix(true)} className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-[13.5px] text-slate-800 hover:bg-slate-100">
+                  <button type="button" onClick={() => setShowFix(true)} className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-[14px] text-slate-800 hover:bg-slate-100">
                     No, let me choose
                   </button>
                 </div>
                 {showFix && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {CLARIFY.map((o) => (
-                      <button key={o.intent} type="button" onClick={() => void correct(o.intent)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] text-slate-800 hover:bg-slate-100">
+                      <button key={o.intent} type="button" onClick={() => void correct(o.intent)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[13px] text-slate-800 hover:bg-slate-100">
                         {o.label}
                       </button>
                     ))}
@@ -222,8 +222,8 @@ export default function AssistBox() {
               </>
             ) : (
               <>
-                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">Here is what we understood</p>
-                <p className="mt-1 text-[15px] font-medium text-slate-900">{result.understood}</p>
+                <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">Here is what we understood</p>
+                <p className="mt-1 text-[16px] font-medium text-slate-900">{result.understood}</p>
                 {result.steps.filter((s) => s.primary).map((s) => (
                   <a
                     key={s.label}
@@ -236,18 +236,18 @@ export default function AssistBox() {
                       <StepIcon name={s.icon} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-semibold">{s.label}</span>
-                      <span className="block text-[12.5px] text-blue-50/90">{s.desc}</span>
+                      <span className="block text-[16px] font-semibold">{s.label}</span>
+                      <span className="block text-[13px] text-blue-50/90">{s.desc}</span>
                     </span>
                     <span aria-hidden="true" className="text-lg">&rarr;</span>
                   </a>
                 ))}
                 {result.steps.some((s) => s.primary && s.note) && (
-                  <p className="mt-1.5 px-1 text-[12px] text-slate-500">{result.steps.find((s) => s.primary)?.note}</p>
+                  <p className="mt-1.5 px-1 text-[13px] text-slate-500">{result.steps.find((s) => s.primary)?.note}</p>
                 )}
                 {result.steps.some((s) => !s.primary) && (
                   <>
-                    <p className="mt-4 text-[11.5px] font-semibold uppercase tracking-wide text-slate-400">More that may help</p>
+                    <p className="mt-4 text-[12px] font-medium uppercase tracking-wide text-slate-400">More that may help</p>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {result.steps.filter((s) => !s.primary).map((s) => (
                         <a
@@ -261,8 +261,8 @@ export default function AssistBox() {
                             <StepIcon name={s.icon} />
                           </span>
                           <span className="min-w-0">
-                            <span className="block text-[13.5px] font-semibold text-slate-900">{s.label}</span>
-                            <span className="block text-[12px] leading-snug text-slate-500">{s.desc}</span>
+                            <span className="block text-[14px] font-semibold text-slate-900">{s.label}</span>
+                            <span className="block text-[13px] leading-snug text-slate-500">{s.desc}</span>
                           </span>
                         </a>
                       ))}
@@ -272,18 +272,18 @@ export default function AssistBox() {
                 {(result.intent === "employer" || result.intent === "jobseeker") && (
                   <div className="mt-4 border-t border-slate-200 pt-3">
                     {contactDone ? (
-                      <p className="text-[13.5px] text-emerald-700">Thank you. A recruiter will reach out.</p>
+                      <p className="text-[14px] text-emerald-700">Thank you. A recruiter will reach out.</p>
                     ) : (
                       <>
-                        <p className="text-[13px] text-slate-600">Prefer that we reach out? Leave an email or mobile number.</p>
+                        <p className="text-[14px] text-slate-600">Prefer that we reach out? Leave an email or mobile number.</p>
                         <div className="mt-2 flex gap-2">
                           <input
                             value={contact}
                             onChange={(e) => setContact(e.target.value)}
                             placeholder="Email or mobile number"
-                            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-[14px]"
+                            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-[15px]"
                           />
-                          <button type="button" onClick={() => void leaveContact()} disabled={!contact.trim()} className="rounded-lg bg-slate-900 px-4 py-2 text-[13.5px] font-semibold text-white disabled:opacity-50">
+                          <button type="button" onClick={() => void leaveContact()} disabled={!contact.trim()} className="rounded-lg bg-slate-900 px-4 py-2 text-[14px] font-semibold text-white disabled:opacity-50">
                             Send
                           </button>
                         </div>
@@ -295,13 +295,13 @@ export default function AssistBox() {
                   {showFix ? (
                     <div className="flex flex-wrap gap-2">
                       {CLARIFY.map((o) => (
-                        <button key={o.intent} type="button" onClick={() => void correct(o.intent)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] text-slate-800 hover:bg-slate-100">
+                        <button key={o.intent} type="button" onClick={() => void correct(o.intent)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[13px] text-slate-800 hover:bg-slate-100">
                           {o.label}
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <button type="button" onClick={() => setShowFix(true)} className="text-[12.5px] text-slate-500 underline-offset-2 hover:underline">
+                    <button type="button" onClick={() => setShowFix(true)} className="text-[13px] text-slate-500 underline-offset-2 hover:underline">
                       Not quite right?
                     </button>
                   )}
@@ -311,7 +311,7 @@ export default function AssistBox() {
           </div>
         )}
 
-        <p className="mt-4 text-[11.5px] leading-relaxed text-slate-400">
+        <p className="mt-4 text-[12px] leading-relaxed text-slate-400">
           Please do not type sensitive personal details. We use your message only to point you to the right step. See our{" "}
           <a href="https://staffanchor.com/privacy" target="_top" className="underline">
             privacy policy

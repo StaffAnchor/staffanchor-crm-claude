@@ -169,11 +169,11 @@ export default function FlagForCallButton({
           onClick={(e) => e.stopPropagation()}
         >
           {sent ? (
-            <p className="text-[12px] text-emerald-700 font-medium">Sent -- it&apos;s on their My Desk now.</p>
+            <p className="text-[13px] text-emerald-700 font-medium">Sent -- it&apos;s on their My Desk now.</p>
           ) : (
             <>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">
+                <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
                   {existingFlag ? "Reassign this call" : "Who should call?"}
                 </p>
                 <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
@@ -216,7 +216,7 @@ export default function FlagForCallButton({
                 type="button"
                 onClick={send}
                 disabled={!recruiterId || sending}
-                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white text-[12px] font-medium px-2 py-1.5 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-2 py-1.5 disabled:opacity-50"
               >
                 {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                 {existingFlag ? "Update" : "Send"}

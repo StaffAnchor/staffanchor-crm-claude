@@ -294,7 +294,7 @@ export default function MandateLinksPanel({
 
               {applicationAnswersByMandate?.[l.mandate_id]?.length ? (
                 <div className="mt-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-2.5 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-1">
                     Application answers
                   </p>
                   <dl className="space-y-1">

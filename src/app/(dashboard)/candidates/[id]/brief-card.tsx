@@ -74,7 +74,7 @@ export default function BriefCard({
 
   if (!brief) {
     return (
-      <div className="flex flex-wrap items-center gap-3 text-[13px] text-slate-500">
+      <div className="flex flex-wrap items-center gap-3 text-[14px] text-slate-500">
         <FileText className="h-4 w-4 text-slate-400" />
         <span>No client brief yet. It is written after your first call note.</span>
         <button type="button" onClick={regenerate} disabled={busy} className="text-teal-700 underline decoration-teal-300 underline-offset-2 disabled:opacity-60 dark:text-teal-300">
@@ -89,31 +89,31 @@ export default function BriefCard({
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <FileText className="h-4 w-4 text-teal-600" />
-        <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Candidate brief</h3>
-        <span className="text-[12px] text-slate-400">
+        <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Candidate brief</h3>
+        <span className="text-[13px] text-slate-400">
           Written by the system{fromCall ? " from the CV and your call notes" : " from the CV"}
           {generatedAt ? ` · ${new Date(generatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : ""}
         </span>
         <div className="ml-auto flex items-center gap-2">
           {brief && (
             <>
-              <button type="button" onClick={() => copy(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-[12px] font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800" title="Without the name or employer, for a first look by a client">
+              <button type="button" onClick={() => copy(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-[13px] font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800" title="Without the name or employer, for a first look by a client">
                 {copied === "client" ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />} Copy client version
               </button>
-              <button type="button" onClick={() => copy(false)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-[12px] font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
+              <button type="button" onClick={() => copy(false)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-[13px] font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
                 {copied === "full" ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />} Copy with name
               </button>
             </>
           )}
-          <button type="button" onClick={regenerate} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-2.5 py-1 text-[12px] font-medium text-white hover:bg-teal-700 disabled:opacity-60">
+          <button type="button" onClick={regenerate} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-2.5 py-1 text-[13px] font-medium text-white hover:bg-teal-700 disabled:opacity-60">
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} {brief ? "Rewrite" : "Write the brief"}
           </button>
         </div>
       </div>
-      {error && <p className="mb-2 text-[12.5px] text-rose-600">{error}</p>}
+      {error && <p className="mb-2 text-[13px] text-rose-600">{error}</p>}
 
       {brief && (
-        <div className={`mb-3 flex flex-wrap items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] ${approvedAt && !changedSinceApproval ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200" : "bg-amber-50 text-amber-900 dark:bg-amber-950/20 dark:text-amber-200"}`}>
+        <div className={`mb-3 flex flex-wrap items-center gap-2 rounded-lg px-3 py-2 text-[13px] ${approvedAt && !changedSinceApproval ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200" : "bg-amber-50 text-amber-900 dark:bg-amber-950/20 dark:text-amber-200"}`}>
           <span className="font-semibold">Client one-pager:</span>
           <span className="flex-1">
             {!approvedAt
@@ -123,12 +123,12 @@ export default function BriefCard({
                 : `Approved ${new Date(approvedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}. Clients with this person on a shortlist can read it.`}
           </span>
           {(!approvedAt || changedSinceApproval) && (
-            <button type="button" disabled={busy} onClick={() => setApproved(true)} className="rounded-full bg-emerald-600 px-3 py-1 text-[12px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+            <button type="button" disabled={busy} onClick={() => setApproved(true)} className="rounded-full bg-emerald-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
               {changedSinceApproval ? "Approve the new version" : "Approve for clients"}
             </button>
           )}
           {approvedAt && (
-            <button type="button" disabled={busy} onClick={() => setApproved(false)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+            <button type="button" disabled={busy} onClick={() => setApproved(false)} className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
               Withdraw
             </button>
           )}
@@ -136,11 +136,11 @@ export default function BriefCard({
       )}
 
       {!brief ? (
-        <p className="text-[12.5px] text-slate-500">No brief yet. It is written automatically after your first call note or when someone is added to the Talent Pool. Or write it now.</p>
+        <p className="text-[13px] text-slate-500">No brief yet. It is written automatically after your first call note or when someone is added to the Talent Pool. Or write it now.</p>
       ) : (
-        <div className="space-y-3 text-[13px] text-slate-700 dark:text-slate-200">
+        <div className="space-y-3 text-[14px] text-slate-700 dark:text-slate-200">
           <div>
-            <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{brief.headline}</p>
+            <p className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{brief.headline}</p>
             <p className="mt-1 leading-6">{brief.summary}</p>
           </div>
           {brief.signals.length > 0 && (
@@ -155,29 +155,29 @@ export default function BriefCard({
           <div className="grid gap-4 md:grid-cols-2">
             {brief.selling.length > 0 && (
               <div>
-                <p className="mb-1 text-[12.5px] font-medium text-slate-500">Selling track record</p>
+                <p className="mb-1 text-[13px] font-medium text-slate-500">Selling track record</p>
                 <ul className="list-disc space-y-0.5 pl-5">{brief.selling.map((x) => <li key={x}>{x}</li>)}</ul>
               </div>
             )}
             {brief.strengths.length > 0 && (
               <div>
-                <p className="mb-1 text-[12.5px] font-medium text-slate-500">Strengths</p>
+                <p className="mb-1 text-[13px] font-medium text-slate-500">Strengths</p>
                 <ul className="list-disc space-y-0.5 pl-5">{brief.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
               </div>
             )}
           </div>
           {brief.recruiter_take && (
-            <p className="rounded-ros-md bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+            <p className="rounded-ros-md bg-amber-50 px-3 py-2 text-[13px] text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
               <span className="font-semibold">Our take:</span> {brief.recruiter_take}
             </p>
           )}
           {brief.probe.length > 0 && (
             <div>
-              <p className="mb-1 text-[12.5px] font-medium text-slate-500">To confirm on the call</p>
+              <p className="mb-1 text-[13px] font-medium text-slate-500">To confirm on the call</p>
               <ul className="list-disc space-y-0.5 pl-5">{brief.probe.map((x) => <li key={x}>{x}</li>)}</ul>
             </div>
           )}
-          <p className="text-[12px] text-slate-500">
+          <p className="text-[13px] text-slate-500">
             {[brief.logistics.city && `Based in ${brief.logistics.city}`, brief.logistics.notice && `Notice ${brief.logistics.notice}`, brief.logistics.pay, brief.logistics.relocation && `Relocation: ${brief.logistics.relocation}`].filter(Boolean).join(" · ")}
           </p>
         </div>

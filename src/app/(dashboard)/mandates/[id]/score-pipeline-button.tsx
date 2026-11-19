@@ -34,12 +34,12 @@ export default function ScorePipelineButton({ mandateId, disabled }: { mandateId
         onClick={run}
         disabled={busy || disabled}
         title="Score every candidate already in this pipeline against this role"
-        className="inline-flex items-center gap-1.5 rounded-ros-md border border-slate-300 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+        className="inline-flex items-center gap-1.5 rounded-ros-md border border-slate-300 bg-white px-3 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
       >
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-teal-500" />}
         {busy ? "Scoring…" : "Score the pipeline"}
       </button>
-      {msg && <span className={`text-[12.5px] ${msg.ok ? "text-emerald-700" : "text-rose-600"}`}>{msg.text}</span>}
+      {msg && <span className={`text-[13px] ${msg.ok ? "text-emerald-700" : "text-rose-600"}`}>{msg.text}</span>}
     </span>
   );
 }

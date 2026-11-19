@@ -39,7 +39,7 @@ export default function MultiSelectChips({
           {selected.map((v) => (
             <span
               key={v}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[12px] px-2.5 py-1"
+              className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[13px] px-2.5 py-1"
             >
               {labelFor(v)}
               <button type="button" onClick={() => toggle(v)} className="text-slate-400 hover:text-red-600">
@@ -56,9 +56,9 @@ export default function MultiSelectChips({
         className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm mb-1.5"
       />
       <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 p-2 space-y-0.5">
-        {filtered.length === 0 && <p className="text-[12px] text-slate-400 px-1 py-1">No matches.</p>}
+        {filtered.length === 0 && <p className="text-[13px] text-slate-400 px-1 py-1">No matches.</p>}
         {filtered.map((o) => (
-          <label key={o.value} className="flex items-center gap-2 text-[13px] text-slate-700 dark:text-slate-300 px-1 py-0.5">
+          <label key={o.value} className="flex items-center gap-2 text-[14px] text-slate-700 dark:text-slate-300 px-1 py-0.5">
             <input type="checkbox" checked={selected.includes(o.value)} onChange={() => toggle(o.value)} />
             {o.label}
           </label>

@@ -13,7 +13,7 @@ function VendorSignOutButton() {
     window.location.assign("/login");
   }
   return (
-    <button onClick={handleSignOut} className="text-[13px] text-slate-400 hover:text-white font-medium">
+    <button onClick={handleSignOut} className="text-[14px] text-slate-400 hover:text-white font-medium">
       Sign out
     </button>
   );
@@ -50,12 +50,12 @@ export default function VendorNav({
               className="h-7 md:h-9 w-auto object-contain"
             />
           </span>
-          <span className="text-[13px] font-semibold text-teal-400 tracking-tight hidden md:block">
+          <span className="text-[14px] font-semibold text-teal-400 tracking-tight hidden md:block">
             Vendor Portal
           </span>
         </div>
 
-        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto text-[13px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto text-[14px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV_LINKS.map((link) => {
             const active = pathname.startsWith(link.href);
             return (
@@ -79,7 +79,7 @@ export default function VendorNav({
 
         <LiveClock />
 
-        <span className="text-[12px] text-slate-400 hidden sm:block">{fullName ?? email}</span>
+        <span className="text-[13px] text-slate-400 hidden sm:block">{fullName ?? email}</span>
         <VendorSignOutButton />
       </div>
     </header>

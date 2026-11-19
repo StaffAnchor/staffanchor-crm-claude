@@ -137,7 +137,7 @@ export default function RoleBoardView({
     <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
       {banner}
       {backHref && (
-        <Link href={backHref} className="inline-flex items-center gap-1.5 text-[12px] text-slate-500 hover:text-slate-800">
+        <Link href={backHref} className="inline-flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-slate-800">
           <ArrowLeft className="h-3.5 w-3.5" /> All your roles
         </Link>
       )}
@@ -146,7 +146,7 @@ export default function RoleBoardView({
         <div>
           <p className={LABEL}>Shortlist</p>
           <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-slate-900">{role.role_title}</h1>
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-500">
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-slate-500">
             {facts.map((f, i) => (
               <span key={i} className="inline-flex items-center gap-1">
                 {f}
@@ -188,11 +188,11 @@ export default function RoleBoardView({
                   role="tab"
                   aria-selected={on}
                   onClick={() => setTab(t.key)}
-                  className={`-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-[3px] px-4 py-2.5 text-[13.5px] font-semibold transition ${on ? `${TAB_LOOK[t.key].line} ${TAB_LOOK[t.key].ink}` : "border-transparent font-medium text-slate-500 hover:text-slate-800"}`}
+                  className={`-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-[3px] px-4 py-2.5 text-[14px] font-semibold transition ${on ? `${TAB_LOOK[t.key].line} ${TAB_LOOK[t.key].ink}` : "border-transparent font-medium text-slate-500 hover:text-slate-800"}`}
                 >
                   <span className={`h-2 w-2 rounded-full ${TAB_LOOK[t.key].dot} ${on ? "" : "opacity-40"}`} />
                   {t.label}
-                  <span className={`rounded-full px-2 py-0.5 font-mono text-[11px] ${on ? (t.key === "review" && tabCounts.review > 0 ? "bg-[#e8896a] text-white" : "bg-slate-900 text-white") : t.key === "review" && tabCounts.review > 0 ? "bg-[#fbe7df] text-[#c2553a]" : "bg-[#f1ece2] text-slate-500"}`}>{tabCounts[t.key]}</span>
+                  <span className={`rounded-full px-2 py-0.5 font-mono text-[12px] ${on ? (t.key === "review" && tabCounts.review > 0 ? "bg-[#e8896a] text-white" : "bg-teal-600 text-white") : t.key === "review" && tabCounts.review > 0 ? "bg-[#fbe7df] text-[#c2553a]" : "bg-[#f1ece2] text-slate-500"}`}>{tabCounts[t.key]}</span>
                 </button>
               );
             })}
@@ -207,7 +207,7 @@ export default function RoleBoardView({
           {([["all", "All"], ["passed_cv", STATUS_NAME.passed_cv], ["not_selected", STATUS_NAME.not_selected], ["withdrawn", STATUS_NAME.withdrawn]] as const).map(([k, label]) => {
             const n = k === "all" ? tabCounts.passed : cands.filter((c) => statusOf(c) === k).length;
             return (
-              <button key={k} type="button" onClick={() => setClosedFilter(k)} className={`rounded-full border px-3 py-1 text-[12px] font-medium transition ${closedFilter === k ? "border-slate-900 bg-slate-900 text-white" : "border-[#e3ddd1] bg-white text-slate-600 hover:border-slate-400"}`}>
+              <button key={k} type="button" onClick={() => setClosedFilter(k)} className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${closedFilter === k ? "border-slate-900 bg-teal-600 text-white" : "border-[#e3ddd1] bg-white text-slate-600 hover:border-slate-400"}`}>
                 {label} <span className="font-mono">{n}</span>
               </button>
             );
@@ -222,7 +222,7 @@ export default function RoleBoardView({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name, title or company"
-            className="w-full rounded-xl border border-[#e3ddd1] bg-white py-2 pl-9 pr-3 text-[13px] outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-xl border border-[#e3ddd1] bg-white py-2 pl-9 pr-3 text-[14px] outline-none focus:ring-2 focus:ring-indigo-200"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -239,7 +239,7 @@ export default function RoleBoardView({
           }}
           disabled={cands.length === 0}
           title="Opens in Excel or Google Sheets"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[#e3ddd1] bg-white px-3 py-2 text-[12.5px] font-medium text-slate-700 hover:bg-[#f4efe6] disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#e3ddd1] bg-white px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-[#f4efe6] disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" /> Download spreadsheet
         </button>
@@ -249,7 +249,7 @@ export default function RoleBoardView({
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-medium ${view === v ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-[#f4efe6]"}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium ${view === v ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-[#f4efe6]"}`}
             >
               {v === "cards" ? <Rows3 className="h-3.5 w-3.5" /> : v === "board" ? <LayoutGrid className="h-3.5 w-3.5" /> : <List className="h-3.5 w-3.5" />}
               {v === "cards" ? "Cards" : v === "board" ? "Board" : "List"}
@@ -261,13 +261,13 @@ export default function RoleBoardView({
 
       {cands.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-[#d9d2c4] bg-white/60 px-6 py-16 text-center">
-          <p className="text-[15px] font-medium text-slate-800">No candidates shortlisted yet</p>
-          <p className="mt-1 text-[13px] text-slate-500">Your recruiter adds people here as soon as they have spoken to them. You will see why each one fits before you decide.</p>
+          <p className="text-[16px] font-medium text-slate-800">No candidates shortlisted yet</p>
+          <p className="mt-1 text-[14px] text-slate-500">Your recruiter adds people here as soon as they have spoken to them. You will see why each one fits before you decide.</p>
         </div>
       ) : view === "cards" ? (
         <div className="mx-auto mt-5 max-w-5xl space-y-4">
           {visible.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-[#d9d2c4] bg-white/60 px-6 py-12 text-center text-[13.5px] text-slate-500">{query.trim() ? "No one matches that search." : activeTab.empty}</p>
+            <p className="rounded-2xl border border-dashed border-[#d9d2c4] bg-white/60 px-6 py-12 text-center text-[14px] text-slate-500">{query.trim() ? "No one matches that search." : activeTab.empty}</p>
           ) : (
             visible.map((c) => (
               <div key={c.link_id}>
@@ -285,13 +285,13 @@ export default function RoleBoardView({
                 <div className="mb-3 flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${col.dot}`} />
-                    <h2 className="text-[13px] font-semibold text-slate-800">{col.title}</h2>
+                    <h2 className="text-[14px] font-semibold text-slate-800">{col.title}</h2>
                   </div>
-                  <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[11px] text-slate-500">{items.length}</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[12px] text-slate-500">{items.length}</span>
                 </div>
                 <div className="space-y-3">
                   {items.length === 0 ? (
-                    <p className="px-2 py-6 text-center text-[12px] text-slate-400">{col.hint}</p>
+                    <p className="px-2 py-6 text-center text-[13px] text-slate-400">{col.hint}</p>
                   ) : (
                     items.map((c) => <CandidateCard key={c.link_id} role={role} c={c} onOpen={() => setOpenId(c.link_id)} getResumeUrl={getResumeUrl} onFeedback={handleFeedback} />)
                   )}
@@ -303,7 +303,7 @@ export default function RoleBoardView({
       ) : (
         <div className="mx-auto mt-5 max-w-3xl space-y-3">
           {visible.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-[#d9d2c4] bg-white/60 px-6 py-12 text-center text-[13.5px] text-slate-500">{query.trim() ? "No one matches that search." : activeTab.empty}</p>
+            <p className="rounded-2xl border border-dashed border-[#d9d2c4] bg-white/60 px-6 py-12 text-center text-[14px] text-slate-500">{query.trim() ? "No one matches that search." : activeTab.empty}</p>
           ) : (
             visible.map((c) => (
               <div key={c.link_id}>

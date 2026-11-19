@@ -21,7 +21,7 @@ type Draft = {
   emailedTo: string | null;
 };
 
-const INPUT = "w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[13px]";
+const INPUT = "w-full rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1.5 text-[14px]";
 
 export default function InvoiceEmailModal({
   trancheId,
@@ -93,12 +93,12 @@ export default function InvoiceEmailModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{reminder ? "Payment reminder" : "Email"} {docName}{draft ? ` ${draft.number}` : ""}</h2>
+          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{reminder ? "Payment reminder" : "Email"} {docName}{draft ? ` ${draft.number}` : ""}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 text-sm">✕</button>
         </div>
 
-        {!draft && !error && <p className="p-5 text-[13px] text-slate-400">Preparing…</p>}
-        {!draft && error && <p className="p-5 text-[13px] text-red-600">{error}</p>}
+        {!draft && !error && <p className="p-5 text-[14px] text-slate-400">Preparing…</p>}
+        {!draft && error && <p className="p-5 text-[14px] text-red-600">{error}</p>}
 
         {draft && (
           <div className="p-5 space-y-3">
@@ -108,11 +108,11 @@ export default function InvoiceEmailModal({
               </div>
             )}
             <Row label="From">
-              <p className="text-[13px] text-slate-700 dark:text-slate-300 py-1.5">StaffAnchor &lt;{draft.from}&gt;</p>
+              <p className="text-[14px] text-slate-700 dark:text-slate-300 py-1.5">StaffAnchor &lt;{draft.from}&gt;</p>
             </Row>
             <Row label="To">
               <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="client@company.com" className={INPUT} />
-              <p className="text-[11.5px] text-slate-400 mt-1">
+              <p className="text-[12px] text-slate-400 mt-1">
                 {draft.toSource ? `Picked from the ${draft.toSource}. ` : "No email on file for this client. "}
                 Separate several addresses with commas, e.g. to add the finance team.
               </p>
@@ -123,7 +123,7 @@ export default function InvoiceEmailModal({
                       key={c.email}
                       type="button"
                       onClick={() => setTo((t) => (t.toLowerCase().includes(c.email.toLowerCase()) ? t : t ? `${t}, ${c.email}` : c.email))}
-                      className="text-[11.5px] rounded-full border border-slate-300 dark:border-slate-700 px-2 py-0.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      className="text-[12px] rounded-full border border-slate-300 dark:border-slate-700 px-2 py-0.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     >
                       + {c.name ? `${c.name} ` : ""}{c.email}
                     </button>
@@ -140,27 +140,27 @@ export default function InvoiceEmailModal({
             <Row label="Message">
               <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={9} className={INPUT} />
             </Row>
-            <p className="text-[11.5px] text-slate-400">Attached: {draft.fileName}</p>
+            <p className="text-[12px] text-slate-400">Attached: {draft.fileName}</p>
 
-            {error && <p className="text-[12px] text-red-600">{error}</p>}
-            {done && <p className="text-[12px] text-emerald-600">{done}</p>}
+            {error && <p className="text-[13px] text-red-600">{error}</p>}
+            {done && <p className="text-[13px] text-emerald-600">{done}</p>}
 
             <div className="flex items-center gap-2 pt-1">
               <button
                 onClick={() => send(false)}
                 disabled={busy !== null || !!done}
-                className="rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[12.5px] font-medium px-3 py-1.5"
+                className="rounded-md bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[13px] font-medium px-3 py-1.5"
               >
                 {busy === "send" ? "Sending…" : reminder ? "Send reminder" : "Send to client"}
               </button>
               <button
                 onClick={() => send(true)}
                 disabled={busy !== null}
-                className="rounded-md border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12.5px] font-medium px-3 py-1.5 disabled:opacity-50"
+                className="rounded-md border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px] font-medium px-3 py-1.5 disabled:opacity-50"
               >
                 {busy === "test" ? "Sending…" : "Send test to me only"}
               </button>
-              <button onClick={onClose} className="rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-100 text-[12.5px] font-medium px-3 py-1.5">
+              <button onClick={onClose} className="rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-100 text-[13px] font-medium px-3 py-1.5">
                 {done ? "Close" : "Cancel"}
               </button>
             </div>

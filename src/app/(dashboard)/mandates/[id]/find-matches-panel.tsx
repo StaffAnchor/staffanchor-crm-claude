@@ -218,10 +218,10 @@ export default function FindMatchesPanel({
           <Sparkles className="w-3.5 h-3.5 text-teal-500" /> Find matching candidates
         </h2>
       </div>
-      <p className="text-[12px] text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-400 mb-3">
         AI scans your existing candidate pool against this mandate&apos;s JD, must haves, and good to haves.
       </p>
-      <p className="text-[12px] mb-3">
+      <p className="text-[13px] mb-3">
         <Link href={`/candidates/search?mandate=${mandateId}`} className="font-medium text-teal-600 hover:underline">
           Search the whole database for this mandate →
         </Link>{" "}
@@ -232,7 +232,7 @@ export default function FindMatchesPanel({
         <button
           onClick={runMatch}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[14px] font-medium py-2 disabled:opacity-60"
         >
           {loading ? (
             <>
@@ -246,7 +246,7 @@ export default function FindMatchesPanel({
         </button>
       )}
 
-      {error && <p className="text-[12px] text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-[13px] text-red-600 mt-2">{error}</p>}
 
       {matches && (
         <>
@@ -275,7 +275,7 @@ export default function FindMatchesPanel({
           </div>
 
           {matches.length === 0 && (
-            <p className="text-[12px] text-slate-400 py-4 text-center">
+            <p className="text-[13px] text-slate-400 py-4 text-center">
               No strong matches found in the current candidate pool for this mandate.
             </p>
           )}
@@ -295,7 +295,7 @@ export default function FindMatchesPanel({
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
                           target="_blank" rel="noopener noreferrer" href={`/candidates/${m.candidate_id}?mandateId=${mandateId}`}
-                          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate"
+                          className="text-[14px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate"
                         >
                           {m.full_name}
                         </Link>
@@ -326,7 +326,7 @@ export default function FindMatchesPanel({
                           </Link>
                         )}
                       </div>
-                      <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{m.reason}</p>
+                      <p className="text-[13px] text-slate-600 dark:text-slate-400 mt-0.5">{m.reason}</p>
 
                       {isScoreOpen && m.score_breakdown && (
                         <div className="mt-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 space-y-1.5">
@@ -372,7 +372,7 @@ export default function FindMatchesPanel({
                   <button
                     onClick={() => addToPipeline(m)}
                     disabled={added || addingId === m.candidate_id}
-                    className="w-full mt-2 flex items-center justify-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12px] py-1.5 disabled:opacity-50"
+                    className="w-full mt-2 flex items-center justify-center gap-1 rounded-lg border border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px] py-1.5 disabled:opacity-50"
                   >
                     {added ? (
                       <>

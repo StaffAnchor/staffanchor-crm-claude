@@ -86,11 +86,11 @@ export default function ReassignCallControl({
           onClick={(e) => e.stopPropagation()}
         >
           {sent ? (
-            <p className="text-[12px] text-emerald-700 font-medium">Reassigned -- back on their queue as open.</p>
+            <p className="text-[13px] text-emerald-700 font-medium">Reassigned -- back on their queue as open.</p>
           ) : (
             <>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">Reassign to</p>
+                <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Reassign to</p>
                 <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -113,7 +113,7 @@ export default function ReassignCallControl({
                 type="button"
                 onClick={send}
                 disabled={!recruiterId || sending}
-                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white text-[12px] font-medium px-2 py-1.5 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-1 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-2 py-1.5 disabled:opacity-50"
               >
                 {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                 Reassign

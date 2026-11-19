@@ -21,9 +21,9 @@ export default function CopyBox({ label, value, rows }: { label: string; value: 
         <button onClick={copy} className="rounded-md bg-teal-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-teal-700">{done ? "Copied" : "Copy"}</button>
       </div>
       {rows ? (
-        <textarea readOnly rows={rows} value={value} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
+        <textarea readOnly rows={rows} value={value} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900" />
       ) : (
-        <input readOnly value={value} onFocus={(e) => e.currentTarget.select()} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
+        <input readOnly value={value} onFocus={(e) => e.currentTarget.select()} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px] dark:border-slate-700 dark:bg-slate-900" />
       )}
     </div>
   );

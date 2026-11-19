@@ -105,7 +105,7 @@ function PromptSearch() {
 
   return (
     <div>
-      <Link href="/candidates" className="mb-3 inline-flex items-center gap-1.5 text-[12.5px] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
+      <Link href="/candidates" className="mb-3 inline-flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
         <ArrowLeft className="h-3.5 w-3.5" /> Back to Candidates
       </Link>
 
@@ -113,7 +113,7 @@ function PromptSearch() {
         <h1 className="flex items-center gap-2 text-[20px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           <Sparkles className="h-5 w-5 text-teal-600" /> Prompt search
         </h1>
-        <p className="mt-0.5 text-[12.5px] text-slate-500 dark:text-slate-400">Describe who you need in plain English, or start from one of your open mandates. Searches the whole candidate database.</p>
+        <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">Describe who you need in plain English, or start from one of your open mandates. Searches the whole candidate database.</p>
       </div>
 
       <Card className="mb-4 p-4">
@@ -126,7 +126,7 @@ function PromptSearch() {
               setSpec(null);
               if (e.target.value) run({ mandate: e.target.value });
             }}
-            className="max-w-[320px] rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[12px] dark:border-slate-700"
+            className="max-w-[320px] rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[13px] dark:border-slate-700"
           >
             <option value="">No mandate (free search)</option>
             {mandates.map((m) => (
@@ -145,11 +145,11 @@ function PromptSearch() {
           }}
           placeholder="e.g. B2B SaaS Account Executives in Bangalore, 4-7 years, currently hunting not farming"
           rows={3}
-          className="w-full resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13.5px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-teal-800"
+          className="w-full resize-none rounded-ros-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-[14px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:focus:ring-teal-800"
         />
         <div className="mb-2 mt-2.5 flex items-center gap-2">
           <label className="shrink-0 text-xs text-slate-500 dark:text-slate-400">Restrict to practice:</label>
-          <select value={practiceId} onChange={(e) => setPracticeId(e.target.value)} className="rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[12px] dark:border-slate-700">
+          <select value={practiceId} onChange={(e) => setPracticeId(e.target.value)} className="rounded-md border border-slate-300 bg-transparent px-2 py-1 text-[13px] dark:border-slate-700">
             <option value="">All practices</option>
             {allPractices.map((p) => (
               <option key={p.id} value={p.id}>
@@ -169,7 +169,7 @@ function PromptSearch() {
           <button
             onClick={() => run({ text: prompt, mandate: mandateId })}
             disabled={loading || (!prompt.trim() && !mandateId)}
-            className="flex shrink-0 items-center gap-1.5 rounded-ros-md bg-teal-600 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-ros-md bg-teal-600 px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
             {loading ? "Searching…" : "Search"}
@@ -179,21 +179,21 @@ function PromptSearch() {
 
       {error && (
         <Card className="mb-4 border-red-200 bg-red-50/40 p-4 dark:border-red-900 dark:bg-red-950/20">
-          <p className="text-[13px] text-red-700 dark:text-red-400">{error}</p>
+          <p className="text-[14px] text-red-700 dark:text-red-400">{error}</p>
         </Card>
       )}
 
       {res && (
         <>
           <Card className="mb-4 p-4">
-            <p className="mb-2 text-[12px] font-medium text-slate-600 dark:text-slate-300">
+            <p className="mb-2 text-[13px] font-medium text-slate-600 dark:text-slate-300">
               {res.understood ? "How I read your search" : "I couldn't break this search down automatically, so it runs on meaning alone"}
               <span className="ml-1 font-normal text-slate-400">· remove a filter to widen the search, or add a requirement</span>
             </p>
             <div className="flex flex-wrap items-center gap-1.5">
-              {chips.length === 0 && <span className="text-[12px] text-slate-400">No specific filters found.</span>}
+              {chips.length === 0 && <span className="text-[13px] text-slate-400">No specific filters found.</span>}
               {chips.map((c) => (
-                <span key={c.id} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium ring-1 ${CHIP_CLS[c.kind]}`}>
+                <span key={c.id} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium ring-1 ${CHIP_CLS[c.kind]}`}>
                   {c.text}
                   <button onClick={() => spec && run({ text: prompt, useSpec: c.remove(spec), mandate: mandateId })} aria-label={`Remove ${c.text}`} className="rounded-full hover:bg-black/10">
                     <X className="h-3 w-3" />
@@ -212,13 +212,13 @@ function PromptSearch() {
                   run({ text: prompt, useSpec: next, mandate: mandateId });
                 }}
               >
-                <input value={newMust} onChange={(e) => setNewMust(e.target.value)} placeholder="Add a requirement" className="w-40 rounded-full border border-dashed border-slate-300 bg-transparent px-2.5 py-1 text-[12px] dark:border-slate-600" />
+                <input value={newMust} onChange={(e) => setNewMust(e.target.value)} placeholder="Add a requirement" className="w-40 rounded-full border border-dashed border-slate-300 bg-transparent px-2.5 py-1 text-[13px] dark:border-slate-600" />
                 <button type="submit" aria-label="Add requirement" className="rounded-full p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
                   <Plus className="h-3.5 w-3.5" />
                 </button>
               </form>
             </div>
-            <p className="mt-2 text-[12px] text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
               {res.matches.length} match{res.matches.length === 1 ? "" : "es"} · looked at {res.scanned} candidates
               {total > 0 && (
                 <>
@@ -232,18 +232,18 @@ function PromptSearch() {
               )}
               {res.inPipelineSkipped > 0 && <> · {res.inPipelineSkipped} already in this mandate&apos;s pipeline</>}
             </p>
-            {res.partial && <p className="mt-1 text-[12px] text-amber-700">Part of the AI review failed, so some candidates may be missing. Search again to retry.</p>}
+            {res.partial && <p className="mt-1 text-[13px] text-amber-700">Part of the AI review failed, so some candidates may be missing. Search again to retry.</p>}
           </Card>
 
           {res.matches.length === 0 ? (
             <Card className="p-6 text-center">
-              <p className="text-[13px] text-slate-500 dark:text-slate-400">No strong matches for this request. Remove a filter above to widen it.</p>
+              <p className="text-[14px] text-slate-500 dark:text-slate-400">No strong matches for this request. Remove a filter above to widen it.</p>
             </Card>
           ) : (
             <div className="space-y-5">
               {groups.map((g) => (
                 <section key={g.title}>
-                  <h2 className="mb-2 text-[12.5px] font-semibold text-slate-700 dark:text-slate-200">
+                  <h2 className="mb-2 text-[13px] font-semibold text-slate-700 dark:text-slate-200">
                     {g.title} <span className="font-normal text-slate-400">· {g.hint} · {g.items.length}</span>
                   </h2>
                   <div className="space-y-2">

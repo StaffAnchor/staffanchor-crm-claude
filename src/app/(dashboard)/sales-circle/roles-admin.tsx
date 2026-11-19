@@ -56,8 +56,8 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
           <button
             key={c.key}
             onClick={() => setFilter(c.key)}
-            className={`rounded-full border px-3 py-1 text-[12px] font-medium ${
-              filter === c.key ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
+            className={`rounded-full border px-3 py-1 text-[13px] font-medium ${
+              filter === c.key ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
             }`}
           >
             {c.label}
@@ -69,8 +69,8 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
         {shown.map(({ role: r, ready, payout, suggested }) => (
           <div key={r.id} className="grid gap-3 px-4 py-3.5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] lg:items-center">
             <div className="min-w-0">
-              <div className="truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{r.role_title}</div>
-              <div className="mt-0.5 truncate text-[12px] text-slate-500 dark:text-slate-400">
+              <div className="truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">{r.role_title}</div>
+              <div className="mt-0.5 truncate text-[13px] text-slate-500 dark:text-slate-400">
                 {r.client_name ?? "—"} · {r.city ?? "No city"} · {ctcBand(r.budget_min, r.budget_max) ?? "No CTC yet"}
                 {payout != null ? (
                   <span className="font-medium text-emerald-700 dark:text-emerald-400"> · Pays ₹{payout.toLocaleString("en-IN")}</span>
@@ -114,7 +114,7 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
             </div>
           </div>
         ))}
-        {shown.length === 0 && <p className="px-4 py-8 text-center text-[13px] text-slate-400">Nothing in this view.</p>}
+        {shown.length === 0 && <p className="px-4 py-8 text-center text-[14px] text-slate-400">Nothing in this view.</p>}
       </div>
 
       {previewing && (
@@ -122,8 +122,8 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
           <div className="w-full max-w-3xl rounded-2xl bg-slate-50 p-5 shadow-2xl sm:p-6">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-[15px] font-semibold text-slate-900">Exactly what a referrer sees</h3>
-                <p className="text-[12px] text-slate-500">The client company name is never shown to referrers.</p>
+                <h3 className="text-[16px] font-semibold text-slate-900">Exactly what a referrer sees</h3>
+                <p className="text-[13px] text-slate-500">The client company name is never shown to referrers.</p>
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={() => setPreviewId(null)} aria-label="Close" className="text-slate-400 hover:text-slate-700">
@@ -136,12 +136,12 @@ export default function RolesAdmin({ roles, slabs }: { roles: AdminRole[]; slabs
               role={{ ...previewing.role, payout_amount: previewing.payout }}
             />
             {!previewing.ready.ready && (
-              <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-800">
+              <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
                 Referrers will see &ldquo;To be confirmed&rdquo; for missing details. Still missing: {previewing.ready.missingCore.join(", ")}.
               </p>
             )}
             {previewing.ready.missingExtra.length > 0 && previewing.ready.ready && (
-              <p className="mt-3 text-[12px] text-slate-500">Optional details not filled in yet: {previewing.ready.missingExtra.join(", ")}. Adding them makes the role clearer.</p>
+              <p className="mt-3 text-[13px] text-slate-500">Optional details not filled in yet: {previewing.ready.missingExtra.join(", ")}. Adding them makes the role clearer.</p>
             )}
           </div>
         </div>

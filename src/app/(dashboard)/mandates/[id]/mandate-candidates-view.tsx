@@ -133,7 +133,7 @@ export default function MandateCandidatesView({
             onClick={() => setStageFilter("active")}
             className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors duration-200 ease-ros ${
               stageFilter === "active"
-                ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
@@ -143,7 +143,7 @@ export default function MandateCandidatesView({
             onClick={() => setStageFilter("all")}
             className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors duration-200 ease-ros ${
               stageFilter === "all"
-                ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
@@ -155,7 +155,7 @@ export default function MandateCandidatesView({
               onClick={() => setStageFilter(s)}
               className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-colors duration-200 ease-ros ${
                 stageFilter === s
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                  ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
@@ -172,7 +172,7 @@ export default function MandateCandidatesView({
                   setRecruiterFilter("all");
                 }}
                 title="Filter by how these candidates entered the system"
-                className="h-8 w-40 shrink-0 rounded-full border border-slate-200 bg-white px-3 text-[12.5px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                className="h-8 w-40 shrink-0 rounded-full border border-slate-200 bg-white px-3 text-[13px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               >
                 <option value="all">All sources</option>
                 {sourceOptions.map(([cb, label]) => (
@@ -186,7 +186,7 @@ export default function MandateCandidatesView({
                   value={recruiterFilter}
                   onChange={(e) => setRecruiterFilter(e.target.value)}
                   title="Drill down to which recruiter added these candidates"
-                  className="h-8 w-40 shrink-0 rounded-full border border-slate-200 bg-white px-3 text-[12.5px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  className="h-8 w-40 shrink-0 rounded-full border border-slate-200 bg-white px-3 text-[13px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 >
                   <option value="all">Added by: anyone</option>
                   {recruiterOptions.map((o) => (

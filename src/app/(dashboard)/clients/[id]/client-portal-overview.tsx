@@ -30,8 +30,8 @@ export default function ClientPortalOverview({ clientId, clientName, roles, shar
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">What {clientName} sees</h2>
-          <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">What {clientName} sees</h2>
+          <p className="mt-0.5 text-[14px] text-slate-500 dark:text-slate-400">
             Each role and the people you have shared on it. {shared.length === 0 ? "Nothing is shared yet." : `${shared.length} shared, ${waiting} waiting for their feedback.`}
           </p>
         </div>
@@ -39,7 +39,7 @@ export default function ClientPortalOverview({ clientId, clientName, roles, shar
       </div>
 
       {roles.length === 0 ? (
-        <p className="mt-4 text-[13px] text-slate-400">No roles for this client yet.</p>
+        <p className="mt-4 text-[14px] text-slate-400">No roles for this client yet.</p>
       ) : (
         <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
           {roles.map((r) => {
@@ -48,31 +48,31 @@ export default function ClientPortalOverview({ clientId, clientName, roles, shar
               <li key={r.id} className="py-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <Link href={`/mandates/${r.id}`} className="text-[14px] font-medium text-slate-900 hover:text-teal-700 dark:text-slate-100">
+                    <Link href={`/mandates/${r.id}`} className="text-[15px] font-medium text-slate-900 hover:text-teal-700 dark:text-slate-100">
                       {r.title}
                     </Link>
-                    <span className="ml-2 text-[12.5px] text-slate-500">
+                    <span className="ml-2 text-[13px] text-slate-500">
                       {r.status.replace("_", " ")}
                       {r.city ? ` · ${r.city}` : ""}
                     </span>
                   </div>
-                  <Link href={`/mandates/${r.id}#sharing`} className="text-[12.5px] font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 dark:text-teal-300">
+                  <Link href={`/mandates/${r.id}#sharing`} className="text-[13px] font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 dark:text-teal-300">
                     Shortlist link and sharing
                   </Link>
                 </div>
                 {list.length === 0 ? (
-                  <p className="mt-1.5 text-[13px] text-slate-400">Nobody shared on this role yet.</p>
+                  <p className="mt-1.5 text-[14px] text-slate-400">Nobody shared on this role yet.</p>
                 ) : (
                   <ul className="mt-2 space-y-1.5">
                     {list.map((c) => {
                       const fb = c.feedback ? FEEDBACK[c.feedback] : null;
                       return (
-                        <li key={c.linkId} className="flex flex-wrap items-center gap-2 text-[13px]">
+                        <li key={c.linkId} className="flex flex-wrap items-center gap-2 text-[14px]">
                           <Link href={`/candidates/${c.candidateId}?mandateId=${r.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-800 hover:text-teal-700 dark:text-slate-200">
                             {c.name}
                           </Link>
-                          <span className={`rounded-full px-2 py-0.5 text-[12px] ring-1 ${fb ? fb.cls : "bg-amber-50 text-amber-800 ring-amber-200"}`}>{fb ? fb.label : "Waiting for feedback"}</span>
-                          {c.interviewConfirmed ? <span className="text-[12px] text-emerald-700">Interview confirmed</span> : c.interviewRequested ? <span className="text-[12px] text-sky-700">Interview requested</span> : null}
+                          <span className={`rounded-full px-2 py-0.5 text-[13px] ring-1 ${fb ? fb.cls : "bg-amber-50 text-amber-800 ring-amber-200"}`}>{fb ? fb.label : "Waiting for feedback"}</span>
+                          {c.interviewConfirmed ? <span className="text-[13px] text-emerald-700">Interview confirmed</span> : c.interviewRequested ? <span className="text-[13px] text-sky-700">Interview requested</span> : null}
                         </li>
                       );
                     })}

@@ -94,7 +94,7 @@ export default function ResumeViewerInline({
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-6">
         <Loader2 className="w-6 h-6 text-slate-400 animate-spin mb-3" />
-        <p className="text-[13px] text-slate-500 dark:text-slate-400">Rendering document…</p>
+        <p className="text-[14px] text-slate-500 dark:text-slate-400">Rendering document…</p>
       </div>
     );
   }
@@ -113,7 +113,7 @@ export default function ResumeViewerInline({
   if (view.state === "doc") {
     return (
       <div className="bg-white dark:bg-slate-900 mx-auto max-w-2xl my-6 p-8 shadow-sm rounded-lg">
-        <p className="text-[11px] text-slate-400 mb-3">Old Word format: showing the text only. Download the file to see the original layout.</p>
+        <p className="text-[12px] text-slate-400 mb-3">Old Word format: showing the text only. Download the file to see the original layout.</p>
         <div className="text-sm leading-relaxed text-slate-800 dark:text-slate-200 whitespace-pre-wrap break-words">{view.text}</div>
       </div>
     );
@@ -122,13 +122,13 @@ export default function ResumeViewerInline({
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-6">
       <FileText className="w-8 h-8 text-slate-300 mb-3" />
-      <p className="text-[13px] text-slate-600 dark:text-slate-400 mb-3">{view.message}</p>
+      <p className="text-[14px] text-slate-600 dark:text-slate-400 mb-3">{view.message}</p>
       <a
         href={signedUrl}
         download={fileName}
         target="_blank"
         rel="noopener noreferrer"
-        className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium px-4 py-2"
+        className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium px-4 py-2"
       >
         Download {fileName}
       </a>

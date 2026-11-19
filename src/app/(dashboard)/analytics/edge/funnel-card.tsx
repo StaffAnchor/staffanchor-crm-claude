@@ -145,14 +145,14 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
   const errorNotes = new Map<string, number>();
   for (const r of stepRows) for (const e of r.errors) errorNotes.set(e.note ?? "unknown", (errorNotes.get(e.note ?? "unknown") ?? 0) + 1);
 
-  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-[12px] font-medium ${on ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`;
+  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-[13px] font-medium ${on ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Booking drop-offs</h2>
-          <p className="mt-0.5 text-[12.5px] text-slate-500">Who tried to book or order, and where they stopped. Your own tests (names like GS or Gagan, anything marked test, @staffanchor.com) are left out.</p>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Booking drop-offs</h2>
+          <p className="mt-0.5 text-[13px] text-slate-500">Who tried to book or order, and where they stopped. Your own tests (names like GS or Gagan, anything marked test, @staffanchor.com) are left out.</p>
         </div>
         <div className="flex gap-1.5">
           {PERIODS.map((x) => (
@@ -170,21 +170,21 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
           { t: "Dropped before paying", v: all.dropped, s: all.dropped ? "listed below" : "nobody so far" },
         ].map((x) => (
           <div key={x.t} className="rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-slate-800/60">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{x.t}</p>
+            <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">{x.t}</p>
             <p className="mt-0.5 text-[24px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{x.v}</p>
-            <p className="mt-1 text-[11.5px] text-slate-500">{x.s}</p>
+            <p className="mt-1 text-[12px] text-slate-500">{x.s}</p>
           </div>
         ))}
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <div>
-          <p className="mb-1 text-[11.5px] font-medium text-slate-500">Jobs site home page into Edge (clicks tracked from 4 Nov 2026)</p>
-          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[12.5px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+          <p className="mb-1 text-[12px] font-medium text-slate-500">Jobs site home page into Edge (clicks tracked from 4 Nov 2026)</p>
+          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[13px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
             <b className="tabular-nums text-slate-900 dark:text-slate-100">{homeVisits ?? 0}</b> visits landed on the home page · <b className="tabular-nums text-slate-900 dark:text-slate-100">{homeClickTotal}</b> clicks on the Edge card ({pctText(homeClickTotal, homeVisits ?? 0)}) · <b className="tabular-nums text-slate-900 dark:text-slate-100">{edgeViews}</b> opened the Edge page
           </p>
           {clicks.size > 0 && (
-            <ul className="mt-2 space-y-1 text-[12.5px]">
+            <ul className="mt-2 space-y-1 text-[13px]">
               {[...clicks.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => (
                 <li key={k} className="flex justify-between gap-3 text-slate-600 dark:text-slate-300"><span>{CLICK_TEXT[k] ?? k}</span><b className="tabular-nums text-slate-900 dark:text-slate-100">{n}</b></li>
               ))}
@@ -192,13 +192,13 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
           )}
         </div>
         <div className="overflow-x-auto">
-          <p className="mb-1 text-[11.5px] font-medium text-slate-500">Where paying leads come from</p>
+          <p className="mb-1 text-[12px] font-medium text-slate-500">Where paying leads come from</p>
           {bySource.size === 0 ? (
-            <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[12.5px] text-slate-500 dark:bg-slate-800/60">No attempts in this period.</p>
+            <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[13px] text-slate-500 dark:bg-slate-800/60">No attempts in this period.</p>
           ) : (
-            <table className="w-full text-[12.5px]">
+            <table className="w-full text-[13px]">
               <thead>
-                <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+                <tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
                   <th className="pb-1.5 text-left font-medium">Source</th>
                   <th className={th}>Tried</th>
                   <th className={th}>Paid</th>
@@ -221,13 +221,13 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
       </div>
 
       <div className="mt-5 overflow-x-auto">
-        <p className="mb-1 text-[11.5px] font-medium text-slate-500">Promotions around the site: clicks by placement (tracked from 4 Nov 2026)</p>
+        <p className="mb-1 text-[12px] font-medium text-slate-500">Promotions around the site: clicks by placement (tracked from 4 Nov 2026)</p>
         {promo.size === 0 ? (
-          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[12.5px] text-slate-500 dark:bg-slate-800/60">No clicks yet in this period. Edge and recruiter-call promotions now sit on every job page, after applying, on city pages, the jobs list, the free tools and in the footer.</p>
+          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[13px] text-slate-500 dark:bg-slate-800/60">No clicks yet in this period. Edge and recruiter-call promotions now sit on every job page, after applying, on city pages, the jobs list, the free tools and in the footer.</p>
         ) : (
-          <table className="w-full min-w-[420px] text-[12.5px]">
+          <table className="w-full min-w-[420px] text-[13px]">
             <thead>
-              <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+              <tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
                 <th className="pb-1.5 text-left font-medium">Placement ({promoTotal} clicks)</th>
                 <th className={th}>Clicks</th>
                 <th className="pb-1.5 pl-4 text-left font-medium">What they clicked</th>
@@ -247,10 +247,10 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
       </div>
 
       <div className="mt-5 overflow-x-auto">
-        <p className="mb-1 text-[11.5px] font-medium text-slate-500">From the moment they pressed pay (complete history)</p>
-        <table className="w-full min-w-[520px] text-[12.5px]">
+        <p className="mb-1 text-[12px] font-medium text-slate-500">From the moment they pressed pay (complete history)</p>
+        <table className="w-full min-w-[520px] text-[13px]">
           <thead>
-            <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+            <tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
               <th className="pb-1.5 text-left font-medium">Service</th>
               <th className={th}>Tried</th>
               <th className={th}>Reached payment</th>
@@ -275,13 +275,13 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
       </div>
 
       <div className="mt-5 overflow-x-auto">
-        <p className="mb-1 text-[11.5px] font-medium text-slate-500">Step by step{firstEvent ? `, tracked since ${when(firstEvent)}` : ""} (separate visits, so one person can count more than once)</p>
+        <p className="mb-1 text-[12px] font-medium text-slate-500">Step by step{firstEvent ? `, tracked since ${when(firstEvent)}` : ""} (separate visits, so one person can count more than once)</p>
         {!hasSteps ? (
-          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[12.5px] text-slate-500 dark:bg-slate-800/60">Tracking of the steps before payment is switched on and fills in as people use the booking pages. Nothing has been recorded in this period yet.</p>
+          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[13px] text-slate-500 dark:bg-slate-800/60">Tracking of the steps before payment is switched on and fills in as people use the booking pages. Nothing has been recorded in this period yet.</p>
         ) : (
-          <table className="w-full min-w-[640px] text-[12.5px]">
+          <table className="w-full min-w-[640px] text-[13px]">
             <thead>
-              <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+              <tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
                 <th className="pb-1.5 text-left font-medium">Service</th>
                 {STEPS.map((st) => <th key={st.key} className={th}>{st.label}</th>)}
               </tr>
@@ -293,7 +293,7 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
                   {r.counts.map((c, i) => (
                     <td key={STEPS[i].key} className="py-1.5 text-right tabular-nums">
                       {c}
-                      {i > 0 && r.counts[i - 1] > 0 && <span className={`ml-1 text-[11px] ${c < r.counts[i - 1] ? "text-rose-600 dark:text-rose-400" : "text-slate-400"}`}>{pctText(c, r.counts[i - 1])}</span>}
+                      {i > 0 && r.counts[i - 1] > 0 && <span className={`ml-1 text-[12px] ${c < r.counts[i - 1] ? "text-rose-600 dark:text-rose-400" : "text-slate-400"}`}>{pctText(c, r.counts[i - 1])}</span>}
                     </td>
                   ))}
                 </tr>
@@ -302,20 +302,20 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
           </table>
         )}
         {errorNotes.size > 0 && (
-          <p className="mt-2 text-[12px] text-amber-700 dark:text-amber-300">Errors people hit: {[...errorNotes.entries()].map(([k, v]) => `${k} (${v})`).join(", ")}</p>
+          <p className="mt-2 text-[13px] text-amber-700 dark:text-amber-300">Errors people hit: {[...errorNotes.entries()].map(([k, v]) => `${k} (${v})`).join(", ")}</p>
         )}
-        <p className="mt-2 text-[11.5px] text-slate-400">Testing it yourself? Open <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">jobs.staffanchor.com/edge?me=1</code> once on that browser and its visits are never recorded.</p>
+        <p className="mt-2 text-[12px] text-slate-400">Testing it yourself? Open <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">jobs.staffanchor.com/edge?me=1</code> once on that browser and its visits are never recorded.</p>
       </div>
 
       <div className="mt-5">
-        <p className="mb-1 text-[11.5px] font-medium text-slate-500">People who dropped before paying</p>
+        <p className="mb-1 text-[12px] font-medium text-slate-500">People who dropped before paying</p>
         {dropList.length === 0 ? (
-          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[12.5px] text-slate-500 dark:bg-slate-800/60">No real person has dropped between pressing pay and paying in this period.</p>
+          <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[13px] text-slate-500 dark:bg-slate-800/60">No real person has dropped between pressing pay and paying in this period.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-[12.5px]">
+            <table className="w-full min-w-[640px] text-[13px]">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+                <tr className="border-b border-slate-100 text-left text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
                   <th className="pb-1.5 font-medium">When</th>
                   <th className="pb-1.5 font-medium">Person</th>
                   <th className="pb-1.5 font-medium">Service</th>
@@ -330,7 +330,7 @@ export default async function FunnelCard({ db, period }: { db: SupabaseClient; p
                     <td className="py-1.5 pr-2 whitespace-nowrap text-slate-500">{when(d.at)}</td>
                     <td className="py-1.5 pr-2 text-slate-700 dark:text-slate-200">
                       <span className="font-medium">{d.name}</span>
-                      <span className="block text-[11.5px] text-slate-500"><a href={`tel:${d.phone}`} className="hover:underline">{d.phone}</a> · <a href={`mailto:${d.email}`} className="hover:underline">{d.email}</a></span>
+                      <span className="block text-[12px] text-slate-500"><a href={`tel:${d.phone}`} className="hover:underline">{d.phone}</a> · <a href={`mailto:${d.email}`} className="hover:underline">{d.email}</a></span>
                     </td>
                     <td className="py-1.5 pr-2 text-slate-700 dark:text-slate-200">{SERVICE_TITLE[d.service] ?? d.service}</td>
                     <td className="py-1.5 pr-2 text-rose-700 dark:text-rose-400">{STAGE_TEXT[d.stage]}</td>

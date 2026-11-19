@@ -24,8 +24,8 @@ export function ScoreRing({ score, rank, size = 38 }: { score: number | null; ra
 export function FactTile({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/60">
-      <dt className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
-      <dd className={`mt-0.5 truncate text-[15px] font-semibold tabular-nums ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-300"}`}>{value || "—"}</dd>
+      <dt className="text-[12px] font-medium uppercase tracking-wide text-slate-400">{label}</dt>
+      <dd className={`mt-0.5 truncate text-[16px] font-semibold tabular-nums ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-300"}`}>{value || "—"}</dd>
     </div>
   );
 }
@@ -42,9 +42,9 @@ export function NextStep({ tone, title, detail, children }: { tone: keyof typeof
   return (
     <div className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${NEXT_TONE[tone]}`}>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wider opacity-70">Next step</p>
-        <p className="text-[14px] font-semibold">{title}</p>
-        {detail && <p className="mt-0.5 text-[12.5px] opacity-80">{detail}</p>}
+        <p className="text-[12px] font-medium uppercase tracking-wide opacity-70">Next step</p>
+        <p className="text-[15px] font-semibold">{title}</p>
+        {detail && <p className="mt-0.5 text-[13px] opacity-80">{detail}</p>}
       </div>
       {children && <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>}
     </div>

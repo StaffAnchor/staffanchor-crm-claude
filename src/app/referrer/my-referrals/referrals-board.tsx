@@ -31,14 +31,14 @@ export default function ReferralsBoard({ referrals }: { referrals: ReferralJourn
             onClick={() => setFilter(t.key)}
             className={`rounded-xl border bg-white p-4 text-left transition-shadow hover:shadow-sm ${filter === t.key ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200"}`}
           >
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t.label}</div>
+            <div className="text-[12px] font-medium uppercase tracking-wide text-slate-400">{t.label}</div>
             <div className={`mt-1 text-[26px] font-bold leading-none ${t.tone}`}>{t.value}</div>
           </button>
         ))}
       </div>
 
       <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {shown.length === 0 ? <p className="px-5 py-10 text-center text-[13px] text-slate-400">Nothing here yet.</p> : shown.map((r) => <ReferralJourneyRow key={r.id} referral={r} />)}
+        {shown.length === 0 ? <p className="px-5 py-10 text-center text-[14px] text-slate-400">Nothing here yet.</p> : shown.map((r) => <ReferralJourneyRow key={r.id} referral={r} />)}
       </div>
     </div>
   );

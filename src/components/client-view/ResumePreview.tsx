@@ -30,7 +30,7 @@ export default function ResumePreview({
       {!hideTrigger && (
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 transition-colors"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 transition-colors"
         >
           <FileText className="w-3 h-3" /> {label ?? "Preview resume"}
         </button>
@@ -46,12 +46,12 @@ export default function ResumePreview({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <p className="text-[13px] font-medium text-slate-800 truncate pr-4">{fileName}</p>
+              <p className="text-[14px] font-medium text-slate-800 truncate pr-4">{fileName}</p>
               <div className="flex items-center gap-2 shrink-0">
                 <a
                   href={signedUrl}
                   download={fileName} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[12px] text-slate-600 hover:text-slate-900 px-2 py-1"
+                  className="flex items-center gap-1 text-[13px] text-slate-600 hover:text-slate-900 px-2 py-1"
                 >
                   <Download className="w-3.5 h-3.5" /> Download
                 </a>

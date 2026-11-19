@@ -90,7 +90,7 @@ export default function TopNav({
           />
         </Link>
 
-        <nav className="order-3 basis-full md:order-none md:basis-auto flex items-center gap-1 text-[13px] min-w-0 shrink overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-1 px-1">
+        <nav className="order-3 basis-full md:order-none md:basis-auto flex items-center gap-1 text-[14px] min-w-0 shrink overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-1 px-1">
           {groups.map((g) => {
             const active = g.id === activeGroup?.id;
             return (
@@ -117,7 +117,7 @@ export default function TopNav({
           <div className="relative" ref={createRef}>
             <button
               onClick={() => setCreateOpen((v) => !v)}
-              className="ros-focusable flex items-center gap-1 bg-teal-600 hover:bg-teal-500 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-white text-[13px] font-medium rounded-lg pl-2.5 pr-2 py-1.5"
+              className="ros-focusable flex items-center gap-1 bg-teal-600 hover:bg-teal-500 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] text-white text-[14px] font-medium rounded-lg pl-2.5 pr-2 py-1.5"
               aria-label="Create new"
               aria-haspopup="menu"
               aria-expanded={createOpen}
@@ -133,14 +133,14 @@ export default function TopNav({
                 <Link
                   href="/candidates/new"
                   onClick={() => setCreateOpen(false)}
-                  className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  className="block px-3 py-2 text-[14px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
                   New candidate
                 </Link>
                 <Link
                   href="/mandates#new-mandate"
                   onClick={() => setCreateOpen(false)}
-                  className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  className="block px-3 py-2 text-[14px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
                   New mandate
                 </Link>
@@ -172,7 +172,7 @@ export default function TopNav({
                 className="ros-glass absolute right-0 mt-2 w-56 rounded-ros-lg shadow-ros-xl border py-1.5 animate-fade-in z-40"
               >
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-                  <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100">{fullName ?? email}</p>
+                  <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100">{fullName ?? email}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{role}</p>
                 </div>
                 {/* Lets a rep set their own outreach voice/bio (task: "per-user
@@ -180,13 +180,13 @@ export default function TopNav({
                     claiming to be the founder regardless of who sends it. */}
                 {adminLinks.length > 0 && (
                   <div className="border-b border-slate-100 py-1 dark:border-slate-800">
-                    <p className="px-3 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Admin</p>
+                    <p className="px-3 pb-1 pt-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">Admin</p>
                     {adminLinks.map((a) => (
                       <Link
                         key={a.href}
                         href={a.href}
                         onClick={() => setMenuOpen(false)}
-                        className="block px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/50"
+                        className="block px-3 py-1.5 text-[14px] text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/50"
                       >
                         {a.label}
                       </Link>
@@ -195,12 +195,12 @@ export default function TopNav({
                 )}
                 <Link
                   href="/settings"
-                  className="block px-3 py-2 text-[13px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800"
+                  className="block px-3 py-2 text-[14px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800"
                   onClick={() => setMenuOpen(false)}
                 >
                   Outreach persona settings
                 </Link>
-                <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2 text-[13px] text-slate-700 dark:border-slate-800 dark:text-slate-300 sm:hidden">
+                <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2 text-[14px] text-slate-700 dark:border-slate-800 dark:text-slate-300 sm:hidden">
                   Dark mode <ThemeToggle />
                 </div>
                 <div className="px-3 py-2">
@@ -212,14 +212,14 @@ export default function TopNav({
         </div>
       </div>
       {activeGroup && activeGroup.items.length > 1 && (
-        <div className="max-w-[1500px] mx-auto px-3 sm:px-5 pb-2 md:-mt-1 flex items-center gap-1 text-[13px] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="max-w-[1500px] mx-auto px-3 sm:px-5 pb-2 md:-mt-1 flex items-center gap-1 text-[14px] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {activeGroup.items.map((i) => {
             const on = pathname.startsWith(i.href);
             return (
               <Link
                 key={i.href}
                 href={i.href}
-                className={`px-3 py-1 rounded-full whitespace-nowrap shrink-0 transition-colors ${on ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"}`}
+                className={`px-3 py-1 rounded-full whitespace-nowrap shrink-0 transition-colors ${on ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"}`}
               >
                 {i.label}
               </Link>

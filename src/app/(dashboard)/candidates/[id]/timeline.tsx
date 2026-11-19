@@ -25,7 +25,7 @@ const ICON_COLOR: Record<TimelineEvent["kind"], string> = {
 
 export default function Timeline({ events }: { events: TimelineEvent[] }) {
   if (events.length === 0) {
-    return <p className="text-[13px] text-slate-400 text-center py-8">No activity yet.</p>;
+    return <p className="text-[14px] text-slate-400 text-center py-8">No activity yet.</p>;
   }
 
   return (
@@ -43,8 +43,8 @@ export default function Timeline({ events }: { events: TimelineEvent[] }) {
               {i < events.length - 1 && <div className="w-px flex-1 bg-slate-200 dark:bg-slate-700 my-1" />}
             </div>
             <div className="pb-5">
-              <p className="text-[13px] text-slate-800 dark:text-slate-200">{e.label}</p>
-              {e.detail && <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{e.detail}</p>}
+              <p className="text-[14px] text-slate-800 dark:text-slate-200">{e.label}</p>
+              {e.detail && <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{e.detail}</p>}
               <p className="text-xs text-slate-400 mt-1">{new Date(e.at).toLocaleString()}</p>
             </div>
           </div>

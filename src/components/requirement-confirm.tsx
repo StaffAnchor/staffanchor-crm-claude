@@ -141,7 +141,7 @@ export function ConfirmPanel({
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[12px] dark:border-slate-700 dark:bg-slate-800/60">
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[13px] dark:border-slate-700 dark:bg-slate-800/60">
       <p className="font-medium text-slate-800 dark:text-slate-100">{requirement}</p>
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <BasisTag basis={basis} />
@@ -153,7 +153,7 @@ export function ConfirmPanel({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Note from the call (optional)"
-          className="min-w-[10rem] flex-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[12px] dark:border-slate-700 dark:bg-slate-900"
+          className="min-w-[10rem] flex-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900"
         />
         <button
           disabled={busy}

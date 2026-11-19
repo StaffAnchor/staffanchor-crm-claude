@@ -39,12 +39,12 @@ export default function NewListForm() {
         onKeyDown={(e) => e.key === "Enter" && create()}
         placeholder="New shortlist, e.g. SaaS AEs, Bengaluru"
         maxLength={80}
-        className="w-72 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-[13px] dark:border-slate-700 dark:bg-slate-900"
+        className="w-72 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-[14px] dark:border-slate-700 dark:bg-slate-900"
       />
-      <button onClick={create} disabled={!name.trim() || busy} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+      <button onClick={create} disabled={!name.trim() || busy} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Create
       </button>
-      {error && <span className="text-[12px] text-rose-600">{error}</span>}
+      {error && <span className="text-[13px] text-rose-600">{error}</span>}
     </div>
   );
 }

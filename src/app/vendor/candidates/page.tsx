@@ -31,26 +31,26 @@ export default async function VendorCandidatesPage() {
         <h1 className="text-[20px] font-semibold text-slate-900">My Candidates</h1>
         <Link
           href="/vendor/candidates/bulk-upload"
-          className="shrink-0 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-3.5 py-2"
+          className="shrink-0 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium px-3.5 py-2"
         >
           + Bulk upload
         </Link>
       </div>
-      <p className="text-[13px] text-slate-500 mt-0.5 mb-5">
+      <p className="text-[14px] text-slate-500 mt-0.5 mb-5">
         {rows.length === 0
           ? "Candidates you submit will show up here -- your own database, separate from anyone else's."
           : `${rows.length} candidate${rows.length === 1 ? "" : "s"} in your database, across all mandates`}
       </p>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[14px] text-red-700">
           {friendlyVendorError(error.message, "vendor-candidates-list")}
         </div>
       )}
 
       {rows.length === 0 && !error ? (
         <div className="rounded-2xl border border-slate-200 bg-white py-16 flex flex-col items-center justify-center text-center">
-          <p className="text-[13px] text-slate-500">
+          <p className="text-[14px] text-slate-500">
             Head to My Mandates to submit your first candidate, or use Bulk Upload to add several at once.
           </p>
         </div>

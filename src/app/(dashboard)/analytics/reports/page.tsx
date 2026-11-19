@@ -884,7 +884,7 @@ export default async function ReportsPage({
       <div className="flex items-baseline justify-between mb-5">
         <div>
           <h1 className="ros-page-title">Reports</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1">
             Portfolio risk, pipeline conversion, and recruiter productivity — the numbers that change a decision, not
             just describe the database. Click any bar or tile to see the matching records.
           </p>
@@ -895,7 +895,7 @@ export default async function ReportsPage({
               key={r.key}
               href={`/analytics/reports?range=${r.key}`}
               className={`text-xs font-medium px-2.5 py-1 rounded-ros-full transition-colors duration-200 ease-ros ${
-                range === r.key ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                range === r.key ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
               {r.label}
@@ -981,7 +981,7 @@ export default async function ReportsPage({
                     <span className="text-xs text-slate-400 ml-auto">next 60 days, and last 7 days for confirmation</span>
                   </div>
                   {upcomingJoiners.length === 0 ? (
-                    <p className="text-[13px] text-slate-400">No joining dates recorded in this window.</p>
+                    <p className="text-[14px] text-slate-400">No joining dates recorded in this window.</p>
                   ) : (
                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {upcomingJoiners.map((j) => (
@@ -991,13 +991,13 @@ export default async function ReportsPage({
                           className="group flex items-center justify-between gap-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 -mx-1 px-1 rounded-ros-md transition-colors duration-200 ease-ros"
                         >
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-teal-600 truncate">
+                            <p className="text-[14px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-teal-600 truncate">
                               {j.candidateName}
                             </p>
                             <p className="text-xs text-slate-400 truncate">{j.mandateLabel}</p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-[12.5px] font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                            <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
                               {new Date(j.dateOfJoining).toLocaleDateString(undefined, { timeZone: "Asia/Kolkata", month: "short", day: "numeric" })}
                             </p>
                             <p
@@ -1208,13 +1208,13 @@ export default async function ReportsPage({
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-teal-500 mb-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-teal-500 mb-2">
                         We passed ({recruiterRejectionTotal})
                       </p>
                       <ReportBarList items={recruiterRejectionItems} colorClass="bg-teal-500/80" emptyLabel="No internal rejections in this window." highlightTop />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-600 mb-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-amber-600 mb-2">
                         Client passed ({clientRejectionTotal})
                       </p>
                       <ReportBarList items={clientRejectionItems} colorClass="bg-amber-500/80" emptyLabel="No client rejections in this window." highlightTop />
@@ -1224,7 +1224,7 @@ export default async function ReportsPage({
 
                 <Card className="flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">
                   <Wallet className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">No revenue/commercial report exists yet</span> — there is
                     no fee, commission, or placement-value field anywhere on <code className="text-xs">mandates</code> or{" "}
                     <code className="text-xs">clients</code> today, so revenue-per-placement, pipeline value, or margin cannot be reported
@@ -1250,10 +1250,10 @@ export default async function ReportsPage({
                   </span>
                 </div>
                 {recruiterRows.length === 0 ? (
-                  <p className="text-[13px] text-slate-400">No recruiter activity recorded yet -- no candidates added, linked, or completed.</p>
+                  <p className="text-[14px] text-slate-400">No recruiter activity recorded yet -- no candidates added, linked, or completed.</p>
                 ) : (
                   <div>
-                    <div className="grid grid-cols-[1fr_55px_65px_55px_70px_70px_60px_60px_60px] gap-2 px-1 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
+                    <div className="grid grid-cols-[1fr_55px_65px_55px_70px_70px_60px_60px_60px] gap-2 px-1 pb-2 text-xs font-medium text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
                       <span>Recruiter</span>
                       <span className="text-right">Added</span>
                       <span className="text-right">Completed</span>
@@ -1267,27 +1267,27 @@ export default async function ReportsPage({
                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {recruiterRows.map((r, idx) => (
                         <div key={r.id} className="grid grid-cols-[1fr_55px_65px_55px_70px_70px_60px_60px_60px] gap-2 items-center py-2.5 px-1">
-                          <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
+                          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
                             {idx === 0 && r.placed > 0 && <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                             <span className="truncate">{r.name}</span>
                             {r.isVendor && <span className="text-[9.5px] uppercase text-slate-400 shrink-0">vendor</span>}
                           </p>
-                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
+                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[13px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
                             {r.candidatesAdded}
                           </Link>
-                          <span className="text-[12px] text-right tabular-nums text-teal-700">{r.profilesCompleted}</span>
-                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
+                          <span className="text-[13px] text-right tabular-nums text-teal-700">{r.profilesCompleted}</span>
+                          <Link href={`/candidates?recruiter=${r.id}`} className="text-[13px] text-right tabular-nums text-slate-600 dark:text-slate-400 hover:text-teal-600 transition-colors duration-200 ease-ros">
                             {r.linked}
                           </Link>
-                          <span className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400">{r.submitted}</span>
-                          <span className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400">{r.interview}</span>
-                          <span className="text-[12px] text-right tabular-nums text-slate-600 dark:text-slate-400">{r.offer}</span>
+                          <span className="text-[13px] text-right tabular-nums text-slate-600 dark:text-slate-400">{r.submitted}</span>
+                          <span className="text-[13px] text-right tabular-nums text-slate-600 dark:text-slate-400">{r.interview}</span>
+                          <span className="text-[13px] text-right tabular-nums text-slate-600 dark:text-slate-400">{r.offer}</span>
                           <Link href={`/candidates?recruiter=${r.id}&placed_only=1`} className="text-right">
                             <Badge tone="success" size="sm" className="normal-case tracking-normal">
                               {r.placed}
                             </Badge>
                           </Link>
-                          <span className="text-[12px] text-right tabular-nums text-slate-400">{r.linked > 0 ? `${r.conversion}%` : "—"}</span>
+                          <span className="text-[13px] text-right tabular-nums text-slate-400">{r.linked > 0 ? `${r.conversion}%` : "—"}</span>
                         </div>
                       ))}
                     </div>
@@ -1375,12 +1375,12 @@ export default async function ReportsPage({
                     </span>
                   </div>
                   {totalCandidatesInvited === 0 ? (
-                    <p className="text-[13px] text-slate-400 mt-2">No profile-completion emails sent yet.</p>
+                    <p className="text-[14px] text-slate-400 mt-2">No profile-completion emails sent yet.</p>
                   ) : (
                     <>
                       <p className="text-[22px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums leading-none mt-2 mb-3">
                         {inviteConversionPct}%
-                        <span className="text-[12px] font-normal text-slate-400 ml-2">conversion rate</span>
+                        <span className="text-[13px] font-normal text-slate-400 ml-2">conversion rate</span>
                       </p>
                       <ReportBarList items={inviteConversionItems} colorClass="bg-teal-500/80" />
                     </>
@@ -1397,7 +1397,7 @@ export default async function ReportsPage({
               <>
                 <Card className="mb-4 flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">
                   <Clock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">What this measures:</span> every time an
                     existing automation does something a recruiter would otherwise have done by hand -- an auto stage update
                     triggered by a client, an AI-drafted call summary, a duplicate caught before it was re-created -- it logs a
@@ -1462,7 +1462,7 @@ export default async function ReportsPage({
               <>
                 <Card className="mb-4 flex items-start gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800">
                   <Zap className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed">
                     Candidates who paid ₹199 on the jobs site for a recruiter call within 3 working days. A logged call attempt of any outcome counts as keeping the promise.
                     &quot;Overdue&quot; means the deadline passed with no call logged, so a refund is due. Scoped to the range above, by payment date.
                   </p>
@@ -1475,7 +1475,7 @@ export default async function ReportsPage({
                   <StatTile icon={<AlertTriangle className="w-4 h-4" />} label="Overdue, refund due" value={paidCallOverdue.length} />
                   <StatTile icon={<TrendingUp className="w-4 h-4" />} label="Net revenue" value={`₹${paidCallRevenue.toLocaleString("en-IN")}`} />
                 </div>
-                <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-700 dark:text-slate-200">
+                <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-slate-700 dark:text-slate-200">
                   <span className="font-semibold">Funnel:</span>
                   <span>{applyTaps ?? 0} tapped Apply</span>
                   <span className="text-slate-400">→</span>
@@ -1491,19 +1491,19 @@ export default async function ReportsPage({
                   <span className="text-slate-400">→</span>
                   <span>{paidCallCount} paid{paidTaps.length ? ` (${Math.round((paidCallCount / paidTaps.length) * 100)}% of taps)` : ""}</span>
                 </div>
-                <p className="mb-4 text-[12px] text-slate-500 dark:text-slate-400">
+                <p className="mb-4 text-[13px] text-slate-500 dark:text-slate-400">
                   Offer taps by place: {paidTapSpots.map((t) => `${({ list: "job list", preview: "preview panel", detail: "job page", bar: "phone bar", confirm: "after applying" } as Record<string, string>)[t.k]} ${t.n}`).join(" · ")}. Taps are counted from the day this went live.
                 </p>
                 <Card>
                   <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Paid calls in this range</h2>
                   {paidCalls.length === 0 ? (
-                    <p className="text-[13px] text-slate-400">No paid calls yet.</p>
+                    <p className="text-[14px] text-slate-400">No paid calls yet.</p>
                   ) : (
                     <ul className="space-y-2 max-h-96 overflow-y-auto">
                       {paidCalls.map((c) => {
                         const st = paidCallState(c);
                         return (
-                          <li key={c.id} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5 text-[12.5px] last:border-0 dark:border-slate-800">
+                          <li key={c.id} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5 text-[13px] last:border-0 dark:border-slate-800">
                             <span className="truncate text-slate-700 dark:text-slate-300">
                               {c.candidates?.full_name ?? "Candidate"} <span className="text-slate-400">· {c.mandates?.role_title ?? "Role"}</span>
                             </span>

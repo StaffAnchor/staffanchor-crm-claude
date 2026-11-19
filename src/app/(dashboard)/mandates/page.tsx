@@ -304,7 +304,7 @@ export default async function MandatesPage({
       <aside className="w-[188px] shrink-0 hidden lg:block">
         <div className="sticky top-20 space-y-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Filter by</p>
+            <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Filter by</p>
             {hasAnyFilter && (
               <Link href="/mandates" className="text-xs text-teal-600 hover:underline">
                 Clear all
@@ -324,7 +324,7 @@ export default async function MandatesPage({
                       <Link
                         key={v.value}
                         href={filterHref(group.key as "category" | "city" | "client" | "recruiter", v.value)}
-                        className={`block truncate text-[12px] rounded-md px-2 py-1 transition-colors duration-150 ease-ros ${
+                        className={`block truncate text-[13px] rounded-md px-2 py-1 transition-colors duration-150 ease-ros ${
                           isActive
                             ? "bg-teal-50 text-teal-700 font-medium"
                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800"
@@ -344,7 +344,7 @@ export default async function MandatesPage({
 
       <div className="flex-1 min-w-0">
         {needsTypeCount > 0 && (
-          <Link href="/mandates/role-types" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-900 hover:bg-amber-100/70 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+          <Link href="/mandates/role-types" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[14px] text-amber-900 hover:bg-amber-100/70 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
             <span className="font-semibold">{needsTypeCount} open {needsTypeCount === 1 ? "role has" : "roles have"} no role type yet,</span>
             <span>so the system can&apos;t find people for {needsTypeCount === 1 ? "it" : "them"}. Set them all in one go →</span>
           </Link>
@@ -352,7 +352,7 @@ export default async function MandatesPage({
         <div className="flex items-baseline justify-between mb-5">
           <div>
             <h1 className="ros-page-title">Mandates</h1>
-            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1">
               {(mandates ?? []).length} client role{(mandates ?? []).length === 1 ? "" : "s"}
               {hasAnyFilter ? " matching current filters" : ""}
             </p>
@@ -365,7 +365,7 @@ export default async function MandatesPage({
             {currentUser && (
               <Link
                 href={recruiter === currentUser.id ? "/mandates" : filterHref("recruiter", currentUser.id)}
-                className={`flex items-center gap-1.5 text-[12px] font-semibold rounded-lg px-2.5 py-1.5 transition-colors ${
+                className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-lg px-2.5 py-1.5 transition-colors ${
                   recruiter === currentUser.id
                     ? "bg-teal-600 text-white"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -376,13 +376,13 @@ export default async function MandatesPage({
             )}
             <Link
               href="/mandates/trash"
-              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
+              className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
             >
               Recently deleted
             </Link>
             <a
               href={`/api/export/mandates${exportQS ? `?${exportQS}` : ""}`}
-              className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors border border-slate-200 dark:border-slate-700"
+              className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors border border-slate-200 dark:border-slate-700"
               title="Export the current filtered list as CSV"
             >
               Export CSV

@@ -61,7 +61,7 @@ export function MiniStat({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all duration-200 ease-ros",
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-all duration-200 ease-ros",
         TONE_CLASSES[effectiveTone],
         isZero && "opacity-60",
         href && "hover:-translate-y-px hover:opacity-100 active:translate-y-0 active:scale-[0.98] cursor-pointer hover:shadow-ros-sm"
@@ -90,7 +90,7 @@ export function StatSection({
   // everything running together into one wall of pills.
   return (
     <div className={cn("h-full rounded-lg border p-3", SECTION_CLASSES[tone], className)}>
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
         <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", DOT_CLASSES[tone])} />
         {title}
       </p>

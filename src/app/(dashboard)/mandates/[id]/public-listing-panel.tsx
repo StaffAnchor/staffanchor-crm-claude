@@ -44,9 +44,9 @@ export default function PublicListingPanel({
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1 flex items-center gap-1.5">
         <Globe className="w-3.5 h-3.5 text-slate-400" /> Public listing (jobs.staffanchor.com)
       </h2>
-      <p className="text-[12px] text-slate-400 mb-3">Controls what candidates see before applying.</p>
+      <p className="text-[13px] text-slate-400 mb-3">Controls what candidates see before applying.</p>
 
-      <label className="flex items-start gap-2 text-[13px] text-slate-700 dark:text-slate-300 mb-2">
+      <label className="flex items-start gap-2 text-[14px] text-slate-700 dark:text-slate-300 mb-2">
         <input type="checkbox" checked={!showClientName} onChange={(e) => setShowClientName(!e.target.checked)} className="mt-0.5" />
         Hide client name (&quot;{clientName}&quot;)
       </label>
@@ -56,7 +56,7 @@ export default function PublicListingPanel({
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder='e.g. "A leading Internet company"'
-          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] mb-2"
+          className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] mb-2"
         />
       )}
 
@@ -67,7 +67,7 @@ export default function PublicListingPanel({
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2 disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2 disabled:opacity-60"
       >
         {saved ? (
           <>

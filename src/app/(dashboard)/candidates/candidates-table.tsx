@@ -301,7 +301,7 @@ function InlineSelectCell({
           setSaving(false);
           setEditing(false);
         }}
-        className="text-[12px] rounded-md border border-teal-300 dark:border-teal-700 px-1.5 py-1 bg-white dark:bg-slate-800 max-w-[170px] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+        className="text-[13px] rounded-md border border-teal-300 dark:border-teal-700 px-1.5 py-1 bg-white dark:bg-slate-800 max-w-[170px] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
       >
         <option value="">{placeholder}</option>
         {disabledOption && !options.includes(disabledOption.value) && (
@@ -380,7 +380,7 @@ function ResumeCell({ candidateId, resumeFileUrl }: { candidateId: string; resum
           setState("missing");
         }
       }}
-      className="flex items-center gap-1.5 rounded-ros-md bg-teal-50 px-3 py-1.5 text-[12px] font-medium text-teal-700 transition-all duration-200 ease-ros hover:bg-teal-100 disabled:opacity-60"
+      className="flex items-center gap-1.5 rounded-ros-md bg-teal-50 px-3 py-1.5 text-[13px] font-medium text-teal-700 transition-all duration-200 ease-ros hover:bg-teal-100 disabled:opacity-60"
     >
       {state === "loading" ? "Opening…" : "Preview"}
     </button>
@@ -441,7 +441,7 @@ function PreviousIndustriesCell({
           className="fixed z-[60] w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2.5"
           style={{ left: pos.left, top: pos.top, bottom: pos.bottom }}
         >
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
             All previous industries ({former.length})
           </p>
           <div className="flex flex-wrap gap-1">
@@ -542,8 +542,8 @@ const COLUMN_DEFS: ColumnDef[] = [
     render: (c) => (
       <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">
         {formatDate(c.created_at)}
-        <span className="block text-[11px] text-slate-400 dark:text-slate-500">{formatTime(c.created_at)}</span>
-        {c.updated_at && formatDate(c.updated_at) !== formatDate(c.created_at) ? <span className="block text-[11px] text-slate-400 dark:text-slate-500">Updated {formatDate(c.updated_at)}, {formatTime(c.updated_at)}</span> : null}
+        <span className="block text-[12px] text-slate-400 dark:text-slate-500">{formatTime(c.created_at)}</span>
+        {c.updated_at && formatDate(c.updated_at) !== formatDate(c.created_at) ? <span className="block text-[12px] text-slate-400 dark:text-slate-500">Updated {formatDate(c.updated_at)}, {formatTime(c.updated_at)}</span> : null}
       </span>
     ),
   },
@@ -621,7 +621,7 @@ const COLUMN_DEFS: ColumnDef[] = [
     label: "Email",
     render: (c) =>
       /\.invalid$/i.test(c.email ?? "") ? (
-        <span className="text-amber-600 dark:text-amber-400 block text-[12px]">No email yet</span>
+        <span className="text-amber-600 dark:text-amber-400 block text-[13px]">No email yet</span>
       ) : (
         <span className="text-slate-500 dark:text-slate-400 truncate block max-w-[180px]">{c.email}</span>
       ),
@@ -647,7 +647,7 @@ const COLUMN_DEFS: ColumnDef[] = [
         onSave={(v) => updateField(c.id, "current_fixed_ctc", Number(v))}
       />
       {ratio !== null && (
-        <span className={`mt-0.5 block text-[11px] tabular-nums ${ratio >= 1.5 ? "font-medium text-emerald-700 dark:text-emerald-400" : "text-slate-400"}`} title="Current pay in lakhs divided by years of experience. 1.5 or more is the bar for the top tier.">
+        <span className={`mt-0.5 block text-[12px] tabular-nums ${ratio >= 1.5 ? "font-medium text-emerald-700 dark:text-emerald-400" : "text-slate-400"}`} title="Current pay in lakhs divided by years of experience. 1.5 or more is the bar for the top tier.">
           ratio {ratio.toFixed(1)}
         </span>
       )}
@@ -1640,7 +1640,7 @@ export default function CandidatesTable({
             : `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`}
         </p>
         <div className="flex items-center gap-1">
-          <label className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 px-2.5 py-1.5">
+          <label className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 px-2.5 py-1.5">
             Sort
             <select
               value={searchParams.get("sort") === "updated" ? "updated" : "created"}
@@ -1652,7 +1652,7 @@ export default function CandidatesTable({
                 const q = sp.toString();
                 router.push(q ? `/candidates?${q}` : "/candidates");
               }}
-              className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[12px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[13px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
               <option value="created">Newest profiles</option>
               <option value="updated">Recently updated</option>
@@ -1668,14 +1668,14 @@ export default function CandidatesTable({
               // through so the CSV matches what's on screen.
               cols: visibleColumns.map((c) => c.key).join(","),
             }).toString()}`}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
             title="Export the current filtered list as CSV, matching your customized columns"
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </a>
           <button
             onClick={() => setPanelOpen((v) => !v)}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
           >
             <Settings2 className="w-3.5 h-3.5" /> Customize columns
           </button>
@@ -1686,7 +1686,7 @@ export default function CandidatesTable({
             <div className="fixed inset-0 z-40" onClick={() => setPanelOpen(false)} />
             <div className="absolute right-4 top-11 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-3">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">Columns</p>
+                <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">Columns</p>
                 <button onClick={() => setPanelOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300">
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -1722,7 +1722,7 @@ export default function CandidatesTable({
                         onChange={() => toggle(key)}
                         className="shrink-0"
                       />
-                      <span className="text-[12px] text-slate-700 dark:text-slate-300 flex-1 truncate">{col.label}</span>
+                      <span className="text-[13px] text-slate-700 dark:text-slate-300 flex-1 truncate">{col.label}</span>
                       <button
                         onClick={() => move(key, -1)}
                         disabled={i === 0}
@@ -1754,7 +1754,7 @@ export default function CandidatesTable({
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
-          <p className="text-[12px] font-semibold text-teal-800">{selected.size} selected</p>
+          <p className="text-[13px] font-semibold text-teal-800">{selected.size} selected</p>
           <Button
             variant="secondary"
             size="sm"
@@ -1812,7 +1812,7 @@ export default function CandidatesTable({
           >
             Delete
           </Button>
-          <button onClick={clearSelection} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 ml-auto">
+          <button onClick={clearSelection} className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 ml-auto">
             Clear selection
           </button>
         </div>
@@ -1820,7 +1820,7 @@ export default function CandidatesTable({
 
       {confirmingInvite && (
         <div className="px-4 py-3 bg-amber-50 border-b border-amber-100 flex flex-wrap items-center gap-3">
-          <p className="text-[12.5px] text-amber-900">
+          <p className="text-[13px] text-amber-900">
             {inviteTargets.length === 0 ? (
               <>None of the {selected.size} selected candidates have an incomplete profile -- nothing to send.</>
             ) : (
@@ -1844,7 +1844,7 @@ export default function CandidatesTable({
             )}
             <button
               onClick={() => setConfirmingInvite(false)}
-              className="text-[12px] text-amber-700 hover:text-amber-900"
+              className="text-[13px] text-amber-700 hover:text-amber-900"
             >
               Cancel
             </button>
@@ -1855,11 +1855,11 @@ export default function CandidatesTable({
       {askPlan && (
         <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex flex-wrap items-center gap-3">
           {askPlan.loading ? (
-            <p className="text-[12.5px] text-emerald-900">Checking {Math.min(selected.size, 20)} candidates…</p>
+            <p className="text-[13px] text-emerald-900">Checking {Math.min(selected.size, 20)} candidates…</p>
           ) : askPlan.error ? (
-            <p className="text-[12.5px] text-rose-700">{askPlan.error}</p>
+            <p className="text-[13px] text-rose-700">{askPlan.error}</p>
           ) : (
-            <p className="text-[12.5px] text-emerald-900">
+            <p className="text-[13px] text-emerald-900">
               {(askPlan.window ?? 0) + (askPlan.template ?? 0) === 0 ? (
                 <>Nobody to ask: {skippedText(askPlan.skipped) || "none eligible"}.</>
               ) : (
@@ -1875,10 +1875,10 @@ export default function CandidatesTable({
           )}
           {!askPlan.loading && !askPlan.error && (askPlan.recipients?.length ?? 0) > 0 && (
             <details className="w-full" open>
-              <summary className="cursor-pointer text-[12.5px] font-medium text-emerald-900">Review each message before it goes (untick to leave someone out)</summary>
+              <summary className="cursor-pointer text-[13px] font-medium text-emerald-900">Review each message before it goes (untick to leave someone out)</summary>
               <ul className="mt-2 max-h-64 space-y-2 overflow-y-auto">
                 {askPlan.recipients!.map((r) => (
-                  <li key={r.id} className="rounded-lg bg-white/70 p-2 text-[12.5px] text-slate-800">
+                  <li key={r.id} className="rounded-lg bg-white/70 p-2 text-[13px] text-slate-800">
                     <label className="flex items-center gap-2 font-medium">
                       <input
                         type="checkbox"
@@ -1899,7 +1899,7 @@ export default function CandidatesTable({
                 {askSending ? "Sending..." : `Send ${(askPlan.recipients ?? []).filter((r) => !askLeftOut.has(r.id)).length}`}
               </Button>
             )}
-            <button onClick={() => setAskPlan(null)} className="text-[12px] text-emerald-800 hover:text-emerald-900">
+            <button onClick={() => setAskPlan(null)} className="text-[13px] text-emerald-800 hover:text-emerald-900">
               Cancel
             </button>
           </div>
@@ -1908,7 +1908,7 @@ export default function CandidatesTable({
 
       {bulkMessage && (
         <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">{bulkMessage}</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">{bulkMessage}</p>
         </div>
       )}
 
@@ -1917,12 +1917,12 @@ export default function CandidatesTable({
       {mapModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setMapModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Map {selected.size} candidate{selected.size === 1 ? "" : "s"} to a mandate</h3>
-            <p className="text-[12px] text-slate-400 mb-3">They'll appear on that mandate's page, sourced stage.</p>
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Map {selected.size} candidate{selected.size === 1 ? "" : "s"} to a mandate</h3>
+            <p className="text-[13px] text-slate-400 mb-3">They'll appear on that mandate's page, sourced stage.</p>
             <select
               value={chosenMandate}
               onChange={(e) => setChosenMandate(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-3"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px] mb-3"
             >
               <option value="">Select an open mandate...</option>
               {openMandates.map((m) => (
@@ -1934,14 +1934,14 @@ export default function CandidatesTable({
             <div className="flex gap-2">
               <button
                 onClick={() => setMapModalOpen(false)}
-                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[14px] font-medium py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBulkMap}
                 disabled={!chosenMandate || bulkBusy}
-                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium py-2 disabled:opacity-50"
               >
                 {bulkBusy ? "Mapping..." : "Map"}
               </button>
@@ -1953,14 +1953,14 @@ export default function CandidatesTable({
       {groupModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setGroupModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
               Add {selected.size} candidate{selected.size === 1 ? "" : "s"} to a group
             </h3>
-            <p className="text-[12px] text-slate-400 mb-3">
+            <p className="text-[13px] text-slate-400 mb-3">
               Saved groups live under Candidates → Groups, for reusable segments you come back to.
             </p>
             {groupsLoading ? (
-              <p className="text-[12.5px] text-slate-400 flex items-center gap-1.5 mb-3">
+              <p className="text-[13px] text-slate-400 flex items-center gap-1.5 mb-3">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading groups...
               </p>
             ) : (
@@ -1970,7 +1970,7 @@ export default function CandidatesTable({
                   setChosenGroupId(e.target.value);
                   if (e.target.value) setNewGroupName("");
                 }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-2"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px] mb-2"
               >
                 <option value="">Select an existing group...</option>
                 {(existingGroups ?? []).map((g) => (
@@ -1988,19 +1988,19 @@ export default function CandidatesTable({
                 if (e.target.value) setChosenGroupId("");
               }}
               placeholder="New group name"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-3"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px] mb-3"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => setGroupModalOpen(false)}
-                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[14px] font-medium py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddToGroup}
                 disabled={(!chosenGroupId && !newGroupName.trim()) || bulkBusy}
-                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium py-2 disabled:opacity-50"
               >
                 {bulkBusy ? "Adding..." : "Add"}
               </button>
@@ -2010,8 +2010,8 @@ export default function CandidatesTable({
       )}
 
       <div className="overflow-auto max-h-[calc(100vh-13rem)]">
-        <table className="w-full text-[13px]">
-          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        <table className="w-full text-[14px]">
+          <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-medium uppercase tracking-wide">
             <tr>
               <th className="px-4 py-2.5 w-8 sticky left-0 top-0 z-30 bg-slate-50 dark:bg-slate-800/50">
                 <input
@@ -2051,7 +2051,7 @@ export default function CandidatesTable({
                   />
                 </td>
                 <td
-                  className={`px-3 py-3 sticky left-[52px] z-10 w-[92px] min-w-[92px] max-w-[92px] whitespace-nowrap text-[12px] font-mono text-slate-400 dark:text-slate-500 ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}
+                  className={`px-3 py-3 sticky left-[52px] z-10 w-[92px] min-w-[92px] max-w-[92px] whitespace-nowrap text-[13px] font-mono text-slate-400 dark:text-slate-500 ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}
                   title="Candidate number — reference this in internal discussions"
                 >
                   {c.candidate_number != null ? `C-${String(c.candidate_number).padStart(6, "0")}` : "—"}
@@ -2074,7 +2074,7 @@ export default function CandidatesTable({
                       <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200/60 flex items-center justify-center text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
                         {initialsFor(c.full_name)}
                       </div>
-                      <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 group-hover:text-teal-600 transition-all duration-200 ease-ros truncate whitespace-nowrap">
+                      <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100 group-hover:text-teal-600 transition-all duration-200 ease-ros truncate whitespace-nowrap">
                         {c.full_name}
                       </p>
                     </Link>
@@ -2117,7 +2117,7 @@ export default function CandidatesTable({
                             href={`/mandates/${m.mandate_id}`}
                             className="block rounded-md px-1.5 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
                           >
-                            <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{m.role_title}</p>
+                            <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">{m.role_title}</p>
                             <p className="text-xs text-slate-400 truncate">{m.client_name}</p>
                           </Link>
                         ))}
@@ -2142,7 +2142,7 @@ export default function CandidatesTable({
                 <td className="px-4 py-3 text-right">
                   <Link
                     href={fromQS ? `/candidates/${c.id}?from=${encodeURIComponent(fromQS)}` : `/candidates/${c.id}`}
-                    className="opacity-0 group-hover:opacity-100 transition-all duration-200 ease-ros inline-flex items-center gap-1 text-[12px] text-teal-600 font-medium whitespace-nowrap"
+                    className="opacity-0 group-hover:opacity-100 transition-all duration-200 ease-ros inline-flex items-center gap-1 text-[13px] text-teal-600 font-medium whitespace-nowrap"
                   >
                     View <ArrowUpRight className="w-3 h-3" />
                   </Link>
@@ -2158,7 +2158,7 @@ export default function CandidatesTable({
           className="border-0 shadow-none py-16"
           title="No candidates match these filters"
           action={
-            <Link href="/candidates" className="text-[13px] text-teal-600 hover:underline">
+            <Link href="/candidates" className="text-[14px] text-teal-600 hover:underline">
               Clear filters
             </Link>
           }
@@ -2167,10 +2167,10 @@ export default function CandidatesTable({
 
       {summaryTooltip && (
         <div
-          className="fixed z-50 w-80 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400 shadow-lg pointer-events-none"
+          className="fixed z-50 w-80 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400 shadow-lg pointer-events-none"
           style={{ left: summaryTooltip.left, top: summaryTooltip.top, bottom: summaryTooltip.bottom }}
         >
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-teal-600">AI summary</p>
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-teal-600">AI summary</p>
           {summaryTooltip.text}
         </div>
       )}

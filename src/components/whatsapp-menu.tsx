@@ -88,7 +88,7 @@ export default function WhatsAppMenu({
               setOpen(false);
               setComposing(true);
             }}
-            className="block w-full rounded px-2.5 py-1.5 text-left text-[12.5px] font-medium text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-slate-800"
+            className="block w-full rounded px-2.5 py-1.5 text-left text-[13px] font-medium text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-slate-800"
           >
             ✎ Write my own message…
           </button>
@@ -100,7 +100,7 @@ export default function WhatsAppMenu({
                 setOpen(false);
                 onIntroduce();
               }}
-              className="block w-full rounded px-2.5 py-1.5 text-left text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-slate-800"
+              className="block w-full rounded px-2.5 py-1.5 text-left text-[13px] font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-slate-800"
             >
               Share an opportunity…
             </button>
@@ -117,7 +117,7 @@ export default function WhatsAppMenu({
                   onSend?.(t.key);
                 }}
                 title="Manual: opens WhatsApp Web with this message typed in. You press Send."
-                className="min-w-0 flex-1 truncate px-2.5 py-1.5 text-left text-[12.5px] text-slate-700 dark:text-slate-200"
+                className="min-w-0 flex-1 truncate px-2.5 py-1.5 text-left text-[13px] text-slate-700 dark:text-slate-200"
               >
                 {t.label}
               </a>
@@ -140,7 +140,7 @@ export default function WhatsAppMenu({
               setOpen(false);
               onSend?.("blank");
             }}
-            className="mt-1 block rounded border-t border-slate-100 px-2.5 py-1.5 text-left text-[12.5px] text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800"
+            className="mt-1 block rounded border-t border-slate-100 px-2.5 py-1.5 text-left text-[13px] text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800"
           >
             Open an empty chat in WhatsApp
           </a>

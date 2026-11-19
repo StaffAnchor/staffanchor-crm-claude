@@ -92,15 +92,15 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
         <>
           {mandates.length > 0 &&
             (state === "added" ? (
-              <span className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 text-[13px] font-semibold text-emerald-700">
+              <span className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 text-[14px] font-semibold text-emerald-700">
                 <Check className="h-3.5 w-3.5" /> Added to {target_?.role_title ?? "the mandate"}
               </span>
             ) : state === "exists" ? (
-              <span className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 text-[12.5px] font-medium text-slate-500">Already in the pipeline</span>
+              <span className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 text-[13px] font-medium text-slate-500">Already in the pipeline</span>
             ) : (
               <>
                 {!mandateId && (
-                  <select value={target} onChange={(e) => setTarget(e.target.value)} className="h-9 w-full rounded-lg border border-slate-300 bg-transparent px-2 text-[12.5px] dark:border-slate-700">
+                  <select value={target} onChange={(e) => setTarget(e.target.value)} className="h-9 w-full rounded-lg border border-slate-300 bg-transparent px-2 text-[13px] dark:border-slate-700">
                     <option value="">Add to a mandate…</option>
                     {mandates.map((x) => (
                       <option key={x.id} value={x.id}>
@@ -110,17 +110,17 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
                     ))}
                   </select>
                 )}
-                <button onClick={add} disabled={!target || state === "adding"} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-teal-600 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
+                <button onClick={add} disabled={!target || state === "adding"} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-teal-600 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
                   <Plus className="h-3.5 w-3.5" /> {state === "adding" ? "Adding…" : mandateId ? `Add to ${target_?.role_title ?? "mandate"}` : "Add"}
                 </button>
-                {state === "error" && <span className="text-[12px] text-rose-600">Couldn&apos;t add. Try again.</span>}
+                {state === "error" && <span className="text-[13px] text-rose-600">Couldn&apos;t add. Try again.</span>}
               </>
             ))}
           <CvButtons candidateId={m.candidate_id} name={m.full_name} />
         </>
       }
     >
-      {m.reason && <p className="mt-2.5 text-[12.5px] leading-snug text-slate-700 dark:text-slate-300">{m.reason}</p>}
+      {m.reason && <p className="mt-2.5 text-[13px] leading-snug text-slate-700 dark:text-slate-300">{m.reason}</p>}
 
       {m.checks.length > 0 && (
         <div className="mt-2.5">
@@ -136,7 +136,7 @@ export default function ResultCard({ m, mandates, mandateId }: { m: Match; manda
             {open ? "Hide the evidence" : "Show the evidence"}
           </button>
           {open && (
-            <ul className="mt-1 space-y-0.5 text-[12px] text-slate-600 dark:text-slate-300">
+            <ul className="mt-1 space-y-0.5 text-[13px] text-slate-600 dark:text-slate-300">
               {m.checks.map((c) => (
                 <li key={c.key}>
                   <span className="font-medium">{c.label}:</span> {STATUS_STYLE[c.status].word}. {c.evidence}

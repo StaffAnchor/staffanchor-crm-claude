@@ -122,7 +122,7 @@ export default async function TeamPage() {
       </div>
       <div className="col-span-2">
         <h1 className="ros-page-title mb-1">Team</h1>
-        <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">
+        <p className="text-[14px] text-slate-500 dark:text-slate-400 mb-4">
           Recruiters, admins, and freelancers who can access this CRM.
         </p>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">

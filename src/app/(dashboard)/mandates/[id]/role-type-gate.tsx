@@ -36,22 +36,22 @@ export default function RoleTypeGate({ mandateId, roleTitle, cluster, level }: {
 
   return (
     <div className="rounded-ros-xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900 dark:bg-amber-950/10">
-      <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Say what kind of role this is, then I&apos;ll find the people</h3>
-      <p className="mt-1 text-[12.5px] text-slate-600 dark:text-slate-300">
+      <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Say what kind of role this is, then I&apos;ll find the people</h3>
+      <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-300">
         Whether the hire is an individual seller or someone who leads a team changes who fits, so it is set on the mandate and never guessed.
       </p>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <label className="text-[12px] text-slate-500">
+        <label className="text-[13px] text-slate-500">
           Role type (what the hire will do) <span className="text-rose-600">*</span>
-          <RoleTypeSelect value={c} onChange={setC} clusters={clusters} className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[13px] text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+          <RoleTypeSelect value={c} onChange={setC} clusters={clusters} className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[14px] text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
         </label>
-        <label className="text-[12px] text-slate-500">
+        <label className="text-[13px] text-slate-500">
           Level <span className="text-rose-600">*</span>
-          <RoleLevelSelect value={l} onChange={setL} className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[13px] text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+          <RoleLevelSelect value={l} onChange={setL} className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[14px] text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
         </label>
       </div>
       {(hint.cluster || hint.level) && (
-        <p className="mt-2 text-[12px] text-slate-500">
+        <p className="mt-2 text-[13px] text-slate-500">
           From the title &quot;{roleTitle}&quot;, it might be:{" "}
           <button type="button" onClick={() => { if (hint.cluster) setC(hint.cluster); if (hint.level) setL(hint.level); }} className="font-medium text-teal-600 hover:underline">
             {[hintCluster, hintLevel].filter(Boolean).join(", ")}
@@ -59,8 +59,8 @@ export default function RoleTypeGate({ mandateId, roleTitle, cluster, level }: {
           (press to use it, or choose your own).
         </p>
       )}
-      {error && <p className="mt-2 text-[12.5px] text-rose-600">{error}</p>}
-      <button type="button" onClick={save} disabled={busy || !c || !l} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+      {error && <p className="mt-2 text-[13px] text-rose-600">{error}</p>}
+      <button type="button" onClick={save} disabled={busy || !c || !l} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
         {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save and find people
       </button>
     </div>

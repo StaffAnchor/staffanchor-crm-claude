@@ -65,7 +65,7 @@ export default function PayoutSlabsPanel({ slabs }: { slabs: Slab[] }) {
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
             <tr>
               <th className="text-left font-medium px-3 py-2">CTC band</th>
@@ -99,44 +99,44 @@ export default function PayoutSlabsPanel({ slabs }: { slabs: Slab[] }) {
 
       {showForm ? (
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-          <label className="text-[12px] text-slate-500">
+          <label className="text-[13px] text-slate-500">
             Role CTC from (₹ per year, e.g. 600000 = 6 LPA)
             <input
               value={form.ctcBandMin}
               onChange={(e) => setForm({ ...form, ctcBandMin: e.target.value })}
-              className="block mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+              className="block mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
             />
           </label>
-          <label className="text-[12px] text-slate-500">
+          <label className="text-[13px] text-slate-500">
             Role CTC up to (₹, blank = no limit)
             <input
               value={form.ctcBandMax}
               onChange={(e) => setForm({ ...form, ctcBandMax: e.target.value })}
-              className="block mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+              className="block mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
             />
           </label>
-          <label className="text-[12px] text-slate-500">
+          <label className="text-[13px] text-slate-500">
             Payout (₹)
             <input
               value={form.payoutAmount}
               onChange={(e) => setForm({ ...form, payoutAmount: e.target.value })}
-              className="block mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[12px]"
+              className="block mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1 text-[13px]"
             />
           </label>
           <button
             disabled={busyId === "new"}
             onClick={addSlab}
-            className="rounded-md bg-teal-600 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-50"
           >
             Save slab
           </button>
-          <button onClick={() => setShowForm(false)} className="text-[12px] text-slate-500">
+          <button onClick={() => setShowForm(false)} className="text-[13px] text-slate-500">
             Cancel
           </button>
-          {error && <p className="w-full text-[12px] text-rose-600">{error}</p>}
+          {error && <p className="w-full text-[13px] text-rose-600">{error}</p>}
         </div>
       ) : (
-        <button onClick={() => setShowForm(true)} className="text-[12px] font-medium text-teal-600">
+        <button onClick={() => setShowForm(true)} className="text-[13px] font-medium text-teal-600">
           + Add slab
         </button>
       )}

@@ -75,10 +75,10 @@ export default function ProfileGroupsStrip({
     >
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">
             Your talent pool, grouped by what people do
           </h2>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">
             Worked out from each candidate&apos;s CV, kept up to date as new
             profiles arrive. Click a group to filter the list.
           </p>
@@ -86,7 +86,7 @@ export default function ProfileGroupsStrip({
         {activeGroup && (
           <Link
             href={hrefFor(undefined, undefined)}
-            className="text-[12px] font-medium text-teal-600 hover:underline"
+            className="text-[13px] font-medium text-teal-600 hover:underline"
           >
             Clear group filter
           </Link>
@@ -150,7 +150,7 @@ export default function ProfileGroupsStrip({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p
-                      className={`text-[12px] font-semibold uppercase tracking-wide ${ACCENT[g].text}`}
+                      className={`text-[13px] font-medium uppercase tracking-wide ${ACCENT[g].text}`}
                     >
                       {GROUP_LABEL[g]}
                     </p>
@@ -198,7 +198,7 @@ export default function ProfileGroupsStrip({
                         </Link>
                       );
                     })}
-                    {rows.length === 0 && <p className="text-[12px] text-slate-400">Nothing sorted here yet.</p>}
+                    {rows.length === 0 && <p className="text-[13px] text-slate-400">Nothing sorted here yet.</p>}
                   </div>
                 );
               })()}
@@ -225,7 +225,7 @@ export default function ProfileGroupsStrip({
       <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-3">
         <Link target="_blank" rel="noopener noreferrer"
           href={hrefFor("review", undefined)}
-          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "review" ? "border-rose-300 bg-rose-50/60 dark:border-rose-800 dark:bg-rose-950/20" : "border-slate-200 dark:border-slate-700"}`}
+          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[13px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "review" ? "border-rose-300 bg-rose-50/60 dark:border-rose-800 dark:bg-rose-950/20" : "border-slate-200 dark:border-slate-700"}`}
         >
           <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <AlertTriangle className="h-4 w-4 text-rose-500" /> Needs a look
@@ -239,7 +239,7 @@ export default function ProfileGroupsStrip({
         </Link>
         <Link target="_blank" rel="noopener noreferrer"
           href={hrefFor("unread", undefined)}
-          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "unread" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
+          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[13px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "unread" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
         >
           <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <FileQuestion className="h-4 w-4 text-slate-400" /> CV not read yet
@@ -253,7 +253,7 @@ export default function ProfileGroupsStrip({
         </Link>
         <Link target="_blank" rel="noopener noreferrer"
           href={hrefFor("nocv", undefined)}
-          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "nocv" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
+          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-[13px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeGroup === "nocv" ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
         >
           <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <FileQuestion className="h-4 w-4 text-slate-400" /> No CV on file

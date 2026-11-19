@@ -72,12 +72,12 @@ export default async function CandidateGroupDetailPage({ params }: { params: Pro
 
   return (
     <div>
-      <Link href="/candidates/groups" className="text-[12px] text-slate-400 hover:text-slate-600 mb-1 inline-block">
+      <Link href="/candidates/groups" className="text-[13px] text-slate-400 hover:text-slate-600 mb-1 inline-block">
         ← Back to Groups
       </Link>
       <div className="mb-3">
         <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{group.name}</h1>
-        {group.description && <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">{group.description}</p>}
+        {group.description && <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{group.description}</p>}
       </div>
       <GroupMembersView groupId={group.id} members={rows} />
     </div>

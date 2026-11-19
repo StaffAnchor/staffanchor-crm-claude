@@ -105,14 +105,14 @@ export default function CvFactsCard() {
     <div className="mt-6 rounded-ros-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="flex items-center gap-2 text-[16px] font-semibold text-slate-900 dark:text-slate-100">
             <FileSearch className="w-4 h-4 text-teal-600" aria-hidden /> CV reading
           </h3>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
             Reads each CV into structured facts (what they sold, to whom, team size, tools, flags). New CVs are read automatically; this reads the newest unread ones now.
           </p>
           {coverage && (
-            <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-2">
+            <p className="text-[14px] text-slate-700 dark:text-slate-300 mt-2">
               {coverage.read} of {coverage.withCv} CVs read
             </p>
           )}
@@ -121,7 +121,7 @@ export default function CvFactsCard() {
           <button
             onClick={run}
             disabled={running || loopRunning}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 text-white text-[13px] font-medium px-3 py-2 hover:bg-slate-800 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 text-white text-[14px] font-medium px-3 py-2 hover:bg-teal-700 disabled:opacity-60"
           >
             {running && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {running ? "Reading..." : "Read the newest 20"}
@@ -129,14 +129,14 @@ export default function CvFactsCard() {
           <button
             onClick={() => runAll(100)}
             disabled={running || loopRunning}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[13px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[14px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
           >
             Read the next 100
           </button>
           <button
             onClick={() => runAll()}
             disabled={running || loopRunning}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[13px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[14px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
           >
             {loopRunning && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {loopRunning ? "Reading all..." : "Read all remaining"}
@@ -144,26 +144,26 @@ export default function CvFactsCard() {
           <button
             onClick={recomputeStability}
             disabled={stabilityBusy}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[13px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[14px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
           >
             {stabilityBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Recompute stability scores
           </button>
         </div>
       </div>
-      {loopNote && <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-3">{loopNote} Keep this page open while it runs.</p>}
+      {loopNote && <p className="text-[14px] text-slate-700 dark:text-slate-300 mt-3">{loopNote} Keep this page open while it runs.</p>}
       {stability && (
-        <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-3">
+        <p className="text-[14px] text-slate-700 dark:text-slate-300 mt-3">
           Checked {stability.checked} timelines: {stability.changed} scores changed{stability.filled ? `, ${stability.filled} newly filled` : ""}.
         </p>
       )}
       {result && (
-        <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-3">
+        <p className="text-[14px] text-slate-700 dark:text-slate-300 mt-3">
           Read {result.read} of {result.attempted}
           {result.failed > 0 ? `, ${result.failed} failed${result.errors[0] ? ` (${result.errors[0]})` : ""}` : ""}.
         </p>
       )}
-      {error && <p className="text-[13px] text-red-600 mt-3">{error}</p>}
+      {error && <p className="text-[14px] text-red-600 mt-3">{error}</p>}
     </div>
   );
 }

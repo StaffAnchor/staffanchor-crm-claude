@@ -59,7 +59,7 @@ export default function PracticesControl({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="text-[12px] px-2.5 py-1 rounded-full border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+        className="text-[13px] px-2.5 py-1 rounded-full border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
       >
         {selected.length === 0 ? "No practices" : `${selected.length} practice${selected.length === 1 ? "" : "s"}`}
       </button>
@@ -67,7 +67,7 @@ export default function PracticesControl({
         <div className="absolute z-20 mt-1 w-72 max-h-80 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-ros-xl p-3 space-y-3">
           {grouped.map(({ group, practices }) => (
             <div key={group}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
                 {GROUP_LABEL[group]}
               </p>
               <div className="flex flex-wrap gap-1">

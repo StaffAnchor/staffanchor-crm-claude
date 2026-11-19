@@ -6,7 +6,7 @@ function Item({ label, value }: { label: string; value: string | null | undefine
   return (
     <div>
       <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={`text-[13px] ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}`}>{value || "Not known"}</p>
+      <p className={`text-[14px] ${value ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}`}>{value || "Not known"}</p>
     </div>
   );
 }
@@ -20,7 +20,7 @@ export default function SaasPassportCard({ row }: { row: PassportRow }) {
     <Card className="mt-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">B2B sales passport</h3>
+          <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">B2B sales passport</h3>
           {row.practice_fit && <Badge tone="accent">{FIT_LABEL[row.practice_fit]} sales</Badge>}
         </div>
         <Badge tone={passportTone(row.passport_score)}>{row.passport_score}% complete</Badge>
@@ -36,12 +36,12 @@ export default function SaasPassportCard({ row }: { row: PassportRow }) {
         <Item label="Tools" value={(row.tools ?? []).slice(0, 4).join(", ") || null} />
       </div>
       {row.best_achievement && (
-        <p className="mt-3 text-[12.5px] text-slate-600 dark:text-slate-300">
+        <p className="mt-3 text-[13px] text-slate-600 dark:text-slate-300">
           <span className="text-slate-400">Best achievement: </span>
           {row.best_achievement}
         </p>
       )}
-      <p className="mt-3 text-[12px] text-slate-500 dark:text-slate-400">
+      <p className="mt-3 text-[13px] text-slate-500 dark:text-slate-400">
         {missing.length > 0 ? `Ask on the next call: ${missing.join(", ")}.` : "Everything a hiring manager asks first is on file."}{" "}
         {row.confirmed_by_profile ? "Some values were confirmed on the profile." : row.cv_read ? "Read from the CV, not yet confirmed." : "CV not read yet."}
       </p>

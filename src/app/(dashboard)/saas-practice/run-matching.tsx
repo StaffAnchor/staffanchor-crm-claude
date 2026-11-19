@@ -50,12 +50,12 @@ export default function RunMatching({ roles }: { roles: Role[] }) {
         type="button"
         onClick={run}
         disabled={running || roles.length === 0}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900"
+        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-[14px] font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900"
       >
         {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
         {running ? `Checking role ${Math.min(done + 1, roles.length)} of ${roles.length}…` : "Find matches for all B2B roles"}
       </button>
-      {message && <span className="text-[12.5px] text-slate-600 dark:text-slate-300">{message}</span>}
+      {message && <span className="text-[13px] text-slate-600 dark:text-slate-300">{message}</span>}
     </div>
   );
 }

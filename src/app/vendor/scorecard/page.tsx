@@ -21,7 +21,7 @@ function StatTile({ label, value, tone }: { label: string; value: number; tone: 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <p className={`text-[26px] font-semibold ${tone}`}>{value}</p>
-      <p className="text-[12px] text-slate-500 mt-0.5">{label}</p>
+      <p className="text-[13px] text-slate-500 mt-0.5">{label}</p>
     </div>
   );
 }
@@ -44,19 +44,19 @@ export default async function VendorScorecardPage() {
   return (
     <div className="max-w-[1100px] mx-auto px-5 py-6">
       <h1 className="text-[20px] font-semibold text-slate-900">My Scorecard</h1>
-      <p className="text-[13px] text-slate-500 mt-0.5 mb-5">
+      <p className="text-[14px] text-slate-500 mt-0.5 mb-5">
         Your own submission-to-placement performance across every mandate you've worked.
       </p>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[14px] text-red-700">
           {friendlyVendorError(error.message, "scorecard")}
         </div>
       )}
 
       {s.total_submitted === 0 && !error ? (
         <div className="rounded-2xl border border-slate-200 bg-white py-16 flex flex-col items-center justify-center text-center">
-          <p className="text-[13px] text-slate-500">
+          <p className="text-[14px] text-slate-500">
             Submit your first candidate from My Mandates to start building your scorecard.
           </p>
         </div>
@@ -74,14 +74,14 @@ export default async function VendorScorecardPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 grid grid-cols-2 gap-4">
             <div>
               <p className="text-[24px] font-semibold text-slate-900">{interviewRate}%</p>
-              <p className="text-[12px] text-slate-500 mt-0.5">
+              <p className="text-[13px] text-slate-500 mt-0.5">
                 Of your submissions reach a client interview — a rough read on how closely your candidates match
                 what each mandate actually needs.
               </p>
             </div>
             <div>
               <p className="text-[24px] font-semibold text-slate-900">{placementRate}%</p>
-              <p className="text-[12px] text-slate-500 mt-0.5">Of your submissions end in a placement.</p>
+              <p className="text-[13px] text-slate-500 mt-0.5">Of your submissions end in a placement.</p>
             </div>
           </div>
         </>

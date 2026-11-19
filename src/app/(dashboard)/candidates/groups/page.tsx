@@ -42,13 +42,13 @@ export default async function CandidateGroupsPage() {
     <div>
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <Link href="/candidates" className="text-[12px] text-slate-400 hover:text-slate-600 mb-1 inline-block">
+          <Link href="/candidates" className="text-[13px] text-slate-400 hover:text-slate-600 mb-1 inline-block">
             ← Back to Candidates
           </Link>
           <h1 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
             Candidate Groups
           </h1>
-          <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
             Saved candidate segments you can come back to, instead of re-running the same filters.
           </p>
         </div>

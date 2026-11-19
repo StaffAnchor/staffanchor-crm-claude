@@ -53,7 +53,7 @@ export default function AskMissingDetails({ candidateId, missing }: { candidateI
   if (missing.length === 0) return null;
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
       <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
         <AlertTriangle className="h-3 w-3" /> Missing: {missing.join(", ")}
       </span>

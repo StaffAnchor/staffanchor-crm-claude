@@ -65,12 +65,12 @@ export default function TopTierStatus({ candidateId, data }: { candidateId: stri
   const tick = (ok: boolean | null) =>
     ok === null ? <span className="inline-block h-3.5 w-3.5 rounded-full border border-slate-300" /> : ok ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <X className="h-3.5 w-3.5 text-rose-500" />;
   const chip = (on: boolean, tone: "good" | "okay" | "weak") =>
-    `rounded-full border px-2.5 py-0.5 text-[12px] font-medium disabled:opacity-50 ${
+    `rounded-full border px-2.5 py-0.5 text-[13px] font-medium disabled:opacity-50 ${
       on
         ? tone === "good" ? "border-emerald-600 bg-emerald-600 text-white" : tone === "okay" ? "border-amber-500 bg-amber-500 text-white" : "border-rose-500 bg-rose-500 text-white"
         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
     }`;
-  const btn = "inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-1 text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200";
+  const btn = "inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-1 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200";
   const active = mode ? preview?.[mode] : null;
 
   const ratioText =
@@ -79,7 +79,7 @@ export default function TopTierStatus({ candidateId, data }: { candidateId: stri
       : `${data.payRatio.toFixed(2)} (₹${data.ctc}L over ${data.expYears} years). ${data.ratioOk ? (data.payRatio > 6 ? "Very high. Check the CTC is right before relying on this." : "At or above 1.5.") : "Below 1.5."}`;
 
   return (
-    <div className={`mt-3 rounded-ros-lg border px-3.5 py-3 text-[12.5px] ${top ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/20" : "border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900"}`}>
+    <div className={`mt-3 rounded-ros-lg border px-3.5 py-3 text-[13px] ${top ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/20" : "border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900"}`}>
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <Star className={`h-3.5 w-3.5 ${top ? "fill-emerald-500 text-emerald-600" : "fill-amber-400 text-amber-500"}`} />
         <span className="font-semibold text-slate-900 dark:text-slate-100">{top ? "Top tier" : data.tier === "ask_open" ? "Strong. Confirm they are open" : data.tier === "worth_a_call" ? "Worth a call" : "Not top tier"}</span>
@@ -124,12 +124,12 @@ export default function TopTierStatus({ candidateId, data }: { candidateId: stri
             <p className="text-slate-500">Loading the preview…</p>
           ) : active && active.available ? (
             <>
-              <p className="mb-1 text-[11.5px] font-medium uppercase tracking-wide text-slate-400">{mode === "email" ? "This email will go out" : "This WhatsApp will go out"}</p>
+              <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">{mode === "email" ? "This email will go out" : "This WhatsApp will go out"}</p>
               {mode === "email" && preview.email.subject && <p className="mb-1 font-medium">{preview.email.subject}</p>}
               <p className="max-h-40 overflow-auto whitespace-pre-wrap text-slate-600 dark:text-slate-300">{active.text}</p>
               <div className="mt-2 flex items-center gap-2">
-                <button type="button" disabled={busy} onClick={() => act({ action: mode })} className="rounded-full bg-teal-600 px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
-                <button type="button" onClick={() => setMode(null)} className="text-[12.5px] text-slate-500 hover:underline">Cancel</button>
+                <button type="button" disabled={busy} onClick={() => act({ action: mode })} className="rounded-full bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Sending…" : "Send"}</button>
+                <button type="button" onClick={() => setMode(null)} className="text-[13px] text-slate-500 hover:underline">Cancel</button>
               </div>
             </>
           ) : (

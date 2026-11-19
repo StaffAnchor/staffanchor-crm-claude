@@ -32,11 +32,11 @@ export default async function RoleTypesPage() {
     <div className="mx-auto max-w-[1200px] px-5 py-8">
       <Link href="/mandates" className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400">← All mandates</Link>
       <h1 className="ros-page-title mt-2">Set the role type</h1>
-      <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
+      <p className="mt-1 max-w-3xl text-[14px] text-slate-500 dark:text-slate-400">
         Whether a hire is an individual seller or someone who leads a team changes who fits, so every role needs its type and level before the system can find people for it. I suggest one from each title. Check them, fix any that are wrong, then save.
       </p>
       {roles.length === 0 ? (
-        <p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Every open role has its type and level set.</p>
+        <p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-[15px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Every open role has its type and level set.</p>
       ) : (
         <RoleTypeSetup roles={roles} />
       )}

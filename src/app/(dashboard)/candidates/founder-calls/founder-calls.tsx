@@ -61,7 +61,7 @@ function inDaysIso(days: number): string {
   return new Date(Date.now() + days * 86400000).toISOString();
 }
 
-const input = "w-20 rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-[13px]";
+const input = "w-20 rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-2 py-1 text-[14px]";
 
 export default function FounderCalls({ rows, progress, settings }: { rows: QueueRow[]; progress: Progress; settings: Settings }) {
   const router = useRouter();
@@ -111,11 +111,11 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="ros-page-title">Founder calls</h1>
-          <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-[14px] text-slate-500 dark:text-slate-400">
             Senior, complete, stable profiles to speak to yourself. Ranked on achievements, team led and a clean CV.
           </p>
         </div>
-        <div className="flex items-center gap-4 text-[13px]">
+        <div className="flex items-center gap-4 text-[14px]">
           <span>
             Today <b className="tabular-nums">{progress.spoke_today}</b> of {settings.per_day} spoken
           </span>
@@ -129,7 +129,7 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
       </div>
 
       {open && (
-        <div className="flex flex-wrap items-end gap-4 rounded-xl border border-slate-200 bg-white p-4 text-[13px] dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-wrap items-end gap-4 rounded-xl border border-slate-200 bg-white p-4 text-[14px] dark:border-slate-700 dark:bg-slate-900">
           <label className="space-y-1">
             <span className="block text-xs text-slate-500">Minimum stability (0–100)</span>
             <input type="number" className={input} value={s.min_stability} onChange={(e) => setS({ ...s, min_stability: Number(e.target.value) })} />
@@ -146,7 +146,7 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
             <span className="block text-xs text-slate-500">Calls a week</span>
             <input type="number" className={input} value={s.per_week} onChange={(e) => setS({ ...s, per_week: Number(e.target.value) })} />
           </label>
-          <button onClick={saveSettings} disabled={saving} className="rounded-md bg-teal-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">
+          <button onClick={saveSettings} disabled={saving} className="rounded-md bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 disabled:opacity-50">
             {saving ? "Saving…" : "Save"}
           </button>
           <p className="basis-full text-xs text-slate-400">{rows.length} profiles currently match. People you have already spoken to (last 90 days) or tried yesterday are left out.</p>
@@ -154,7 +154,7 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
       )}
 
       {today.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 text-[15px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
           {remaining === 0 ? `That's your ${settings.per_day} for today. Nice work.` : "No profiles match these filters right now. Loosen them above."}
         </div>
       ) : (
@@ -163,10 +163,10 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
             <article key={r.id} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <Link href={`/candidates/${r.id}`} target="_blank" className="text-[15px] font-semibold text-slate-900 hover:underline dark:text-slate-100">
+                  <Link href={`/candidates/${r.id}`} target="_blank" className="text-[16px] font-semibold text-slate-900 hover:underline dark:text-slate-100">
                     {r.full_name}
                   </Link>
-                  <p className="text-[13px] text-slate-600 dark:text-slate-300">
+                  <p className="text-[14px] text-slate-600 dark:text-slate-300">
                     {r.title ?? "—"} · {r.emp ?? "—"}
                   </p>
                   <p className="text-xs text-slate-400">
@@ -177,15 +177,15 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
                   Stability {r.stab ?? "—"}
                 </span>
               </div>
-              <p className="text-[13px] text-slate-700 dark:text-slate-300">
+              <p className="text-[14px] text-slate-700 dark:text-slate-300">
                 {r.exp}y · <b>{r.ctc}L</b> now{r.expected ? ` · expects ${r.expected}L` : ""} · notice {r.notice ?? "—"}
               </p>
               {r.flags.length > 0 && (
                 <p className="text-xs text-amber-700 dark:text-amber-300">Check: {r.flags.map((f) => FLAG_LABEL[f.kind] ?? f.kind).join(", ")}</p>
               )}
               <div>
-                <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Ask on the call</p>
-                <ul className="list-disc space-y-1 pl-4 text-[12.5px] text-slate-600 dark:text-slate-300">
+                <p className="mb-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">Ask on the call</p>
+                <ul className="list-disc space-y-1 pl-4 text-[13px] text-slate-600 dark:text-slate-300">
                   {probes(r).map((p) => (
                     <li key={p}>{p}</li>
                   ))}
@@ -193,10 +193,10 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
               </div>
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <CallButton candidateId={r.id} phone={r.phone} source="founder_queue" label="Call" />
-                <button onClick={() => skip(r.id, 14, "not_now")} className="text-[12.5px] text-slate-500 hover:underline">
+                <button onClick={() => skip(r.id, 14, "not_now")} className="text-[13px] text-slate-500 hover:underline">
                   Not now
                 </button>
-                <button onClick={() => skip(r.id, null, "not_a_fit")} className="text-[12.5px] text-slate-500 hover:underline">
+                <button onClick={() => skip(r.id, null, "not_a_fit")} className="text-[13px] text-slate-500 hover:underline">
                   Not a fit
                 </button>
               </div>
@@ -207,8 +207,8 @@ export default function FounderCalls({ rows, progress, settings }: { rows: Queue
 
       {upNext.length > 0 && (
         <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">Up next this week</h2>
-          <ul className="divide-y divide-slate-100 text-[13px] dark:divide-slate-800">
+          <h2 className="mb-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">Up next this week</h2>
+          <ul className="divide-y divide-slate-100 text-[14px] dark:divide-slate-800">
             {upNext.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <span>

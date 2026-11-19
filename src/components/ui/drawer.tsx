@@ -53,7 +53,7 @@ export function Drawer({
         )}
       >
         <div className="flex items-center justify-between px-5 h-14 border-b border-slate-100 dark:border-slate-800 shrink-0">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
           <button
             onClick={onClose}
             aria-label="Close panel"

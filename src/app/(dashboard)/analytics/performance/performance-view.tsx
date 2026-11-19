@@ -100,7 +100,7 @@ export default function PerformanceView({ rows }: { rows: RevenueRow[] }) {
       </div>
 
       {clientFilter && (
-        <div className="flex items-center gap-2 text-[12.5px]">
+        <div className="flex items-center gap-2 text-[13px]">
           <span className="text-slate-500 dark:text-slate-400">Filtered to</span>
           <span className="font-medium text-slate-800 dark:text-slate-200">{filteredClientName}</span>
           <button onClick={() => setClientFilter(null)} className="text-teal-600 hover:underline">
@@ -114,7 +114,7 @@ export default function PerformanceView({ rows }: { rows: RevenueRow[] }) {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`text-[12.5px] font-medium px-3 py-2 -mb-px border-b-2 transition-colors ${
+            className={`text-[13px] font-medium px-3 py-2 -mb-px border-b-2 transition-colors ${
               tab === t
                 ? "border-teal-600 text-slate-900 dark:text-slate-100"
                 : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
@@ -169,7 +169,7 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[14px]">
         <thead>
           <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 dark:border-slate-800">
             {head.map((h) => (

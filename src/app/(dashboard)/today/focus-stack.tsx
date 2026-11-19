@@ -50,15 +50,15 @@ export default function FocusStack({ cards, greeting, firstName, fees }: { cards
           <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-100">
             {greeting}, {firstName}
           </h1>
-          <p className="mt-1 text-[14px] text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-[15px] text-slate-500 dark:text-slate-400">
             {current ? `${queue.length} ${queue.length === 1 ? "thing" : "things"} worth doing now. About ${minutes} minutes.` : total === 0 ? "Nothing needs you right now." : "You're clear for now."}
           </p>
         </div>
         {fees && (
           <div className="text-right">
-            <p className="text-[12px] text-slate-500">Fees in play with clients</p>
+            <p className="text-[13px] text-slate-500">Fees in play with clients</p>
             <p className="text-[22px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{fees.amount}</p>
-            <p className="text-[12px] text-slate-400">{fees.people} {fees.people === 1 ? "candidate" : "candidates"}, if all are placed</p>
+            <p className="text-[13px] text-slate-400">{fees.people} {fees.people === 1 ? "candidate" : "candidates"}, if all are placed</p>
           </div>
         )}
       </div>
@@ -76,26 +76,26 @@ export default function FocusStack({ cards, greeting, firstName, fees }: { cards
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${KIND_STYLE[current.kind]}`}>{KIND_LABEL[current.kind]}</span>
             {current.value && <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">{current.value}</span>}
-            <span className="text-[12px] text-slate-400">{done + 1} of {total}</span>
+            <span className="text-[13px] text-slate-400">{done + 1} of {total}</span>
           </div>
           <p className="mt-3 text-[19px] font-semibold leading-snug text-slate-900 dark:text-slate-100">{current.title}</p>
-          <p className="mt-1.5 text-[14px] leading-6 text-slate-600 dark:text-slate-300">{current.why}</p>
+          <p className="mt-1.5 text-[15px] leading-6 text-slate-600 dark:text-slate-300">{current.why}</p>
 
           <div className="mt-5 flex flex-wrap items-center gap-2.5">
             {current.candidate?.phone && current.kind !== "chat" && (
-              <CallButton candidateId={current.candidate.id} mandateId={current.mandateId} phone={current.candidate.phone} className="inline-flex min-h-[46px] items-center gap-2 rounded-full bg-teal-600 px-6 text-[15px] font-semibold text-white hover:bg-teal-500" />
+              <CallButton candidateId={current.candidate.id} mandateId={current.mandateId} phone={current.candidate.phone} className="inline-flex min-h-[46px] items-center gap-2 rounded-full bg-teal-600 px-6 text-[16px] font-semibold text-white hover:bg-teal-500" />
             )}
-            <Link href={current.href} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-[46px] items-center gap-2 rounded-full px-6 text-[15px] font-semibold ${current.candidate?.phone && current.kind !== "chat" ? "border border-slate-300 text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800" : "bg-teal-600 text-white hover:bg-teal-500"}`}>
+            <Link href={current.href} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-[46px] items-center gap-2 rounded-full px-6 text-[16px] font-semibold ${current.candidate?.phone && current.kind !== "chat" ? "border border-slate-300 text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800" : "bg-teal-600 text-white hover:bg-teal-500"}`}>
               {current.kind === "chat" ? <MessageCircle className="h-4 w-4" /> : null}
               {current.actionLabel}
               {current.kind !== "chat" && <ArrowRight className="h-4 w-4" />}
             </Link>
             {current.candidate?.phone && current.kind === "chat" && (
-              <CallButton candidateId={current.candidate.id} phone={current.candidate.phone} label="Call instead" className="inline-flex min-h-[46px] items-center gap-2 rounded-full border border-slate-300 px-5 text-[15px] font-medium text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800" />
+              <CallButton candidateId={current.candidate.id} phone={current.candidate.phone} label="Call instead" className="inline-flex min-h-[46px] items-center gap-2 rounded-full border border-slate-300 px-5 text-[16px] font-medium text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800" />
             )}
           </div>
 
-          <div className="mt-5 flex items-center gap-4 border-t border-slate-100 pt-4 text-[14px] dark:border-slate-800">
+          <div className="mt-5 flex items-center gap-4 border-t border-slate-100 pt-4 text-[15px] dark:border-slate-800">
             <button type="button" onClick={finish} disabled={busy} className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 hover:underline dark:text-emerald-300">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Done, next
             </button>
@@ -110,7 +110,7 @@ export default function FocusStack({ cards, greeting, firstName, fees }: { cards
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-8 text-center dark:border-emerald-900 dark:bg-emerald-950/20">
           <Check className="mx-auto h-8 w-8 text-emerald-600" />
           <p className="mt-2 text-[18px] font-semibold text-slate-900 dark:text-slate-100">{done > 0 ? `That's ${done} done. You're clear.` : "You're all clear."}</p>
-          <p className="mt-1 text-[14px] text-slate-600 dark:text-slate-300">Nothing is waiting on you. The roles and tasks below are still there if you want to get ahead.</p>
+          <p className="mt-1 text-[15px] text-slate-600 dark:text-slate-300">Nothing is waiting on you. The roles and tasks below are still there if you want to get ahead.</p>
         </div>
       )}
 
@@ -118,8 +118,8 @@ export default function FocusStack({ cards, greeting, firstName, fees }: { cards
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {upcoming.map((c, i) => (
             <div key={c.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-[12px] text-slate-400">{i === 0 ? "Next" : "Then"}</p>
-              <p className="mt-0.5 flex items-center gap-1.5 truncate text-[14px] text-slate-800 dark:text-slate-100">
+              <p className="text-[13px] text-slate-400">{i === 0 ? "Next" : "Then"}</p>
+              <p className="mt-0.5 flex items-center gap-1.5 truncate text-[15px] text-slate-800 dark:text-slate-100">
                 {c.candidate?.phone && c.kind !== "chat" ? <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" /> : null}
                 <span className="truncate">{c.title}</span>
               </p>

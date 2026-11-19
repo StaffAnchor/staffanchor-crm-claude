@@ -50,7 +50,7 @@ export default function LeadOutreachPanel({ leadId }: { leadId: string }) {
     <Card>
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4 text-teal-500" />
-        <h2 className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">AI Outreach Draft</h2>
+        <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">AI Outreach Draft</h2>
       </div>
 
       <div className="flex items-center gap-2 mb-3">
@@ -72,7 +72,7 @@ export default function LeadOutreachPanel({ leadId }: { leadId: string }) {
         </Button>
       </div>
 
-      {error && <p className="text-[12px] text-rose-500 mb-2">{error}</p>}
+      {error && <p className="text-[13px] text-rose-500 mb-2">{error}</p>}
 
       {draft ? (
         <div className="relative">
@@ -80,7 +80,7 @@ export default function LeadOutreachPanel({ leadId }: { leadId: string }) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={8}
-            className="w-full text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
+            className="w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
           />
           <button
             onClick={copyDraft}

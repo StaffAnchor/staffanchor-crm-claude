@@ -60,7 +60,7 @@ import {
 const CATEGORY_OPTIONS = profileTypeOptions;
 
 const INPUT_CLS =
-  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white dark:bg-slate-900";
+  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[14px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white dark:bg-slate-900";
 
 function subDomainLabelFor(category: string): string {
   if (category === "b2b_sales") return "Practice";
@@ -179,7 +179,7 @@ function QuarterField({
                 onClick={() => onAchievement(o)}
                 className={`rounded-full border px-2 py-0.5 text-xs font-medium transition-colors duration-200 ease-ros ${
                   active
-                    ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                    ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200"
                     : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-400"
                 }`}
               >
@@ -305,7 +305,7 @@ export default function CareerTimelinePanel({
           <BriefcaseBusiness className="w-3.5 h-3.5 text-slate-400" /> Career Timeline
         </h2>
       </div>
-      <p className="text-[12px] text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-400 mb-3">
         Per-job history from two sources -- the resume (auto-extracted) and the confirmed profile. Scores use
         whichever is more trustworthy for each role. Re-extracting from the resume now happens automatically as
         part of the main AI summary&apos;s single &quot;Regenerate&quot; button above, rather than a separate action here.
@@ -319,7 +319,7 @@ export default function CareerTimelinePanel({
                 <TrendingUp className="w-4 h-4" />
               </span>
               <div>
-                <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">
+                <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">
                   {stabilityScore}<span className="text-xs font-normal text-slate-400">/100</span>
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -334,7 +334,7 @@ export default function CareerTimelinePanel({
                 <ShieldCheck className="w-4 h-4" />
               </span>
               <div>
-                <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">
+                <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">
                   {domainScore}<span className="text-xs font-normal text-slate-400">/100</span>
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Domain consistency</p>
@@ -352,7 +352,7 @@ export default function CareerTimelinePanel({
               className="flex items-start gap-2 rounded-ros-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 px-2.5 py-2"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-              <p className="flex-1 text-[12px] text-amber-800 dark:text-amber-400">{gap.message}</p>
+              <p className="flex-1 text-[13px] text-amber-800 dark:text-amber-400">{gap.message}</p>
               {gap.type === "resume_not_in_profile" && (
                 <button
                   onClick={() =>
@@ -376,14 +376,14 @@ export default function CareerTimelinePanel({
       <div className="space-y-4">
         {resumeEntries.length > 0 && (
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
               From resume <span className="normal-case font-normal text-slate-400">(unconfirmed)</span>
             </h3>
             <div className="space-y-1.5">
               {resumeEntries.map((e) => (
                 <div key={e.id} className="rounded-ros-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+                    <p className="text-[14px] font-medium text-slate-700 dark:text-slate-300">
                       {e.title || "Role"} <span className="text-slate-400 font-normal">at {e.company}</span>
                     </p>
                     <p className="text-xs text-slate-400">
@@ -398,11 +398,11 @@ export default function CareerTimelinePanel({
         )}
 
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+          <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
             Confirmed in profile
           </h3>
           {profileEntries.length === 0 && (
-            <p className="text-[12px] text-slate-400 rounded-ros-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2 mb-2">
+            <p className="text-[13px] text-slate-400 rounded-ros-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-2 mb-2">
               No confirmed roles yet.
             </p>
           )}
@@ -413,7 +413,7 @@ export default function CareerTimelinePanel({
                 <div key={e.id} className="rounded-ros-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">
+                      <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">
                         {e.title || "Role"} <span className="text-slate-400 font-normal">at {e.company}</span>
                       </p>
                       <p className="text-xs text-slate-400">
@@ -436,12 +436,12 @@ export default function CareerTimelinePanel({
         </div>
       </div>
 
-      {error && <p className="text-[12px] text-red-600 mt-3">{error}</p>}
+      {error && <p className="text-[13px] text-red-600 mt-3">{error}</p>}
 
       {!form ? (
         <button
           onClick={() => startAdd()}
-          className="mt-3 flex items-center gap-1 text-[12px] font-medium text-teal-600 hover:text-teal-700"
+          className="mt-3 flex items-center gap-1 text-[13px] font-medium text-teal-600 hover:text-teal-700"
         >
           <Plus className="w-3.5 h-3.5" /> Add a role
         </button>
@@ -725,7 +725,7 @@ export default function CareerTimelinePanel({
 
               {isInsideSalesRole && (
                 <div className="rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-2.5">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Inside sales detail
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -808,7 +808,7 @@ export default function CareerTimelinePanel({
           </div>
 
           <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
               Revenue impact{" "}
               <span className="normal-case font-normal text-slate-400">
                 {isCurrentRole
@@ -1030,13 +1030,13 @@ export default function CareerTimelinePanel({
 
           {isCurrentRole && isSalesCategory && (
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
                 Performance{" "}
                 <span className="normal-case font-normal text-slate-400">
                   -- real target vs. achievement for the current role
                 </span>
               </p>
-              <p className="mb-2 rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5 text-[12px] text-slate-600 dark:text-slate-400">
+              <p className="mb-2 rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5 text-[13px] text-slate-600 dark:text-slate-400">
                 {isTeamLead ? (
                   <>
                     Team size led is <strong>{form.team_size}</strong> in this role, so the target below is the{" "}
@@ -1120,7 +1120,7 @@ export default function CareerTimelinePanel({
 
               {isTeamLead && form.has_ic_target_too === "Yes" && (
                 <div className="mt-3 rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-2.5">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Individual target (in addition to the team number)
                   </p>
                   <div>
@@ -1210,13 +1210,13 @@ export default function CareerTimelinePanel({
             <button
               onClick={handleSaveForm}
               disabled={saving}
-              className="flex-1 rounded-ros-md bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+              className="flex-1 rounded-ros-md bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save role"}
             </button>
             <button
               onClick={() => setForm(null)}
-              className="rounded-ros-md border border-slate-300 dark:border-slate-700 px-3 text-[13px] text-slate-600 dark:text-slate-400"
+              className="rounded-ros-md border border-slate-300 dark:border-slate-700 px-3 text-[14px] text-slate-600 dark:text-slate-400"
             >
               Cancel
             </button>

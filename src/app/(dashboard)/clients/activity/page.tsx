@@ -46,7 +46,7 @@ export default async function ClientActivityPage({ searchParams }: { searchParam
     const s = q.toString();
     return s ? `/clients/activity?${s}` : "/clients/activity";
   };
-  const chip = (on: boolean) => `rounded-full px-3 py-1 text-[13px] ${on ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`;
+  const chip = (on: boolean) => `rounded-full px-3 py-1 text-[14px] ${on ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`;
 
   const byDay = new Map<string, ClientReply[]>();
   for (const i of items) byDay.set(day(i.at), [...(byDay.get(day(i.at)) ?? []), i]);
@@ -55,9 +55,9 @@ export default async function ClientActivityPage({ searchParams }: { searchParam
     <div className="mx-auto max-w-[1000px] px-5 py-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/clients" className="text-[13px] text-slate-500 hover:underline">← All clients</Link>
+          <Link href="/clients" className="text-[14px] text-slate-500 hover:underline">← All clients</Link>
           <h1 className="mt-1 text-[24px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">Client activity</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400">Every sign-in, interest, interview request and pass from the client portal{unseen ? `, ${unseen} new` : ""}.</p>
+          <p className="text-[14px] text-slate-500 dark:text-slate-400">Every sign-in, interest, interview request and pass from the client portal{unseen ? `, ${unseen} new` : ""}.</p>
         </div>
         {unseen > 0 && <MarkSeenButton />}
       </div>
@@ -72,7 +72,7 @@ export default async function ClientActivityPage({ searchParams }: { searchParam
         {clients.map(([id, name]) => (
           <Link key={id} href={href({ client: id })} className={chip(sp.client === id)}>{name}</Link>
         ))}
-        <span className="ml-auto flex items-center gap-1 text-[13px] text-slate-500">
+        <span className="ml-auto flex items-center gap-1 text-[14px] text-slate-500">
           {PERIODS.map((p) => (
             <Link key={p} href={href({ days: p })} className={chip(days === p)}>{p} days</Link>
           ))}
@@ -80,12 +80,12 @@ export default async function ClientActivityPage({ searchParams }: { searchParam
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-8 rounded-xl border border-slate-200 bg-white p-6 text-[14px] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">Nothing here for these filters.</p>
+        <p className="mt-8 rounded-xl border border-slate-200 bg-white p-6 text-[15px] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">Nothing here for these filters.</p>
       ) : (
         <div className="mt-6 space-y-6">
           {Array.from(byDay.entries()).map(([d, list]) => (
             <section key={d}>
-              <h2 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-slate-400">{d}</h2>
+              <h2 className="mb-2 text-[13px] font-medium uppercase tracking-wide text-slate-400">{d}</h2>
               <ul className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
                 {list.map((r) => {
                   const k = KIND[r.kind];
@@ -97,7 +97,7 @@ export default async function ClientActivityPage({ searchParams }: { searchParam
                           <Icon className="h-4 w-4" aria-hidden />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100">
+                          <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
                             {r.kind === "login" ? (
                               <>{r.who} <span className="font-normal text-slate-500">{k.verb}{r.client ? ` · ${r.client}` : ""}</span></>
                             ) : (
@@ -105,13 +105,13 @@ export default async function ClientActivityPage({ searchParams }: { searchParam
                             )}
                           </p>
                           {r.kind !== "login" && (
-                            <p className="text-[12.5px] text-slate-500 dark:text-slate-400">{[r.role, r.who !== "Someone" ? r.who : null].filter(Boolean).join(" · ")}</p>
+                            <p className="text-[13px] text-slate-500 dark:text-slate-400">{[r.role, r.who !== "Someone" ? r.who : null].filter(Boolean).join(" · ")}</p>
                           )}
-                          {r.extra && r.kind !== "login" && <p className="mt-0.5 text-[13px] text-slate-700 dark:text-slate-300">{r.extra}</p>}
-                          {r.extra && r.kind === "login" && <p className="text-[12.5px] text-slate-500">{r.extra}</p>}
+                          {r.extra && r.kind !== "login" && <p className="mt-0.5 text-[14px] text-slate-700 dark:text-slate-300">{r.extra}</p>}
+                          {r.extra && r.kind === "login" && <p className="text-[13px] text-slate-500">{r.extra}</p>}
                         </div>
                         {r.unseen && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-teal-500" aria-label="New" />}
-                        <span className="shrink-0 text-[12px] text-slate-400">{time(r.at)}</span>
+                        <span className="shrink-0 text-[13px] text-slate-400">{time(r.at)}</span>
                       </Link>
                     </li>
                   );

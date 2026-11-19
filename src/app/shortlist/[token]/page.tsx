@@ -199,10 +199,10 @@ export default async function ClientShortlistPage({
       <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white">
         <div className="max-w-3xl mx-auto px-6 pt-8 pb-7">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-blue-500 flex items-center justify-center text-[13px] font-bold shrink-0">
+            <div className="w-7 h-7 rounded-md bg-blue-500 flex items-center justify-center text-[14px] font-bold shrink-0">
               S
             </div>
-            <p className="text-xs font-semibold tracking-wide text-blue-300 uppercase">
+            <p className="text-xs font-medium tracking-wide text-blue-300 uppercase">
               StaffAnchor Talent Solutions
             </p>
           </div>
@@ -280,7 +280,7 @@ function CandidateCard({
           <div
             className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatarTone(
               candidate.full_name
-            )} flex items-center justify-center text-white text-[15px] font-semibold shrink-0 shadow-sm`}
+            )} flex items-center justify-center text-white text-[16px] font-semibold shrink-0 shadow-sm`}
           >
             {initials(candidate.full_name)}
           </div>
@@ -288,7 +288,7 @@ function CandidateCard({
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-semibold text-slate-900">{candidate.full_name}</h2>
               {recommended && (
-                <span className="text-[11px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-[12px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-medium">
                   Recommended
                 </span>
               )}
@@ -348,7 +348,7 @@ function CandidateCard({
 
       {candidate.industries && candidate.industries.length > 0 && (
         <div className="mt-3">
-          <p className="text-[11px] text-slate-400 mb-1.5">Industries</p>
+          <p className="text-[12px] text-slate-400 mb-1.5">Industries</p>
           <div className="flex flex-wrap gap-1.5">
             {candidate.industries.map((i) => (
               <span key={i} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
@@ -375,8 +375,8 @@ function CandidateCard({
 function StatChip({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
     <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2" title={title}>
-      <p className="text-[10.5px] text-slate-400 uppercase tracking-wide">{label}</p>
-      <p className="text-[13.5px] font-semibold text-slate-800 mt-0.5">{value}</p>
+      <p className="text-[12px] text-slate-400 uppercase tracking-wide">{label}</p>
+      <p className="text-[14px] font-semibold text-slate-800 mt-0.5">{value}</p>
     </div>
   );
 }

@@ -141,7 +141,7 @@ export default async function SalesCirclePage() {
     <div className="mx-auto max-w-[1500px] space-y-8 px-5 py-8">
       <div>
         <h1 className="text-ros-display mb-1 font-semibold tracking-tight text-slate-900 dark:text-slate-100">Sales Circle</h1>
-        <p className="text-[13px] text-slate-500 dark:text-slate-400">
+        <p className="text-[14px] text-slate-500 dark:text-slate-400">
           Your referral network: who applies, which roles they see, who they refer, and what they earn.
         </p>
       </div>
@@ -153,7 +153,7 @@ export default async function SalesCirclePage() {
             href={k.href}
             className={`rounded-xl border bg-white p-4 transition-shadow hover:shadow-sm dark:bg-slate-900 ${k.tone === "alert" ? "border-amber-300 dark:border-amber-700" : "border-slate-200 dark:border-slate-700"}`}
           >
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">{k.label}</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-slate-400">{k.label}</div>
             <div className="mt-1 text-[24px] font-bold leading-none text-slate-900 dark:text-slate-100">{k.value}</div>
             <div className={`mt-1.5 text-xs ${k.tone === "alert" ? "font-medium text-amber-700 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>{k.sub}</div>
           </a>
@@ -162,25 +162,25 @@ export default async function SalesCirclePage() {
 
       <nav className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-1 bg-white/90 px-1 py-2 backdrop-blur dark:bg-slate-950/90">
         {jump.map(([href, label]) => (
-          <a key={href} href={href} className="rounded-full px-3 py-1 text-[12.5px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+          <a key={href} href={href} className="rounded-full px-3 py-1 text-[13px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
             {label}
           </a>
         ))}
       </nav>
 
       <section id="applications" className="scroll-mt-16 space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Pending applications</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Pending applications</h2>
         <ReferrerApplicationsPanel applications={pendingApplications ?? []} />
       </section>
 
       <section id="referrers" className="scroll-mt-16 space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Referrers</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Referrers</h2>
         <ReferrersTable referrers={referrers ?? []} />
       </section>
 
       <section id="roles" className="scroll-mt-16 space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Roles on the referrer board</h2>
-        <p className="text-[12px] text-slate-500 dark:text-slate-400">
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Roles on the referrer board</h2>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">
           Choose which open roles referrers can see, and set the payout for each one yourself before it goes live. Each role shows how complete it is. Use
           &ldquo;Preview as referrer&rdquo; to see exactly what they get. The client company name is never shown to referrers.
         </p>
@@ -188,18 +188,18 @@ export default async function SalesCirclePage() {
       </section>
 
       <section id="referrals" className="scroll-mt-16 space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Referrals</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Referrals</h2>
         <ReferralsAdmin referrals={referrals} />
       </section>
 
       <section id="payouts" className="scroll-mt-16 space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Payouts</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Payouts</h2>
         <PayoutsPanel payouts={payouts} />
       </section>
 
       <section id="slabs" className="scroll-mt-16 space-y-3">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Suggested payout slabs</h2>
-        <p className="text-[12px] text-slate-500 dark:text-slate-400">
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Suggested payout slabs</h2>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">
           Only suggestions. When you publish a role, the payout field starts with the slab for its CTC budget, and you can change it to any amount. Referrers always see the amount you set for that role.
         </p>
         <PayoutSlabsPanel slabs={slabs ?? []} />

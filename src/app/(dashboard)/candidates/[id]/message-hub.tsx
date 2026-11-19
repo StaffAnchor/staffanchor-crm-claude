@@ -59,7 +59,7 @@ export default function MessageHub({
   return (
     <div>
       {suggestion && (
-        <p className="mb-3 rounded-lg bg-teal-50 px-3 py-2 text-[13px] text-teal-900 dark:bg-teal-950/30 dark:text-teal-200">
+        <p className="mb-3 rounded-lg bg-teal-50 px-3 py-2 text-[14px] text-teal-900 dark:bg-teal-950/30 dark:text-teal-200">
           <b>Suggested:</b> {suggestion}
         </p>
       )}
@@ -69,27 +69,27 @@ export default function MessageHub({
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`-mb-px border-b-2 px-3 py-2 text-[13px] font-medium ${tab === t.key ? "border-teal-600 text-teal-700" : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
+            className={`-mb-px border-b-2 px-3 py-2 text-[14px] font-medium ${tab === t.key ? "border-teal-600 text-teal-700" : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <p className="mt-2 mb-3 text-[12px] text-slate-500 dark:text-slate-400">{cur.note}</p>
+      <p className="mt-2 mb-3 text-[13px] text-slate-500 dark:text-slate-400">{cur.note}</p>
 
       {tab === "email" && (
         <div className="space-y-3">
           {emailSlot}
           {hasEmail ? (
-            <a href={`mailto:${email}`} onClick={() => logActivity(candidateId, "email")} className="inline-block rounded-ros-md border border-slate-300 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+            <a href={`mailto:${email}`} onClick={() => logActivity(candidateId, "email")} className="inline-block rounded-ros-md border border-slate-300 bg-white px-3 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
               Write a free-form email
             </a>
           ) : (
-            <p className="text-[13px] text-amber-700 dark:text-amber-300">No email on file. Use WhatsApp, or get the email first.</p>
+            <p className="text-[14px] text-amber-700 dark:text-amber-300">No email on file. Use WhatsApp, or get the email first.</p>
           )}
         </div>
       )}
-      {tab === "official" && <div className="space-y-3">{phone ? officialSlot : <p className="text-[13px] text-amber-700 dark:text-amber-300">No usable phone number, so nothing can go on WhatsApp.</p>}</div>}
+      {tab === "official" && <div className="space-y-3">{phone ? officialSlot : <p className="text-[14px] text-amber-700 dark:text-amber-300">No usable phone number, so nothing can go on WhatsApp.</p>}</div>}
       {tab === "browser" && (
         <div className="space-y-2">
           {phone ? (
@@ -98,10 +98,10 @@ export default function MessageHub({
               templates={candidateTemplates(candidateName, { me, candidateId, missing: missingKeys }).filter((t) => t.key !== "intro")}
               onIntroduce={() => setSharing(true)}
               onSend={() => logActivity(candidateId, "whatsapp")}
-              className="inline-flex items-center gap-1.5 rounded-ros-md bg-emerald-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-ros-md bg-emerald-600 px-3.5 py-1.5 text-[14px] font-semibold text-white hover:bg-emerald-700"
             />
           ) : (
-            <p className="text-[13px] text-amber-700 dark:text-amber-300">No usable phone number.</p>
+            <p className="text-[14px] text-amber-700 dark:text-amber-300">No usable phone number.</p>
           )}
           {sharing && <WhatsAppShareModal candidateIds={ids} onClose={() => setSharing(false)} />}
         </div>

@@ -45,7 +45,7 @@ export default function FeedbackBar({
   }
 
   const base = "inline-flex items-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-60";
-  const size = compact ? "px-2.5 py-1.5 text-[12px]" : "px-3.5 py-2 text-[13px]";
+  const size = compact ? "px-2.5 py-1.5 text-[13px]" : "px-3.5 py-2 text-[14px]";
   const offGreen = "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100";
   const offIndigo = "border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100";
   const offRose = "border border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100";
@@ -53,7 +53,7 @@ export default function FeedbackBar({
   // In the CRM the buttons are the client's own decisions, so a recruiter gets a way into the candidate instead.
   if (readOnly) {
     return (
-      <Link href={`/candidates/${candidate.candidate_id}`} className="text-[12.5px] font-medium text-teal-700 hover:underline">
+      <Link href={`/candidates/${candidate.candidate_id}`} className="text-[13px] font-medium text-teal-700 hover:underline">
         Open this candidate in the CRM →
       </Link>
     );
@@ -100,7 +100,7 @@ export default function FeedbackBar({
             setPassReason("already_interviewed");
             setPassing(true);
           }}
-          className="mt-2 text-[12px] text-slate-500 underline decoration-dotted underline-offset-2 hover:text-slate-800"
+          className="mt-2 text-[13px] text-slate-500 underline decoration-dotted underline-offset-2 hover:text-slate-800"
         >
           Already interviewed or in our process?
         </button>
@@ -108,11 +108,11 @@ export default function FeedbackBar({
 
       {scheduling && !compact && (
         <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl border border-[#e3ddd1] bg-[#faf8f4] p-3">
-          <label className="text-[11px] font-medium text-slate-500">
+          <label className="text-[12px] font-medium text-slate-500">
             Preferred date
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 block rounded-lg border border-[#e3ddd1] bg-white px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300" />
           </label>
-          <label className="text-[11px] font-medium text-slate-500">
+          <label className="text-[12px] font-medium text-slate-500">
             Preferred time
             <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 block rounded-lg border border-[#e3ddd1] bg-white px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300" />
           </label>
@@ -126,7 +126,7 @@ export default function FeedbackBar({
               }
               send("interview_requested", new Date(`${date}T${time}`).toISOString());
             }}
-            className="rounded-lg bg-indigo-600 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-lg bg-indigo-600 px-3.5 py-2 text-[14px] font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
           >
             Send request
           </button>
@@ -136,7 +136,7 @@ export default function FeedbackBar({
       {passing && <PassReasonDialog candidateName={candidate.full_name} initialReason={passReason} busy={busy} onCancel={() => setPassing(false)} onConfirm={(reason, note) => send("not_interested", undefined, { reason, note })} />}
 
       {(confirmed || requested) && (
-        <p className="mt-2 flex items-center gap-1.5 text-[12px] text-slate-500">
+        <p className="mt-2 flex items-center gap-1.5 text-[13px] text-slate-500">
           <CalendarClock className="h-3.5 w-3.5 shrink-0" />
           {confirmed ? (
             <span>
@@ -162,7 +162,7 @@ export function ReconsiderBar({ candidate, onFeedback }: { candidate: BoardCandi
   if (candidate.client_feedback !== "not_interested") return null;
   const closedByRecruiter = ["rejected", "pulled_back", "placed"].includes(candidate.stage);
   if (closedByRecruiter) {
-    return <p className="text-[12px] text-slate-500">Changed your mind? Message your recruiter and they can reopen this candidate.</p>;
+    return <p className="text-[13px] text-slate-500">Changed your mind? Message your recruiter and they can reopen this candidate.</p>;
   }
   return (
     <button
@@ -178,7 +178,7 @@ export function ReconsiderBar({ candidate, onFeedback }: { candidate: BoardCandi
           setBusy(false);
         }
       }}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[12.5px] font-medium text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-60"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[13px] font-medium text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-60"
     >
       <Undo2 className="h-3.5 w-3.5" /> {busy ? "Moving…" : "Changed your mind? Move back to Shortlisted"}
     </button>

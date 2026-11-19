@@ -14,7 +14,7 @@ export default function ClientAcquisitionLayout({ children }: { children: React.
       <div className="border-b border-slate-100 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40">
         <div className="max-w-[1500px] mx-auto px-5 pt-5">
           <h1 className="ros-page-title">Client Acquisition</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-4">
+          <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1 mb-4">
             The sales pipeline and the inbound inquiry queue that feeds it -- one place for bringing in new business.
           </p>
           <ClientAcquisitionSubNav />

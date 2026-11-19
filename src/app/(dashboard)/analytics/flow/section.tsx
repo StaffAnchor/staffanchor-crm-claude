@@ -120,7 +120,7 @@ export default async function FlowPage() {
       <section className="space-y-3">
         <div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pipeline flow</h2>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400">
+          <p className="text-[14px] text-slate-500 dark:text-slate-400">
             Open roles only. A candidate counts as stuck once they sit in a stage past its limit (sourced 14 days, screened 7, shortlisted 5, everything on the client side 7).
           </p>
         </div>
@@ -132,7 +132,7 @@ export default async function FlowPage() {
         </div>
 
         <Card padded={false} className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead>
               <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                 <th className="px-4 py-2.5 font-medium">Stage</th>
@@ -167,7 +167,7 @@ export default async function FlowPage() {
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Stuck now</h2>
         <Card padded={false} className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead>
               <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                 <th className="px-4 py-2.5 font-medium">Candidate</th>
@@ -211,7 +211,7 @@ export default async function FlowPage() {
         <div className="space-y-3">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Load by owner</h2>
           <Card padded={false}>
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                   <th className="px-4 py-2.5 font-medium">Owner</th>
@@ -240,7 +240,7 @@ export default async function FlowPage() {
         <div className="space-y-3">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Time between stages</h2>
           <Card padded={false}>
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                   <th className="px-4 py-2.5 font-medium">Move</th>
@@ -268,7 +268,7 @@ export default async function FlowPage() {
               </tbody>
             </table>
           </Card>
-          {sinceLabel && <p className="text-[12px] text-slate-400">Stage changes have been recorded since {sinceLabel}; older movements are not included, so treat small counts as indicative.</p>}
+          {sinceLabel && <p className="text-[13px] text-slate-400">Stage changes have been recorded since {sinceLabel}; older movements are not included, so treat small counts as indicative.</p>}
         </div>
       </section>
 
@@ -282,7 +282,7 @@ export default async function FlowPage() {
               </Badge>
             ))}
           </div>
-          <p className="text-[12px] text-slate-400">The stage a candidate was in when they were rejected. Reasons are on the Reports tab.</p>
+          <p className="text-[13px] text-slate-400">The stage a candidate was in when they were rejected. Reasons are on the Reports tab.</p>
         </section>
       )}
 
@@ -292,8 +292,8 @@ export default async function FlowPage() {
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card padded={false}>
-            <p className="px-4 pt-3 pb-1 text-[13px] font-medium text-slate-800 dark:text-slate-200">AI use, last 30 days</p>
-            <table className="w-full text-[13px]">
+            <p className="px-4 pt-3 pb-1 text-[14px] font-medium text-slate-800 dark:text-slate-200">AI use, last 30 days</p>
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                   <th className="px-4 py-2 font-medium">Task</th>
@@ -321,8 +321,8 @@ export default async function FlowPage() {
           </Card>
 
           <Card padded={false}>
-            <p className="px-4 pt-3 pb-1 text-[13px] font-medium text-slate-800 dark:text-slate-200">Was the AI right?</p>
-            <table className="w-full text-[13px]">
+            <p className="px-4 pt-3 pb-1 text-[14px] font-medium text-slate-800 dark:text-slate-200">Was the AI right?</p>
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                   <th className="px-4 py-2 font-medium">AI rated</th>
@@ -361,7 +361,7 @@ export default async function FlowPage() {
             </table>
             {topReasons.length > 0 && (
               <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-[12px] font-medium text-slate-600 dark:text-slate-300 mb-1.5">Why suggestions were dismissed</p>
+                <p className="text-[13px] font-medium text-slate-600 dark:text-slate-300 mb-1.5">Why suggestions were dismissed</p>
                 <div className="flex flex-wrap gap-1.5">
                   {topReasons.map(([label, n]) => (
                     <Badge key={label} tone="neutral">
@@ -371,20 +371,20 @@ export default async function FlowPage() {
                 </div>
               </div>
             )}
-            <p className="px-4 py-2 text-[12px] text-slate-400">
+            <p className="px-4 py-2 text-[13px] text-slate-400">
               &quot;Agreed&quot; is the share of decided suggestions that people added. It shows once there are 5 decisions per rating, so &quot;strong&quot; can be checked against real choices.
             </p>
           </Card>
         </div>
 
         <Card padded={false}>
-          <p className="px-4 pt-3 pb-1 text-[13px] font-medium text-slate-800 dark:text-slate-200">Latest AI outputs on record</p>
-          <p className="px-4 pb-2 text-[12px] text-slate-400">
+          <p className="px-4 pt-3 pb-1 text-[14px] font-medium text-slate-800 dark:text-slate-200">Latest AI outputs on record</p>
+          <p className="px-4 pb-2 text-[13px] text-slate-400">
             Each call stores a fingerprint of its input and the answer it returned (CV reading stores only the fingerprint, not the CV). Use this to trace why a suggestion appeared.
           </p>
           <ul className="divide-y divide-slate-50 dark:divide-slate-800/60">
             {recent.map((r) => (
-              <li key={r.id} className="px-4 py-2.5 text-[12px]">
+              <li key={r.id} className="px-4 py-2.5 text-[13px]">
                 <div className="flex flex-wrap items-center gap-2 text-slate-500">
                   <span className="font-medium text-slate-700 dark:text-slate-300">{r.purpose.replace(/_/g, " ")}</span>
                   <span>{new Date(r.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
@@ -395,7 +395,7 @@ export default async function FlowPage() {
                 <p className="mt-1 text-slate-600 dark:text-slate-400 line-clamp-2">{r.output_text}</p>
               </li>
             ))}
-            {recent.length === 0 && <li className="px-4 py-5 text-center text-[13px] text-slate-500">Outputs will appear here after the next matching run.</li>}
+            {recent.length === 0 && <li className="px-4 py-5 text-center text-[14px] text-slate-500">Outputs will appear here after the next matching run.</li>}
           </ul>
         </Card>
       </section>

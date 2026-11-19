@@ -108,7 +108,7 @@ function LeadCard({ lead, ownerName }: { lead: SalesLeadScoredRow; ownerName?: s
     >
       <Link href={`/client-acquisition/sales/${lead.id}`} className="block group">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-teal-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
+          <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 group-hover:text-teal-600 transition-colors duration-200 ease-ros truncate flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             {lead.company_name}
           </p>
@@ -193,7 +193,7 @@ function StageColumn({
       className={`min-w-[200px] rounded-ros-lg transition-colors duration-150 ${isOver ? "bg-teal-50/60 dark:bg-teal-950/20 ring-1 ring-teal-300 dark:ring-teal-800" : ""}`}
     >
       <div className="flex items-center justify-between mb-2 px-1 pt-1">
-        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
         <span className="text-xs font-semibold text-slate-400 tabular-nums">{leads.length}</span>
       </div>
       {stageValue > 0 && <p className="text-xs text-slate-400 px-1 mb-2 -mt-1">{formatDealValue(stageValue, "INR")}</p>}
@@ -322,14 +322,14 @@ function AddLeadModal({ onClose, existingLeads }: { onClose: () => void; existin
   }
 
   const inputClass =
-    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
+    "w-full text-[14px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
   const labelClass = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-ros-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-ros-md p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Add lead</h2>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Add lead</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros">
             <X className="w-4 h-4" />
           </button>
@@ -529,12 +529,12 @@ export default function SalesBoard({ leads, ownerNames }: { leads: SalesLeadScor
           value={q}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search company or contact..."
-          className="text-[12.5px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-teal-400"
+          className="text-[13px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 w-64 focus:outline-none focus:ring-1 focus:ring-teal-400"
         />
         <select
           value={sourceFilter}
           onChange={(e) => setSourceFilter(e.target.value)}
-          className="text-[12.5px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-400"
+          className="text-[13px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-400"
         >
           <option value="all">All sources</option>
           {SOURCES.map((s) => (

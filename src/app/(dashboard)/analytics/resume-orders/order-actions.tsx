@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const BTN = "rounded-md border border-slate-300 px-2 py-1 text-[12px] text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800";
+const BTN = "rounded-md border border-slate-300 px-2 py-1 text-[13px] text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800";
 
 export default function OrderActions({ id, status, revisionsUsed, revisionsAllowed }: { id: string; status: string; revisionsUsed: number; revisionsAllowed: number }) {
   const router = useRouter();

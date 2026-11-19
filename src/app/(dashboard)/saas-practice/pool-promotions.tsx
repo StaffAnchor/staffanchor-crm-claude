@@ -13,7 +13,7 @@ export default function PoolPromotions({ items }: { items: Promotion[] }) {
     <section className="space-y-2">
       <div>
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Add these to the pool</h2>
-        <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">
           Complete profiles the system rates strong, not in the pool yet. Open one if you want to check, or add them straight away: the pool is what gets called first when a role opens.
         </p>
       </div>
@@ -21,10 +21,10 @@ export default function PoolPromotions({ items }: { items: Promotion[] }) {
         {items.map((r) => (
           <li key={r.candidate_id} className="flex items-start justify-between gap-3 rounded-ros-xl border border-amber-100 bg-amber-50/40 p-3 dark:border-amber-900/40 dark:bg-amber-950/10">
             <div className="min-w-0">
-              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[13.5px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
+              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-700 dark:text-slate-100">
                 {r.full_name ?? "Unnamed"}
               </Link>
-              <p className="text-[12px] text-slate-500">
+              <p className="text-[13px] text-slate-500">
                 {[r.title, r.employer].filter(Boolean).join(" at ") || "No role on file"}
                 {r.city ? ` · ${r.city}` : ""}
               </p>

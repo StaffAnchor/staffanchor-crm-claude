@@ -424,7 +424,7 @@ export default function MandateBulkActionsBar({
       </div>
 
       {oppPlan && (
-        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[12.5px] text-emerald-900">
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] text-emerald-900">
           {oppPlan.loading ? (
             <span>Checking the selected people…</span>
           ) : oppPlan.error ? (
@@ -464,14 +464,14 @@ export default function MandateBulkActionsBar({
       {groupModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setGroupModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
               Add {selected.size} candidate{selected.size === 1 ? "" : "s"} to a group
             </h3>
-            <p className="text-[12px] text-slate-400 mb-3">
+            <p className="text-[13px] text-slate-400 mb-3">
               Saved groups live under Candidates → Groups, for reusable segments you come back to.
             </p>
             {groupsLoading ? (
-              <p className="text-[12.5px] text-slate-400 flex items-center gap-1.5 mb-3">
+              <p className="text-[13px] text-slate-400 flex items-center gap-1.5 mb-3">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading groups...
               </p>
             ) : (
@@ -481,7 +481,7 @@ export default function MandateBulkActionsBar({
                   setChosenGroupId(e.target.value);
                   if (e.target.value) setNewGroupName("");
                 }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-2"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px] mb-2"
               >
                 <option value="">Select an existing group...</option>
                 {(existingGroups ?? []).map((g) => (
@@ -499,19 +499,19 @@ export default function MandateBulkActionsBar({
                 if (e.target.value) setChosenGroupId("");
               }}
               placeholder="New group name"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[13px] mb-3"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-[14px] mb-3"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => setGroupModalOpen(false)}
-                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[14px] font-medium py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddToGroup}
                 disabled={(!chosenGroupId && !newGroupName.trim()) || busy}
-                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium py-2 disabled:opacity-50"
               >
                 {busy ? "Adding..." : "Add"}
               </button>
@@ -523,10 +523,10 @@ export default function MandateBulkActionsBar({
       {emailModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setEmailModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
               Email {selected.size} candidate{selected.size === 1 ? "" : "s"} to the client
             </h3>
-            <p className="text-[12px] text-slate-400 mb-3">
+            <p className="text-[13px] text-slate-400 mb-3">
               Sends a summary + resumes to the contact(s) you pick, and marks {selected.size === 1 ? "this candidate" : "these candidates"} submitted
               to client / in the client shortlist.
             </p>
@@ -534,7 +534,7 @@ export default function MandateBulkActionsBar({
               {contactsWithEmail.map((c) => (
                 <label
                   key={c.id}
-                  className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[14px] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
                   <input type="checkbox" checked={chosenContactIds.has(c.id)} onChange={() => toggleContact(c.id)} />
                   <span className="flex-1">
@@ -548,14 +548,14 @@ export default function MandateBulkActionsBar({
             <div className="flex gap-2">
               <button
                 onClick={() => setEmailModalOpen(false)}
-                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[14px] font-medium py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSendToClient}
                 disabled={chosenContactIds.size === 0 || sendingClientEmail}
-                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium py-2 disabled:opacity-50"
               >
                 {sendingClientEmail ? "Sending..." : "Send"}
               </button>
@@ -567,10 +567,10 @@ export default function MandateBulkActionsBar({
       {jdModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setJdModalOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-1">
               Email JD to {selected.size} candidate{selected.size === 1 ? "" : "s"}
             </h3>
-            <p className="text-[12px] text-slate-400 mb-3">
+            <p className="text-[13px] text-slate-400 mb-3">
               The JD PDF is always attached. Optionally include any of this client&apos;s company
               resources below.
             </p>
@@ -579,7 +579,7 @@ export default function MandateBulkActionsBar({
                 {clientResources.map((r) => (
                   <label
                     key={r.id}
-                    className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[14px] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   >
                     <input type="checkbox" checked={chosenResourceIds.has(r.id)} onChange={() => toggleResource(r.id)} />
                     <span className="flex-1">
@@ -590,21 +590,21 @@ export default function MandateBulkActionsBar({
                 ))}
               </div>
             ) : (
-              <p className="text-[12px] text-slate-400 mb-3">
+              <p className="text-[13px] text-slate-400 mb-3">
                 No company resources added yet for this client -- add some from the client&apos;s page.
               </p>
             )}
             <div className="flex gap-2">
               <button
                 onClick={() => setJdModalOpen(false)}
-                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[13px] font-medium py-2"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[14px] font-medium py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleEmailJd}
                 disabled={emailingJd}
-                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium py-2 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium py-2 disabled:opacity-50"
               >
                 {emailingJd ? "Sending..." : "Send"}
               </button>

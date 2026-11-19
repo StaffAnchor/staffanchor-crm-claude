@@ -93,7 +93,7 @@ export default function MandateRejectModal({
 
         {!source ? (
           <div className="p-4 space-y-2">
-            <p className="text-[12.5px] text-slate-500 dark:text-slate-400 mb-2">
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-2">
               Who&apos;s making this call? This decides which reason list you&apos;ll pick from, and how it&apos;s reported.
             </p>
             <button
@@ -102,7 +102,7 @@ export default function MandateRejectModal({
             >
               <UserX className="w-5 h-5 text-teal-500 shrink-0" />
               <span>
-                <span className="block text-[13px] font-semibold text-slate-800 dark:text-slate-100">We&apos;re passing</span>
+                <span className="block text-[14px] font-semibold text-slate-800 dark:text-slate-100">We&apos;re passing</span>
                 <span className="block text-xs text-slate-500 dark:text-slate-400">Our own call -- never reached the client</span>
               </span>
             </button>
@@ -112,7 +112,7 @@ export default function MandateRejectModal({
             >
               <Building2 className="w-5 h-5 text-amber-500 shrink-0" />
               <span>
-                <span className="block text-[13px] font-semibold text-slate-800 dark:text-slate-100">Client passed</span>
+                <span className="block text-[14px] font-semibold text-slate-800 dark:text-slate-100">Client passed</span>
                 <span className="block text-xs text-slate-500 dark:text-slate-400">Client (or their portal) made this call</span>
               </span>
             </button>
@@ -130,7 +130,7 @@ export default function MandateRejectModal({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 autoFocus
-                className="w-full text-[13px] rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-2 bg-white dark:bg-slate-900"
+                className="w-full text-[14px] rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-2 bg-white dark:bg-slate-900"
               >
                 <option value="">Select a reason…</option>
                 {(showAllReasons ? reasons : reasons.filter((r, i) => i < 6 || r.value === category || r.value.startsWith("other"))).map((r) => (
@@ -143,7 +143,7 @@ export default function MandateRejectModal({
               {!showAllReasons && reasons.length > 7 && <button type="button" onClick={() => setShowAllReasons(true)} className="mt-1 text-xs text-teal-700 hover:underline">Show all {reasons.length} reasons</button>}
               {hints.length > 0 && (
                 <div className="mt-2">
-                  <p className="mb-1 flex items-center gap-1 text-[11.5px] font-medium text-slate-500 dark:text-slate-400">
+                  <p className="mb-1 flex items-center gap-1 text-[12px] font-medium text-slate-500 dark:text-slate-400">
                     <Sparkles className="h-3 w-3 text-teal-500" /> The CV points to
                   </p>
                   <div className="flex flex-col gap-1">
@@ -155,7 +155,7 @@ export default function MandateRejectModal({
                           setCategory(h.value);
                           if (!note.trim()) setNote(h.evidence);
                         }}
-                        className={`rounded-lg border px-2.5 py-1.5 text-left text-[12px] ${category === h.value ? "border-teal-400 bg-teal-50 dark:border-teal-700 dark:bg-teal-950/30" : "border-slate-200 hover:border-teal-300 dark:border-slate-700"}`}
+                        className={`rounded-lg border px-2.5 py-1.5 text-left text-[13px] ${category === h.value ? "border-teal-400 bg-teal-50 dark:border-teal-700 dark:bg-teal-950/30" : "border-slate-200 hover:border-teal-300 dark:border-slate-700"}`}
                       >
                         <span className="font-medium text-slate-800 dark:text-slate-100">{h.label}</span>
                         <span className="block text-slate-500 dark:text-slate-400">{h.evidence}</span>
@@ -166,7 +166,7 @@ export default function MandateRejectModal({
               )}
             </div>
             {source === "recruiter" && (
-              <label className="flex items-start gap-2 text-[12px] text-slate-600 dark:text-slate-300">
+              <label className="flex items-start gap-2 text-[13px] text-slate-600 dark:text-slate-300">
                 <input type="checkbox" checked={cvOnly} onChange={(e) => setCvOnly(e.target.checked)} className="mt-0.5" />
                 <span>
                   I haven&apos;t spoken to them; this is from the CV only.
@@ -183,7 +183,7 @@ export default function MandateRejectModal({
                 onChange={(e) => setNote(e.target.value)}
                 rows={2}
                 placeholder="Anything specific worth remembering..."
-                className="w-full text-[13px] rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-2 bg-white dark:bg-slate-900 resize-none"
+                className="w-full text-[14px] rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-2 bg-white dark:bg-slate-900 resize-none"
               />
             </div>
             {candidateId && source === "recruiter" && (
@@ -194,7 +194,7 @@ export default function MandateRejectModal({
                 <div className="space-y-1.5">
                   {["selling", "track", "people"].map((cat) => (
                     <div key={cat} className="flex flex-wrap items-center gap-1.5">
-                      <span className="w-full text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">{CATEGORY_LABEL[cat]}</span>
+                      <span className="w-full text-[12px] font-medium uppercase tracking-wide text-slate-400">{CATEGORY_LABEL[cat]}</span>
                       {NOT_A_FIT_REASONS.filter((r) => r.scope === "person" && r.category === cat).map((r) => {
                         const on = sellerFlags.includes(r.value);
                         return (
@@ -203,7 +203,7 @@ export default function MandateRejectModal({
                             type="button"
                             title={r.hint}
                             onClick={() => setSellerFlags((f) => (on ? f.filter((x) => x !== r.value) : [...f, r.value]))}
-                            className={`rounded-full border px-2.5 py-1 text-[12px] font-medium ${on ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300" : "border-slate-200 text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300"}`}
+                            className={`rounded-full border px-2.5 py-1 text-[13px] font-medium ${on ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300" : "border-slate-200 text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-300"}`}
                           >
                             {r.title}
                           </button>
@@ -223,7 +223,7 @@ export default function MandateRejectModal({
               </div>
             )}
             <div className="flex items-center justify-end gap-2 pt-1">
-              <button onClick={onCancel} className="text-[12.5px] font-medium text-slate-500 hover:text-slate-700 px-3 py-1.5">
+              <button onClick={onCancel} className="text-[13px] font-medium text-slate-500 hover:text-slate-700 px-3 py-1.5">
                 Cancel
               </button>
               <button
@@ -237,7 +237,7 @@ export default function MandateRejectModal({
                   onConfirm({ source, category, note: `${basis}${note.trim()}`.trim() });
                 }}
                 disabled={!category || submitting}
-                className="flex items-center gap-1.5 text-[12.5px] font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-3.5 py-1.5"
+                className="flex items-center gap-1.5 text-[13px] font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-3.5 py-1.5"
               >
                 {submitting && <Loader2 className="w-3 h-3 animate-spin" />}
                 Confirm reject

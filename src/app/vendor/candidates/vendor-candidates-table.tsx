@@ -79,7 +79,7 @@ export default function VendorCandidatesTable({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, mandate, employer..."
-          className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-2 text-[13px]"
+          className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-2 text-[14px]"
         />
       </div>
 
@@ -107,7 +107,7 @@ export default function VendorCandidatesTable({
                     >
                       {r.full_name}
                     </Link>
-                    <p className="text-[11px] text-slate-400">{r.email}</p>
+                    <p className="text-[12px] text-slate-400">{r.email}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{r.current_location ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 tabular-nums">
@@ -117,7 +117,7 @@ export default function VendorCandidatesTable({
                     <div className="flex flex-col gap-1">
                       {r.mandates.map((m) => (
                         <div key={m.mandate_id} className="flex items-center gap-1.5">
-                          <span className="text-[12px] text-slate-600 truncate max-w-[160px]">{m.role_title}</span>
+                          <span className="text-[13px] text-slate-600 truncate max-w-[160px]">{m.role_title}</span>
                           <span
                             className={`text-[10px] font-semibold rounded-full px-1.5 py-0.5 shrink-0 ${
                               STAGE_TINT[m.stage] ?? "bg-slate-100 text-slate-600"
@@ -133,13 +133,13 @@ export default function VendorCandidatesTable({
                     {signedUrl ? (
                       <ResumePreview signedUrl={signedUrl} fileName={`${r.full_name}-resume`} label="View" />
                     ) : (
-                      <span className="text-slate-300 text-[12px]">—</span>
+                      <span className="text-slate-300 text-[13px]">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/vendor/candidates/${r.candidate_id}`}
-                      className="text-[12px] font-medium text-teal-600 hover:text-teal-700"
+                      className="text-[13px] font-medium text-teal-600 hover:text-teal-700"
                     >
                       Edit
                     </Link>
@@ -149,7 +149,7 @@ export default function VendorCandidatesTable({
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-[13px]">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-[14px]">
                   No candidates match &quot;{query}&quot;.
                 </td>
               </tr>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 export type InvoiceInfo = { id: string; number: string; url: string | null; sentAt: string | null; sentTo: string | null; email: string | null };
 
-const BTN = "rounded-md border border-slate-300 px-2 py-1 text-[12px] text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800";
+const BTN = "rounded-md border border-slate-300 px-2 py-1 text-[13px] text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800";
 
 // The tax invoice for one paid booking or order. It is made automatically at payment; it is emailed only when asked.
 export default function InvoiceControls({ kind, refId, invoice }: { kind: "edge" | "resume"; refId: string; invoice: InvoiceInfo | null }) {
@@ -36,7 +36,7 @@ export default function InvoiceControls({ kind, refId, invoice }: { kind: "edge"
 
   if (!invoice) {
     return (
-      <div className="flex items-center gap-2 text-[12px]">
+      <div className="flex items-center gap-2 text-[13px]">
         <span className="text-amber-700 dark:text-amber-300">No invoice yet.</span>
         <button className={BTN} disabled={busy} onClick={make}>Make invoice</button>
         {msg && <span className="text-slate-500">{msg}</span>}
@@ -44,7 +44,7 @@ export default function InvoiceControls({ kind, refId, invoice }: { kind: "edge"
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[12px]">
+    <div className="flex flex-wrap items-center gap-2 text-[13px]">
       <span className="font-medium text-slate-700 dark:text-slate-200">Invoice {invoice.number}</span>
       {invoice.url && <a className="text-teal-600 hover:underline" href={invoice.url} target="_blank">Download</a>}
       <button className={BTN} disabled={busy} onClick={send}>{invoice.sentAt ? "Send again" : "Send to customer"}</button>

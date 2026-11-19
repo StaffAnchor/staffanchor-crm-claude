@@ -80,7 +80,7 @@ export default function ClientContactsPanel({
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Contacts</h2>
         <button
           onClick={() => setFormOpen((v) => !v)}
-          className="text-[12px] font-medium text-teal-600 hover:text-teal-700"
+          className="text-[13px] font-medium text-teal-600 hover:text-teal-700"
         >
           {formOpen ? "Cancel" : "+ Add contact"}
         </button>
@@ -115,7 +115,7 @@ export default function ClientContactsPanel({
               className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-slate-500"
             />
           </div>
-          <label className="flex items-center gap-2 text-[12px] text-slate-600 dark:text-slate-400">
+          <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-400">
             <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} />
             Mark as primary contact
           </label>
@@ -131,7 +131,7 @@ export default function ClientContactsPanel({
       )}
 
       {contacts.length === 0 ? (
-        <p className="text-[13px] text-slate-400">No contacts added yet.</p>
+        <p className="text-[14px] text-slate-400">No contacts added yet.</p>
       ) : (
         <div className="space-y-3">
           {contacts.map((c) => (
@@ -141,8 +141,8 @@ export default function ClientContactsPanel({
                   {c.full_name}
                   {c.is_primary && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
                 </p>
-                {c.designation && <p className="text-[12px] text-slate-500 dark:text-slate-400">{c.designation}</p>}
-                <div className="flex flex-col gap-0.5 mt-1 text-[12px] text-slate-500 dark:text-slate-400">
+                {c.designation && <p className="text-[13px] text-slate-500 dark:text-slate-400">{c.designation}</p>}
+                <div className="flex flex-col gap-0.5 mt-1 text-[13px] text-slate-500 dark:text-slate-400">
                   {c.email && (
                     <span className="flex items-center gap-1">
                       <Mail className="w-3 h-3" /> {c.email}

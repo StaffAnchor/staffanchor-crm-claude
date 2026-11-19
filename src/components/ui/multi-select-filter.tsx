@@ -136,7 +136,7 @@ export function MultiSelectFilter({
           {filteredGroups.map((g) => (
             <div key={g.group || "flat"} className="px-1.5">
               {g.group && (
-                <p className="text-ros-caption font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-1.5 pt-2 pb-1">
+                <p className="text-ros-caption font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide px-1.5 pt-2 pb-1">
                   {g.group}
                 </p>
               )}

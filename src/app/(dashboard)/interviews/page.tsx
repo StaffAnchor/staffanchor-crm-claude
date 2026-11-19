@@ -125,7 +125,7 @@ export default async function InterviewsPage() {
       <div className="flex items-baseline justify-between mb-5">
         <div>
           <h1 className="ros-page-title">Interviews</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1">
             Every candidate currently at the client-interview stage, across all mandates.
           </p>
         </div>
@@ -164,12 +164,12 @@ export default async function InterviewsPage() {
         <p className="text-xs text-slate-400 mb-4">Confirmed interviews, grouped by day.</p>
 
         {agendaGroups.length === 0 ? (
-          <p className="text-[13px] text-slate-400">No confirmed upcoming interviews.</p>
+          <p className="text-[14px] text-slate-400">No confirmed upcoming interviews.</p>
         ) : (
           <div className="space-y-5">
             {agendaGroups.map((g) => (
               <div key={g.key}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
                   {g.label} <span className="font-normal normal-case text-slate-400">· {g.rows.length}</span>
                 </p>
                 <div className="divide-y divide-slate-100">
@@ -200,7 +200,7 @@ function InterviewListRow({ row }: { row: InterviewRow }) {
       <div className="min-w-0">
         <Link
           target="_blank" rel="noopener noreferrer" href={`/candidates/${row.candidate_id}?mandateId=${row.mandate_id}`}
-          className="text-[13px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 transition-colors duration-200 ease-ros truncate"
+          className="text-[14px] font-medium text-slate-900 dark:text-slate-100 hover:text-teal-600 transition-colors duration-200 ease-ros truncate"
         >
           {row.candidate_name}
         </Link>

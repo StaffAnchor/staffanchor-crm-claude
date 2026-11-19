@@ -21,7 +21,7 @@ export default function ProfileCallSection({ person, doubts, history, roleCluste
   return (
     <div>
       {last && (
-        <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[12.5px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
+        <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[13px] text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
           <p className="flex items-center gap-1.5 font-semibold">
             <Check className="h-4 w-4" /> {OUT[last.outcome] ?? "Saved"}.{last.tier ? ` Talent Pool: ${POOL_TIER_LABEL[last.tier as PoolTier] ?? last.tier}.` : ""}
           </p>
@@ -46,10 +46,10 @@ export default function ProfileCallSection({ person, doubts, history, roleCluste
       />
       {history.length > 0 && (
         <div className="mt-5">
-          <p className="mb-1.5 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Earlier calls</p>
+          <p className="mb-1.5 text-[13px] font-semibold text-slate-600 dark:text-slate-300">Earlier calls</p>
           <ul className="space-y-2">
             {history.map((h) => (
-              <li key={h.id} className="rounded-ros-md bg-slate-50 px-3 py-2 text-[12.5px] dark:bg-slate-800/50">
+              <li key={h.id} className="rounded-ros-md bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800/50">
                 <p className="text-xs text-slate-400">
                   {new Date(h.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   {h.author ? ` · ${h.author}` : ""}

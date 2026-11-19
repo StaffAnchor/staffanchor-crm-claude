@@ -58,14 +58,14 @@ export default function ReferrerApplicationsPanel({ applications }: { applicatio
   }
 
   if (applications.length === 0) {
-    return <p className="text-[13px] text-slate-500 dark:text-slate-400">No pending applications.</p>;
+    return <p className="text-[14px] text-slate-500 dark:text-slate-400">No pending applications.</p>;
   }
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-[13px] text-rose-600">{error}</p>}
+      {error && <p className="text-[14px] text-rose-600">{error}</p>}
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
             <tr>
               <th className="text-left font-medium px-3 py-2">Name</th>
@@ -101,14 +101,14 @@ export default function ReferrerApplicationsPanel({ applications }: { applicatio
                   <button
                     disabled={busyId === a.id}
                     onClick={() => approve(a.id)}
-                    className="rounded-md bg-emerald-600 px-2.5 py-1 text-[12px] font-medium text-white disabled:opacity-50"
+                    className="rounded-md bg-emerald-600 px-2.5 py-1 text-[13px] font-medium text-white disabled:opacity-50"
                   >
                     Approve
                   </button>
                   <button
                     disabled={busyId === a.id}
                     onClick={() => reject(a.id)}
-                    className="rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-[12px] font-medium text-slate-600 dark:text-slate-300 disabled:opacity-50"
+                    className="rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-[13px] font-medium text-slate-600 dark:text-slate-300 disabled:opacity-50"
                   >
                     Reject
                   </button>

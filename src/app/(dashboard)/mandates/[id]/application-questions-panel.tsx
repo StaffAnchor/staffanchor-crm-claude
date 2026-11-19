@@ -142,16 +142,16 @@ export default function ApplicationQuestionsPanel({
     <Card className="mt-4">
       <div className="flex items-center gap-2 mb-1">
         <ListOrdered className="w-4 h-4 text-teal-600" />
-        <p className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">Application Questions</p>
+        <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Application Questions</p>
       </div>
-      <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-3">
         Candidates answer these on jobs.staffanchor.com when applying to this mandate, before their application is
         recorded — e.g. &quot;What is your current fixed CTC?&quot; (Numeric) or &quot;Are you comfortable with night
         shifts?&quot; (Yes/No). Applies to new applications going forward. Answers about current or expected pay, notice period, total experience, relocation and current city are also saved on the candidate&apos;s profile, and every answer is kept for their later applications.
       </p>
 
       {questions.length === 0 ? (
-        <p className="text-[12px] text-slate-400 mb-3">No application questions yet — add one below.</p>
+        <p className="text-[13px] text-slate-400 mb-3">No application questions yet — add one below.</p>
       ) : (
         <div className="space-y-2 mb-4">
           {questions.map((q, i) => {
@@ -195,7 +195,7 @@ export default function ApplicationQuestionsPanel({
                       Required
                     </label>
                   </div>
-                  <p className="text-[13px] text-slate-800 dark:text-slate-200 mt-1">{q.question_text}</p>
+                  <p className="text-[14px] text-slate-800 dark:text-slate-200 mt-1">{q.question_text}</p>
                 </div>
                 <button
                   type="button"
@@ -215,9 +215,9 @@ export default function ApplicationQuestionsPanel({
         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Add a question</p>
         {suggestions.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
-            <span className="text-[11.5px] text-slate-400">Used on other roles:</span>
+            <span className="text-[12px] text-slate-400">Used on other roles:</span>
             {suggestions.map((sg) => (
-              <button key={sg.text} type="button" onClick={() => { setText(sg.text); setType(sg.type); setRequired(sg.required); }} title={`Used on ${sg.uses} role${sg.uses === 1 ? "" : "s"}`} className="max-w-[260px] truncate rounded-full border border-slate-200 px-2.5 py-0.5 text-[12px] text-slate-600 hover:border-teal-400 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">
+              <button key={sg.text} type="button" onClick={() => { setText(sg.text); setType(sg.type); setRequired(sg.required); }} title={`Used on ${sg.uses} role${sg.uses === 1 ? "" : "s"}`} className="max-w-[260px] truncate rounded-full border border-slate-200 px-2.5 py-0.5 text-[13px] text-slate-600 hover:border-teal-400 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300">
                 {sg.text}
               </button>
             ))}
@@ -227,19 +227,19 @@ export default function ApplicationQuestionsPanel({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="e.g. What is your current fixed CTC?"
-          className="w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          className="w-full text-[14px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
         />
         <div className="flex items-center gap-2 flex-wrap">
           <select
             value={type}
             onChange={(e) => setType(e.target.value as ApplicationQuestion["answer_type"])}
-            className="text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5"
+            className="text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5"
           >
             <option value="short_answer">Short answer</option>
             <option value="yes_no">Yes / No</option>
             <option value="numeric">Numeric</option>
           </select>
-          <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 dark:text-slate-400 cursor-pointer">
+          <label className="flex items-center gap-1.5 text-[13px] text-slate-600 dark:text-slate-400 cursor-pointer">
             <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} className="accent-teal-600" />
             Required
           </label>

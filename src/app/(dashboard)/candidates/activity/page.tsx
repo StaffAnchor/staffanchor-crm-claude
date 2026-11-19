@@ -98,13 +98,13 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
     const s = p.toString();
     return s ? `?${s}` : "?";
   };
-  const pill = (on: boolean) => `rounded-full border px-3 py-1 text-[12.5px] font-medium ${on ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"}`;
+  const pill = (on: boolean) => `rounded-full border px-3 py-1 text-[13px] font-medium ${on ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"}`;
 
   return (
     <div className="mx-auto max-w-[1500px] px-5 py-8">
       <CandidatesSubNav />
       <h1 className="ros-page-title">Activity</h1>
-      <p className="mt-1 max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
+      <p className="mt-1 max-w-3xl text-[14px] text-slate-500 dark:text-slate-400">
         Everyone we contacted, how, by whom, and whether it worked. WhatsApp and email outcomes update by themselves: read, replied, updated their profile, said yes, or bounced.
       </p>
 
@@ -113,9 +113,9 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
           const Icon = ICON[s.ch];
           return (
             <Link key={s.ch} href={qs({ channel: channel === s.ch ? null : s.ch })} className={`rounded-xl border bg-white p-4 transition hover:shadow-sm dark:bg-slate-900 ${channel === s.ch ? "border-teal-500 ring-1 ring-teal-500" : "border-slate-200 dark:border-slate-700"}`}>
-              <p className="flex items-center gap-2 text-[12.5px] font-medium text-slate-500"><Icon className="h-4 w-4 text-teal-600" /> {CHANNEL_LABEL[s.ch]}, last {days} days</p>
+              <p className="flex items-center gap-2 text-[13px] font-medium text-slate-500"><Icon className="h-4 w-4 text-teal-600" /> {CHANNEL_LABEL[s.ch]}, last {days} days</p>
               <p className="mt-1.5 text-[26px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{s.total}</p>
-              <p className="mt-1.5 text-[12.5px] text-slate-600 dark:text-slate-300">
+              <p className="mt-1.5 text-[13px] text-slate-600 dark:text-slate-300">
                 <span className="font-semibold text-emerald-700 dark:text-emerald-400">{s.worked} worked ({s.rate}%)</span>
                 {s.problem > 0 && <span className="text-rose-600"> · {s.problem} problems</span>}
               </p>
@@ -138,12 +138,12 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
       </div>
 
       {error ? (
-        <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-800">Couldn&apos;t load the activity: {error.message}</p>
+        <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[14px] text-rose-800">Couldn&apos;t load the activity: {error.message}</p>
       ) : shown.length === 0 ? (
-        <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-[14px] text-slate-500 dark:border-slate-700 dark:bg-slate-900">Nothing here for these filters.</p>
+        <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-[15px] text-slate-500 dark:border-slate-700 dark:bg-slate-900">Nothing here for these filters.</p>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-2.5">When</th>
@@ -177,7 +177,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
                     </td>
                     {/* Only the welcome email goes out with nobody pressing anything; everything else was sent by the team. */}
                     <td className="whitespace-nowrap px-4 py-2.5 text-slate-500">{r.sent_by ? senderOf.get(r.sent_by) ?? "Team" : r.kind === "welcome" ? "Automatic" : "Team"}</td>
-                    <td className="px-4 py-2.5"><span className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-medium ${GROUP_CLS[o.group]}`}>{o.label}</span></td>
+                    <td className="px-4 py-2.5"><span className={`inline-flex rounded-full px-2.5 py-0.5 text-[13px] font-medium ${GROUP_CLS[o.group]}`}>{o.label}</span></td>
                   </tr>
                 );
               })}
@@ -185,7 +185,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
           </table>
         </div>
       )}
-      {base.length > 300 && <p className="mt-2 text-[12px] text-slate-400">Showing the latest 300. Narrow the filters to see more.</p>}
+      {base.length > 300 && <p className="mt-2 text-[13px] text-slate-400">Showing the latest 300. Narrow the filters to see more.</p>}
     </div>
   );
 }

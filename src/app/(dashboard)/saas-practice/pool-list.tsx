@@ -22,7 +22,7 @@ function Fact({ label, value }: { label: string; value: string | null | undefine
   return (
     <div className="min-w-[96px]">
       <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`text-[12.5px] ${value ? "text-slate-800 dark:text-slate-200" : "text-slate-300 dark:text-slate-600"}`}>{value || "Not known"}</p>
+      <p className={`text-[13px] ${value ? "text-slate-800 dark:text-slate-200" : "text-slate-300 dark:text-slate-600"}`}>{value || "Not known"}</p>
     </div>
   );
 }
@@ -62,7 +62,7 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
   }, [rows, tier, q, city, sort]);
 
   const chip = (on: boolean) =>
-    `rounded-full border px-3 py-1 text-[12.5px] font-medium ${on ? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`;
+    `rounded-full border px-3 py-1 text-[13px] font-medium ${on ? "border-slate-900 bg-teal-600 text-white dark:border-white dark:bg-white dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-teal-700"}`;
   const count = (t: PoolTier) => rows.filter((r) => r.pool.tier === t).length;
   const coldCount = rows.filter((r) => r.daysSinceTouch == null || r.daysSinceTouch >= COLD_DAYS).length;
 
@@ -83,9 +83,9 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, company, reason, tag" className="h-8 w-56 rounded-lg border border-slate-200 bg-white pl-8 pr-2 text-[12.5px] dark:border-slate-700 dark:bg-slate-900" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, company, reason, tag" className="h-8 w-56 rounded-lg border border-slate-200 bg-white pl-8 pr-2 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
           </div>
-          <select value={city} onChange={(e) => setCity(e.target.value)} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[12.5px] dark:border-slate-700 dark:bg-slate-900">
+          <select value={city} onChange={(e) => setCity(e.target.value)} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[13px] dark:border-slate-700 dark:bg-slate-900">
             <option value="">All cities</option>
             {cities.map((c) => (
               <option key={c} value={c}>
@@ -93,7 +93,7 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
               </option>
             ))}
           </select>
-          <select value={sort} onChange={(e) => setSort(e.target.value as "tier" | "recent" | "cold")} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[12.5px] dark:border-slate-700 dark:bg-slate-900">
+          <select value={sort} onChange={(e) => setSort(e.target.value as "tier" | "recent" | "cold")} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[13px] dark:border-slate-700 dark:bg-slate-900">
             <option value="tier">Best first</option>
             <option value="recent">Recently added</option>
             <option value="cold">Longest since contact</option>
@@ -103,8 +103,8 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
 
       {rows.length === 0 && (
         <div className="rounded-ros-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-[14px] font-semibold text-slate-800 dark:text-slate-100">Your Talent Pool is empty</p>
-          <p className="mx-auto mt-1 max-w-md text-[12.5px] text-slate-500">
+          <p className="text-[15px] font-semibold text-slate-800 dark:text-slate-100">Your Talent Pool is empty</p>
+          <p className="mx-auto mt-1 max-w-md text-[13px] text-slate-500">
             After a good conversation, press <span className="font-semibold">Add to pool</span> on the bench or on the candidate&apos;s profile, choose a tier and say why. They will appear here.
           </p>
         </div>
@@ -114,10 +114,10 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
         {shown.map((r) => (
           <li key={r.candidate_id} className="rounded-ros-xl border border-slate-100 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[12px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{initials(r.full_name)}</div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[13px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{initials(r.full_name)}</div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[14px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
+                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${r.candidate_id}`} className="text-[15px] font-semibold text-slate-900 hover:text-teal-600 dark:text-slate-100">
                     {r.full_name ?? "Unnamed"}
                   </Link>
                   <PoolControl candidateId={r.candidate_id} entry={r.pool} compact />
@@ -127,12 +127,12 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
                     </span>
                   )}
                 </div>
-                <p className="mt-0.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
                   {[r.current_job_title, r.current_employer].filter(Boolean).join(" at ") || "No role on file"}
                   {r.city ? ` · ${r.city}` : ""}
                   {r.total_experience_years != null ? ` · ${Number(r.total_experience_years)} yrs` : ""}
                 </p>
-                {r.pool.reason && <p className="mt-1.5 text-[12.5px] italic text-slate-700 dark:text-slate-200">&ldquo;{r.pool.reason}&rdquo;</p>}
+                {r.pool.reason && <p className="mt-1.5 text-[13px] italic text-slate-700 dark:text-slate-200">&ldquo;{r.pool.reason}&rdquo;</p>}
                 {(r.pool.tags ?? []).length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {r.pool.tags.map((t) => (
@@ -160,14 +160,14 @@ export default function PoolList({ rows }: { rows: PoolRow[] }) {
                 <WhatsAppMenu
                   phone={r.phone}
                   templates={candidateTemplates(r.full_name, { me, candidateId: r.candidate_id, missing: gapKeys(r) }).filter((t) => t.key !== "intro")}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 />
               </div>
             </div>
           </li>
         ))}
       </ul>
-      {rows.length > 0 && shown.length === 0 && <p className="text-[13px] text-slate-500">No one in the pool matches these filters.</p>}
+      {rows.length > 0 && shown.length === 0 && <p className="text-[14px] text-slate-500">No one in the pool matches these filters.</p>}
     </div>
   );
 }

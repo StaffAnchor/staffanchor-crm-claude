@@ -94,7 +94,7 @@ export default function WhatsAppPanel({
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.direction === "outbound" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[75%] rounded-ros-lg px-3 py-2 text-[13px] ${
+              className={`max-w-[75%] rounded-ros-lg px-3 py-2 text-[14px] ${
                 m.direction === "outbound"
                   ? "bg-emerald-50 text-slate-800 dark:bg-emerald-950/30 dark:text-slate-100"
                   : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
@@ -111,7 +111,7 @@ export default function WhatsAppPanel({
       </div>
 
       {!hasPhone ? (
-        <p className="text-[12px] text-slate-400">This candidate has no phone number on file, so a WhatsApp reply can't be sent.</p>
+        <p className="text-[13px] text-slate-400">This candidate has no phone number on file, so a WhatsApp reply can't be sent.</p>
       ) : (
         <div className="rounded-ros-lg border border-dashed border-teal-200 dark:border-teal-900/50 bg-teal-50/50 dark:bg-teal-950/20 p-3">
           <div className="flex items-center justify-between mb-1.5">
@@ -138,7 +138,7 @@ export default function WhatsAppPanel({
             }}
             rows={3}
             placeholder="Type a reply, or generate a draft with AI first..."
-            className="w-full rounded-ros-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-[13px] resize-y bg-white dark:bg-slate-900"
+            className="w-full rounded-ros-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-[14px] resize-y bg-white dark:bg-slate-900"
           />
           <p className="mt-1.5 text-xs leading-4 text-slate-400">
             Auto: this is sent straight away from StaffAnchor&apos;s WhatsApp Business number, as a free reply inside the 24-hour window. It is not a template.
@@ -152,7 +152,7 @@ export default function WhatsAppPanel({
               type="button"
               onClick={handleSend}
               disabled={sending || !draft.trim()}
-              className="rounded-ros-md bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-medium px-3 py-1.5 disabled:opacity-50 transition-colors duration-200 ease-ros"
+              className="rounded-ros-md bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-medium px-3 py-1.5 disabled:opacity-50 transition-colors duration-200 ease-ros"
             >
               {sending ? "Sending..." : "Send"}
             </button>

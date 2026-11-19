@@ -81,10 +81,10 @@ export default function AccessGate({ token }: { token: string }) {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="max-w-sm w-full bg-white border border-slate-200 rounded-xl shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-md bg-blue-500 flex items-center justify-center text-[13px] font-bold text-white shrink-0">
+          <div className="w-7 h-7 rounded-md bg-blue-500 flex items-center justify-center text-[14px] font-bold text-white shrink-0">
             S
           </div>
-          <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">StaffAnchor Talent Solutions</p>
+          <p className="text-xs font-medium tracking-wide text-blue-600 uppercase">StaffAnchor Talent Solutions</p>
         </div>
 
         {step === "email" ? (

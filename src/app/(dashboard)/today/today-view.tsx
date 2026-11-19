@@ -25,12 +25,12 @@ const HEALTH: Record<RoleHealth, { label: string; cls: string }> = {
 function Tile({ icon: Icon, value, label, sub, warn }: { icon: typeof CalendarClock; value: string; label: string; sub?: string; warn?: boolean }) {
   return (
     <div className={`${card} p-4`}>
-      <div className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400">
+      <div className="flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400">
         <Icon className={`h-4 w-4 ${warn ? "text-amber-600" : "text-teal-600"}`} aria-hidden />
         {label}
       </div>
       <p className="mt-1.5 text-[26px] leading-none font-semibold tracking-tight text-slate-900 dark:text-slate-100">{value}</p>
-      {sub ? <p className="mt-1.5 text-[12px] text-slate-500 dark:text-slate-400 truncate">{sub}</p> : null}
+      {sub ? <p className="mt-1.5 text-[13px] text-slate-500 dark:text-slate-400 truncate">{sub}</p> : null}
     </div>
   );
 }
@@ -41,15 +41,15 @@ function DecisionRow({ d }: { d: Decision }) {
       <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
         <span className={`mt-1.5 sm:mt-0 h-2 w-2 rounded-full shrink-0 ${TONE_DOT[d.tone]}`} aria-label={d.tone} />
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 sm:truncate">{d.title}</p>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 sm:truncate">{d.detail}</p>
+          <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100 sm:truncate">{d.title}</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 sm:truncate">{d.detail}</p>
         </div>
       </div>
       <Link
         href={d.href}
         target="_blank"
         rel="noopener noreferrer"
-        className="shrink-0 self-start sm:self-auto ml-5 sm:ml-0 inline-flex items-center gap-1.5 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[13px] font-medium text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 ros-focusable"
+        className="shrink-0 self-start sm:self-auto ml-5 sm:ml-0 inline-flex items-center gap-1.5 rounded-ros-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-[14px] font-medium text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 ros-focusable"
       >
         {d.actionLabel}
         <ArrowRight className="h-3.5 w-3.5" aria-hidden />
@@ -64,8 +64,8 @@ function NextUpRow({ t }: { t: NextUp }) {
       <Link href={t.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ros-focusable">
         <span className={`h-2 w-2 rounded-full shrink-0 ${t.priority === "high" ? "bg-rose-500" : "bg-slate-400"}`} aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">{t.title}</p>
-          {t.context ? <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">{t.context}</p> : null}
+          <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100 truncate">{t.title}</p>
+          {t.context ? <p className="text-[13px] text-slate-500 dark:text-slate-400 truncate">{t.context}</p> : null}
         </div>
         <ArrowRight className="h-4 w-4 text-slate-400 shrink-0" aria-hidden />
       </Link>
@@ -86,13 +86,13 @@ function RoleLine({ r, max }: { r: RoleRow; max: number }) {
         className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1.8fr)_repeat(4,minmax(0,0.5fr))_minmax(0,1fr)] gap-x-3 gap-y-1 items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ros-focusable"
       >
         <div className="min-w-0">
-          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">{r.role}</p>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">
+          <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100 truncate">{r.role}</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 truncate">
             {r.client} · open {r.daysOpen}d
             {r.setupNote ? <span className="sm:hidden text-teal-700 dark:text-teal-300"> · {r.setupNote}</span> : null}
           </p>
         </div>
-        <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">
+        <div className="hidden sm:block text-[14px] tabular-nums text-slate-700 dark:text-slate-300">
           {r.inPipeline}
           <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" title={`${r.unreviewed} of ${r.inPipeline} not yet opened`}>
             <div className="flex h-full" style={{ width: `${width}%` }}>
@@ -101,11 +101,11 @@ function RoleLine({ r, max }: { r: RoleRow; max: number }) {
             </div>
           </div>
         </div>
-        <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.unreviewed}</div>
-        <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.sent}</div>
-        <div className="hidden sm:block text-[13px] tabular-nums text-slate-700 dark:text-slate-300">{r.interviewing}</div>
+        <div className="hidden sm:block text-[14px] tabular-nums text-slate-700 dark:text-slate-300">{r.unreviewed}</div>
+        <div className="hidden sm:block text-[14px] tabular-nums text-slate-700 dark:text-slate-300">{r.sent}</div>
+        <div className="hidden sm:block text-[14px] tabular-nums text-slate-700 dark:text-slate-300">{r.interviewing}</div>
         <div className="justify-self-end sm:justify-self-start">
-          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-medium ${h.cls}`}>{h.label}</span>
+          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[13px] font-medium ${h.cls}`}>{h.label}</span>
           <p className="hidden sm:block mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">{r.healthNote}</p>
           {r.setupNote ? <p className="hidden sm:block text-xs font-medium text-teal-700 dark:text-teal-300 truncate">{r.setupNote}</p> : null}
         </div>
@@ -121,12 +121,12 @@ function WaitingRow({ w }: { w: WaitingItem }) {
       <Link href={w.href} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ros-focusable">
         <span className={`h-2 w-2 rounded-full shrink-0 ${w.kind === "employer" ? "bg-rose-500" : w.kind === "candidate_on_role" ? "bg-amber-500" : "bg-slate-400"}`} aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">
+          <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100 truncate">
             {w.name} <span className="font-normal text-slate-500 dark:text-slate-400">· {KIND_LABEL[w.kind]}</span>
           </p>
-          {w.preview ? <p className="text-[12px] text-slate-500 dark:text-slate-400 truncate">{w.preview}</p> : null}
+          {w.preview ? <p className="text-[13px] text-slate-500 dark:text-slate-400 truncate">{w.preview}</p> : null}
         </div>
-        <span className="text-[12px] text-slate-400 shrink-0">{age}</span>
+        <span className="text-[13px] text-slate-400 shrink-0">{age}</span>
         <ArrowRight className="h-4 w-4 text-slate-400 shrink-0" aria-hidden />
       </Link>
     </li>
@@ -142,9 +142,9 @@ function TrendTile({ label, values, sub }: { label: string; values: number[]; su
   return (
     <div className={`${card} flex items-center justify-between gap-4 p-4`}>
       <div className="min-w-0">
-        <p className="text-[12px] text-slate-500 dark:text-slate-400">{label}</p>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">{label}</p>
         <p className="mt-1.5 text-[26px] leading-none font-semibold tracking-tight tabular-nums text-slate-900 dark:text-slate-100">{total}</p>
-        <p className="mt-1.5 text-[12px] text-slate-500 dark:text-slate-400 truncate">
+        <p className="mt-1.5 text-[13px] text-slate-500 dark:text-slate-400 truncate">
           <span className={up ? "font-medium text-emerald-700 dark:text-emerald-400" : "font-medium text-amber-700 dark:text-amber-400"}>{up ? "Up" : "Down"}</span> on the week before · {sub}
         </p>
       </div>
@@ -166,21 +166,21 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
 
       <section className={`${card} mb-6`}>
         <header className="px-4 pt-4 pb-3">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Waiting on you{waiting.length ? ` (${waiting.length})` : ""}</h2>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">Employers first, then candidates on a live role. Everyone else has already been answered.</p>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Waiting on you{waiting.length ? ` (${waiting.length})` : ""}</h2>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">Employers first, then candidates on a live role. Everyone else has already been answered.</p>
         </header>
         {waiting.length === 0 ? (
-          <div className="flex items-center gap-2 px-4 py-5 border-t border-slate-100 dark:border-slate-800 text-[14px] text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-2 px-4 py-5 border-t border-slate-100 dark:border-slate-800 text-[15px] text-slate-600 dark:text-slate-300">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
             Nobody is waiting on a reply.
           </div>
         ) : (
           <ul>{waiting.slice(0, 8).map((w) => <WaitingRow key={`${w.kind}-${w.key}`} w={w} />)}</ul>
         )}
-        {waiting.length > 8 ? <p className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-[12px] text-slate-500">{waiting.length - 8} more in the WhatsApp inbox.</p> : null}
+        {waiting.length > 8 ? <p className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-[13px] text-slate-500">{waiting.length - 8} more in the WhatsApp inbox.</p> : null}
       </section>
 
-      <p className="mb-3 text-[12px] font-medium uppercase tracking-wide text-slate-400">The wider picture</p>
+      <p className="mb-3 text-[13px] font-medium uppercase tracking-wide text-slate-400">The wider picture</p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Tile
           icon={CalendarClock}
@@ -213,11 +213,11 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
         <div className="space-y-5 min-w-0">
           <section className={card}>
             <header className="px-4 pt-4 pb-3">
-              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Needs a decision</h2>
-              <p className="text-[12px] text-slate-500 dark:text-slate-400">One item per role, most important first.</p>
+              <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Needs a decision</h2>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400">One item per role, most important first.</p>
             </header>
             {desk.decisions.length === 0 ? (
-              <div className="flex items-center gap-2 px-4 py-6 border-t border-slate-100 dark:border-slate-800 text-[14px] text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-2 px-4 py-6 border-t border-slate-100 dark:border-slate-800 text-[15px] text-slate-600 dark:text-slate-300">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
                 All roles are set up and moving.
               </div>
@@ -229,7 +229,7 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
               </ul>
             )}
             {desk.moreDecisions > 0 ? (
-              <p className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-[12px] text-slate-500 dark:text-slate-400">
+              <p className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-[13px] text-slate-500 dark:text-slate-400">
                 {desk.moreDecisions} more {desk.moreDecisions === 1 ? "role needs" : "roles need"} attention. See the table below.
               </p>
             ) : null}
@@ -237,11 +237,11 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
 
           <section className={card}>
             <header className="px-4 pt-4 pb-3">
-              <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Roles at a glance</h2>
-              <p className="text-[12px] text-slate-500 dark:text-slate-400">Every open role, stuck ones first.</p>
+              <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Roles at a glance</h2>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400">Every open role, stuck ones first.</p>
             </header>
             {desk.roles.length === 0 ? (
-              <p className="px-4 py-6 border-t border-slate-100 dark:border-slate-800 text-[14px] text-slate-600 dark:text-slate-300">No open roles.</p>
+              <p className="px-4 py-6 border-t border-slate-100 dark:border-slate-800 text-[15px] text-slate-600 dark:text-slate-300">No open roles.</p>
             ) : (
               <>
                 <div className="hidden sm:grid grid-cols-[minmax(0,1.8fr)_repeat(4,minmax(0,0.5fr))_minmax(0,1fr)] gap-x-3 px-4 py-2 border-t border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wide text-slate-400">
@@ -266,12 +266,12 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
           <section className={card}>
             <header className="px-4 pt-4 pb-3 flex items-baseline justify-between gap-3">
               <div>
-                <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Next up for you</h2>
-                <p className="text-[12px] text-slate-500 dark:text-slate-400">Real tasks only, no bulk reminders.</p>
+                <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Next up for you</h2>
+                <p className="text-[13px] text-slate-500 dark:text-slate-400">Real tasks only, no bulk reminders.</p>
               </div>
             </header>
             {desk.nextUp.length === 0 ? (
-              <div className="flex items-center gap-2 px-4 py-6 border-t border-slate-100 dark:border-slate-800 text-[14px] text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-2 px-4 py-6 border-t border-slate-100 dark:border-slate-800 text-[15px] text-slate-600 dark:text-slate-300">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
                 You're clear.
               </div>
@@ -284,7 +284,7 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
             )}
             <Link
               href="/tasks"
-              className="flex items-center justify-between gap-2 px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-b-ros-xl ros-focusable"
+              className="flex items-center justify-between gap-2 px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-[14px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-b-ros-xl ros-focusable"
             >
               <span className="flex items-center gap-2">
                 <ListChecks className="h-4 w-4" aria-hidden />

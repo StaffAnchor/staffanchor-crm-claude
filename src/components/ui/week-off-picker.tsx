@@ -64,7 +64,7 @@ export default function WeekOffPicker({
         <button
           type="button"
           onClick={() => setType("fixed")}
-          className={`flex-1 rounded-lg border px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+          className={`flex-1 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${
             value.week_off_type === "fixed"
               ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-300"
               : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
@@ -75,7 +75,7 @@ export default function WeekOffPicker({
         <button
           type="button"
           onClick={() => setType("rotational")}
-          className={`flex-1 rounded-lg border px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+          className={`flex-1 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${
             value.week_off_type === "rotational"
               ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-300"
               : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
@@ -88,7 +88,7 @@ export default function WeekOffPicker({
       {value.week_off_type === "fixed" && (
         <div className="grid grid-cols-4 gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 p-2.5">
           {weekDaysOptions.map((day) => (
-            <label key={day} className="flex items-center gap-1.5 text-[12.5px] text-slate-700 dark:text-slate-300">
+            <label key={day} className="flex items-center gap-1.5 text-[13px] text-slate-700 dark:text-slate-300">
               <input type="checkbox" checked={value.week_off.includes(day)} onChange={() => toggleFixedDay(day)} />
               {day.slice(0, 3)}
             </label>
@@ -104,7 +104,7 @@ export default function WeekOffPicker({
               {([1, 2] as const).map((n) => (
                 <label
                   key={n}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12.5px] cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] cursor-pointer ${
                     value.rotational_offs_per_week === n
                       ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/30 dark:text-teal-300"
                       : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
@@ -128,7 +128,7 @@ export default function WeekOffPicker({
             </p>
             <div className="grid grid-cols-4 gap-1.5">
               {weekDaysOptions.map((day) => (
-                <label key={day} className="flex items-center gap-1.5 text-[12.5px] text-slate-700 dark:text-slate-300">
+                <label key={day} className="flex items-center gap-1.5 text-[13px] text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     checked={value.mandatory_working_days.includes(day)}

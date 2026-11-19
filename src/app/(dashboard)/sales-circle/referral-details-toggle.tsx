@@ -38,7 +38,7 @@ export default function ReferralDetailsToggle({ details }: { details: ReferralDe
         {open ? "Hide details" : "View details"}
       </button>
       {open && (
-        <div className="mt-2 rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-2 text-[12px]">
+        <div className="mt-2 rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-2 text-[13px]">
           <div className="grid grid-cols-2 gap-2">
             <DetailRow label="Sales experience" value={details.candidate_sales_experience ? SALES_EXPERIENCE_LABELS[details.candidate_sales_experience] ?? details.candidate_sales_experience : "—"} />
             <DetailRow label="Total experience" value={details.candidate_total_experience_years != null ? `${details.candidate_total_experience_years} yrs` : "—"} />

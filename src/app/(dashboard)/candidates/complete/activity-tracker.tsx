@@ -75,19 +75,19 @@ export default function ActivityTracker({ group, label }: { group: string | null
 
   const tile = (title: string, value: number, sub?: string, tone = "text-slate-900 dark:text-slate-100") => (
     <div className="rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-slate-800/60">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
+      <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
       <p className={`mt-0.5 text-[24px] font-semibold leading-none tabular-nums ${tone}`}>{value}</p>
-      {sub && <p className="mt-1 text-[11.5px] text-slate-500">{sub}</p>}
+      {sub && <p className="mt-1 text-[12px] text-slate-500">{sub}</p>}
     </div>
   );
-  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-[12px] font-medium transition ${on ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`;
+  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-[13px] font-medium transition ${on ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`;
   const th = "pb-1.5 text-right font-medium";
 
   return (
     <section className={`${card} mb-5 p-4`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Daily activity · {label}</h2>
-        <p className="text-[11.5px] text-slate-400">From the call log and profile completions. Days are India days.{rangeNote}</p>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Daily activity · {label}</h2>
+        <p className="text-[12px] text-slate-400">From the call log and profile completions. Days are India days.{rangeNote}</p>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -96,13 +96,13 @@ export default function ActivityTracker({ group, label }: { group: string | null
         ))}
         <button type="button" onClick={() => setPreset("custom")} className={chip(preset === "custom")}>Custom dates</button>
         {preset === "custom" && (
-          <span className="ml-1 flex flex-wrap items-center gap-1.5 text-[12px] text-slate-500">
-            <input type="date" value={from} max={to} onChange={(e) => e.target.value && setFrom(e.target.value)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[12px] dark:border-slate-700 dark:bg-slate-900" />
+          <span className="ml-1 flex flex-wrap items-center gap-1.5 text-[13px] text-slate-500">
+            <input type="date" value={from} max={to} onChange={(e) => e.target.value && setFrom(e.target.value)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
             to
-            <input type="date" value={to} min={from} max={istToday()} onChange={(e) => e.target.value && setTo(e.target.value)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[12px] dark:border-slate-700 dark:bg-slate-900" />
+            <input type="date" value={to} min={from} max={istToday()} onChange={(e) => e.target.value && setTo(e.target.value)} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900" />
           </span>
         )}
-        <select value={caller} onChange={(e) => setCaller(e.target.value)} className="ml-auto rounded-md border border-slate-200 bg-white px-2 py-1 text-[12px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" aria-label="Person">
+        <select value={caller} onChange={(e) => setCaller(e.target.value)} className="ml-auto rounded-md border border-slate-200 bg-white px-2 py-1 text-[13px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" aria-label="Person">
           <option value="">Everyone</option>
           {people.map((p) => (
             <option key={p.id} value={p.id ?? ""}>{p.name}</option>
@@ -111,9 +111,9 @@ export default function ActivityTracker({ group, label }: { group: string | null
       </div>
 
       {failed ? (
-        <p className="mt-4 text-[12.5px] text-rose-600">Could not load the activity. Refresh the page to try again.</p>
+        <p className="mt-4 text-[13px] text-rose-600">Could not load the activity. Refresh the page to try again.</p>
       ) : !data ? (
-        <p className="mt-4 text-[12.5px] text-slate-400">Loading…</p>
+        <p className="mt-4 text-[13px] text-slate-400">Loading…</p>
       ) : (
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -127,10 +127,10 @@ export default function ActivityTracker({ group, label }: { group: string | null
 
           <div className="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <div className="overflow-x-auto">
-              <p className="mb-1 text-[11.5px] font-medium text-slate-500">Day by day</p>
-              <table className="w-full min-w-[520px] text-[12.5px]">
+              <p className="mb-1 text-[12px] font-medium text-slate-500">Day by day</p>
+              <table className="w-full min-w-[520px] text-[13px]">
                 <thead>
-                  <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+                  <tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
                     <th className="pb-1.5 text-left font-medium">Day</th>
                     <th className={th}>Calls</th>
                     <th className={th}>Picked up</th>
@@ -150,7 +150,7 @@ export default function ActivityTracker({ group, label }: { group: string | null
                           <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{d.calls}</span>
                         </span>
                       </td>
-                      <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{d.picked}<span className="ml-1 text-[11px] text-slate-400">{d.calls ? pctOf(d.picked, d.calls) : ""}</span></td>
+                      <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{d.picked}<span className="ml-1 text-[12px] text-slate-400">{d.calls ? pctOf(d.picked, d.calls) : ""}</span></td>
                       <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{d.not_interested}</td>
                       <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{d.no_answer}</td>
                       <td className="py-1.5 text-right font-semibold tabular-nums text-teal-700 dark:text-teal-400">{d.gate}</td>
@@ -171,13 +171,13 @@ export default function ActivityTracker({ group, label }: { group: string | null
             </div>
 
             <div className="overflow-x-auto">
-              <p className="mb-1 text-[11.5px] font-medium text-slate-500">By person</p>
+              <p className="mb-1 text-[12px] font-medium text-slate-500">By person</p>
               {data.people.length === 0 ? (
-                <p className="text-[12.5px] text-slate-400">No calls or completions in this range.</p>
+                <p className="text-[13px] text-slate-400">No calls or completions in this range.</p>
               ) : (
-                <table className="w-full min-w-[400px] text-[12.5px]">
+                <table className="w-full min-w-[400px] text-[13px]">
                   <thead>
-                    <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
+                    <tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800">
                       <th className="pb-1.5 text-left font-medium">Person</th>
                       <th className={th}>Calls</th>
                       <th className={th}>Picked up</th>
@@ -191,7 +191,7 @@ export default function ActivityTracker({ group, label }: { group: string | null
                       <tr key={p.id ?? p.name} className="border-b border-slate-50 dark:border-slate-800/60">
                         <td className="max-w-[140px] truncate py-1.5 pr-2 text-slate-700 dark:text-slate-200">{p.name}</td>
                         <td className="py-1.5 text-right tabular-nums font-medium text-slate-900 dark:text-slate-100">{p.calls}</td>
-                        <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.picked}<span className="ml-1 text-[11px] text-slate-400">{p.calls ? pctOf(p.picked, p.calls) : ""}</span></td>
+                        <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.picked}<span className="ml-1 text-[12px] text-slate-400">{p.calls ? pctOf(p.picked, p.calls) : ""}</span></td>
                         <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.not_interested}</td>
                         <td className="py-1.5 text-right font-semibold tabular-nums text-teal-700 dark:text-teal-400">{p.gate}</td>
                         <td className="py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-200">{p.full}</td>
@@ -200,7 +200,7 @@ export default function ActivityTracker({ group, label }: { group: string | null
                   </tbody>
                 </table>
               )}
-              <p className="mt-2 text-[11px] leading-snug text-slate-400">Picked up = reached, not interested or asked to call later. Profile completions are counted for whoever edited the profile, from 31 Oct 2026.</p>
+              <p className="mt-2 text-[12px] leading-snug text-slate-400">Picked up = reached, not interested or asked to call later. Profile completions are counted for whoever edited the profile, from 31 Oct 2026.</p>
             </div>
           </div>
         </div>

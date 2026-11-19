@@ -25,7 +25,7 @@ export default function CopyShareLinkButton({ shortCode }: { shortCode: string }
       type="button"
       onClick={copy}
       title={url}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[13px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[14px] font-medium px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800"
     >
       {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Link2 className="w-3.5 h-3.5" />}
       {copied ? "Copied" : "Copy share link"}

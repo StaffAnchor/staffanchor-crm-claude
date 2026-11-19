@@ -71,14 +71,14 @@ function LogOutreachModal({ onClose }: { onClose: () => void }) {
   }
 
   const inputClass =
-    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
+    "w-full text-[14px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
   const labelClass = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-ros-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-ros-md p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Log outreach</h2>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Log outreach</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 ease-ros">
             <X className="w-4 h-4" />
           </button>
@@ -258,7 +258,7 @@ export default function OutreachLogView({ initialRows, ownerNames }: { initialRo
         </Card>
       ) : (
         <Card padded={false} className="overflow-x-auto">
-          <table className="w-full text-[12.5px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 text-left text-slate-400">
                 <th className="px-3 py-2 font-medium">Company</th>

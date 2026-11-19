@@ -63,7 +63,7 @@ export default function ReactivationPanel() {
       <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
         <Users className="h-4 w-4 text-teal-600" /> Re-engage your database
       </h2>
-      <p className="mt-1 text-[13px] text-slate-500">
+      <p className="mt-1 text-[14px] text-slate-500">
         Ask people you already know whether they&apos;d like to hear about new roles. One tap tells us, and anyone who says yes ranks higher for matching roles.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -76,26 +76,26 @@ export default function ReactivationPanel() {
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
-        <button type="button" onClick={find} disabled={busy || !cluster} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
+        <button type="button" onClick={find} disabled={busy || !cluster} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50">
           {busy && !preview ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Find people
         </button>
       </div>
-      {msg && <p className="mt-3 text-[13px] text-slate-700 dark:text-slate-200">{msg}</p>}
+      {msg && <p className="mt-3 text-[14px] text-slate-700 dark:text-slate-200">{msg}</p>}
       {needsTemplate && <TemplateSetup which="reactivation" />}
 
       {preview && (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div>
-            <p className="mb-2 text-[13px] text-slate-700 dark:text-slate-200">
+            <p className="mb-2 text-[14px] text-slate-700 dark:text-slate-200">
               <b>{preview.total}</b> {preview.role} contacts can be {preview.channel === "whatsapp" ? "messaged" : "emailed"}. Showing the first {preview.people.length}, top-rated first.{preview.channel === "email" ? ` ${preview.room} left under today's limit of ${preview.cap}.` : ""}
             </p>
             {preview.people.length === 0 ? (
-              <p className="text-[13px] text-slate-400">Nobody eligible for this group right now.</p>
+              <p className="text-[14px] text-slate-400">Nobody eligible for this group right now.</p>
             ) : (
               <ul className="max-h-80 space-y-1 overflow-y-auto">
                 {preview.people.map((p) => (
                   <li key={p.id}>
-                    <label className="flex items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-[13px] dark:border-slate-800">
+                    <label className="flex items-start gap-2 rounded-lg border border-slate-100 px-3 py-2 text-[14px] dark:border-slate-800">
                       <input type="checkbox" checked={picked.has(p.id)} onChange={() => toggle(p.id)} className="mt-1" />
                       <span className="min-w-0">
                         <span className="font-medium text-slate-900 dark:text-slate-100">{p.name}</span>
@@ -107,7 +107,7 @@ export default function ReactivationPanel() {
                 ))}
               </ul>
             )}
-            <button type="button" onClick={send} disabled={busy || picked.size === 0} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
+            <button type="button" onClick={send} disabled={busy || picked.size === 0} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Send to {picked.size}
             </button>
             <p className="mt-1.5 text-xs text-slate-500">{preview.channel === "whatsapp" ? `Sent from StaffAnchor's WhatsApp number with the approved template, up to ${preview.perPress} per press. Meta charges per message.` : "Goes out in a paced batch of up to 30 per press, from the team mailbox."}</p>

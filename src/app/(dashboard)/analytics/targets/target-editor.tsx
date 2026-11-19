@@ -54,7 +54,7 @@ export default function TargetEditor({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         autoFocus
-        className="w-14 rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-0.5 text-[12px] tabular-nums"
+        className="w-14 rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-0.5 text-[13px] tabular-nums"
       />
       <button type="button" onClick={handleSave} disabled={saving} className="text-emerald-600 hover:text-emerald-700">
         <Check className="w-3.5 h-3.5" />

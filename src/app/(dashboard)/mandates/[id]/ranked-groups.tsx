@@ -37,11 +37,11 @@ const QUICK_REASONS: { value: string; label: string }[] = [
 function QuickNotAFit({ onPick }: { onPick: (reason: string) => void }) {
   return (
     <details className="relative">
-      <summary className="inline-flex h-8 cursor-pointer list-none items-center gap-1 rounded-lg border border-slate-200 px-3 text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 [&::-webkit-details-marker]:hidden"><X className="h-3.5 w-3.5" /> Not a fit <ChevronDown className="h-3 w-3 opacity-60" /></summary>
+      <summary className="inline-flex h-8 cursor-pointer list-none items-center gap-1 rounded-lg border border-slate-200 px-3 text-[13px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 [&::-webkit-details-marker]:hidden"><X className="h-3.5 w-3.5" /> Not a fit <ChevronDown className="h-3 w-3 opacity-60" /></summary>
       <div className="absolute right-0 z-30 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-        <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Why not?</p>
+        <p className="px-2.5 pb-1 pt-1.5 text-[12px] font-medium uppercase tracking-wide text-slate-400">Why not?</p>
         {QUICK_REASONS.map((r) => (
-          <button key={r.value} type="button" onClick={(e) => { (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open"); onPick(r.value); }} className="block w-full rounded-lg px-2.5 py-2 text-left text-[13px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{r.label}</button>
+          <button key={r.value} type="button" onClick={(e) => { (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open"); onPick(r.value); }} className="block w-full rounded-lg px-2.5 py-2 text-left text-[14px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{r.label}</button>
         ))}
       </div>
     </details>
@@ -201,15 +201,15 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
             <span title="How well they match this role"><ScoreRing score={r.score} rank={r.bucket === "stretch" ? 3 : undefined} /></span>
             <span className="min-w-0">
               <span className="flex items-baseline gap-1.5">
-                <span className="max-w-[68%] shrink-0 truncate text-[14px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name ?? "Unnamed"}</span>
-                <span className="min-w-0 flex-1 truncate text-[12px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ")}</span>
+                <span className="max-w-[68%] shrink-0 truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">{c.full_name ?? "Unnamed"}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ")}</span>
               </span>
-              <span className="mt-0.5 block truncate text-[12px] tabular-nums text-slate-500">{factsOf(r).join(" · ") || "No facts yet"}</span>
-              <span className={`mt-0.5 block truncate text-[12px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
+              <span className="mt-0.5 block truncate text-[13px] tabular-nums text-slate-500">{factsOf(r).join(" · ") || "No facts yet"}</span>
+              <span className={`mt-0.5 block truncate text-[13px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
             </span>
             <span className="flex flex-col items-end gap-1">
               <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${spoke ? "bg-emerald-600 text-white" : "border-[1.5px] border-amber-500"}`} title={spoke ? "Spoken to: we remember what they said" : "Not spoken to about this yet"}>{spoke ? <Check className="h-2.5 w-2.5" /> : null}</span>
-              {reached[c.candidate_id] && <span className={`rounded-full px-1.5 text-[10.5px] font-medium ${REACHED_STYLE[reached[c.candidate_id].status] ?? REACHED_STYLE.sent}`}>{REACHED_LABEL[reached[c.candidate_id].status] ?? "Messaged"}</span>}
+              {reached[c.candidate_id] && <span className={`rounded-full px-1.5 text-[12px] font-medium ${REACHED_STYLE[reached[c.candidate_id].status] ?? REACHED_STYLE.sent}`}>{REACHED_LABEL[reached[c.candidate_id].status] ?? "Messaged"}</span>}
             </span>
           </button>
         </div>
@@ -226,36 +226,36 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
     const toConfirm = [...(c.readiness_missing ?? []).map((k) => MISSING_LABEL[k] ?? k.replace(/_/g, " ")), ...r.gaps.filter((g) => /not known|confirm|not asked/i.test(g))].filter((x, i, arr) => arr.indexOf(x) === i).slice(0, 4);
     const strongGap = r.gaps.find((g) => /not .*(NCR|Mumbai|Pune|Bengaluru|Hyderabad|Chennai|Kolkata|Ahmedabad)|abroad/i.test(g));
     const next: { tone: "go" | "warn" | "stop" | "info"; title: string; detail?: string; actions?: React.ReactNode } = reached[c.candidate_id]?.status === "interested"
-      ? { tone: "go", title: "Said yes to this role", detail: "Call to confirm pay, notice and relocation, then add to the pipeline.", actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Open the call form</button> }
+      ? { tone: "go", title: "Said yes to this role", detail: "Call to confirm pay, notice and relocation, then add to the pipeline.", actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white">Open the call form</button> }
       : spoke
         ? r.bucket === "stretch"
-          ? { tone: "warn", title: "Spoken to, but a stretch for this role", detail: r.gaps[0], actions: <button type="button" disabled={busy} onClick={() => void addList([r])} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-slate-700">Add anyway</button> }
-          : { tone: "go", title: "Spoken to, a good match: add to the pipeline", detail: m?.summary || undefined, actions: <button type="button" disabled={busy} onClick={() => void addList([r])} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Add to pipeline</button> }
+          ? { tone: "warn", title: "Spoken to, but a stretch for this role", detail: r.gaps[0], actions: <button type="button" disabled={busy} onClick={() => void addList([r])} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700">Add anyway</button> }
+          : { tone: "go", title: "Spoken to, a good match: add to the pipeline", detail: m?.summary || undefined, actions: <button type="button" disabled={busy} onClick={() => void addList([r])} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white">Add to pipeline</button> }
         : strongGap
-          ? { tone: "warn", title: "Location is the problem", detail: `${strongGap}. Ask if they would move before spending time.`, actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Call and ask</button> }
-          : { tone: "info", title: r.bucket === "perfect" ? "A strong match nobody has spoken to yet" : "Worth a call", detail: toConfirm.length ? `Confirm: ${toConfirm.join(" · ")}` : undefined, actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white">Open the call form</button> };
+          ? { tone: "warn", title: "Location is the problem", detail: `${strongGap}. Ask if they would move before spending time.`, actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-amber-600 px-3 py-1.5 text-[13px] font-semibold text-white">Call and ask</button> }
+          : { tone: "info", title: r.bucket === "perfect" ? "A strong match nobody has spoken to yet" : "Worth a call", detail: toConfirm.length ? `Confirm: ${toConfirm.join(" · ")}` : undefined, actions: <button type="button" onClick={() => setPaneTab("call")} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white">Open the call form</button> };
     return (
       <div className="flex min-h-0 flex-col">
         <div className="sticky top-0 z-10 bg-white dark:bg-slate-900">
         <div className="flex flex-wrap items-start gap-4 border-b border-slate-100 p-5 dark:border-slate-800">
-          <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[12.5px] lg:hidden"><ArrowLeft className="h-3.5 w-3.5" /> List</button>
+          <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[13px] lg:hidden"><ArrowLeft className="h-3.5 w-3.5" /> List</button>
           <ScoreRing score={r.score} rank={r.bucket === "stretch" ? 3 : undefined} size={52} />
           <div className="min-w-[180px] flex-1">
             <a href={`/candidates/${c.candidate_id}`} target="_blank" rel="noopener noreferrer" className="text-[20px] font-semibold leading-tight tracking-tight text-slate-900 hover:underline dark:text-slate-100">{name}</a>
-            <p className="truncate text-[12.5px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || "No role on file"}</p>
+            <p className="truncate text-[13px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || "No role on file"}</p>
             <div className="mt-1 flex flex-wrap gap-1.5">
               {c.pool_tier && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[c.pool_tier as PoolTier]}`}>Pool: {POOL_TIER_LABEL[c.pool_tier as PoolTier]}</span>}
               {c.sub_group && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{c.sub_group}</span>}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" disabled={busy} onClick={() => void shareNow(r)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-teal-600 px-3.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50" title="Adds them to the pipeline and shows them to the client"><Send className="h-3.5 w-3.5" /> Share with client</button>
-            <button type="button" disabled={busy} onClick={() => void addList([r])} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-teal-600 px-3.5 text-[13px] font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:text-teal-300" title="Adds them to the pipeline without telling the client"><UserPlus className="h-3.5 w-3.5" /> Add to pipeline</button>
+            <button type="button" disabled={busy} onClick={() => void shareNow(r)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-teal-600 px-3.5 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50" title="Adds them to the pipeline and shows them to the client"><Send className="h-3.5 w-3.5" /> Share with client</button>
+            <button type="button" disabled={busy} onClick={() => void addList([r])} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-teal-600 px-3.5 text-[14px] font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:text-teal-300" title="Adds them to the pipeline without telling the client"><UserPlus className="h-3.5 w-3.5" /> Add to pipeline</button>
             <WriteWhatsAppButton candidateId={c.candidate_id} name={c.full_name ?? "there"} role={roleTitle} />
             <QuickNotAFit onPick={(reason) => dismiss(c.candidate_id, reason)} />
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3 text-[12.5px] dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3 text-[13px] dark:border-slate-800">
           {(() => {
             const ex = extra[c.candidate_id];
             const called = ex?.call ?? null;
@@ -277,7 +277,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
         </div>
         <div role="tablist" className="flex gap-2 border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
           {([["overview", "Overview", Eye], ["call", "Call & details", ClipboardList]] as const).map(([k, label, Icon]) => (
-            <button key={k} role="tab" type="button" aria-selected={paneTab === k} onClick={() => setPaneTab(k)} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-[14px] font-semibold ${paneTab === k ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
+            <button key={k} role="tab" type="button" aria-selected={paneTab === k} onClick={() => setPaneTab(k)} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-[15px] font-semibold ${paneTab === k ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
               <Icon className="h-4 w-4" />{label}{k === "call" && !spoke && !extra[c.candidate_id]?.call && <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />}
             </button>
           ))}
@@ -296,29 +296,29 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
                 {fact("Relocation", c.open_to_relocation)}
               </dl>
               <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Why this match</p>
+                <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-slate-500">Why this match</p>
                 <div className="flex flex-wrap gap-1.5">
                   {r.matched.map((x) => (<span key={x} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300"><Check className="h-3 w-3" /> {x}</span>))}
                   {r.gaps.map((x) => (<span key={x} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300">⚠ {x}</span>))}
-                  {r.matched.length + r.gaps.length === 0 && <span className="text-[13px] text-slate-400">No reasons yet.</span>}
+                  {r.matched.length + r.gaps.length === 0 && <span className="text-[14px] text-slate-400">No reasons yet.</span>}
                 </div>
-                {c.readiness_tier && c.readiness_tier !== "ready" && (c.readiness_missing?.length ?? 0) > 0 && <p className="mt-2 text-[12px] text-amber-800 dark:text-amber-300">To confirm on a call: {missingText(c.readiness_missing)}</p>}
+                {c.readiness_tier && c.readiness_tier !== "ready" && (c.readiness_missing?.length ?? 0) > 0 && <p className="mt-2 text-[13px] text-amber-800 dark:text-amber-300">To confirm on a call: {missingText(c.readiness_missing)}</p>}
               </div>
               <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">What we remember from calls</p>
+                <p className="mb-1.5 text-[12px] font-medium uppercase tracking-wide text-slate-400">What we remember from calls</p>
                 {m ? (
-                  <div className="space-y-1.5 text-[13px]">
+                  <div className="space-y-1.5 text-[14px]">
                     {m.summary && <p className="text-slate-700 dark:text-slate-300"><span className="font-medium">Spoke {fmtShort(m.at)}:</span> {m.summary}</p>}
                     <div className="flex flex-wrap gap-1.5">
-                      {(m.wants ?? []).map((w) => (<span key={w} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[12px] text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Wants: {w}</span>))}
-                      {(m.dealbreakers ?? []).map((w) => (<span key={w} className="rounded-full bg-rose-50 px-2 py-0.5 text-[12px] text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">Will not accept: {w}</span>))}
+                      {(m.wants ?? []).map((w) => (<span key={w} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[13px] text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Wants: {w}</span>))}
+                      {(m.dealbreakers ?? []).map((w) => (<span key={w} className="rounded-full bg-rose-50 px-2 py-0.5 text-[13px] text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">Will not accept: {w}</span>))}
                     </div>
                   </div>
                 ) : (
-                  <p className="flex items-center gap-1.5 text-[13px] text-slate-400"><MessageCircle className="h-3.5 w-3.5" /> Nothing yet. Press Call now, and what they say shows here and feeds matching.</p>
+                  <p className="flex items-center gap-1.5 text-[14px] text-slate-400"><MessageCircle className="h-3.5 w-3.5" /> Nothing yet. Press Call now, and what they say shows here and feeds matching.</p>
                 )}
               </div>
-              {c.summary && <p className="text-[13px] text-slate-600 dark:text-slate-300">{c.summary}</p>}
+              {c.summary && <p className="text-[14px] text-slate-600 dark:text-slate-300">{c.summary}</p>}
               <SkillsStrip candidateId={c.candidate_id} roleText={roleTitle ?? ""} />
               <div className="flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
                 <CvButtons candidateId={c.candidate_id} name={c.full_name} />
@@ -327,7 +327,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[13px] dark:bg-slate-800/60">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[14px] dark:bg-slate-800/60">
                 <span className="text-slate-600 dark:text-slate-300">Fill this in when you speak to them. What they say is remembered and used for every future match.</span>
                 <a href={`/candidates/${c.candidate_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 font-medium"><Phone className="h-3.5 w-3.5" /> Phone is on the profile</a>
               </div>
@@ -352,13 +352,13 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
               type="button"
               onClick={() => { setTab(g.key); setShown(PER_PAGE); }}
               aria-pressed={on}
-              className={`rounded-2xl border-2 p-4 text-left transition ${on ? "border-slate-900 bg-white shadow-sm dark:border-slate-100 dark:bg-slate-900" : "border-transparent bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800"}`}
+              className={`rounded-2xl border-2 p-4 text-left transition ${on ? "border-teal-600 bg-white shadow-sm dark:border-teal-400 dark:bg-slate-900" : "border-transparent bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800"}`}
             >
               <span className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-[16px] font-semibold text-slate-900 dark:text-slate-100"><span className={`h-2.5 w-2.5 rounded-full ${g.tone}`} />{g.label}</span>
                 <span className="text-[22px] font-semibold tabular-nums text-slate-900 dark:text-slate-100">{counts[g.key]}</span>
               </span>
-              <span className="mt-1 block text-[12.5px] leading-snug text-slate-500 dark:text-slate-400">{g.blurb}</span>
+              <span className="mt-1 block text-[13px] leading-snug text-slate-500 dark:text-slate-400">{g.blurb}</span>
             </button>
           );
         })}
@@ -366,9 +366,9 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
 
       <div className="flex flex-wrap items-center gap-3">
         {cities.length > 0 && (
-          <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-[14px] text-slate-600 dark:text-slate-300">
             Where they are
-            <select value={where} onChange={(e) => { setWhere(e.target.value as Where); setShown(PER_PAGE); }} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[13px] dark:border-slate-700 dark:bg-slate-900">
+            <select value={where} onChange={(e) => { setWhere(e.target.value as Where); setShown(PER_PAGE); }} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[14px] dark:border-slate-700 dark:bg-slate-900">
               <option value="all">Everyone ({allRanked.length})</option>
               <option value="here">In {cities.join(" / ")} ({whereCounts.here})</option>
               <option value="reloc">Elsewhere, open to moving ({whereCounts.reloc})</option>
@@ -376,18 +376,18 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
             </select>
           </label>
         )}
-        {where === "unknown" && <span className="text-[12px] text-slate-400">They have not said whether they would relocate. Ask on a call.</span>}
-        {msg && <span className="text-[12.5px] text-slate-600 dark:text-slate-300">{msg}</span>}
+        {where === "unknown" && <span className="text-[13px] text-slate-400">They have not said whether they would relocate. Ask on a call.</span>}
+        {msg && <span className="text-[13px] text-slate-600 dark:text-slate-300">{msg}</span>}
         {picked.size > 0 && (
           <div className="ml-auto flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-1.5 text-white dark:bg-slate-100 dark:text-slate-900">
-            <span className="text-[12.5px] font-medium">{picked.size} ticked</span>
+            <span className="text-[13px] font-medium">{picked.size} ticked</span>
             {flags?.opportunity && (
-              <button type="button" onClick={() => setReviewing(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-emerald-500"><MessageCircle className="h-3.5 w-3.5" /> Tell them about this role</button>
+              <button type="button" onClick={() => setReviewing(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1 text-[13px] font-semibold text-white hover:bg-emerald-500"><MessageCircle className="h-3.5 w-3.5" /> Tell them about this role</button>
             )}
-            <button type="button" onClick={addPicked} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-500 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-400 disabled:opacity-50">
+            <button type="button" onClick={addPicked} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-500 px-3 py-1 text-[13px] font-semibold text-white hover:bg-teal-400 disabled:opacity-50">
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />} Add to pipeline
             </button>
-            <button type="button" onClick={() => setPicked(new Set())} className="text-[12px] underline opacity-80">Clear</button>
+            <button type="button" onClick={() => setPicked(new Set())} className="text-[13px] underline opacity-80">Clear</button>
           </div>
         )}
       </div>
@@ -403,7 +403,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
         </div>
       )}
 
-      {list.length === 0 && <p className="rounded-ros-lg border border-dashed border-slate-300 p-6 text-center text-[13px] text-slate-500 dark:border-slate-700">No one in this group yet. The card may be too narrow: try adding more &quot;also fine&quot; worlds or cities.</p>}
+      {list.length === 0 && <p className="rounded-ros-lg border border-dashed border-slate-300 p-6 text-center text-[14px] text-slate-500 dark:border-slate-700">No one in this group yet. The card may be too narrow: try adding more &quot;also fine&quot; worlds or cities.</p>}
 
       {list.length > 0 && (() => {
         const needle = q.trim().toLowerCase();
@@ -413,9 +413,9 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
           <div className="grid items-start gap-3 lg:grid-cols-[minmax(350px,430px)_minmax(0,1fr)]">
             <ul className={`${mobileOpen ? "hidden lg:block" : ""} overflow-hidden rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
               <li className="sticky top-0 z-[2] border-b border-slate-100 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, company, city" aria-label="Search this list" className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800" />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, company, city" aria-label="Search this list" className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[14px] outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800" />
               </li>
-              {shownRows.length === 0 && <li className="p-6 text-center text-[13px] text-slate-400">No one matches that search.</li>}
+              {shownRows.length === 0 && <li className="p-6 text-center text-[14px] text-slate-400">No one matches that search.</li>}
               {shownRows.map((r) => renderMatchRow(r, active?.row.candidate_id ?? null))}
             </ul>
             <div className={`${mobileOpen ? "" : "hidden lg:block"} rounded-ros-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-3 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto`}>
@@ -425,7 +425,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
         );
       })()}
       {list.length > shown && (
-        <button type="button" onClick={() => setShown((s) => s + PER_PAGE)} className="text-[13px] font-medium text-teal-600 hover:underline">
+        <button type="button" onClick={() => setShown((s) => s + PER_PAGE)} className="text-[14px] font-medium text-teal-600 hover:underline">
           Show {Math.min(PER_PAGE, list.length - shown)} more of {list.length - shown}
         </button>
       )}

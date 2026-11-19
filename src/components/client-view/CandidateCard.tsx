@@ -53,10 +53,10 @@ export default function CandidateCard({
     <div className="min-w-0 rounded-2xl border border-[#ece7de] bg-white p-4 shadow-[0_1px_2px_rgba(60,40,20,0.04)] transition-shadow hover:shadow-[0_6px_20px_rgba(60,40,20,0.08)]">
       <button type="button" onClick={onOpen} className="block w-full text-left">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f1e9dc] text-[13px] font-semibold text-[#7a5b34]">{initials(c.full_name)}</div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f1e9dc] text-[14px] font-semibold text-[#7a5b34]">{initials(c.full_name)}</div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14.5px] font-semibold text-slate-900">{c.full_name}</p>
-            <p className="truncate text-[12.5px] text-slate-500">
+            <p className="truncate text-[13px] text-slate-500">
               {c.current_job_title ?? "—"}
               {c.current_employer ? ` · ${c.current_employer}` : ""}
             </p>
@@ -74,28 +74,28 @@ export default function CandidateCard({
         </div>
 
         {c.current_location && (
-          <p className="mt-2 flex items-center gap-1 text-[12px] text-slate-500">
+          <p className="mt-2 flex items-center gap-1 text-[13px] text-slate-500">
             <MapPin className="h-3 w-3" /> {c.current_location}
           </p>
         )}
         {c.client_note && (
-          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[12.5px] leading-5 text-amber-900">
+          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[13px] leading-5 text-amber-900">
             <span className="font-semibold">Note from StaffAnchor:</span> {c.client_note}
           </p>
         )}
-        {summary && <p className="mt-2 line-clamp-2 text-[12.5px] leading-5 text-slate-600">{summary}</p>}
+        {summary && <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-slate-600">{summary}</p>}
       </button>
 
       <div className="mt-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {c.resume_file_url && getResumeUrl && (
-            <button type="button" onClick={openCv} disabled={cvBusy} className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4dccd] bg-[#faf7f1] px-2.5 py-1 text-[12px] font-medium text-slate-700 hover:bg-[#f3eee4] disabled:opacity-60">
+            <button type="button" onClick={openCv} disabled={cvBusy} className="inline-flex items-center gap-1.5 rounded-lg border border-[#e4dccd] bg-[#faf7f1] px-2.5 py-1 text-[13px] font-medium text-slate-700 hover:bg-[#f3eee4] disabled:opacity-60">
               <FileText className="h-3.5 w-3.5" /> {cvBusy ? "Opening…" : "Original CV"}
             </button>
           )}
-          {cvError && <span className="text-[11.5px] text-amber-700">Couldn&apos;t open. Ask your recruiter.</span>}
+          {cvError && <span className="text-[12px] text-amber-700">Couldn&apos;t open. Ask your recruiter.</span>}
         </div>
-        <button type="button" onClick={onOpen} className="text-[12.5px] font-medium text-[#7a5b34] underline-offset-2 hover:underline">
+        <button type="button" onClick={onOpen} className="text-[13px] font-medium text-[#7a5b34] underline-offset-2 hover:underline">
           Click here to view more →
         </button>
       </div>

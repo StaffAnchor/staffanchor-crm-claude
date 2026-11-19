@@ -22,13 +22,13 @@ export default function TopTierCard({
   founderCalls?: boolean;
 }) {
   const pill = (isActive: boolean, strong: boolean) =>
-    `inline-flex items-baseline gap-2 rounded-full border px-3.5 py-1.5 text-[13px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
+    `inline-flex items-baseline gap-2 rounded-full border px-3.5 py-1.5 text-[14px] transition hover:bg-slate-50 dark:hover:bg-slate-800 ${
       isActive ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30" : strong ? "border-emerald-200 bg-white dark:border-emerald-900 dark:bg-slate-900" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
     }`;
   const num = (n: number, tone: string) => <span className={`text-[18px] font-semibold tabular-nums leading-none ${n > 0 ? tone : "text-slate-400"}`}>{n.toLocaleString("en-IN")}</span>;
   return (
     <section aria-label="Top tier" className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-ros-lg border border-slate-200 bg-white px-4 py-3 shadow-ros-sm dark:border-slate-700 dark:bg-slate-900">
-      <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 dark:text-slate-100" title="Sales people with 3+ years, pay-to-experience ratio of 1.5 or more, good communication on a call, and open to work">
+      <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-slate-900 dark:text-slate-100" title="Sales people with 3+ years, pay-to-experience ratio of 1.5 or more, good communication on a call, and open to work">
         <Star className="h-4 w-4 fill-amber-400 text-amber-500" /> Top tier
       </h2>
       <Link href={hrefFor("top")} target="_blank" rel="noopener noreferrer" className={pill(active === "top", topCount > 0)} title="All five tests passed">
@@ -45,17 +45,17 @@ export default function TopTierCard({
       </Link>
       <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1.5">
         {active && (
-          <Link href={hrefFor(undefined)} className="text-[12.5px] font-medium text-slate-500 hover:text-slate-800 hover:underline">
+          <Link href={hrefFor(undefined)} className="text-[13px] font-medium text-slate-500 hover:text-slate-800 hover:underline">
             Clear filter
           </Link>
         )}
         {noPayCount > 0 && (
-          <Link href="/candidates/complete" className="text-[12.5px] font-medium text-amber-700 hover:underline dark:text-amber-300" title="Experienced sales people with no current pay on file, so the ratio can't be worked out">
+          <Link href="/candidates/complete" className="text-[13px] font-medium text-amber-700 hover:underline dark:text-amber-300" title="Experienced sales people with no current pay on file, so the ratio can't be worked out">
             {noPayCount.toLocaleString("en-IN")} need their pay filled in
           </Link>
         )}
         {founderCalls && (
-          <Link href="/candidates/founder-calls" className="text-[12.5px] font-medium text-teal-700 hover:underline dark:text-teal-300" title="Your daily 4 senior profiles to speak to personally">
+          <Link href="/candidates/founder-calls" className="text-[13px] font-medium text-teal-700 hover:underline dark:text-teal-300" title="Your daily 4 senior profiles to speak to personally">
             Founder calls
           </Link>
         )}

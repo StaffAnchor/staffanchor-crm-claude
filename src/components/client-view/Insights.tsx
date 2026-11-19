@@ -23,8 +23,8 @@ const daysAgo = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.now(
 function Panel({ title, sub, children, className = "" }: { title: string; sub?: string; children: React.ReactNode; className?: string }) {
   return (
     <section className={`rounded-2xl border border-[#ece7de] bg-white p-4 ${className}`}>
-      <h3 className="text-[13px] font-semibold text-slate-900">{title}</h3>
-      {sub && <p className="mt-0.5 text-[12px] text-slate-500">{sub}</p>}
+      <h3 className="text-[14px] font-semibold text-slate-900">{title}</h3>
+      {sub && <p className="mt-0.5 text-[13px] text-slate-500">{sub}</p>}
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -50,11 +50,11 @@ function Funnel({ cands }: { cands: BoardCandidate[] }) {
     <ul className="space-y-2.5" aria-label="Shortlist funnel">
       {steps.map((s, i) => (
         <li key={s.label}>
-          <div className="mb-1 flex items-baseline justify-between text-[12.5px]">
+          <div className="mb-1 flex items-baseline justify-between text-[13px]">
             <span className="text-slate-700">{s.label}</span>
             <span className="font-mono text-slate-900">
               {s.n}
-              {i > 0 && steps[i - 1].n > 0 && <span className="ml-1.5 text-[11px] text-slate-400">{Math.round((s.n / steps[i - 1].n) * 100)}%</span>}
+              {i > 0 && steps[i - 1].n > 0 && <span className="ml-1.5 text-[12px] text-slate-400">{Math.round((s.n / steps[i - 1].n) * 100)}%</span>}
             </span>
           </div>
           <div className="h-2.5 overflow-hidden rounded-full bg-[#f1ece2]">
@@ -92,7 +92,7 @@ function Donut({ reasons, total }: { reasons: Reason[]; total: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-mono text-[24px] font-semibold leading-none text-slate-900">{total}</span>
-        <span className="mt-0.5 text-[10.5px] uppercase tracking-wider text-slate-500">passed</span>
+        <span className="mt-0.5 text-[12px] uppercase tracking-wide text-slate-500">passed</span>
       </div>
     </div>
   );
@@ -100,21 +100,21 @@ function Donut({ reasons, total }: { reasons: Reason[]; total: number }) {
 
 function ReasonBreakdown({ passed }: { passed: BoardCandidate[] }) {
   const reasons = passReasons(passed);
-  if (passed.length === 0) return <p className="text-[13px] text-slate-500">You have not passed on anyone yet. When you do, the reasons are broken down here.</p>;
+  if (passed.length === 0) return <p className="text-[14px] text-slate-500">You have not passed on anyone yet. When you do, the reasons are broken down here.</p>;
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
       <Donut reasons={reasons} total={passed.length} />
       <ul className="min-w-[220px] flex-1 space-y-2">
         {reasons.map((r) => (
           <li key={r.value}>
-            <div className="flex items-baseline justify-between gap-3 text-[12.5px]">
+            <div className="flex items-baseline justify-between gap-3 text-[13px]">
               <span className="flex min-w-0 items-center gap-2 text-slate-700">
                 <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: r.color }} />
                 <span className="truncate">{r.label}</span>
               </span>
               <span className="shrink-0 font-mono text-slate-900">
                 {r.n}
-                <span className="ml-1.5 text-[11px] text-slate-400">{Math.round((r.n / passed.length) * 100)}%</span>
+                <span className="ml-1.5 text-[12px] text-slate-400">{Math.round((r.n / passed.length) * 100)}%</span>
               </span>
             </div>
             <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#f1ece2]">
@@ -143,7 +143,7 @@ function FitSpread({ role, cands }: { role: Role; cands: BoardCandidate[] }) {
       <div className="flex h-3.5 overflow-hidden rounded-full bg-[#f1ece2]" role="img" aria-label="Spread of match strength">
         {counts.map((t) => <div key={t.key} style={{ width: `${(t.n / Math.max(1, cands.length)) * 100}%`, background: t.color }} title={`${t.label}: ${t.n}`} />)}
       </div>
-      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-600">
+      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-slate-600">
         {counts.map((t) => (
           <li key={t.key} className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ background: t.color }} />
@@ -161,7 +161,7 @@ function PayVsBudget({ role, cands }: { role: Role; cands: BoardCandidate[] }) {
   const pts = cands.map((c) => ({ c, v: num(c.expected_fixed_ctc) })).filter((p): p is { c: BoardCandidate; v: number } => p.v !== null && p.v > 0);
   const bMin = num(role.budget_min);
   const bMax = num(role.budget_max);
-  if (pts.length === 0) return <p className="text-[13px] text-slate-500">Expected pay is not available for these candidates yet.</p>;
+  if (pts.length === 0) return <p className="text-[14px] text-slate-500">Expected pay is not available for these candidates yet.</p>;
   const values = [...pts.map((p) => p.v), ...(bMin !== null ? [bMin] : []), ...(bMax !== null ? [bMax] : [])];
   const lo = Math.floor(Math.min(...values) - 2);
   const hi = Math.ceil(Math.max(...values) + 2);
@@ -190,7 +190,7 @@ function PayVsBudget({ role, cands }: { role: Role; cands: BoardCandidate[] }) {
           </circle>
         ))}
       </svg>
-      <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-slate-500">
+      <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-slate-500">
         {(["review", "interested", "interview", "passed", "hired"] as const).filter((k) => pts.some((p) => tabOf(p.c) === k)).map((k) => (
           <li key={k} className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ background: DOT[k] }} />
@@ -198,7 +198,7 @@ function PayVsBudget({ role, cands }: { role: Role; cands: BoardCandidate[] }) {
           </li>
         ))}
       </ul>
-      <p className="mt-1 text-[12px] text-slate-500">
+      <p className="mt-1 text-[13px] text-slate-500">
         {bMax !== null ? (above === 0 ? "Everyone expects pay within your budget." : `${plural(above, "candidate")} expect${above === 1 ? "s" : ""} more than ${lakhLabel(bMax)}.`) : "Each dot is a candidate's expected pay."}
       </p>
     </div>
@@ -214,7 +214,7 @@ function avgFit(role: Role, list: BoardCandidate[]): number | null {
 
 function Insight({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex gap-2 rounded-xl bg-[#f7f3ea] px-3 py-2.5 text-[12.5px] leading-5 text-slate-700">
+    <p className="flex gap-2 rounded-xl bg-[#f7f3ea] px-3 py-2.5 text-[13px] leading-5 text-slate-700">
       <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#d9694a]" />
       <span>{children}</span>
     </p>
@@ -235,7 +235,7 @@ export default function TabBanner({ tab, role, cands, onOpen }: { tab: Tab; role
         <div>
           <p className={`${LABEL} !text-[10px]`}>{label}</p>
           <h2 className={`text-[17px] font-semibold ${look.ink}`}>{title}</h2>
-          <p className="mt-0.5 max-w-xl text-[12.5px] text-slate-600">{sub}</p>
+          <p className="mt-0.5 max-w-xl text-[13px] text-slate-600">{sub}</p>
         </div>
       </div>
       {right}
@@ -256,7 +256,7 @@ export default function TabBanner({ tab, role, cands, onOpen }: { tab: Tab; role
       best && best.fit.pct !== null && waiting.length > 1 ? (
         <button type="button" onClick={() => onOpen(best.c.link_id)} className="rounded-xl border border-[#e8c9bd] bg-white px-3 py-2 text-left hover:bg-[#fff8f5]">
           <span className={`${LABEL} !text-[10px]`}>Strongest match waiting</span>
-          <span className="mt-0.5 block text-[13px] font-semibold text-slate-900">{best.c.full_name} <span className="font-mono text-emerald-700">{best.fit.pct}%</span></span>
+          <span className="mt-0.5 block text-[14px] font-semibold text-slate-900">{best.c.full_name} <span className="font-mono text-emerald-700">{best.fit.pct}%</span></span>
         </button>
       ) : null
     );
@@ -266,7 +266,7 @@ export default function TabBanner({ tab, role, cands, onOpen }: { tab: Tab; role
     body = list.length > 0 && (
       <div className="mt-3 flex flex-wrap gap-2">
         {list.map((c) => (
-          <button key={c.link_id} type="button" onClick={() => onOpen(c.link_id)} className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-[12.5px] font-medium text-emerald-800 hover:bg-emerald-50">
+          <button key={c.link_id} type="button" onClick={() => onOpen(c.link_id)} className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-[13px] font-medium text-emerald-800 hover:bg-emerald-50">
             {c.full_name}
           </button>
         ))}
@@ -281,10 +281,10 @@ export default function TabBanner({ tab, role, cands, onOpen }: { tab: Tab; role
           <li key={c.link_id}>
             <button type="button" onClick={() => onOpen(c.link_id)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-white px-3 py-2.5 text-left hover:bg-indigo-50/60">
               <span className="min-w-0">
-                <span className="block truncate text-[13px] font-semibold text-slate-900">{c.full_name}</span>
-                <span className="block truncate text-[12px] text-slate-500">{at ? formatSlot(at) : "Time to be set"}</span>
+                <span className="block truncate text-[14px] font-semibold text-slate-900">{c.full_name}</span>
+                <span className="block truncate text-[13px] text-slate-500">{at ? formatSlot(at) : "Time to be set"}</span>
               </span>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${confirmed ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{confirmed ? "Confirmed" : "Requested"}</span>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold ${confirmed ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{confirmed ? "Confirmed" : "Requested"}</span>
             </button>
           </li>
         ))}
@@ -327,7 +327,7 @@ export default function TabBanner({ tab, role, cands, onOpen }: { tab: Tab; role
       <TrendingUp className="h-[18px] w-[18px]" />,
       "The whole shortlist at a glance",
       `${plural(cands.length, "candidate")} shared. You decided on ${decided}${decided ? `, and ${interestedAll} of them moved forward` : ""}.`,
-      <div className="flex flex-wrap gap-2 text-[12px] text-slate-600">
+      <div className="flex flex-wrap gap-2 text-[13px] text-slate-600">
         {med !== null && <span className="rounded-full bg-white px-3 py-1">Median expected <b className="font-mono text-slate-900">{lakhLabel(med)}</b>{budgetMax !== null && <> vs budget up to <b className="font-mono text-slate-900">{lakhLabel(budgetMax)}</b></>}</span>}
       </div>
     );

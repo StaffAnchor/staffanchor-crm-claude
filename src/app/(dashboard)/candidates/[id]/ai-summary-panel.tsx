@@ -140,7 +140,7 @@ export default function AiSummaryPanel({
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h3 className="flex items-center gap-1.5 text-[15px] font-semibold text-slate-900 dark:text-slate-100" title="The summary text can be shown to clients. Strengths, concerns and skills are internal only.">
+        <h3 className="flex items-center gap-1.5 text-[16px] font-semibold text-slate-900 dark:text-slate-100" title="The summary text can be shown to clients. Strengths, concerns and skills are internal only.">
           <Sparkles className="w-4 h-4 text-teal-600" />
           AI summary
         </h3>
@@ -148,17 +148,17 @@ export default function AiSummaryPanel({
           {summary ? "Regenerate" : "Generate"}
         </Button>
       </div>
-      {error && <p className="mt-2 text-[12px] text-rose-600">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-rose-600">{error}</p>}
 
       {(decisionFlags?.recommendation || stabilityLabel) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {decisionFlags?.recommendation && (
-            <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm" className="!normal-case !tracking-normal text-[12.5px]">
+            <Badge tone={RECOMMENDATION_TONE[decisionFlags.recommendation] ?? "neutral"} size="sm" className="!normal-case !tracking-normal text-[13px]">
               {decisionFlags.recommendation}
             </Badge>
           )}
           {stabilityLabel && (
-            <Badge tone={STABILITY_TONE[stabilityLabel] ?? "neutral"} size="sm" icon={<TrendingUp className="w-3 h-3" />} className="!normal-case !tracking-normal text-[12.5px]">
+            <Badge tone={STABILITY_TONE[stabilityLabel] ?? "neutral"} size="sm" icon={<TrendingUp className="w-3 h-3" />} className="!normal-case !tracking-normal text-[13px]">
               Stability {stabilityScore}/100, {stabilityLabel.toLowerCase()}
             </Badge>
           )}
@@ -167,28 +167,28 @@ export default function AiSummaryPanel({
 
       {summary ? (
         <div className="mt-3">
-          <p className="text-[15px] font-medium leading-6 text-slate-900 dark:text-slate-100">{firstSentence}</p>
+          <p className="text-[16px] font-medium leading-6 text-slate-900 dark:text-slate-100">{firstSentence}</p>
           {restOfSummary && (
             <details className="mt-1.5">
-              <summary className="cursor-pointer text-[12.5px] text-teal-700 dark:text-teal-300">Read the full summary</summary>
-              <p className="mt-2 text-[14px] leading-6 text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{restOfSummary}</p>
+              <summary className="cursor-pointer text-[13px] text-teal-700 dark:text-teal-300">Read the full summary</summary>
+              <p className="mt-2 text-[15px] leading-6 text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{restOfSummary}</p>
             </details>
           )}
         </div>
       ) : (
-        <p className="mt-3 text-[14px] text-slate-500">Not generated yet. Click Generate to summarise this candidate from their profile data.</p>
+        <p className="mt-3 text-[15px] text-slate-500">Not generated yet. Click Generate to summarise this candidate from their profile data.</p>
       )}
 
-      {passport?.profile_incomplete && <p className="mt-2 text-[12.5px] text-slate-500">Based on limited information: they have not finished registering. It updates once they do.</p>}
+      {passport?.profile_incomplete && <p className="mt-2 text-[13px] text-slate-500">Based on limited information: they have not finished registering. It updates once they do.</p>}
 
       {hasFlags && dots.length > 0 && (
         <div className="mt-5 grid gap-5 sm:grid-cols-3">
           {dots.map((g) => (
             <div key={g.label}>
-              <p className="mb-2 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">{g.label}</p>
+              <p className="mb-2 text-[13px] font-medium text-slate-500 dark:text-slate-400">{g.label}</p>
               <ul className="space-y-1.5">
                 {g.items.slice(0, SHOWN).map((f, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">
+                  <li key={i} className="flex items-start gap-2 text-[14px] leading-5 text-slate-700 dark:text-slate-300">
                     <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${g.dot}`} aria-hidden />
                     <span>{f}</span>
                   </li>
@@ -196,10 +196,10 @@ export default function AiSummaryPanel({
               </ul>
               {g.items.length > SHOWN && (
                 <details className="mt-1.5">
-                  <summary className="cursor-pointer text-[12px] text-teal-700 dark:text-teal-300">{g.items.length - SHOWN} more</summary>
+                  <summary className="cursor-pointer text-[13px] text-teal-700 dark:text-teal-300">{g.items.length - SHOWN} more</summary>
                   <ul className="mt-1.5 space-y-1.5">
                     {g.items.slice(SHOWN).map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">
+                      <li key={i} className="flex items-start gap-2 text-[14px] leading-5 text-slate-700 dark:text-slate-300">
                         <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${g.dot}`} aria-hidden />
                         <span>{f}</span>
                       </li>
@@ -214,10 +214,10 @@ export default function AiSummaryPanel({
 
       {nextQuestions.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">Ask on the next call</p>
+          <p className="mb-2 text-[13px] font-medium text-slate-500 dark:text-slate-400">Ask on the next call</p>
           <ul className="space-y-1.5">
             {nextQuestions.slice(0, 4).map((q, i) => (
-              <li key={i} className="flex items-start gap-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">
+              <li key={i} className="flex items-start gap-2 text-[14px] leading-5 text-slate-700 dark:text-slate-300">
                 <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" aria-hidden />
                 <span>{q}</span>
               </li>
@@ -228,12 +228,12 @@ export default function AiSummaryPanel({
 
       {hasSkillInventory && (skills.length > 0 || moreSkills.length > 0) && (
         <div className="mt-5">
-          <p className="mb-2 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">Skills</p>
-          <p className="text-[13px] leading-6 text-slate-700 dark:text-slate-300">{skills.map(sentence).join(" · ")}</p>
+          <p className="mb-2 text-[13px] font-medium text-slate-500 dark:text-slate-400">Skills</p>
+          <p className="text-[14px] leading-6 text-slate-700 dark:text-slate-300">{skills.map(sentence).join(" · ")}</p>
           {moreSkills.length > 0 && (
             <details className="mt-1.5">
-              <summary className="cursor-pointer text-[12px] text-teal-700 dark:text-teal-300">Tools and soft skills</summary>
-              <p className="mt-1.5 text-[13px] leading-6 text-slate-600 dark:text-slate-400">{moreSkills.map(sentence).join(" · ")}</p>
+              <summary className="cursor-pointer text-[13px] text-teal-700 dark:text-teal-300">Tools and soft skills</summary>
+              <p className="mt-1.5 text-[14px] leading-6 text-slate-600 dark:text-slate-400">{moreSkills.map(sentence).join(" · ")}</p>
             </details>
           )}
         </div>

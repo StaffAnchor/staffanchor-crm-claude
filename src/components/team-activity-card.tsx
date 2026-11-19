@@ -41,31 +41,31 @@ export default async function TeamActivityCard({ supabase }: { supabase: Supabas
     <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100"><PhoneCall className="h-4 w-4 text-slate-500" /> Team activity today</h2>
-        <p className="text-[11.5px] text-slate-400">{rows.length} {rows.length === 1 ? "call" : "calls"} so far · {rows.filter((r) => r.outcome === "reached").length} reached</p>
+        <p className="text-[12px] text-slate-400">{rows.length} {rows.length === 1 ? "call" : "calls"} so far · {rows.filter((r) => r.outcome === "reached").length} reached</p>
       </div>
       {list.length === 0 ? (
-        <p className="py-6 text-center text-[12.5px] text-slate-400">Nobody has logged a call yet today.</p>
+        <p className="py-6 text-center text-[13px] text-slate-400">Nobody has logged a call yet today.</p>
       ) : (
         <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
           {list.map((p) => (
             <details key={p.name} className="group py-2">
-              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 text-[14px]">
                 <span className="min-w-[140px] font-medium text-slate-800 dark:text-slate-100">{p.name}</span>
                 <span className="tabular-nums text-slate-700 dark:text-slate-200"><b>{p.calls.length}</b> calls</span>
                 <span className="text-emerald-700 dark:text-emerald-300">{n(p.calls, "reached")} spoke</span>
                 <span className="text-rose-700 dark:text-rose-300">{n(p.calls, "no_answer")} did not pick up</span>
                 <span className="text-violet-700 dark:text-violet-300">{n(p.calls, "call_later")} call back</span>
                 <span className="text-slate-500">{n(p.calls, "not_interested") + n(p.calls, "wrong_number")} closed</span>
-                <span className="ml-auto text-[11.5px] text-slate-400">last call {ago(p.calls[0].created_at)}</span>
+                <span className="ml-auto text-[12px] text-slate-400">last call {ago(p.calls[0].created_at)}</span>
               </summary>
               <ul className="mt-2 space-y-1 pl-2">
                 {p.calls.map((c) => (
-                  <li key={c.id} className="flex flex-wrap items-center gap-2 text-[12.5px]">
+                  <li key={c.id} className="flex flex-wrap items-center gap-2 text-[13px]">
                     <span className="w-16 tabular-nums text-slate-400">{timeOf(c.created_at)}</span>
                     <Link href={`/candidates/${c.candidate_id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-teal-700 hover:underline dark:text-teal-300">{c.full_name ?? "Unnamed"}</Link>
-                    <span className={`rounded px-1.5 py-px text-[11px] font-medium ${OUT[c.outcome]?.cls ?? OUT.not_interested.cls}`}>{OUT[c.outcome]?.label ?? c.outcome}</span>
-                    {c.outcome === "reached" && (!c.has_pay || !c.has_cv) && <span className="text-[11.5px] text-amber-700 dark:text-amber-300">still missing {[!c.has_pay && "current pay", !c.has_cv && "CV"].filter(Boolean).join(" and ")}</span>}
-                    {c.outcome === "call_later" && c.call_back_at && <span className="text-[11.5px] text-slate-500">asked for {new Date(c.call_back_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}</span>}
+                    <span className={`rounded px-1.5 py-px text-[12px] font-medium ${OUT[c.outcome]?.cls ?? OUT.not_interested.cls}`}>{OUT[c.outcome]?.label ?? c.outcome}</span>
+                    {c.outcome === "reached" && (!c.has_pay || !c.has_cv) && <span className="text-[12px] text-amber-700 dark:text-amber-300">still missing {[!c.has_pay && "current pay", !c.has_cv && "CV"].filter(Boolean).join(" and ")}</span>}
+                    {c.outcome === "call_later" && c.call_back_at && <span className="text-[12px] text-slate-500">asked for {new Date(c.call_back_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}</span>}
                   </li>
                 ))}
               </ul>

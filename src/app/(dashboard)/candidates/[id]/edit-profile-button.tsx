@@ -139,7 +139,7 @@ const MANDATORY_FIELDS_COMPLETE = (f: {
   return true;
 };
 
-const SECTION_LABEL = "block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5";
+const SECTION_LABEL = "block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5";
 const FIELD_LABEL = "block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1";
 const INPUT_CLS = "w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm";
 // Applied to the 12 "Stage 1B" fields (the same set INCOMPLETE_PROFILE
@@ -171,7 +171,7 @@ function CheckboxGroup({
             type="button"
             key={opt}
             onClick={() => onToggle(opt)}
-            className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
+            className={`text-[13px] px-2.5 py-1 rounded-full border transition-colors ${
               active
                 ? "bg-teal-600 border-teal-600 text-white"
                 : "bg-white dark:bg-slate-900 border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
@@ -675,7 +675,7 @@ export default function EditProfileButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`flex items-center gap-1.5 text-[12px] font-semibold rounded-ros-md px-3.5 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
+        className={`flex items-center gap-1.5 text-[13px] font-semibold rounded-ros-md px-3.5 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
           "text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
         }`}
       >
@@ -694,11 +694,11 @@ export default function EditProfileButton({
             {hasResume && (
               <div className="hidden lg:flex flex-col w-1/2 shrink-0 border-r border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                  <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{resumeFileName}</p>
+                  <p className="text-[14px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{resumeFileName}</p>
                   <a
                     href={resumeSignedUrl!}
                     download={resumeFileName!} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[12px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 shrink-0"
+                    className="flex items-center gap-1 text-[13px] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" /> Download
                   </a>
@@ -712,7 +712,7 @@ export default function EditProfileButton({
             <div className="flex-1 min-w-0 overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
               <div className="flex items-center gap-2">
-                <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Edit / Complete Profile</h3>
+                <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Edit / Complete Profile</h3>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${READINESS_BADGE[readinessTier]}`}>
                   {readinessTier} · {readinessScore}%
                 </span>
@@ -766,11 +766,11 @@ export default function EditProfileButton({
                   <div>
                     <label className={FIELD_LABEL}>Resume</label>
                     {candidate.resume_file_url && !resumeFile && (
-                      <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-1 truncate">Currently on file</p>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-1 truncate">Currently on file</p>
                     )}
-                    {resumeFile && <p className="text-[12px] text-slate-700 dark:text-slate-300 mb-1 truncate">{resumeFile.name} (replacing)</p>}
+                    {resumeFile && <p className="text-[13px] text-slate-700 dark:text-slate-300 mb-1 truncate">{resumeFile.name} (replacing)</p>}
                     <label
-                      className={`flex items-center gap-1.5 text-[12px] text-slate-600 dark:text-slate-400 border border-dashed rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 w-fit ${
+                      className={`flex items-center gap-1.5 text-[13px] text-slate-600 dark:text-slate-400 border border-dashed rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 w-fit ${
                         !candidate.resume_file_url && !resumeFile ? `${MISSING_CLS} border-dashed` : "border-slate-300"
                       }`}
                     >
@@ -1164,7 +1164,7 @@ export default function EditProfileButton({
 
                   {isB2B && (
                     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
+                      <span className="block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
                         Sales Motion Type &amp; Buyer Persona
                       </span>
                       <div className="space-y-3">
@@ -1198,7 +1198,7 @@ export default function EditProfileButton({
                   )}
 
                   <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
+                    <span className="block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2.5">
                       Quarterly Targets &amp; Achievement (last 4 quarters)
                     </span>
                     {isTeamLead && (
@@ -1335,7 +1335,7 @@ export default function EditProfileButton({
             </div>
 
             {error && (
-              <p className="mx-5 mb-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[12px] font-medium text-red-700">
+              <p className="mx-5 mb-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[13px] font-medium text-red-700">
                 {error}
               </p>
             )}
@@ -1344,14 +1344,14 @@ export default function EditProfileButton({
               <button
                 onClick={() => setOpen(false)}
                 disabled={saving}
-                className="text-[12px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 px-3 py-1.5"
+                className="text-[13px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 px-3 py-1.5"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-teal-600 hover:bg-teal-500 rounded-lg px-3.5 py-1.5 disabled:opacity-60"
+                className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-teal-600 hover:bg-teal-500 rounded-lg px-3.5 py-1.5 disabled:opacity-60"
               >
                 {saving && <Loader2 className="w-3 h-3 animate-spin" />}
                 Save changes

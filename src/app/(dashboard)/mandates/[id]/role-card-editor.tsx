@@ -62,7 +62,7 @@ export default function RoleCardEditor({
     }
   }
 
-  const chip = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium";
+  const chip = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium";
   const num = (v: number | null) => (v == null ? "" : String(v));
   const parse = (v: string) => (v.trim() === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -70,14 +70,14 @@ export default function RoleCardEditor({
     <div className="rounded-ros-xl border border-teal-200 bg-teal-50/40 p-4 dark:border-teal-900 dark:bg-teal-950/10">
       <div className="flex flex-wrap items-center gap-2">
         <Sparkles className="h-4 w-4 text-teal-600" />
-        <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">What this role really needs</h3>
-        <span className="text-[12px] text-slate-400">{confirmed ? "Checked" : "Written by the system"}</span>
-        <button type="button" onClick={() => setOpen((o) => !o)} className="ml-auto text-[12px] font-medium text-teal-600 hover:underline">
+        <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">What this role really needs</h3>
+        <span className="text-[13px] text-slate-400">{confirmed ? "Checked" : "Written by the system"}</span>
+        <button type="button" onClick={() => setOpen((o) => !o)} className="ml-auto text-[13px] font-medium text-teal-600 hover:underline">
           {open ? "Done" : confirmed ? "Adjust" : "Check it"}
         </button>
       </div>
 
-      <p className="mt-2 text-[13px] text-slate-700 dark:text-slate-200">
+      <p className="mt-2 text-[14px] text-slate-700 dark:text-slate-200">
         <span className="font-semibold">{clusters.find((x) => x.slug === c.cluster)?.name ?? c.cluster}</span>
         {c.level !== "any" ? `, ${LEVEL_LABEL[c.level].toLowerCase()}` : ""}
         {c.sells_summary ? `. ${c.sells_summary}` : ""}
@@ -103,7 +103,7 @@ export default function RoleCardEditor({
       </div>
 
       {open && (
-        <div className="mt-4 space-y-4 border-t border-teal-200/70 pt-4 text-[12.5px] dark:border-teal-900">
+        <div className="mt-4 space-y-4 border-t border-teal-200/70 pt-4 text-[13px] dark:border-teal-900">
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-slate-500">
               What the person does
@@ -142,7 +142,7 @@ export default function RoleCardEditor({
               <select
                 value=""
                 onChange={(e) => e.target.value && setC({ ...c, exact_worlds: [...c.exact_worlds, e.target.value], adjacent_worlds: c.adjacent_worlds.filter((a) => a.slug !== e.target.value) })}
-                className="rounded-full border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-full border border-slate-300 bg-white px-2 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900"
               >
                 <option value="">+ add</option>
                 {worlds.filter((w) => !c.exact_worlds.includes(w.slug)).map((w) => (
@@ -164,7 +164,7 @@ export default function RoleCardEditor({
               <select
                 value=""
                 onChange={(e) => e.target.value && setC({ ...c, adjacent_worlds: [...c.adjacent_worlds, { slug: e.target.value, why: "Added by you" }] })}
-                className="rounded-full border border-slate-300 bg-white px-2 py-1 text-[12px] dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-full border border-slate-300 bg-white px-2 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900"
               >
                 <option value="">+ add</option>
                 {worlds.filter((w) => !c.exact_worlds.includes(w.slug) && !c.adjacent_worlds.some((a) => a.slug === w.slug)).map((w) => (

@@ -25,7 +25,7 @@ export default function ClientAcquisitionSubNav() {
           <Link
             key={t.href}
             href={t.href}
-            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-[13px] font-medium border-b-2 transition-colors duration-200 ease-ros ${
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-[14px] font-medium border-b-2 transition-colors duration-200 ease-ros ${
               active
                 ? "border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100"
                 : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"

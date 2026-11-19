@@ -96,7 +96,7 @@ export default function MandateStaffingControl({
 
   return (
     <div className="mt-1">
-      <div className="flex flex-wrap items-center gap-1.5 text-[12.5px]">
+      <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
         <span className="text-slate-400">Recruiter / Vendor:</span>
         {assigned.map((p) => (
           <span
@@ -126,7 +126,7 @@ export default function MandateStaffingControl({
               autoFocus
               value={pickerValue}
               onChange={(e) => setPickerValue(e.target.value)}
-              className="rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-0.5 text-[12px] text-slate-700 dark:text-slate-300"
+              className="rounded-md border border-slate-300 dark:border-slate-700 bg-transparent px-1.5 py-0.5 text-[13px] text-slate-700 dark:text-slate-300"
             >
               <option value="">Select...</option>
               {candidates.map((p) => (

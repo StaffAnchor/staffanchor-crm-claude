@@ -50,13 +50,13 @@ export function WhatsAppOpenSwitch({ className = "" }: { className?: string }) {
       type="button"
       onClick={() => setMode(m)}
       aria-pressed={mode === m}
-      className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium ${mode === m ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+      className={`rounded-full px-2.5 py-1 text-[12px] font-medium ${mode === m ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
     >
       {label}
     </button>
   );
   return (
-    <div className={`flex flex-wrap items-center gap-1.5 text-[11.5px] text-slate-500 ${className}`} title="WhatsApp Web allows one open tab per browser. The desktop app has no such limit and keeps your open chats.">
+    <div className={`flex flex-wrap items-center gap-1.5 text-[12px] text-slate-500 ${className}`} title="WhatsApp Web allows one open tab per browser. The desktop app has no such limit and keeps your open chats.">
       <span>Open in</span>
       {opt("web", "Browser tab")}
       {opt("app", "Desktop app")}

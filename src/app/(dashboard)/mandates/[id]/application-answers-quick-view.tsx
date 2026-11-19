@@ -108,14 +108,14 @@ export default function ApplicationAnswersQuickView({
           style={{ position: "fixed", top: pos.top, bottom: pos.bottom, left: pos.left, width: POPOVER_WIDTH }}
           className="z-50 rounded-ros-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-3"
         >
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1.5">
             Application answers
           </p>
           <dl className="space-y-1.5">
             {answers.map((a, i) => (
               <div key={i}>
                 <dt className="text-xs text-slate-500 dark:text-slate-400">{a.question_text}</dt>
-                <dd className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200">{formatAnswer(a)}</dd>
+                <dd className="text-[13px] font-medium text-slate-800 dark:text-slate-200">{formatAnswer(a)}</dd>
               </div>
             ))}
           </dl>

@@ -9,7 +9,7 @@ export type InflowPoint = {
 
 export default function InflowTrend({ points }: { points: InflowPoint[] }) {
   if (points.length === 0) {
-    return <p className="text-[13px] text-slate-400">No candidates registered in this window.</p>;
+    return <p className="text-[14px] text-slate-400">No candidates registered in this window.</p>;
   }
   const max = Math.max(1, ...points.map((p) => p.count));
   const dense = points.length > 20;

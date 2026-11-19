@@ -39,7 +39,7 @@ export function Badge({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1 font-semibold uppercase tracking-wide rounded-ros-full ring-1 whitespace-nowrap transition-colors duration-200 ease-ros",
+        "inline-flex items-center gap-1 font-medium rounded-ros-full ring-1 whitespace-nowrap transition-colors duration-200 ease-ros",
         size === "sm" ? "text-xs px-1.5 py-0.5" : "text-xs px-2.5 py-1",
         TONE_CLASSES[tone],
         className

@@ -29,7 +29,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
           <Trophy className="w-4 h-4 text-amber-500" />
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Client performance</h2>
         </div>
-        <p className="text-[13px] text-slate-400">
+        <p className="text-[14px] text-slate-400">
           No candidates have been submitted to any client yet. Once recruiters start moving candidates
           through the pipeline, submission → interview → placement conversion rates will show up here.
         </p>
@@ -55,7 +55,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
 
       <div className={`grid gap-4 ${bottom.length ? "grid-cols-2" : "grid-cols-1"}`}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600 mb-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-emerald-600 mb-2">
             Best converting
           </p>
           <div className="space-y-2">
@@ -67,7 +67,7 @@ export default function ClientLeaderboard({ rows }: { rows: ClientLeaderRow[] })
 
         {bottom.length > 0 && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-rose-500 mb-2 flex items-center gap-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-rose-500 mb-2 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" /> Needs attention
             </p>
             <div className="space-y-2">
@@ -95,7 +95,7 @@ function LeaderRow({ row, rank, positive }: { row: ClientLeaderRow; rank?: numbe
           </span>
         )}
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">{row.name}</p>
+          <p className="text-[14px] font-medium text-slate-900 dark:text-slate-100 truncate">{row.name}</p>
           <p className="text-xs text-slate-400">
             {row.stats.submittedPlus} submitted · {row.stats.placed} placed
           </p>

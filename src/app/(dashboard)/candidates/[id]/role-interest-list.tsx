@@ -20,8 +20,8 @@ export default async function RoleInterestList({ candidateId }: { candidateId: s
   return (
     <div className="mt-3 space-y-3 rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700">
       {memory && (
-        <div className="space-y-1 text-[12.5px] text-slate-700 dark:text-slate-200">
-          <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">What we remember from calls{memory.at ? <span className="ml-1.5 text-xs font-normal text-slate-400">last updated {new Date(memory.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span> : null}</p>
+        <div className="space-y-1 text-[13px] text-slate-700 dark:text-slate-200">
+          <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">What we remember from calls{memory.at ? <span className="ml-1.5 text-xs font-normal text-slate-400">last updated {new Date(memory.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span> : null}</p>
           {memory.summary && <p>{memory.summary}</p>}
           {memory.wants.length > 0 && <p><b>Wants:</b> {memory.wants.join("; ")}</p>}
           {memory.dealbreakers.length > 0 && <p><b>Will not accept:</b> {memory.dealbreakers.join("; ")}</p>}
@@ -32,14 +32,14 @@ export default async function RoleInterestList({ candidateId }: { candidateId: s
       )}
       {rows.length > 0 && (
       <div>
-      <p className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">What they said about roles</p>
+      <p className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">What they said about roles</p>
       <ul className="space-y-1.5">
         {rows.map((r, i) => {
           const m = Array.isArray(r.mandates) ? r.mandates[0] : r.mandates;
           const l = LABEL[r.interest] ?? LABEL.maybe;
           return (
-            <li key={i} className="flex flex-wrap items-center gap-2 text-[12.5px] text-slate-700 dark:text-slate-200">
-              <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${l.cls}`}>{l.text}</span>
+            <li key={i} className="flex flex-wrap items-center gap-2 text-[13px] text-slate-700 dark:text-slate-200">
+              <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${l.cls}`}>{l.text}</span>
               <span className="font-medium">{m?.role_title ?? "A role"}{m?.client_name ? ` (${m.client_name})` : ""}</span>
               {r.reason && <span className="text-slate-500">{r.reason}</span>}
               <span className="ml-auto text-xs text-slate-400">{new Date(r.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>

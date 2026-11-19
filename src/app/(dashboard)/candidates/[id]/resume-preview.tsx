@@ -38,7 +38,7 @@ export default function ResumePreview({
           setOpen(true);
           onOpen?.();
         }}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+        className="flex items-center gap-1.5 text-[13px] font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         <FileText className="w-3 h-3" /> {label ?? "Preview resume"}
       </button>
@@ -54,12 +54,12 @@ export default function ResumePreview({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-              <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{fileName}</p>
+              <p className="text-[14px] font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{fileName}</p>
               <div className="flex items-center gap-2 shrink-0">
                 <a
                   href={signedUrl}
                   download={fileName} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[12px] text-slate-600 dark:text-slate-400 hover:text-slate-900 px-2 py-1"
+                  className="flex items-center gap-1 text-[13px] text-slate-600 dark:text-slate-400 hover:text-slate-900 px-2 py-1"
                 >
                   <Download className="w-3.5 h-3.5" /> Download
                 </a>

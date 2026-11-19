@@ -97,7 +97,7 @@ export default async function SalesPage() {
       <div className="flex items-baseline justify-between mb-5">
         <div>
           <h1 className="ros-page-title">Sales</h1>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1">
             {isPartnerView
               ? "Leads you brought in — target companies to sell recruiting services to."
               : "StaffAnchor’s own client-acquisition pipeline — target companies to sell recruiting services to. Separate from candidates and mandates."}
@@ -120,11 +120,11 @@ export default async function SalesPage() {
 
       {bySource.length > 1 && (
         <Card className="mb-4">
-          <p className="text-[12.5px] font-semibold text-slate-700 dark:text-slate-300 mb-2.5">Conversion by source</p>
+          <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 mb-2.5">Conversion by source</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {bySource.map((s) => (
               <div key={s.key} className="rounded-ros-md border border-slate-100 dark:border-slate-800 px-3 py-2.5">
-                <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">{s.label}</p>
+                <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">{s.label}</p>
                 <div className="flex items-baseline gap-1.5 mt-1">
                   <span className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{s.total}</span>
                   <span className="text-xs text-slate-400">lead{s.total === 1 ? "" : "s"}</span>

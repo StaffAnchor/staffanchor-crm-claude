@@ -29,7 +29,7 @@ export default function AssignAgencyControl({
       defaultValue=""
       onChange={handleChange}
       disabled={saving}
-      className="text-[12px] rounded-lg border border-slate-300 px-2 py-1 disabled:opacity-50"
+      className="text-[13px] rounded-lg border border-slate-300 px-2 py-1 disabled:opacity-50"
     >
       <option value="" disabled>
         Assign to agency...

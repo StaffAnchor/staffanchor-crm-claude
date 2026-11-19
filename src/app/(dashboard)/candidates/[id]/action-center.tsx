@@ -19,9 +19,9 @@ export default function ActionCenter({ message, label, children }: { message: Re
     window.addEventListener("profile-open-panel", on);
     return () => window.removeEventListener("profile-open-panel", on);
   }, []);
-  const primary = (on: boolean) => `inline-flex items-center gap-1.5 rounded-ros-md px-4 py-1.5 text-[13px] font-semibold text-white ${on ? "bg-teal-700" : "bg-teal-600 hover:bg-teal-700"}`;
+  const primary = (on: boolean) => `inline-flex items-center gap-1.5 rounded-ros-md px-4 py-1.5 text-[14px] font-semibold text-white ${on ? "bg-teal-700" : "bg-teal-600 hover:bg-teal-700"}`;
   const quiet = (on: boolean) =>
-    `inline-flex items-center gap-1.5 rounded-ros-md border px-3.5 py-1.5 text-[13px] font-medium ${on ? "border-teal-600 bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"}`;
+    `inline-flex items-center gap-1.5 rounded-ros-md border px-3.5 py-1.5 text-[14px] font-medium ${on ? "border-teal-600 bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"}`;
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">

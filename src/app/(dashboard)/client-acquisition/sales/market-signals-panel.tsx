@@ -160,7 +160,7 @@ export default function MarketSignalsPanel({
       <button onClick={() => setCollapsed((c) => !c)} className="w-full flex items-center justify-between px-5 py-3.5">
         <div className="flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-teal-600" />
-          <h2 className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">Market Signals</h2>
+          <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Market Signals</h2>
           <span className="text-xs text-slate-400 font-normal">India funding &amp; hiring news, scanned daily</span>
           {open.length > 0 && (
             <Badge tone="accent" size="sm">
@@ -173,9 +173,9 @@ export default function MarketSignalsPanel({
 
       {!collapsed && (
         <div className="px-5 pb-4 border-t border-slate-100 dark:border-slate-800 pt-3">
-          {fetchError && <p className="text-[12px] text-rose-500">Couldn&apos;t load signals: {fetchError}</p>}
+          {fetchError && <p className="text-[13px] text-rose-500">Couldn&apos;t load signals: {fetchError}</p>}
           {!fetchError && open.length === 0 && (
-            <p className="text-[12.5px] text-slate-400">
+            <p className="text-[13px] text-slate-400">
               No fresh signals right now — a daily scan looks for India companies that just raised funding or are
               hiring (especially sales roles) and drops them here.
             </p>
@@ -194,7 +194,7 @@ export default function MarketSignalsPanel({
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-[12.5px] font-semibold text-slate-800 dark:text-slate-200">{signal.company_name}</p>
+                      <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">{signal.company_name}</p>
                       <Badge tone="neutral" size="sm" className="normal-case tracking-normal">
                         {meta.label}
                       </Badge>
@@ -212,7 +212,7 @@ export default function MarketSignalsPanel({
                         <span className="text-xs text-slate-400">Founder: {signal.founder_name}</span>
                       )}
                     </div>
-                    <p className="text-[12px] text-slate-600 dark:text-slate-400 mt-0.5">{signal.headline}</p>
+                    <p className="text-[13px] text-slate-600 dark:text-slate-400 mt-0.5">{signal.headline}</p>
                     {signal.summary && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{signal.summary}</p>}
                     {signal.fit_reason && (
                       <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 italic">{signal.fit_reason}</p>

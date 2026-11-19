@@ -28,7 +28,7 @@ export default function HeaderMenu({ label, icon, primary = false, children }: {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`inline-flex items-center gap-1.5 rounded-ros-md px-3.5 py-2 text-[13px] font-semibold ${
+        className={`inline-flex items-center gap-1.5 rounded-ros-md px-3.5 py-2 text-[14px] font-semibold ${
           primary ? "bg-teal-600 text-white hover:bg-teal-700" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
         }`}
       >

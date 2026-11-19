@@ -39,8 +39,8 @@ const GCAL_MSG: Record<string, string> = {
 function Card({ title, children, sub }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-      <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      {sub && <p className="mt-0.5 text-[12.5px] text-slate-500">{sub}</p>}
+      <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+      {sub && <p className="mt-0.5 text-[13px] text-slate-500">{sub}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -88,29 +88,29 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
     <div className="mx-auto max-w-[1100px] space-y-5 px-5 py-8">
       <div>
         <h1 className="ros-page-title">StaffAnchor Edge</h1>
-        <p className="mt-1 text-[13px] text-slate-500">Paid 1:1 sessions for jobseekers (mock interview, job search strategy, resume): what is booked, when you are free, and replies to LinkedIn requests.</p>
+        <p className="mt-1 text-[14px] text-slate-500">Paid 1:1 sessions for jobseekers (mock interview, job search strategy, resume): what is booked, when you are free, and replies to LinkedIn requests.</p>
       </div>
-      {sp.gcal && <p className="rounded-lg bg-slate-100 px-3 py-2 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{GCAL_MSG[sp.gcal] ?? sp.gcal}</p>}
+      {sp.gcal && <p className="rounded-lg bg-slate-100 px-3 py-2 text-[14px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{GCAL_MSG[sp.gcal] ?? sp.gcal}</p>}
 
       <div className="grid gap-3 md:grid-cols-3">
         <Card title="Google Calendar">
           {conn ? (
-            <p className="text-[13px] text-emerald-700 dark:text-emerald-300">Connected{conn.email ? ` as ${conn.email}` : ""}. Free times come from your calendars, and each booking creates a Meet event.</p>
+            <p className="text-[14px] text-emerald-700 dark:text-emerald-300">Connected{conn.email ? ` as ${conn.email}` : ""}. Free times come from your calendars, and each booking creates a Meet event.</p>
           ) : (
-            <p className="text-[13px] text-amber-700 dark:text-amber-300">Not connected. Times come from the weekly windows only and no calendar event is created.</p>
+            <p className="text-[14px] text-amber-700 dark:text-amber-300">Not connected. Times come from the weekly windows only and no calendar event is created.</p>
           )}
-          <Link href="/api/admin/google-calendar/connect" className="mt-3 inline-block text-[13px] font-medium text-teal-600 hover:underline">
+          <Link href="/api/admin/google-calendar/connect" className="mt-3 inline-block text-[14px] font-medium text-teal-600 hover:underline">
             {conn ? "Reconnect" : gc ? "Connect Google Calendar →" : "Needs the Google keys first"}
           </Link>
         </Card>
         <Card title="Payments (Razorpay)">
-          <p className={`text-[13px] ${linked ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+          <p className={`text-[14px] ${linked ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
             {linked ? "Payments are taken on jobs.staffanchor.com with your existing Razorpay account, then confirmed here." : "The link to jobs.staffanchor.com isn't set up yet (PRO_INTERNAL_SECRET is missing)."}
           </p>
         </Card>
         <Card title="Bookings">
           <p className="text-[24px] font-semibold tabular-nums">{paid.length}</p>
-          <p className="text-[12.5px] text-slate-500">paid, worth {inr(paid.reduce((a, b) => a + b.amount_inr, 0))}</p>
+          <p className="text-[13px] text-slate-500">paid, worth {inr(paid.reduce((a, b) => a + b.amount_inr, 0))}</p>
         </Card>
       </div>
 
@@ -119,7 +119,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
       <Card title="Session reports" sub="Open one during the meeting, fill it in as you talk, and it makes a PDF for the candidate. Start it from a booking below, or here for someone who did not book through the site.">
         <NewSessionForm />
         {reports.length > 0 && (
-          <ul className="mt-4 divide-y divide-slate-100 text-[13px] dark:divide-slate-800">
+          <ul className="mt-4 divide-y divide-slate-100 text-[14px] dark:divide-slate-800">
             {reports.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <Link href={`/analytics/edge/session/${r.id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">{r.candidate_name}</Link>
@@ -133,7 +133,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
       <Card title="Candidate CV forms" sub="A private link the candidate fills in (about 10 to 15 minutes) with their sales career, numbers and what they want next, so you can write a stronger CV. Make it from a booking below, or here for someone who did not book through the site.">
         <NewCvForm />
         {cvForms.length > 0 && (
-          <ul className="mt-4 divide-y divide-slate-100 text-[13px] dark:divide-slate-800">
+          <ul className="mt-4 divide-y divide-slate-100 text-[14px] dark:divide-slate-800">
             {cvForms.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <Link href={`/analytics/edge/cv/${r.id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-400">{r.name}</Link>
@@ -149,7 +149,7 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
       </Card>
 
       <Card title="Booking pages" sub="Share these. The StaffAnchor Edge pages on both websites link to the same ones.">
-        <ul className="space-y-1 text-[13px]">
+        <ul className="space-y-1 text-[14px]">
           {(services ?? []).map((s: { slug: string; title: string; duration_min: number; price_inr: number }) => (
             <li key={s.slug}>
               <span className="font-medium">{s.title}</span> · {s.duration_min} min · {inr(s.price_inr)} ·{" "}
@@ -173,10 +173,10 @@ export default async function ProSessionsAdmin({ searchParams }: { searchParams:
 
       <Card title="Sessions">
         {rows.length === 0 ? (
-          <p className="text-[13px] text-slate-500">No bookings yet.</p>
+          <p className="text-[14px] text-slate-500">No bookings yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="text-left text-xs text-slate-400">
                   <th className="py-1.5 pr-3 font-medium">When (IST)</th>

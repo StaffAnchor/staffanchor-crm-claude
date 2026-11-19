@@ -57,11 +57,11 @@ export function ConfirmDetailsPanel({ roleCluster = null, mandateContext, linkId
   return (
     <div>
           {ready ? (
-            <p className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[13px] font-medium text-emerald-700">
+            <p className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[14px] font-medium text-emerald-700">
               <Check className="h-4 w-4" /> Everything is confirmed. This candidate is ready to share.
             </p>
           ) : (
-            <div className="rounded-lg bg-amber-50 px-3 py-2.5 text-[12.5px] text-amber-800">
+            <div className="rounded-lg bg-amber-50 px-3 py-2.5 text-[13px] text-amber-800">
               <p className="font-medium">Still needed ({blockers.length}):</p>
               <ul className="mt-1 list-disc pl-5">
                 {blockers.map((b) => (
@@ -86,18 +86,18 @@ export function ConfirmDetailsPanel({ roleCluster = null, mandateContext, linkId
           {candidate && mandateContext && (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 p-4 dark:border-slate-800">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Questions for this role</p>
-                <p className="text-[12.5px] text-slate-500">{(mandateContext.screening_questions ?? []).length > 0 ? "Role-specific questions to ask on the call; answers are saved against this role." : "No role-specific questions yet. Add some on the Screening tab."}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Questions for this role</p>
+                <p className="text-[13px] text-slate-500">{(mandateContext.screening_questions ?? []).length > 0 ? "Role-specific questions to ask on the call; answers are saved against this role." : "No role-specific questions yet. Add some on the Screening tab."}</p>
               </div>
               {(mandateContext.screening_questions ?? []).length > 0 && (
-                <button type="button" onClick={() => setQuestionsOpen(true)} className="rounded-lg border border-teal-600 px-3 py-1.5 text-[13px] font-semibold text-teal-700 hover:bg-teal-50">Answer role questions</button>
+                <button type="button" onClick={() => setQuestionsOpen(true)} className="rounded-lg border border-teal-600 px-3 py-1.5 text-[14px] font-semibold text-teal-700 hover:bg-teal-50">Answer role questions</button>
               )}
             </div>
           )}
 
           {candidate && (
             <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Call details</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Call details</p>
               <CallRecordForm
                 key={String(candidate.updated_at ?? "")}
                 p={{
@@ -166,7 +166,7 @@ export default function ConfirmDetailsModal({
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-5 py-4">
           <div>
             <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{mode === "details" ? "Call and details" : "Confirm before sharing"}</h2>
-            <p className="text-[12.5px] text-slate-500">
+            <p className="text-[13px] text-slate-500">
               {mode === "details"
                 ? `${candidateName}: fill this in whenever you speak to them, before or after sharing. The client only sees the profile once everything is complete.`
                 : `${candidateName}: the client will see all of this, so a recruiter confirms it first.`}
@@ -182,7 +182,7 @@ export default function ConfirmDetailsModal({
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 px-5 py-3">
-          <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-[14px] text-slate-600 hover:bg-slate-100">
             Close
           </button>
           <button
@@ -194,7 +194,7 @@ export default function ConfirmDetailsModal({
               setSharing(false);
               if (ok) onClose();
             }}
-            className="rounded-lg bg-teal-600 px-4 py-2 text-[13px] font-medium text-white hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-teal-600 px-4 py-2 text-[14px] font-medium text-white hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {sharing ? "Sharing…" : "Share with client"}
           </button>

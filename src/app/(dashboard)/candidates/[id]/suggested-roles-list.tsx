@@ -65,31 +65,31 @@ function Row({ s, candidateId, onDone }: { s: RoleSuggestion; candidateId: strin
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/mandates/${s.mandateId}`} className="text-[14px] font-semibold text-teal-700 hover:underline dark:text-teal-400">
+            <Link href={`/mandates/${s.mandateId}`} className="text-[15px] font-semibold text-teal-700 hover:underline dark:text-teal-400">
               {s.roleTitle}
             </Link>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.cls}`}>{f.label}</span>
-            <span className="text-[12px] tabular-nums text-slate-500">{s.score}/100</span>
+            <span className="text-[13px] tabular-nums text-slate-500">{s.score}/100</span>
           </div>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">{[s.clientName, s.where].filter(Boolean).join(" · ")}</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">{[s.clientName, s.where].filter(Boolean).join(" · ")}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="rounded-lg px-2.5 py-1.5 text-[12.5px] text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+          <button onClick={() => setDismissing((d) => !d)} disabled={busy !== null} className="rounded-lg px-2.5 py-1.5 text-[13px] text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
             Not a fit
           </button>
-          <button onClick={() => decide("add")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-slate-800 disabled:opacity-60">
+          <button onClick={() => decide("add")} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-slate-800 disabled:opacity-60">
             {busy === "add" && <Loader2 className="h-3 w-3 animate-spin" />} Add to pipeline
           </button>
         </div>
       </div>
-      {s.summary && <p className="mt-2 text-[13px] text-slate-700 dark:text-slate-300">{s.summary}</p>}
+      {s.summary && <p className="mt-2 text-[14px] text-slate-700 dark:text-slate-300">{s.summary}</p>}
       <div className="mt-2 flex flex-wrap gap-1.5">
         {s.checks.must.map((c, i) => (
           <ReqChip key={`m${i}`} c={c} />
         ))}
       </div>
       {(s.checks.experience === "below" || s.checks.experience === "above" || s.checks.location === "other" || s.checks.location === "relocate") && (
-        <p className="mt-1.5 text-[12px] text-slate-500 dark:text-slate-400">
+        <p className="mt-1.5 text-[13px] text-slate-500 dark:text-slate-400">
           {[
             s.checks.experience === "below" ? "Below the experience asked" : s.checks.experience === "above" ? "Above the experience asked" : null,
             s.checks.location === "other" ? "Based elsewhere" : s.checks.location === "relocate" ? "Based elsewhere, open to relocate" : null,
@@ -99,7 +99,7 @@ function Row({ s, candidateId, onDone }: { s: RoleSuggestion; candidateId: strin
         </p>
       )}
       {dismissing && <DismissReasons value={reasonCodes} onChange={setReasonCodes} onConfirm={() => decide("dismiss")} busy={busy !== null} />}
-      {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-red-600">{error}</p>}
     </li>
   );
 }
@@ -139,10 +139,10 @@ export default function SuggestedRolesList({ candidateId, items, openRoles, hasC
     <div>
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="flex items-center gap-2 text-[16px] font-semibold text-slate-900 dark:text-slate-100">
             <Sparkles className="h-4 w-4 text-teal-600" aria-hidden /> Roles that may suit this person
           </h2>
-          <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
             Open roles whose must-haves are checked against this CV, with the evidence. A doubt is something to confirm with them, not a no. They are not in any pipeline until you add them.
           </p>
         </div>
@@ -150,16 +150,16 @@ export default function SuggestedRolesList({ candidateId, items, openRoles, hasC
           onClick={run}
           disabled={running || !hasCv || openRoles === 0}
           title={!hasCv ? "This profile has no CV to check yet" : undefined}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[13px] font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-[14px] font-medium text-white hover:bg-slate-800 disabled:opacity-50"
         >
           {running && <Loader2 className="h-3.5 w-3.5 animate-spin" />} {running ? "Checking..." : items.length > 0 ? "Check more open roles" : "Check against open roles"}
         </button>
       </div>
-      {!hasCv && <p className="mb-3 text-[13px] text-amber-800 dark:text-amber-300">Add a CV to this profile first. Matching reads the CV.</p>}
-      {message && <p className="mb-3 text-[13px] text-slate-700 dark:text-slate-300">{message}</p>}
-      {error && <p className="mb-3 text-[13px] text-red-600">{error}</p>}
+      {!hasCv && <p className="mb-3 text-[14px] text-amber-800 dark:text-amber-300">Add a CV to this profile first. Matching reads the CV.</p>}
+      {message && <p className="mb-3 text-[14px] text-slate-700 dark:text-slate-300">{message}</p>}
+      {error && <p className="mb-3 text-[14px] text-red-600">{error}</p>}
       {items.length === 0 ? (
-        <p className="py-6 text-[13px] text-slate-500 dark:text-slate-400">
+        <p className="py-6 text-[14px] text-slate-500 dark:text-slate-400">
           {openRoles === 0 ? "There are no open roles right now." : "No suggestions yet. Press the button to check this person against your open roles."}
         </p>
       ) : (

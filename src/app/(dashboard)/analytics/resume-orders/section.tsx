@@ -101,7 +101,7 @@ export default async function ResumeOrdersPage() {
     <div className="mx-auto max-w-[1100px] space-y-5 px-5 py-8">
       <div>
         <h1 className="ros-page-title">Resume orders</h1>
-        <p className="mt-1 text-[13px] text-slate-500">Resume Writing bought on the website. Each order moves from paid, to details received, to draft sent, to completed.</p>
+        <p className="mt-1 text-[14px] text-slate-500">Resume Writing bought on the website. Each order moves from paid, to details received, to draft sent, to completed.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -112,7 +112,7 @@ export default async function ResumeOrdersPage() {
           { l: "Completed", v: String(count((o) => o.status === "completed")) },
         ].map((s) => (
           <div key={s.l} className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[12px] text-slate-500">{s.l}</p>
+            <p className="text-[13px] text-slate-500">{s.l}</p>
             <p className="mt-0.5 text-[24px] font-semibold leading-none tabular-nums text-slate-900 dark:text-slate-100">{s.v}</p>
             {s.n && <p className="mt-1 text-xs text-slate-400">{s.n}</p>}
           </div>
@@ -121,7 +121,7 @@ export default async function ResumeOrdersPage() {
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         {orders.length === 0 ? (
-          <p className="text-[13px] text-slate-500">No orders yet.</p>
+          <p className="text-[14px] text-slate-500">No orders yet.</p>
         ) : (
           <div className="space-y-3">
             {orders.map((o) => {
@@ -129,7 +129,7 @@ export default async function ResumeOrdersPage() {
               const late = overdue(o);
               return (
                 <details key={o.id} className="rounded-lg border border-slate-200 px-4 py-3 dark:border-slate-700">
-                  <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-[13px]">
+                  <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-[14px]">
                     <span>
                       <span className="font-medium text-slate-900 dark:text-slate-100">{o.name}</span>
                       <span className="ml-2 text-slate-400">{o.experience_years != null ? `${o.experience_years} yrs, ` : ""}{t.band} plan · {o.booking_id && combo[o.booking_id] ? `part of ${combo[o.booking_id].title}: ${inr(combo[o.booking_id].paid)} paid in total, resume share ${inr(o.amount_inr)}` : inr(o.amount_inr)} · ordered {day(o.created_at)}</span>
@@ -139,7 +139,7 @@ export default async function ResumeOrdersPage() {
                       <span className={o.status === "completed" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-600 dark:text-slate-300"}>{STATUS[o.status] ?? o.status}</span>
                     </span>
                   </summary>
-                  <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 text-[13px] dark:border-slate-800">
+                  <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 text-[14px] dark:border-slate-800">
                     <p className="text-slate-600 dark:text-slate-300">
                       {o.email} · {o.phone}
                       {o.source ? ` · from ${o.source}` : ""}
@@ -162,7 +162,7 @@ export default async function ResumeOrdersPage() {
                     {o.status !== "pending_payment" && (o.booking_id ? (
                       <div className="space-y-1">
                         <InvoiceControls kind="edge" refId={o.booking_id} invoice={comboInvoices[o.booking_id] ?? null} />
-                        <p className="text-[11px] text-slate-400">One invoice covers the whole combo, so there is no separate resume invoice.</p>
+                        <p className="text-[12px] text-slate-400">One invoice covers the whole combo, so there is no separate resume invoice.</p>
                       </div>
                     ) : (
                       <InvoiceControls kind="resume" refId={o.id} invoice={invoices[o.id] ?? null} />

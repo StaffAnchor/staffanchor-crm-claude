@@ -147,14 +147,14 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
           <p className="text-xs text-slate-400 mt-0.5">Used on generated Proforma/Tax Invoices. Add one per billing office.</p>
         </div>
         {editingId === null && (
-          <button onClick={startAdd} className="flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
+          <button onClick={startAdd} className="flex items-center gap-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
             <Plus className="w-3 h-3" /> Add
           </button>
         )}
       </div>
 
       {registrations.length === 0 && editingId === null && (
-        <p className="text-[12px] text-amber-600">No GST details on file — invoice generation for this client will be blocked until you add one.</p>
+        <p className="text-[13px] text-amber-600">No GST details on file — invoice generation for this client will be blocked until you add one.</p>
       )}
 
       <div className="space-y-2">
@@ -162,7 +162,7 @@ export default function ClientGstPanel({ clientId, initial }: { clientId: string
           editingId === r.id ? (
             <RegistrationForm key={r.id} draft={draft} setDraft={setDraft} error={error} saving={saving} onSave={handleSave} lookup={lookup} looking={looking} onFetch={fetchOnline} onUseLookup={useLookup} onCancel={() => setEditingId(null)} />
           ) : (
-            <div key={r.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-[12.5px]">
+            <div key={r.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-[13px]">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-1.5">
@@ -235,7 +235,7 @@ function RegistrationForm({
           value={draft.label}
           onChange={(e) => setDraft({ ...draft, label: e.target.value })}
           placeholder="Label (e.g. Noida HO, Ahmedabad)"
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-slate-500"
         />
         <input
           value={draft.gstin}
@@ -245,41 +245,41 @@ function RegistrationForm({
             setDraft(p?.ok ? { ...draft, gstin, state_code: p.stateCode, state_name: p.stateName } : { ...draft, gstin });
           }}
           placeholder="GSTIN (state fills in automatically)"
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-slate-500"
         />
         <input
           value={draft.state_code}
           onChange={(e) => setDraft({ ...draft, state_code: e.target.value })}
           placeholder="State code (e.g. 09)"
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-slate-500"
         />
         <input
           value={draft.state_name}
           onChange={(e) => setDraft({ ...draft, state_name: e.target.value })}
           placeholder="State name"
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-slate-500"
         />
       </div>
       {draft.gstin.length === 15 && (() => {
         const p = parseGstin(draft.gstin);
         return p.ok ? (
-          <p className="text-[11.5px] text-emerald-600">Valid GSTIN · {p.stateName} ({p.stateCode}) · PAN {p.pan}</p>
+          <p className="text-[12px] text-emerald-600">Valid GSTIN · {p.stateName} ({p.stateCode}) · PAN {p.pan}</p>
         ) : (
-          <p className="text-[11.5px] text-red-600">{p.error}</p>
+          <p className="text-[12px] text-red-600">{p.error}</p>
         );
       })()}
       {draft.gstin.length === 15 && parseGstin(draft.gstin).ok && (
-        <button type="button" onClick={onFetch} disabled={looking} className="text-[12px] text-teal-600 hover:underline disabled:opacity-50">
+        <button type="button" onClick={onFetch} disabled={looking} className="text-[13px] text-teal-600 hover:underline disabled:opacity-50">
           {looking ? "Fetching…" : "Fetch name & address online"}
         </button>
       )}
       {lookup && (
-        <div className="rounded-md border border-teal-200 bg-teal-50 dark:bg-teal-950/20 dark:border-teal-900 p-2.5 text-[12px] space-y-0.5">
+        <div className="rounded-md border border-teal-200 bg-teal-50 dark:bg-teal-950/20 dark:border-teal-900 p-2.5 text-[13px] space-y-0.5">
           <div className="font-medium text-slate-800 dark:text-slate-100">{lookup.legalName ?? "—"}</div>
           {lookup.tradeName && lookup.tradeName !== lookup.legalName && <div className="text-slate-500">Trade name: {lookup.tradeName}</div>}
           {lookup.status && <div className="text-slate-500">Status: {lookup.status}</div>}
           <div className="text-slate-600 dark:text-slate-300">{lookup.address ?? "No address returned"}</div>
-          <button type="button" onClick={onUseLookup} className="mt-1 rounded-md bg-teal-600 text-white text-[12px] px-2 py-1">
+          <button type="button" onClick={onUseLookup} className="mt-1 rounded-md bg-teal-600 text-white text-[13px] px-2 py-1">
             Looks right, use this
           </button>
         </div>
@@ -288,27 +288,27 @@ function RegistrationForm({
         value={draft.contact_phone}
         onChange={(e) => setDraft({ ...draft, contact_phone: e.target.value })}
         placeholder="Contact phone (optional)"
-        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-slate-500"
       />
       <input
         value={draft.billing_email}
         onChange={(e) => setDraft({ ...draft, billing_email: e.target.value })}
         placeholder="Billing email for invoices (optional)"
-        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-slate-500"
       />
       <textarea
         value={draft.billing_address}
         onChange={(e) => setDraft({ ...draft, billing_address: e.target.value })}
         placeholder="Billing address"
         rows={2}
-        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] outline-none focus:ring-2 focus:ring-slate-500"
+        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-[13px] outline-none focus:ring-2 focus:ring-slate-500"
       />
       {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
-        <button onClick={onSave} disabled={saving} className="rounded-md bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-[12px] font-medium px-2.5 py-1.5">
+        <button onClick={onSave} disabled={saving} className="rounded-md bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-[13px] font-medium px-2.5 py-1.5">
           {saving ? "Saving…" : "Save"}
         </button>
-        <button onClick={onCancel} className="rounded-md border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[12px] font-medium px-2.5 py-1.5">
+        <button onClick={onCancel} className="rounded-md border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-[13px] font-medium px-2.5 py-1.5">
           Cancel
         </button>
       </div>

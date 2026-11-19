@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm bg-white border border-slate-200 rounded-xl shadow-sm p-8">
         <div className="mb-6">
-          <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">StaffAnchor</p>
+          <p className="text-xs font-medium tracking-wide text-blue-600 uppercase">StaffAnchor</p>
           <h1 className="text-xl font-semibold text-slate-900 mt-1">Set a new password</h1>
           <p className="text-sm text-slate-500 mt-1">Choose a new password for your account.</p>
         </div>

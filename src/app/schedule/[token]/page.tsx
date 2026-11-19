@@ -57,7 +57,7 @@ export default async function ScheduleInterviewPage({
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-xl mx-auto px-6 py-6">
-          <p className="text-xs font-semibold tracking-wide text-blue-600 uppercase">StaffAnchor Talent Solutions</p>
+          <p className="text-xs font-medium tracking-wide text-blue-600 uppercase">StaffAnchor Talent Solutions</p>
           <h1 className="text-xl font-semibold text-slate-900 mt-1">
             Schedule your interview — {role_title}
           </h1>

@@ -38,18 +38,18 @@ export default function LazyCvPreview({ candidateId, name, variant = "compact" }
         type="button"
         onClick={open}
         disabled={state === "loading"}
-        className={variant === "card" ? "inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-teal-600 bg-white text-[13px] font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-60 dark:bg-transparent dark:text-teal-300" : "inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/30 dark:text-teal-300"}
+        className={variant === "card" ? "inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-teal-600 bg-white text-[14px] font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-60 dark:bg-transparent dark:text-teal-300" : "inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700 hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/30 dark:text-teal-300"}
       >
         {state === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} {variant === "card" ? "Preview" : "Preview CV"}
       </button>
-      {error && <p className="text-[11px] text-amber-700 dark:text-amber-400">{error}</p>}
+      {error && <p className="text-[12px] text-amber-700 dark:text-amber-400">{error}</p>}
       {state === "open" && file && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-6" onClick={() => setState("idle")}>
           <div className="flex h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-ros-lg bg-white shadow-ros-md dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-              <p className="truncate pr-4 text-[13px] font-medium text-slate-800 dark:text-slate-200">{name ? `${name} · ` : ""}{file.fileName}</p>
+              <p className="truncate pr-4 text-[14px] font-medium text-slate-800 dark:text-slate-200">{name ? `${name} · ` : ""}{file.fileName}</p>
               <div className="flex shrink-0 items-center gap-2">
-                <a href={file.url} download={file.fileName} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 text-[12px] text-slate-600 hover:text-slate-900 dark:text-slate-400">
+                <a href={file.url} download={file.fileName} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 text-[13px] text-slate-600 hover:text-slate-900 dark:text-slate-400">
                   <Download className="h-3.5 w-3.5" /> Download
                 </a>
                 <button type="button" onClick={() => setState("idle")} aria-label="Close" className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">

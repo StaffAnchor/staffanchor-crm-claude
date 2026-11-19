@@ -44,10 +44,10 @@ export default function ClientReplies({ items, unseen }: { items: ClientReply[];
     <section className={`${card} mb-6`}>
       <header className="flex flex-wrap items-start justify-between gap-2 px-4 pt-4 pb-3">
         <div>
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Client replies{unseen ? ` (${unseen} new)` : ""}</h2>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">What employers did in the client portal in the last 14 days.</p>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Client replies{unseen ? ` (${unseen} new)` : ""}</h2>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">What employers did in the client portal in the last 14 days.</p>
         </div>
-        <div className="flex items-center gap-3 text-[13px]">
+        <div className="flex items-center gap-3 text-[14px]">
           {logins.length > 0 && (
             <button type="button" onClick={() => setShowLogins((v) => !v)} className="text-slate-500 hover:underline">
               {showLogins ? "Hide sign-ins" : `Show sign-ins (${logins.length})`}
@@ -62,7 +62,7 @@ export default function ClientReplies({ items, unseen }: { items: ClientReply[];
         </div>
       </header>
       {shown.length === 0 ? (
-        <p className="border-t border-slate-100 px-4 py-5 text-[14px] text-slate-600 dark:border-slate-800 dark:text-slate-300">No employer activity yet.</p>
+        <p className="border-t border-slate-100 px-4 py-5 text-[15px] text-slate-600 dark:border-slate-800 dark:text-slate-300">No employer activity yet.</p>
       ) : (
         <ul>
           {shown.map((r) => {
@@ -76,7 +76,7 @@ export default function ClientReplies({ items, unseen }: { items: ClientReply[];
                     <Icon className="h-4 w-4" aria-hidden />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-medium text-slate-900 dark:text-slate-100">
+                    <p className="truncate text-[15px] font-medium text-slate-900 dark:text-slate-100">
                       {r.kind === "login" ? (
                         <>
                           {subject} <span className="font-normal text-slate-500 dark:text-slate-400">{k.verb}{r.client ? ` · ${r.client}` : ""}</span>
@@ -87,12 +87,12 @@ export default function ClientReplies({ items, unseen }: { items: ClientReply[];
                         </>
                       )}
                     </p>
-                    <p className="truncate text-[12px] text-slate-500 dark:text-slate-400">
+                    <p className="truncate text-[13px] text-slate-500 dark:text-slate-400">
                       {[r.kind === "login" ? null : r.role, r.kind === "login" ? null : r.who, r.extra].filter(Boolean).join(" · ") || (r.kind === "login" ? "Client portal" : "")}
                     </p>
                   </div>
                   {r.unseen && <span className="h-2 w-2 shrink-0 rounded-full bg-teal-500" aria-label="New" />}
-                  <span className="shrink-0 text-[12px] text-slate-400">{ago(r.at)}</span>
+                  <span className="shrink-0 text-[13px] text-slate-400">{ago(r.at)}</span>
                   <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
                 </Link>
               </li>

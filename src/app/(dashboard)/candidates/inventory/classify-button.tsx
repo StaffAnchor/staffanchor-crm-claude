@@ -63,19 +63,19 @@ export default function ClassifyButton({
 
   return (
     <div className="flex items-center gap-2">
-      {msg && <span className="text-[12px] text-slate-500">{msg}</span>}
+      {msg && <span className="text-[13px] text-slate-500">{msg}</span>}
       <button
         type="button"
         onClick={() => run("missing")}
         disabled={busy || waiting === 0}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
         title={title}
       >
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
         {busy ? "Working…" : waiting == null ? `${verb} with AI` : waiting === 0 ? "All done" : `${verb} ${waiting} with AI`}
       </button>
       {allowRecheck && !busy && waiting === 0 && (
-        <button type="button" onClick={() => run("all")} className="text-[12px] font-medium text-teal-600 hover:underline" title="Have the AI re-read everyone, replacing the keyword guesses">
+        <button type="button" onClick={() => run("all")} className="text-[13px] font-medium text-teal-600 hover:underline" title="Have the AI re-read everyone, replacing the keyword guesses">
           Re-check everyone
         </button>
       )}

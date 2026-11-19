@@ -97,7 +97,7 @@ export function RatingPicker({
   const reasons = draft.rating === "weak" ? WEAK_REASONS : draft.rating === "strong" ? STRONG_REASONS : [];
   const pick = (r: ProfileRating | null) => onChange({ rating: r, reasons: [], note: draft.note });
   const btn = (active: boolean, tone: string) =>
-    `rounded-lg border px-2.5 py-1.5 text-[12px] font-medium ${active ? tone : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"}`;
+    `rounded-lg border px-2.5 py-1.5 text-[13px] font-medium ${active ? tone : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"}`;
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
@@ -133,7 +133,7 @@ export function RatingPicker({
           value={draft.note}
           onChange={(e) => onChange({ ...draft, note: e.target.value })}
           placeholder="Note (optional)"
-          className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12.5px] dark:border-slate-700 dark:bg-slate-900"
+          className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] dark:border-slate-700 dark:bg-slate-900"
         />
       )}
     </div>
@@ -195,7 +195,7 @@ export function ProfileRatingPanel({ candidateId }: { candidateId: string }) {
   return (
     <div className="mt-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
           <span className="font-medium text-slate-700 dark:text-slate-200">CV quality</span>
           {row ? (
             <>
@@ -214,7 +214,7 @@ export function ProfileRatingPanel({ candidateId }: { candidateId: string }) {
               setDraft(row ? { rating: row.rating, reasons: row.reasons, note: row.note ?? "" } : emptyDraft);
               setEditing(true);
             }}
-            className="text-[12px] font-medium text-teal-600 hover:underline"
+            className="text-[13px] font-medium text-teal-600 hover:underline"
           >
             {row ? "Change" : "Mark this CV"}
           </button>
@@ -224,19 +224,19 @@ export function ProfileRatingPanel({ candidateId }: { candidateId: string }) {
         <div className="mt-2 space-y-2">
           <RatingPicker draft={draft} onChange={setDraft} averageLabel="Not marked" />
           <div className="flex items-center gap-2">
-            <button disabled={busy || !draft.rating} onClick={save} className="rounded-lg bg-slate-900 px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
+            <button disabled={busy || !draft.rating} onClick={save} className="rounded-lg bg-slate-900 px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
               Save
             </button>
-            <button onClick={() => setEditing(false)} className="text-[12px] text-slate-500 hover:text-slate-700">
+            <button onClick={() => setEditing(false)} className="text-[13px] text-slate-500 hover:text-slate-700">
               Cancel
             </button>
             {row && (
-              <button disabled={busy} onClick={clear} className="ml-auto text-[12px] text-rose-600 hover:underline">
+              <button disabled={busy} onClick={clear} className="ml-auto text-[13px] text-rose-600 hover:underline">
                 Clear mark
               </button>
             )}
           </div>
-          {error && <p className="text-[12px] text-rose-600">{error}</p>}
+          {error && <p className="text-[13px] text-rose-600">{error}</p>}
         </div>
       )}
     </div>

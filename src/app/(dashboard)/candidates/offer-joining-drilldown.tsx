@@ -63,7 +63,7 @@ export default function OfferJoiningDrilldown({
             disabled={isZero}
             onClick={() => setOpen(t.key)}
             className={[
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all duration-200 ease-ros",
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-all duration-200 ease-ros",
               TILE_TONE_CLASSES[t.tone],
               isZero ? "opacity-60 cursor-default" : "hover:-translate-y-px hover:opacity-100 active:translate-y-0 active:scale-[0.98] cursor-pointer hover:shadow-ros-sm",
             ].join(" ")}
@@ -78,7 +78,7 @@ export default function OfferJoiningDrilldown({
         {activeTile && (
           <div className="max-h-[60vh] overflow-y-auto">
             {activeTile.rows.length === 0 ? (
-              <p className="text-[13px] text-slate-400">No candidates in this bucket.</p>
+              <p className="text-[14px] text-slate-400">No candidates in this bucket.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">

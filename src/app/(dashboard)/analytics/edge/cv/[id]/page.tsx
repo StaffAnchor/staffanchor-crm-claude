@@ -20,9 +20,9 @@ function nowMs() {
 function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-      <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+      <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
       {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
-      <div className="mt-3 space-y-3 text-[13px]">{children}</div>
+      <div className="mt-3 space-y-3 text-[14px]">{children}</div>
     </section>
   );
 }
@@ -42,10 +42,10 @@ function JobView({ j, n }: { j: Job; n: number }) {
   return (
     <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{j.title || "Role not given"}{j.employer ? `, ${j.employer}` : ""}</p>
+        <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{j.title || "Role not given"}{j.employer ? `, ${j.employer}` : ""}</p>
         <p className="text-xs text-slate-500">{jobPeriod(j) || "Dates not given"}{j.city ? ` · ${j.city}` : ""}{n === 0 ? " · latest" : ""}{j.fromCv ? " · read from CV" : ""}</p>
       </div>
-      <p className="mt-2 flex flex-wrap gap-1.5 text-[11.5px] font-semibold">
+      <p className="mt-2 flex flex-wrap gap-1.5 text-[12px] font-semibold">
         {items.map((k) => <span key={k.id} className={`rounded-full px-2 py-0.5 ${k.done ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-200"}`}>{k.done ? "✓" : "Missing:"} {k.label}</span>)}
       </p>
       <dl className="mt-3 space-y-2">
@@ -119,7 +119,7 @@ function JobView({ j, n }: { j: Job; n: number }) {
           <Row key={w.id} k={`Achievement ${i + 1}${w.type ? ` (${w.type})` : ""}`} v={[w.text, w.result && `Result: ${w.result}`].filter(Boolean).join("\n")} />
         ))}
         <Row k="Promotions" v={j.promoted} />
-        <Row k="How it reads" v={<span className="block rounded-lg bg-slate-50 p-3 text-[12.5px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">{describeJob(j, n < 2).lines.filter((l) => !l.ghost).map((l) => l.text).join(" ")}</span>} />
+        <Row k="How it reads" v={<span className="block rounded-lg bg-slate-50 p-3 text-[13px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">{describeJob(j, n < 2).lines.filter((l) => !l.ghost).map((l) => l.text).join(" ")}</span>} />
         <Row k="Anything else" v={j.extra} />
       </dl>
     </div>
@@ -161,7 +161,7 @@ export default async function CvBriefPage({ params }: { params: Promise<{ id: st
       <Link href="/analytics/edge" className="text-xs text-teal-700 hover:underline dark:text-teal-400">← StaffAnchor Edge</Link>
       <div>
         <h1 className="ros-page-title">{b.name}: Sales CV form</h1>
-        <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-slate-500">
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-[14px] text-slate-500">
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span>
           {st.nudge && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-200">Time for a nudge</span>}
           <span>{progress(d)}% of the key details are in</span>

@@ -35,7 +35,7 @@ export default function RolesBoard({ roles }: { roles: RoleCardData[] }) {
     });
   }, [roles, query, category, place, sort]);
 
-  const select = "rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200";
+  const select = "rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200";
 
   return (
     <div>
@@ -46,7 +46,7 @@ export default function RolesBoard({ roles }: { roles: RoleCardData[] }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search roles, skills or city"
-            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-slate-200"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-slate-200"
           />
         </div>
         {categories.length > 1 && (
@@ -76,12 +76,12 @@ export default function RolesBoard({ roles }: { roles: RoleCardData[] }) {
         </select>
       </div>
 
-      <p className="mt-3 text-[12px] text-slate-400">
+      <p className="mt-3 text-[13px] text-slate-400">
         Showing {shown.length} of {roles.length} open role{roles.length === 1 ? "" : "s"}
       </p>
 
       {shown.length === 0 ? (
-        <p className="mt-10 text-center text-[13px] text-slate-400">No roles match those filters.</p>
+        <p className="mt-10 text-center text-[14px] text-slate-400">No roles match those filters.</p>
       ) : (
         <div className="mt-4 grid gap-4">
           {shown.map((r) => (

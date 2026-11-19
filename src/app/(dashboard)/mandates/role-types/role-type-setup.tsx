@@ -9,7 +9,7 @@ import { suggestFromTitle } from "@/lib/role-type";
 
 export type SetupRole = { id: string; title: string; client: string; city: string; cluster: string; level: string; pipeline: number };
 
-const sel = "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[13px] text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
+const sel = "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[14px] text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 
 export default function RoleTypeSetup({ roles }: { roles: SetupRole[] }) {
   const router = useRouter();
@@ -62,13 +62,13 @@ export default function RoleTypeSetup({ roles }: { roles: SetupRole[] }) {
   return (
     <div className="mt-5">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={useSuggestions} className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+        <button type="button" onClick={useSuggestions} className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
           Fill in my suggestions
         </button>
-        <button type="button" onClick={saveAll} disabled={readyCount === 0 || !!busy} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
+        <button type="button" onClick={saveAll} disabled={readyCount === 0 || !!busy} className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
           {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Save {readyCount} {readyCount === 1 ? "role" : "roles"}
         </button>
-        <span className="text-[12.5px] text-slate-500">{stillOpen} of {roles.length} still need a type. Suggestions only fill empty boxes; nothing is saved until you press Save.</span>
+        <span className="text-[13px] text-slate-500">{stillOpen} of {roles.length} still need a type. Suggestions only fill empty boxes; nothing is saved until you press Save.</span>
       </div>
       <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-700 dark:bg-slate-900">
         {roles.map((r) => {
@@ -77,13 +77,13 @@ export default function RoleTypeSetup({ roles }: { roles: SetupRole[] }) {
           return (
             <li key={r.id} className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center ${done ? "bg-emerald-50/50 dark:bg-emerald-950/10" : ""}`}>
               <div className="min-w-0">
-                <Link href={`/mandates/${r.id}`} target="_blank" rel="noopener noreferrer" className="block truncate text-[14px] font-medium text-slate-900 hover:text-teal-700 dark:text-slate-100">{r.title}</Link>
+                <Link href={`/mandates/${r.id}`} target="_blank" rel="noopener noreferrer" className="block truncate text-[15px] font-medium text-slate-900 hover:text-teal-700 dark:text-slate-100">{r.title}</Link>
                 <p className="truncate text-xs text-slate-500">{[r.client, r.city, r.pipeline > 0 ? `${r.pipeline} in the pipeline` : null].filter(Boolean).join(" · ")}</p>
-                {!hint.cluster && !done && <p className="text-[11.5px] text-amber-700">No suggestion from this title. Choose one.</p>}
+                {!hint.cluster && !done && <p className="text-[12px] text-amber-700">No suggestion from this title. Choose one.</p>}
               </div>
               <RoleTypeSelect value={vals[r.id]?.c ?? ""} onChange={(c) => setVals((v) => ({ ...v, [r.id]: { ...v[r.id], c } }))} clusters={clusters} className={sel} />
               <RoleLevelSelect value={vals[r.id]?.l ?? ""} onChange={(l) => setVals((v) => ({ ...v, [r.id]: { ...v[r.id], l } }))} className={sel} />
-              <div className="text-right text-[12.5px]">
+              <div className="text-right text-[13px]">
                 {done ? (
                   <span className="inline-flex items-center gap-1 font-medium text-emerald-700"><Check className="h-3.5 w-3.5" /> Saved</span>
                 ) : (

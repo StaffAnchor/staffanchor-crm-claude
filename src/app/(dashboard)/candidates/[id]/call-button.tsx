@@ -24,7 +24,7 @@ export default function CallButton({ candidateId, phone }: { candidateId: string
   }, [candidateId, phone]);
   if (!phone) return null;
   return (
-    <button type="button" onClick={() => void call()} className="inline-flex items-center gap-1.5 rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+    <button type="button" onClick={() => void call()} className="inline-flex items-center gap-1.5 rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
       <Phone className="h-3.5 w-3.5" /> Call
     </button>
   );

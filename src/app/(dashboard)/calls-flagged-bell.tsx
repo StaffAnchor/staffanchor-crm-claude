@@ -142,12 +142,12 @@ export default function CallsFlaggedBell() {
           className="ros-glass absolute right-0 mt-2 w-96 max-h-[28rem] overflow-y-auto rounded-ros-lg shadow-ros-xl border py-1 animate-fade-in z-40"
         >
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-            <p className="text-[12px] font-semibold text-slate-900 dark:text-slate-100">Calls flagged for me</p>
+            <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Calls flagged for me</p>
           </div>
           {!loaded ? (
-            <p className="px-3 py-6 text-center text-[12px] text-slate-400">Loading…</p>
+            <p className="px-3 py-6 text-center text-[13px] text-slate-400">Loading…</p>
           ) : calls.length === 0 ? (
-            <p className="px-3 py-6 text-center text-[12px] text-slate-400">Nothing flagged right now.</p>
+            <p className="px-3 py-6 text-center text-[13px] text-slate-400">Nothing flagged right now.</p>
           ) : (
             calls.map((c) => (
               <button
@@ -159,7 +159,7 @@ export default function CallsFlaggedBell() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                      <p className="text-[12.5px] font-medium text-slate-800 dark:text-slate-200 truncate">{c.candidate_name ?? "Candidate"}</p>
+                      <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">{c.candidate_name ?? "Candidate"}</p>
                       {c.link_stage && (
                         <span
                           className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9.5px] font-medium ${STAGE_COLOR[c.link_stage] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
@@ -168,7 +168,7 @@ export default function CallsFlaggedBell() {
                         </span>
                       )}
                       {roundLabel(c.call_round) && (
-                        <span className="shrink-0 text-[9.5px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
+                        <span className="shrink-0 text-[9.5px] font-medium uppercase tracking-wide text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 rounded-full px-1.5 py-0.5">
                           {roundLabel(c.call_round)}
                         </span>
                       )}
@@ -216,7 +216,7 @@ export default function CallsFlaggedBell() {
               setOpen(false);
               router.push("/calls-flagged");
             }}
-            className="block w-full text-center px-3 py-2.5 text-[12px] font-semibold text-white bg-teal-600 hover:bg-teal-500 border-t border-slate-100 dark:border-slate-800"
+            className="block w-full text-center px-3 py-2.5 text-[13px] font-semibold text-white bg-teal-600 hover:bg-teal-500 border-t border-slate-100 dark:border-slate-800"
           >
             View full list as a table →
           </button>

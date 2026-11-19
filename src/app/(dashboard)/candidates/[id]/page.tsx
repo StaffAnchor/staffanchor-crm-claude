@@ -586,20 +586,20 @@ export default async function CandidateDetailPage({
         <div className="space-y-5">
           {(applyVoice.length > 0 || waVoice.length > 0) && (
             <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 dark:border-teal-900 dark:bg-teal-950/30">
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> Voice notes</p>
+              <p className="flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-wide text-teal-800 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> Voice notes</p>
               <div className="mt-2 space-y-3">
                 {applyVoice.map((v, i) => (
                   <div key={`a${i}`}>
-                    <p className="text-[12px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400">
                       With an application{v.role ? ` for ${v.role}` : ""} · {new Date(v.at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}{v.seconds ? ` · ${v.seconds}s` : ""}
                     </p>
                     <audio controls preload="none" src={v.url} className="mt-1 h-10 w-full" />
-                    {v.transcript ? <p className="mt-1.5 text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">&ldquo;{v.transcript}&rdquo; <span className="text-[11px] text-slate-400">English text, translated if needed</span></p> : <p className="mt-1.5 text-[12px] text-slate-400">Written version still being prepared.</p>}
+                    {v.transcript ? <p className="mt-1.5 text-[14px] leading-relaxed text-slate-700 dark:text-slate-200">&ldquo;{v.transcript}&rdquo; <span className="text-[12px] text-slate-400">English text, translated if needed</span></p> : <p className="mt-1.5 text-[13px] text-slate-400">Written version still being prepared.</p>}
                   </div>
                 ))}
                 {waVoice.map((v) => (
                   <div key={v.id}>
-                    <p className="text-[12px] text-slate-500 dark:text-slate-400">Sent on WhatsApp · {new Date(v.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400">Sent on WhatsApp · {new Date(v.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
                     <audio controls preload="none" src={`/api/whatsapp/media?id=${v.id}`} className="mt-1 h-10 w-full" />
                   </div>
                 ))}
@@ -617,10 +617,10 @@ export default async function CandidateDetailPage({
             employer={candidate.current_employer}
           />
           <details className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 [&::-webkit-details-marker]:hidden">
               <span>Detailed analysis <span className="font-normal text-slate-500">· fit, stability, strengths and concerns (internal)</span></span>
-              <span className="text-[12px] font-normal text-teal-700 group-open:hidden">Show</span>
-              <span className="hidden text-[12px] font-normal text-teal-700 group-open:inline">Hide</span>
+              <span className="text-[13px] font-normal text-teal-700 group-open:hidden">Show</span>
+              <span className="hidden text-[13px] font-normal text-teal-700 group-open:inline">Hide</span>
             </summary>
             <div className="mt-3">
           <AiSummaryPanel
@@ -636,7 +636,7 @@ export default async function CandidateDetailPage({
           </details>
           {candidate.skills && !candidate.skill_inventory && (
             <div>
-              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
+              <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-2">Skills</h3>
               <div className="flex flex-wrap gap-1.5">
                 {candidate.skills.split(",").map((s: string) => s.trim()).filter(Boolean).map((skill: string) => (
                   <Badge key={skill} tone="accent" size="sm" className="normal-case tracking-normal">
@@ -648,19 +648,19 @@ export default async function CandidateDetailPage({
           )}
           {segmentEntries.length > 0 && (
             <details className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px] font-semibold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100 [&::-webkit-details-marker]:hidden">
                 <span>Sales profile <span className="font-normal text-slate-500">· {segmentEntries.length} details from the CV and calls</span></span>
-                <span className="text-[12px] font-normal text-teal-700 group-open:hidden">Show</span>
-                <span className="hidden text-[12px] font-normal text-teal-700 group-open:inline">Hide</span>
+                <span className="text-[13px] font-normal text-teal-700 group-open:hidden">Show</span>
+                <span className="hidden text-[13px] font-normal text-teal-700 group-open:inline">Hide</span>
               </summary>
               <div className="mt-3">
               <h3 className="sr-only">Sales profile</h3>
-              {callConfirmed?.at && <p className="mb-2 text-[12px] text-emerald-700 dark:text-emerald-300">Confirmed on a call {new Date(callConfirmed.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}{callConfirmed.by ? ` by ${callConfirmed.by}` : ""}.</p>}
+              {callConfirmed?.at && <p className="mb-2 text-[13px] text-emerald-700 dark:text-emerald-300">Confirmed on a call {new Date(callConfirmed.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}{callConfirmed.by ? ` by ${callConfirmed.by}` : ""}.</p>}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 {segmentEntries.map(([k, v]) => (
                   <div key={k}>
                     <p className="text-xs text-slate-400">{humanize(k)}</p>
-                    <p className="text-[13px] text-slate-700 dark:text-slate-300">{formatValue(v)}</p>
+                    <p className="text-[14px] text-slate-700 dark:text-slate-300">{formatValue(v)}</p>
                   </div>
                 ))}
               </div>
@@ -669,12 +669,12 @@ export default async function CandidateDetailPage({
           )}
           {Object.keys(selfAssessment).length > 0 && (
             <div>
-              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 mb-2">In their own words</h3>
+              <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-2">In their own words</h3>
               <div className="space-y-3">
                 {Object.entries(selfAssessment).map(([k, v]) => (
                   <div key={k}>
                     <p className="text-xs font-medium text-slate-400 uppercase">{humanize(k)}</p>
-                    <p className="text-[13px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{String(v)}</p>
+                    <p className="text-[14px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{String(v)}</p>
                   </div>
                 ))}
               </div>
@@ -689,11 +689,11 @@ export default async function CandidateDetailPage({
       tone: "violet" as const,
       content: (
         <div className="space-y-6">
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-[13px] text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
             One place for a call, the same as Calls today: fill in what they tell you, rate how they came across, write a quick note, then pick the result. Everything lands on the profile.
           </p>
           <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">1. Record a call</h3>
+            <h3 className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">1. Record a call</h3>
             <ProfileCallSection
               roleCluster={callRoleCluster}
               person={{
@@ -724,7 +724,7 @@ export default async function CandidateDetailPage({
           <CallTranscriptPanel candidateId={candidate.id} />
           <RoleInterestList candidateId={candidate.id} />
           <details className="rounded-ros-lg border border-slate-200 p-4 dark:border-slate-700" open={!!recommendation}>
-            <summary className="cursor-pointer text-[13px] font-semibold text-slate-900 dark:text-slate-100">
+            <summary className="cursor-pointer text-[14px] font-semibold text-slate-900 dark:text-slate-100">
               2. Scorecard <span className="font-normal text-slate-500">(optional, internal only)</span>
               {recommendation ? <span className="ml-2"><Badge tone={RECOMMENDATION_TONE[recommendation] ?? "neutral"} size="sm">{recommendation}</Badge></span> : null}
             </summary>
@@ -744,7 +744,7 @@ export default async function CandidateDetailPage({
             </div>
           </details>
           <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Notes</h3>
+            <h3 className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">Notes</h3>
             <NotesPanel candidateId={candidate.id} notes={notes ?? []} />
           </section>
         </div>
@@ -757,7 +757,7 @@ export default async function CandidateDetailPage({
       content: (
         <div className="space-y-6">
           <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">On these roles</h3>
+            <h3 className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">On these roles</h3>
             <MandateLinksPanel
               candidateId={candidate.id}
               candidateName={candidate.full_name}
@@ -767,11 +767,11 @@ export default async function CandidateDetailPage({
             />
           </section>
           <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Roles that could fit</h3>
+            <h3 className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">Roles that could fit</h3>
             <SuggestedRolesPanel candidateId={candidate.id} hasCv={!!candidate.resume_file_url} />
           </section>
           <section>
-            <h3 className="mb-1 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Other open roles in their practice</h3>
+            <h3 className="mb-1 text-[14px] font-semibold text-slate-900 dark:text-slate-100">Other open roles in their practice</h3>
             <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">Based on their practice tags (Overview tab).</p>
             <PracticeMatchesPanel
               candidateId={candidate.id}
@@ -820,7 +820,7 @@ export default async function CandidateDetailPage({
         <div className="space-y-6">
           <Timeline events={timelineEvents} />
           <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Contact attempts</h3>
+            <h3 className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">Contact attempts</h3>
             <ActivityLogPanel candidateId={candidate.id} activities={activities} />
           </section>
         </div>
@@ -831,11 +831,11 @@ export default async function CandidateDetailPage({
   return (
     <div className="max-w-[1180px] mx-auto px-5 py-8">
       <div className="flex items-center justify-between">
-        <Link href={backHref} className="text-[12px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
+        <Link href={backHref} className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors duration-200 ease-ros">
           {backLabel}
         </Link>
         {listPosition && (
-          <div className="flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1 text-[13px] text-slate-500 dark:text-slate-400">
             <span className="tabular-nums mr-1">
               {listPosition.index} of {listPosition.total}
             </span>
@@ -872,22 +872,22 @@ export default async function CandidateDetailPage({
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
                   {((voiceNoteRows ?? []).length > 0 || (waVoiceRows ?? []).length > 0) && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Sent a voice note (on WhatsApp or with an application). It plays in the Overview tab.">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[13px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Sent a voice note (on WhatsApp or with an application). It plays in the Overview tab.">
                       <Mic className="h-3.5 w-3.5" /> Voice note
                     </span>
                   )}
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12.5px] font-medium ring-1 ${VERDICT_TONE[next.verdict]}`} title={next.reason}>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[13px] font-medium ring-1 ${VERDICT_TONE[next.verdict]}`} title={next.reason}>
                     {next.verdict === "ready" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
                     {next.verdictLabel}
                   </span>
-                  {candidate.stability_score != null && (() => { const n = Math.round(Number(candidate.stability_score)); const r = n >= 70 ? { w: "Stable", c: "bg-emerald-50 text-emerald-700 ring-emerald-200" } : n >= 50 ? { w: "Some job hopping", c: "bg-amber-50 text-amber-800 ring-amber-200" } : { w: "Frequent job changes", c: "bg-rose-50 text-rose-700 ring-rose-200" }; return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12.5px] font-medium ring-1 ${r.c}`} title="Out of 100, read from how long they stayed in each job">Stability {n}/100 · {r.w}</span>; })()}
+                  {candidate.stability_score != null && (() => { const n = Math.round(Number(candidate.stability_score)); const r = n >= 70 ? { w: "Stable", c: "bg-emerald-50 text-emerald-700 ring-emerald-200" } : n >= 50 ? { w: "Some job hopping", c: "bg-amber-50 text-amber-800 ring-amber-200" } : { w: "Frequent job changes", c: "bg-rose-50 text-rose-700 ring-rose-200" }; return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[13px] font-medium ring-1 ${r.c}`} title="Out of 100, read from how long they stayed in each job">Stability {n}/100 · {r.w}</span>; })()}
                 </div>
-                <p className="text-[14px] text-slate-600 dark:text-slate-300 mt-0.5">
+                <p className="text-[15px] text-slate-600 dark:text-slate-300 mt-0.5">
                   {candidate.current_job_title}
                   {candidate.current_employer ? ` at ${candidate.current_employer}` : ""}
                   {candidate.current_location ? ` · ${candidate.current_location}` : ""}
                 </p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
+                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-slate-500 dark:text-slate-400">
                   {!/\.invalid$/i.test(candidate.email ?? "") && candidate.email ? (
                     <span className="inline-flex items-center gap-1">
                       {candidate.email}
@@ -904,7 +904,7 @@ export default async function CandidateDetailPage({
                   )}
                   {Array.isArray(candidate.alt_phones) && candidate.alt_phones.length > 0 && <span>alt {candidate.alt_phones.join(", ")}</span>}
                 </div>
-                <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[12px] text-slate-400">
+                <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[13px] text-slate-400">
                   <span>{detailsDone} of {detailsTotal} key details filled</span>
                   <span>{lastContactDays == null ? "No contact logged yet" : lastContactDays === 0 ? "Last contact today" : `Last contact ${lastContactDays}d ago`}</span>
                 </p>
@@ -931,7 +931,7 @@ export default async function CandidateDetailPage({
               ]}
             />
             <FactTile label="Best matching role" icon={<Target className="h-4 w-4" />} tone="teal">
-              <p className="mt-0.5 text-[16px] font-semibold leading-5 text-slate-900 dark:text-slate-100" title={fit ? `${fit.clientName ? fit.clientName + ": " : ""}${fit.why}` : bestMatch ?? undefined}>{bestMatchText ?? <span className="text-[14px] font-normal text-slate-400">Not checked against roles yet</span>}</p>
+              <p className="mt-0.5 text-[16px] font-semibold leading-5 text-slate-900 dark:text-slate-100" title={fit ? `${fit.clientName ? fit.clientName + ": " : ""}${fit.why}` : bestMatch ?? undefined}>{bestMatchText ?? <span className="text-[15px] font-normal text-slate-400">Not checked against roles yet</span>}</p>
               {!bestMatch && <CheckRolesButton candidateId={candidate.id} />}
             </FactTile>
           </div>
@@ -965,7 +965,7 @@ export default async function CandidateDetailPage({
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <SendInviteButton candidateId={candidate.id} />
-                        <span className="text-[12px] text-slate-500">Emails them a link to complete their own profile.</span>
+                        <span className="text-[13px] text-slate-500">Emails them a link to complete their own profile.</span>
                       </div>
                       <SendRole candidateId={candidate.id} candidateName={candidate.full_name} email={candidate.email} roles={(openMandates ?? []) as never} channel="email" inline />
                     </div>
@@ -981,7 +981,7 @@ export default async function CandidateDetailPage({
               label={
                 <div className="space-y-5">
                   <div>
-                    <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">Category</h3>
+                    <h3 className="mb-2 text-[14px] font-semibold text-slate-900 dark:text-slate-100">Category</h3>
                     <ProfileGroupControl
                       candidateId={candidate.id}
                       group={candidate.profile_group ?? null}
@@ -993,7 +993,7 @@ export default async function CandidateDetailPage({
                     />
                   </div>
                   <div>
-                    <h3 className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">Role and quality</h3>
+                    <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Role and quality</h3>
                     <div className="-mx-4 mt-1">
                       <CvActionsBar candidateId={candidate.id} showCategory={false} />
                     </div>
@@ -1005,22 +1005,22 @@ export default async function CandidateDetailPage({
               {resumeSignedUrl && resumeFileName && <ResumePreview signedUrl={resumeSignedUrl} fileName={resumeFileName} label="CV" candidateId={candidate.id} />}
               <AddToRoleButton candidateId={candidate.id} candidateName={candidate.full_name} roles={(openMandates ?? []) as never} linkedIds={Array.from(alreadyLinkedMandateIds) as string[]} />
               <details className="relative">
-                <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 [&::-webkit-details-marker]:hidden">More <span aria-hidden className="text-[10px] opacity-60">▾</span></summary>
+                <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 [&::-webkit-details-marker]:hidden">More <span aria-hidden className="text-[10px] opacity-60">▾</span></summary>
                 <div className="absolute left-0 z-30 mt-2 flex w-64 flex-col items-stretch gap-2 rounded-ros-lg border border-slate-200 bg-white p-3 shadow-ros-xl dark:border-slate-700 dark:bg-slate-900">
                   <EditProfileButton candidate={candidate} resumeSignedUrl={resumeSignedUrl} resumeFileName={resumeFileName} />
                   <RecommendDialog candidateId={candidate.id} candidateName={candidate.full_name ?? "this candidate"} label="Recommend" />
-                  <div className="flex items-center justify-between gap-2 text-[12px] text-slate-500"><span>Status</span><StatusControl candidateId={candidate.id} currentStatus={candidate.status} /></div>
+                  <div className="flex items-center justify-between gap-2 text-[13px] text-slate-500"><span>Status</span><StatusControl candidateId={candidate.id} currentStatus={candidate.status} /></div>
                 </div>
               </details>
               {candidate.resume_file_url && !resumeSignedUrl && (
-                <span className="flex items-center gap-1.5 text-[12px] font-medium text-rose-600 bg-rose-50 rounded-ros-md px-3 py-1.5">
+                <span className="flex items-center gap-1.5 text-[13px] font-medium text-rose-600 bg-rose-50 rounded-ros-md px-3 py-1.5">
                   <FileText className="w-3 h-3" /> Resume file not found
                 </span>
               )}
             </ActionCenter>
             {topTier.isSales && (
               <details className="mt-3 rounded-ros-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
-                <summary className="cursor-pointer text-[13px] font-medium text-slate-600 dark:text-slate-300">Top-tier check <span className="font-normal text-slate-400">(experience, pay ratio, communication, open to work)</span></summary>
+                <summary className="cursor-pointer text-[14px] font-medium text-slate-600 dark:text-slate-300">Top-tier check <span className="font-normal text-slate-400">(experience, pay ratio, communication, open to work)</span></summary>
                 <div className="mt-2"><TopTierStatus candidateId={candidate.id} data={topTier} /></div>
               </details>
             )}
@@ -1030,12 +1030,12 @@ export default async function CandidateDetailPage({
 
       {/* 3. What to do next, and why it matters */}
       <Card className="mt-4">
-        <h2 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">To do{todos.length ? ` (${todos.length})` : ""}</h2>
+        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">To do{todos.length ? ` (${todos.length})` : ""}</h2>
         {todos.length === 0 ? (
           onePagerPending ? (
-            <p className="mt-2 text-[13px] text-amber-800 dark:text-amber-300">Details are complete. One step left: read the client one-pager on the Overview tab and approve it, so clients can see this profile.</p>
+            <p className="mt-2 text-[14px] text-amber-800 dark:text-amber-300">Details are complete. One step left: read the client one-pager on the Overview tab and approve it, so clients can see this profile.</p>
           ) : (
-            <p className="mt-2 text-[13px] text-emerald-700 dark:text-emerald-300">Nothing pending. This profile is ready to put forward.</p>
+            <p className="mt-2 text-[14px] text-emerald-700 dark:text-emerald-300">Nothing pending. This profile is ready to put forward.</p>
           )
         ) : (
           <TodoList todos={todos} />
@@ -1047,7 +1047,7 @@ export default async function CandidateDetailPage({
         <Tabs tabs={tabs} />
       </Card>
 
-      <div className="mt-6 flex items-center justify-between gap-3 text-[12px] text-slate-400">
+      <div className="mt-6 flex items-center justify-between gap-3 text-[13px] text-slate-400">
         <span>
           {candidate.candidate_number != null ? `C-${String(candidate.candidate_number).padStart(6, "0")} · ` : ""}Registered {candidate.created_at ? formatDateIST(candidate.created_at) : "—"}
           {candidate.acquisition_source ? ` · from ${[candidate.acquisition_source, candidate.acquisition_campaign].filter(Boolean).join(" · ")}` : ""}

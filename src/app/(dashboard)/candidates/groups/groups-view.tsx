@@ -89,7 +89,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
         <button
           type="button"
           onClick={() => setCreating(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[13px] font-medium px-3.5 py-2 shadow-sm transition-all duration-200 ease-ros"
+          className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[14px] font-medium px-3.5 py-2 shadow-sm transition-all duration-200 ease-ros"
         >
           <Plus className="w-3.5 h-3.5" /> New group
         </button>
@@ -100,21 +100,21 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Group name (e.g. B2B AEs shortlisted for DDP)"
-            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[14px]"
           />
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description (optional)"
-            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[12.5px]"
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
           />
-          {error && <p className="text-[12px] text-rose-600">{error}</p>}
+          {error && <p className="text-[13px] text-rose-600">{error}</p>}
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleCreate}
               disabled={!name.trim() || busy}
-              className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-[12.5px] font-medium px-3 py-1.5"
+              className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-[13px] font-medium px-3 py-1.5"
             >
               {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
               Create
@@ -125,7 +125,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
                 setCreating(false);
                 setError(null);
               }}
-              className="text-[12.5px] font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5"
+              className="text-[13px] font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5"
             >
               Cancel
             </button>
@@ -140,7 +140,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
       {groups.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-8 text-center">
           <Users className="w-6 h-6 text-slate-300 mx-auto mb-2" />
-          <p className="text-[13px] text-slate-500">No saved groups yet.</p>
+          <p className="text-[14px] text-slate-500">No saved groups yet.</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg shadow-ros-sm divide-y divide-slate-100 dark:divide-slate-800">
@@ -155,7 +155,7 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
                     if (e.key === "Enter") handleRename(g.id);
                     if (e.key === "Escape") setRenamingId(null);
                   }}
-                  className="flex-1 min-w-0 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px]"
+                  className="flex-1 min-w-0 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[14px]"
                 />
                 <button
                   type="button"
@@ -178,10 +178,10 @@ export default function GroupsView({ groups }: { groups: GroupRow[] }) {
             ) : (
               <div key={g.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <Link href={`/candidates/groups/${g.id}`} className="min-w-0 flex-1 group">
-                  <p className="text-[13.5px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-teal-600 truncate">
+                  <p className="text-[14px] font-medium text-slate-800 dark:text-slate-100 group-hover:text-teal-600 truncate">
                     {g.name} <span className="text-slate-400 font-normal">({g.count})</span>
                   </p>
-                  {g.description && <p className="text-[12px] text-slate-400 truncate">{g.description}</p>}
+                  {g.description && <p className="text-[13px] text-slate-400 truncate">{g.description}</p>}
                   <p className="text-xs text-slate-400 mt-0.5">
                     {g.createdByName ? `Created by ${g.createdByName} · ` : ""}
                     {new Date(g.createdAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}

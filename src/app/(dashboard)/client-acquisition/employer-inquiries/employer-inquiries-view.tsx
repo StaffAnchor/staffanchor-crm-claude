@@ -585,20 +585,20 @@ export default function EmployerInquiriesView({
     <div>
       {selected.size > 0 && (
         <div className="flex items-center justify-between gap-3 mb-3 rounded-ros-md border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-3 py-2">
-          <p className="text-[12.5px] font-medium text-rose-700 dark:text-rose-300">
+          <p className="text-[13px] font-medium text-rose-700 dark:text-rose-300">
             {selected.size} selected
           </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelected(new Set())}
-              className="text-[12px] font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              className="text-[13px] font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
             >
               Clear
             </button>
             <button
               onClick={deleteSelected}
               disabled={deleting}
-              className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
+              className="flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-ros-md bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
             >
               <Trash2 className="w-3 h-3" />
               {deleting ? "Deleting…" : "Delete permanently"}
@@ -619,7 +619,7 @@ export default function EmployerInquiriesView({
                 setActiveFilter("all");
                 setSelected(new Set());
               }}
-              className={`-mb-px border-b-2 px-3 py-2 text-[13px] font-medium transition-colors ${
+              className={`-mb-px border-b-2 px-3 py-2 text-[14px] font-medium transition-colors ${
                 active
                   ? "border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100"
                   : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
@@ -632,18 +632,18 @@ export default function EmployerInquiriesView({
       </div>
 
       {kindTab === "jobseeker" && (
-        <p className="mb-3 text-[12px] text-slate-500 dark:text-slate-400">
+        <p className="mb-3 text-[13px] text-slate-500 dark:text-slate-400">
           People who wrote in as jobseekers. Reply by email, then mark them as replied.
         </p>
       )}
       {kindTab === "spam" && (
-        <p className="mb-3 text-[12px] text-slate-500 dark:text-slate-400">
+        <p className="mb-3 text-[13px] text-slate-500 dark:text-slate-400">
           Caught automatically (marketing pitches, tests, blocked senders). If something here is real, use &ldquo;Not spam&rdquo;.
         </p>
       )}
 
       <div className="flex items-center gap-1.5 mb-3">
-        <label className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 mr-1 cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 mr-1 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filtered.length > 0 && filtered.every((r) => selected.has(r.id))}
@@ -656,7 +656,7 @@ export default function EmployerInquiriesView({
           <button
             key={f.key}
             onClick={() => setActiveFilter(f.key)}
-            className={`text-[12px] font-medium px-2.5 py-1 rounded-ros-full border transition-colors duration-200 ease-ros ${
+            className={`text-[13px] font-medium px-2.5 py-1 rounded-ros-full border transition-colors duration-200 ease-ros ${
               activeFilter === f.key
                 ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100"
                 : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
@@ -673,7 +673,7 @@ export default function EmployerInquiriesView({
           <button
             key={d.key}
             onClick={() => setDateRange(d.key)}
-            className={`text-[12px] font-medium px-2.5 py-1 rounded-ros-full border transition-colors duration-200 ease-ros ${
+            className={`text-[13px] font-medium px-2.5 py-1 rounded-ros-full border transition-colors duration-200 ease-ros ${
               dateRange === d.key
                 ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100"
                 : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300"
@@ -685,7 +685,7 @@ export default function EmployerInquiriesView({
         <select
           value={sourceFilter}
           onChange={(e) => setSourceFilter(e.target.value as InquirySource | "all")}
-          className="text-[12px] rounded-ros-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-slate-600 dark:text-slate-300"
+          className="text-[13px] rounded-ros-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-slate-600 dark:text-slate-300"
         >
           {SOURCE_FILTERS.map((f) => (
             <option key={f.key} value={f.key}>
@@ -699,7 +699,7 @@ export default function EmployerInquiriesView({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name, company, email, message"
-            className="w-64 rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 pl-7 pr-2 text-[12px]"
+            className="w-64 rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 pl-7 pr-2 text-[13px]"
           />
         </div>
       </div>
@@ -711,7 +711,7 @@ export default function EmployerInquiriesView({
             setActiveFilter("new");
             setDateRange("all");
           }}
-          className="mb-3 flex w-full items-center gap-2 rounded-ros-md border border-amber-200 bg-amber-50 px-3 py-2 text-left text-[12.5px] text-amber-800 hover:bg-amber-100"
+          className="mb-3 flex w-full items-center gap-2 rounded-ros-md border border-amber-200 bg-amber-50 px-3 py-2 text-left text-[13px] text-amber-800 hover:bg-amber-100"
         >
           <Clock className="h-3.5 w-3.5 shrink-0" />
           <span suppressHydrationWarning>
@@ -721,14 +721,14 @@ export default function EmployerInquiriesView({
       )}
 
       {error && !errorRowId && (
-        <p className="text-[12px] text-rose-600 dark:text-rose-400 mb-3">{error}</p>
+        <p className="text-[13px] text-rose-600 dark:text-rose-400 mb-3">{error}</p>
       )}
 
       <div className="space-y-5">
         {grouped.map(([key, items]) => (
           <section key={key}>
             <div className="sticky top-0 z-10 -mx-1 mb-2 flex items-baseline gap-2 bg-white/90 dark:bg-slate-950/90 px-1 py-1.5 backdrop-blur">
-              <h2 className="text-[12.5px] font-semibold text-slate-800 dark:text-slate-100" suppressHydrationWarning>{dayHeading(key, now)}</h2>
+              <h2 className="text-[13px] font-semibold text-slate-800 dark:text-slate-100" suppressHydrationWarning>{dayHeading(key, now)}</h2>
               <span className="text-xs text-slate-400">
                 {items.length} inquir{items.length === 1 ? "y" : "ies"}
               </span>
@@ -748,7 +748,7 @@ export default function EmployerInquiriesView({
                   />
                   <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {row.company_name ?? row.full_name}
                     </p>
                     <Badge tone={STATUS_TONE[row.status]} size="sm">
@@ -804,7 +804,7 @@ export default function EmployerInquiriesView({
 
                   {isMandate && (
                     <>
-                      <p className="text-[12.5px] text-slate-700 dark:text-slate-300 font-medium">
+                      <p className="text-[13px] text-slate-700 dark:text-slate-300 font-medium">
                         {row.role_title}
                         {row.category && (
                           <span className="text-slate-400 dark:text-slate-500 font-normal">
@@ -859,14 +859,14 @@ export default function EmployerInquiriesView({
                   )}
 
                   {row.company_name && (
-                    <p className="text-[12.5px] text-slate-600 dark:text-slate-400">
+                    <p className="text-[13px] text-slate-600 dark:text-slate-400">
                       {row.full_name}
                       {row.designation && <span className="text-slate-400 dark:text-slate-500"> · {row.designation}</span>}
                     </p>
                   )}
                   {row.message && (
                     <p
-                      className={`text-[12.5px] text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line ${
+                      className={`text-[13px] text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line ${
                         expandedIds.has(row.id) ? "" : "line-clamp-2"
                       }`}
                     >
@@ -957,7 +957,7 @@ export default function EmployerInquiriesView({
                   <select
                     value={row.status}
                     onChange={(e) => setStatus(row.id, e.target.value as InquiryStatus)}
-                    className="text-[12px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-teal-500/30"
+                    className="text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-teal-500/30"
                   >
                     <option value="new">New</option>
                     <option value="contacted">Contacted</option>
@@ -972,7 +972,7 @@ export default function EmployerInquiriesView({
                         value={row.owner_id ?? ""}
                         onChange={(e) => assignOwner(row.id, e.target.value)}
                         disabled={assigningId === row.id}
-                        className="text-[12px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-teal-500/30 disabled:opacity-50"
+                        className="text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 outline-none focus:ring-2 focus:ring-teal-500/30 disabled:opacity-50"
                       >
                         <option value="">Assign owner...</option>
                         {specialists.length > 0 && (
@@ -999,14 +999,14 @@ export default function EmployerInquiriesView({
                     <WhatsAppMenu
                       phone={row.mobile_number}
                       templates={row.kind === "jobseeker" ? jobseekerTemplates(row.full_name) : employerTemplates(row.full_name, row.role_title)}
-                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-900 transition-colors duration-200 ease-ros"
+                      className="flex items-center gap-1 text-[13px] font-medium px-2.5 py-1.5 rounded-ros-md bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-900 transition-colors duration-200 ease-ros"
                     />
                   )}
 
                   {row.kind === "jobseeker" && row.status === "new" && (
                     <button
                       onClick={() => setStatus(row.id, "contacted")}
-                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white transition-colors duration-200 ease-ros"
+                      className="flex items-center gap-1 text-[13px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 text-white transition-colors duration-200 ease-ros"
                     >
                       <Mail className="w-3 h-3" />
                       Mark replied
@@ -1017,7 +1017,7 @@ export default function EmployerInquiriesView({
                     <button
                       onClick={() => createMandate(row)}
                       disabled={busyId === row.id}
-                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
+                      className="flex items-center gap-1 text-[13px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
                     >
                       <Briefcase className="w-3 h-3" />
                       {row.converted_mandate_id
@@ -1032,7 +1032,7 @@ export default function EmployerInquiriesView({
                       <button
                         onClick={() => convertToClient(row)}
                         disabled={busyId === row.id}
-                        className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
+                        className="flex items-center gap-1 text-[13px] font-medium px-2.5 py-1.5 rounded-ros-md bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white transition-colors duration-200 ease-ros"
                       >
                         <Building2 className="w-3 h-3" />
                         {row.converted_client_id
@@ -1053,7 +1053,7 @@ export default function EmployerInquiriesView({
                     <button
                       onClick={() => convertToSalesLead(row)}
                       disabled={busyId === row.id}
-                      className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-ros-md bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 transition-colors duration-200 ease-ros"
+                      className="flex items-center gap-1 text-[13px] font-medium px-2.5 py-1.5 rounded-ros-md bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 transition-colors duration-200 ease-ros"
                     >
                       <Users2 className="w-3 h-3" />
                       {row.converted_lead_id
@@ -1087,7 +1087,7 @@ export default function EmployerInquiriesView({
         ))}
 
         {filtered.length === 0 && (
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 text-center py-8">No inquiries in this filter.</p>
+          <p className="text-[14px] text-slate-500 dark:text-slate-400 text-center py-8">No inquiries in this filter.</p>
         )}
       </div>
     </div>

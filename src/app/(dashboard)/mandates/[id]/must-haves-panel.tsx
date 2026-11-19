@@ -30,7 +30,7 @@ export function TagEditor({
         {items.map((item, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[12px] px-2.5 py-1"
+            className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[13px] px-2.5 py-1"
           >
             {item}
             <button type="button" onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-600">
@@ -38,7 +38,7 @@ export function TagEditor({
             </button>
           </span>
         ))}
-        {items.length === 0 && <span className="text-[12px] text-slate-400">None added yet.</span>}
+        {items.length === 0 && <span className="text-[13px] text-slate-400">None added yet.</span>}
       </div>
       <div className="flex gap-1.5">
         <input
@@ -51,7 +51,7 @@ export function TagEditor({
             }
           }}
           placeholder={`Add a ${label.toLowerCase()} item...`}
-          className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1 text-[12px]"
+          className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1 text-[13px]"
         />
         <button
           type="button"
@@ -150,7 +150,7 @@ export default function MustHavesPanel({
       </div>
       {!collapsed && (
       <>
-      <p className="text-[12px] text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-400 mb-3">
         Used by AI candidate matching below to score and explain fit against this mandate. Both fields are
         required before this mandate can be published -- a candidate missing a must-have is excluded from
         matches; a candidate missing a good-to-have is never penalized for it, only scored higher if they have it.
@@ -160,16 +160,16 @@ export default function MustHavesPanel({
         <button
           onClick={handleDraft}
           disabled={drafting}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 text-[12px] font-medium px-3 py-1.5 hover:bg-teal-100 dark:hover:bg-teal-950/50 disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 text-[13px] font-medium px-3 py-1.5 hover:bg-teal-100 dark:hover:bg-teal-950/50 disabled:opacity-60"
         >
           {drafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
           {drafting ? "Reading the JD..." : "Draft from the JD"}
         </button>
-        {draftError && <p className="text-[12px] text-red-600 mt-1.5">{draftError}</p>}
+        {draftError && <p className="text-[13px] text-red-600 mt-1.5">{draftError}</p>}
       </div>
 
       {draftInfo && (
-        <div className="mb-3 rounded-lg border border-teal-200 dark:border-teal-900 bg-teal-50/60 dark:bg-teal-950/20 p-3 text-[12px] text-slate-700 dark:text-slate-300">
+        <div className="mb-3 rounded-lg border border-teal-200 dark:border-teal-900 bg-teal-50/60 dark:bg-teal-950/20 p-3 text-[13px] text-slate-700 dark:text-slate-300">
           <p className="font-medium text-teal-900 dark:text-teal-200 mb-1">Suggested from the JD. Check each one, edit or remove what&apos;s wrong, then Save.</p>
           {draftInfo.questions.length > 0 && (
             <>
@@ -208,7 +208,7 @@ export default function MustHavesPanel({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2 disabled:opacity-60 mt-1"
+            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2 disabled:opacity-60 mt-1"
           >
             {saving ? "Saving..." : "Save"}
           </button>
@@ -219,22 +219,22 @@ export default function MustHavesPanel({
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Must haves</p>
             <div className="flex flex-wrap gap-1.5">
               {mustHaves.map((item, i) => (
-                <span key={i} className="rounded-full bg-red-50 text-red-700 text-[12px] px-2.5 py-1">
+                <span key={i} className="rounded-full bg-red-50 text-red-700 text-[13px] px-2.5 py-1">
                   {item}
                 </span>
               ))}
-              {mustHaves.length === 0 && <span className="text-[12px] text-slate-400">None added.</span>}
+              {mustHaves.length === 0 && <span className="text-[13px] text-slate-400">None added.</span>}
             </div>
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Good to haves</p>
             <div className="flex flex-wrap gap-1.5">
               {goodToHaves.map((item, i) => (
-                <span key={i} className="rounded-full bg-teal-50 text-teal-700 text-[12px] px-2.5 py-1">
+                <span key={i} className="rounded-full bg-teal-50 text-teal-700 text-[13px] px-2.5 py-1">
                   {item}
                 </span>
               ))}
-              {goodToHaves.length === 0 && <span className="text-[12px] text-slate-400">None added.</span>}
+              {goodToHaves.length === 0 && <span className="text-[13px] text-slate-400">None added.</span>}
             </div>
           </div>
         </div>

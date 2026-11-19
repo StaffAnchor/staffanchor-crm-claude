@@ -37,21 +37,21 @@ export default async function VendorSubmissionsPage() {
   return (
     <div className="max-w-[1100px] mx-auto px-5 py-6">
       <h1 className="text-[20px] font-semibold text-slate-900">My Submissions</h1>
-      <p className="text-[13px] text-slate-500 mt-0.5 mb-5">
+      <p className="text-[14px] text-slate-500 mt-0.5 mb-5">
         {submissions.length === 0
           ? "You haven't submitted any candidates yet."
           : `${submissions.length} candidate${submissions.length === 1 ? "" : "s"} submitted by you, across all your mandates`}
       </p>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[14px] text-red-700">
           {friendlyVendorError(error.message, "submissions-list")}
         </div>
       )}
 
       {submissions.length === 0 && !error ? (
         <div className="rounded-2xl border border-slate-200 bg-white py-16 flex flex-col items-center justify-center text-center">
-          <p className="text-[13px] text-slate-500">
+          <p className="text-[14px] text-slate-500">
             Head to a mandate under My Mandates to submit your first candidate.
           </p>
         </div>
@@ -65,32 +65,32 @@ export default async function VendorSubmissionsPage() {
                 className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0"
               >
                 <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-slate-900 truncate">{s.candidate_name}</p>
+                  <p className="text-[14px] font-medium text-slate-900 truncate">{s.candidate_name}</p>
                   <Link
                     href={`/vendor/mandates/${s.mandate_id}`}
-                    className="text-[12px] text-slate-500 hover:text-teal-600 truncate block"
+                    className="text-[13px] text-slate-500 hover:text-teal-600 truncate block"
                   >
                     {s.role_title} · {s.client_display}
                   </Link>
                 </div>
                 <div className="shrink-0 flex flex-col items-end gap-1">
-                  <span className={`text-[11px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
+                  <span className={`text-[12px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
                     {stageMeta.label}
                   </span>
                   {/* Interview time was fetched but never shown to vendors (gap
                       identified in the July 2026 audit) -- a vendor had no way to
                       know when their candidate's client interview was scheduled. */}
                   {s.stage === "client_interview" && s.confirmed_interview_at && (
-                    <span className="text-[11px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
+                    <span className="text-[12px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
                   )}
                   {/* Previously invisible to vendors -- they'd see "not moving
                       forward" with no way to learn what to submit
                       differently next time for this client. */}
                   {s.stage === "rejected" && s.rejection_reason && (
-                    <span className="text-[11px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
+                    <span className="text-[12px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
                   )}
                   {s.vendor_update_note && (
-                    <span className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 max-w-[220px] text-right">
+                    <span className="text-[12px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 max-w-[220px] text-right">
                       Note from StaffAnchor: {s.vendor_update_note}
                     </span>
                   )}

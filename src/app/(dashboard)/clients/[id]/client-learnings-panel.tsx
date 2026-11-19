@@ -36,17 +36,17 @@ export default function ClientLearningsPanel({ rows }: { rows: LearnRow[] }) {
 
   return (
     <Card className="mt-5">
-      <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">What this client has told us</h2>
-      <p className="mt-0.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+      <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">What this client has told us</h2>
+      <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
         From {passed.length} pass{passed.length === 1 ? "" : "es"} and {liked.length} show{liked.length === 1 ? "" : "s"} of interest in the portal. Use it before you shortlist the next person for them.
       </p>
 
       {top.length > 0 && (
         <div className="mt-3">
-          <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">Why they pass</p>
+          <p className="text-[13px] font-medium uppercase tracking-wide text-slate-400">Why they pass</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {top.map(([label, n]) => (
-              <span key={label} className="rounded-full bg-rose-50 px-2.5 py-1 text-[12.5px] text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+              <span key={label} className="rounded-full bg-rose-50 px-2.5 py-1 text-[13px] text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
                 {label} · {n}
               </span>
             ))}
@@ -56,12 +56,12 @@ export default function ClientLearningsPanel({ rows }: { rows: LearnRow[] }) {
 
       {liked.length > 0 && passed.length > 0 && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 text-[13px] dark:border-emerald-900 dark:bg-emerald-950/10">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 text-[14px] dark:border-emerald-900 dark:bg-emerald-950/10">
             <p className="font-medium text-emerald-800 dark:text-emerald-300">Liked ({liked.length})</p>
             <p className="mt-1 text-slate-600 dark:text-slate-300">Average {fmt(yearsLike, " yrs")} experience, expecting {fmt(payLike, "L")}.</p>
             <p className="mt-0.5 text-slate-500">{liked.map((r) => r.name).join(", ")}</p>
           </div>
-          <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 text-[13px] dark:border-rose-900 dark:bg-rose-950/10">
+          <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 text-[14px] dark:border-rose-900 dark:bg-rose-950/10">
             <p className="font-medium text-rose-800 dark:text-rose-300">Passed ({passed.length})</p>
             <p className="mt-1 text-slate-600 dark:text-slate-300">Average {fmt(yearsPass, " yrs")} experience, expecting {fmt(payPass, "L")}.</p>
             <p className="mt-0.5 text-slate-500">{passed.map((r) => r.name).join(", ")}</p>
@@ -71,10 +71,10 @@ export default function ClientLearningsPanel({ rows }: { rows: LearnRow[] }) {
 
       {comments.length > 0 && (
         <div className="mt-4">
-          <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">Comments</p>
+          <p className="text-[13px] font-medium uppercase tracking-wide text-slate-400">Comments</p>
           <ul className="mt-1.5 space-y-2">
             {comments.map((r, i) => (
-              <li key={i} className="text-[13px] text-slate-700 dark:text-slate-300">
+              <li key={i} className="text-[14px] text-slate-700 dark:text-slate-300">
                 <span className="font-medium text-slate-900 dark:text-slate-100">{r.name}</span> <span className="text-slate-400">· {r.role}</span>
                 {r.note && <p className="text-slate-600 dark:text-slate-300">Client: {r.note}</p>}
                 {r.ourNote && <p className="text-amber-800 dark:text-amber-300">Our note: {r.ourNote}</p>}

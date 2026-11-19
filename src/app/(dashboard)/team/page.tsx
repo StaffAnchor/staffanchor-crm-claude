@@ -10,7 +10,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
     <>
       <div className="mx-auto flex max-w-[1400px] items-center gap-1 px-6 pt-5">
         {([{ key: "team", label: "People" }, { key: "vendors", label: "Vendors" }] as const).map((v) => (
-          <Link key={v.key} href={v.key === "team" ? "/team" : "/team?view=vendors"} className={`rounded-full px-3 py-1 text-[12.5px] font-medium ${view === v.key ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}>
+          <Link key={v.key} href={v.key === "team" ? "/team" : "/team?view=vendors"} className={`rounded-full px-3 py-1 text-[13px] font-medium ${view === v.key ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}>
             {v.label}
           </Link>
         ))}

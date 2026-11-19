@@ -74,7 +74,7 @@ export default function StatusControl({
       <select
         defaultValue={currentStatus}
         onChange={handleChange}
-        className={`rounded-ros-md border-0 ring-1 px-3 py-1.5 text-[13px] font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] cursor-pointer ${
+        className={`rounded-ros-md border-0 ring-1 px-3 py-1.5 text-[14px] font-medium transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] cursor-pointer ${
           STATUS_STYLE[currentStatus] ?? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 ring-slate-200/60"
         }`}
       >

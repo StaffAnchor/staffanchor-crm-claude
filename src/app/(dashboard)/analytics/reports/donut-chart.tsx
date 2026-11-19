@@ -28,7 +28,7 @@ export type DonutSlice = {
 export default function DonutChart({ slices, totalLabel = "total" }: { slices: DonutSlice[]; totalLabel?: string }) {
   const total = slices.reduce((sum, s) => sum + s.count, 0);
   if (total === 0) {
-    return <p className="text-[13px] text-slate-400">No data yet.</p>;
+    return <p className="text-[14px] text-slate-400">No data yet.</p>;
   }
   const RADIUS = 54;
   const STROKE = 24;
@@ -68,7 +68,7 @@ export default function DonutChart({ slices, totalLabel = "total" }: { slices: D
       </svg>
       <div className="flex-1 min-w-0 space-y-1.5">
         {slices.map((s, i) => (
-          <Link key={s.key} href={s.href} className="group flex items-center gap-2 text-[12px]">
+          <Link key={s.key} href={s.href} className="group flex items-center gap-2 text-[13px]">
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length] }} />
             <span className="truncate text-slate-600 dark:text-slate-400 group-hover:text-teal-600 transition-colors duration-200 ease-ros">{s.label}</span>
             <span className="ml-auto shrink-0 font-semibold tabular-nums text-slate-700 dark:text-slate-300">{s.count}</span>

@@ -27,15 +27,15 @@ export type Stage = (typeof STAGES)[number];
 // color for e.g. "client_interview" instead of each guessing their own.
 export const STAGE_COLOR: Record<string, string> = {
   sourced: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
-  screened: "bg-blue-100 text-blue-800",
-  shortlisted: "bg-teal-100 text-teal-800",
-  submitted: "bg-indigo-100 text-indigo-800",
-  client_interview: "bg-cyan-100 text-cyan-800",
-  client_shortlisted: "bg-purple-100 text-purple-800",
-  offer: "bg-lime-100 text-lime-800",
-  placed: "bg-green-100 text-green-800",
-  pulled_back: "bg-orange-100 text-orange-800",
-  rejected: "bg-red-100 text-red-700",
+  screened: "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200",
+  shortlisted: "bg-teal-50 text-teal-800",
+  submitted: "bg-teal-100 text-teal-800",
+  client_interview: "bg-teal-200 text-teal-900",
+  client_shortlisted: "bg-teal-300 text-teal-900",
+  offer: "bg-emerald-100 text-emerald-800",
+  placed: "bg-emerald-200 text-emerald-900",
+  pulled_back: "bg-amber-100 text-amber-800",
+  rejected: "bg-rose-100 text-rose-700",
 };
 
 // The two terminal outcomes that mean a candidate is no longer an active

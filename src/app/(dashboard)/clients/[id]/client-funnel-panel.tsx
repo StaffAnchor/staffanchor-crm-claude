@@ -37,7 +37,7 @@ export default function ClientFunnelPanel({ stats }: { stats: FunnelStats }) {
     return (
       <Card>
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">Submission funnel</h2>
-        <p className="text-[13px] text-slate-400">
+        <p className="text-[14px] text-slate-400">
           No candidates linked to this client's mandates yet — conversion analysis will appear once
           candidates are submitted.
         </p>

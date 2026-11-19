@@ -69,7 +69,7 @@ export default function PauseMandateButton({ mandateId, status, roleTitle }: { m
         <button
           onClick={resume}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[12px] font-medium px-2.5 py-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[13px] font-medium px-2.5 py-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-60"
         >
           {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />} Resume
         </button>
@@ -82,22 +82,22 @@ export default function PauseMandateButton({ mandateId, status, roleTitle }: { m
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[12px] font-medium px-2.5 py-1 hover:bg-slate-50 dark:hover:bg-slate-800"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[13px] font-medium px-2.5 py-1 hover:bg-slate-50 dark:hover:bg-slate-800"
       >
         <Pause className="w-3 h-3" /> Pause
       </button>
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !busy && setOpen(false)}>
           <div className="bg-white dark:bg-slate-900 rounded-ros-lg shadow-ros-md w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Pause this role?</h3>
-            <p className="text-[12px] text-slate-500 dark:text-slate-400 mb-3">
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 mb-1">Pause this role?</h3>
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-3">
               {roleTitle} will be hidden from the jobs site, stop taking applications and drop out of matching, alerts and Today. Nothing is deleted, and Resume brings it back.
             </p>
             <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Reason</label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-[13px] mb-2"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-[14px] mb-2"
             >
               {PAUSE_REASONS.map((r) => (
                 <option key={r}>{r}</option>
@@ -108,15 +108,15 @@ export default function PauseMandateButton({ mandateId, status, roleTitle }: { m
                 value={other}
                 onChange={(e) => setOther(e.target.value)}
                 placeholder="What's the reason?"
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-[13px] mb-2"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-[14px] mb-2"
               />
             )}
-            {error && <p className="text-[12px] text-red-600 mb-2">{error}</p>}
+            {error && <p className="text-[13px] text-red-600 mb-2">{error}</p>}
             <div className="flex justify-end gap-2 mt-3">
-              <button onClick={() => setOpen(false)} disabled={busy} className="rounded-lg px-3 py-1.5 text-[13px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <button onClick={() => setOpen(false)} disabled={busy} className="rounded-lg px-3 py-1.5 text-[14px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
                 Cancel
               </button>
-              <button onClick={pause} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white text-[13px] font-medium px-3 py-1.5 hover:bg-slate-800 disabled:opacity-60">
+              <button onClick={pause} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 text-white text-[14px] font-medium px-3 py-1.5 hover:bg-teal-700 disabled:opacity-60">
                 {busy && <Loader2 className="w-3 h-3 animate-spin" />} Pause role
               </button>
             </div>

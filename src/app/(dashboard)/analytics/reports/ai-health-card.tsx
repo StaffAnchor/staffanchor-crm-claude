@@ -220,8 +220,8 @@ export default function AiHealthCard() {
       <div className="flex items-start gap-2.5 mb-3">
         <BrainCircuit className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
         <div>
-          <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200">AI system health</p>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[14px] font-medium text-slate-800 dark:text-slate-200">AI system health</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
             {stats ? (
               <>
                 {stats.total} candidates in system · {stats.missingSummary} missing an AI summary ·{" "}
@@ -238,7 +238,7 @@ export default function AiHealthCard() {
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <div className="flex-1 flex items-center justify-between gap-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
           <div className="min-w-0">
-            <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">
+            <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
               Read CV → summary + stability score
             </p>
             {summaryResult && (
@@ -256,7 +256,7 @@ export default function AiHealthCard() {
           <button
             onClick={runSummaryBackfill}
             disabled={runningSummary}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
           >
             {runningSummary ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanSearch className="w-3.5 h-3.5" />}
             {runningSummary ? "Running…" : "Run now"}
@@ -265,7 +265,7 @@ export default function AiHealthCard() {
 
         <div className="flex-1 flex items-center justify-between gap-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
           <div className="min-w-0">
-            <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">Embedding backfill</p>
+            <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Embedding backfill</p>
             {embedResult && (
               <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
                 Backfilled {embedResult.processed} of {embedResult.candidatesConsidered} pending.
@@ -281,7 +281,7 @@ export default function AiHealthCard() {
           <button
             onClick={runEmbedBackfill}
             disabled={runningEmbed}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
           >
             {runningEmbed ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             {runningEmbed ? "Running…" : "Run now"}
@@ -296,7 +296,7 @@ export default function AiHealthCard() {
           hand-tagging. Same Run now / self-healing-sweep pattern. */}
       <div className="mt-2 flex items-center justify-between gap-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
         <div className="min-w-0">
-          <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">Practice tagging (candidates + mandates)</p>
+          <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">Practice tagging (candidates + mandates)</p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {practiceStats ? (
               <>
@@ -322,7 +322,7 @@ export default function AiHealthCard() {
         <button
           onClick={runPracticeTagBackfill}
           disabled={runningPracticeTags}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
         >
           {runningPracticeTags ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Tags className="w-3.5 h-3.5" />}
           {runningPracticeTags ? "Running…" : "Run now"}
@@ -338,7 +338,7 @@ export default function AiHealthCard() {
           last looked". */}
       <div className="mt-2 flex items-center justify-between gap-2 rounded-ros-md bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
         <div className="min-w-0">
-          <p className="text-[12px] font-medium text-slate-700 dark:text-slate-300">
+          <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
             Talent resurfacing (full-pool mandate scans)
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -362,7 +362,7 @@ export default function AiHealthCard() {
         <button
           onClick={runResurfaceBackfill}
           disabled={runningResurface}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 rounded-ros-md px-3 py-1.5 transition-colors duration-200 ease-ros disabled:opacity-60 shrink-0"
         >
           {runningResurface ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
           {runningResurface ? "Running…" : "Run now"}

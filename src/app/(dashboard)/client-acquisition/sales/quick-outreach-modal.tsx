@@ -95,14 +95,14 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
   }
 
   const inputClass =
-    "w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
+    "w-full text-[14px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros";
   const labelClass = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-ros-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-ros-md p-5">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-teal-500" />
             Generate outreach
           </h2>
@@ -167,7 +167,7 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
             </Button>
           </div>
 
-          {error && <p className="text-[12px] text-rose-500">{error}</p>}
+          {error && <p className="text-[13px] text-rose-500">{error}</p>}
 
           {draft && (
             <div className="relative">
@@ -175,7 +175,7 @@ export default function QuickOutreachModal({ onClose }: { onClose: () => void })
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
-                className="w-full text-[12.5px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
+                className="w-full text-[13px] rounded-ros-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-3 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
               />
               <button
                 onClick={copyDraft}

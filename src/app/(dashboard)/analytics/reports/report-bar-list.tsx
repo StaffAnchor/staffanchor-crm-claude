@@ -20,7 +20,7 @@ export default function ReportBarList({
   highlightTop?: boolean;
 }) {
   if (items.length === 0) {
-    return <p className="text-[13px] text-slate-400">{emptyLabel}</p>;
+    return <p className="text-[14px] text-slate-400">{emptyLabel}</p>;
   }
   const max = Math.max(1, ...items.map((i) => i.count));
 

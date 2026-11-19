@@ -116,7 +116,7 @@ export default function RoleFitReview({
     await onSaved();
   }
 
-  if (!loaded) return <p className="text-[12.5px] text-slate-400">Loading the role&apos;s requirements…</p>;
+  if (!loaded) return <p className="text-[13px] text-slate-400">Loading the role&apos;s requirements…</p>;
 
   // A plain function (not a component) so rows keep their identity while typing.
   const renderRow = (req: string, required: boolean) => {
@@ -124,7 +124,7 @@ export default function RoleFitReview({
     const hint = ai[req];
     return (
       <div key={req} className="rounded-lg border border-slate-100 dark:border-slate-800 p-3">
-        <p className="text-[13px] font-medium text-slate-800 dark:text-slate-100">
+        <p className="text-[14px] font-medium text-slate-800 dark:text-slate-100">
           {req} {!required && <span className="font-normal text-slate-400">(nice to have)</span>}
         </p>
         {hint && (
@@ -139,7 +139,7 @@ export default function RoleFitReview({
               key={o.value}
               type="button"
               onClick={() => set(req, { status: x.status === o.value ? "" : o.value })}
-              className={`rounded-full border px-3 py-1 text-[12px] font-medium ${x.status === o.value ? o.on : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+              className={`rounded-full border px-3 py-1 text-[13px] font-medium ${x.status === o.value ? o.on : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
             >
               {o.label}
             </button>
@@ -150,7 +150,7 @@ export default function RoleFitReview({
             value={x.note}
             onChange={(e) => set(req, { note: e.target.value })}
             placeholder="Short note the client will see (what is the gap, and why share anyway?)"
-            className="mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent px-2.5 py-1.5 text-[12.5px]"
+            className="mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent px-2.5 py-1.5 text-[13px]"
           />
         )}
       </div>
@@ -161,8 +161,8 @@ export default function RoleFitReview({
     <div>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Role fit</h3>
-          <p className="text-[12px] text-slate-500">The client sees this review, including anything that is not met.</p>
+          <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Role fit</h3>
+          <p className="text-[13px] text-slate-500">The client sees this review, including anything that is not met.</p>
         </div>
         {savedAt && (
           <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
@@ -179,7 +179,7 @@ export default function RoleFitReview({
               key={v}
               type="button"
               onClick={() => setInterested(interested === v ? "" : v)}
-              className={`rounded-full border px-3 py-1 text-[12px] font-medium ${interested === v ? (v === "yes" ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-700 text-white border-slate-700") : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+              className={`rounded-full border px-3 py-1 text-[13px] font-medium ${interested === v ? (v === "yes" ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-700 text-white border-slate-700") : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
             >
               {v === "yes" ? "Yes, confirmed with them" : "No / not sure"}
             </button>
@@ -188,7 +188,7 @@ export default function RoleFitReview({
       </div>
 
       {must.length === 0 && good.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-800">This role has no requirements listed yet. Add them on the mandate (Must-haves) so the client can see how each candidate fits.</p>
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-800">This role has no requirements listed yet. Add them on the mandate (Must-haves) so the client can see how each candidate fits.</p>
       ) : (
         <div className="mt-3 space-y-2">
           {must.map((r) => renderRow(r, true))}
@@ -196,8 +196,8 @@ export default function RoleFitReview({
         </div>
       )}
 
-      {error && <p className="mt-3 text-[12.5px] text-rose-600">{error}</p>}
-      <button type="button" onClick={save} disabled={saving} className="mt-3 rounded-lg bg-teal-600 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-teal-500 disabled:opacity-60">
+      {error && <p className="mt-3 text-[13px] text-rose-600">{error}</p>}
+      <button type="button" onClick={save} disabled={saving} className="mt-3 rounded-lg bg-teal-600 px-3.5 py-2 text-[14px] font-medium text-white hover:bg-teal-500 disabled:opacity-60">
         {saving ? "Saving…" : "Save role fit"}
       </button>
     </div>

@@ -14,7 +14,7 @@ function ReferrerSignOutButton() {
     window.location.assign("/login");
   }
   return (
-    <button onClick={handleSignOut} className="text-[13px] text-slate-400 hover:text-white font-medium">
+    <button onClick={handleSignOut} className="text-[14px] text-slate-400 hover:text-white font-medium">
       Sign out
     </button>
   );
@@ -52,12 +52,12 @@ export default function ReferrerNav({
               className="h-7 md:h-9 w-auto object-contain"
             />
           </span>
-          <span className="text-[13px] font-semibold text-teal-400 tracking-tight hidden md:block">
+          <span className="text-[14px] font-semibold text-teal-400 tracking-tight hidden md:block">
             Sales Circle
           </span>
         </div>
 
-        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto text-[13px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto text-[14px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV_LINKS.map((link) => {
             const active = pathname.startsWith(link.href);
             return (
@@ -80,17 +80,17 @@ export default function ReferrerNav({
         <div className="flex-1" />
 
         {tier === "trusted" && (
-          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20">
+          <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20">
             Trusted
           </span>
         )}
         <LiveClock />
-        <span className="text-[12px] text-slate-400 hidden sm:block">{fullName ?? email}</span>
+        <span className="text-[13px] text-slate-400 hidden sm:block">{fullName ?? email}</span>
         <a
           href={whatsappEntryLink("Hi StaffAnchor, I'm a Sales Circle referrer. I have a question.")}
           target="_blank"
           rel="noreferrer"
-          className="text-[13px] font-medium text-emerald-400 hover:text-emerald-300"
+          className="text-[14px] font-medium text-emerald-400 hover:text-emerald-300"
           title="Message StaffAnchor on WhatsApp"
         >
           WhatsApp us

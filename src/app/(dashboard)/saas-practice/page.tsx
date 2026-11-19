@@ -31,11 +31,11 @@ function countBy(values: (string | null | undefined)[]) {
 function BarList({ title, items, total }: { title: string; items: [string, number][]; total: number }) {
   return (
     <Card>
-      <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 mb-2">{title}</p>
+      <p className="text-[14px] font-medium text-slate-800 dark:text-slate-200 mb-2">{title}</p>
       <ul className="space-y-1.5">
-        {items.length === 0 && <li className="text-[12.5px] text-slate-400">Nothing recorded yet.</li>}
+        {items.length === 0 && <li className="text-[13px] text-slate-400">Nothing recorded yet.</li>}
         {items.slice(0, 7).map(([label, n]) => (
-          <li key={label} className="text-[12.5px]">
+          <li key={label} className="text-[13px]">
             <div className="flex justify-between text-slate-600 dark:text-slate-300">
               <span>{label}</span>
               <span className="tabular-nums">{n}</span>
@@ -371,23 +371,23 @@ for (let off = 0; off < 5000; off += 1000) {
       <CandidatesSubNav />
       <div>
         <h1 className="ros-page-title">Talent pool</h1>
-        <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
+        <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">
           The people you would put in front of any client, kept warm and complete, and the bench of B2B SaaS and tech sales profiles behind them. Open a role, call the pool first.
         </p>
       </div>
 
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700">
-        <Link href="/saas-practice" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${poolView ? "border-amber-500 text-slate-900 dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+        <Link href="/saas-practice" className={`-mb-px border-b-2 px-4 py-2 text-[14px] font-medium ${poolView ? "border-amber-500 text-slate-900 dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
           Talent pool <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-900">{poolCount}</span>
         </Link>
-        <Link href="/saas-practice?view=bench" className={`-mb-px border-b-2 px-4 py-2 text-[13.5px] font-medium ${!poolView ? "border-slate-900 text-slate-900 dark:border-white dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+        <Link href="/saas-practice?view=bench" className={`-mb-px border-b-2 px-4 py-2 text-[14px] font-medium ${!poolView ? "border-slate-900 text-slate-900 dark:border-white dark:text-white" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
           B2B SaaS bench <span className="ml-1 text-slate-400">{total}</span>
         </Link>
       </div>
 
       {poolView ? (
         <div className="space-y-5">
-          <p className="max-w-3xl text-[13px] text-slate-500 dark:text-slate-400">
+          <p className="max-w-3xl text-[14px] text-slate-500 dark:text-slate-400">
             The people you would put in front of any client. Anyone on the team can add a person after a good conversation. Call the Top talent first when a role opens.
           </p>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -406,9 +406,9 @@ for (let off = 0; off < 5000; off += 1000) {
                 { h: "Judge them on a call", t: "Rate communication, seriousness and the rest", href: "/candidates/complete?group=b2b_sales&sub=*&mode=assess&pool=1" },
               ] as const).map((a) => (
                 <Link key={a.h} target="_blank" rel="noopener noreferrer" href={a.href} className="rounded-ros-xl border border-slate-200 bg-white p-3 hover:border-teal-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                  <p className="text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">{a.h}</p>
-                  <p className="text-[12px] text-slate-500">{a.t}</p>
-                  <p className="mt-1.5 text-[12px] font-semibold text-teal-700 dark:text-teal-300">Start calling →</p>
+                  <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">{a.h}</p>
+                  <p className="text-[13px] text-slate-500">{a.t}</p>
+                  <p className="mt-1.5 text-[13px] font-semibold text-teal-700 dark:text-teal-300">Start calling →</p>
                 </Link>
               ))}
             </div>
@@ -419,10 +419,10 @@ for (let off = 0; off < 5000; off += 1000) {
               <ul className="grid gap-2 md:grid-cols-2">
                 {Array.from(poolBoard.entries()).map(([mid, list]) => (
                   <li key={mid} className="rounded-ros-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                    <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${mid}`} className="text-[13.5px] font-semibold text-teal-700 hover:underline dark:text-teal-300">{roleTitle.get(mid)}</Link>
+                    <Link target="_blank" rel="noopener noreferrer" href={`/mandates/${mid}`} className="text-[14px] font-semibold text-teal-700 hover:underline dark:text-teal-300">{roleTitle.get(mid)}</Link>
                     <ul className="mt-1 space-y-0.5">
                       {list.map((b) => (
-                        <li key={b.candidate_id} className="text-[12.5px]">
+                        <li key={b.candidate_id} className="text-[13px]">
                           <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${b.candidate_id}`} className="font-medium text-slate-800 hover:underline dark:text-slate-100">{b.full_name ?? "Unnamed"}</Link>
                           {b.pool_tier && <span className="ml-1.5 text-slate-400">{POOL_TIER_LABEL[b.pool_tier]}</span>}
                           <span className={`ml-1.5 ${(b.blockers ?? []).length === 0 ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
@@ -457,7 +457,7 @@ for (let off = 0; off < 5000; off += 1000) {
           <RunMatching roles={roles.map((r) => ({ id: r.id, title: r.role_title ?? "Role" }))} />
         </div>
         <Card padded={false} className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead>
               <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                 <th className="px-4 py-2.5 font-medium">Role</th>
@@ -502,7 +502,7 @@ for (let off = 0; off < 5000; off += 1000) {
             </tbody>
           </table>
         </Card>
-        <p className="text-[12px] text-slate-400">
+        <p className="text-[13px] text-slate-400">
           &quot;Checked&quot; is how many bench candidates the AI has assessed for the role. Each press checks the next best batch, so press again for more.
         </p>
       </section>
@@ -515,7 +515,7 @@ for (let off = 0; off < 5000; off += 1000) {
           <BarList title="Sales cycle" items={cycleCounts} total={total} />
           <BarList title="Hunter or farmer" items={hunterCounts} total={total} />
         </div>
-        <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">
           Most common gaps in passports:{" "}
           {gapCounts.length ? gapCounts.map(([g, n]) => `${g} (${n})`).join(", ") : "none"}. Fill these on calls to make more of the bench usable for any role.
         </p>
@@ -524,7 +524,7 @@ for (let off = 0; off < 5000; off += 1000) {
       <section className="space-y-3">
         <div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">The bench</h2>
-          <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Start with &quot;Needs details&quot;: pick the gap, select the people, and send them as tasks to the recruiter who will collect them. Read any CV without leaving the page.</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">Start with &quot;Needs details&quot;: pick the gap, select the people, and send them as tasks to the recruiter who will collect them. Read any CV without leaving the page.</p>
         </div>
         <BenchTable rows={tableRows} segmentOptions={segmentKeys} recruiters={recruiters} roles={roleOptions} matchesByRole={matchesByRole} stageByRole={stageByRole} relocation={relocation} lists={lists} waOpportunity={!!process.env.WHATSAPP_TEMPLATE_ROLE_OPPORTUNITY} pool={poolBy} />
       </section>

@@ -109,7 +109,7 @@ export default function ProfilePassportTrigger({
           >
             <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Profile passport</p>
+                <p className="text-[12px] font-medium uppercase tracking-wide text-blue-600">Profile passport</p>
                 <h2 className="text-lg font-semibold text-slate-900">{fullName}</h2>
                 <p className="text-sm text-slate-500">
                   {currentJobTitle}
@@ -147,7 +147,7 @@ export default function ProfilePassportTrigger({
 
               {aiPassport?.resume_highlights && aiPassport.resume_highlights.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">
                     Resume highlights
                   </p>
                   <ul className="space-y-1.5">

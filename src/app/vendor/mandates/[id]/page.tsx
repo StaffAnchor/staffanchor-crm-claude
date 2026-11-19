@@ -49,12 +49,12 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
 
   return (
     <div className="max-w-[1100px] mx-auto px-5 py-6">
-      <Link href="/vendor/mandates" className="inline-flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-slate-700 mb-4">
+      <Link href="/vendor/mandates" className="inline-flex items-center gap-1.5 text-[14px] text-slate-500 hover:text-slate-700 mb-4">
         <ArrowLeft className="w-3.5 h-3.5" /> My Mandates
       </Link>
 
       {mandatesError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[14px] text-red-700">
           {friendlyVendorError(mandatesError.message, "mandate-detail")}
         </div>
       )}
@@ -64,14 +64,14 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
           <div className="flex items-start justify-between gap-4 mb-2">
             <div>
               <h1 className="text-[20px] font-semibold text-slate-900">{mandate.role_title}</h1>
-              <p className="text-[13px] text-slate-500 mt-0.5">{mandate.client_display}</p>
+              <p className="text-[14px] text-slate-500 mt-0.5">{mandate.client_display}</p>
             </div>
-            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-teal-600 bg-teal-50 ring-1 ring-teal-200 rounded-full px-2.5 py-1">
+            <span className="shrink-0 text-[12px] font-medium uppercase tracking-wide text-teal-600 bg-teal-50 ring-1 ring-teal-200 rounded-full px-2.5 py-1">
               {mandate.status}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-slate-500 mb-6">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-500 mb-6">
             {mandate.cities && mandate.cities.length > 0 && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" /> {mandate.cities.join(", ")}
@@ -86,7 +86,7 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
           </div>
 
           {mandate.commission_percentage !== null && (
-            <div className="mb-6 inline-flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-full px-3 py-1.5">
+            <div className="mb-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-full px-3 py-1.5">
               You earn {mandate.commission_percentage}% commission if a candidate you submit here gets placed
             </div>
           )}
@@ -97,17 +97,17 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
         </>
       )}
 
-      <h2 className="text-[15px] font-semibold text-slate-900 mb-3">Your submissions for this mandate</h2>
+      <h2 className="text-[16px] font-semibold text-slate-900 mb-3">Your submissions for this mandate</h2>
 
       {submissionsError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[14px] text-red-700">
           {friendlyVendorError(submissionsError.message, "mandate-detail-submissions")}
         </div>
       )}
 
       {mySubmissions.length === 0 && !submissionsError ? (
         <div className="rounded-2xl border border-slate-200 bg-white py-12 flex items-center justify-center text-center">
-          <p className="text-[13px] text-slate-500">No candidates submitted for this mandate yet.</p>
+          <p className="text-[14px] text-slate-500">No candidates submitted for this mandate yet.</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
@@ -118,19 +118,19 @@ export default async function VendorMandateDetailPage({ params }: { params: Prom
                 key={s.cml_id}
                 className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0"
               >
-                <span className="text-[13px] font-medium text-slate-900">{s.candidate_name}</span>
+                <span className="text-[14px] font-medium text-slate-900">{s.candidate_name}</span>
                 <div className="shrink-0 flex flex-col items-end gap-1">
-                  <span className={`text-[11px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
+                  <span className={`text-[12px] font-semibold rounded-full px-2.5 py-1 ${stageMeta.tint}`}>
                     {stageMeta.label}
                   </span>
                   {s.stage === "client_interview" && s.confirmed_interview_at && (
-                    <span className="text-[11px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
+                    <span className="text-[12px] text-slate-500">{formatDateTimeIST(s.confirmed_interview_at)}</span>
                   )}
                   {s.stage === "rejected" && s.rejection_reason && (
-                    <span className="text-[11px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
+                    <span className="text-[12px] text-rose-600 max-w-[220px] text-right">{s.rejection_reason}</span>
                   )}
                   {s.vendor_update_note && (
-                    <span className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 max-w-[220px] text-right">
+                    <span className="text-[12px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 max-w-[220px] text-right">
                       Note from StaffAnchor: {s.vendor_update_note}
                     </span>
                   )}

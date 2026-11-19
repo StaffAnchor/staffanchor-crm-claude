@@ -31,7 +31,7 @@ export default function DeleteCandidateButton({ candidateId, candidateName }: { 
       <button
         onClick={handleDelete}
         disabled={deleting}
-        className="flex items-center gap-1.5 text-[12px] font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-ros-md px-3 py-1.5 disabled:opacity-60 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
+        className="flex items-center gap-1.5 text-[13px] font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-ros-md px-3 py-1.5 disabled:opacity-60 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98]"
       >
         {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
         Delete profile

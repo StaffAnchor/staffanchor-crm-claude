@@ -37,8 +37,8 @@ export default function CandidatesSubNav() {
         <Link
           key={t.href}
           href={t.href}
-          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-[12.5px] font-medium transition-colors ${
-            tabActive(t) ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className={`px-3 py-1.5 rounded-full whitespace-nowrap text-[13px] font-medium transition-colors ${
+            tabActive(t) ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
           {t.label}
@@ -47,15 +47,15 @@ export default function CandidatesSubNav() {
       {MORE.length > 0 && (
       <details className="relative">
         <summary
-          className={`list-none cursor-pointer px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
-            moreActive ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className={`list-none cursor-pointer px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
+            moreActive ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:ring-teal-800" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
         >
           More ▾
         </summary>
         <div className="absolute left-0 max-md:left-auto max-md:right-0 z-30 mt-1 w-64 max-w-[calc(100vw-1.5rem)] rounded-ros-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           {MORE.map((m) => (
-            <Link key={m.href} href={m.href} className="block px-3 py-2 text-[12.5px] text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
+            <Link key={m.href} href={m.href} className="block px-3 py-2 text-[13px] text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
               {m.label}
             </Link>
           ))}
@@ -69,7 +69,7 @@ export default function CandidatesSubNav() {
           <Link
             key={o.href}
             href={o.href}
-            className={`px-2.5 py-1 rounded-md whitespace-nowrap text-[12.5px] font-medium ${isActive(o.href) ? "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"}`}
+            className={`px-2.5 py-1 rounded-md whitespace-nowrap text-[13px] font-medium ${isActive(o.href) ? "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"}`}
           >
             {o.label}
           </Link>

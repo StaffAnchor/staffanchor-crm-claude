@@ -23,7 +23,7 @@ export default async function ReviewPrepPage() {
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
         <Link href="/lab/home" className="text-sm text-slate-500 hover:text-slate-800">← My progress</Link>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">Session 3</p>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-teal-700">Session 3</p>
           <h1 className="text-2xl font-semibold tracking-tight">Review Meeting Prep</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Prepare for the review you already hold: the exceptions, what changed, your guess at the root cause, the decision you need, and the follow-up. A short prep makes the review change behaviour instead of just reporting status.</p>
         </div>

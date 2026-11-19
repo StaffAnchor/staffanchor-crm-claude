@@ -40,7 +40,7 @@ export type MandateScreeningContext = {
 };
 
 const CONTROL_CLS =
-  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[13px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white dark:bg-slate-900";
+  "w-full rounded-ros-md border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-[14px] transition-colors duration-200 ease-ros focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white dark:bg-slate-900";
 
 function toTier2Question(q: ScreeningQuestion): MandateScreeningQuestion {
   return {
@@ -233,7 +233,7 @@ export default function MandateScreeningPanel({
           ) : (
             <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0 mt-0.5" />
           )}
-          <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 leading-snug">{q.text}</p>
+          <p className="text-[14px] font-medium text-slate-800 dark:text-slate-200 leading-snug">{q.text}</p>
         </div>
 
         {q.answer_type === "dropdown" && (
@@ -260,7 +260,7 @@ export default function MandateScreeningPanel({
                   key={o}
                   type="button"
                   onClick={() => toggleMultiOption(q.id, o)}
-                  className={`text-[12px] px-2.5 py-1 rounded-ros-full border transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
+                  className={`text-[13px] px-2.5 py-1 rounded-ros-full border transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] ${
                     selected
                       ? "bg-teal-600 border-teal-600 text-white"
                       : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
@@ -294,7 +294,7 @@ export default function MandateScreeningPanel({
             <UserRound className="w-4 h-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 truncate">
+            <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100 truncate">
               {mandateContext.role_title}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{mandateContext.client_name}</p>
@@ -316,7 +316,7 @@ export default function MandateScreeningPanel({
           <div>
             <div className="flex items-center gap-1.5 mb-2">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <h3 className="text-[13px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Worth raising on the call
               </h3>
               <span className="rounded-full bg-amber-100 text-amber-700 text-xs font-medium px-1.5 py-0.5">
@@ -330,7 +330,7 @@ export default function MandateScreeningPanel({
                   className="flex items-start gap-2 rounded-ros-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 px-3 py-2"
                 >
                   <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-[12px] text-amber-800 dark:text-amber-400">{gap.message}</p>
+                  <p className="text-[13px] text-amber-800 dark:text-amber-400">{gap.message}</p>
                 </div>
               ))}
             </div>
@@ -340,7 +340,7 @@ export default function MandateScreeningPanel({
         {tier1.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 mb-2">
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <h3 className="text-[13px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Complete their profile
               </h3>
               <span className="rounded-full bg-amber-100 text-amber-700 text-xs font-medium px-1.5 py-0.5">
@@ -355,7 +355,7 @@ export default function MandateScreeningPanel({
           <div>
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-teal-500" />
-              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <h3 className="text-[13px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Mandate-specific questions
               </h3>
             </div>
@@ -364,19 +364,19 @@ export default function MandateScreeningPanel({
         )}
 
         {allQuestions.length === 0 && (
-          <p className="text-[12px] text-slate-400 rounded-ros-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-4 text-center">
+          <p className="text-[13px] text-slate-400 rounded-ros-lg border border-dashed border-slate-200 dark:border-slate-700 px-3 py-4 text-center">
             No profile gaps left and no mandate-specific questions generated yet -- add some in the Screening
             question bank above.
           </p>
         )}
 
-        {error && <p className="text-[12px] text-red-600">{error}</p>}
+        {error && <p className="text-[13px] text-red-600">{error}</p>}
 
         <div className="sticky bottom-0 -mx-5 -mb-5 px-5 py-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
           <button
             onClick={handleSave}
             disabled={saving || allQuestions.length === 0}
-            className="ros-focusable w-full flex items-center justify-center gap-1.5 rounded-ros-md bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium py-2.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:opacity-50"
+            className="ros-focusable w-full flex items-center justify-center gap-1.5 rounded-ros-md bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium py-2.5 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:opacity-50"
           >
             {saving ? "Saving..." : saved ? "Saved -- keep answering or close" : "Save screening answers"}
           </button>

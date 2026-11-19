@@ -33,7 +33,7 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
   const sp = await searchParams;
   const range = RANGES.find((x) => x.key === sp.r) ?? RANGES[1];
   const db = adminDb();
-  if (!db) return <div className="mx-auto max-w-[1100px] px-5 py-8 text-[13px] text-slate-500">The database key is not set, so this view cannot load.</div>;
+  if (!db) return <div className="mx-auto max-w-[1100px] px-5 py-8 text-[14px] text-slate-500">The database key is not set, so this view cannot load.</div>;
   const since = range.days > 0 ? new Date(clock() - range.days * 86_400_000).toISOString() : "2000-01-01T00:00:00Z";
 
   const { data: touchRows } = await db.from("traffic_events").select("visitor_id, kind, source, medium, landing_path, candidate_id, mandate_id, created_at").gte("created_at", since).order("created_at").limit(20000);
@@ -92,14 +92,14 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
   const callFirst = cands.filter((c) => !appliedIds.has(c.id) && !waIds.has(c.id) && c.phone).slice(0, 25);
   const maxDaily = Math.max(1, ...a.daily.map((d) => d.visits));
 
-  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-[12px] font-medium ${on ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`;
+  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-[13px] font-medium ${on ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-200" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"}`;
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5 px-5 py-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="ros-page-title">Website funnel</h1>
-          <p className="mt-1 max-w-3xl text-[13px] text-slate-500">Where jobs.staffanchor.com visitors come from, who signs up and applies, who comes back, who is on WhatsApp, and what they buy. Left out: our own testing ({a.internalExcluded} heavy-use browser{a.internalExcluded === 1 ? "" : "s"}, plus anything marked test), {a.employerVisitors} employer visit{a.employerVisitors === 1 ? "" : "s"} to the client portal, and {a.existingCandidates} existing candidate{a.existingCandidates === 1 ? "" : "s"} going back to their own account.</p>
+          <p className="mt-1 max-w-3xl text-[14px] text-slate-500">Where jobs.staffanchor.com visitors come from, who signs up and applies, who comes back, who is on WhatsApp, and what they buy. Left out: our own testing ({a.internalExcluded} heavy-use browser{a.internalExcluded === 1 ? "" : "s"}, plus anything marked test), {a.employerVisitors} employer visit{a.employerVisitors === 1 ? "" : "s"} to the client portal, and {a.existingCandidates} existing candidate{a.existingCandidates === 1 ? "" : "s"} going back to their own account.</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {RANGES.map((x) => (
@@ -109,16 +109,16 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
       </div>
 
       <section className={card}>
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">What the data says</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">What the data says</h2>
         {fs.length === 0 ? (
-          <p className="mt-3 text-[13px] text-slate-500">Not enough visits in this period to say anything yet.</p>
+          <p className="mt-3 text-[14px] text-slate-500">Not enough visits in this period to say anything yet.</p>
         ) : (
           <ul className="mt-3 grid gap-2.5 lg:grid-cols-2">
             {fs.map((f) => (
               <li key={f.title} className={`rounded-xl border p-3.5 ${TONE[f.tone]}`}>
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide opacity-70">{TONE_LABEL[f.tone]}</p>
-                <p className="mt-0.5 text-[13.5px] font-semibold">{f.title}</p>
-                <p className="mt-1 text-[12.5px] leading-relaxed opacity-90">{f.body}</p>
+                <p className="text-[12px] font-medium uppercase tracking-wide opacity-70">{TONE_LABEL[f.tone]}</p>
+                <p className="mt-0.5 text-[14px] font-semibold">{f.title}</p>
+                <p className="mt-1 text-[13px] leading-relaxed opacity-90">{f.body}</p>
               </li>
             ))}
           </ul>
@@ -126,11 +126,11 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
       </section>
 
       <section className={card}>
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">From visit to paying candidate</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">From visit to paying candidate</h2>
         <div className="mt-4 space-y-2.5">
           {steps.map((s, i) => (
             <div key={s.label}>
-              <div className="flex items-baseline justify-between gap-3 text-[12.5px]">
+              <div className="flex items-baseline justify-between gap-3 text-[13px]">
                 <span className="font-medium text-slate-800 dark:text-slate-200">{s.label} <span className="font-normal text-slate-400">· {s.note}</span></span>
                 <span className="tabular-nums text-slate-700 dark:text-slate-300"><b>{s.n}</b>{i > 0 && i < 3 && steps[i - 1].n > 0 && <span className="ml-1.5 text-slate-400">{pctOf(s.n, steps[i - 1].n)}% of the step before</span>}</span>
               </div>
@@ -138,41 +138,41 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[11.5px] text-slate-400">Revenue from website candidates in this period: {inr(revenue)}. WhatsApp and paid purchases are counted against website candidates, not against visitors.</p>
+        <p className="mt-3 text-[12px] text-slate-400">Revenue from website candidates in this period: {inr(revenue)}. WhatsApp and paid purchases are counted against website candidates, not against visitors.</p>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className={card}>
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">New and returning visitors</h2>
-          <table className="mt-3 w-full text-[12.5px]">
-            <thead><tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Visitors</th><th className={th}>People</th><th className={th}>Signed up</th><th className={th}>Rate</th></tr></thead>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">New and returning visitors</h2>
+          <table className="mt-3 w-full text-[13px]">
+            <thead><tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Visitors</th><th className={th}>People</th><th className={th}>Signed up</th><th className={th}>Rate</th></tr></thead>
             <tbody>
               <tr className="border-b border-slate-50 dark:border-slate-800/60"><td className="py-1.5">First visit only</td><td className="py-1.5 text-right tabular-nums">{a.firstTime.n}</td><td className="py-1.5 text-right tabular-nums">{a.firstTime.signup}</td><td className="py-1.5 text-right tabular-nums">{a.firstTime.rate}%</td></tr>
               <tr className="border-b border-slate-50 dark:border-slate-800/60"><td className="py-1.5">Came back (2 or more visits)</td><td className="py-1.5 text-right tabular-nums">{a.returning.n}</td><td className="py-1.5 text-right tabular-nums">{a.returning.signup}</td><td className="py-1.5 text-right font-semibold tabular-nums text-teal-700 dark:text-teal-400">{a.returning.rate}%</td></tr>
               <tr><td className="py-1.5">Visited 3+ times, not signed up</td><td className="py-1.5 text-right tabular-nums font-semibold text-amber-700 dark:text-amber-400">{a.heavyNoSignup}</td><td className="py-1.5" /><td className="py-1.5" /></tr>
             </tbody>
           </table>
-          <p className="mt-2 text-[11.5px] text-slate-400">A visit is one browser session. Visitors are recognised by a cookie, so someone who clears it or switches phone counts as new.</p>
+          <p className="mt-2 text-[12px] text-slate-400">A visit is one browser session. Visitors are recognised by a cookie, so someone who clears it or switches phone counts as new.</p>
         </section>
 
         <section className={card}>
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Applying on a job page <span className="text-[12px] font-normal text-slate-400">· recorded since 31 Oct</span></h2>
-          <table className="mt-3 w-full text-[12.5px]">
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Applying on a job page <span className="text-[13px] font-normal text-slate-400">· recorded since 31 Oct</span></h2>
+          <table className="mt-3 w-full text-[13px]">
             <tbody>
               {[["Tapped Apply free", "click"], ["Application form opened", "form_opened"], ["Email gate shown to a new visitor", "gate_shown"], ["Application submitted", "submitted"], ["Shown the recruiter call offer", "paid_call_view"], ["Tapped the recruiter call button", "paid_call_click"]].map(([l, k]) => (
                 <tr key={k} className="border-b border-slate-50 dark:border-slate-800/60"><td className="py-1.5">{l}</td><td className="py-1.5 text-right font-semibold tabular-nums">{ev.get(k) ?? 0}</td></tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-[11.5px] text-slate-400">All counted over the same days, so the steps can be compared. Applications through the register page and the 30-second box are not in these lines, so they can be lower than the application total above. "Shown the offer" starts counting from the release that added it, so compare it with the taps from that day only.</p>
+          <p className="mt-2 text-[12px] text-slate-400">All counted over the same days, so the steps can be compared. Applications through the register page and the 30-second box are not in these lines, so they can be lower than the application total above. "Shown the offer" starts counting from the release that added it, so compare it with the taps from that day only.</p>
         </section>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className={card}>
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">By source</h2>
-          <table className="mt-3 w-full text-[12.5px]">
-            <thead><tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Source</th><th className={th}>Visitors</th><th className={th}>Signed up</th><th className={th}>Applied</th><th className={th}>Rate</th></tr></thead>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">By source</h2>
+          <table className="mt-3 w-full text-[13px]">
+            <thead><tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Source</th><th className={th}>Visitors</th><th className={th}>Signed up</th><th className={th}>Applied</th><th className={th}>Rate</th></tr></thead>
             <tbody>
               {a.bySource.map((s) => (
                 <tr key={s.name} className="border-b border-slate-50 dark:border-slate-800/60"><td className="py-1.5">{s.name}</td><td className="py-1.5 text-right tabular-nums">{s.visitors}</td><td className="py-1.5 text-right tabular-nums">{s.signups}</td><td className="py-1.5 text-right tabular-nums">{s.applies}</td><td className="py-1.5 text-right tabular-nums">{s.rate}%</td></tr>
@@ -181,9 +181,9 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
           </table>
         </section>
         <section className={card}>
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">By first page seen</h2>
-          <table className="mt-3 w-full text-[12.5px]">
-            <thead><tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Landed on</th><th className={th}>Visitors</th><th className={th}>Signed up</th><th className={th}>Rate</th></tr></thead>
+          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">By first page seen</h2>
+          <table className="mt-3 w-full text-[13px]">
+            <thead><tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Landed on</th><th className={th}>Visitors</th><th className={th}>Signed up</th><th className={th}>Rate</th></tr></thead>
             <tbody>
               {a.byLanding.map((l) => (
                 <tr key={l.name} className="border-b border-slate-50 dark:border-slate-800/60"><td className="py-1.5">{l.name}</td><td className="py-1.5 text-right tabular-nums">{l.visitors}</td><td className="py-1.5 text-right tabular-nums">{l.signups}</td><td className="py-1.5 text-right tabular-nums">{l.rate}%</td></tr>
@@ -194,14 +194,14 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
       </div>
 
       <section className={card}>
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Reach these first</h2>
-        <p className="mt-0.5 text-[12.5px] text-slate-500">Registered on the website, never applied to a role, not on WhatsApp. They have a phone number and showed no offer on the Build your profile route until the latest release: a profile review or a WhatsApp message is the natural first touch.</p>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Reach these first</h2>
+        <p className="mt-0.5 text-[13px] text-slate-500">Registered on the website, never applied to a role, not on WhatsApp. They have a phone number and showed no offer on the Build your profile route until the latest release: a profile review or a WhatsApp message is the natural first touch.</p>
         {callFirst.length === 0 ? (
-          <p className="mt-3 text-[12.5px] text-slate-400">No one in this period fits.</p>
+          <p className="mt-3 text-[13px] text-slate-400">No one in this period fits.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[560px] text-[12.5px]">
-              <thead><tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 font-medium">Candidate</th><th className="pb-1.5 font-medium">Phone</th><th className="pb-1.5 font-medium">Came from</th><th className="pb-1.5 text-right font-medium">Visits before signup</th><th className="pb-1.5 text-right font-medium">Signed up</th></tr></thead>
+            <table className="w-full min-w-[560px] text-[13px]">
+              <thead><tr className="border-b border-slate-100 text-left text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 font-medium">Candidate</th><th className="pb-1.5 font-medium">Phone</th><th className="pb-1.5 font-medium">Came from</th><th className="pb-1.5 text-right font-medium">Visits before signup</th><th className="pb-1.5 text-right font-medium">Signed up</th></tr></thead>
               <tbody>
                 {callFirst.map((c) => (
                   <tr key={c.id} className="border-b border-slate-50 dark:border-slate-800/60">
@@ -219,10 +219,10 @@ export default async function WebsiteFunnelPage({ searchParams }: { searchParams
       </section>
 
       <section className={card}>
-        <h2 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Day by day</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Day by day</h2>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[460px] text-[12.5px]">
-            <thead><tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Day</th><th className={th}>Visits</th><th className={th}>Signups</th><th className={th}>Applications</th></tr></thead>
+          <table className="w-full min-w-[460px] text-[13px]">
+            <thead><tr className="border-b border-slate-100 text-[12px] uppercase tracking-wide text-slate-400 dark:border-slate-800"><th className="pb-1.5 text-left font-medium">Day</th><th className={th}>Visits</th><th className={th}>Signups</th><th className={th}>Applications</th></tr></thead>
             <tbody>
               {a.daily.slice(0, 31).map((d) => (
                 <tr key={d.day} className="border-b border-slate-50 dark:border-slate-800/60">

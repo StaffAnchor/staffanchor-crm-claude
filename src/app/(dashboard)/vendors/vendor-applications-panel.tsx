@@ -93,7 +93,7 @@ export default function VendorApplicationsPanel({ applications }: { applications
 
   if (applications.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-6 text-center text-[13px] text-slate-400">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-6 text-center text-[14px] text-slate-400">
         No pending applications from vendors.staffanchor.com.
       </div>
     );
@@ -179,7 +179,7 @@ export default function VendorApplicationsPanel({ applications }: { applications
                   <tr className="bg-slate-50/60 dark:bg-slate-800/30">
                     <td />
                     <td colSpan={7} className="px-2 pb-4 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-[12px] text-slate-600 dark:text-slate-400 max-w-4xl">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-[13px] text-slate-600 dark:text-slate-400 max-w-4xl">
                         <p>
                           <span className="text-slate-400">Phone:</span> {a.phone ?? "—"}
                           {a.linkedin_url && (

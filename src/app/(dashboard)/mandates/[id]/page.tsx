@@ -413,11 +413,11 @@ export default async function MandateDetailPage({
         <div className="min-w-0 w-full md:w-auto">
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-[22px] md:text-[26px] leading-7 md:leading-8 font-semibold tracking-tight text-slate-900 dark:text-slate-100">{mandate.role_title}</h1>
-            <Badge tone={mandate.status === "open" ? "success" : mandate.status === "draft" ? "warning" : "neutral"} size="sm" className="!normal-case !tracking-normal text-[12.5px]">
+            <Badge tone={mandate.status === "open" ? "success" : mandate.status === "draft" ? "warning" : "neutral"} size="sm" className="!normal-case !tracking-normal text-[13px]">
               {mandate.is_archived ? "Archived" : String(mandate.status).replace("_", " ").replace(/^./, (c: string) => c.toUpperCase())}
             </Badge>
           </div>
-          <p className="mt-1 text-[14px] text-slate-600 dark:text-slate-300">
+          <p className="mt-1 text-[15px] text-slate-600 dark:text-slate-300">
             {mandate.client_id ? (
               <Link href={`/clients/${mandate.client_id}`} className="font-medium text-teal-700 hover:underline dark:text-teal-300">
                 {mandate.client_name}
@@ -433,13 +433,13 @@ export default async function MandateDetailPage({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <HeaderMenu label="Share" icon={<Share2 className="h-3.5 w-3.5" />} primary>
-            <p className="px-3 pb-0.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Find candidates</p>
+            <p className="px-3 pb-0.5 pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">Find candidates</p>
             {mandate.status === "open" && mandate.short_code && <CopyShareLinkButton shortCode={mandate.short_code} />}
             <LinkedinPostButton mandateId={id} />
             <CopyForLinkedinButton mandate={mandate} />
             <DownloadJdButton mandateId={id} />
-            <p className="px-3 pb-0.5 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Show the client</p>
-            <Link href="#sharing" className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
+            <p className="px-3 pb-0.5 pt-2 text-[12px] font-medium uppercase tracking-wide text-slate-400">Show the client</p>
+            <Link href="#sharing" className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
               Client link and portal
             </Link>
           </HeaderMenu>
@@ -458,11 +458,11 @@ export default async function MandateDetailPage({
 
       {mandate.is_archived && (
         <div className="mt-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-4 py-3">
-          <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+          <p className="text-[14px] font-medium text-slate-700 dark:text-slate-300">
             This mandate is archived -- real status is still &quot;{mandate.status.replace("_", " ")}
             &quot;{mandate.archived_reason ? ` (${mandate.archived_reason})` : ""}
           </p>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
             {mandate.archived_at ? `Archived ${new Date(mandate.archived_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}. ` : ""}
             It won't show up in the active Mandates list, cron sweeps, or open-mandate counts until reactivated.
           </p>
@@ -484,10 +484,10 @@ export default async function MandateDetailPage({
       {mandate.status === "open" &&
         ((mandate.must_haves ?? []).length === 0 || (mandate.good_to_haves ?? []).length === 0) && (
           <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-[13px] font-medium text-amber-900">
+            <p className="text-[14px] font-medium text-amber-900">
               This mandate went live before must-have / good-to-have criteria were required
             </p>
-            <p className="text-[12px] text-amber-800 mt-0.5">
+            <p className="text-[13px] text-amber-800 mt-0.5">
               Add both below (under &quot;Must haves / Good to haves&quot;) so candidate matching on this
               mandate can actually filter and score against something.
             </p>
@@ -504,7 +504,7 @@ export default async function MandateDetailPage({
         ].map((t) => (
           <div key={t.label} title={(t as { title?: string }).title} className="rounded-xl bg-slate-50 px-4 py-2.5 dark:bg-slate-800/60">
             <p className={`text-[22px] font-semibold leading-7 tabular-nums text-slate-900 dark:text-slate-100 ${t.cls}`}>{t.value}</p>
-            <p className="text-[12px] text-slate-500 dark:text-slate-400">{t.label}</p>
+            <p className="text-[13px] text-slate-500 dark:text-slate-400">{t.label}</p>
           </div>
         ))}
       </div>
@@ -512,7 +512,7 @@ export default async function MandateDetailPage({
       <NextAction item={nextAction} />
       {mandate.status === "open" && !mandate.is_archived && (
         <details className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-          <summary className="cursor-pointer text-[13px] font-medium text-slate-600 dark:text-slate-300">Where this role stands <span className="font-normal text-slate-400">(match, reach, track, call, send to client)</span></summary>
+          <summary className="cursor-pointer text-[14px] font-medium text-slate-600 dark:text-slate-300">Where this role stands <span className="font-normal text-slate-400">(match, reach, track, call, send to client)</span></summary>
           <RolePlaybook mandateId={id} />
         </details>
       )}
@@ -540,7 +540,7 @@ export default async function MandateDetailPage({
             blurb: "The people working on this role. Call them, fill in their details, then share the good ones with the client.",
             group: "main",
             icon: <Users className="h-3.5 w-3.5" />,
-            badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{pipelineCount}</span>,
+            badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[12px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{pipelineCount}</span>,
             content: (
         <MandateCandidatesView
           initialStage={initialStage}
@@ -636,7 +636,7 @@ export default async function MandateDetailPage({
             blurb: "Everyone the client can see, in piles by where they stand: waiting, shortlisted, interview, offer, placed or passed (with the reason).",
             group: "main",
             icon: <Send className="h-3.5 w-3.5" />,
-            badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{(links ?? []).filter((l) => l.in_shortlist).length}</span>,
+            badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[12px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{(links ?? []).filter((l) => l.in_shortlist).length}</span>,
             content: (
               <div className="space-y-5">
                 <SubmittedBoard
@@ -664,7 +664,7 @@ export default async function MandateDetailPage({
                     .filter((r) => r.candidateId)}
                 />
                 <details className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                  <summary className="cursor-pointer text-[13.5px] font-semibold text-slate-700 dark:text-slate-200">See exactly what the client sees <span className="font-normal text-slate-400">(their portal view, read only)</span></summary>
+                  <summary className="cursor-pointer text-[14px] font-semibold text-slate-700 dark:text-slate-200">See exactly what the client sees <span className="font-normal text-slate-400">(their portal view, read only)</span></summary>
                   <div className="mt-3"><SubmittedClientView mandateId={id} clientName={mandate.client_name ?? null} /></div>
                 </details>
               </div>
@@ -680,10 +680,10 @@ export default async function MandateDetailPage({
             content: (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-[13px] text-slate-600 dark:text-slate-300">The best people in your whole database for this role, ranked with the reasons. Add the right ones to the pipeline.</p>
+                  <p className="text-[14px] text-slate-600 dark:text-slate-300">The best people in your whole database for this role, ranked with the reasons. Add the right ones to the pipeline.</p>
                   <div className="flex flex-wrap items-center gap-2">
                     <ScorePipelineButton mandateId={id} disabled={pipelineCount === 0} />
-                    <Link href={`/mandates/${id}/matches`} className="rounded-ros-md border border-teal-300 px-3 py-1.5 text-[13px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/30">
+                    <Link href={`/mandates/${id}/matches`} className="rounded-ros-md border border-teal-300 px-3 py-1.5 text-[14px] font-medium text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950/30">
                       Custom search with extra criteria →
                     </Link>
                   </div>
@@ -691,7 +691,7 @@ export default async function MandateDetailPage({
             <div className="space-y-6">
               <div id="best-matches"><Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}><BestMatchesPanel mandateId={id} /></Suspense></div>
               <details className="rounded-ros-xl border border-slate-200 p-3 dark:border-slate-700">
-                <summary className="cursor-pointer text-[13px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>
+                <summary className="cursor-pointer text-[14px] font-semibold text-slate-700 dark:text-slate-200">Detailed requirement check (the AI reads each CV against every must-have)</summary>
                 <div className="mt-3">
                   <AiMatchesPanel mandateId={id} />
                 </div>
@@ -876,14 +876,14 @@ export default async function MandateDetailPage({
               content: (
                 <>
                   <div id="sharing" className="rounded-ros-xl border border-teal-200 bg-teal-50/50 p-4 dark:border-teal-900 dark:bg-teal-950/20">
-                    <h3 className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Client portal</h3>
-                    <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-300">
+                    <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Client portal</h3>
+                    <p className="mt-1 text-[14px] text-slate-600 dark:text-slate-300">
                       {mandate.client_name} signs in at jobs.staffanchor.com/client-portal to see this role and the candidates you share. The one-off shortlist link is further down.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {mandate.client_id && <PortalPreviewButton clientId={mandate.client_id} />}
                       {mandate.client_id && (
-                        <Link href={`/clients/${mandate.client_id}`} className="rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+                        <Link href={`/clients/${mandate.client_id}`} className="rounded-ros-md border border-slate-300 bg-white px-3.5 py-1.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                           Manage portal access
                         </Link>
                       )}

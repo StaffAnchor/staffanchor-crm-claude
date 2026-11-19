@@ -46,11 +46,11 @@ export default function RoleNudgeButton({ mandateId, count }: { mandateId: strin
   return (
     <div className="mt-2">
       {!open ? (
-        <button type="button" onClick={show} className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1 text-[12.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200">
+        <button type="button" onClick={show} className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200">
           <BellRing className="h-3 w-3" /> Remind {count}
         </button>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-white p-2.5 text-[12px] dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-lg border border-slate-200 bg-white p-2.5 text-[13px] dark:border-slate-700 dark:bg-slate-900">
           {!info && !msg && <p className="text-slate-500">Preparing…</p>}
           {info && (
             <>

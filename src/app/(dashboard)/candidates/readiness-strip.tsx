@@ -29,15 +29,15 @@ export default function ReadinessStrip({
     <section aria-label="Data readiness" className="mb-3 rounded-ros-lg border border-slate-100 bg-white p-4 shadow-ros-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-slate-900 dark:text-slate-100">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" /> How ready is your talent pool for a mandate?
           </h2>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">
+          <p className="text-[13px] text-slate-500 dark:text-slate-400">
             {readyPct}% of profiles are ready to shortlist today (average score {overview.avg}/100). Fix the details below to move the most profiles up.
           </p>
         </div>
         {(activeTier || activeMissing) && (
-          <Link href={hrefFor(undefined, undefined)} className="text-[12px] font-medium text-teal-600 hover:underline">
+          <Link href={hrefFor(undefined, undefined)} className="text-[13px] font-medium text-teal-600 hover:underline">
             Clear readiness filter
           </Link>
         )}
@@ -54,7 +54,7 @@ export default function ReadinessStrip({
             href={hrefFor(t, undefined)}
             className={`rounded-lg border px-3 py-2 transition hover:bg-slate-50 dark:hover:bg-slate-800 ${activeTier === t ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"}`}
           >
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               <span className={`h-2 w-2 rounded-full ${TIER_BAR[t]}`} /> {TIER_LABEL[t]}
             </div>
             <div className="mt-0.5 flex items-baseline justify-between">

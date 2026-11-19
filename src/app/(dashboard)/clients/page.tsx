@@ -146,17 +146,17 @@ export default async function ClientsPage({
         <div className="flex items-baseline justify-between mb-5">
           <div>
             <h1 className="ros-page-title">Clients</h1>
-            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1">
               {(clients ?? []).length} client{(clients ?? []).length === 1 ? "" : "s"}
               {isPartnerView ? " you brought in" : " in your database"}
             </p>
           </div>
           <div className="flex items-center gap-2">
-          <Link href="/clients/activity" className="rounded-full border border-slate-200 dark:border-slate-700 px-4 py-2 text-[13px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+          <Link href="/clients/activity" className="rounded-full border border-slate-200 dark:border-slate-700 px-4 py-2 text-[14px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
             Client activity
           </Link>
           <details className="group relative">
-            <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-teal-700 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-teal-700 [&::-webkit-details-marker]:hidden">
               <span aria-hidden>+</span> New client
             </summary>
             <div className="absolute right-0 z-30 mt-2 w-[360px] max-w-[90vw]">
@@ -189,7 +189,7 @@ export default async function ClientsPage({
             name="q"
             defaultValue={q}
             placeholder="Search clients by name…"
-            className="w-full rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[13px] outline-none transition-colors duration-200 ease-ros focus:ring-2 focus:ring-teal-500/30 focus:border-teal-300 shadow-ros-sm"
+            className="w-full rounded-ros-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[14px] outline-none transition-colors duration-200 ease-ros focus:ring-2 focus:ring-teal-500/30 focus:border-teal-300 shadow-ros-sm"
           />
         </form>
 
@@ -208,7 +208,7 @@ export default async function ClientsPage({
               <Card key={c.id} interactive padded={false} className="p-0">
                 <Link href={`/clients/${c.id}`} className="block p-5">
                   <div className="flex items-start justify-between mb-2 gap-2">
-                    <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 truncate">{c.name}</p>
+                    <p className="text-[16px] font-semibold text-slate-900 dark:text-slate-100 truncate">{c.name}</p>
                     {c.industry && (
                       <Badge tone="neutral" size="sm" className="normal-case tracking-normal shrink-0">
                         {c.industry}
@@ -218,7 +218,7 @@ export default async function ClientsPage({
                   {c.owner_id && ownerNames[c.owner_id] && (
                     <p className="text-xs text-slate-400 mb-2 -mt-1">Owner: {ownerNames[c.owner_id]}</p>
                   )}
-                  <div className="flex items-center gap-4 text-[12px] text-slate-500 dark:text-slate-400 mb-3">
+                  <div className="flex items-center gap-4 text-[13px] text-slate-500 dark:text-slate-400 mb-3">
                     {c.hq_city && (
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> {c.hq_city}

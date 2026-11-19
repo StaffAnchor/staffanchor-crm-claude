@@ -24,8 +24,8 @@ export default function GenerateButton({ briefId, hasDrafts, submitted }: { brie
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-3">
-        <button onClick={go} disabled={busy} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Writing the draft…" : hasDrafts ? "Write a new draft from the answers" : "Write the first draft"}</button>
-        <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300"><input type="checkbox" checked={polish} onChange={(e) => setPolish(e.target.checked)} /> Polish the wording with AI (every figure is checked)</label>
+        <button onClick={go} disabled={busy} className="rounded-lg bg-teal-600 px-3.5 py-1.5 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">{busy ? "Writing the draft…" : hasDrafts ? "Write a new draft from the answers" : "Write the first draft"}</button>
+        <label className="flex items-center gap-2 text-[14px] text-slate-600 dark:text-slate-300"><input type="checkbox" checked={polish} onChange={(e) => setPolish(e.target.checked)} /> Polish the wording with AI (every figure is checked)</label>
       </div>
       {busy && <p className="text-xs text-slate-500">This can take up to half a minute.</p>}
       {err && <p className="text-sm text-red-600">{err}</p>}
