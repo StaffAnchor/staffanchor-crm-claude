@@ -295,7 +295,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
                 {fact("Expected", c.expected_fixed_ctc != null ? `${Number(c.expected_fixed_ctc)} LPA` : null)}
                 {fact("Relocation", c.open_to_relocation)}
               </dl>
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+              <div className="rounded-2xl bg-slate-50/70 p-4 dark:bg-slate-800/40">
                 <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-slate-500">Why this match</p>
                 <div className="flex flex-wrap gap-1.5">
                   {r.matched.map((x) => (<span key={x} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-300"><Check className="h-3 w-3" /> {x}</span>))}
@@ -304,7 +304,7 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
                 </div>
                 {c.readiness_tier && c.readiness_tier !== "ready" && (c.readiness_missing?.length ?? 0) > 0 && <p className="mt-2 text-[13px] text-amber-800 dark:text-amber-300">To confirm on a call: {missingText(c.readiness_missing)}</p>}
               </div>
-              <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
+              <div className="rounded-xl bg-slate-50/70 p-3 dark:bg-slate-800/40">
                 <p className="mb-1.5 text-[12px] font-medium uppercase tracking-wide text-slate-400">What we remember from calls</p>
                 {m ? (
                   <div className="space-y-1.5 text-[14px]">
@@ -318,8 +318,13 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
                   <p className="flex items-center gap-1.5 text-[14px] text-slate-400"><MessageCircle className="h-3.5 w-3.5" /> Nothing yet. Press Call now, and what they say shows here and feeds matching.</p>
                 )}
               </div>
-              {c.summary && <p className="text-[14px] text-slate-600 dark:text-slate-300">{c.summary}</p>}
-              <SkillsStrip candidateId={c.candidate_id} roleText={roleTitle ?? ""} />
+              <details className="group rounded-xl bg-slate-50/70 px-4 py-3 dark:bg-slate-800/40">
+                <summary className="cursor-pointer list-none text-[14px] font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">Summary and skills <span className="font-normal text-slate-500 group-open:hidden">Show</span></summary>
+                <div className="mt-3 space-y-3">
+                  {c.summary && <p className="text-[14px] text-slate-600 dark:text-slate-300">{c.summary}</p>}
+                  <SkillsStrip candidateId={c.candidate_id} roleText={roleTitle ?? ""} />
+                </div>
+              </details>
               <div className="flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
                 <CvButtons candidateId={c.candidate_id} name={c.full_name} />
               </div>

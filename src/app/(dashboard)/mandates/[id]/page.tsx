@@ -500,7 +500,8 @@ export default async function MandateDetailPage({
           { label: "In the pipeline", value: String(pipelineCount), cls: "" },
           { label: "Shared with the client", value: String(submittedCount), cls: "" },
           { label: mandate.headcount > 1 ? "Positions filled" : "Days open", value: mandate.headcount > 1 ? `${placedCount}/${mandate.headcount}` : String(daysOpenNum), cls: mandate.headcount <= 1 && daysOpenNum >= 21 ? "text-amber-600" : "" },
-          ...(fillProbability ? [{ label: "Chance of filling", value: `${fillProbability.score}%`, cls: fillProbability.bucket === "high" ? "text-emerald-600" : fillProbability.bucket === "medium" ? "text-amber-600" : "text-rose-600", title: `Main driver: ${fillProbability.driver}` }] : []),
+          // A percentage on a role that opened yesterday with two candidates is a guess. It shows once there is a week and a pipeline behind it.
+          ...(fillProbability && daysOpenNum >= 7 && pipelineCount >= 3 ? [{ label: "Chance of filling", value: `${fillProbability.score}%`, cls: fillProbability.bucket === "high" ? "text-emerald-600" : fillProbability.bucket === "medium" ? "text-amber-600" : "text-rose-600", title: `Main driver: ${fillProbability.driver}` }] : []),
         ].map((t) => (
           <div key={t.label} title={(t as { title?: string }).title} className="rounded-xl bg-slate-50 px-4 py-2.5 dark:bg-slate-800/60">
             <p className={`text-[22px] font-semibold leading-7 tabular-nums text-slate-900 dark:text-slate-100 ${t.cls}`}>{t.value}</p>

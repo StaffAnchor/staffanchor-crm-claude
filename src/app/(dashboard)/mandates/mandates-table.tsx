@@ -115,7 +115,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   },
   {
     key: "linked",
-    label: "Applications",
+    label: "In the pipeline",
     render: (m) =>
       m.linked === 0 ? (
         <span className="text-slate-400 tabular-nums">0</span>
@@ -131,7 +131,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   },
   {
     key: "submitted",
-    label: "Submitted+",
+    label: "With the client",
     render: (m) => <span className="text-slate-600 dark:text-slate-300 tabular-nums">{m.submitted}</span>,
   },
   {
@@ -199,7 +199,6 @@ const COLUMN_DEFS: ColumnDef[] = [
 
 const COLUMN_KEYS = COLUMN_DEFS.map((c) => c.key);
 const DEFAULT_VISIBLE = new Set([
-  "client_name",
   "staffNames",
   "category",
   "city",
@@ -210,7 +209,7 @@ const DEFAULT_VISIBLE = new Set([
   "signals",
 ]);
 
-const STORAGE_KEY = "sa_mandates_columns_v1";
+const STORAGE_KEY = "sa_mandates_columns_v2";
 
 function loadPrefs(): { order: string[]; hidden: string[] } {
   const defaults = {
@@ -574,9 +573,10 @@ export default function MandatesTable({
                     selected.has(m.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"
                   }`}
                 >
-                  <Link href={`/mandates/${m.id}`} className="font-medium text-teal-700 dark:text-teal-400 hover:underline truncate block max-w-[220px]">
+                  <Link href={`/mandates/${m.id}`} className="font-medium text-teal-700 dark:text-teal-400 hover:underline truncate block max-w-[260px]">
                     {m.role_title}
                   </Link>
+                  <span className="block max-w-[260px] truncate text-[13px] text-slate-500 dark:text-slate-400">{m.client_name}</span>
                 </td>
                 {visibleColumns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
@@ -588,7 +588,10 @@ export default function MandatesTable({
                     selected.has(m.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"
                   }`}
                 >
-                  <PauseMandateButton mandateId={m.id} status={m.status} roleTitle={m.role_title} />
+                  {/* Quiet until you point at the row, so the list is not a column of identical buttons. A paused role keeps its Resume visible. */}
+                  <div className={m.status === "on_hold" ? "" : "opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"}>
+                    <PauseMandateButton mandateId={m.id} status={m.status} roleTitle={m.role_title} />
+                  </div>
                 </td>
               </tr>
             ))}

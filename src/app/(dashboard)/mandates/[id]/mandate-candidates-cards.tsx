@@ -414,7 +414,7 @@ export default function MandateCandidatesCards({
                 {fact(l.origin === "applied" ? "Applied" : "Added", fmtDate(l.created_at))}
               </dl>
 
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+              <div className="rounded-2xl bg-slate-50/70 p-4 dark:bg-slate-800/40">
                 <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-slate-500">Why this fit</p>
                 {a ? (
                   <div className="space-y-3 text-[14px]">
@@ -444,7 +444,7 @@ export default function MandateCandidatesCards({
                 )}
               </div>
 
-              <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
+              <div className="rounded-xl bg-slate-50/70 p-3 dark:bg-slate-800/40">
                 <p className="mb-1.5 text-[12px] font-medium uppercase tracking-wide text-slate-400">What we remember from calls</p>
                 {memory ? (
                   <div className="space-y-1.5 text-[14px]">
@@ -463,6 +463,9 @@ export default function MandateCandidatesCards({
                 {l.call_paid_at && <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800" title="Paid ₹199 for a recruiter call">Paid call{l.call_due_at ? ` · due ${fmtDate(l.call_due_at)}` : ""}</span>}
               </div>
 
+              <details className="group rounded-xl bg-slate-50/70 px-4 py-3 dark:bg-slate-800/40">
+                <summary className="cursor-pointer list-none text-[14px] font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">Career, education and skills <span className="font-normal text-slate-500 group-open:hidden">Show</span></summary>
+                <div className="mt-3 space-y-4">
               <div className="grid gap-4 text-[14px] sm:grid-cols-2">
                 <div className="min-w-0 space-y-2">
                   <p className="text-[12px] font-medium uppercase tracking-wide text-slate-400">Last jobs</p>
@@ -479,6 +482,8 @@ export default function MandateCandidatesCards({
                 </div>
               </div>
               <SkillsStrip candidateId={c.id} roleText={roleText} />
+                </div>
+              </details>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-slate-50 px-3 py-2 text-[14px] dark:bg-slate-800/60">
                 {c.phone ? <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 font-medium text-teal-700"><Phone className="h-3.5 w-3.5" /> {c.phone}</a> : <span className="text-slate-400">No phone</span>}
                 {c.email ? <a href={`mailto:${c.email}`} className="inline-flex items-center gap-1.5 font-medium text-teal-700"><Mail className="h-3.5 w-3.5" /> {c.email}</a> : <span className="text-slate-400">No email</span>}
@@ -528,7 +533,7 @@ export default function MandateCandidatesCards({
                 </div>
               ) : (
                 <>
-                  <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                  <div className="rounded-2xl bg-slate-50/70 p-4 dark:bg-slate-800/40">
                     <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-slate-500">Before the client sees this person</p>
                     {left === undefined ? <p className="text-[14px] text-slate-400">Checking…</p> : left.length === 0 ? (
                       <p className="flex items-center gap-2 text-[14px] font-medium text-emerald-700"><Check className="h-4 w-4" /> Everything the client needs is filled in.</p>
@@ -538,7 +543,7 @@ export default function MandateCandidatesCards({
                       </ul>
                     )}
                   </div>
-                  <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                  <div className="rounded-2xl bg-slate-50/70 p-4 dark:bg-slate-800/40">
                     <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-slate-500">What the client will see</p>
                     <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                       {fact("Role now", [c.current_job_title, c.current_employer].filter(Boolean).join(" at ") || null)}

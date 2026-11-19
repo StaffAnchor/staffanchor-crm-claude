@@ -365,7 +365,8 @@ body {
     letter-spacing: -0.006em;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3 {
+  h1, h2, h3, .ros-page-title {
+    font-family: var(--font-heading), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
   /* Numbers line up in columns: pay, counts, dates. */
