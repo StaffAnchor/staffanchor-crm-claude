@@ -11,6 +11,7 @@ import type { MandateCandidateRow } from "./candidate-row";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
 import MandateRejectModal from "./mandate-reject-modal";
+import PlacedDateModal from "./placed-date-modal";
 import { ConfirmDetailsPanel } from "./confirm-details-modal";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import PipelineWhatsApp from "./pipeline-whatsapp";
@@ -110,6 +111,8 @@ export default function MandateCandidatesCards({
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [readiness, setReadiness] = useState<Record<string, string[]>>({});
   const [rejectRow, setRejectRow] = useState<MandateCandidateRow | null>(null);
+  // Placed needs the joining date, so choosing it opens this small window first.
+  const [dojRow, setDojRow] = useState<MandateCandidateRow | null>(null);
   const [busy, setBusy] = useState(false);
   const mandateId = mandateContext.mandateId as string;
   const label = `${mandateContext.role_title as string} — ${mandateContext.client_name as string}`;
@@ -140,7 +143,7 @@ export default function MandateCandidatesCards({
     await supabase.from("candidate_mandate_links").update({ viewed_at: new Date().toISOString(), viewed_by: user?.id ?? null }).eq("id", row.id).is("viewed_at", null);
   }
 
-  async function move(row: MandateCandidateRow, newStage: Stage, source: StageSource = "recruiter", extra: { rejectionCategory?: string; rejectionReason?: string } = {}) {
+  async function move(row: MandateCandidateRow, newStage: Stage, source: StageSource = "recruiter", extra: { rejectionCategory?: string; rejectionReason?: string; dateOfJoining?: string } = {}) {
     setBusy(true);
     setMessage(null);
     try {
@@ -191,6 +194,7 @@ export default function MandateCandidatesCards({
   function pickStage(row: MandateCandidateRow, next: Stage) {
     if (next === row.stage) return;
     if (next === "rejected") return setRejectRow(row);
+    if (next === "placed" && !row.date_of_joining) return setDojRow(row);
     if (next === "submitted" && !row.in_shortlist && (STAGE_ORDER[row.stage] ?? 0) < STAGE_ORDER["submitted"]) return void shortlist(row);
     void move(row, next);
   }
@@ -649,6 +653,20 @@ export default function MandateCandidatesCards({
           {activeRow ? renderPane(activeRow) : <p className="p-10 text-center text-sm text-slate-400">Pick someone from the list.</p>}
         </div>
       </div>
+
+      {dojRow && (
+        <PlacedDateModal
+          candidateName={dojRow.candidate.full_name}
+          busy={busy}
+          onCancel={() => setDojRow(null)}
+          onConfirm={async (date) => {
+            const row = dojRow;
+            await move(row, "placed", "recruiter", { dateOfJoining: date });
+            setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, date_of_joining: date } : r)));
+            setDojRow(null);
+          }}
+        />
+      )}
 
       {rejectRow && (
         <MandateRejectModal

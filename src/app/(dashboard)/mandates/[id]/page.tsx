@@ -22,6 +22,7 @@ import RolePlaybook from "./role-playbook";
 import { SmartSearchProvider, SmartSearchBar, SmartSearchTab, SmartBadge } from "./smart-search";
 import { type MandateCandidateRow } from "./candidate-row";
 import MandateCandidatesView from "./mandate-candidates-view";
+import SubmittedBoard from "./submitted-board";
 import SubmittedClientView from "./submitted-client-view";
 import DeleteMandateButton from "./delete-mandate-button";
 import HeaderMenu from "./header-menu";
@@ -632,11 +633,42 @@ export default async function MandateDetailPage({
             key: "submitted",
             tone: "indigo",
             label: "Submitted",
-            blurb: "The people the client can see. Their answers (shortlist or pass, and why) show here.",
+            blurb: "Everyone the client can see, in piles by where they stand: waiting, shortlisted, interview, offer, placed or passed (with the reason).",
             group: "main",
             icon: <Send className="h-3.5 w-3.5" />,
             badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{(links ?? []).filter((l) => l.in_shortlist).length}</span>,
-            content: <SubmittedClientView mandateId={id} clientName={mandate.client_name ?? null} />,
+            content: (
+              <div className="space-y-5">
+                <SubmittedBoard
+                  mandateId={id}
+                  mandateLabel={`${mandate.role_title} — ${mandate.client_name}`}
+                  rows={(links ?? [])
+                    .filter((l) => l.in_shortlist || ["submitted", "client_interview", "client_shortlisted", "offer", "placed"].includes(l.stage as string) || (l.client_feedback === "not_interested" && !!l.client_decision_at))
+                    .map((l) => {
+                      const c = l.candidates as unknown as { id: string; full_name: string | null; current_job_title: string | null; current_employer: string | null } | null;
+                      return {
+                        id: l.id as string,
+                        candidateId: c?.id ?? "",
+                        name: c?.full_name ?? "Candidate",
+                        headline: [c?.current_job_title, c?.current_employer].filter(Boolean).join(" at "),
+                        stage: l.stage as string,
+                        inShortlist: !!l.in_shortlist,
+                        clientFeedback: (l.client_feedback as string | null) ?? null,
+                        passReason: (l.client_pass_reason as string | null) ?? null,
+                        passNote: (l.client_pass_note as string | null) ?? null,
+                        decisionAt: (l.client_decision_at as string | null) ?? null,
+                        sharedAt: (l.stage_updated_at as string | null) ?? null,
+                        joiningDate: (l.date_of_joining as string | null) ?? null,
+                      };
+                    })
+                    .filter((r) => r.candidateId)}
+                />
+                <details className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                  <summary className="cursor-pointer text-[13.5px] font-semibold text-slate-700 dark:text-slate-200">See exactly what the client sees <span className="font-normal text-slate-400">(their portal view, read only)</span></summary>
+                  <div className="mt-3"><SubmittedClientView mandateId={id} clientName={mandate.client_name ?? null} /></div>
+                </details>
+              </div>
+            ),
           },
           {
             key: "best-matches",
