@@ -44,6 +44,7 @@ import {
   Download,
   MessageCircle,
   Star,
+  Mic,
 } from "lucide-react";
 
 export type OpenMandate = {
@@ -1147,6 +1148,7 @@ export default function CandidatesTable({
   teamMembers = [],
   mandateLinksByCandidate = {},
   poolTiers = {},
+  voiceIds = [],
   totalCount,
   rangeStart,
   rangeEnd,
@@ -1158,6 +1160,8 @@ export default function CandidatesTable({
   mandateLinksByCandidate?: Record<string, MandateLink[]>;
   /** Candidates on this page who are in the Talent Pool, with their tier. */
   poolTiers?: Record<string, "top" | "strong" | "watch">;
+  /** Candidates on this page who added a voice note with an application. */
+  voiceIds?: string[];
   // When provided (server knows the real filtered total, not just this
   // page's row count), the header switches from "N candidates" to
   // "Showing A-B of N candidates" so pagination doesn't look like truncation.
@@ -2075,6 +2079,11 @@ export default function CandidatesTable({
                       </p>
                     </Link>
                     <ProfileRatingBadge row={ratings.get(c.id)} />
+                    {voiceIds.includes(c.id) && (
+                      <span className="ml-1 inline-flex shrink-0 text-teal-600" title="Added a voice note with an application" aria-label="Has a voice note">
+                        <Mic className="h-3.5 w-3.5" />
+                      </span>
+                    )}
                     {poolTiers[c.id] && (
                       <span className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${POOL_TIER_PILL[poolTiers[c.id]]}`} title="In the Talent Pool">
                         <Star className="h-3 w-3" /> {POOL_TIER_LABEL[poolTiers[c.id]]}

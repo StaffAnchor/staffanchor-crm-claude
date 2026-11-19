@@ -709,6 +709,15 @@ export default async function CandidatesPage({
       for (const p of (poolRows ?? []) as { candidate_id: string; tier: "top" | "strong" | "watch" }[]) poolTiers[p.candidate_id] = p.tier;
     }
   }
+  // Who on this page added a voice note with an application, so the list can show a mic.
+  const voiceIds: string[] = [];
+  {
+    const pageIds = (candidates ?? []).map((c) => c.id as string);
+    if (pageIds.length > 0) {
+      const { data: voiceRows } = await supabase.from("application_voice_notes").select("candidate_id").in("candidate_id", pageIds);
+      voiceIds.push(...Array.from(new Set(((voiceRows ?? []) as { candidate_id: string }[]).map((v) => v.candidate_id))));
+    }
+  }
   const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
   ((linkRowsRes.data ?? []) as { candidate_id: string; mandate_id: string; mandates: unknown }[]).forEach((row) => {
     const mandate = row.mandates as unknown as { role_title: string; client_name: string } | null;
@@ -1532,6 +1541,7 @@ export default async function CandidatesPage({
         teamMembers={teamMembers ?? []}
         mandateLinksByCandidate={mandateLinksByCandidate}
         poolTiers={poolTiers}
+        voiceIds={voiceIds}
         totalCount={totalFiltered}
         rangeStart={rangeStart}
         rangeEnd={rangeEnd}

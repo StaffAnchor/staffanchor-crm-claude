@@ -2,7 +2,7 @@ import Link from "next/link";
 import { after } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
-import { FileText, AlertTriangle, ChevronLeft, ChevronRight, Briefcase, Clock, IndianRupee, Target, LayoutGrid, PhoneCall, Layers, MessageSquare, ScrollText, History as HistoryIcon, AlertCircle, CheckCircle2 } from "lucide-react";
+import { FileText, AlertTriangle, ChevronLeft, ChevronRight, Briefcase, Clock, IndianRupee, Target, LayoutGrid, PhoneCall, Layers, MessageSquare, ScrollText, History as HistoryIcon, AlertCircle, CheckCircle2, Mic } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -136,6 +136,7 @@ export default async function CandidateDetailPage({
     viewer: Promise.resolve(supabase.auth.getUser()).then(async ({ data: { user } }) => (user ? { user, profile: (await supabase.from("profiles").select("full_name, email").eq("id", user.id).single()).data } : { user: null, profile: null })),
     passport: Promise.resolve(supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle()),
     cvFacts: Promise.resolve(supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle()),
+    voiceNotes: Promise.resolve(supabase.from("application_voice_notes").select("seconds, mandate_id").eq("candidate_id", id)),
     notes: Promise.resolve(supabase.from("recruiter_notes").select("id, note_type, content, created_at, author_id").eq("candidate_id", id).order("created_at", { ascending: false })),
     audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
     pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
@@ -402,6 +403,7 @@ export default async function CandidateDetailPage({
   const whatsappRows = ((await q.whatsapp).data ?? []).slice().reverse();
 
   const { data: links } = await q.links;
+  const { data: voiceNoteRows } = await q.voiceNotes;
 
   const linkedMandateCities = Array.from(
     new Set(
@@ -831,6 +833,11 @@ export default async function CandidateDetailPage({
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
+                  {(voiceNoteRows ?? []).length > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Added a voice note with an application. Play it on the role's page.">
+                      <Mic className="h-3.5 w-3.5" /> Voice note
+                    </span>
+                  )}
                   {candidate.candidate_number != null && (
                     <span className="text-xs font-mono text-slate-400" title="Candidate number">
                       C-{String(candidate.candidate_number).padStart(6, "0")}
