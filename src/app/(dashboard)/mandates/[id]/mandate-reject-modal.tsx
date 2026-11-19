@@ -39,6 +39,7 @@ export default function MandateRejectModal({
   const [note, setNote] = useState("");
   const [rating, setRating] = useState<RatingDraft>(emptyDraft);
   const [sellerFlags, setSellerFlags] = useState<string[]>([]);
+  const [showAllReasons, setShowAllReasons] = useState(false);
 
   const baseReasons = source === "recruiter" ? RECRUITER_REJECTION_REASONS : CLIENT_REJECTION_REASONS;
 
@@ -132,13 +133,14 @@ export default function MandateRejectModal({
                 className="w-full text-[13px] rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-2 bg-white dark:bg-slate-900"
               >
                 <option value="">Select a reason…</option>
-                {reasons.map((r) => (
+                {(showAllReasons ? reasons : reasons.filter((r, i) => i < 6 || r.value === category || r.value.startsWith("other"))).map((r) => (
                   <option key={r.value} value={r.value}>
                     {hints.some((h) => h.value === r.value) ? "★ " : ""}
                     {r.label}
                   </option>
                 ))}
               </select>
+              {!showAllReasons && reasons.length > 7 && <button type="button" onClick={() => setShowAllReasons(true)} className="mt-1 text-xs text-teal-700 hover:underline">Show all {reasons.length} reasons</button>}
               {hints.length > 0 && (
                 <div className="mt-2">
                   <p className="mb-1 flex items-center gap-1 text-[11.5px] font-medium text-slate-500 dark:text-slate-400">

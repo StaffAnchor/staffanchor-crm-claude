@@ -521,7 +521,12 @@ export default async function MandateDetailPage({
       </p>
 
       <NextAction item={nextAction} />
-      {mandate.status === "open" && !mandate.is_archived && <RolePlaybook mandateId={id} />}
+      {mandate.status === "open" && !mandate.is_archived && (
+        <details className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+          <summary className="cursor-pointer text-[13px] font-medium text-slate-600 dark:text-slate-300">Where this role stands <span className="font-normal text-slate-400">(match, reach, track, call, send to client)</span></summary>
+          <RolePlaybook mandateId={id} />
+        </details>
+      )}
 
       {blockers.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -536,7 +541,6 @@ export default async function MandateDetailPage({
 
 
       <SmartSearchProvider mandateId={id} roleTitle={mandate.role_title} city={mandate.cities?.[0] ?? mandate.city ?? null}>
-      {!mandate.is_archived && <SmartSearchBar />}
       <Tabs
         className="mt-6"
         items={[
@@ -684,7 +688,12 @@ export default async function MandateDetailPage({
             group: "main",
             icon: <Sparkles className="h-3.5 w-3.5" />,
             badge: <SmartBadge />,
-            content: <SmartSearchTab />,
+            content: (
+              <div className="space-y-4">
+                {!mandate.is_archived && <SmartSearchBar />}
+                <SmartSearchTab />
+              </div>
+            ),
           },
           {
             key: "voice",

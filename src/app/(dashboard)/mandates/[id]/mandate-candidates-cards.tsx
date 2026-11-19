@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Mic, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
+import { ArrowLeft, Check, ClipboardList, Eye, Mic, Send, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { passReasonLabel } from "@/components/client-view/PassReasonDialog";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
@@ -46,7 +46,7 @@ function KeyFacts({ l, voice, wa }: { l: MandateCandidateRow; voice?: { url: str
   const ourReason = l.rejection_category ? rejectionReasonLabel("recruiter", l.rejection_category) : null;
   const when = l.client_decision_at ?? l.stage_updated_at;
   const dateText = when ? new Date(when).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null;
-  const hasAnything = l.stage === "rejected" || !!l.client_feedback || sr || voice || wa;
+  const hasAnything = l.stage === "rejected" || !!l.client_feedback || voice;
   if (!hasAnything) return null;
   return (
     <div className="space-y-2.5">
@@ -63,12 +63,6 @@ function KeyFacts({ l, voice, wa }: { l: MandateCandidateRow; voice?: { url: str
           <p className={`text-[11px] font-semibold uppercase tracking-wider ${clientPassed ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-300"}`}>{l.client_feedback === "not_interested" ? "Client passed" : l.client_feedback === "interview_requested" ? "Client wants an interview" : "Client shortlisted"}{dateText ? ` · ${dateText}` : ""}</p>
           {clientPassed && <p className="mt-1 text-[14px] font-semibold text-slate-900 dark:text-slate-100">{clientReason ?? "No reason given"}</p>}
           {(l.client_pass_note || l.client_note) && <p className="mt-1 text-[13px] text-slate-700 dark:text-slate-300">&ldquo;{l.client_pass_note ?? l.client_note}&rdquo;</p>}
-        </div>
-      )}
-      {(sr || wa) && (
-        <div className="flex flex-wrap items-center gap-2 text-[12px]">
-          {sr && stab != null && <span className={`rounded-full px-2.5 py-1 font-semibold ${sr.cls}`} title="Out of 100, read from how long they stayed in each job">Stability {stab}/100 · {sr.word}</span>}
-          {wa && <Link href={`/candidates/${c.id}`} target="_blank" className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> {wa.count > 1 ? `${wa.count} WhatsApp voice notes` : "WhatsApp voice note"}</Link>}
         </div>
       )}
       {voice && (
@@ -380,12 +374,25 @@ export default function MandateCandidatesCards({
           </div>
         </div>
 
-        <div role="tablist" className="flex gap-0.5 overflow-x-auto border-b border-slate-100 px-4 dark:border-slate-800">
-          {tabs.map((t) => (
-            <button key={t.key} role="tab" type="button" aria-selected={curTab === t.key} onClick={() => setTab(t.key)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] ${curTab === t.key ? "border-teal-600 font-semibold text-slate-900 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-              {t.label}{t.dot && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3 text-[12.5px] dark:border-slate-800">
+          {logged ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-200"><PhoneCall className="h-3.5 w-3.5" /> Called{memory?.at ? ` ${fmtDate(memory.at)}` : ""}</span>
+          ) : (
+            <button type="button" onClick={() => { setTab("details"); void markViewed(l); }} className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100"><Phone className="h-3.5 w-3.5" /> Not called yet. Call now</button>
+          )}
+          {c.stability_score != null && (() => { const n = Math.round(Number(c.stability_score)); const r = stabilityRead(n); return <span className={`rounded-full px-3 py-1 font-semibold ${r.cls}`} title="Out of 100, read from how long they stayed in each job">Stability {n}/100 · {r.word}</span>; })()}
+          {(voice || waVoiceByCandidate[c.id]) && <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-3 py-1 font-semibold text-teal-800 ring-1 ring-teal-200"><Mic className="h-3.5 w-3.5" /> {voice ? "Voice note below" : "WhatsApp voice note. Listen on the profile"}</span>}
+          {l.match_score != null && <span className="ml-auto text-slate-400" title="How well their job, selling, city, pay, experience and notice line up with this role, out of 100">Match score {Math.min(100, Math.round(l.match_score))}/100</span>}
+        </div>
+        <div role="tablist" className="flex gap-2 overflow-x-auto border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
+          {tabs.map((t) => {
+            const Icon = t.key === "overview" ? Eye : t.key === "details" ? ClipboardList : t.key === "share" ? Send : MessageCircle;
+            return (
+              <button key={t.key} role="tab" type="button" aria-selected={curTab === t.key} onClick={() => setTab(t.key)} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-[14px] font-semibold ${curTab === t.key ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
+                <Icon className="h-4 w-4" />{t.label}{t.dot && <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />}
+              </button>
+            );
+          })}
         </div>
 
         </div>
