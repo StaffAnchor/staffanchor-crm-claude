@@ -11,7 +11,7 @@ export type PastDebrief = { id: string; created_at: string; author: string | nul
 
 // The profile's call section: the same form as Calls today, so a call is recorded one way everywhere, with what the
 // system did shown right after saving and the earlier calls underneath.
-export default function ProfileCallSection({ person, doubts, history }: { person: CallFormPerson; doubts: string[]; history: PastDebrief[] }) {
+export default function ProfileCallSection({ person, doubts, history, roleCluster = null }: { person: CallFormPerson; doubts: string[]; history: PastDebrief[]; roleCluster?: string | null }) {
   const router = useRouter();
   const [last, setLast] = useState<CallResult | null>(null);
   const [round, setRound] = useState(0);
@@ -37,6 +37,7 @@ export default function ProfileCallSection({ person, doubts, history }: { person
         p={person}
         doubts={doubts}
         mode="profile"
+        roleCluster={roleCluster}
         onDone={(r) => {
           setLast(r);
           setRound((n) => n + 1);

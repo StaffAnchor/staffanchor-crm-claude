@@ -29,6 +29,7 @@ import CvFactsPanel from "./cv-facts-panel";
 import SendInviteButton from "./send-invite-button";
 import AskMissingDetails from "./ask-missing-details";
 import ProfileGroupControl from "./profile-group-control";
+import { profileKind } from "@/lib/profile-kind";
 import ProfileCallSection, { type PastDebrief } from "./profile-call-section";
 import CallTranscriptPanel from "./call-transcript-panel";
 import RoleInterestList from "./role-interest-list";
@@ -154,7 +155,7 @@ export default async function CandidateDetailPage({
     links: Promise.resolve(
       supabase
         .from("candidate_mandate_links")
-        .select("id, mandate_id, stage, in_shortlist, rejection_reason, rejection_category, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title, city, cities)")
+        .select("id, mandate_id, stage, in_shortlist, rejection_reason, rejection_category, stage_source, client_decision_at, rejected_from_stage, date_of_joining, mandates(client_name, role_title, city, cities, role_cluster)")
         .eq("candidate_id", id)
     ),
     openMandates: Promise.resolve(supabase.from("mandates").select("id, client_name, role_title, practice_id, seniority_band").eq("status", "open").eq("is_archived", false)),
@@ -162,7 +163,7 @@ export default async function CandidateDetailPage({
     signed: candidate.resume_file_url
       ? Promise.resolve(supabase.storage.from("resumes").createSignedUrl((candidate.resume_file_url as string).replace(/^resumes\//, ""), 60 * 60 * 12))
       : Promise.resolve(null),
-    mandateCtx: mandateId ? Promise.resolve(supabase.from("mandates").select("role_title, client_name").eq("id", mandateId).single()) : Promise.resolve(null),
+    mandateCtx: mandateId ? Promise.resolve(supabase.from("mandates").select("role_title, client_name, role_cluster").eq("id", mandateId).single()) : Promise.resolve(null),
     mandateRoster: mandateId ? Promise.resolve(supabase.from("candidate_mandate_links").select("candidate_id, created_at, candidates(id, full_name)").eq("mandate_id", mandateId).order("created_at", { ascending: true })) : Promise.resolve(null),
     groupCtx: !mandateId && groupId ? Promise.resolve(supabase.from("candidate_groups").select("name").eq("id", groupId).single()) : Promise.resolve(null),
     groupRoster: !mandateId && groupId ? Promise.resolve(supabase.from("candidate_group_members").select("candidate_id, added_at, candidates(id, full_name)").eq("group_id", groupId).order("added_at", { ascending: true })) : Promise.resolve(null),
@@ -232,8 +233,13 @@ export default async function CandidateDetailPage({
   let backLabel = "← All candidates";
   let backHref = from ? `/candidates?${from}` : "/candidates";
 
+  // Which kind of "about their work" questions the call form asks: the role's kind when opened from a role, else the kind
+  // of the roles they are linked to (when those are all the same kind), else the person's own profile type.
+  let callRoleCluster: string | null = null;
+
   if (mandateId) {
     const { data: mandateRow } = (await q.mandateCtx) ?? { data: null };
+    callRoleCluster = (mandateRow as { role_cluster?: string | null } | null)?.role_cluster ?? null;
     backHref = `/mandates/${mandateId}`;
     backLabel = mandateRow ? `← ${mandateRow.role_title} — ${mandateRow.client_name}` : "← Back to mandate";
 
@@ -491,6 +497,10 @@ export default async function CandidateDetailPage({
 
   recordTiming("candidate", renderStart);
   const activeLinks = (links ?? []).filter((l) => !["rejected", "pulled_back"].includes(l.stage));
+  if (!callRoleCluster) {
+    const clusters = activeLinks.map((l) => (l.mandates as unknown as { role_cluster: string | null } | null)?.role_cluster ?? null).filter((c): c is string => !!c);
+    if (clusters.length > 0 && new Set(clusters.map((c) => profileKind(c))).size === 1) callRoleCluster = clusters[0];
+  }
   // One function decides the verdict and the to-do list (see lib/candidate-next-actions).
   const confirmedAt = ((candidate.details_confirmed_at as string | null | undefined) ?? (candidate.segment_data as { call_confirmed?: { at?: string } } | null)?.call_confirmed?.at) ?? null;
   const next = candidateNextActions({
@@ -645,6 +655,7 @@ export default async function CandidateDetailPage({
           <section>
             <h3 className="mb-2 text-[13px] font-semibold text-slate-900 dark:text-slate-100">1. Record a call</h3>
             <ProfileCallSection
+              roleCluster={callRoleCluster}
               person={{
                 id: candidate.id,
                 full_name: candidate.full_name,
