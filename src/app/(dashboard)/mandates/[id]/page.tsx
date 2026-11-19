@@ -196,8 +196,18 @@ export default async function MandateDetailPage({
   }
 
   // Voice notes candidates added when they applied ("why do you suit this role?"), playable from the card.
+  // This role's note wins; a note they left on another role still shows (labelled), and so does a WhatsApp voice note.
   const { data: voiceRows } = await q.voices;
-  const voicePaths = (voiceRows ?? []).map((v) => v.audio_path as string);
+  const linkCandidateIds = Array.from(new Set((links ?? []).map((l) => (l.candidates as unknown as { id: string } | null)?.id).filter((x): x is string => !!x)));
+  const [{ data: otherVoiceRows }, { data: waVoiceRows }] = linkCandidateIds.length
+    ? await Promise.all([
+        supabase.from("application_voice_notes").select("candidate_id, audio_path, seconds, transcript_en, created_at, mandates(role_title, client_name)").in("candidate_id", linkCandidateIds).neq("mandate_id", id).order("created_at", { ascending: false }),
+        supabase.from("whatsapp_messages").select("id, candidate_id, created_at").in("candidate_id", linkCandidateIds).eq("direction", "inbound").eq("raw_payload->>type", "audio").order("created_at", { ascending: false }).limit(300),
+      ])
+    : [{ data: [] }, { data: [] }];
+  type OtherVoice = { candidate_id: string; audio_path: string; seconds: number | null; transcript_en: string | null; created_at: string; mandates: { role_title: string | null; client_name: string | null } | { role_title: string | null; client_name: string | null }[] | null };
+  const otherVoices = (otherVoiceRows ?? []) as unknown as OtherVoice[];
+  const voicePaths = [...(voiceRows ?? []).map((v) => v.audio_path as string), ...otherVoices.map((v) => v.audio_path)];
   const voiceUrlByPath: Record<string, string> = {};
   if (voicePaths.length > 0) {
     const { data: signedVoice } = await supabase.storage.from("application-voice").createSignedUrls(voicePaths, 60 * 60 * 12);
@@ -205,10 +215,21 @@ export default async function MandateDetailPage({
       if (s.signedUrl && !s.error && s.path) voiceUrlByPath[s.path] = s.signedUrl;
     });
   }
-  const voiceByCandidate: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string }> = {};
+  const voiceByCandidate: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string; thisRole: boolean; role: string | null }> = {};
+  for (const v of otherVoices) {
+    const url = voiceUrlByPath[v.audio_path];
+    const m = Array.isArray(v.mandates) ? v.mandates[0] : v.mandates;
+    if (url && !voiceByCandidate[v.candidate_id]) voiceByCandidate[v.candidate_id] = { url, seconds: v.seconds, transcript: v.transcript_en, at: v.created_at, thisRole: false, role: [m?.role_title, m?.client_name].filter(Boolean).join(" at ") || null };
+  }
   for (const v of voiceRows ?? []) {
     const url = voiceUrlByPath[v.audio_path as string];
-    if (url) voiceByCandidate[v.candidate_id as string] = { url, seconds: (v.seconds as number | null) ?? null, transcript: (v.transcript_en as string | null) ?? null, at: v.created_at as string };
+    if (url) voiceByCandidate[v.candidate_id as string] = { url, seconds: (v.seconds as number | null) ?? null, transcript: (v.transcript_en as string | null) ?? null, at: v.created_at as string, thisRole: true, role: null };
+  }
+  const waVoiceByCandidate: Record<string, { id: string; at: string; count: number }> = {};
+  for (const w of (waVoiceRows ?? []) as { id: string; candidate_id: string; created_at: string }[]) {
+    const cur = waVoiceByCandidate[w.candidate_id];
+    if (cur) cur.count += 1;
+    else waVoiceByCandidate[w.candidate_id] = { id: w.id, at: w.created_at, count: 1 };
   }
 
   // Open "Flag for call" requests for this mandate, so the flag button can
@@ -584,6 +605,7 @@ export default async function MandateDetailPage({
           applicationAnswersByCandidate={applicationAnswersByCandidate}
           resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
           voiceByCandidate={voiceByCandidate}
+          waVoiceByCandidate={waVoiceByCandidate}
           flaggedCallByCandidate={flaggedCallByCandidate}
           mandateContext={{
             mandateId: id,

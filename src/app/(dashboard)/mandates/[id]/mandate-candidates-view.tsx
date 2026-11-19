@@ -23,6 +23,7 @@ export default function MandateCandidatesView({
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
   voiceByCandidate = {},
+  waVoiceByCandidate = {},
 }: {
   // Opened from Today with ?stage=shortlisted and similar, so the list lands
   // on the right pile instead of all 149 rows.
@@ -41,7 +42,8 @@ export default function MandateCandidatesView({
   // without navigating to the candidate's profile page.
   resumeSignedUrlByCandidate?: Record<string, string>;
   // Per-candidate voice note added when they applied (signed audio link plus an English transcript).
-  voiceByCandidate?: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string }>;
+  voiceByCandidate?: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string; thisRole: boolean; role: string | null }>;
+  waVoiceByCandidate?: Record<string, { id: string; at: string; count: number }>;
   // Per-candidate open "Flag for call" request (if any), so the flag button
   // can render a persistent "Flagged to X" state instead of always
   // reverting to the static "Flag for call" label.
@@ -217,6 +219,7 @@ export default function MandateCandidatesView({
         applicationAnswersByCandidate={applicationAnswersByCandidate}
         resumeSignedUrlByCandidate={resumeSignedUrlByCandidate}
         voiceByCandidate={voiceByCandidate}
+        waVoiceByCandidate={waVoiceByCandidate}
       />
     </div>
   );

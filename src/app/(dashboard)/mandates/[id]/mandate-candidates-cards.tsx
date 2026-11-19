@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Mic, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { passReasonLabel } from "@/components/client-view/PassReasonDialog";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./candidate-row";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
@@ -32,18 +33,69 @@ const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(
 
 // The same pipeline as the Table and Board, laid out one person per card: who they are on the left, last jobs and degree in the
 // middle, the fit read and the actions on the right. Every stage pill above the list works here as it does everywhere else.
+const stabilityRead = (n: number) => (n >= 70 ? { word: "Stable", cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" } : n >= 50 ? { word: "Some job hopping", cls: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" } : { word: "Frequent job changes", cls: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" });
+
+// The few things a recruiter must not miss on a card: who rejected and why, what the client said, stability, and any voice note.
+function KeyFacts({ l, voice, wa }: { l: MandateCandidateRow; voice?: { url: string; seconds: number | null; transcript: string | null; at: string; thisRole: boolean; role: string | null }; wa?: { id: string; at: string; count: number } }) {
+  const c = l.candidate;
+  const stab = c.stability_score != null ? Math.round(Number(c.stability_score)) : null;
+  const sr = stab != null ? stabilityRead(stab) : null;
+  const clientPassed = l.client_feedback === "not_interested" || !!l.client_pass_reason;
+  const rejectedByClient = l.stage === "rejected" && (l.stage_source === "client_relayed" || clientPassed);
+  const clientReason = passReasonLabel(l.client_pass_reason) ?? (l.rejection_category ? rejectionReasonLabel("client_relayed", l.rejection_category) : null);
+  const ourReason = l.rejection_category ? rejectionReasonLabel("recruiter", l.rejection_category) : null;
+  const when = l.client_decision_at ?? l.stage_updated_at;
+  const dateText = when ? new Date(when).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null;
+  const hasAnything = l.stage === "rejected" || !!l.client_feedback || sr || voice || wa;
+  if (!hasAnything) return null;
+  return (
+    <div className="space-y-2.5">
+      {l.stage === "rejected" && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 dark:border-rose-900 dark:bg-rose-950/30">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-300">{rejectedByClient ? "Rejected by the client" : "Rejected by us"}{dateText ? ` · ${dateText}` : ""}{l.rejected_from_stage ? ` · was at ${l.rejected_from_stage.replace(/_/g, " ")}` : ""}</p>
+          <p className="mt-1 text-[14px] font-semibold text-slate-900 dark:text-slate-100">{(rejectedByClient ? clientReason ?? ourReason : ourReason ?? clientReason) ?? "No reason was recorded"}</p>
+          {(l.client_pass_note || l.rejection_reason) && <p className="mt-1 text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">{l.client_pass_note ? `Client note: \u201c${l.client_pass_note}\u201d` : l.rejection_reason}</p>}
+          {l.client_pass_note && l.rejection_reason && l.rejection_reason !== l.client_pass_note && <p className="mt-1 text-[12.5px] text-slate-500">{l.rejection_reason}</p>}
+        </div>
+      )}
+      {l.stage !== "rejected" && l.client_feedback && (
+        <div className={`rounded-2xl border p-4 ${clientPassed ? "border-rose-200 bg-rose-50/70 dark:border-rose-900 dark:bg-rose-950/30" : "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900 dark:bg-emerald-950/30"}`}>
+          <p className={`text-[11px] font-semibold uppercase tracking-wider ${clientPassed ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-300"}`}>{l.client_feedback === "not_interested" ? "Client passed" : l.client_feedback === "interview_requested" ? "Client wants an interview" : "Client shortlisted"}{dateText ? ` · ${dateText}` : ""}</p>
+          {clientPassed && <p className="mt-1 text-[14px] font-semibold text-slate-900 dark:text-slate-100">{clientReason ?? "No reason given"}</p>}
+          {(l.client_pass_note || l.client_note) && <p className="mt-1 text-[13px] text-slate-700 dark:text-slate-300">&ldquo;{l.client_pass_note ?? l.client_note}&rdquo;</p>}
+        </div>
+      )}
+      {(sr || wa) && (
+        <div className="flex flex-wrap items-center gap-2 text-[12px]">
+          {sr && stab != null && <span className={`rounded-full px-2.5 py-1 font-semibold ${sr.cls}`} title="Out of 100, read from how long they stayed in each job">Stability {stab}/100 · {sr.word}</span>}
+          {wa && <Link href={`/candidates/${c.id}`} target="_blank" className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> {wa.count > 1 ? `${wa.count} WhatsApp voice notes` : "WhatsApp voice note"}</Link>}
+        </div>
+      )}
+      {voice && (
+        <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 dark:border-teal-900 dark:bg-teal-950/30">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> {voice.thisRole ? "Why they say they suit this role" : `Voice note from another role${voice.role ? `: ${voice.role}` : ""}`}{voice.seconds ? ` · ${voice.seconds}s` : ""}</p>
+          <audio controls preload="none" src={voice.url} className="mt-2 h-10 w-full" />
+          {voice.transcript ? <p className="mt-2 text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">&ldquo;{voice.transcript}&rdquo; <span className="text-[11px] text-slate-400">English text, translated if needed</span></p> : <p className="mt-2 text-[12px] text-slate-400">Written version still being prepared.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MandateCandidatesCards({
   rows: initialRows,
   mandateContext,
   applicationAnswersByCandidate = {},
   resumeSignedUrlByCandidate = {},
   voiceByCandidate = {},
+  waVoiceByCandidate = {},
 }: {
   rows: MandateCandidateRow[];
   mandateContext: MandateScreeningContext & { [key: string]: unknown };
   applicationAnswersByCandidate?: Record<string, ApplicationAnswer[]>;
   resumeSignedUrlByCandidate?: Record<string, string>;
-  voiceByCandidate?: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string }>;
+  voiceByCandidate?: Record<string, { url: string; seconds: number | null; transcript: string | null; at: string; thisRole: boolean; role: string | null }>;
+  waVoiceByCandidate?: Record<string, { id: string; at: string; count: number }>;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -339,13 +391,7 @@ export default function MandateCandidatesCards({
         </div>
         <div className="min-h-0 flex-1 space-y-4 p-5">
           {next && curTab !== "share" && <NextStep tone={next.tone} title={next.title} detail={next.detail}>{next.actions}</NextStep>}
-          {voice && curTab !== "details" && curTab !== "share" && (
-            <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 dark:border-teal-900 dark:bg-teal-950/30">
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-200"><Mic className="h-3.5 w-3.5" /> Why they say they suit this role{voice.seconds ? ` · ${voice.seconds}s` : ""}</p>
-              <audio controls preload="none" src={voice.url} className="mt-2 h-10 w-full" />
-              {voice.transcript ? <p className="mt-2 text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">&ldquo;{voice.transcript}&rdquo; <span className="text-[11px] text-slate-400">English text, translated if needed</span></p> : <p className="mt-2 text-[12px] text-slate-400">Written version still being prepared.</p>}
-            </div>
-          )}
+          <KeyFacts l={l} voice={voice} wa={waVoiceByCandidate[c.id]} />
           {curTab === "overview" && (
             <div className="space-y-4">
               <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -397,8 +443,6 @@ export default function MandateCandidatesCards({
 
               <div className="flex flex-wrap items-center gap-2 text-[12px]">
                 {l.call_paid_at && <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800" title="Paid ₹199 for a recruiter call">Paid call{l.call_due_at ? ` · due ${fmtDate(l.call_due_at)}` : ""}</span>}
-                {l.client_feedback && <span className={`rounded-full px-2 py-0.5 font-medium ${l.client_feedback === "not_interested" ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>Client: {l.client_feedback.replace(/_/g, " ")}</span>}
-                {l.stage === "rejected" && l.rejection_category && <span className="text-slate-500" title={l.rejection_reason ?? undefined}>{rejectionReasonLabel((l.stage_source as "recruiter" | "client_relayed") ?? "recruiter", l.rejection_category)}</span>}
               </div>
 
               <div className="grid gap-4 text-[13px] sm:grid-cols-2">

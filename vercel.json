@@ -108,6 +108,10 @@
       "schedule": "30 4 * * *"
     },
     {
+      "path": "/api/cron/client-decision-notify",
+      "schedule": "45 4 * * *"
+    },
+    {
       "path": "/api/cron/waiting-digest",
       "schedule": "30 3 * * *"
     }
