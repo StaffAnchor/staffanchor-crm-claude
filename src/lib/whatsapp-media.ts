@@ -17,9 +17,10 @@ export async function downloadWhatsAppMedia(mediaId: string): Promise<{ bytes: U
 
 /** The media id inside a stored inbound message, if it carried a file. */
 export function mediaOf(raw: unknown): { id: string; name: string | null; mime: string | null } | null {
-  const m = raw as { type?: string; document?: { id?: string; filename?: string; mime_type?: string }; image?: { id?: string; mime_type?: string } } | null;
+  const m = raw as { type?: string; document?: { id?: string; filename?: string; mime_type?: string }; image?: { id?: string; mime_type?: string }; audio?: { id?: string; mime_type?: string } } | null;
   if (m?.document?.id) return { id: m.document.id, name: m.document.filename ?? null, mime: m.document.mime_type ?? null };
   if (m?.image?.id) return { id: m.image.id, name: null, mime: m.image.mime_type ?? null };
+  if (m?.audio?.id) return { id: m.audio.id, name: "Voice note", mime: m.audio.mime_type ?? null };
   return null;
 }
 

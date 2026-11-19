@@ -502,12 +502,15 @@ export default function WhatsAppInbox({
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[13px] leading-snug ${mine ? "bg-emerald-600 text-white" : "bg-white text-slate-800 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700"}`}>
                         {mine && m.template_name?.startsWith("bot:") && <p className="mb-0.5 text-xs font-medium uppercase tracking-wide text-emerald-100">Assistant</p>}
-                        {(m.media_path || (!mine && /^(Document|Photo)/.test(m.body_preview ?? ""))) && (
+                        {!mine && m.body_preview === "Voice note" && (
+                          <audio controls preload="none" src={`/api/whatsapp/media?id=${m.id}`} className="mb-1 h-9 w-56 max-w-full" />
+                        )}
+                        {(m.media_path || (!mine && /^(Document|Photo)/.test(m.body_preview ?? ""))) && !(!mine && m.body_preview === "Voice note") && (
                           <a href={`/api/whatsapp/media?id=${m.id}`} target="_blank" rel="noreferrer" className={`mb-1 inline-flex items-center gap-1 text-[12px] font-medium underline ${mine ? "text-white" : "text-teal-600"}`}>
                             <Paperclip className="h-3 w-3" /> Open {m.media_name || m.body_preview?.replace(/^Document:\s*/, "").replace(/\s*\(.*\)$/, "") || "file"}
                           </a>
                         )}
-                        {!mine && !active.candidateId && (m.media_path || m.body_preview?.startsWith("Document:")) && (
+                        {!mine && !active.candidateId && m.body_preview !== "Voice note" && (m.media_path || m.body_preview?.startsWith("Document:")) && (
                           <button
                             onClick={() => createProfile(m.id)}
                             disabled={creating !== null}

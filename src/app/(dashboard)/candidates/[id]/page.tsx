@@ -137,6 +137,7 @@ export default async function CandidateDetailPage({
     passport: Promise.resolve(supabase.from("saas_passport").select(PASSPORT_COLUMNS).eq("candidate_id", id).maybeSingle()),
     cvFacts: Promise.resolve(supabase.from("candidate_cv_facts").select("facts").eq("candidate_id", id).maybeSingle()),
     voiceNotes: Promise.resolve(supabase.from("application_voice_notes").select("seconds, mandate_id").eq("candidate_id", id)),
+    waVoiceNotes: Promise.resolve(supabase.from("whatsapp_messages").select("id").eq("candidate_id", id).eq("direction", "inbound").eq("raw_payload->>type", "audio").limit(1)),
     notes: Promise.resolve(supabase.from("recruiter_notes").select("id, note_type, content, created_at, author_id").eq("candidate_id", id).order("created_at", { ascending: false })),
     audit: Promise.resolve(supabase.from("audit_log").select("id, at, action, detail").eq("entity", "candidate").eq("entity_id", id).order("at", { ascending: false })),
     pool: Promise.resolve(supabase.from("talent_pool_entries").select("tier, reason, tags, marked_at").eq("candidate_id", id).eq("practice", POOL_PRACTICE).maybeSingle()),
@@ -404,6 +405,7 @@ export default async function CandidateDetailPage({
 
   const { data: links } = await q.links;
   const { data: voiceNoteRows } = await q.voiceNotes;
+  const { data: waVoiceRows } = await q.waVoiceNotes;
 
   const linkedMandateCities = Array.from(
     new Set(
@@ -833,8 +835,8 @@ export default async function CandidateDetailPage({
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
-                  {(voiceNoteRows ?? []).length > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Added a voice note with an application. Play it on the role's page.">
+                  {((voiceNoteRows ?? []).length > 0 || (waVoiceRows ?? []).length > 0) && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Sent a voice note (on WhatsApp or with an application). WhatsApp ones play in the WhatsApp inbox; application ones on the role's page.">
                       <Mic className="h-3.5 w-3.5" /> Voice note
                     </span>
                   )}

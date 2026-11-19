@@ -185,6 +185,22 @@ export async function POST(req: NextRequest) {
             raw_payload: message,
           });
 
+          // A voice note: keep the audio so staff can play it from the chat (WhatsApp deletes media after about 30 days).
+          if (message?.type === "audio" && message?.audio?.id && fromPhone) {
+            try {
+              const media = await downloadWhatsAppMedia(message.audio.id as string);
+              if (media && media.bytes.byteLength > 0 && media.bytes.byteLength <= 15 * 1024 * 1024) {
+                const mime = media.mime ?? (message.audio.mime_type as string | undefined) ?? "audio/ogg";
+                const ext = /ogg|opus/i.test(mime) ? ".ogg" : /mpeg|mp3/i.test(mime) ? ".mp3" : /mp4|m4a|aac/i.test(mime) ? ".m4a" : /amr/i.test(mime) ? ".amr" : ".ogg";
+                const path = `whatsapp/${fromPhone.slice(-10)}/${crypto.randomUUID()}-voice${ext}`;
+                const { error: upErr } = await admin.storage.from("client-resources").upload(path, media.bytes, { contentType: mime });
+                if (!upErr && incomingId) await admin.from("whatsapp_messages").update({ media_path: path, media_name: "Voice note", media_type: mime }).eq("meta_message_id", incomingId);
+              }
+            } catch (err) {
+              console.error("[whatsapp-webhook] voice note not stored", err instanceof Error ? err.message : err);
+            }
+          }
+
           // A candidate who sends the activation message from the jobs site ("Please activate my job alerts and
           // interview reminders on WhatsApp") has agreed to hear from us here. Record that, and confirm inside the
           // 24-hour window they just opened, so the confirmation is free and not a template.

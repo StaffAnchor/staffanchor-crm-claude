@@ -2080,7 +2080,7 @@ export default function CandidatesTable({
                     </Link>
                     <ProfileRatingBadge row={ratings.get(c.id)} />
                     {voiceIds.includes(c.id) && (
-                      <span className="ml-1 inline-flex shrink-0 text-teal-600" title="Added a voice note with an application" aria-label="Has a voice note">
+                      <span className="ml-1 inline-flex shrink-0 text-teal-600" title="Sent a voice note (on WhatsApp or with an application)" aria-label="Has a voice note">
                         <Mic className="h-3.5 w-3.5" />
                       </span>
                     )}

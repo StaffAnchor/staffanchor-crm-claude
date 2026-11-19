@@ -709,13 +709,16 @@ export default async function CandidatesPage({
       for (const p of (poolRows ?? []) as { candidate_id: string; tier: "top" | "strong" | "watch" }[]) poolTiers[p.candidate_id] = p.tier;
     }
   }
-  // Who on this page added a voice note with an application, so the list can show a mic.
+  // Who on this page added a voice note (with an application or on WhatsApp), so the list can show a mic.
   const voiceIds: string[] = [];
   {
     const pageIds = (candidates ?? []).map((c) => c.id as string);
     if (pageIds.length > 0) {
-      const { data: voiceRows } = await supabase.from("application_voice_notes").select("candidate_id").in("candidate_id", pageIds);
-      voiceIds.push(...Array.from(new Set(((voiceRows ?? []) as { candidate_id: string }[]).map((v) => v.candidate_id))));
+      const [{ data: voiceRows }, { data: waVoiceRows }] = await Promise.all([
+        supabase.from("application_voice_notes").select("candidate_id").in("candidate_id", pageIds),
+        supabase.from("whatsapp_messages").select("candidate_id").in("candidate_id", pageIds).eq("direction", "inbound").eq("raw_payload->>type", "audio"),
+      ]);
+      voiceIds.push(...Array.from(new Set([...((voiceRows ?? []) as { candidate_id: string }[]), ...((waVoiceRows ?? []) as { candidate_id: string }[])].map((v) => v.candidate_id))));
     }
   }
   const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
