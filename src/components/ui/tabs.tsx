@@ -29,6 +29,10 @@ export type TabItem = {
   tone?: TabTone;
   icon?: ReactNode;
   badge?: ReactNode;
+  // One plain sentence about what is inside, shown under the bar while this tab is open.
+  blurb?: string;
+  // 'more' tabs sit to the right, smaller, behind a Role setup label. Everything else is a main tab.
+  group?: "main" | "more";
   content: ReactNode;
 };
 
@@ -51,6 +55,55 @@ export function Tabs({ items, defaultKey, className }: { items: TabItem[]; defau
 
   return (
     <div className={className}>
+      {items.some((i) => i.group) ? (
+        <div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-slate-200 pb-2 dark:border-slate-800">
+            <div className="flex flex-wrap gap-1.5">
+              {items.filter((i) => i.group !== "more").map((item) => {
+                const tone = item.tone ? TONE[item.tone] : null;
+                const on = active === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setActive(item.key)}
+                    aria-current={on}
+                    className={cn(
+                      "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-[15px] font-semibold transition-colors",
+                      on ? `${tone ? tone.on : "bg-slate-900 text-white"} ring-2 shadow-sm` : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    )}
+                  >
+                    {item.icon ? <span className={tone && !on ? tone.icon : ""}>{item.icon}</span> : null}
+                    {item.label}
+                    {item.badge}
+                  </button>
+                );
+              })}
+            </div>
+            <span className="mx-1 hidden h-6 w-px bg-slate-200 dark:bg-slate-700 md:block" />
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Role setup</span>
+              {items.filter((i) => i.group === "more").map((item) => {
+                const on = active === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setActive(item.key)}
+                    aria-current={on}
+                    className={cn("flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium", on ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800")}
+                  >
+                    {item.icon}
+                    {item.label}
+                    {item.badge}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {items.find((i) => i.key === active)?.blurb && <p className="mt-3 text-[14px] text-slate-600 dark:text-slate-300">{items.find((i) => i.key === active)?.blurb}</p>}
+        </div>
+      ) : (
       <div className="flex gap-1 overflow-x-auto md:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-ros-lg border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-1 backdrop-blur-sm">
         {items.map((item) => {
           const tone = item.tone ? TONE[item.tone] : null;
@@ -78,6 +131,7 @@ export function Tabs({ items, defaultKey, className }: { items: TabItem[]; defau
           );
         })}
       </div>
+      )}
 
       <div className="mt-4">
         {items.map((item) => (

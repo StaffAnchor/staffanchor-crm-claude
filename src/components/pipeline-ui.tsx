@@ -14,7 +14,7 @@ export function ScoreRing({ score, rank, size = 38 }: { score: number | null; ra
       style={{ width: size, height: size, background: score == null ? "transparent" : `conic-gradient(${color} ${Math.max(4, Math.min(100, score)) * 3.6}deg, rgb(226 232 240 / 0.7) 0)`, border: score == null ? "1.5px dashed #cbd5e1" : undefined }}
     >
       <span className="flex items-center justify-center rounded-full bg-white font-semibold tabular-nums dark:bg-slate-900" style={{ width: size - 7, height: size - 7, fontSize: size > 40 ? 15 : 12, color: score == null ? "#94a3b8" : color }}>
-        {score != null ? Math.round(score) : "?"}
+        {score != null ? Math.min(100, Math.round(score)) : "?"}
       </span>
     </span>
   );

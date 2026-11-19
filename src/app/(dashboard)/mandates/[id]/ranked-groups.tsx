@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Loader2, MessageCircle, Phone, PhoneCall, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ClipboardList, Eye, Loader2, MessageCircle, Mic, Phone, PhoneCall, Send, UserPlus, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { applyStageChange } from "@/lib/mandate-stage";
 import { CvButtons } from "@/components/candidate-card-layout";
 import { SkillsStrip } from "@/components/candidate-facts-strip";
 import CandidateCallPanel from "./candidate-call-panel";
 import { FactTile, NextStep, ScoreRing } from "@/components/pipeline-ui";
-import NotAFitMenu from "./not-a-fit-menu";
 import PipelineTemplateActions from "./pipeline-template-actions";
 import WriteWhatsAppButton from "./write-whatsapp-button";
 import WhatsAppReview from "@/components/whatsapp-review";
@@ -23,6 +24,32 @@ const GROUPS: { key: Ranked["bucket"]; label: string; blurb: string; tone: strin
 
 const PER_PAGE = 15;
 
+// The few reasons that cover almost every "no". The codes are the same ones the long list used, so what the system learns is unchanged.
+const QUICK_REASONS: { value: string; label: string }[] = [
+  { value: "wrong_level", label: "Wrong level (too junior or too senior)" },
+  { value: "wrong_world", label: "Sells something else" },
+  { value: "wrong_city", label: "Location does not work" },
+  { value: "pay_too_high", label: "Pay too high" },
+  { value: "not_interested", label: "Not interested" },
+  { value: "wrong_role", label: "Different kind of job" },
+];
+
+function QuickNotAFit({ onPick }: { onPick: (reason: string) => void }) {
+  return (
+    <details className="relative">
+      <summary className="inline-flex h-8 cursor-pointer list-none items-center gap-1 rounded-lg border border-slate-200 px-3 text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 [&::-webkit-details-marker]:hidden"><X className="h-3.5 w-3.5" /> Not a fit <ChevronDown className="h-3 w-3 opacity-60" /></summary>
+      <div className="absolute right-0 z-30 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+        <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Why not?</p>
+        {QUICK_REASONS.map((r) => (
+          <button key={r.value} type="button" onClick={(e) => { (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open"); onPick(r.value); }} className="block w-full rounded-lg px-2.5 py-2 text-left text-[13px] text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">{r.label}</button>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+const stabilityRead = (n: number) => (n >= 70 ? { word: "Stable", cls: "bg-emerald-50 text-emerald-700" } : n >= 50 ? { word: "Some job hopping", cls: "bg-amber-50 text-amber-800" } : { word: "Frequent job changes", cls: "bg-rose-50 text-rose-700" });
+
 const MISSING_LABEL: Record<string, string> = { current_ctc: "current pay", expected_ctc: "expected pay", notice: "notice period", industries: "industries", cv_unread: "CV not read", current_employer: "company", relocation: "relocation", city: "city" };
 const missingText = (m: string[] | null | undefined) => (m ?? []).slice(0, 3).map((k) => MISSING_LABEL[k] ?? k.replace(/_/g, " ")).join(", ");
 
@@ -36,7 +63,7 @@ const REACHED_STYLE: Record<string, string> = {
 type Where = "all" | "here" | "reloc" | "unknown";
 const RELOC_OK = new Set(["Yes", "Maybe", "Depends upon Option"]);
 
-export default function RankedGroups({ mandateId, roleTitle = null, roleCluster = null, ranked: allRanked, reached = {}, cities = [], memory = {} }: { mandateId: string; roleTitle?: string | null; roleCluster?: string | null; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }>; cities?: string[]; memory?: Record<string, { at: string; summary: string; wants?: string[]; dealbreakers?: string[] }> }) {
+export default function RankedGroups({ mandateId, roleTitle = null, roleCluster = null, ranked: allRanked, reached = {}, cities = [], memory = {}, extra = {} }: { mandateId: string; roleTitle?: string | null; roleCluster?: string | null; ranked: Ranked[]; reached?: Record<string, { status: string; at: string }>; cities?: string[]; memory?: Record<string, { at: string; summary: string; wants?: string[]; dealbreakers?: string[] }>; extra?: Record<string, { stability: number | null; voice: boolean; call: { outcome: string | null; at: string } | null }> }) {
   const router = useRouter();
   const flags = useWhatsAppTemplates();
   const [reviewing, setReviewing] = useState(false);
@@ -96,6 +123,33 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
       setMsg(res.ok ? `Added ${d.added} to the pipeline.` : d.error ?? "Couldn't add.");
       setPicked((p) => new Set([...p].filter((id) => !chosen.some((r) => r.row.candidate_id === id))));
       if (res.ok) setGone((g) => new Set([...g, ...chosen.map((r) => r.row.candidate_id)]));
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Add to the pipeline and share with the client in one go. The client only ever sees a person whose call and details are
+  // complete, so when something is missing the person is still added and we say what is left.
+  async function shareNow(r: Ranked) {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/mandates/${mandateId}/role-card/add`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidates: [{ id: r.row.candidate_id, score: r.score, note: r.matched.slice(0, 3).join("; ") }] }) });
+      const d = await res.json().catch(() => ({}));
+      const linkId = (d.links as { candidate_id: string; link_id: string }[] | undefined)?.find((x) => x.candidate_id === r.row.candidate_id)?.link_id;
+      if (!res.ok || !linkId) return setMsg(d.error ?? "Couldn't add them to the pipeline.");
+      const supabase = createClient();
+      const { error } = await supabase.from("candidate_mandate_links").update({ in_shortlist: true }).eq("id", linkId);
+      if (error) {
+        setGone((g) => new Set(g).add(r.row.candidate_id));
+        router.refresh();
+        setMsg(error.message.includes("NOT_CLIENT_READY") ? `${r.row.full_name ?? "They"} are in the pipeline, but the client can only see complete profiles. Open the Pipeline tab, finish the call and details, then share.` : error.message);
+        return;
+      }
+      await applyStageChange(supabase, { linkId, candidateId: r.row.candidate_id, mandateId, candidateName: r.row.full_name ?? "Candidate", mandateLabel: roleTitle ?? "Role", previousStage: "sourced", newStage: "submitted", source: "recruiter" }).catch(() => {});
+      setGone((g) => new Set(g).add(r.row.candidate_id));
+      setMsg(`${r.row.full_name ?? "They"} is in the pipeline and now visible to the client.`);
       router.refresh();
     } finally {
       setBusy(false);
@@ -195,19 +249,36 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {spoke ? (
-              <button type="button" disabled={busy} onClick={() => void addList([r])} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-teal-600 px-3 text-[12.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50"><UserPlus className="h-3.5 w-3.5" /> Add to pipeline</button>
-            ) : (
-              <button type="button" onClick={() => setPaneTab("call")} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-teal-600 px-3 text-[12.5px] font-semibold text-white hover:bg-teal-700"><PhoneCall className="h-3.5 w-3.5" /> Call now</button>
-            )}
+            <button type="button" disabled={busy} onClick={() => void shareNow(r)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-teal-600 px-3.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50" title="Adds them to the pipeline and shows them to the client"><Send className="h-3.5 w-3.5" /> Share with client</button>
+            <button type="button" disabled={busy} onClick={() => void addList([r])} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-teal-600 px-3.5 text-[13px] font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:text-teal-300" title="Adds them to the pipeline without telling the client"><UserPlus className="h-3.5 w-3.5" /> Add to pipeline</button>
             <WriteWhatsAppButton candidateId={c.candidate_id} name={c.full_name ?? "there"} role={roleTitle} />
-            <NotAFitMenu onPick={(reason) => dismiss(c.candidate_id, reason)} />
+            <QuickNotAFit onPick={(reason) => dismiss(c.candidate_id, reason)} />
           </div>
         </div>
-        <div role="tablist" className="flex gap-0.5 border-b border-slate-100 px-4 dark:border-slate-800">
-          {([["overview", "Overview"], ["call", "Call & details"]] as const).map(([k, label]) => (
-            <button key={k} role="tab" type="button" aria-selected={paneTab === k} onClick={() => setPaneTab(k)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] ${paneTab === k ? "border-teal-600 font-semibold text-slate-900 dark:text-slate-100" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
-              {label}{k === "call" && !spoke && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />}
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3 text-[12.5px] dark:border-slate-800">
+          {(() => {
+            const ex = extra[c.candidate_id];
+            const called = ex?.call ?? null;
+            const stab = ex?.stability ?? null;
+            const sr = stab != null ? stabilityRead(stab) : null;
+            return (
+              <>
+                {called || spoke ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-200"><PhoneCall className="h-3.5 w-3.5" /> Called{called ? ` ${fmtShort(called.at)}${called.outcome && called.outcome !== "reached" ? ` (${called.outcome.replace(/_/g, " ")})` : ""}` : spoke ? ` ${fmtShort(m!.at)}` : ""}</span>
+                ) : (
+                  <button type="button" onClick={() => setPaneTab("call")} className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100"><Phone className="h-3.5 w-3.5" /> Not called yet. Call now</button>
+                )}
+                {sr && stab != null && <span className={`rounded-full px-3 py-1 font-semibold ${sr.cls}`} title="Out of 100, read from how long they stayed in each job">Stability {stab}/100 · {sr.word}</span>}
+                {ex?.voice && <a href={`/candidates/${c.candidate_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-3 py-1 font-semibold text-teal-800 ring-1 ring-teal-200"><Mic className="h-3.5 w-3.5" /> Voice note. Listen on the profile</a>}
+                <span className="ml-auto text-slate-400" title="How well their job, selling, city, pay, experience and notice line up with this role, out of 100">Match score {Math.min(100, Math.round(r.score))}/100</span>
+              </>
+            );
+          })()}
+        </div>
+        <div role="tablist" className="flex gap-2 border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
+          {([["overview", "Overview", Eye], ["call", "Call & details", ClipboardList]] as const).map(([k, label, Icon]) => (
+            <button key={k} role="tab" type="button" aria-selected={paneTab === k} onClick={() => setPaneTab(k)} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-[14px] font-semibold ${paneTab === k ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
+              <Icon className="h-4 w-4" />{label}{k === "call" && !spoke && !extra[c.candidate_id]?.call && <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />}
             </button>
           ))}
         </div>
@@ -272,58 +343,53 @@ export default function RankedGroups({ mandateId, roleTitle = null, roleCluster 
 
   return (
     <div className="space-y-3">
-      {cities.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 text-[12.5px]">
-          <span className="font-medium text-slate-500">Where they are:</span>
-          {(
-            [
-              { k: "all", label: "Everyone", n: allRanked.length },
-              { k: "here", label: `In ${cities.join(" / ")}`, n: whereCounts.here },
-              { k: "reloc", label: "Elsewhere, open to moving", n: whereCounts.reloc },
-              { k: "unknown", label: "Elsewhere, not asked yet", n: whereCounts.unknown },
-            ] as { k: Where; label: string; n: number }[]
-          ).map((o) => (
+      <div className="grid gap-2.5 sm:grid-cols-3">
+        {GROUPS.map((g) => {
+          const on = tab === g.key;
+          return (
             <button
-              key={o.k}
+              key={g.key}
               type="button"
-              onClick={() => {
-                setWhere(o.k);
-                setShown(PER_PAGE);
-              }}
-              className={`rounded-full border px-3 py-1 font-medium ${where === o.k ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`}
+              onClick={() => { setTab(g.key); setShown(PER_PAGE); }}
+              aria-pressed={on}
+              className={`rounded-2xl border-2 p-4 text-left transition ${on ? "border-slate-900 bg-white shadow-sm dark:border-slate-100 dark:bg-slate-900" : "border-transparent bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800"}`}
             >
-              {o.label} <span className="opacity-70">{o.n}</span>
+              <span className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-[16px] font-semibold text-slate-900 dark:text-slate-100"><span className={`h-2.5 w-2.5 rounded-full ${g.tone}`} />{g.label}</span>
+                <span className="text-[22px] font-semibold tabular-nums text-slate-900 dark:text-slate-100">{counts[g.key]}</span>
+              </span>
+              <span className="mt-1 block text-[12.5px] leading-snug text-slate-500 dark:text-slate-400">{g.blurb}</span>
             </button>
-          ))}
-          {where === "unknown" && <span className="text-slate-400">They have not said whether they would relocate. Ask on a call.</span>}
-        </div>
-      )}
-      <div className="flex flex-wrap items-center gap-2">
-        {GROUPS.map((g) => (
-          <button
-            key={g.key}
-            type="button"
-            onClick={() => {
-              setTab(g.key);
-              setShown(PER_PAGE);
-            }}
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[13px] font-semibold ${tab === g.key ? `${g.tone} border-transparent text-white` : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`}
-          >
-            {g.label} <span className={`rounded-full px-1.5 text-xs ${tab === g.key ? "bg-white/20" : "bg-slate-100 text-slate-600 dark:bg-slate-800"}`}>{counts[g.key]}</span>
-          </button>
-        ))}
-        <p className="text-[12px] text-slate-500">{GROUPS.find((g) => g.key === tab)?.blurb}</p>
-        <div className="ml-auto flex items-center gap-2">
-          {msg && <span className="text-[12px] text-slate-500">{msg}</span>}
-          {flags?.opportunity && (
-            <button type="button" onClick={() => setReviewing(true)} disabled={picked.size === 0} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
-              <MessageCircle className="h-3.5 w-3.5" /> Review &amp; WhatsApp {picked.size || ""}
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        {cities.length > 0 && (
+          <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">
+            Where they are
+            <select value={where} onChange={(e) => { setWhere(e.target.value as Where); setShown(PER_PAGE); }} className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[13px] dark:border-slate-700 dark:bg-slate-900">
+              <option value="all">Everyone ({allRanked.length})</option>
+              <option value="here">In {cities.join(" / ")} ({whereCounts.here})</option>
+              <option value="reloc">Elsewhere, open to moving ({whereCounts.reloc})</option>
+              <option value="unknown">Elsewhere, not asked yet ({whereCounts.unknown})</option>
+            </select>
+          </label>
+        )}
+        {where === "unknown" && <span className="text-[12px] text-slate-400">They have not said whether they would relocate. Ask on a call.</span>}
+        {msg && <span className="text-[12.5px] text-slate-600 dark:text-slate-300">{msg}</span>}
+        {picked.size > 0 && (
+          <div className="ml-auto flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-1.5 text-white dark:bg-slate-100 dark:text-slate-900">
+            <span className="text-[12.5px] font-medium">{picked.size} ticked</span>
+            {flags?.opportunity && (
+              <button type="button" onClick={() => setReviewing(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-emerald-500"><MessageCircle className="h-3.5 w-3.5" /> Tell them about this role</button>
+            )}
+            <button type="button" onClick={addPicked} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-500 px-3 py-1 text-[12.5px] font-semibold text-white hover:bg-teal-400 disabled:opacity-50">
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />} Add to pipeline
             </button>
-          )}
-          <button type="button" onClick={addPicked} disabled={busy || picked.size === 0} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />} Add {picked.size || ""} to pipeline
-          </button>
-        </div>
+            <button type="button" onClick={() => setPicked(new Set())} className="text-[12px] underline opacity-80">Clear</button>
+          </div>
+        )}
       </div>
 
       {readyToReach.length > 0 && flags?.opportunity && picked.size === 0 && (

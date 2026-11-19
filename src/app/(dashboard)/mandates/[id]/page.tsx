@@ -544,6 +544,8 @@ export default async function MandateDetailPage({
             key: "pipeline",
             tone: "teal",
             label: "Pipeline",
+            blurb: "The people working on this role. Call them, fill in their details, then share the good ones with the client.",
+            group: "main",
             icon: <Users className="h-3.5 w-3.5" />,
             badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{pipelineCount}</span>,
             content: (
@@ -638,6 +640,8 @@ export default async function MandateDetailPage({
             key: "submitted",
             tone: "indigo",
             label: "Submitted",
+            blurb: "The people the client can see. Their answers (shortlist or pass, and why) show here.",
+            group: "main",
             icon: <Send className="h-3.5 w-3.5" />,
             badge: <span className="ml-1 rounded-full bg-slate-100 px-1.5 text-[11px] tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-200">{(links ?? []).filter((l) => l.in_shortlist).length}</span>,
             content: <SubmittedClientView mandateId={id} clientName={mandate.client_name ?? null} />,
@@ -646,6 +650,8 @@ export default async function MandateDetailPage({
             key: "best-matches",
             tone: "violet",
             label: "Matches",
+            blurb: "People already in your database who fit this role, best first. Not in the pipeline yet. Add them, or share straight with the client.",
+            group: "main",
             icon: <Sparkles className="h-3.5 w-3.5" />,
             content: (
               <div className="space-y-4">
@@ -674,6 +680,8 @@ export default async function MandateDetailPage({
             key: "smart",
             tone: "sky",
             label: "Smart",
+            blurb: "Describe who you want in your own words, like hunters from B2B SaaS, 5 to 8 years, Pune, and we search for them.",
+            group: "main",
             icon: <Sparkles className="h-3.5 w-3.5" />,
             badge: <SmartBadge />,
             content: <SmartSearchTab />,
@@ -682,6 +690,8 @@ export default async function MandateDetailPage({
             key: "voice",
             tone: "violet",
             label: "Voice agent",
+            blurb: "An AI caller that rings candidates for you.",
+            group: "more",
             icon: <Phone className="h-3.5 w-3.5" />,
             content: (
               <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />}>
@@ -693,6 +703,8 @@ export default async function MandateDetailPage({
               key: "intake",
             tone: "amber",
               label: "Brief",
+            blurb: "The role as the client described it: must-haves, pay, city.",
+            group: "more",
               icon: <ClipboardList className="h-3.5 w-3.5" />,
               content: (
                 <>
@@ -783,6 +795,8 @@ export default async function MandateDetailPage({
               key: "screening",
             tone: "emerald",
               label: "Screening",
+            blurb: "Questions candidates answer when they apply.",
+            group: "more",
               icon: <ListChecks className="h-3.5 w-3.5" />,
               content: (
                 <>
@@ -813,6 +827,8 @@ export default async function MandateDetailPage({
               key: "sourcing",
             tone: "orange",
               label: "Sourcing",
+            blurb: "LinkedIn profiles you found by hand.",
+            group: "more",
               icon: <Users className="h-3.5 w-3.5" />,
               content: (
                 <>
@@ -825,6 +841,8 @@ export default async function MandateDetailPage({
               key: "sharing",
             tone: "rose",
               label: "Sharing and client portal",
+            blurb: "Client portal logins, the public job listing and the share link.",
+            group: "more",
               icon: <Share2 className="h-3.5 w-3.5" />,
               content: (
                 <>

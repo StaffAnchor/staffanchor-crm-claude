@@ -95,19 +95,46 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const shownRanked = [...top, ...local];
   const memoryShown = Object.fromEntries(shownRanked.flatMap((r) => { const m = callMemory.get(r.row.candidate_id); return m ? [[r.row.candidate_id, { at: m.at, summary: m.summary, wants: m.wants, dealbreakers: m.dealbreakers }]] : []; }));
 
+  // Facts shown on the right-hand card of each match: stability, voice notes, and whether anyone has called them.
+  const shownIds = shownRanked.map((r) => r.row.candidate_id);
+  const chunk = <T,>(a: T[], n: number) => Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n));
+  const parts = await Promise.all(chunk(shownIds, 60).map((ids) => Promise.all([
+    supabase.from("candidates").select("id, stability_score").in("id", ids),
+    supabase.from("application_voice_notes").select("candidate_id").in("candidate_id", ids),
+    supabase.from("whatsapp_messages").select("candidate_id").in("candidate_id", ids).eq("direction", "inbound").eq("raw_payload->>type", "audio"),
+    supabase.from("call_log").select("candidate_id, outcome, created_at").in("candidate_id", ids).order("created_at", { ascending: false }),
+  ])));
+  const extra: Record<string, { stability: number | null; voice: boolean; call: { outcome: string | null; at: string } | null }> = {};
+  const ex = (id: string) => (extra[id] ??= { stability: null, voice: false, call: null });
+  for (const [st, vo, wa, ca] of parts) {
+    for (const r of (st.data ?? []) as { id: string; stability_score: number | null }[]) ex(r.id).stability = r.stability_score != null ? Math.round(Number(r.stability_score)) : null;
+    for (const r of [...((vo.data ?? []) as { candidate_id: string }[]), ...((wa.data ?? []) as { candidate_id: string }[])]) ex(r.candidate_id).voice = true;
+    for (const r of (ca.data ?? []) as { candidate_id: string; outcome: string | null; created_at: string }[]) if (!ex(r.candidate_id).call) ex(r.candidate_id).call = { outcome: r.outcome, at: r.created_at };
+  }
+
   return (
     <div className="space-y-4">
-      <RoleCardEditor key={JSON.stringify(card)} mandateId={mandateId} card={card} confirmed={!!cardRow.confirmed} clusters={clusters} worlds={worlds} />
-      <AlsoTypesBar mandateId={mandateId} main={mandateRow.role_cluster} initial={also} />
+      <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} roleCluster={mandateRow.role_cluster} cities={card.cities} ranked={shownRanked} memory={memoryShown} extra={extra} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
+      <details className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        <summary className="cursor-pointer text-[13.5px] font-semibold text-slate-700 dark:text-slate-200">Change what we look for <span className="font-normal text-slate-400">(role type, cities, pay, other roles that also count)</span></summary>
+        <div className="mt-3 space-y-4">
+          <RoleCardEditor key={JSON.stringify(card)} mandateId={mandateId} card={card} confirmed={!!cardRow.confirmed} clusters={clusters} worlds={worlds} />
+          <AlsoTypesBar mandateId={mandateId} main={mandateRow.role_cluster} initial={also} />
+        </div>
+      </details>
       {mandateRow.status === "open" && !mandateRow.is_archived && mandateRow.listing_kind !== "pipeline" && mandateRow.short_code && (
-        <ReferralAskPanel
-          endpoint={`/api/mandates/${mandateId}/referral-ask`}
-          heading="Ask for referrals for this role"
-          blurb="People most likely to know a fit: the same kind of job, the same city, people we placed, and people rated top or strong. They see this role and refer someone; the referral is saved against it. Nobody is asked twice about the same role."
-          templateKey="referralRole"
-        />
+        <details className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <summary className="cursor-pointer text-[13.5px] font-semibold text-slate-700 dark:text-slate-200">Ask people for referrals <span className="font-normal text-slate-400">(optional)</span></summary>
+          <div className="mt-3">
+            <ReferralAskPanel
+              endpoint={`/api/mandates/${mandateId}/referral-ask`}
+              heading="Ask for referrals for this role"
+              blurb="People most likely to know a fit: the same kind of job, the same city, people we placed, and people rated top or strong. They see this role and refer someone; the referral is saved against it. Nobody is asked twice about the same role."
+              templateKey="referralRole"
+            />
+          </div>
+        </details>
       )}
-      <RankedGroups mandateId={mandateId} roleTitle={mandateRow.role_title} roleCluster={mandateRow.role_cluster} cities={card.cities} ranked={shownRanked} memory={memoryShown} reached={Object.fromEntries(((outreachRows ?? []) as { candidate_id: string; status: string; sent_at: string }[]).map((o) => [o.candidate_id, { status: o.status, at: o.sent_at }]))} />
       <p className="text-[12px] text-slate-400">
         Ranked from {pool.length} people in your database whose job or world is close to this role. Anyone already in this pipeline, marked not a fit, or who said no to this role on a call is left out. People who said yes on a call are lifted and say so.
       </p>

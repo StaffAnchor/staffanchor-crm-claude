@@ -16,8 +16,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const body = (await req.json().catch(() => ({}))) as { candidates?: { id?: unknown; score?: unknown; note?: unknown }[] };
   const list = (Array.isArray(body.candidates) ? body.candidates : []).filter((c) => typeof c.id === "string" && /^[0-9a-f-]{36}$/i.test(c.id as string)).slice(0, 50);
   let added = 0;
+  const links: { candidate_id: string; link_id: string }[] = [];
   for (const c of list) {
-    const { error } = await supabase.from("candidate_mandate_links").insert({
+    const { data: ins, error } = await supabase.from("candidate_mandate_links").insert({
       candidate_id: c.id,
       mandate_id: id,
       added_by: user.id,
@@ -25,8 +26,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       match_score_breakdown: { notes: typeof c.note === "string" ? c.note.slice(0, 300) : "Chosen from the best matches for this role", source: "role_card" },
       match_source: "role_card",
       matched_at: new Date().toISOString(),
-    });
-    if (!error || /duplicate|unique/i.test(error.message)) added++;
+    }).select("id").single();
+    if (!error || /duplicate|unique/i.test(error.message)) {
+      added++;
+      // The link id lets the caller go straight on to share the person, whether they were just added or already there.
+      const linkId = ins?.id ?? (await supabase.from("candidate_mandate_links").select("id").eq("candidate_id", c.id as string).eq("mandate_id", id).maybeSingle()).data?.id;
+      if (linkId) links.push({ candidate_id: c.id as string, link_id: linkId as string });
+    }
   }
-  return NextResponse.json({ ok: true, added });
+  return NextResponse.json({ ok: true, added, links });
 }
