@@ -18,6 +18,15 @@ import type { CandidateLite, Contact, Store } from "./store";
 //    never to a chat that is archived and muted.
 //  - Every decision is saved, and every message it sends is recorded.
 
+/** Company names compared without spelling noise: "Pvt Ltd" vs "Private Limited", spaces, brackets like "(an NTT DATA company)". */
+function squashCompany(v: string | null | undefined): string {
+  return (v ?? "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\b(pvt|private|ltd|limited|llp|inc|india|the|co|company|corp|corporation)\b/g, " ")
+    .replace(/[^a-z0-9]/g, "");
+}
+
 export interface Io {
   send(toDigits: string, body: string): Promise<{ ok: true; id: string } | { ok: false; error: string; notConfigured?: boolean }>;
   downloadMedia(mediaId: string): Promise<{ bytes: Uint8Array; mime: string | null } | null>;
@@ -399,8 +408,8 @@ export async function handleInbound(env: EngineEnv, store: Store, io: Io, m: Inb
     const before = await store.getCandidate(state.candidateId);
     if (before?.resume_file_url) {
       const { cvEmployer } = await store.enrichFromCv(state.candidateId);
-      const said = (before.current_employer ?? "").trim().toLowerCase();
-      const cv = (cvEmployer ?? "").trim().toLowerCase();
+      const said = squashCompany(before.current_employer);
+      const cv = squashCompany(cvEmployer);
       if (said && cv && !said.includes(cv) && !cv.includes(said)) hand(`CV shows current company "${cvEmployer}" but the candidate said "${before.current_employer}"`);
     }
     const after = await store.getCandidate(state.candidateId);

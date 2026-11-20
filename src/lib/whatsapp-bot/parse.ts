@@ -33,6 +33,18 @@ export function parseName(raw: string): string | null {
 }
 
 export function parseRoleCompany(raw: string): { title: string; company: string | null } | null {
+  // A pasted LinkedIn-style headline: the role on the first line (often with "|" topics after it) and "At Company" on a later line.
+  const lines = raw.split(/\r?\n/).map((l) => collapse(l)).filter(Boolean);
+  if (lines.length >= 2) {
+    const atLine = lines.slice(1).find((l) => /^(?:at|@|with)\s+\S/i.test(l));
+    if (atLine && raw.length <= 400 && !/@\S+\.\S+/.test(raw) && !/https?:\/\//i.test(raw)) {
+      const company = atLine.replace(/^(?:at|@|with)\s+/i, "").trim();
+      const title = lines[0].split("|")[0].trim();
+      if (title.length >= 2 && title.length <= 80 && title.split(" ").length <= 10 && company.length >= 2 && company.length <= 80) {
+        return { title: titleCase(title), company: titleCase(company) };
+      }
+    }
+  }
   const t = collapse(raw);
   if (t.length < 2 || t.length > 160 || /@\S+\.\S+/.test(t) || /https?:\/\//i.test(t) || looksLikeQuestion(t)) return null;
   // Prefer "Role at Company", then "Role - Company", then "Role, Company". Split once only,
