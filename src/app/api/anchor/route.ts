@@ -33,11 +33,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (intent.kind === "dropped") {
-    const rows = await loadDropped(supabase, isAdmin ? adminDb() : null);
+    const rows = await loadDropped(supabase, adminDb(), isAdmin);
     return NextResponse.json({
       kind: "dropped",
       total: rows.length,
-      rows: rows.slice(0, 15).map((r) => ({ linkId: r.linkId, candidateId: r.candidateId, mandateId: r.mandateId, candidate: r.candidate, client: r.client, role: r.role, joined: r.joined, droppedOn: r.droppedOn, daysIn: r.daysIn, reason: r.reason, billing: billingLine(r, isAdmin) })),
+      rows: rows.slice(0, 15).map((r) => ({ linkId: r.linkId, candidateId: r.candidateId, mandateId: r.mandateId, candidate: r.candidate, client: r.client, role: r.role, joined: r.joined, droppedOn: r.droppedOn, daysIn: r.daysIn, reason: r.reason, billing: billingLine(r) })),
     });
   }
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { STAGES, applyStageChange, joiningProgress, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import MandateRejectModal from "../../mandates/[id]/mandate-reject-modal";
+import { errorText, isNotClientReady, markSharedOffline, stillNeeded } from "@/lib/shared-offline";
 
 type Link = {
   id: string;
@@ -152,6 +153,8 @@ export default function MandateLinksPanel({
     return { stage: l.stage as Stage, clientRelayed: false, rejectionReason: l.rejection_reason ?? "", dateOfJoining: l.date_of_joining ?? "" };
   }
 
+  const [offlineFor, setOfflineFor] = useState<{ linkId: string; needed: string } | null>(null);
+
   async function saveStage(l: Link) {
     const p = getPending(l);
     if (p.stage === l.stage && p.stage !== "rejected" && p.stage !== "placed") return;
@@ -182,8 +185,26 @@ export default function MandateLinksPanel({
       });
       router.refresh();
     } catch (e) {
-      setStageError(e instanceof Error ? e.message : "Failed to update stage.");
+      if (isNotClientReady(e)) {
+        setOfflineFor({ linkId: l.id, needed: stillNeeded(e) });
+        setStageError(null);
+      } else {
+        setStageError(errorText(e, "Failed to update stage."));
+      }
     } finally {
+      setSaving(null);
+    }
+  }
+
+  // The profile went to the client by hand, so mark it and save the stage the person picked.
+  async function sharedByHand(l: Link) {
+    setSaving(l.id);
+    try {
+      await markSharedOffline(supabase, l.id);
+      setOfflineFor(null);
+      await saveStage(l);
+    } catch (e) {
+      setStageError(errorText(e, "Couldn't save that."));
       setSaving(null);
     }
   }
@@ -373,6 +394,17 @@ export default function MandateLinksPanel({
                   </Button>
                 )}
               </div>
+              {offlineFor?.linkId === l.id && (
+                <div className="mt-3 rounded-lg bg-amber-50 p-3 text-[13px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  <p className="font-semibold">This person was never put in front of the client in the portal.</p>
+                  <p className="mt-1">The portal needs a call and a role review first{offlineFor.needed ? ` (still needed: ${offlineFor.needed})` : ""}, so it will not move the stage on its own.</p>
+                  <p className="mt-1">If you sent their profile to the client yourself, by email or WhatsApp, record that and the stage will save. They will not appear in the client&apos;s portal.</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button type="button" disabled={saving === l.id} onClick={() => void sharedByHand(l)} className="rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">I shared this profile with the client myself</button>
+                    <button type="button" onClick={() => setOfflineFor(null)} className="rounded-lg border border-amber-300 px-3 py-1.5 text-[13px] font-medium text-amber-900">Cancel</button>
+                  </div>
+                </div>
+              )}
             </Card>
           );
         })}

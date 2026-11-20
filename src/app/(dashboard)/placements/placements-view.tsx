@@ -235,8 +235,7 @@ export default function PlacementsView({
     if (outcome === "attrited") {
       const joined = row.dateOfJoining ? Math.round((Date.now() - new Date(`${row.dateOfJoining}T00:00:00Z`).getTime()) / 86_400_000) : null;
       if (joined !== null && joined <= 90) {
-        if (isAdmin) setDropRow(row);
-        else setMessage({ type: "success", text: `${row.candidateName} left within 90 days of joining, so the fee is cancelled. Ask an admin to mark it on Placements (Dropped within 90 days).` });
+        setDropRow(row);
       }
     }
     router.refresh();
@@ -440,7 +439,7 @@ export default function PlacementsView({
                     <td></td>
                     <td colSpan={6} className="px-3 py-3">
                       <RetentionCheckins row={row} savingId={savingId} onSaveOutcome={saveCheckinOutcome} />
-                      {isAdmin && (
+                      {(
                         <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
                           <button type="button" onClick={() => setDropRow(row)} className="rounded-lg border border-rose-300 px-3 py-1.5 text-[13px] font-semibold text-rose-700 hover:bg-rose-50">Dropped within 90 days</button>
                           <span className="text-[12px] text-slate-500">Left or never joined inside the guarantee? This cancels the billing, paid or unpaid.</span>

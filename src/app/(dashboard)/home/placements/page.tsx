@@ -24,7 +24,7 @@ export default async function PlacedPage({ searchParams }: { searchParams: Promi
   const { rows, counts } = await loadPlaced(supabase, range);
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   const isAdmin = me?.role === "admin";
-  const dropped = await loadDropped(supabase, isAdmin ? adminDb() : null).catch(() => []);
+  const dropped = await loadDropped(supabase, adminDb(), isAdmin).catch(() => []);
 
   return (
     <div className="mx-auto max-w-[1000px] px-5 py-8">

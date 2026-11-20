@@ -13,6 +13,7 @@ import type { ApplicationAnswer } from "./application-answers-quick-view";
 import MandateRejectModal from "./mandate-reject-modal";
 import PlacedDateModal from "./placed-date-modal";
 import PullBackDialog from "./pull-back-dialog";
+import { errorText, isNotClientReady, markSharedOffline } from "@/lib/shared-offline";
 import { CAN_PULL_BACK, pullBackFromClient } from "@/lib/pull-back";
 import { ConfirmDetailsPanel } from "./confirm-details-modal";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
@@ -165,7 +166,7 @@ export default function MandateCandidatesCards({
       setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stage: newStage, stage_source: source, ...(newStage === "rejected" ? { rejection_category: extra.rejectionCategory ?? null, rejection_reason: extra.rejectionReason ?? null } : {}) } : r)));
       router.refresh();
     } catch (e) {
-      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to update stage." });
+      setMessage({ type: "error", text: isNotClientReady(e) ? `${row.candidate.full_name} was never put in front of the client in the portal. If you shared their profile yourself, open More actions on their row and choose "I shared them myself", then change the stage.` : errorText(e, "Failed to update stage.") });
     } finally {
       setBusy(false);
     }
@@ -372,6 +373,7 @@ export default function MandateCandidatesCards({
               <RowMenu label={`More actions for ${c.full_name}`}>
                 {!l.in_shortlist && rec === "Not a Fit" && <MenuItem onClick={() => void shortlist(l)}>Send to client anyway</MenuItem>}
                 {!l.in_shortlist && rec !== "Not a Fit" && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
+                {!l.in_shortlist && <MenuItem onClick={async () => { try { await markSharedOffline(supabase, l.id); setMessage({ type: "success", text: `Recorded: you shared ${c.full_name}'s profile with the client yourself. You can now move their stage. They stay out of the client's portal.` }); } catch (e) { setMessage({ type: "error", text: errorText(e, "Couldn't save that.") }); } }}>I shared them myself (outside the portal)</MenuItem>}
                 {l.in_shortlist && CAN_PULL_BACK.includes(l.stage) && <MenuItem onClick={() => setPullRow(l)} danger>Pull back from the client</MenuItem>}
                 {l.in_shortlist && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
                 {!l.in_shortlist && logged && <MenuItem onClick={() => setTab("details")}>Call &amp; details</MenuItem>}

@@ -44,8 +44,8 @@ export const daysBetween = (from: string, to: string) => Math.round((new Date(`$
 type One<T> = T | T[] | null;
 const one = <T,>(v: One<T>): T | null => (Array.isArray(v) ? v[0] ?? null : v);
 
-/** `supabase` is the viewer's session (list of people); `admin` is the service client, passed only for admins so fees and amounts stay hidden from everyone else. */
-export async function loadDropped(supabase: SupabaseClient, admin: SupabaseClient | null): Promise<DroppedRow[]> {
+/** `supabase` is the viewer's session (list of people); `admin` is the service client used to read fee status. Amounts are filled in only when `showAmounts` (admins), so recruiters see what happened to the billing but not the figures. */
+export async function loadDropped(supabase: SupabaseClient, admin: SupabaseClient | null, showAmounts = true): Promise<DroppedRow[]> {
   const cols = "id, candidate_id, mandate_id, stage, date_of_joining, join_status, join_status_updated_at, dropped_at, drop_reason, stage_updated_at, candidates(full_name), mandates(role_title, client_name)";
   const [dropped, attrited] = await Promise.all([
     supabase.from("candidate_mandate_links").select(cols).or("dropped_at.not.is.null,join_status.eq.did_not_join,and(stage.in.(pulled_back,rejected),date_of_joining.not.is.null)").limit(500),
@@ -77,7 +77,7 @@ export async function loadDropped(supabase: SupabaseClient, admin: SupabaseClien
       const arr = fees.get(t.link_id) ?? [];
       arr.push({
         id: t.id,
-        amount: Number(t.amount_lakhs ?? 0),
+        amount: showAmounts ? Number(t.amount_lakhs ?? 0) : null,
         status: t.status,
         paidAt: t.payment_received_at,
         refundDue: t.refund_due,
@@ -119,13 +119,15 @@ export async function loadDropped(supabase: SupabaseClient, admin: SupabaseClien
 
 const inrFmt = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
-/** One plain line about the fee for a dropped placement. Non-admins never see amounts. */
-export function billingLine(r: DroppedRow, isAdmin: boolean): { text: string; tone: "ok" | "warn" | "bad" } {
-  if (!isAdmin) return { text: r.billingLive ? "Billing may still be running. An admin will check." : "Billing cancelled.", tone: r.billingLive ? "warn" : "ok" };
+/** One plain line about the fee for a dropped placement. Amounts appear only when the loader was given them. */
+export function billingLine(r: DroppedRow): { text: string; tone: "ok" | "warn" | "bad" } {
   if (r.fees.length === 0) return { text: "No fee had been raised.", tone: "ok" };
   if (r.billingLive) return { text: "Billing is still live. Cancel it.", tone: "bad" };
   const owed = r.fees.filter((f) => f.refundDue && !f.refundSettledAt);
-  if (owed.length) return { text: `Billing cancelled. Already paid ${inrFmt(owed.reduce((s, f) => s + (f.amount ?? 0), 0))}: refund due to the client.`, tone: "bad" };
+  if (owed.length) {
+    const total = owed.reduce((s, f) => s + (f.amount ?? 0), 0);
+    return { text: `Billing cancelled. Already paid${owed.every((f) => f.amount !== null) ? ` ${inrFmt(total)}` : ""}: refund due to the client.`, tone: "bad" };
+  }
   if (r.fees.some((f) => f.refundDue)) return { text: "Billing cancelled. Refund paid back.", tone: "ok" };
   return { text: "Billing cancelled, nothing had been paid.", tone: "ok" };
 }

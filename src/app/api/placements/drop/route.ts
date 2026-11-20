@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/pro-sessions/admin-auth";
+import { createClient } from "@/lib/supabase/server";
+import { CRM_STAFF_ROLES } from "@/lib/is-staff-viewer";
 import { adminDb } from "@/lib/pro-sessions/core";
 import { GUARANTEE_DAYS, daysBetween } from "@/lib/placements/drops";
 
@@ -9,21 +10,28 @@ const REASON = "Dropped within 90 days of joining";
 const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 const today = () => new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10);
 
-// Admin only, because it stops billing. Money is never moved here: unpaid fees are cancelled, paid ones are cancelled and flagged
+// Any CRM staff member can record a drop; only an admin can tick off a refund, because that is money. Money is never moved here: unpaid fees are cancelled, paid ones are cancelled and flagged
 // "refund due", and the refund itself is settled by hand and ticked off afterwards.
 //   drop            a placed person left (or never joined) within 90 days: stage -> pulled back, billing cancelled
 //   cancel_billing  the person is already off the placement (older cases): just stop the fees
 //   refund_settled  tick off a refund that has been paid back
 //   undo            put a drop right back: placed again, fees restored to exactly what they were
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin();
-  if (auth.error) return auth.error;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Not signed in" }, { status: 401 });
+  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const role = me?.role as string | undefined;
+  if (!role || !(CRM_STAFF_ROLES as readonly string[]).includes(role)) return NextResponse.json({ ok: false, error: "Not allowed" }, { status: 403 });
   const admin = adminDb();
   if (!admin) return NextResponse.json({ ok: false, error: "Not configured" }, { status: 503 });
   const b = (await req.json().catch(() => ({}))) as { action?: string; linkId?: string; feeId?: string; droppedOn?: string; reason?: string; note?: string };
   const fail = (error: string, status = 400) => NextResponse.json({ ok: false, error }, { status });
 
   if (b.action === "refund_settled") {
+    if (role !== "admin") return fail("Only an admin can mark a refund as paid back.", 403);
     if (!b.feeId) return fail("Which fee?");
     const { error } = await admin.from("placement_fee_tranches").update({ refund_settled_at: new Date().toISOString() }).eq("id", b.feeId).eq("refund_due", true);
     return error ? fail(error.message, 500) : NextResponse.json({ ok: true });

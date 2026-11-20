@@ -91,7 +91,7 @@ export default async function PlacementsPage() {
         Billing).
       </p>
       <PlacementsView initialRows={rows} fetchError={error?.message ?? null} isAdmin={isAdmin} currentUserId={user.id} />
-      <DroppedSection rows={await loadDropped(supabase, isAdmin ? adminDb() : null).catch(() => [])} isAdmin={isAdmin} />
+      <DroppedSection rows={await loadDropped(supabase, adminDb(), isAdmin).catch(() => [])} isAdmin={isAdmin} />
     </div>
   );
 }
