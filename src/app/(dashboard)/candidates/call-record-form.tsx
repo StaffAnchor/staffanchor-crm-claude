@@ -7,11 +7,11 @@ import { recordingToWav } from "@/lib/voice-wav";
 import WhatsAppMenu from "@/components/whatsapp-menu";
 import { candidateTemplates } from "@/lib/whatsapp-link";
 import { useMyFirstName } from "@/lib/use-my-name";
-import { cityOptions, employmentStatusOptions, fixedCtcOptions, highestQualificationOptions, level1OptionsForProfileType, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
+import { cityOptions, fixedCtcOptions, noticePeriodOptions, relocationOptions } from "@/lib/candidate-options";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
-import { BEST_TIMES, CUSTOMER_KINDS, CYCLES, INTERVIEWING, JUDGMENTS, METRICS_OWNED, NOTICE_FLEX, QUOTA_BANDS, REASONS, SERVICE_TYPES, SHIFT_PATTERNS, STYLES, TEAM_HANDLED, WORK_STYLES, type CallSegment, type JudgmentKey } from "@/lib/call-form-options";
-import { KIND_TITLE, profileKind } from "@/lib/profile-kind";
+import { JUDGMENTS, TEAM_HANDLED, WORK_STYLES, type CallSegment, type JudgmentKey } from "@/lib/call-form-options";
+import { profileKind } from "@/lib/profile-kind";
 
 // The one call form, used on Calls today, on the candidate profile and in the role page's confirm-details window, so a
 // call is recorded the same way everywhere. Everything typed here goes onto the profile; the after-the-call note is read
@@ -332,7 +332,7 @@ export default function CallRecordForm({
     }
     return o;
   };
-  const rated = Object.values(ratings).filter(Boolean).length;
+  const rated = ["communication", "seriousness", "skill_match"].filter((x) => ratings[x as JudgmentKey]).length;
 
   // "Spoke to them": the note is required, and the person sees what will be remembered before the call is saved.
   async function saveSpoke() {
@@ -441,151 +441,156 @@ export default function CallRecordForm({
       {fixedCtcOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
-  const basicsKnown = [k.city, k.years, k.group, k.sub, k.level, k.employer, k.title, k.status, k.qualification, k.name].every(Boolean);
-  const basicsFilled = [ctc, city, relocation, years, level, group, subDomain, name, sellsWorld].filter(Boolean).length;
-  const moveFilled = [openness, reasons.length ? "x" : "", notice, noticeFlex, interviewing, offer].filter(Boolean).length;
-  const payFilled = [ctc, currentVar, expected, payFlex].filter(Boolean).length;
-  const salesFilled = [carriesQuota, quotaBand, style, cycle].filter(Boolean).length;
-  const serviceFilled = [teamHandled, serviceTypes.length ? "x" : "", customerKind, metricsOwned.length ? "x" : "", shiftPattern, revenueTarget].filter(Boolean).length;
-  const otherFilled = [teamHandled, workStyle, keyTools.trim(), certifications.trim()].filter(Boolean).length;
-  const stayFilled = [canMessage, bestTime, canRefer].filter(Boolean).length;
+  const sellsShown = kind !== "other" && worlds.length > 0;
+  const basicsKnown = [k.city, k.years, k.level, !sellsShown || worldKnown].every(Boolean);
+  const basicsFilled = [city, years, level, sellsShown ? sellsWorld : "x"].filter(Boolean).length;
+  const basicsTotal = sellsShown ? 4 : 3;
+  const moveFilled = [openness, notice, relocation, offer].filter(Boolean).length;
+  const payFilled = [ctc, expected, payFlex].filter(Boolean).length;
+  const otherFilled = [workStyle, teamHandled].filter(Boolean).length;
+
+  // Answers already on the profile fold away into one line; only what is missing stays open to fill.
+  const split = (fs: { known: boolean; node: React.ReactNode }[], grid = false) => {
+    const open = fs.filter((x) => !x.known);
+    const done = fs.filter((x) => x.known);
+    const wrap = (xs: typeof fs) => (grid ? <div className="grid grid-cols-2 gap-3">{xs.map((x) => x.node)}</div> : <div className="space-y-3.5">{xs.map((x) => x.node)}</div>);
+    return (
+      <>
+        {open.length > 0 && wrap(open)}
+        {done.length > 0 && (
+          <details className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900/40">
+            <summary className="cursor-pointer text-[13px] text-slate-500">Already on the profile ({done.length}). Tap to correct</summary>
+            <div className="mt-2">{wrap(done)}</div>
+          </details>
+        )}
+      </>
+    );
+  };
 
   const stepWho = (n: number) => (
-    <>
-      <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "Role, level, city, experience, domain"} filled={basicsFilled} total={9} defaultOpen={!basicsKnown && !desk}>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Current city" missing={!k.city} known={k.city}>
-            <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
-            <datalist id={`calls-city-${p.id}`}>{cityOptions.map((c) => <option key={c} value={c} />)}</datalist>
-          </Field>
-          <Field label="Total experience (years)" missing={p.total_experience_years !== undefined && !k.years} known={k.years}>
-            <input type="number" inputMode="decimal" min="0" max="50" step="0.5" value={years} onChange={(e) => setYears(e.target.value)} placeholder="e.g. 6.5" className={sel(k.years)} />
-          </Field>
-          {p.profile_group !== undefined && (
-            <Field label="Domain" missing={!k.group} known={k.group}>
-              <select value={group} onChange={(e) => { setGroup(e.target.value); setSubDomain(""); }} className={sel(k.group)}>
-                <option value="">Select</option>
-                <option value="b2b_sales">B2B Sales</option>
-                <option value="b2c_sales">B2C Sales</option>
-                <option value="non_sales">Non-Sales</option>
-              </select>
-            </Field>
-          )}
-          {p.sub_domain !== undefined && (
-            <Field label="Sub-domain" missing={!k.sub} known={k.sub}>
-              <select value={subDomain} onChange={(e) => setSubDomain(e.target.value)} className={sel(k.sub)} disabled={!group}>
-                <option value="">{group ? "Select" : "Pick the domain first"}</option>
-                {subDomain && !level1OptionsForProfileType(group).includes(subDomain) && <option value={subDomain}>{subDomain}</option>}
-                {level1OptionsForProfileType(group).map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </Field>
-          )}
-          {kind !== "other" && worlds.length > 0 && (
-            <Field label="What do they sell?" missing={!worldKnown} known={worldKnown}>
-              <select value={sellsWorld} onChange={(e) => setSellsWorld(e.target.value)} className={sel(worldKnown)}>
-                <option value="">Select the closest</option>
-                {Array.from(new Set(worlds.map((w) => w.family))).map((fam) => (
-                  <optgroup key={fam} label={fam}>{worlds.filter((w) => w.family === fam).map((w) => <option key={w.slug} value={w.slug}>{w.name}</option>)}</optgroup>
-                ))}
-              </select>
-            </Field>
-          )}
-          <Field label="Role level" missing={!k.level} known={k.level}>
-            <select value={level} onChange={(e) => setLevel(e.target.value)} className={sel(k.level)}>
-              <option value="">Select</option>
-              {yourLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </Field>
-          <Field label="Current company" missing={!k.employer} known={k.employer}>
-            <input value={employer} onChange={(e) => setEmployer(e.target.value)} placeholder="Company" className={sel(k.employer)} />
-          </Field>
-          <Field label="Current job title" missing={!k.title} known={k.title}>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className={sel(k.title)} />
-          </Field>
-          <Field label="Employment status" missing={!k.status} known={k.status}>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className={sel(k.status)}>
-              <option value="">Select</option>
-              {employmentStatusOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </Field>
-          <Field label="Highest qualification" missing={!k.qualification} known={k.qualification}>
-            <select value={qualification} onChange={(e) => setQualification(e.target.value)} className={sel(k.qualification)}>
-              <option value="">Select</option>
-              {highestQualificationOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </Field>
-          <Field label="Full name" known={k.name} missing={!k.name}>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={sel(k.name)} />
-          </Field>
-          {p.email !== undefined && (
-            <Field label="Email" missing={!k.email} known={k.email}>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" className={sel(k.email)} />
-            </Field>
-          )}
-        </div>
-        <p className="text-[12px] text-slate-400">
-          Role type: {level ? (levelLead ? "Leads a team" : "Individual contributor") : p.role_type ?? "set by the level"}. Only changes are saved.
-        </p>
-      </Step>
-    </>
+    <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "City, experience, level, what they sell"} filled={basicsFilled} total={basicsTotal} defaultOpen={!basicsKnown && !desk}>
+      {split(
+        [
+          {
+            known: k.city,
+            node: (
+              <Field key="city" label="Current city" missing={!k.city} known={k.city}>
+                <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
+                <datalist id={`calls-city-${p.id}`}>{cityOptions.map((c) => <option key={c} value={c} />)}</datalist>
+              </Field>
+            ),
+          },
+          {
+            known: k.years,
+            node: (
+              <Field key="years" label="Total experience (years)" missing={p.total_experience_years !== undefined && !k.years} known={k.years}>
+                <input type="number" inputMode="decimal" min="0" max="50" step="0.5" value={years} onChange={(e) => setYears(e.target.value)} placeholder="e.g. 6.5" className={sel(k.years)} />
+              </Field>
+            ),
+          },
+          {
+            known: k.level,
+            node: (
+              <Field key="level" label="Role level" missing={!k.level} known={k.level}>
+                <select value={level} onChange={(e) => setLevel(e.target.value)} className={sel(k.level)}>
+                  <option value="">Select</option>
+                  {yourLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </Field>
+            ),
+          },
+          ...(sellsShown
+            ? [
+                {
+                  known: worldKnown,
+                  node: (
+                    <Field key="sells" label="What do they sell?" missing={!worldKnown} known={worldKnown}>
+                      <select value={sellsWorld} onChange={(e) => setSellsWorld(e.target.value)} className={sel(worldKnown)}>
+                        <option value="">Select the closest</option>
+                        {Array.from(new Set(worlds.map((w) => w.family))).map((fam) => (
+                          <optgroup key={fam} label={fam}>{worlds.filter((w) => w.family === fam).map((w) => <option key={w.slug} value={w.slug}>{w.name}</option>)}</optgroup>
+                        ))}
+                      </select>
+                    </Field>
+                  ),
+                },
+              ]
+            : []),
+        ],
+        true
+      )}
+    </Step>
   );
   const stepMove = (n: number) => (
-    <>
-      <Step n={n} title="Their move" hint="Are they looking, why, how soon, what else is on" filled={moveFilled} total={6} defaultOpen={!desk}>
-        <Field label="Looking for a new role?" missing={!k.looking} known={k.looking}>
-          <Chips known={k.looking} value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
-        </Field>
-        <Field label="Why are they looking? (up to 3)">
-          <MultiChips value={reasons} options={REASONS} onChange={setReasons} max={3} />
-        </Field>
-        <Field label="Notice period" missing={!k.notice} known={k.notice}>
-          <Chips known={k.notice} value={notice} options={asOpts(noticePeriodOptions)} onChange={setNotice} />
-        </Field>
-        <Field label="Can they join earlier?">
-          <Chips value={noticeFlex} options={NOTICE_FLEX.map((o) => ({ v: o.v, label: o.label }))} onChange={setNoticeFlex} />
-        </Field>
-        <Field label="Interviewing elsewhere?">
-          <Chips value={interviewing} options={INTERVIEWING.map((o) => ({ v: o.v, label: o.label }))} onChange={setInterviewing} />
-        </Field>
-        <Field label="Offer in hand?" known={k.offer}>
-          <div className="flex flex-wrap items-center gap-2">
-            <Chips known={k.offer} value={offer} options={asOpts(["Yes", "No"])} onChange={setOffer} />
-            {offer === "Yes" && (
-              <select value={offerCtc} onChange={(e) => setOfferCtc(e.target.value)} className={`${select} w-40`}>
-                <option value="">Offer CTC</option>
-                {fixedCtcOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            )}
-          </div>
-        </Field>
-        <Field label="Open to relocating?" missing={!k.relocation} known={k.relocation}>
-          <Chips known={k.relocation} value={relocation} options={asOpts(relocationOptions)} onChange={setRelocation} />
-        </Field>
-        <Field label="Work mode" known={k.workMode}>
-          <Chips known={k.workMode} value={workMode} options={asOpts(workModeOptions)} onChange={setWorkMode} />
-        </Field>
-      </Step>
-    </>
+    <Step n={n} title="Their move" hint="Looking, how soon, relocation, offer" filled={moveFilled} total={4} defaultOpen={!desk}>
+      {split([
+        {
+          known: k.looking,
+          node: (
+            <Field key="looking" label="Looking for a new role?" missing={!k.looking} known={k.looking}>
+              <Chips known={k.looking} value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
+            </Field>
+          ),
+        },
+        {
+          known: k.notice,
+          node: (
+            <Field key="notice" label="Notice period" missing={!k.notice} known={k.notice}>
+              <Chips known={k.notice} value={notice} options={asOpts(noticePeriodOptions)} onChange={setNotice} />
+            </Field>
+          ),
+        },
+        {
+          known: k.relocation,
+          node: (
+            <Field key="reloc" label="Open to relocating?" missing={!k.relocation} known={k.relocation}>
+              <Chips known={k.relocation} value={relocation} options={asOpts(relocationOptions)} onChange={setRelocation} />
+            </Field>
+          ),
+        },
+        {
+          known: k.offer,
+          node: (
+            <Field key="offer" label="Offer in hand?" known={k.offer}>
+              <div className="flex flex-wrap items-center gap-2">
+                <Chips known={k.offer} value={offer} options={asOpts(["Yes", "No"])} onChange={setOffer} />
+                {offer === "Yes" && (
+                  <select value={offerCtc} onChange={(e) => setOfferCtc(e.target.value)} className={`${select} w-40`}>
+                    <option value="">Offer CTC</option>
+                    {fixedCtcOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                )}
+              </div>
+            </Field>
+          ),
+        },
+      ])}
+    </Step>
   );
   const stepPay = (n: number) => (
-    <>
-      <Step n={n} title="Pay" hint="What they earn and what they want" filled={payFilled} total={4} defaultOpen={!desk}>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Current fixed pay" missing={!k.ctc} known={k.ctc}>{fixedPay(ctc, setCtc, k.ctc)}</Field>
-          <Field label="Current variable pay" known={k.currentVar}>{fixedPay(currentVar, setCurrentVar, k.currentVar)}</Field>
-          <Field label="Expected fixed pay" missing={!k.expected} known={k.expected}>{fixedPay(expected, setExpected, k.expected)}</Field>
-          <Field label="Is the expectation flexible?">
-            <Chips value={payFlex} options={asOpts(["Yes", "No"])} onChange={setPayFlex} />
-          </Field>
-        </div>
-        {ratio !== null && (
-          <p className={`text-[13px] ${ratio >= 1.5 ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>
-            Pay-to-experience ratio {ratio.toFixed(2)} {ratio >= 1.5 ? "(meets the top-tier bar of 1.5)" : "(below the top-tier bar of 1.5)"}
-            {ratio > 6 ? ". Very high: double-check the number." : ""}
-          </p>
-        )}
-      </Step>
-    </>
+    <Step n={n} title="Pay" hint="What they earn and what they want" filled={payFilled} total={3} defaultOpen={!desk}>
+      {split(
+        [
+          ...(gateOpen ? [] : [{ known: k.ctc, node: <Field key="ctc" label="Current fixed pay" missing={!k.ctc} known={k.ctc}>{fixedPay(ctc, setCtc, k.ctc)}</Field> }]),
+          { known: k.expected, node: <Field key="exp" label="Expected fixed pay" missing={!k.expected} known={k.expected}>{fixedPay(expected, setExpected, k.expected)}</Field> },
+          {
+            known: false,
+            node: (
+              <Field key="flex" label="Is the expectation flexible?">
+                <Chips value={payFlex} options={asOpts(["Yes", "No"])} onChange={setPayFlex} />
+              </Field>
+            ),
+          },
+        ],
+        true
+      )}
+      {ratio !== null && (
+        <p className={`text-[13px] ${ratio >= 1.5 ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>
+          Pay-to-experience ratio {ratio.toFixed(2)} {ratio >= 1.5 ? "(meets the top-tier bar of 1.5)" : "(below the top-tier bar of 1.5)"}
+          {ratio > 6 ? ". Very high: double-check the number." : ""}
+        </p>
+      )}
+    </Step>
   );
 
   // Current pay is the first thing that must be on file, so when it is missing the Pay step comes first.
@@ -633,75 +638,23 @@ export default function CallRecordForm({
           )}
         </div>
       )}
-      <p className="text-[12px] text-slate-400">
-        <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-200 bg-slate-100 align-middle" /> Grey is already on the profile. <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-white align-middle" /> White with an amber edge is missing: ask these.
-      </p>
-
-      {desk ? <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">More details (optional)</p> : <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">Needed for every profile</p>}
+      {desk && <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">More details (optional)</p>}
       {order.map((key, i) => <span key={key} className="contents">{key === "who" ? stepWho(i + 1) : key === "move" ? stepMove(i + 1) : stepPay(i + 1)}</span>)}
 
-      <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">{KIND_TITLE[kind]}</p>
-      {kind === "sales" && (
-        <Step n={4} title="Sales depth" hint="Quota, style and cycle: the strongest fit signals for sales roles" filled={salesFilled} total={4} defaultOpen={p.profile_group !== undefined && !desk}>
-          <Field label="Do they carry a quota?">
-            <Chips value={carriesQuota} options={asOpts(["Yes", "No"])} onChange={setCarriesQuota} />
-          </Field>
-          {carriesQuota !== "No" && (
-            <Field label="How much did they achieve last year?">
-              <Chips value={quotaBand} options={asOpts([...QUOTA_BANDS])} onChange={setQuotaBand} />
-            </Field>
-          )}
-          <Field label="Hunter or farmer?">
-            <Chips value={style} options={asOpts([...STYLES])} onChange={setStyle} />
-          </Field>
-          <Field label="Typical sales cycle">
-            <Chips value={cycle} options={asOpts([...CYCLES])} onChange={setCycle} />
-          </Field>
-        </Step>
-      )}
-      {kind === "service" && (
-        <Step n={4} title="Service depth" hint="What they handle, for whom, and what they are measured on" filled={serviceFilled} total={6} defaultOpen={!desk}>
-          <Field label="How many people have they managed?">
-            <Chips value={teamHandled} options={asOpts([...TEAM_HANDLED])} onChange={setTeamHandled} />
-          </Field>
-          <Field label="What kind of service work? (up to 3)">
-            <MultiChips value={serviceTypes} options={SERVICE_TYPES} onChange={setServiceTypes} max={3} />
-          </Field>
-          <Field label="Whose customers?">
-            <Chips value={customerKind} options={asOpts([...CUSTOMER_KINDS])} onChange={setCustomerKind} />
-          </Field>
-          <Field label="What were they measured on? (up to 3)">
-            <MultiChips value={metricsOwned} options={METRICS_OWNED} onChange={setMetricsOwned} max={3} />
-          </Field>
-          <Field label="Do they carry an upsell or revenue target?">
-            <Chips value={revenueTarget} options={asOpts(["Yes", "No"])} onChange={setRevenueTarget} />
-          </Field>
-          <Field label="Shifts and travel">
-            <Chips value={shiftPattern} options={asOpts([...SHIFT_PATTERNS])} onChange={setShiftPattern} />
-          </Field>
-        </Step>
-      )}
       {kind === "other" && (
-        <Step n={4} title="Their kind of work" hint="Hands-on or managing, team size, tools and certifications" filled={otherFilled} total={4} defaultOpen={!desk}>
+        <Step n={4} title="Their kind of work" hint="Hands-on or managing, and team size" filled={otherFilled} total={2} defaultOpen={!desk}>
           <Field label="Hands-on or managing people?">
             <Chips value={workStyle} options={asOpts([...WORK_STYLES])} onChange={setWorkStyle} />
           </Field>
           <Field label="How many people have they managed?">
             <Chips value={teamHandled} options={asOpts([...TEAM_HANDLED])} onChange={setTeamHandled} />
           </Field>
-          <Field label="Key tools they use">
-            <input value={keyTools} onChange={(e) => setKeyTools(e.target.value)} maxLength={80} placeholder="For example SAP, Tally, Power BI" className={select} />
-          </Field>
-          <Field label="Certifications">
-            <input value={certifications} onChange={(e) => setCertifications(e.target.value)} maxLength={80} placeholder="For example CA, PMP, CFA" className={select} />
-          </Field>
         </Step>
       )}
 
-      <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">After the call</p>
-      <Step n={5} title="Your read of them" hint="Two taps each. This sets their profile strength" filled={rated} total={5} defaultOpen={!desk}>
+      <Step n={kind === "other" ? 5 : 4} title="Your read of them" hint="One tap each" filled={rated} total={3} defaultOpen={!desk}>
         <div className="space-y-2">
-          {JUDGMENTS.map((j) => (
+          {JUDGMENTS.filter((j) => ["communication", "seriousness", "skill_match"].includes(j.key)).map((j) => (
             <div key={j.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <p className="min-w-0 text-[13px] font-medium text-slate-700 dark:text-slate-200">
                 {j.label} <span className="font-normal text-slate-400">· {j.hint}</span>
@@ -718,19 +671,7 @@ export default function CallRecordForm({
         {p.comm && !ratings.communication && <p className="text-[12px] text-slate-400">Communication last rated {p.comm}.</p>}
       </Step>
 
-      <Step n={6} title="Stay in touch" hint="Consent, best time, referrals" filled={stayFilled} total={3} defaultOpen={false}>
-        <Field label="OK to message them on WhatsApp and email about roles?">
-          <Chips value={canMessage} options={asOpts(["Yes", "No"])} onChange={setCanMessage} />
-        </Field>
-        <Field label="Best time to call">
-          <Chips value={bestTime} options={asOpts([...BEST_TIMES])} onChange={setBestTime} />
-        </Field>
-        <Field label="Can they refer a colleague?">
-          <Chips value={canRefer} options={asOpts(["Yes", "No"])} onChange={setCanRefer} />
-        </Field>
-      </Step>
-
-      <Step n={7} title="What you discussed (required)" hint="A few words, written like a text to a colleague" defaultOpen>
+      <Step n={kind === "other" ? 6 : 5} title="What you discussed (required)" hint="A few words, written like a text to a colleague" defaultOpen>
         <Field label="What did you discuss? Rough is fine: what they want, what they will not accept, anything to remember">
           <textarea
             value={note}
@@ -754,7 +695,6 @@ export default function CallRecordForm({
             {voice === "converting" && <span className="text-[13px] text-slate-500">Turning your voice into text…</span>}
             <span className="text-[12px] text-slate-400">Hindi, English or both. It goes into the box below and you can edit it. The recording is not kept.</span>
           </div>
-          <p className="mt-1 text-[12px] text-slate-400">Before saving, you see what the system will remember. It fills any detail still blank, keeps what they want and will not accept for future roles, and matches strong people to open roles.</p>
           {readBack && (
             <div className="mt-2 space-y-1 rounded-lg border border-teal-200 bg-teal-50/60 p-3 text-[13px] text-slate-700 dark:border-teal-900 dark:bg-teal-950/20 dark:text-slate-200">
               <p className="font-semibold text-teal-900 dark:text-teal-200">This is what I will remember:</p>
