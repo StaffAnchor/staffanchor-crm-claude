@@ -11,7 +11,7 @@ function inline(text: string, key: string): ReactNode[] {
     const bold = part.match(/^\*\*([^*]+)\*\*$/);
     if (bold) return <strong key={`${key}-${i}`} className="font-semibold">{bold[1]}</strong>;
     const link = part.match(/^\[([^\]]+)\]\((\/[^)\s]*)\)$/);
-    if (link) return <Link key={`${key}-${i}`} href={link[2]} className="font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-900 dark:text-teal-300">{link[1]}</Link>;
+    if (link) return <Link key={`${key}-${i}`} href={link[2]} target="_blank" rel="noopener noreferrer" className="font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-900 dark:text-teal-300">{link[1]}</Link>;
     return <span key={`${key}-${i}`}>{part}</span>;
   });
 }

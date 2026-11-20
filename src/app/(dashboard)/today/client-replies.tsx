@@ -41,7 +41,7 @@ export default function ClientReplies({ items, unseen }: { items: ClientReply[];
   }
 
   return (
-    <section className={`${card} mb-6`}>
+    <section id="client-replies" className={`${card} mb-6 scroll-mt-20`}>
       <header className="flex flex-wrap items-start justify-between gap-2 px-4 pt-4 pb-3">
         <div>
           <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Client replies{unseen ? ` (${unseen} new)` : ""}</h2>

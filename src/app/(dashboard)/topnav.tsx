@@ -11,16 +11,19 @@ import NotificationBell from "./notification-bell";
 import CallsFlaggedBell from "./calls-flagged-bell";
 import CallerLookup from "./caller-lookup";
 import WhatsAppNavBadge from "./whatsapp-nav-badge";
+import AnchorLauncher from "@/components/anchor/anchor-launcher";
 
 type NavLink = { href: string; label: string; enabled: boolean };
 
 // `also` lists pages that belong to a group but have no tab of their own, so the right heading still lights up.
 const NAV_GROUPS: { id: string; label: string; items: string[]; also?: string[] }[] = [
-  { id: "today", label: "Today", items: ["/today"], also: ["/tasks"] },
-  // Everything about a role: the roles themselves, the clients behind them, new client business and the placements that follow.
-  // Interviews and the old hiring board are no longer in the bar (no activity); their pages still open from links.
-  { id: "roles", label: "Roles", items: ["/mandates", "/clients", "/client-acquisition", "/placements"], also: ["/interviews", "/hiring", "/employer-inquiries", "/sales", "/retention"] },
-  { id: "people", label: "People", items: ["/candidates"], also: ["/saas-practice", "/referrals", "/whatsapp"] },
+  // Each heading is its own place. Pages that belong to one but have no tab of their own (`also`) keep the right heading lit.
+  { id: "home", label: "Home", items: ["/home"], also: ["/today", "/tasks"] },
+  { id: "roles", label: "Roles", items: ["/mandates"], also: ["/interviews", "/hiring", "/sales", "/retention"] },
+  { id: "clients", label: "Clients", items: ["/clients"], also: ["/client-acquisition", "/employer-inquiries"] },
+  { id: "people", label: "People", items: ["/candidates"], also: ["/saas-practice", "/referrals", "/recommended"] },
+  { id: "placements", label: "Placements", items: ["/placements"] },
+  { id: "inbox", label: "Inbox", items: ["/whatsapp"] },
 ];
 
 // Redesigned per direct feedback (Aug 2026): the old header was dark navy
@@ -53,7 +56,7 @@ export default function TopNav({
   const present = new Map(navLinks.filter((l) => l.enabled).map((l) => [l.href, l]));
   const groups = NAV_GROUPS.map((g) => {
     const items = g.items.map((h) => present.get(h)).filter((x): x is NavLink => !!x);
-    return { id: g.id, label: g.label, items, href: items[0]?.href ?? "/today", also: g.also ?? [] };
+    return { id: g.id, label: g.label, items, href: items[0]?.href ?? "/home", also: g.also ?? [] };
   }).filter((g) => g.items.length > 0);
   const activeGroup = groups.find((g) => [...g.items.map((i) => i.href), ...g.also].some((h) => pathname.startsWith(h))) ?? null;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -79,7 +82,7 @@ export default function TopNav({
   return (
     <header className="ros-glass border-b sticky top-0 z-30">
       <div className="max-w-[1500px] mx-auto px-3 sm:px-5 py-2 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-1.5 md:gap-4">
-        <Link href="/today" className="flex items-center shrink-0">
+        <Link href="/home" className="flex items-center shrink-0">
           <Image
             src="/Staffanchor_Logo.svg"
             alt="StaffAnchor"
@@ -104,7 +107,7 @@ export default function TopNav({
                 }`}
               >
                 {g.label}
-                {g.id === "people" && !active ? <WhatsAppNavBadge /> : null}
+                {g.id === "inbox" && !active ? <WhatsAppNavBadge /> : null}
               </Link>
             );
           })}
@@ -113,6 +116,7 @@ export default function TopNav({
         <div className="flex-1 min-w-2 order-1 md:order-none" />
 
         <div className="order-2 md:order-none flex items-center gap-1.5 md:gap-2 shrink-0">
+          {["admin", "recruiter", "partner"].includes(role) && <AnchorLauncher firstName={(fullName ?? email).split(" ")[0] || "You"} isAdmin={role === "admin"} />}
           {["admin", "recruiter", "partner", "freelancer"].includes(role) && <CallerLookup />}
           <div className="relative" ref={createRef}>
             <button

@@ -45,7 +45,7 @@ type Command = {
 // switches to search). Each also has a bare-key global shortcut (no
 // modifier) so recruiters never need to open the palette at all for these.
 const COMMANDS: Command[] = [
-  { id: "today", label: "Today", hint: "G then T", icon: Flame, href: "/today" },
+  { id: "home", label: "Home", hint: "G then T", icon: Flame, href: "/home" },
   { id: "inbox", label: "All tasks", hint: "G then I", icon: Flame, href: "/inbox" },
   { id: "candidates", label: "Candidates", hint: "G then C", icon: Users, href: "/candidates" },
   { id: "mandates", label: "Mandates", hint: "G then M", icon: Briefcase, href: "/mandates" },
@@ -133,7 +133,7 @@ export default function CopilotPalette({ role }: { role: string }) {
         chordRef.current = null;
         const lead = pending.key.toLowerCase();
         const second = e.key.toLowerCase();
-        if (lead === "g" && second === "t") return void go("/today");
+        if (lead === "g" && second === "t") return void go("/home");
         if (lead === "g" && second === "i") return void go("/inbox");
         if (lead === "g" && second === "c") return void go("/candidates");
         if (lead === "g" && second === "m") return void go("/mandates");

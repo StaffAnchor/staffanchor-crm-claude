@@ -164,7 +164,7 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
 
       <ClientReplies items={replies.items} unseen={replies.unseen} />
 
-      <section className={`${card} mb-6`}>
+      <section id="waiting" className={`${card} mb-6 scroll-mt-20`}>
         <header className="px-4 pt-4 pb-3">
           <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Waiting on you{waiting.length ? ` (${waiting.length})` : ""}</h2>
           <p className="text-[13px] text-slate-500 dark:text-slate-400">Employers first, then candidates on a live role. Everyone else has already been answered.</p>
@@ -211,7 +211,7 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
 
       <div className="grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-5 items-start">
         <div className="space-y-5 min-w-0">
-          <section className={card}>
+          <section id="decisions" className={`${card} scroll-mt-20`}>
             <header className="px-4 pt-4 pb-3">
               <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Needs a decision</h2>
               <p className="text-[13px] text-slate-500 dark:text-slate-400">One item per role, most important first.</p>
@@ -235,7 +235,7 @@ export default function TodayView({ desk, focus, waiting, trends, replies }: { d
             ) : null}
           </section>
 
-          <section className={card}>
+          <section id="roles" className={`${card} scroll-mt-20`}>
             <header className="px-4 pt-4 pb-3">
               <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Roles at a glance</h2>
               <p className="text-[13px] text-slate-500 dark:text-slate-400">Every open role, stuck ones first.</p>

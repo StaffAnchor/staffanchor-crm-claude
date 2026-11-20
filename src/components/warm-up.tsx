@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 // server cannot help (every page needs a signed-in session), so the signed-in browser does it: a few seconds after a page opens it asks
 // for the main pages once, quietly and one at a time, and repeats while the tab stays open. By the time a recruiter clicks Roles or
 // Profile completion the page is already awake. It skips phones on mobile data and anyone who has asked their browser to save data.
-const PAGES = ["/candidates/complete", "/candidates", "/mandates", "/candidates/inventory", "/saas-practice", "/clients", "/today"];
+const PAGES = ["/candidates/complete", "/candidates", "/mandates", "/candidates/inventory", "/saas-practice", "/clients", "/home"];
 const EVERY_MS = 7 * 60_000;
 const GAP_MS = 1500;
 

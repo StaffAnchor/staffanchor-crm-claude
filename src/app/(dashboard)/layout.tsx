@@ -34,7 +34,7 @@ export default async function DashboardLayout({
     // Renamed from "Priority Actions" -- that's now just one of the three
     // boxes on this page (Mandate Tasks/Build Pipeline/Profile Completion),
     // so the tab needed a name covering all three, not just the first.
-    { href: "/today", label: "Today", enabled: true },
+    { href: "/home", label: "Home", enabled: true },
     { href: "/candidates", label: "Candidates", enabled: true },
     // Candidates colleagues have recommended to you for a role: your own space, see (dashboard)/recommended.
     { href: "/mandates", label: "Mandates", enabled: true },
@@ -55,6 +55,7 @@ export default async function DashboardLayout({
     // check-ins to disappear from the same place its DOJ/confirmation
     // live, not a separate page that never got told.
     { href: "/placements", label: "Placements", enabled: true },
+    { href: "/whatsapp", label: "Inbox", enabled: true },
     // Practice Pool folded into the Candidates page as a tab (Sep 2026) --
     // see (dashboard)/candidates/candidates-sub-nav.tsx. Still lives at its
     // own /practice-pool URL, just no longer a separate top-nav item.

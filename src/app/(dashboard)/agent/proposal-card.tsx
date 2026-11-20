@@ -65,7 +65,7 @@ export default function ProposalCard({ p: initial, onChange }: { p: Proposal; on
       {count > 0 && (
         <p className="mt-2 flex flex-wrap gap-1.5">
           {prev.recipients!.slice(0, 20).map((r) => (
-            <Link key={r.id} href={p.kind === "email" && p.payload.to === "client_contact" ? "#" : `/candidates/${r.id}`} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[13px] text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200">{r.name}</Link>
+            <Link key={r.id} href={p.kind === "email" && p.payload.to === "client_contact" ? "#" : `/candidates/${r.id}`} target="_blank" rel="noopener noreferrer" className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[13px] text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200">{r.name}</Link>
           ))}
         </p>
       )}
@@ -96,7 +96,7 @@ export default function ProposalCard({ p: initial, onChange }: { p: Proposal; on
 
       {p.result?.message && <p className={`mt-2 text-[14px] font-medium ${p.result.ok ? "text-emerald-800 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}>{p.result.message}</p>}
       {p.status === "failed" && !p.result?.message && p.error && <p className="mt-2 text-[14px] font-medium text-red-700">{p.error}</p>}
-      {p.result?.links?.map((l) => <Link key={l.href} href={l.href} className="mr-3 mt-1 inline-block text-[14px] font-medium text-teal-700 underline dark:text-teal-300">{l.label}</Link>)}
+      {p.result?.links?.map((l) => <Link key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className="mr-3 mt-1 inline-block text-[14px] font-medium text-teal-700 underline dark:text-teal-300">{l.label}</Link>)}
       {err && <p className="mt-2 text-[14px] text-red-600">{err}</p>}
 
       {(p.status === "pending" || p.status === "failed") && (
