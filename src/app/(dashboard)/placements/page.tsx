@@ -5,7 +5,7 @@ import { adminDb } from "@/lib/pro-sessions/core";
 import { loadDropped } from "@/lib/placements/drops";
 import DroppedSection from "@/components/placements/dropped-section";
 import FeeAnalysisView from "@/components/placements/fee-analysis-view";
-import { loadFeeAnalysis } from "@/lib/placements/fee-analysis";
+import { feeStageFromRow, loadFeeAnalysis } from "@/lib/placements/fee-analysis";
 import Link from "next/link";
 
 // Source-of-truth placement tracker: every candidate at stage="placed",
@@ -87,6 +87,23 @@ export default async function PlacementsPage({ searchParams }: { searchParams: P
       checkins: [...checkins].sort((a, b) => a.due_date.localeCompare(b.due_date)),
     };
   });
+
+  // Admins also see each placement's fees and the stage they are in, so a fee can be moved from the tracker.
+  if (isAdmin && admin && rows.length) {
+    const { data: fees } = await admin
+      .from("placement_fee_tranches")
+      .select("id, link_id, label, amount_lakhs, status, proforma_sent_at, final_invoiced_at, payment_received_at, cancelled_at")
+      .in("link_id", rows.map((r) => r.linkId));
+    const by = new Map<string, NonNullable<PlacementRow["fees"]>>();
+    for (const f of (fees ?? []) as { id: string; link_id: string; label: string | null; amount_lakhs: number | string | null; status: string; proforma_sent_at: string | null; final_invoiced_at: string | null; payment_received_at: string | null; cancelled_at: string | null }[]) {
+      const stage = feeStageFromRow(f.status, f.payment_received_at, f.cancelled_at);
+      if (stage === "cancelled") continue;
+      const list = by.get(f.link_id) ?? [];
+      list.push({ id: f.id, label: f.label ?? "Placement", amount: Number(f.amount_lakhs ?? 0), stage, billedOn: (f.proforma_sent_at ?? f.final_invoiced_at)?.slice(0, 10) ?? null, paidOn: f.payment_received_at?.slice(0, 10) ?? null });
+      by.set(f.link_id, list);
+    }
+    for (const r of rows) r.fees = by.get(r.linkId) ?? [];
+  }
 
   return (
     <div className="max-w-[1500px] mx-auto px-5 py-8">

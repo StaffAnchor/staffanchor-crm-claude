@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import DropDialog from "@/components/placements/drop-dialog";
+import FeeRowActions from "@/components/placements/fee-row-actions";
 import { applyStageChange } from "@/lib/mandate-stage";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -39,6 +40,8 @@ export type PlacementRow = {
   // -- folded in here (formerly a separate /retention page) so DOJ,
   // confirmation, and the follow-ups it drives all live in one place.
   checkins: RetentionCheckin[];
+  /** Admin only: this placement's live fees and the stage each is in (potential, billed or received). */
+  fees?: { id: string; label: string; amount: number; stage: "potential" | "billed" | "received" | "cancelled"; billedOn: string | null; paidOn: string | null }[];
 };
 
 const JOIN_STATUS_TONE: Record<string, string> = {
@@ -425,6 +428,14 @@ export default function PlacementsView({
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <p className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{breakdown ? inr(breakdown.total) : "—"}</p>
+                    {isAdmin && row.fees && (
+                      <p className="mt-0.5 flex flex-wrap justify-end gap-1">
+                        {row.fees.length === 0 ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">No fee raised</span> : (["potential", "billed", "received"] as const).map((st) => {
+                          const n = row.fees!.filter((f) => f.stage === st).length;
+                          return n ? <span key={st} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${st === "received" ? "bg-emerald-50 text-emerald-700" : st === "billed" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{st === "potential" ? "Potential" : st === "billed" ? "Billed" : "Received"}{row.fees!.length > 1 ? ` ${n}` : ""}</span> : null;
+                        })}
+                      </p>
+                    )}
                     <p className="text-[12px] tabular-nums text-slate-500 dark:text-slate-400">
                       {row.feePercentage != null ? (
                         breakdown ? `${row.feePercentage}% = ${inr(breakdown.billing)} + GST ${inr(breakdown.gst)}` : `${row.feePercentage}% fee`
@@ -439,6 +450,19 @@ export default function PlacementsView({
                     <td></td>
                     <td colSpan={6} className="px-3 py-3">
                       <RetentionCheckins row={row} savingId={savingId} onSaveOutcome={saveCheckinOutcome} />
+                      {isAdmin && row.fees && row.fees.length > 0 && (
+                        <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+                          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Fees on this placement</p>
+                          <ul className="space-y-2">
+                            {row.fees.map((f) => (
+                              <li key={f.id} className="flex flex-wrap items-center justify-between gap-3 text-[13px]">
+                                <span className="text-slate-700 dark:text-slate-200">{f.label} · {inr(f.amount)} <span className="text-slate-400">· {f.stage === "received" ? `received${f.paidOn ? ` ${f.paidOn}` : ""}` : f.stage === "billed" ? `billed${f.billedOn ? ` ${f.billedOn}` : ""}` : "potential"}</span></span>
+                                <FeeRowActions feeId={f.id} cls={f.stage} linkId={row.linkId} candidate={row.candidateName} client={row.clientName} joinedOn={row.dateOfJoining} />
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       {(
                         <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
                           <button type="button" onClick={() => setDropRow(row)} className="rounded-lg border border-rose-300 px-3 py-1.5 text-[13px] font-semibold text-rose-700 hover:bg-rose-50">Dropped within 90 days</button>
