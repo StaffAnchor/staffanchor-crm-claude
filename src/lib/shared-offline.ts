@@ -15,7 +15,7 @@ export const isNotClientReady = (e: unknown) => errorText(e, "").includes("NOT_C
 
 /** What was still needed, in plain words, from a NOT_CLIENT_READY message. */
 export function stillNeeded(e: unknown): string {
-  const m = errorText(e, "").match(/Still needed:\s*(.*?)\.\s*Use "Confirm details"/s);
+  const m = errorText(e, "").match(/Still needed:\s*([\s\S]*?)\.\s*Use "Confirm details"/);
   return m ? m[1] : "";
 }
 
