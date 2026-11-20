@@ -1,5 +1,6 @@
 import type { FeeAnalysis, Bucket, FeeClass, Slice } from "@/lib/placements/fee-analysis";
 import { shortDate } from "@/lib/anchor/data";
+import FeeRowActions from "./fee-row-actions";
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 1000) / 10}%` : "—");
@@ -189,12 +190,12 @@ export default function FeeAnalysisView({ a }: { a: FeeAnalysis }) {
         )}
       </section>
 
-      <section className={`${card} overflow-hidden`}>
-        <header className="px-4 pt-4"><h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Every fee</h3><p className="text-[13px] text-slate-500">The detail behind the numbers. Anything needing action is first.</p></header>
+      <section id="every-fee" className={`${card} scroll-mt-20 overflow-hidden`}>
+        <header className="px-4 pt-4"><h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Every fee</h3><p className="text-[13px] text-slate-500">The detail behind the numbers. Anything needing action is first. Mark a fee received here once the money lands.</p></header>
         <div className="overflow-x-auto">
-          <table className="mt-3 w-full min-w-[760px] text-[13px]">
+          <table className="mt-3 w-full min-w-[900px] text-[13px]">
             <thead className="text-left text-xs uppercase tracking-wide text-slate-400"><tr>
-              <th className="px-4 py-2">Client and candidate</th><th className="px-2 py-2">Status</th><th className="px-2 py-2 text-right">Amount</th><th className="px-2 py-2">Due</th><th className="px-2 py-2">Invoiced</th><th className="px-4 py-2">Paid</th>
+              <th className="px-4 py-2">Client and candidate</th><th className="px-2 py-2">Status</th><th className="px-2 py-2 text-right">Amount</th><th className="px-2 py-2">Due</th><th className="px-2 py-2">Invoiced</th><th className="px-2 py-2">Paid</th><th className="px-4 py-2 text-right">Action</th>
             </tr></thead>
             <tbody>
               {ledger.map((x) => (
@@ -204,12 +205,38 @@ export default function FeeAnalysisView({ a }: { a: FeeAnalysis }) {
                   <td className="px-2 text-right tabular-nums">{inr(x.amount)}{x.estimated ? <span className="block text-[11px] text-slate-400">estimate</span> : null}</td>
                   <td className={`px-2 ${x.daysOverdue > 0 ? "font-medium text-rose-700" : ""}`}>{x.dueOn ? shortDate(x.dueOn) : "—"}{x.daysOverdue > 0 ? <span className="block text-[11px]">{x.daysOverdue} days late</span> : null}</td>
                   <td className="px-2">{x.invoicedOn ? shortDate(x.invoicedOn) : "—"}</td>
-                  <td className="px-4">{x.paidOn ? shortDate(x.paidOn) : "—"}</td>
+                  <td className="px-2">{x.paidOn ? shortDate(x.paidOn) : "—"}</td>
+                  <td className="px-4 text-right"><FeeRowActions feeId={x.id} cls={x.cls} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </section>
+
+
+      <section className={`${card} p-4`}>
+        <h3 className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">Ties out to Analytics, Revenue</h3>
+        <p className="text-[13px] text-slate-500">Analytics adds the invoices raised before this CRM to the fees since. The same sum, so the two pages agree.</p>
+        <dl className="mt-3 grid gap-y-1.5 text-[14px] sm:grid-cols-[1fr_auto] sm:gap-x-8">
+          <dt className="text-slate-600 dark:text-slate-300">Before the CRM: {a.historical.count} imported invoices{a.historical.oldest ? `, ${shortDate(a.historical.oldest)} to ${shortDate(a.historical.newest)}` : ""}</dt>
+          <dd className="tabular-nums text-slate-900 dark:text-slate-100 sm:text-right">{inr(a.historical.net)}</dd>
+          <dt className="text-slate-600 dark:text-slate-300">Fees since the CRM, after drops (the final expected fee above)</dt>
+          <dd className="tabular-nums text-slate-900 dark:text-slate-100 sm:text-right">{inr(a.net)}</dd>
+          <dt className="border-t border-slate-100 pt-1.5 font-semibold text-slate-900 dark:border-slate-800 dark:text-slate-100">Total, before GST</dt>
+          <dd className="border-t border-slate-100 pt-1.5 font-semibold tabular-nums text-slate-900 dark:border-slate-800 dark:text-slate-100 sm:text-right">{inr(a.historical.net + a.net)}</dd>
+          <dt className="text-slate-500">With 18% GST on the fees since the CRM, plus the imported invoices as billed</dt>
+          <dd className="tabular-nums text-slate-500 sm:text-right">{inr(a.historical.gross + a.net * 1.18)}</dd>
+        </dl>
+        <p className="mt-2 text-[12px] text-slate-400">The imported invoices carry no payment status, so they are history, not part of received or waiting above.</p>
+        {a.historical.byClient.length > 0 && (
+          <details className="mt-3 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/40">
+            <summary className="cursor-pointer text-[13px] text-slate-600 dark:text-slate-300">Imported invoices by client ({a.historical.byClient.length})</summary>
+            <ul className="mt-2 space-y-1 text-[13px]">
+              {a.historical.byClient.map((c) => (<li key={c.client} className="flex justify-between gap-3"><span className="truncate text-slate-700 dark:text-slate-200">{c.client}</span><span className="shrink-0 tabular-nums text-slate-500">{c.count} · {inr(c.net)}</span></li>))}
+            </ul>
+          </details>
+        )}
       </section>
 
       <p className="text-[12px] text-slate-400">

@@ -443,6 +443,7 @@ export default function PlacementsView({
                         <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
                           <button type="button" onClick={() => setDropRow(row)} className="rounded-lg border border-rose-300 px-3 py-1.5 text-[13px] font-semibold text-rose-700 hover:bg-rose-50">Dropped within 90 days</button>
                           <span className="text-[12px] text-slate-500">Left or never joined inside the guarantee? This cancels the billing, paid or unpaid.</span>
+                          <a href="/placements?view=analysis#every-fee" className="text-[12px] font-medium text-teal-700 hover:underline dark:text-teal-300">Fee status and mark received</a>
                         </div>
                       )}
                     </td>

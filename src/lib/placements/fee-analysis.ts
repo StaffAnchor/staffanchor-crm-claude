@@ -42,8 +42,11 @@ export type MonthRow = Slice & { month: string; placements: number; dropped_n: n
 export type Bucket = { label: string; count: number; amount: number };
 export type AtRisk = { linkId: string; candidateId: string; candidate: string; client: string; role: string; joined: string; daysLeft: number; atStake: number };
 
+export type Historical = { count: number; net: number; gross: number; byClient: { client: string; count: number; net: number }[]; oldest: string | null; newest: string | null };
+
 export type FeeAnalysis = {
   asOf: string;
+  historical: Historical;
   lines: FeeLine[];
   placements: number;
   droppedPlacements: number;
@@ -133,6 +136,24 @@ export async function loadFeeAnalysis(admin: SupabaseClient): Promise<FeeAnalysi
       daysOverdue: unpaid && t.due_date && t.due_date < asOf ? daysBetween(t.due_date, asOf) : 0,
     });
   }
+
+  // Invoices raised before this CRM (imported history). Their payment status is not tracked, so they sit outside received and waiting;
+  // they are here so this page ties out to Analytics > Revenue, which adds them to the fees since.
+  const { data: hist } = await admin.from("historical_invoices").select("invoice_date, gross_amount, net_amount, clients(name)").not("client_id", "is", null).not("invoice_date", "is", null).limit(5000);
+  const hMap = new Map<string, { client: string; count: number; net: number }>();
+  let hNet = 0, hGross = 0, hOld: string | null = null, hNew: string | null = null;
+  for (const h of (hist ?? []) as unknown as { invoice_date: string; gross_amount: number | string | null; net_amount: number | string | null; clients: One<{ name: string | null }> }[]) {
+    const name = one(h.clients)?.name ?? "Unknown client";
+    const row = hMap.get(name) ?? { client: name, count: 0, net: 0 };
+    row.count++;
+    row.net += Number(h.net_amount ?? 0);
+    hMap.set(name, row);
+    hNet += Number(h.net_amount ?? 0);
+    hGross += Number(h.gross_amount ?? 0);
+    if (!hOld || h.invoice_date < hOld) hOld = h.invoice_date;
+    if (!hNew || h.invoice_date > hNew) hNew = h.invoice_date;
+  }
+  const historical: Historical = { count: [...hMap.values()].reduce((s, r) => s + r.count, 0), net: hNet, gross: hGross, byClient: [...hMap.values()].sort((a, b) => b.net - a.net), oldest: hOld, newest: hNew };
 
   const real = lines.filter((x) => x.cls !== "voided");
   const sum = (xs: FeeLine[]) => xs.reduce((s, x) => s + x.amount, 0);
@@ -250,7 +271,7 @@ export async function loadFeeAnalysis(admin: SupabaseClient): Promise<FeeAnalysi
   const overdue = sum(overdueLines);
 
   const a: FeeAnalysis = {
-    asOf, lines, placements: universe.length, droppedPlacements, gross, dropped, net: gross - dropped, received, waiting, notInvoiced, overdue, overdueCount: overdueLines.length, refundDue,
+    asOf, historical, lines, placements: universe.length, droppedPlacements, gross, dropped, net: gross - dropped, received, waiting, notInvoiced, overdue, overdueCount: overdueLines.length, refundDue,
     estimatedCount: real.filter((x) => x.estimated).length, avgDaysToCollect, avgDaysToInvoice, clients, months, aging, forecast, dropTiming, reasons, atRisk, insights: [],
   };
   a.insights = insights(a);
