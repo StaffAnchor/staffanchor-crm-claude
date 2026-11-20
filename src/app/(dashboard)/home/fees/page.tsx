@@ -8,7 +8,7 @@ import { RANGE_LABEL } from "@/lib/anchor/intents";
 export const dynamic = "force-dynamic";
 
 const TAB: Record<string, string> = { "30": "30 days", "60": "60 days", "90": "90 days", life: "All time" };
-const STATUS: Record<string, string> = { pending: "Not invoiced", proforma_sent: "Proforma sent", payment_received: "Paid", invoiced: "Invoiced", paid: "Paid" };
+const STATUS: Record<string, string> = { pending: "Potential", proforma_sent: "Billed", payment_received: "Paid", invoiced: "Billed", final_invoiced: "Billed", paid: "Paid" };
 
 // Fees, admin only: what has been collected, what is still to come in, and per client. Amounts are as recorded, before GST.
 export default async function FeesPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
@@ -50,7 +50,7 @@ export default async function FeesPage({ searchParams }: { searchParams: Promise
         <div className="rounded-ros-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
           <p className="text-[13px] font-medium text-amber-800 dark:text-amber-300">Still to collect</p>
           <p className="mt-1 text-[30px] font-semibold tabular-nums text-amber-900 dark:text-amber-100">{inr(f.outstanding)}</p>
-          <p className="text-[13px] text-amber-700 dark:text-amber-300">{f.outstandingCount} fee{f.outstandingCount === 1 ? "" : "s"}{f.overdueCount ? `, ${f.overdueCount} past the due date` : ", none overdue"}</p>
+          <p className="text-[13px] text-amber-700 dark:text-amber-300">{f.outstandingCount} fee{f.outstandingCount === 1 ? "" : "s"}{f.overdueCount ? `, ${f.overdueCount} late` : ", none late"}</p>
         </div>
       </div>
       {f.estimatedCount > 0 && (
@@ -83,7 +83,7 @@ export default async function FeesPage({ searchParams }: { searchParams: Promise
                   <div className="min-w-0">
                     <p className="truncate text-[15px] font-medium text-slate-900 dark:text-slate-100">{r.client}</p>
                     <p className="truncate text-[13px] text-slate-500">{r.candidate} · {r.role}</p>
-                    <p className="text-[12px] text-slate-400">{STATUS[r.status] ?? r.status}{r.paidAt ? ` · paid ${shortDate(r.paidAt)}` : r.due ? ` · due ${shortDate(r.due)}` : ""}</p>
+                    <p className="text-[12px] text-slate-400">{STATUS[r.status] ?? r.status}{r.paidAt ? ` · paid ${shortDate(r.paidAt)}` : r.due ? ` · payable by ${shortDate(r.due)}${r.late ? ", late" : ""}` : ""}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[15px] font-semibold tabular-nums text-slate-900 dark:text-slate-100">{inr(r.amount)}</p>

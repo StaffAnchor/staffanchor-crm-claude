@@ -1,11 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GUARANTEE_DAYS, daysBetween } from "./drops";
+import { BILL_BY_DAYS, PAYABLE_DAYS, feeDates } from "./fee-timing";
 
 // Fee analysis for the Placements page (admins). Every number comes from the fee tranches and the placements behind them.
 //
 // A fee moves through four stages, and these are the only ones shown:
-//   potential   the candidate has joined (or is about to): the fee is expected, no invoice yet. Normally billed about 30 days after joining
-//   billed      the invoice has gone out, not paid yet. Normally received 60 to 90 days after joining
+//   potential   the candidate has joined (or is about to): the fee is expected, no invoice yet. Normally billed 30 to 45 days after joining
+//   billed      the invoice has gone out, not paid yet. Payable 15 days after billing, so received about 60 days after joining
 //   received    paid by the client and kept
 //   cancelled   the candidate left inside the 90-day guarantee, or the fee was cancelled. A fee that was paid first then shows as refund due
 // Plus one that is never shown: voided = a duplicate or a fee that was replaced while the person stayed placed. Not revenue, so it is
@@ -13,9 +14,6 @@ import { GUARANTEE_DAYS, daysBetween } from "./drops";
 //
 // Amounts are rupees before GST.
 
-export const BILL_BY_DAYS = 30;
-export const COLLECT_FROM_DAYS = 60;
-export const COLLECT_BY_DAYS = 90;
 /** The cancel reason written when a fee is voided as a duplicate or a mistake. */
 export const DUPLICATE_REASON = "Duplicate or entered by mistake";
 
@@ -38,14 +36,17 @@ export type FeeLine = {
   /** For a cancelled fee: the person left, or the fee itself was cancelled. */
   cancelKind: "left" | "other" | null;
   cancelReason: string | null;
-  dueOn: string | null;
+  /** The latest day to raise the invoice (45 days after joining). */
+  billByOn: string | null;
+  /** When the money should be in: 15 days after the invoice, or 60 days after joining if not yet billed. */
+  payByOn: string | null;
   invoicedOn: string | null;
   paidOn: string | null;
   joinedOn: string | null;
   daysSinceJoin: number | null;
-  /** potential and past 30 days since joining: should have been billed. billed and past 90 days: should have been received. */
+  /** potential and past the billing window (45 days after joining): should have been billed. billed and past its payment date: should have been received. */
   late: "bill" | "collect" | null;
-  /** Days past the due date for an unpaid fee, else 0. */
+  /** Days past that point for an unpaid fee, else 0. */
   daysOverdue: number;
 };
 
@@ -150,7 +151,9 @@ export async function loadFeeAnalysis(admin: SupabaseClient): Promise<FeeAnalysi
     const invoicedOn = (t.proforma_sent_at ?? t.final_invoiced_at)?.slice(0, 10) ?? null;
     const joinedOn = l?.date_of_joining ?? null;
     const daysSinceJoin = joinedOn ? daysBetween(joinedOn, asOf) : null;
-    const unpaid = cls === "billed" || cls === "potential";
+    const { billBy, payBy } = feeDates({ joinedOn, invoicedOn });
+    const lateBy = cls === "potential" ? billBy : cls === "billed" ? payBy : null;
+    const daysOverdue = lateBy && lateBy < asOf ? daysBetween(lateBy, asOf) : 0;
     lines.push({
       id: t.id,
       linkId: t.link_id,
@@ -163,13 +166,14 @@ export async function loadFeeAnalysis(admin: SupabaseClient): Promise<FeeAnalysi
       cls,
       cancelKind,
       cancelReason: t.cancel_reason,
-      dueOn: t.due_date,
+      billByOn: billBy,
+      payByOn: payBy,
       invoicedOn,
       paidOn: t.payment_received_at ? t.payment_received_at.slice(0, 10) : null,
       joinedOn,
       daysSinceJoin,
-      late: cls === "potential" && daysSinceJoin !== null && daysSinceJoin > BILL_BY_DAYS ? "bill" : cls === "billed" && daysSinceJoin !== null && daysSinceJoin > COLLECT_BY_DAYS ? "collect" : null,
-      daysOverdue: unpaid && t.due_date && t.due_date < asOf ? daysBetween(t.due_date, asOf) : 0,
+      late: daysOverdue > 0 ? (cls === "potential" ? "bill" : "collect") : null,
+      daysOverdue,
     });
   }
 
@@ -240,9 +244,9 @@ export async function loadFeeAnalysis(admin: SupabaseClient): Promise<FeeAnalysi
     bucket("61 to 90 days late", unpaid.filter((x) => x.daysOverdue >= 61 && x.daysOverdue <= 90)),
     bucket("Over 90 days late", unpaid.filter((x) => x.daysOverdue > 90)),
   ];
-  const until = (x: FeeLine) => (x.dueOn ? daysBetween(asOf, x.dueOn) : 9999);
+  const until = (x: FeeLine) => (x.payByOn ? daysBetween(asOf, x.payByOn) : 9999);
   const forecast = [
-    bucket("Already due", unpaid.filter((x) => x.daysOverdue > 0)),
+    bucket("Already past their date", unpaid.filter((x) => x.daysOverdue > 0)),
     bucket("Due in the next 30 days", unpaid.filter((x) => x.daysOverdue === 0 && until(x) <= 30)),
     bucket("Due in 31 to 60 days", unpaid.filter((x) => x.daysOverdue === 0 && until(x) > 30 && until(x) <= 60)),
     bucket("Due in 61 to 90 days", unpaid.filter((x) => x.daysOverdue === 0 && until(x) > 60 && until(x) <= 90)),
@@ -320,11 +324,8 @@ function insights(a: FeeAnalysis): string[] {
   if (a.received.amount === 0) out.push(`Nothing has been received yet. ${inr(a.net)} is still expected: ${inr(a.billed.amount)} billed and waiting, ${inr(a.potential.amount)} potential (joined, not billed yet).`);
   else out.push(`${inr(a.received.amount)} received, ${pct(a.received.amount, a.gross)}% of everything booked and ${pct(a.received.amount, a.net)}% of what is still expected.`);
   if (a.potential.late > 0) out.push(`${a.potential.late} potential fee${a.potential.late === 1 ? " is" : "s are"} past ${BILL_BY_DAYS} days since joining without a bill (${inr(a.potential.lateAmount)}). Bill ${a.potential.late === 1 ? "it" : "them"} now.`);
-  if (a.billed.late > 0) out.push(`${a.billed.late} billed fee${a.billed.late === 1 ? " is" : "s are"} past ${COLLECT_BY_DAYS} days since joining and still unpaid (${inr(a.billed.lateAmount)}). Chase ${a.billed.late === 1 ? "it" : "them"}.`);
-  else if (a.overdueCount > 0) {
-    const worst = [...a.lines].filter((x) => x.daysOverdue > 0).sort((x, y) => y.daysOverdue - x.daysOverdue)[0];
-    out.push(`${a.overdueCount} unpaid fee${a.overdueCount === 1 ? " is" : "s are"} past the due date (${inr(a.overdue)}). The longest, ${worst.client} for ${worst.candidate}, is ${worst.daysOverdue} days late.`);
-  }
+  if (a.billed.late > 0) out.push(`${a.billed.late} billed fee${a.billed.late === 1 ? " is" : "s are"} past ${PAYABLE_DAYS} days since billing and still unpaid (${inr(a.billed.lateAmount)}). Chase ${a.billed.late === 1 ? "it" : "them"}.`);
+
   const worstClient = [...a.clients].filter((c) => c.placements >= 1 && c.dropped_n > 0).sort((x, y) => y.dropped_n / y.placements - x.dropped_n / x.placements)[0];
   if (worstClient) out.push(`${worstClient.client} has the highest drop rate: ${worstClient.dropped_n} of ${worstClient.placements} placed (${pct(worstClient.dropped_n, worstClient.placements)}%).`);
   if (a.atRisk.length > 0) {

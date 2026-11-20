@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Range } from "./intents";
+import { feeDates } from "@/lib/placements/fee-timing";
 
 // What Anchor and the Home pages read: who was placed, what was billed and collected, and where a name leads. Everything
 // is read with the caller's own session except fees, which the callers only run for admins.
@@ -52,6 +53,8 @@ export type FeeRow = {
   /** Rupees before GST. A fee not yet invoiced is stored in lakhs (2.25 = 2.25 lakh); once an invoice is made it is overwritten with rupees. Values under 1,000 are read as lakhs and converted. */
   amount: number;
   due: string | null;
+  /** Unpaid and past its date: past the billing window if not billed, past its payment date if billed. */
+  late: boolean;
   paidAt: string | null;
   /** Converted from lakhs: an estimate until the invoice is raised. */
   estimated: boolean;
@@ -72,10 +75,10 @@ export type FeeResult = {
 export async function loadFees(admin: SupabaseClient, range: Range): Promise<FeeResult> {
   const { data } = await admin
     .from("placement_fee_tranches")
-    .select("id, label, amount_lakhs, due_date, status, payment_received_at, cancelled_at, mandates(role_title, client_name), candidate_mandate_links(candidates(full_name))")
+    .select("id, label, amount_lakhs, due_date, status, proforma_sent_at, final_invoiced_at, payment_received_at, cancelled_at, mandates(role_title, client_name), candidate_mandate_links(date_of_joining, candidates(full_name))")
     .order("due_date", { ascending: false })
     .limit(2000);
-  type R = { id: string; label: string | null; amount_lakhs: number | string | null; due_date: string | null; status: string | null; payment_received_at: string | null; cancelled_at: string | null; mandates: { role_title: string | null; client_name: string | null } | { role_title: string | null; client_name: string | null }[] | null; candidate_mandate_links: { candidates: { full_name: string | null } | { full_name: string | null }[] | null } | { candidates: { full_name: string | null } | { full_name: string | null }[] | null }[] | null };
+  type R = { id: string; label: string | null; amount_lakhs: number | string | null; due_date: string | null; status: string | null; proforma_sent_at: string | null; final_invoiced_at: string | null; payment_received_at: string | null; cancelled_at: string | null; mandates: { role_title: string | null; client_name: string | null } | { role_title: string | null; client_name: string | null }[] | null; candidate_mandate_links: { date_of_joining: string | null; candidates: { full_name: string | null } | { full_name: string | null }[] | null } | { date_of_joining: string | null; candidates: { full_name: string | null } | { full_name: string | null }[] | null }[] | null };
   const one = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? v[0] ?? null : v);
   const today = istToday();
   const rows: FeeRow[] = [];
@@ -85,6 +88,8 @@ export async function loadFees(admin: SupabaseClient, range: Range): Promise<Fee
     const estimated = raw > 0 && raw < 1000;
     const amount = estimated ? Math.round(raw * 100_000) : raw;
     const link = one(r.candidate_mandate_links);
+    const billed = r.status === "proforma_sent" || r.status === "final_invoiced";
+    const dates = feeDates({ joinedOn: link?.date_of_joining ?? null, invoicedOn: (r.proforma_sent_at ?? r.final_invoiced_at)?.slice(0, 10) ?? null });
     rows.push({
       id: r.id,
       client: one(r.mandates)?.client_name ?? "Unknown client",
@@ -93,7 +98,9 @@ export async function loadFees(admin: SupabaseClient, range: Range): Promise<Fee
       label: r.label ?? "Placement",
       status: r.status ?? "pending",
       amount,
-      due: r.due_date,
+      // When the money should arrive: 15 days after the invoice, or 60 days after joining if not billed yet. The stored due date is only the milestone.
+      due: dates.payBy,
+      late: !r.payment_received_at && ((billed ? dates.payBy : dates.billBy) ?? "9999") < today,
       paidAt: r.payment_received_at,
       estimated,
       paidInRange: !!r.payment_received_at && inRange(r.payment_received_at.slice(0, 10), range),
@@ -111,7 +118,7 @@ export async function loadFees(admin: SupabaseClient, range: Range): Promise<Fee
       bucket(r.client).collected += r.amount;
     } else {
       outstandingCount++;
-      if (r.due && r.due < today) overdueCount++;
+      if (r.late) overdueCount++;
       outstanding += r.amount;
       bucket(r.client).outstanding += r.amount;
     }

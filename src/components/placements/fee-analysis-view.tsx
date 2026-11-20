@@ -1,4 +1,5 @@
-import { BILL_BY_DAYS, COLLECT_BY_DAYS, COLLECT_FROM_DAYS, stageOf, type Bucket, type FeeAnalysis, type FeeLine, type Slice, type Stage } from "@/lib/placements/fee-analysis";
+import { stageOf, type Bucket, type FeeAnalysis, type FeeLine, type Slice, type Stage } from "@/lib/placements/fee-analysis";
+import { BILL_BY_DAYS, BILL_FROM_DAYS, PAYABLE_DAYS, PAY_OUTER_DAYS, PAY_TARGET_DAYS } from "@/lib/placements/fee-timing";
 import { GUARANTEE_DAYS } from "@/lib/placements/drops";
 import { shortDate } from "@/lib/anchor/data";
 import FeeRowActions from "./fee-row-actions";
@@ -8,8 +9,8 @@ const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 1000) / 1
 const card = "rounded-ros-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900";
 
 const STAGES: { key: Stage; label: string; when: string; bar: string; chip: string; tone: string }[] = [
-  { key: "potential", label: "Potential", when: `The candidate has joined. Billed about ${BILL_BY_DAYS} days after joining.`, bar: "bg-slate-300", chip: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200", tone: "border-slate-200 dark:border-slate-800" },
-  { key: "billed", label: "Billed", when: `Invoice sent. Received about ${COLLECT_FROM_DAYS} to ${COLLECT_BY_DAYS} days after joining.`, bar: "bg-amber-400", chip: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300", tone: "border-amber-200 dark:border-amber-900" },
+  { key: "potential", label: "Potential", when: `The candidate has joined. Billed ${BILL_FROM_DAYS} to ${BILL_BY_DAYS} days after joining.`, bar: "bg-slate-300", chip: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200", tone: "border-slate-200 dark:border-slate-800" },
+  { key: "billed", label: "Billed", when: `Invoice sent, payable ${PAYABLE_DAYS} days after billing: received about ${PAY_TARGET_DAYS} days after joining (up to ${PAY_OUTER_DAYS}).`, bar: "bg-amber-400", chip: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300", tone: "border-amber-200 dark:border-amber-900" },
   { key: "received", label: "Received", when: "Paid by the client and kept.", bar: "bg-emerald-500", chip: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300", tone: "border-emerald-200 dark:border-emerald-900" },
   { key: "cancelled", label: "Cancelled", when: `The candidate left inside ${GUARANTEE_DAYS} days, or the fee was cancelled.`, bar: "bg-rose-400", chip: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300", tone: "border-rose-200 dark:border-rose-900" },
 ];
@@ -94,12 +95,12 @@ function Ledger({ stage, lines }: { stage: Stage; lines: FeeLine[] }) {
                   {x.joinedOn ? `Joined ${shortDate(x.joinedOn)}${x.daysSinceJoin !== null ? ` · day ${x.daysSinceJoin}` : ""}` : "No joining date"}
                   {x.invoicedOn ? ` · billed ${shortDate(x.invoicedOn)}` : ""}
                   {x.paidOn ? ` · received ${shortDate(x.paidOn)}` : ""}
-                  {x.cls === "billed" || x.cls === "potential" ? (x.dueOn ? ` · due ${shortDate(x.dueOn)}` : "") : ""}
+                  {x.cls === "potential" && x.billByOn ? ` · bill by ${shortDate(x.billByOn)}` : ""}
+                  {x.cls === "billed" && x.payByOn ? ` · payable by ${shortDate(x.payByOn)}` : ""}
                 </p>
                 <p className="mt-0.5 flex flex-wrap gap-1.5 text-[11px] font-medium">
-                  {x.late === "bill" && <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-800">Should have been billed by day {BILL_BY_DAYS}</span>}
-                  {x.late === "collect" && <span className="rounded bg-rose-50 px-1.5 py-0.5 text-rose-700">Past day {COLLECT_BY_DAYS}, still unpaid</span>}
-                  {x.daysOverdue > 0 && <span className="rounded bg-rose-50 px-1.5 py-0.5 text-rose-700">{x.daysOverdue} days past due date</span>}
+                  {x.late === "bill" && <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-800">{x.daysOverdue} days past the billing window (day {BILL_BY_DAYS})</span>}
+                  {x.late === "collect" && <span className="rounded bg-rose-50 px-1.5 py-0.5 text-rose-700">{x.daysOverdue} days past its payment date</span>}
                   {x.cls === "refund_due" && <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-800">Paid, now refund due</span>}
                   {x.cls === "refunded" && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">Refunded</span>}
                   {stage === "cancelled" && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">{x.cancelKind === "left" ? "Candidate left" : x.cancelReason ?? "Cancelled"}</span>}
@@ -157,7 +158,7 @@ export default function FeeAnalysisView({ a }: { a: FeeAnalysis }) {
           })}
         </div>
         <p className="mt-2 text-[12px] text-slate-500">
-          So far: billed {a.avgDaysJoinToBill !== null ? `${a.avgDaysJoinToBill} days` : "no data yet"} after joining on average (aim for {BILL_BY_DAYS}), received {a.avgDaysJoinToCollect !== null ? `${a.avgDaysJoinToCollect} days` : "no data yet"} after joining (aim for {COLLECT_FROM_DAYS} to {COLLECT_BY_DAYS}).
+          So far: billed {a.avgDaysJoinToBill !== null ? `${a.avgDaysJoinToBill} days` : "no data yet"} after joining on average (normal: {BILL_FROM_DAYS} to {BILL_BY_DAYS}), received {a.avgDaysJoinToCollect !== null ? `${a.avgDaysJoinToCollect} days` : "no data yet"} after joining (normal: about {PAY_TARGET_DAYS}, up to {PAY_OUTER_DAYS}).
         </p>
       </div>
 
@@ -231,8 +232,8 @@ export default function FeeAnalysisView({ a }: { a: FeeAnalysis }) {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Buckets title="How late unpaid fees are" blurb="Potential or billed, past the due date." rows={a.aging} empty="Nothing is waiting to be paid." />
-        <Buckets title="Cash still to come in" blurb="Unpaid fees by when they fall due." rows={a.forecast} empty="Nothing is waiting to be paid." />
+        <Buckets title="How late unpaid fees are" blurb="Past the day it should have been billed, or past its payment date once billed." rows={a.aging} empty="Nothing is waiting to be paid." />
+        <Buckets title="Cash still to come in" blurb="Unpaid fees by when the money should arrive: 15 days after billing, or about 60 days after joining if not billed yet." rows={a.forecast} empty="Nothing is waiting to be paid." />
         <Buckets title="When people leave" blurb="Days after joining. The guarantee is 90." rows={a.dropTiming} empty="Nobody has dropped." valueLabel="people" />
         <Buckets title="Why they leave" blurb="From the reason recorded with each drop." rows={a.reasons} empty="Nobody has dropped." valueLabel="people" />
       </div>
