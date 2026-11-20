@@ -7,11 +7,12 @@ import { recordingToWav } from "@/lib/voice-wav";
 import WhatsAppMenu from "@/components/whatsapp-menu";
 import { candidateTemplates } from "@/lib/whatsapp-link";
 import { useMyFirstName } from "@/lib/use-my-name";
-import { cityOptions, fixedCtcOptions, noticePeriodOptions, relocationOptions } from "@/lib/candidate-options";
+import { cityOptions, fixedCtcOptions, level1OptionsForProfileType, noticePeriodOptions, relocationOptions, workModeOptions } from "@/lib/candidate-options";
 import { yourLevelOptions } from "@/lib/candidate-taxonomy";
 import { POOL_TIERS, POOL_TIER_LABEL, type PoolTier } from "@/lib/talent-pool";
-import { JUDGMENTS, TEAM_HANDLED, WORK_STYLES, type CallSegment, type JudgmentKey } from "@/lib/call-form-options";
+import { JUDGMENTS, type CallSegment, type JudgmentKey } from "@/lib/call-form-options";
 import { profileKind } from "@/lib/profile-kind";
+import { RoleFitFields, useRoleFit } from "../mandates/[id]/role-fit-fields";
 
 // The one call form, used on Calls today, on the candidate profile and in the role page's confirm-details window, so a
 // call is recorded the same way everywhere. Everything typed here goes onto the profile; the after-the-call note is read
@@ -141,8 +142,11 @@ export default function CallRecordForm({
   doubts = [],
   mode = "desk",
   roleCluster = null,
+  role = null,
 }: {
   p: CallFormPerson;
+  /** Set when the call is for one role: the role's questions (interested, each must-have) become part of this same form and are saved with it. */
+  role?: { linkId: string; mandateId: string } | null;
   onDone: (r: CallResult) => void;
   /** The role this call is for, when it is made from a role's pipeline: a service role asks service questions, whatever the person's profile says. */
   roleCluster?: string | null;
@@ -151,6 +155,7 @@ export default function CallRecordForm({
   /** desk: Calls today, which moves to the next person; profile: stays on this person. */
   mode?: "desk" | "profile";
 }) {
+  const rf = useRoleFit(role ? { linkId: role.linkId, mandateId: role.mandateId, candidateId: p.id } : null);
   const [tier, setTier] = useState<PoolTier | null>(null);
   const [customBack, setCustomBack] = useState("");
   const [backOpen, setBackOpen] = useState(false);
@@ -332,12 +337,16 @@ export default function CallRecordForm({
     }
     return o;
   };
-  const rated = ["communication", "seriousness", "skill_match"].filter((x) => ratings[x as JudgmentKey]).length;
 
   // "Spoke to them": the note is required, and the person sees what will be remembered before the call is saved.
   async function saveSpoke() {
     if (note.trim().length < MIN_NOTE) {
       setError("Write a few words about what you discussed, rough is fine: what they want, what they will not accept, anything to remember.");
+      return;
+    }
+    const roleProblem = rf.validate();
+    if (roleProblem) {
+      setError(roleProblem);
       return;
     }
     if (readBack) return log("reached", { readBack });
@@ -363,6 +372,15 @@ export default function CallRecordForm({
     setBusy(outcome);
     setError(null);
     try {
+      if (outcome === "reached" && rf.enabled) {
+        try {
+          await rf.save();
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Couldn't save the role review.");
+          setBusy(null);
+          return;
+        }
+      }
       const res = await fetch("/api/calls/log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -442,160 +460,178 @@ export default function CallRecordForm({
     </select>
   );
   const sellsShown = kind !== "other" && worlds.length > 0;
-  const basicsKnown = [k.city, k.years, k.level, !sellsShown || worldKnown].every(Boolean);
-  const basicsFilled = [city, years, level, sellsShown ? sellsWorld : "x"].filter(Boolean).length;
-  const basicsTotal = sellsShown ? 4 : 3;
-  const moveFilled = [openness, notice, relocation, offer].filter(Boolean).length;
-  const payFilled = [ctc, expected, payFlex].filter(Boolean).length;
-  const otherFilled = [workStyle, teamHandled].filter(Boolean).length;
 
-  // Answers already on the profile fold away into one line; only what is missing stays open to fill.
-  const split = (fs: { known: boolean; node: React.ReactNode }[], grid = false) => {
-    const open = fs.filter((x) => !x.known);
-    const done = fs.filter((x) => x.known);
-    const wrap = (xs: typeof fs) => (grid ? <div className="grid grid-cols-2 gap-3">{xs.map((x) => x.node)}</div> : <div className="space-y-3.5">{xs.map((x) => x.node)}</div>);
-    return (
-      <>
-        {open.length > 0 && wrap(open)}
-        {done.length > 0 && (
-          <details className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900/40">
-            <summary className="cursor-pointer text-[13px] text-slate-500">Already on the profile ({done.length}). Tap to correct</summary>
-            <div className="mt-2">{wrap(done)}</div>
-          </details>
-        )}
-      </>
-    );
-  };
-
-  const stepWho = (n: number) => (
-    <Step n={n} title="Confirm who they are" hint={basicsKnown ? "All on the profile. Open to correct anything" : "City, experience, level, what they sell"} filled={basicsFilled} total={basicsTotal} defaultOpen={!basicsKnown && !desk}>
-      {split(
-        [
+  // One flat list. Short inputs sit in a two-column grid; tap-answers (chips) stack below. Anything already on the profile
+  // folds into a single line, so what you see is mostly what is missing.
+  type F = { known: boolean; wide?: boolean; node: React.ReactNode };
+  const fields: F[] = [
+    ...(gateOpen ? [] : [{ known: k.ctc, node: <Field key="ctc" label="Current fixed pay" missing={!k.ctc} known={k.ctc}>{fixedPay(ctc, setCtc, k.ctc)}</Field> }]),
+    { known: k.expected, node: <Field key="exp" label="Expected fixed pay" missing={!k.expected} known={k.expected}>{fixedPay(expected, setExpected, k.expected)}</Field> },
+    {
+      known: k.city,
+      node: (
+        <Field key="city" label="Current city" missing={!k.city} known={k.city}>
+          <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
+          <datalist id={`calls-city-${p.id}`}>{cityOptions.map((c) => <option key={c} value={c} />)}</datalist>
+        </Field>
+      ),
+    },
+    {
+      known: k.years,
+      node: (
+        <Field key="years" label="Total experience (years)" missing={p.total_experience_years !== undefined && !k.years} known={k.years}>
+          <input type="number" inputMode="decimal" min="0" max="50" step="0.5" value={years} onChange={(e) => setYears(e.target.value)} placeholder="e.g. 6.5" className={sel(k.years)} />
+        </Field>
+      ),
+    },
+    {
+      known: k.level,
+      node: (
+        <Field key="level" label="Role level" missing={!k.level} known={k.level}>
+          <select value={level} onChange={(e) => setLevel(e.target.value)} className={sel(k.level)}>
+            <option value="">Select</option>
+            {yourLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </Field>
+      ),
+    },
+    // The share check needs these too, so they show whenever they are missing and fold away once on the profile.
+    { known: k.employer, node: <Field key="employer" label="Current company" missing={!k.employer} known={k.employer}><input value={employer} onChange={(e) => setEmployer(e.target.value)} placeholder="Company" className={sel(k.employer)} /></Field> },
+    { known: k.title, node: <Field key="title" label="Current job title" missing={!k.title} known={k.title}><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className={sel(k.title)} /></Field> },
+    ...(p.profile_group !== undefined
+      ? [
           {
-            known: k.city,
+            known: k.group,
             node: (
-              <Field key="city" label="Current city" missing={!k.city} known={k.city}>
-                <input list={`calls-city-${p.id}`} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Type or pick a city" className={sel(k.city)} />
-                <datalist id={`calls-city-${p.id}`}>{cityOptions.map((c) => <option key={c} value={c} />)}</datalist>
-              </Field>
-            ),
-          },
-          {
-            known: k.years,
-            node: (
-              <Field key="years" label="Total experience (years)" missing={p.total_experience_years !== undefined && !k.years} known={k.years}>
-                <input type="number" inputMode="decimal" min="0" max="50" step="0.5" value={years} onChange={(e) => setYears(e.target.value)} placeholder="e.g. 6.5" className={sel(k.years)} />
-              </Field>
-            ),
-          },
-          {
-            known: k.level,
-            node: (
-              <Field key="level" label="Role level" missing={!k.level} known={k.level}>
-                <select value={level} onChange={(e) => setLevel(e.target.value)} className={sel(k.level)}>
+              <Field key="group" label="Domain" missing={!k.group} known={k.group}>
+                <select value={group} onChange={(e) => { setGroup(e.target.value); setSubDomain(""); }} className={sel(k.group)}>
                   <option value="">Select</option>
-                  {yourLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  <option value="b2b_sales">B2B Sales</option>
+                  <option value="b2c_sales">B2C Sales</option>
+                  <option value="non_sales">Non-Sales</option>
                 </select>
               </Field>
             ),
           },
-          ...(sellsShown
-            ? [
-                {
-                  known: worldKnown,
-                  node: (
-                    <Field key="sells" label="What do they sell?" missing={!worldKnown} known={worldKnown}>
-                      <select value={sellsWorld} onChange={(e) => setSellsWorld(e.target.value)} className={sel(worldKnown)}>
-                        <option value="">Select the closest</option>
-                        {Array.from(new Set(worlds.map((w) => w.family))).map((fam) => (
-                          <optgroup key={fam} label={fam}>{worlds.filter((w) => w.family === fam).map((w) => <option key={w.slug} value={w.slug}>{w.name}</option>)}</optgroup>
-                        ))}
-                      </select>
-                    </Field>
-                  ),
-                },
-              ]
-            : []),
-        ],
-        true
-      )}
-    </Step>
-  );
-  const stepMove = (n: number) => (
-    <Step n={n} title="Their move" hint="Looking, how soon, relocation, offer" filled={moveFilled} total={4} defaultOpen={!desk}>
-      {split([
-        {
-          known: k.looking,
-          node: (
-            <Field key="looking" label="Looking for a new role?" missing={!k.looking} known={k.looking}>
-              <Chips known={k.looking} value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
-            </Field>
-          ),
-        },
-        {
-          known: k.notice,
-          node: (
-            <Field key="notice" label="Notice period" missing={!k.notice} known={k.notice}>
-              <Chips known={k.notice} value={notice} options={asOpts(noticePeriodOptions)} onChange={setNotice} />
-            </Field>
-          ),
-        },
-        {
-          known: k.relocation,
-          node: (
-            <Field key="reloc" label="Open to relocating?" missing={!k.relocation} known={k.relocation}>
-              <Chips known={k.relocation} value={relocation} options={asOpts(relocationOptions)} onChange={setRelocation} />
-            </Field>
-          ),
-        },
-        {
-          known: k.offer,
-          node: (
-            <Field key="offer" label="Offer in hand?" known={k.offer}>
-              <div className="flex flex-wrap items-center gap-2">
-                <Chips known={k.offer} value={offer} options={asOpts(["Yes", "No"])} onChange={setOffer} />
-                {offer === "Yes" && (
-                  <select value={offerCtc} onChange={(e) => setOfferCtc(e.target.value)} className={`${select} w-40`}>
-                    <option value="">Offer CTC</option>
-                    {fixedCtcOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                )}
-              </div>
-            </Field>
-          ),
-        },
-      ])}
-    </Step>
-  );
-  const stepPay = (n: number) => (
-    <Step n={n} title="Pay" hint="What they earn and what they want" filled={payFilled} total={3} defaultOpen={!desk}>
-      {split(
-        [
-          ...(gateOpen ? [] : [{ known: k.ctc, node: <Field key="ctc" label="Current fixed pay" missing={!k.ctc} known={k.ctc}>{fixedPay(ctc, setCtc, k.ctc)}</Field> }]),
-          { known: k.expected, node: <Field key="exp" label="Expected fixed pay" missing={!k.expected} known={k.expected}>{fixedPay(expected, setExpected, k.expected)}</Field> },
+        ]
+      : []),
+    ...(p.sub_domain !== undefined
+      ? [
           {
-            known: false,
+            known: k.sub,
             node: (
-              <Field key="flex" label="Is the expectation flexible?">
-                <Chips value={payFlex} options={asOpts(["Yes", "No"])} onChange={setPayFlex} />
+              <Field key="sub" label="Sub-domain" missing={!k.sub} known={k.sub}>
+                <select value={subDomain} onChange={(e) => setSubDomain(e.target.value)} className={sel(k.sub)} disabled={!group}>
+                  <option value="">{group ? "Select" : "Pick the domain first"}</option>
+                  {subDomain && !level1OptionsForProfileType(group).includes(subDomain) && <option value={subDomain}>{subDomain}</option>}
+                  {level1OptionsForProfileType(group).map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
               </Field>
             ),
           },
-        ],
-        true
-      )}
-      {ratio !== null && (
-        <p className={`text-[13px] ${ratio >= 1.5 ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>
-          Pay-to-experience ratio {ratio.toFixed(2)} {ratio >= 1.5 ? "(meets the top-tier bar of 1.5)" : "(below the top-tier bar of 1.5)"}
-          {ratio > 6 ? ". Very high: double-check the number." : ""}
-        </p>
-      )}
-    </Step>
+        ]
+      : []),
+    ...(sellsShown
+      ? [
+          {
+            known: worldKnown,
+            node: (
+              <Field key="sells" label="What do they sell?" missing={!worldKnown} known={worldKnown}>
+                <select value={sellsWorld} onChange={(e) => setSellsWorld(e.target.value)} className={sel(worldKnown)}>
+                  <option value="">Select the closest</option>
+                  {Array.from(new Set(worlds.map((w) => w.family))).map((fam) => (
+                    <optgroup key={fam} label={fam}>{worlds.filter((w) => w.family === fam).map((w) => <option key={w.slug} value={w.slug}>{w.name}</option>)}</optgroup>
+                  ))}
+                </select>
+              </Field>
+            ),
+          },
+        ]
+      : []),
+    { known: false, wide: true, node: <Field key="flex" label="Is the expected pay flexible?"><Chips value={payFlex} options={asOpts(["Yes", "No"])} onChange={setPayFlex} /></Field> },
+    {
+      known: k.looking,
+      wide: true,
+      node: (
+        <Field key="looking" label="Looking for a new role?" missing={!k.looking} known={k.looking}>
+          <Chips known={k.looking} value={openness} options={[{ v: "Looking", label: "Yes, looking" }, { v: "Not now", label: "Not now" }]} onChange={setOpenness} />
+        </Field>
+      ),
+    },
+    {
+      known: k.notice,
+      wide: true,
+      node: (
+        <Field key="notice" label="Notice period" missing={!k.notice} known={k.notice}>
+          <Chips known={k.notice} value={notice} options={asOpts(noticePeriodOptions)} onChange={setNotice} />
+        </Field>
+      ),
+    },
+    {
+      known: k.relocation,
+      wide: true,
+      node: (
+        <Field key="reloc" label="Open to relocating?" missing={!k.relocation} known={k.relocation}>
+          <Chips known={k.relocation} value={relocation} options={asOpts(relocationOptions)} onChange={setRelocation} />
+        </Field>
+      ),
+    },
+    {
+      known: k.workMode,
+      wide: true,
+      node: (
+        <Field key="workmode" label="Work mode" missing={!k.workMode} known={k.workMode}>
+          <Chips known={k.workMode} value={workMode} options={asOpts(workModeOptions)} onChange={setWorkMode} />
+        </Field>
+      ),
+    },
+    {
+      known: k.offer,
+      wide: true,
+      node: (
+        <Field key="offer" label="Offer in hand?" known={k.offer}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Chips known={k.offer} value={offer} options={asOpts(["Yes", "No"])} onChange={setOffer} />
+            {offer === "Yes" && (
+              <select value={offerCtc} onChange={(e) => setOfferCtc(e.target.value)} className={`${select} w-40`}>
+                <option value="">Offer CTC</option>
+                {fixedCtcOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            )}
+          </div>
+        </Field>
+      ),
+    },
+  ];
+  const layout = (xs: F[]) => (
+    <>
+      {xs.some((f) => !f.wide) && <div className="grid grid-cols-2 gap-3">{xs.filter((f) => !f.wide).map((f) => f.node)}</div>}
+      {xs.some((f) => f.wide) && <div className="space-y-3.5">{xs.filter((f) => f.wide).map((f) => f.node)}</div>}
+    </>
   );
+  const renderFields = () => {
+    const open = fields.filter((f) => !f.known);
+    const done = fields.filter((f) => f.known);
+    return (
+      <div className="space-y-3.5">
+        {open.length > 0 && layout(open)}
+        {done.length > 0 && (
+          <details className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900/40">
+            <summary className="cursor-pointer text-[13px] text-slate-500">Already on the profile ({done.length}). Tap to correct</summary>
+            <div className="mt-3 space-y-3.5">{layout(done)}</div>
+          </details>
+        )}
+        {ratio !== null && (
+          <p className={`text-[13px] ${ratio >= 1.5 ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>
+            Pay-to-experience ratio {ratio.toFixed(2)} {ratio >= 1.5 ? "(meets the top-tier bar of 1.5)" : "(below the top-tier bar of 1.5)"}
+            {ratio > 6 ? ". Very high: double-check the number." : ""}
+          </p>
+        )}
+      </div>
+    );
+  };
 
-  // Current pay is the first thing that must be on file, so when it is missing the Pay step comes first.
-  const order = !k.ctc ? (["pay", "who", "move"] as const) : (["who", "move", "pay"] as const);
-  return (
+    return (
     <div className="space-y-3">
       {gateOpen && (
         <div className="rounded-xl border-2 border-teal-600/40 bg-teal-50 p-3 dark:border-teal-700 dark:bg-teal-950/30">
@@ -638,21 +674,10 @@ export default function CallRecordForm({
           )}
         </div>
       )}
-      {desk && <p className="pt-1 text-[12px] font-medium uppercase tracking-wide text-slate-400">More details (optional)</p>}
-      {order.map((key, i) => <span key={key} className="contents">{key === "who" ? stepWho(i + 1) : key === "move" ? stepMove(i + 1) : stepPay(i + 1)}</span>)}
+      {renderFields()}
+      {role && <RoleFitFields rf={rf} />}
 
-      {kind === "other" && (
-        <Step n={4} title="Their kind of work" hint="Hands-on or managing, and team size" filled={otherFilled} total={2} defaultOpen={!desk}>
-          <Field label="Hands-on or managing people?">
-            <Chips value={workStyle} options={asOpts([...WORK_STYLES])} onChange={setWorkStyle} />
-          </Field>
-          <Field label="How many people have they managed?">
-            <Chips value={teamHandled} options={asOpts([...TEAM_HANDLED])} onChange={setTeamHandled} />
-          </Field>
-        </Step>
-      )}
-
-      <Step n={kind === "other" ? 5 : 4} title="Your read of them" hint="One tap each" filled={rated} total={3} defaultOpen={!desk}>
+      <div className="space-y-2">
         <div className="space-y-2">
           {JUDGMENTS.filter((j) => ["communication", "seriousness", "skill_match"].includes(j.key)).map((j) => (
             <div key={j.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -669,9 +694,9 @@ export default function CallRecordForm({
           ))}
         </div>
         {p.comm && !ratings.communication && <p className="text-[12px] text-slate-400">Communication last rated {p.comm}.</p>}
-      </Step>
+      </div>
 
-      <Step n={kind === "other" ? 6 : 5} title="What you discussed (required)" hint="A few words, written like a text to a colleague" defaultOpen>
+      <div>
         <Field label="What did you discuss? Rough is fine: what they want, what they will not accept, anything to remember">
           <textarea
             value={note}
@@ -716,7 +741,7 @@ export default function CallRecordForm({
           </div>
         </Field>
 
-      </Step>
+      </div>
 
       {/* The result of the call: always on screen on the call desk, so "No answer" never needs a scroll. */}
       <div className={desk ? "sticky bottom-0 z-10 -mx-4 -mb-4 space-y-2 border-t border-slate-200 bg-white/95 px-4 pb-3 pt-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95" : "space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800"}>

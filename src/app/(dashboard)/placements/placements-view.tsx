@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import DropDialog from "@/components/placements/drop-dialog";
 import { applyStageChange } from "@/lib/mandate-stage";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -107,6 +108,7 @@ export default function PlacementsView({
   const [ctcDrafts, setCtcDrafts] = useState<Record<string, string>>({});
   const [statusFilter, setStatusFilter] = useState<"all" | "awaiting" | "joined_on_time" | "joined_postponed" | "did_not_join">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [dropRow, setDropRow] = useState<PlacementRow | null>(null);
 
   const totals = useMemo(() => {
     let awaiting = 0;
@@ -229,6 +231,14 @@ export default function PlacementsView({
             }
       )
     );
+    // Someone who left inside the guarantee costs the fee: offer to record it and cancel the billing right away.
+    if (outcome === "attrited") {
+      const joined = row.dateOfJoining ? Math.round((Date.now() - new Date(`${row.dateOfJoining}T00:00:00Z`).getTime()) / 86_400_000) : null;
+      if (joined !== null && joined <= 90) {
+        if (isAdmin) setDropRow(row);
+        else setMessage({ type: "success", text: `${row.candidateName} left within 90 days of joining, so the fee is cancelled. Ask an admin to mark it on Placements (Dropped within 90 days).` });
+      }
+    }
     router.refresh();
   }
 
@@ -430,6 +440,12 @@ export default function PlacementsView({
                     <td></td>
                     <td colSpan={6} className="px-3 py-3">
                       <RetentionCheckins row={row} savingId={savingId} onSaveOutcome={saveCheckinOutcome} />
+                      {isAdmin && (
+                        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+                          <button type="button" onClick={() => setDropRow(row)} className="rounded-lg border border-rose-300 px-3 py-1.5 text-[13px] font-semibold text-rose-700 hover:bg-rose-50">Dropped within 90 days</button>
+                          <span className="text-[12px] text-slate-500">Left or never joined inside the guarantee? This cancels the billing, paid or unpaid.</span>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )}
@@ -446,6 +462,22 @@ export default function PlacementsView({
           </tbody>
         </table>
       </div>
+      {dropRow && (
+        <DropDialog
+          linkId={dropRow.linkId}
+          candidateName={dropRow.candidateName}
+          clientName={dropRow.clientName}
+          joined={dropRow.dateOfJoining}
+          onCancel={() => setDropRow(null)}
+          onDone={(r) => {
+            const gone = dropRow;
+            setRows((prev) => prev.filter((x) => x.linkId !== gone.linkId));
+            setDropRow(null);
+            setMessage({ type: "success", text: `${gone.candidateName} moved to Dropped. ${r.cancelled} fee${r.cancelled === 1 ? "" : "s"} cancelled${r.refundDue ? `, ${r.refundDue} already paid so a refund is due` : ""}${r.emailed.length ? `. ${r.emailed[0]} was already emailed to the client: let them know it is cancelled` : ""}.` });
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

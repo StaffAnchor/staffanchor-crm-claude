@@ -26,7 +26,7 @@ export async function loadPlaced(supabase: SupabaseClient, range: Range): Promis
     .limit(2000);
   type R = { id: string; candidate_id: string; mandate_id: string; date_of_joining: string | null; join_status: string | null; stage_updated_at: string | null; candidates: { full_name: string | null } | { full_name: string | null }[] | null; mandates: { role_title: string | null; client_name: string | null } | { role_title: string | null; client_name: string | null }[] | null };
   const one = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? v[0] ?? null : v);
-  const all = ((data ?? []) as unknown as R[]).map((r): PlacedRow => ({
+  const all = ((data ?? []) as unknown as R[]).filter((r) => r.join_status !== "did_not_join").map((r): PlacedRow => ({
     linkId: r.id,
     candidateId: r.candidate_id,
     mandateId: r.mandate_id,
@@ -49,12 +49,12 @@ export type FeeRow = {
   role: string;
   label: string;
   status: string;
-  /** Rupees before GST. The column is called amount_lakhs but holds rupees (see Billing). */
+  /** Rupees before GST. A fee not yet invoiced is stored in lakhs (2.25 = 2.25 lakh); once an invoice is made it is overwritten with rupees. Values under 1,000 are read as lakhs and converted. */
   amount: number;
   due: string | null;
   paidAt: string | null;
-  /** A figure under 1,000 almost certainly means lakhs were typed into a rupee field. It is shown but never added to totals. */
-  suspect: boolean;
+  /** Converted from lakhs: an estimate until the invoice is raised. */
+  estimated: boolean;
   /** Paid, and inside the chosen period. */
   paidInRange: boolean;
 };
@@ -64,7 +64,7 @@ export type FeeResult = {
   outstanding: number;
   outstandingCount: number;
   overdueCount: number;
-  suspectCount: number;
+  estimatedCount: number;
   rows: FeeRow[];
   byClient: { client: string; outstanding: number; collected: number }[];
 };
@@ -81,7 +81,9 @@ export async function loadFees(admin: SupabaseClient, range: Range): Promise<Fee
   const rows: FeeRow[] = [];
   for (const r of (data ?? []) as unknown as R[]) {
     if (r.cancelled_at || r.status === "cancelled") continue;
-    const amount = Number(r.amount_lakhs ?? 0);
+    const raw = Number(r.amount_lakhs ?? 0);
+    const estimated = raw > 0 && raw < 1000;
+    const amount = estimated ? Math.round(raw * 100_000) : raw;
     const link = one(r.candidate_mandate_links);
     rows.push({
       id: r.id,
@@ -93,27 +95,29 @@ export async function loadFees(admin: SupabaseClient, range: Range): Promise<Fee
       amount,
       due: r.due_date,
       paidAt: r.payment_received_at,
-      suspect: amount > 0 && amount < 1000,
+      estimated,
       paidInRange: !!r.payment_received_at && inRange(r.payment_received_at.slice(0, 10), range),
     });
   }
-  let collected = 0, collectedCount = 0, outstanding = 0, outstandingCount = 0, overdueCount = 0, suspectCount = 0;
+  let collected = 0, collectedCount = 0, outstanding = 0, outstandingCount = 0, overdueCount = 0, estimatedCount = 0;
   const by = new Map<string, { outstanding: number; collected: number }>();
   const bucket = (c: string) => by.get(c) ?? (by.set(c, { outstanding: 0, collected: 0 }), by.get(c)!);
   for (const r of rows) {
-    if (r.suspect) suspectCount++;
+    if (r.estimated) estimatedCount++;
     if (r.paidAt) {
       if (!inRange(r.paidAt.slice(0, 10), range)) continue;
       collectedCount++;
-      if (!r.suspect) { collected += r.amount; bucket(r.client).collected += r.amount; }
+      collected += r.amount;
+      bucket(r.client).collected += r.amount;
     } else {
       outstandingCount++;
       if (r.due && r.due < today) overdueCount++;
-      if (!r.suspect) { outstanding += r.amount; bucket(r.client).outstanding += r.amount; }
+      outstanding += r.amount;
+      bucket(r.client).outstanding += r.amount;
     }
   }
   return {
-    collected, collectedCount, outstanding, outstandingCount, overdueCount, suspectCount, rows,
+    collected, collectedCount, outstanding, outstandingCount, overdueCount, estimatedCount, rows,
     byClient: [...by.entries()].map(([client, v]) => ({ client, ...v })).sort((a, b) => b.outstanding + b.collected - (a.outstanding + a.collected)),
   };
 }

@@ -13,7 +13,8 @@ type Target = { type: "mandate" | "candidate" | "client"; id: string; label: str
 type Shown = { id: number | string; kind: "user" | "assistant" | "proposal"; text?: string; proposalId?: string };
 type Result =
   | { kind: "placements"; range: number | "life"; counts: Record<string, number>; total: number; rows: PlacedRow[] }
-  | { kind: "fees"; range: number | "life"; collected: number; collectedCount: number; outstanding: number; outstandingCount: number; overdueCount: number; suspectCount: number; byClient: { client: string; outstanding: number; collected: number }[] }
+  | { kind: "fees"; range: number | "life"; collected: number; collectedCount: number; outstanding: number; outstandingCount: number; overdueCount: number; estimatedCount: number; byClient: { client: string; outstanding: number; collected: number }[] }
+  | { kind: "dropped"; total: number; rows: { linkId: string; candidateId: string; mandateId: string; candidate: string; client: string; role: string; joined: string | null; droppedOn: string | null; daysIn: number | null; reason: string; billing: { text: string; tone: "ok" | "warn" | "bad" } }[] }
   | { kind: "go"; q: string; matches: Target[] }
   | { kind: "nomatch"; q: string }
   | { kind: "denied"; text: string }
@@ -46,6 +47,7 @@ export default function AnchorBox({ firstName, isAdmin, variant = "hero" }: { fi
     "Placed in the last 30 days",
     "Placed in the last 90 days",
     "All-time placements",
+    "Who dropped within 90 days?",
     ...(isAdmin ? ["Fees collected", "What needs my attention today?"] : []),
     "Take me to Service Manager",
   ];
@@ -222,6 +224,29 @@ function ResultView({ r }: { r: Result }) {
       </div>
     );
 
+  if (r.kind === "dropped")
+    return (
+      <div className={card}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2 px-3.5 pt-3">
+          <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{r.total} dropped within 90 days</p>
+          <A href="/home/placements" className="text-[13px] font-medium text-teal-700 dark:text-teal-300">Open the list ↗</A>
+        </div>
+        {r.rows.length === 0 ? (
+          <p className="px-3.5 py-4 text-[14px] text-slate-500">Nobody has dropped. Good.</p>
+        ) : (
+          <ul className="mt-2">
+            {r.rows.map((p) => (
+              <li key={p.linkId} className="border-t border-slate-100 px-3.5 py-2.5 dark:border-slate-800">
+                <A href={`/candidates/${p.candidateId}`} className="block truncate text-[15px] font-medium text-slate-900 hover:text-teal-700 dark:text-slate-100">{p.candidate}</A>
+                <A href={`/mandates/${p.mandateId}`} className="block truncate text-[13px] text-slate-500 hover:text-teal-700">{p.client} · {p.role} · left {day(p.droppedOn)}{p.daysIn !== null && p.daysIn >= 0 ? ` (day ${p.daysIn})` : ""}</A>
+                <p className={`text-[13px] font-medium ${p.billing.tone === "bad" ? "text-rose-700" : p.billing.tone === "warn" ? "text-amber-700" : "text-emerald-700"}`}>{p.billing.text}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+
   if (r.kind === "fees")
     return (
       <div className={card}>
@@ -241,7 +266,7 @@ function ResultView({ r }: { r: Result }) {
             <p className="text-[12px] text-amber-700">{r.outstandingCount} invoice{r.outstandingCount === 1 ? "" : "s"}{r.overdueCount ? `, ${r.overdueCount} overdue` : ""}</p>
           </div>
         </div>
-        <p className="px-3.5 pb-2 text-[12px] text-slate-400">Amounts are before GST, as recorded on each fee.{r.suspectCount ? ` ${r.suspectCount} fee${r.suspectCount === 1 ? "" : "s"} under ₹1,000 look like lakhs typed as rupees and are left out of the totals.` : ""}</p>
+        <p className="px-3.5 pb-2 text-[12px] text-slate-400">Amounts are before GST.{r.estimatedCount ? ` ${r.estimatedCount} fee${r.estimatedCount === 1 ? " is" : "s are"} an estimate: not invoiced yet, so counted from the fee in lakhs.` : ""}</p>
         {r.byClient.length > 0 && (
           <ul>
             {r.byClient.map((c) => (

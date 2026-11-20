@@ -4,6 +4,7 @@ import { adminDb } from "@/lib/pro-sessions/core";
 import { CRM_STAFF_ROLES } from "@/lib/is-staff-viewer";
 import { parseIntent } from "@/lib/anchor/intents";
 import { findTargets, loadFees, loadPlaced } from "@/lib/anchor/data";
+import { billingLine, loadDropped } from "@/lib/placements/drops";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -31,12 +32,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ kind: "placements", range: intent.range, counts: r.counts, total: r.rows.length, rows: r.rows.slice(0, 25) });
   }
 
+  if (intent.kind === "dropped") {
+    const rows = await loadDropped(supabase, isAdmin ? adminDb() : null);
+    return NextResponse.json({
+      kind: "dropped",
+      total: rows.length,
+      rows: rows.slice(0, 15).map((r) => ({ linkId: r.linkId, candidateId: r.candidateId, mandateId: r.mandateId, candidate: r.candidate, client: r.client, role: r.role, joined: r.joined, droppedOn: r.droppedOn, daysIn: r.daysIn, reason: r.reason, billing: billingLine(r, isAdmin) })),
+    });
+  }
+
   if (intent.kind === "fees") {
     if (!isAdmin) return NextResponse.json({ kind: "denied", text: "Fees are visible to admins only. I can show you placements instead: try “placed in the last 30 days”." });
     const admin = adminDb();
     if (!admin) return NextResponse.json({ error: "Not configured" }, { status: 503 });
     const f = await loadFees(admin, intent.range);
-    return NextResponse.json({ kind: "fees", range: intent.range, collected: f.collected, collectedCount: f.collectedCount, outstanding: f.outstanding, outstandingCount: f.outstandingCount, overdueCount: f.overdueCount, suspectCount: f.suspectCount, byClient: f.byClient.slice(0, 6) });
+    return NextResponse.json({ kind: "fees", range: intent.range, collected: f.collected, collectedCount: f.collectedCount, outstanding: f.outstanding, outstandingCount: f.outstandingCount, overdueCount: f.overdueCount, estimatedCount: f.estimatedCount, byClient: f.byClient.slice(0, 6) });
   }
 
   if (intent.kind === "go") {

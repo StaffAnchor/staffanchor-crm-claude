@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { RANGES, loadPlaced, parseRangeParam, rangeKey, shortDate } from "@/lib/anchor/data";
 import { RANGE_LABEL } from "@/lib/anchor/intents";
+import { adminDb } from "@/lib/pro-sessions/core";
+import { loadDropped } from "@/lib/placements/drops";
+import DroppedSection from "@/components/placements/dropped-section";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,9 @@ export default async function PlacedPage({ searchParams }: { searchParams: Promi
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { rows, counts } = await loadPlaced(supabase, range);
+  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const isAdmin = me?.role === "admin";
+  const dropped = await loadDropped(supabase, isAdmin ? adminDb() : null).catch(() => []);
 
   return (
     <div className="mx-auto max-w-[1000px] px-5 py-8">
@@ -63,6 +69,8 @@ export default async function PlacedPage({ searchParams }: { searchParams: Promi
           </>
         )}
       </section>
+      <DroppedSection rows={dropped} isAdmin={isAdmin} />
+
       <p className="mt-3 text-[13px] text-slate-400">Fee tracking, retention check-ins and confirming a joining date are on the <a href="/placements" target="_blank" rel="noopener noreferrer" className="font-medium text-teal-700 dark:text-teal-300">Placements tracker</a>.</p>
     </div>
   );

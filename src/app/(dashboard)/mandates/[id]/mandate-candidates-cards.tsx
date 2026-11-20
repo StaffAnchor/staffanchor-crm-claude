@@ -506,15 +506,6 @@ export default function MandateCandidatesCards({
                 <span className="text-slate-600 dark:text-slate-300">Fill this in whenever you speak to them, before or after sharing. The client sees the profile only when it is complete.</span>
                 {c.phone ? <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 font-semibold text-white"><Phone className="h-3.5 w-3.5" /> {c.phone}</a> : <span className="text-slate-400">No phone</span>}
               </div>
-              {((mandateContext.must_haves as string[] | undefined) ?? []).length > 0 && (
-                <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <p className="mb-1.5 text-[12px] font-medium uppercase tracking-wide text-slate-500">Ask about, from the JD</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {((mandateContext.must_haves as string[]) ?? []).slice(0, 8).map((m) => (<span key={m} className="rounded-full bg-slate-100 px-2.5 py-1 text-[13px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">{m}</span>))}
-                  </div>
-                  <p className="mt-2 text-[13px] text-slate-400">The review below marks each of these. Notes you write, in English or Hindi, are translated and remembered for matching.</p>
-                </div>
-              )}
               <ConfirmDetailsPanel
                 key={l.id}
                 roleCluster={(mandateContext.role_cluster as string | null | undefined) ?? null}

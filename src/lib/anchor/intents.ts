@@ -7,6 +7,7 @@ export type Range = 30 | 60 | 90 | "life";
 export type Intent =
   | { kind: "placements"; range: Range }
   | { kind: "fees"; range: Range }
+  | { kind: "dropped" }
   | { kind: "go"; q: string; type: "mandate" | "candidate" | "client" | null; explicit: boolean }
   | { kind: "agent" };
 
@@ -42,6 +43,9 @@ function cleanTarget(raw: string): { q: string; type: "mandate" | "candidate" | 
 export function parseIntent(raw: string): Intent {
   const text = raw.trim().replace(/\s+/g, " ");
   const t = text.toLowerCase();
+
+  // People who left inside the guarantee, and refunds that follow.
+  if (/\b(dropped|drop ?outs?|attrit\w*|refunds?|left (the )?(job|company))\b/.test(t)) return { kind: "dropped" };
 
   // Fees first: "fee collected for placements" is about money, not about who joined.
   if (/\b(fees?|collected|collections?|invoic\w*|receivables?|outstanding|billing|earned|earnings)\b/.test(t) || /\bpayments? (received|pending|due)\b/.test(t)) {

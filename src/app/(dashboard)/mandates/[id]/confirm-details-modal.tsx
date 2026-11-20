@@ -8,7 +8,6 @@ import CallRecordForm, { type CallFormPerson } from "../../candidates/call-recor
 
 // Said they are open to roles in the last 90 days (the same window the top tier uses).
 const openFresh = (iso: unknown) => !!iso && Date.now() - new Date(String(iso)).getTime() < 90 * 86_400_000;
-import RoleFitReview from "./role-fit-review";
 import MandateScreeningPanel, { type MandateScreeningContext, type ScreeningCandidate } from "./mandate-screening-panel";
 
 // What the Call companion itself can fix. Everything else on the checklist is a
@@ -50,84 +49,70 @@ export function ConfirmDetailsPanel({ roleCluster = null, mandateContext, linkId
   }, [candidateId]);
 
   const ready = blockers.length === 0;
+  const isCall = (b: string) => b === CONFIRMATION || b.startsWith("Recruiter confirmation") || b.startsWith("A call confirming");
   const fixableHere = (b: string) =>
-    FIXABLE_HERE.has(b) || b === CONFIRMATION || b.startsWith("Candidate confirmed interested") || b.startsWith("Review of") || b.startsWith("A short note") || b.startsWith("This role has no");
+    FIXABLE_HERE.has(b) || isCall(b) || b.startsWith("Candidate confirmed interested") || b.startsWith("Review of") || b.startsWith("A short note") || b.startsWith("This role has no");
   const needsProfileEdit = blockers.filter((b) => !fixableHere(b));
+  const say = (b: string) => (isCall(b) ? "a call with them (fill in the form below and save)" : b.startsWith("Candidate confirmed interested") ? "their interest in this role" : b);
+  const questions = mandateContext?.screening_questions ?? [];
 
   return (
-    <div>
-          {ready ? (
-            <p className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[14px] font-medium text-emerald-700">
-              <Check className="h-4 w-4" /> Everything is confirmed. This candidate is ready to share.
-            </p>
-          ) : (
-            <div className="rounded-lg bg-amber-50 px-3 py-2.5 text-[13px] text-amber-800">
-              <p className="font-medium">Still needed ({blockers.length}):</p>
-              <ul className="mt-1 list-disc pl-5">
-                {blockers.map((b) => (
-                  <li key={b}>{b === CONFIRMATION ? "Recruiter confirmation: tap the answers in \"Call details\" below and save" : b}</li>
-                ))}
-              </ul>
-              {needsProfileEdit.length > 0 && (
-                <p className="mt-2">
-                  <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${candidateId}`} className="font-medium underline">
-                    Open the candidate page
-                  </Link>{" "}
-                  to add: {needsProfileEdit.join(", ")}.
-                </p>
-              )}
-            </div>
+    <div className="space-y-4">
+      {ready ? (
+        <p className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[14px] font-medium text-emerald-700">
+          <Check className="h-4 w-4" /> Call done and everything is confirmed. Ready to share.
+        </p>
+      ) : (
+        <p className="rounded-lg bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900">
+          <span className="font-semibold">A call is required before sharing.</span> Still needed: {blockers.map(say).join("; ")}.
+          {needsProfileEdit.length > 0 && (
+            <>
+              {" "}
+              <Link target="_blank" rel="noopener noreferrer" href={`/candidates/${candidateId}`} className="font-medium underline">
+                Open the candidate page
+              </Link>{" "}
+              to add: {needsProfileEdit.join(", ")}.
+            </>
           )}
+        </p>
+      )}
 
-          <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
-            <RoleFitReview linkId={linkId} mandateId={mandateId} candidateId={candidateId} onSaved={onRecheck} />
-          </div>
+      {candidate && (
+        <CallRecordForm
+          key={String(candidate.updated_at ?? "")}
+          p={{
+            ...(candidate as unknown as CallFormPerson),
+            open_fresh: openFresh(candidate.open_to_work_at),
+            offer_in_hand: typeof (candidate.segment_data as { offer_in_hand?: unknown } | null)?.offer_in_hand === "boolean" ? (candidate.segment_data as { offer_in_hand: boolean }).offer_in_hand : null,
+            offer_ctc: Number((candidate.segment_data as { offer_ctc?: unknown } | null)?.offer_ctc) || null,
+          }}
+          mode="profile"
+          roleCluster={roleCluster}
+          role={{ linkId, mandateId }}
+          onDone={async () => {
+            await loadCandidate();
+            await onRecheck();
+          }}
+        />
+      )}
 
-          {candidate && mandateContext && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 p-4 dark:border-slate-800">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Questions for this role</p>
-                <p className="text-[13px] text-slate-500">{(mandateContext.screening_questions ?? []).length > 0 ? "Role-specific questions to ask on the call; answers are saved against this role." : "No role-specific questions yet. Add some on the Screening tab."}</p>
-              </div>
-              {(mandateContext.screening_questions ?? []).length > 0 && (
-                <button type="button" onClick={() => setQuestionsOpen(true)} className="rounded-lg border border-teal-600 px-3 py-1.5 text-[14px] font-semibold text-teal-700 hover:bg-teal-50">Answer role questions</button>
-              )}
-            </div>
-          )}
-
-          {candidate && (
-            <div className="mt-4 rounded-xl border border-slate-100 dark:border-slate-800 p-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Call details</p>
-              <CallRecordForm
-                key={String(candidate.updated_at ?? "")}
-                p={{
-                  ...(candidate as unknown as CallFormPerson),
-                  open_fresh: openFresh(candidate.open_to_work_at),
-                  offer_in_hand: typeof (candidate.segment_data as { offer_in_hand?: unknown } | null)?.offer_in_hand === "boolean" ? (candidate.segment_data as { offer_in_hand: boolean }).offer_in_hand : null,
-                  offer_ctc: Number((candidate.segment_data as { offer_ctc?: unknown } | null)?.offer_ctc) || null,
-                }}
-                mode="profile"
-                roleCluster={roleCluster}
-                onDone={async () => {
-                  await loadCandidate();
-                  await onRecheck();
-                }}
-              />
-            </div>
-          )}
-        {candidate && mandateContext && (
-          <MandateScreeningPanel
-            open={questionsOpen}
-            onClose={() => setQuestionsOpen(false)}
-            candidate={candidate as unknown as ScreeningCandidate}
-            mandateContext={mandateContext}
-            onSaved={async () => {
-              await loadCandidate();
-              await onRecheck();
-            }}
-          />
-        )}
-
+      {candidate && mandateContext && questions.length > 0 && (
+        <button type="button" onClick={() => setQuestionsOpen(true)} className="text-[14px] font-medium text-teal-700 hover:underline">
+          Answer this role&apos;s {questions.length} screening {questions.length === 1 ? "question" : "questions"}
+        </button>
+      )}
+      {candidate && mandateContext && (
+        <MandateScreeningPanel
+          open={questionsOpen}
+          onClose={() => setQuestionsOpen(false)}
+          candidate={candidate as unknown as ScreeningCandidate}
+          mandateContext={mandateContext}
+          onSaved={async () => {
+            await loadCandidate();
+            await onRecheck();
+          }}
+        />
+      )}
     </div>
   );
 }

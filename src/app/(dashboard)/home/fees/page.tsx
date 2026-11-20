@@ -30,7 +30,7 @@ export default async function FeesPage({ searchParams }: { searchParams: Promise
   return (
     <div className="mx-auto max-w-[1000px] px-5 py-8">
       <h1 className="ros-page-title">Fees</h1>
-      <p className="mt-1 text-[15px] text-slate-500 dark:text-slate-400">What has come in and what is still to collect. Amounts are before GST, as recorded on each fee. Invoicing itself is in Analytics, Billing.</p>
+      <p className="mt-1 text-[15px] text-slate-500 dark:text-slate-400">What has come in and what is still to collect. Amounts are before GST. Invoicing itself is in Analytics, Billing.</p>
 
       <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Period">
         {RANGES.map((r) => {
@@ -53,9 +53,9 @@ export default async function FeesPage({ searchParams }: { searchParams: Promise
           <p className="text-[13px] text-amber-700 dark:text-amber-300">{f.outstandingCount} fee{f.outstandingCount === 1 ? "" : "s"}{f.overdueCount ? `, ${f.overdueCount} past the due date` : ", none overdue"}</p>
         </div>
       </div>
-      {f.suspectCount > 0 && (
+      {f.estimatedCount > 0 && (
         <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[13px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-          {f.suspectCount} fee{f.suspectCount === 1 ? " is" : "s are"} under ₹1,000, which usually means lakhs were typed into a rupee field. They are marked below and left out of the totals until corrected in Billing.
+          {f.estimatedCount} fee{f.estimatedCount === 1 ? " is" : "s are"} an estimate: not invoiced yet, so the amount is worked out from the fee in lakhs. It becomes exact when the invoice is raised.
         </p>
       )}
 
@@ -87,7 +87,7 @@ export default async function FeesPage({ searchParams }: { searchParams: Promise
                   </div>
                   <div className="text-right">
                     <p className="text-[15px] font-semibold tabular-nums text-slate-900 dark:text-slate-100">{inr(r.amount)}</p>
-                    {r.suspect ? <p className="text-[12px] font-medium text-amber-700 dark:text-amber-300">check amount</p> : null}
+                    {r.estimated ? <p className="text-[12px] font-medium text-amber-700 dark:text-amber-300">estimate</p> : null}
                   </div>
                 </li>
               ))}

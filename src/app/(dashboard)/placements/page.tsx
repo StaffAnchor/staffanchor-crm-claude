@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PlacementsView, { type PlacementRow, type RetentionCheckin } from "./placements-view";
+import { adminDb } from "@/lib/pro-sessions/core";
+import { loadDropped } from "@/lib/placements/drops";
+import DroppedSection from "@/components/placements/dropped-section";
 
 // Source-of-truth placement tracker: every candidate at stage="placed",
 // their joining date, and the recruiter's confirmation of what actually
@@ -88,6 +91,7 @@ export default async function PlacementsPage() {
         Billing).
       </p>
       <PlacementsView initialRows={rows} fetchError={error?.message ?? null} isAdmin={isAdmin} currentUserId={user.id} />
+      <DroppedSection rows={await loadDropped(supabase, isAdmin ? adminDb() : null).catch(() => [])} isAdmin={isAdmin} />
     </div>
   );
 }
