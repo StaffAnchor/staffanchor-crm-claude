@@ -30,7 +30,7 @@ export default async function FeesPage({ searchParams }: { searchParams: Promise
   return (
     <div className="mx-auto max-w-[1000px] px-5 py-8">
       <h1 className="ros-page-title">Fees</h1>
-      <p className="mt-1 text-[15px] text-slate-500 dark:text-slate-400">What has come in and what is still to collect. Amounts are before GST. Invoicing itself is in Analytics, Billing.</p>
+      <p className="mt-1 text-[15px] text-slate-500 dark:text-slate-400">What has come in and what is still to collect. Amounts are before GST. Invoicing itself is in Analytics, Billing. For drop rates, client-wise realisation and ageing, open the <a href="/placements?view=analysis" target="_blank" rel="noopener noreferrer" className="font-medium text-teal-700 dark:text-teal-300">full fee analysis</a>.</p>
 
       <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Period">
         {RANGES.map((r) => {

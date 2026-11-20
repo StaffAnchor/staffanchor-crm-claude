@@ -4,6 +4,9 @@ import PlacementsView, { type PlacementRow, type RetentionCheckin } from "./plac
 import { adminDb } from "@/lib/pro-sessions/core";
 import { loadDropped } from "@/lib/placements/drops";
 import DroppedSection from "@/components/placements/dropped-section";
+import FeeAnalysisView from "@/components/placements/fee-analysis-view";
+import { loadFeeAnalysis } from "@/lib/placements/fee-analysis";
+import Link from "next/link";
 
 // Source-of-truth placement tracker: every candidate at stage="placed",
 // their joining date, and the recruiter's confirmation of what actually
@@ -29,7 +32,8 @@ import DroppedSection from "@/components/placements/dropped-section";
 // that drives them means one place to look instead of two, and no more
 // stale check-ins sitting around for candidates who turned out not to
 // have actually joined.
-export default async function PlacementsPage() {
+export default async function PlacementsPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const sp = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,6 +42,8 @@ export default async function PlacementsPage() {
 
   const { data: myProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   const isAdmin = myProfile?.role === "admin";
+  const analysis = isAdmin && sp.view === "analysis";
+  const admin = adminDb();
 
   const { data, error } = await supabase
     .from("candidate_mandate_links")
@@ -90,8 +96,24 @@ export default async function PlacementsPage() {
         retention check-ins -- the source of truth this updates everywhere else (Candidates, mandate pipelines,
         Billing).
       </p>
-      <PlacementsView initialRows={rows} fetchError={error?.message ?? null} isAdmin={isAdmin} currentUserId={user.id} />
-      <DroppedSection rows={await loadDropped(supabase, adminDb(), isAdmin).catch(() => [])} isAdmin={isAdmin} />
+      {isAdmin && (
+        <div className="mb-5 flex gap-2" role="tablist" aria-label="Placements view">
+          {[{ key: "tracker", label: "Tracker" }, { key: "analysis", label: "Fee analysis" }].map((t) => {
+            const on = (t.key === "analysis") === analysis;
+            return (
+              <Link key={t.key} href={t.key === "analysis" ? "/placements?view=analysis" : "/placements"} role="tab" aria-selected={on} className={`rounded-full border px-4 py-1.5 text-[14px] font-medium ${on ? "border-teal-600 bg-teal-600 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-teal-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"}`}>{t.label}</Link>
+            );
+          })}
+        </div>
+      )}
+      {analysis && admin ? (
+        <FeeAnalysisView a={await loadFeeAnalysis(admin)} />
+      ) : (
+        <>
+          <PlacementsView initialRows={rows} fetchError={error?.message ?? null} isAdmin={isAdmin} currentUserId={user.id} />
+          <DroppedSection rows={await loadDropped(supabase, admin, isAdmin).catch(() => [])} isAdmin={isAdmin} />
+        </>
+      )}
     </div>
   );
 }
