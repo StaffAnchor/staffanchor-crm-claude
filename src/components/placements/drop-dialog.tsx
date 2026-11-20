@@ -10,7 +10,7 @@ const today = () => new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0
 export type DropResult = { cancelled: number; refundDue: number; emailed: string[] };
 
 // Recording that a placed person left inside the 90-day guarantee. Billing for the placement is cancelled with it.
-export default function DropDialog({ linkId, candidateName, clientName, joined, defaultDate, onCancel, onDone }: { linkId: string; candidateName: string; clientName: string; joined: string | null; defaultDate?: string | null; onCancel: () => void; onDone: (r: DropResult) => void }) {
+export default function DropDialog({ linkId, candidateName, clientName, joined, defaultDate, onCancel, onDone, onStageOnly }: { linkId: string; candidateName: string; clientName: string; joined: string | null; defaultDate?: string | null; onCancel: () => void; onDone: (r: DropResult) => void; /** Offered when the date is past the guarantee: change the stage without touching billing. */ onStageOnly?: () => void }) {
   const [date, setDate] = useState(defaultDate && defaultDate <= today() ? defaultDate : today());
   const [reason, setReason] = useState(REASONS[0]);
   const [note, setNote] = useState("");
@@ -59,6 +59,7 @@ export default function DropDialog({ linkId, candidateName, clientName, joined, 
           {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-[13px] text-rose-700 dark:bg-rose-950/30 dark:text-rose-200">{error}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={onCancel} disabled={busy} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[14px] text-slate-600">Cancel</button>
+            {tooLate && onStageOnly && <button type="button" onClick={onStageOnly} disabled={busy} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[14px] font-medium text-slate-700">Just change the stage, fee stays</button>}
             <button type="button" onClick={() => void go()} disabled={busy || tooLate} className="rounded-lg bg-rose-600 px-4 py-1.5 text-[14px] font-semibold text-white hover:bg-rose-700 disabled:opacity-50">{busy ? "Saving…" : "Mark dropped and cancel billing"}</button>
           </div>
         </div>

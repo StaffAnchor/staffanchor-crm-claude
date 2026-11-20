@@ -14,6 +14,8 @@ import MandateRejectModal from "./mandate-reject-modal";
 import PlacedDateModal from "./placed-date-modal";
 import PullBackDialog from "./pull-back-dialog";
 import { errorText, isNotClientReady, markSharedOffline } from "@/lib/shared-offline";
+import DropDialog from "@/components/placements/drop-dialog";
+import { withinGuarantee } from "@/lib/placements/drops";
 import { CAN_PULL_BACK, pullBackFromClient } from "@/lib/pull-back";
 import { ConfirmDetailsPanel } from "./confirm-details-modal";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
@@ -115,6 +117,7 @@ export default function MandateCandidatesCards({
   const [readiness, setReadiness] = useState<Record<string, string[]>>({});
   const [rejectRow, setRejectRow] = useState<MandateCandidateRow | null>(null);
   const [pullRow, setPullRow] = useState<MandateCandidateRow | null>(null);
+  const [dropRow, setDropRow] = useState<MandateCandidateRow | null>(null);
   // Placed needs the joining date, so choosing it opens this small window first.
   const [dojRow, setDojRow] = useState<MandateCandidateRow | null>(null);
   const [busy, setBusy] = useState(false);
@@ -197,6 +200,7 @@ export default function MandateCandidatesCards({
 
   function pickStage(row: MandateCandidateRow, next: Stage) {
     if (next === row.stage) return;
+    if (row.stage === "placed" && (next === "rejected" || next === "pulled_back") && withinGuarantee(row.date_of_joining)) return setDropRow(row);
     if (next === "rejected") return setRejectRow(row);
     if (next === "placed" && !row.date_of_joining) return setDojRow(row);
     if (next === "submitted" && !row.in_shortlist && (STAGE_ORDER[row.stage] ?? 0) < STAGE_ORDER["submitted"]) return void shortlist(row);
@@ -673,6 +677,28 @@ export default function MandateCandidatesCards({
             await move(row, "placed", "recruiter", { dateOfJoining: date });
             setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, date_of_joining: date } : r)));
             setDojRow(null);
+          }}
+        />
+      )}
+
+      {dropRow && (
+        <DropDialog
+          linkId={dropRow.id}
+          candidateName={dropRow.candidate.full_name}
+          clientName={(mandateContext.client_name as string) || "the client"}
+          joined={dropRow.date_of_joining}
+          onCancel={() => setDropRow(null)}
+          onStageOnly={() => {
+            const row = dropRow;
+            setDropRow(null);
+            void move(row, "pulled_back");
+          }}
+          onDone={() => {
+            const row = dropRow;
+            setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stage: "pulled_back" } : r)));
+            setMessage({ type: "success", text: `${row.candidate.full_name} is recorded as dropped. Billing is cancelled. See Placements for the list.` });
+            setDropRow(null);
+            router.refresh();
           }}
         />
       )}

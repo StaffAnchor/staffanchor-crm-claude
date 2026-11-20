@@ -33,11 +33,16 @@ export type DroppedRow = {
   kind: "dropped" | "did_not_join" | "attrited";
   /** Marked dropped here (dropped_at set), so it can be undone. */
   recorded: boolean;
+  /** Pulled back from Placed some other way, so the day they actually left was never recorded and the guarantee cannot be judged. */
+  needsDate: boolean;
   stage: string;
   fees: DroppedFee[];
   /** Any fee still live (not cancelled): billing has not been stopped. */
   billingLive: boolean;
 };
+
+/** True while a joining date is still inside the 90-day guarantee, counted to today. */
+export const withinGuarantee = (joined: string | null | undefined) => !!joined && daysBetween(joined, new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10)) <= GUARANTEE_DAYS;
 
 export const daysBetween = (from: string, to: string) => Math.round((new Date(`${to.slice(0, 10)}T00:00:00Z`).getTime() - new Date(`${from.slice(0, 10)}T00:00:00Z`).getTime()) / 86_400_000);
 
@@ -93,9 +98,14 @@ export async function loadDropped(supabase: SupabaseClient, admin: SupabaseClien
   for (const [id, { l, kind, leftOn, note }] of byId) {
     const joined = l.date_of_joining;
     const daysIn = joined && leftOn ? daysBetween(joined, leftOn) : null;
-    // After the guarantee the fee stands, so those are not "dropped within 90 days" (a recorded drop is always within it).
-    if (kind !== "dropped" || !l.dropped_at) if (daysIn !== null && daysIn > GUARANTEE_DAYS) continue;
     const f = fees.get(id) ?? [];
+    // Pulled back or rejected after a joining date, with no drop recorded: only a placement that really happened counts (it has a fee, or a join confirmation).
+    const legacy = kind === "dropped" && !l.dropped_at;
+    if (legacy && f.length === 0 && !l.join_status) continue;
+    // For those, the only date we have is the day the status was changed. If that is past the guarantee the real day is unknown, so ask for it.
+    const needsDate = legacy && daysIn !== null && daysIn > GUARANTEE_DAYS;
+    // Otherwise, after the guarantee the fee stands, so it is not a drop within 90 days.
+    if (!needsDate && !l.dropped_at && daysIn !== null && daysIn > GUARANTEE_DAYS) continue;
     rows.push({
       linkId: id,
       candidateId: l.candidate_id,
@@ -109,6 +119,7 @@ export async function loadDropped(supabase: SupabaseClient, admin: SupabaseClien
       reason: l.drop_reason ?? note ?? (kind === "did_not_join" ? "Never joined" : kind === "attrited" ? "Left, logged at a retention check-in" : "Pulled back after a joining date was set"),
       kind,
       recorded: !!l.dropped_at,
+      needsDate,
       stage: l.stage,
       fees: f,
       billingLive: f.some((x) => x.status !== "cancelled"),

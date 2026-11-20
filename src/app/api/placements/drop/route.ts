@@ -65,7 +65,9 @@ export async function POST(req: NextRequest) {
 
   try {
     if (b.action === "drop") {
-      if (link.stage !== "placed") return fail("This person is not in the Placed stage.");
+      const wasPlaced = link.stage === "placed";
+      if (!wasPlaced && !["pulled_back", "rejected"].includes(link.stage as string)) return fail("This person is not in the Placed stage.");
+      if (link.dropped_at) return fail("A drop is already recorded for this placement.");
       if (!isDate(b.droppedOn)) return fail("Pick the date they left.");
       if (b.droppedOn > today()) return fail("That date is in the future.");
       if (!link.date_of_joining) return fail("This placement has no joining date.");
@@ -74,7 +76,9 @@ export async function POST(req: NextRequest) {
       const reason = [String(b.reason ?? "").trim().slice(0, 80), String(b.note ?? "").trim().slice(0, 300)].filter(Boolean).join(": ") || REASON;
       // Fees first, so the database's own cancel-on-leaving-placed rule finds nothing left to touch and every fee keeps its history.
       const r = await cancelFees(REASON);
-      const { error } = await admin.from("candidate_mandate_links").update({ stage: "pulled_back", stage_updated_at: nowIso, stage_source: "recruiter", dropped_at: b.droppedOn, drop_reason: reason }).eq("id", b.linkId);
+      // Already pulled back some other way: only the date and reason are added, the stage stays as it is.
+      const patch = wasPlaced ? { stage: "pulled_back", stage_updated_at: nowIso, stage_source: "recruiter", dropped_at: b.droppedOn, drop_reason: reason } : { dropped_at: b.droppedOn, drop_reason: reason };
+      const { error } = await admin.from("candidate_mandate_links").update(patch).eq("id", b.linkId);
       if (error) {
         await restoreFees(r.items);
         return fail(error.message, 500);

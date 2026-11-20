@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { STAGES, applyStageChange, joiningProgress, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import MandateRejectModal from "../../mandates/[id]/mandate-reject-modal";
+import DropDialog from "@/components/placements/drop-dialog";
+import { withinGuarantee } from "@/lib/placements/drops";
 import { errorText, isNotClientReady, markSharedOffline, stillNeeded } from "@/lib/shared-offline";
 
 type Link = {
@@ -74,6 +76,8 @@ export default function MandateLinksPanel({
   >({});
   const [saving, setSaving] = useState<string | null>(null);
   const [rejectModalLink, setRejectModalLink] = useState<Link | null>(null);
+  // Taking a placed person off Placed inside the guarantee is a drop: it needs the day they left and cancels the billing.
+  const [dropFor, setDropFor] = useState<Link | null>(null);
   // applyStageChange throws on validation failures (missing rejection
   // reason, and now missing joining date for Placed) -- previously nothing
   // in this panel caught or surfaced that, so a blocked save just failed
@@ -340,6 +344,10 @@ export default function MandateLinksPanel({
                   value={p.stage}
                   onChange={(e) => {
                     const next = e.target.value as Stage;
+                    if (l.stage === "placed" && (next === "rejected" || next === "pulled_back") && withinGuarantee(l.date_of_joining)) {
+                      setDropFor(l);
+                      return;
+                    }
                     if (next === "rejected") {
                       setRejectModalLink(l);
                       return;
@@ -427,6 +435,25 @@ export default function MandateLinksPanel({
           Link
         </Button>
       </div>
+
+      {dropFor && (
+        <DropDialog
+          linkId={dropFor.id}
+          candidateName={candidateName}
+          clientName={dropFor.mandates?.client_name ?? "the client"}
+          joined={dropFor.date_of_joining}
+          onCancel={() => setDropFor(null)}
+          onStageOnly={() => {
+            const l = dropFor;
+            setDropFor(null);
+            setPendingFor(l.id, { stage: "pulled_back" });
+          }}
+          onDone={() => {
+            setDropFor(null);
+            router.refresh();
+          }}
+        />
+      )}
 
       {rejectModalLink && (
         <MandateRejectModal
