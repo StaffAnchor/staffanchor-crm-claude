@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { applyStageChange, type Stage } from "@/lib/mandate-stage";
 import { passReasonLabel } from "@/lib/pass-reasons";
 import PlacedDateModal from "./placed-date-modal";
+import PullBackDialog from "./pull-back-dialog";
+import { pullBackFromClient } from "@/lib/pull-back";
 
 export type SubmittedRow = {
   id: string;
@@ -24,7 +26,7 @@ export type SubmittedRow = {
   joiningDate: string | null;
 };
 
-type Pile = "waiting" | "shortlisted" | "interview" | "offer" | "placed" | "passed";
+type Pile = "waiting" | "shortlisted" | "interview" | "offer" | "placed" | "passed" | "pulled";
 
 const PILES: { key: Pile; title: string; hint: string; icon: typeof Clock; tone: string }[] = [
   { key: "waiting", title: "Waiting for the client", hint: "Shared, no answer yet", icon: Clock, tone: "text-amber-700 bg-amber-50" },
@@ -33,9 +35,11 @@ const PILES: { key: Pile; title: string; hint: string; icon: typeof Clock; tone:
   { key: "offer", title: "Offer made", hint: "Waiting for them to accept and join", icon: Send, tone: "text-lime-700 bg-lime-50" },
   { key: "placed", title: "Placed", hint: "Joining date set", icon: Trophy, tone: "text-green-700 bg-green-50" },
   { key: "passed", title: "Client passed", hint: "With the reason they gave", icon: ThumbsDown, tone: "text-rose-700 bg-rose-50" },
+  { key: "pulled", title: "Pulled back, still visible", hint: "Marked withdrawn, but the client can still open them", icon: Undo2, tone: "text-amber-700 bg-amber-50" },
 ];
 
 function pileOf(r: SubmittedRow): Pile {
+  if (r.stage === "pulled_back") return "pulled";
   if (r.stage === "placed") return "placed";
   if (r.stage === "offer") return "offer";
   if (r.stage === "client_interview" || r.stage === "client_shortlisted") return "interview";
@@ -48,11 +52,12 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-
 const daysAgo = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)) : null);
 
 // Where each shared person stands with the client, in plain piles, with the one next step for each.
-export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mandateId: string; mandateLabel: string; rows: SubmittedRow[] }) {
+export default function SubmittedBoard({ mandateId, mandateLabel, clientName = "the client", rows }: { mandateId: string; mandateLabel: string; clientName?: string; rows: SubmittedRow[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dojRow, setDojRow] = useState<SubmittedRow | null>(null);
+  const [pullRow, setPullRow] = useState<SubmittedRow | null>(null);
 
   async function move(r: SubmittedRow, to: Stage, dateOfJoining?: string) {
     setBusyId(r.id);
@@ -68,15 +73,27 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
     }
   }
 
+  async function pull(r: SubmittedRow) {
+    await pullBackFromClient(createClient(), { linkId: r.id, candidateId: r.candidateId, mandateId, candidateName: r.name, mandateLabel, stage: r.stage, existingDateOfJoining: r.joiningDate });
+    setPullRow(null);
+    router.refresh();
+  }
+
   const btn = "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-semibold disabled:opacity-50";
   function action(r: SubmittedRow, pile: Pile) {
     const busy = busyId === r.id;
     const spin = busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null;
-    if (pile === "waiting") return <button type="button" disabled={busy} onClick={() => void move(r, "pulled_back")} className={`${btn} border border-slate-300 text-slate-600 hover:bg-slate-50`}>{spin ?? <Undo2 className="h-3.5 w-3.5" />} Take back from the client</button>;
-    if (pile === "shortlisted") return <button type="button" disabled={busy} onClick={() => void move(r, "client_interview")} className={`${btn} bg-teal-600 text-white hover:bg-teal-700`}>{spin ?? <CalendarCheck className="h-3.5 w-3.5" />} Interview is on</button>;
-    if (pile === "interview") return <button type="button" disabled={busy} onClick={() => void move(r, "offer")} className={`${btn} bg-teal-600 text-white hover:bg-teal-700`}>{spin ?? <Send className="h-3.5 w-3.5" />} Offer made</button>;
+    const pullBtn = (
+      <button type="button" disabled={busy} onClick={() => setPullRow(r)} className={`${btn} border border-amber-300 text-amber-800 hover:bg-amber-50`} title="Take this person off the client's screen">
+        <Undo2 className="h-3.5 w-3.5" /> Pull back
+      </button>
+    );
+    if (pile === "waiting") return pullBtn;
+    if (pile === "shortlisted") return <div className="flex flex-wrap gap-2">{pullBtn}<button type="button" disabled={busy} onClick={() => void move(r, "client_interview")} className={`${btn} bg-teal-600 text-white hover:bg-teal-700`}>{spin ?? <CalendarCheck className="h-3.5 w-3.5" />} Interview is on</button></div>;
+    if (pile === "interview") return <div className="flex flex-wrap gap-2">{pullBtn}<button type="button" disabled={busy} onClick={() => void move(r, "offer")} className={`${btn} bg-teal-600 text-white hover:bg-teal-700`}>{spin ?? <Send className="h-3.5 w-3.5" />} Offer made</button></div>;
     if (pile === "offer") return <button type="button" disabled={busy} onClick={() => setDojRow(r)} className={`${btn} bg-green-600 text-white hover:bg-green-700`}>{spin ?? <Trophy className="h-3.5 w-3.5" />} Placed: add joining date</button>;
     if (pile === "placed") return <button type="button" onClick={() => setDojRow(r)} className={`${btn} border border-slate-300 text-slate-600 hover:bg-slate-50`}>Change date</button>;
+    if (pile === "pulled") return <button type="button" disabled={busy} onClick={() => setPullRow(r)} className={`${btn} bg-amber-600 text-white hover:bg-amber-700`} title="Switch off the client's access to this person completely"><Undo2 className="h-3.5 w-3.5" /> Hide from the client completely</button>;
     return null;
   }
 
@@ -87,7 +104,7 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-7">
         {PILES.map((p) => {
           const n = rows.filter((r) => pileOf(r) === p.key).length;
           return (
@@ -122,6 +139,7 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
                     {p.key === "interview" && <span>In interviews</span>}
                     {p.key === "offer" && <span>Offer made. Joining date not set.</span>}
                     {p.key === "placed" && <span className="font-medium text-green-700">Joining {r.joiningDate ? new Date(r.joiningDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "date not set"}</span>}
+                    {p.key === "pulled" && <span className="text-amber-700">The client sees them as withdrawn.</span>}
                     {p.key === "passed" && <span className="text-rose-700"><strong>{reason ?? "No reason given"}</strong>{r.passNote ? `. “${r.passNote}”` : ""}{r.decisionAt ? ` · ${fmt(r.decisionAt)}` : ""}</span>}
                   </div>
                   <div className="ml-auto">{action(r, p.key)}</div>
@@ -131,6 +149,7 @@ export default function SubmittedBoard({ mandateId, mandateLabel, rows }: { mand
           </ul>
         </section>
       ))}
+      {pullRow && <PullBackDialog candidateName={pullRow.name} clientName={clientName} clientReacted={!!pullRow.clientFeedback || ["client_interview", "client_shortlisted"].includes(pullRow.stage)} onCancel={() => setPullRow(null)} onConfirm={() => pull(pullRow)} />}
       {dojRow && <PlacedDateModal candidateName={dojRow.name} initialDate={dojRow.joiningDate ?? ""} busy={busyId === dojRow.id} onCancel={() => setDojRow(null)} onConfirm={(d) => void move(dojRow, "placed", d)} />}
     </div>
   );

@@ -12,6 +12,8 @@ import type { MandateScreeningContext } from "./mandate-screening-panel";
 import type { ApplicationAnswer } from "./application-answers-quick-view";
 import MandateRejectModal from "./mandate-reject-modal";
 import PlacedDateModal from "./placed-date-modal";
+import PullBackDialog from "./pull-back-dialog";
+import { CAN_PULL_BACK, pullBackFromClient } from "@/lib/pull-back";
 import { ConfirmDetailsPanel } from "./confirm-details-modal";
 import MandateBulkActionsBar from "./mandate-bulk-actions-bar";
 import PipelineWhatsApp from "./pipeline-whatsapp";
@@ -111,6 +113,7 @@ export default function MandateCandidatesCards({
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [readiness, setReadiness] = useState<Record<string, string[]>>({});
   const [rejectRow, setRejectRow] = useState<MandateCandidateRow | null>(null);
+  const [pullRow, setPullRow] = useState<MandateCandidateRow | null>(null);
   // Placed needs the joining date, so choosing it opens this small window first.
   const [dojRow, setDojRow] = useState<MandateCandidateRow | null>(null);
   const [busy, setBusy] = useState(false);
@@ -369,6 +372,7 @@ export default function MandateCandidatesCards({
               <RowMenu label={`More actions for ${c.full_name}`}>
                 {!l.in_shortlist && rec === "Not a Fit" && <MenuItem onClick={() => void shortlist(l)}>Send to client anyway</MenuItem>}
                 {!l.in_shortlist && rec !== "Not a Fit" && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
+                {l.in_shortlist && CAN_PULL_BACK.includes(l.stage) && <MenuItem onClick={() => setPullRow(l)} danger>Pull back from the client</MenuItem>}
                 {l.in_shortlist && <MenuItem onClick={() => setRejectRow(l)} danger>Reject</MenuItem>}
                 {!l.in_shortlist && logged && <MenuItem onClick={() => setTab("details")}>Call &amp; details</MenuItem>}
                 {resumeUrl && <MenuItem href={resumeUrl} download onClick={() => void markViewed(l)}>Download CV</MenuItem>}
@@ -676,6 +680,23 @@ export default function MandateCandidatesCards({
             await move(row, "placed", "recruiter", { dateOfJoining: date });
             setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, date_of_joining: date } : r)));
             setDojRow(null);
+          }}
+        />
+      )}
+
+      {pullRow && (
+        <PullBackDialog
+          candidateName={pullRow.candidate.full_name}
+          clientName={(mandateContext.client_name as string) || "the client"}
+          clientReacted={!!pullRow.client_feedback || ["client_interview", "client_shortlisted"].includes(pullRow.stage)}
+          onCancel={() => setPullRow(null)}
+          onConfirm={async () => {
+            const row = pullRow;
+            await pullBackFromClient(supabase, { linkId: row.id, candidateId: row.candidate.id, mandateId, candidateName: row.candidate.full_name, mandateLabel: label, stage: row.stage, existingDateOfJoining: row.date_of_joining ?? null });
+            setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, in_shortlist: false, stage: "pulled_back" } : r)));
+            setMessage({ type: "success", text: `${row.candidate.full_name} is no longer visible to the client. Share again from Matches whenever you want.` });
+            setPullRow(null);
+            router.refresh();
           }}
         />
       )}

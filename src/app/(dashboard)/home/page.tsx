@@ -92,7 +92,7 @@ export default async function HomePage() {
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Box
-          href="/home/everything#waiting"
+          href="/home/replies"
           icon={Reply}
           title="Reply to people"
           value={String(waiting.length)}
@@ -100,7 +100,7 @@ export default async function HomePage() {
           tone={employers > 0 ? "urgent" : waiting.length > 0 ? "attention" : "calm"}
         />
         <Box
-          href="/home/everything#client-replies"
+          href="/home/client-replies"
           icon={MessageCircle}
           title="Client replies"
           value={String(replies.unseen)}
@@ -108,7 +108,7 @@ export default async function HomePage() {
           tone={replies.unseen > 0 ? "attention" : "calm"}
         />
         <Box
-          href="/home/everything#decisions"
+          href="/home/decisions"
           icon={Briefcase}
           title="Needs a decision"
           value={String(decisions)}
@@ -116,7 +116,7 @@ export default async function HomePage() {
           tone={desk.decisions.some((d) => d.tone === "urgent") ? "urgent" : decisions > 0 ? "attention" : "calm"}
         />
         <Box
-          href="/home/everything#roles"
+          href="/home/roles"
           icon={Hourglass}
           title="Roles behind"
           value={String(behind.length)}
@@ -151,10 +151,10 @@ export default async function HomePage() {
       </div>
 
       {desk.decisions.length > 0 && (
-        <section className="rounded-ros-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <section className="mb-4 rounded-ros-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <header className="flex items-baseline justify-between gap-3 px-4 pb-2 pt-4">
             <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Do these next</h2>
-            <a href="/home/everything" target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-teal-700 dark:text-teal-300">See everything ↗</a>
+            <a href="/home/decisions" target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-teal-700 dark:text-teal-300">See all ↗</a>
           </header>
           <ul>
             {desk.decisions.slice(0, 3).map((d) => (
@@ -173,6 +173,7 @@ export default async function HomePage() {
           </ul>
         </section>
       )}
+      <p className="mt-4 text-[13px] text-slate-400">The old all-in-one list is still at <a href="/home/everything" target="_blank" rel="noopener noreferrer" className="font-medium text-teal-700 dark:text-teal-300">Everything</a>.</p>
     </div>
   );
 }

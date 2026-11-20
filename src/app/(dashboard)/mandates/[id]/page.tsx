@@ -644,6 +644,7 @@ export default async function MandateDetailPage({
                 <SubmittedBoard
                   mandateId={id}
                   mandateLabel={`${mandate.role_title} — ${mandate.client_name}`}
+                  clientName={mandate.client_name ?? "the client"}
                   rows={(links ?? [])
                     .filter((l) => l.in_shortlist || ["submitted", "client_interview", "client_shortlisted", "offer", "placed"].includes(l.stage as string) || (l.client_feedback === "not_interested" && !!l.client_decision_at))
                     .map((l) => {
