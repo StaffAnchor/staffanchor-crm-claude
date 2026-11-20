@@ -15,7 +15,7 @@ import ScreeningQuestionsPanel from "./screening-questions-panel";
 import MustHavesPanel from "./must-haves-panel";
 import AiMatchesPanel from "./ai-matches-panel";
 import BestMatchesPanel from "./best-matches-panel";
-import { passReasonLabel } from "@/components/client-view/PassReasonDialog";
+import { passReasonLabel } from "@/lib/pass-reasons";
 import VoiceAgentTab from "./voice-agent-tab";
 import { recordTiming } from "@/lib/page-timing";
 import NextAction, { type NextActionItem } from "@/components/next-action";

@@ -1,7 +1,7 @@
 import type { BoardCandidate, Role } from "./types";
 import { computeFit } from "./fit";
 import { STATUS_NAME, statusOf } from "./status";
-import { passReasonLabel } from "./PassReasonDialog";
+import { passReasonLabel } from "@/lib/pass-reasons";
 
 
 const esc = (v: unknown) => {

@@ -1,5 +1,5 @@
 import type { BoardCandidate } from "./types";
-import { passReasonLabel } from "./PassReasonDialog";
+import { passReasonLabel } from "@/lib/pass-reasons";
 import { formatSlot } from "./ui";
 
 // Where a candidate stands, in the words the client sees on the tab, the card chip and the buttons. One place decides it.

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarCheck, Check, Clock, Loader2, Send, ThumbsDown, ThumbsUp, Trophy, Undo2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { applyStageChange, type Stage } from "@/lib/mandate-stage";
-import { passReasonLabel } from "@/components/client-view/PassReasonDialog";
+import { passReasonLabel } from "@/lib/pass-reasons";
 import PlacedDateModal from "./placed-date-modal";
 
 export type SubmittedRow = {

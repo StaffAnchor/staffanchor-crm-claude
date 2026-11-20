@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, renderEmailShell } from "@/lib/mail";
 import { withHeartbeat } from "@/lib/cron-heartbeat";
-import { passReasonLabel } from "@/components/client-view/PassReasonDialog";
+import { passReasonLabel } from "@/lib/pass-reasons";
 
 // Emails the owner when a client shortlists ("interested") or passes on a candidate in the client portal.
 // candidate_mandate_links.client_decision_emailed holds the answer last announced, so each decision is sent once and a

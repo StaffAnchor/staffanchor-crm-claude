@@ -3,7 +3,7 @@
 import { CalendarClock, CheckCircle2, Clock, Sparkles, ThumbsDown, TrendingUp, UserCheck } from "lucide-react";
 import type { BoardCandidate, Role } from "./types";
 import { computeFit } from "./fit";
-import { PASS_REASONS, passReasonLabel } from "./PassReasonDialog";
+import { PASS_REASONS, passReasonLabel } from "@/lib/pass-reasons";
 import { TAB_LOOK, TABS, tabOf, type Tab } from "./tabs";
 import { statusOf } from "./status";
 import { LABEL, formatSlot, lakhLabel } from "./ui";

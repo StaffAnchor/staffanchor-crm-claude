@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ClipboardList, Eye, Mic, Send, ChevronDown, ChevronUp, GraduationCap, Inbox, Mail, MessageCircle, MoreHorizontal, PanelRightClose, PanelRightOpen, Phone, PhoneCall, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { passReasonLabel } from "@/components/client-view/PassReasonDialog";
+import { passReasonLabel } from "@/lib/pass-reasons";
 import { STAGES, STAGE_COLOR, applyStageChange, rejectionReasonLabel, type Stage, type StageSource } from "@/lib/mandate-stage";
 import type { MandateCandidateRow } from "./candidate-row";
 import type { MandateScreeningContext } from "./mandate-screening-panel";
