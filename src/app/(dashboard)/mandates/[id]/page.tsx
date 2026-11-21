@@ -816,6 +816,7 @@ export default async function MandateDetailPage({
                   />
                   <JobDescriptionPanel
                     mandateId={id}
+                    initialHidePay={((mandate as { show_pay_on_listing?: boolean | null }).show_pay_on_listing ?? true) === false}
                     initial={{
                       jd_overview: mandate.jd_overview,
                       jd_responsibilities: mandate.jd_responsibilities,

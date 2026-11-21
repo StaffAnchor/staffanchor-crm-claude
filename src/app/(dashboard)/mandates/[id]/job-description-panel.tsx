@@ -36,10 +36,13 @@ export default function JobDescriptionPanel({
   mandateId,
   initial,
   context,
+  initialHidePay = false,
 }: {
   mandateId: string;
   initial: JDFields;
   context: MandateContext;
+  /** True when the role already hides its pay on the public listing. */
+  initialHidePay?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -47,7 +50,13 @@ export default function JobDescriptionPanel({
   // Names found in an uploaded client JD (kept out of the listing) and any special instructions for the AI.
   const [hideNames, setHideNames] = useState<string[]>([]);
   const [instructions, setInstructions] = useState("");
-  const [hidePay, setHidePay] = useState(false);
+  const [hidePay, setHidePay] = useState(initialHidePay);
+  // The choice is saved on the role at once, so it is the real pay setting for the public listing and not just a note to the AI.
+  async function changeHidePay(next: boolean) {
+    setHidePay(next);
+    await supabase.from("mandates").update({ show_pay_on_listing: !next }).eq("id", mandateId);
+    router.refresh();
+  }
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [editInstruction, setEditInstruction] = useState("");
@@ -198,9 +207,9 @@ export default function JobDescriptionPanel({
               className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] bg-white dark:bg-slate-900"
             />
             <label className="mt-1.5 flex items-center gap-1.5 text-[13px] text-slate-600">
-              <input type="checkbox" checked={hidePay} onChange={(e) => setHidePay(e.target.checked)} /> Leave pay figures out of the listing
+              <input type="checkbox" checked={hidePay} onChange={(e) => void changeHidePay(e.target.checked)} /> Do not show the pay on the public listing or in the job description
             </label>
-            <p className="mt-1 text-[12px] text-slate-500">The client&apos;s name is always kept out of the listing, along with their website and email addresses.</p>
+            <p className="mt-1 text-[12px] text-slate-500">The client&apos;s name is always kept out of the listing text, along with their website and email addresses. This pay choice is the same switch as on the listing panel above, and takes effect at once. The budget is still used for matching.</p>
             <button
               type="button"
               onClick={handleGenerate}
