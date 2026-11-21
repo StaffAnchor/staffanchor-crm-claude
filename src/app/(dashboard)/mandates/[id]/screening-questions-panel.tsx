@@ -109,7 +109,7 @@ export default function ScreeningQuestionsPanel({
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-          <MessageCircleQuestion className="w-3.5 h-3.5 text-slate-400" /> Screening question bank
+          <MessageCircleQuestion className="w-3.5 h-3.5 text-slate-400" /> Call script for recruiters
         </h2>
         <button
           onClick={handleGenerate}
@@ -120,9 +120,9 @@ export default function ScreeningQuestionsPanel({
         </button>
       </div>
       <p className="text-[13px] text-slate-400 mb-2">
-        Targeted questions for screening calls against this mandate. Recruiters answer these per-candidate from the
-        Screen action in the candidate table below -- answers become structured, searchable profile data, not just
-        notes.
+        Longer, role-specific questions for your own screening calls. Candidates never see these: what they are asked when they
+        apply is in the box above. Recruiters answer these per candidate from the Screen action in the pipeline, and the answers
+        become structured profile data. Each question shows its type.
       </p>
       {genError && <p className="text-xs text-red-600 mb-2">{genError}</p>}
 
@@ -138,7 +138,11 @@ export default function ScreeningQuestionsPanel({
             className="flex items-start gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5"
           >
             <span className="text-xs text-slate-400 mt-0.5">{i + 1}.</span>
-            <span className="flex-1 text-[14px] text-slate-700 dark:text-slate-300">{q.text}</span>
+            <span className="min-w-0 flex-1 text-[14px] text-slate-700 dark:text-slate-300">
+              {q.text}
+              {q.options && q.options.length > 0 && <span className="mt-0.5 block text-[12px] text-slate-400">Choices: {q.options.join(" · ")}</span>}
+            </span>
+            <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{q.answer_type === "dropdown" ? "Dropdown" : q.answer_type === "multi_select" ? "Multi-select" : "Free text"}</span>
             {q.source === "ai" && (
               <span className="shrink-0 rounded-full bg-teal-50 text-teal-600 text-xs font-medium px-1.5 py-0.5">AI</span>
             )}

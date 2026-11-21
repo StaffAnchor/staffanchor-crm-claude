@@ -96,6 +96,7 @@ export default function CreateMandateForm({
     role_cluster: "",
     also_clusters: [] as string[],
     hide_client: false,
+    hide_pay: false,
     public_client_label: "",
     jd_raw_notes: "",
     jd_overview: "",
@@ -308,6 +309,7 @@ export default function CreateMandateForm({
         role_cluster: form.role_cluster || null,
         also_clusters: form.also_clusters.filter((c) => c !== form.role_cluster),
         show_client_name: !form.hide_client,
+        show_pay_on_listing: !form.hide_pay,
         public_client_label: form.hide_client ? form.public_client_label || null : null,
         jd_overview: form.jd_overview || null,
         jd_responsibilities: form.jd_responsibilities || null,
@@ -404,6 +406,7 @@ export default function CreateMandateForm({
       role_cluster: "",
     also_clusters: [] as string[],
       hide_client: false,
+      hide_pay: false,
       public_client_label: "",
       jd_raw_notes: "",
       jd_overview: "",
@@ -1079,6 +1082,11 @@ export default function CreateMandateForm({
             ? "Candidates will see this text instead of the real client name."
             : "The real client name will be visible on the public job listing."}
         </p>
+        <label className="mt-3 flex items-start gap-2 text-[13px] text-slate-700 dark:text-slate-300">
+          <input type="checkbox" checked={form.hide_pay} onChange={(e) => setForm((f) => ({ ...f, hide_pay: e.target.checked }))} className="mt-0.5" />
+          Do not show the pay on the public job listing
+        </label>
+        <p className="mt-1 text-xs text-slate-400">The budget is still used for matching. You can change both choices later on the role&apos;s Brief tab.</p>
       </div>
 
       {error && <p className="text-xs text-red-600">{error}</p>}

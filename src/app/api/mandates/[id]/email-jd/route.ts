@@ -33,12 +33,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: mandate, error: mandateError } = await supabase
     .from("mandates")
     .select(
-      "client_id, role_title, client_name, show_client_name, public_client_label, category, sub_domain, sub_domains, city, cities, budget_min, budget_max, experience_min, experience_max, work_mode, jd_overview, jd_responsibilities, jd_candidate_profile, jd_compensation_benefits, must_haves, good_to_haves"
+      "client_id, role_title, client_name, show_client_name, public_client_label, category, sub_domain, sub_domains, city, cities, budget_min, budget_max, show_pay_on_listing, experience_min, experience_max, work_mode, jd_overview, jd_responsibilities, jd_candidate_profile, jd_compensation_benefits, must_haves, good_to_haves"
     )
     .eq("id", id)
     .single();
   if (mandateError || !mandate) {
     return NextResponse.json({ error: "Mandate not found" }, { status: 404 });
+  }
+
+
+  // A role that hides its pay on the public listing also leaves it out of the JD document.
+  if ((mandate as { show_pay_on_listing?: boolean | null }).show_pay_on_listing === false) {
+    (mandate as { budget_min: number | null; budget_max: number | null }).budget_min = null;
+    (mandate as { budget_min: number | null; budget_max: number | null }).budget_max = null;
   }
 
   const { data: candidates } = await supabase

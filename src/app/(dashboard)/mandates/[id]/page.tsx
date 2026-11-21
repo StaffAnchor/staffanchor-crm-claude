@@ -772,6 +772,15 @@ export default async function MandateDetailPage({
                     }}
                     placedCount={placedCount}
                   />
+                  <PublicListingPanel
+                    mandateId={id}
+                    initialShowClientName={mandate.show_client_name ?? true}
+                    initialPublicClientLabel={mandate.public_client_label}
+                    initialShowPay={(mandate as { show_pay_on_listing?: boolean | null }).show_pay_on_listing ?? true}
+                    budgetMin={mandate.budget_min ?? null}
+                    budgetMax={mandate.budget_max ?? null}
+                    clientName={mandate.client_name}
+                  />
                   <GoldStandardPanel
                     mandateId={id}
                     initial={{
@@ -833,11 +842,31 @@ export default async function MandateDetailPage({
               key: "screening",
             tone: "emerald",
               label: "Screening",
-            blurb: "Questions candidates answer when they apply.",
+            blurb: "What candidates are asked when they apply, and your own script for the screening call.",
             group: "more",
               icon: <ListChecks className="h-3.5 w-3.5" />,
               content: (
                 <>
+                  <ApplicationQuestionsPanel
+                    mandateId={id}
+                    initialQuestions={(applicationQuestions ?? []) as ApplicationQuestion[]}
+                    context={{
+                      role_title: mandate.role_title,
+                      category: mandate.category,
+                      sub_domains: mandate.sub_domains ?? (mandate.sub_domain ? [mandate.sub_domain] : []),
+                      must_haves: mandate.must_haves ?? [],
+                      good_to_haves: mandate.good_to_haves ?? [],
+                      cities: mandate.cities ?? (mandate.city ? [mandate.city] : []),
+                      work_mode: mandate.work_mode,
+                      working_days: mandate.working_days,
+                      shift_timing: mandate.shift_timing,
+                      requires_own_device: mandate.requires_own_device ?? false,
+                      jd_overview: mandate.jd_overview,
+                      jd_candidate_profile: mandate.jd_candidate_profile,
+                      sales_cycle: mandate.sales_cycle,
+                      deal_size_band: mandate.deal_size_band,
+                    }}
+                  />
                   <ScreeningQuestionsPanel
                     mandateId={id}
                     initialQuestions={mandate.screening_questions ?? []}
@@ -879,7 +908,7 @@ export default async function MandateDetailPage({
               key: "sharing",
             tone: "rose",
               label: "Sharing and client portal",
-            blurb: "Client portal logins, the public job listing and the share link.",
+            blurb: "Client portal logins, applications from the jobs site, and the share link.",
             group: "more",
               icon: <Share2 className="h-3.5 w-3.5" />,
               content: (
@@ -902,16 +931,9 @@ export default async function MandateDetailPage({
                     <ClientPortalAccessPanel clientId={mandate.client_id} clientName={mandate.client_name} initialInvites={portalInvites ?? []} initialUsers={portalUsers ?? []} />
                   )}
                   <QuickApplyFunnelPanel mandateId={id} />
-                  <ApplicationQuestionsPanel
-                    mandateId={id}
-                    initialQuestions={(applicationQuestions ?? []) as ApplicationQuestion[]}
-                  />
-                  <PublicListingPanel
-                    mandateId={id}
-                    initialShowClientName={mandate.show_client_name ?? true}
-                    initialPublicClientLabel={mandate.public_client_label}
-                    clientName={mandate.client_name}
-                  />
+                  <p className="rounded-lg bg-slate-50 px-3 py-2.5 text-[13px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+                    The questions candidates answer when they apply are on the <b>Screening</b> tab. How the role is listed publicly (the company line and whether pay is shown) is on the <b>Brief</b> tab.
+                  </p>
                   <ShortlistLinkPanel
                     mandateId={id}
                     existingToken={existingToken?.token ?? null}

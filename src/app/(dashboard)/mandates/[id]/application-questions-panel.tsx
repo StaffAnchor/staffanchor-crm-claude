@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Trash2, ArrowUp, ArrowDown, ListOrdered, Hash, ToggleLeft, MessageSquareText } from "lucide-react";
+import { Plus, Trash2, ArrowUp, ArrowDown, ListOrdered, Hash, ToggleLeft, MessageSquareText, Sparkles } from "lucide-react";
+import { APPLY_TYPE_LABEL, normQuestion, type GeneratedQuestion } from "@/lib/application-questions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,17 +31,37 @@ export type ApplicationQuestion = {
 };
 
 const TYPE_META: Record<ApplicationQuestion["answer_type"], { label: string; icon: typeof Hash }> = {
-  short_answer: { label: "Short answer", icon: MessageSquareText },
-  yes_no: { label: "Yes / No", icon: ToggleLeft },
-  numeric: { label: "Numeric", icon: Hash },
+  short_answer: { label: APPLY_TYPE_LABEL.short_answer, icon: MessageSquareText },
+  yes_no: { label: APPLY_TYPE_LABEL.yes_no, icon: ToggleLeft },
+  numeric: { label: APPLY_TYPE_LABEL.numeric, icon: Hash },
+};
+
+/** What the AI needs to know about the role. */
+export type ApplyQuestionContext = {
+  role_title: string;
+  category: string | null;
+  sub_domains: string[];
+  must_haves: string[];
+  good_to_haves: string[];
+  cities: string[];
+  work_mode: string | null;
+  working_days: string | null;
+  shift_timing: string | null;
+  requires_own_device: boolean;
+  jd_overview: string | null;
+  jd_candidate_profile: string | null;
+  sales_cycle: string | null;
+  deal_size_band: string | null;
 };
 
 export default function ApplicationQuestionsPanel({
   mandateId,
   initialQuestions,
+  context,
 }: {
   mandateId: string;
   initialQuestions: ApplicationQuestion[];
+  context?: ApplyQuestionContext;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -51,6 +72,8 @@ export default function ApplicationQuestionsPanel({
   const [type, setType] = useState<ApplicationQuestion["answer_type"]>("short_answer");
   const [required, setRequired] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genMessage, setGenMessage] = useState<{ ok: boolean; text: string } | null>(null);
   // Questions used on other roles, most used first, so a good one is one click away next time.
   const [library, setLibrary] = useState<{ text: string; type: ApplicationQuestion["answer_type"]; required: boolean; uses: number }[]>([]);
   useEffect(() => {
@@ -76,6 +99,49 @@ export default function ApplicationQuestionsPanel({
     const have = new Set(questions.map((q) => q.question_text.toLowerCase().trim()));
     return library.filter((l) => !have.has(l.text.toLowerCase().trim())).slice(0, 8);
   }, [library, questions]);
+
+
+  // Basic questions first (pay, place and days, working now, how soon they can join), then a few simple ones from the job description.
+  async function generate() {
+    if (!context) return;
+    setGenerating(true);
+    setGenMessage(null);
+    try {
+      const res = await fetch("/api/generate-application-questions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(context) });
+      const data = (await res.json()) as { questions?: GeneratedQuestion[]; note?: string | null; error?: string };
+      if (!res.ok || !data.questions) throw new Error(data.error ?? "That did not work. Try again.");
+      const have = new Set(questions.map((q) => normQuestion(q.question_text)));
+      const fresh = data.questions.filter((q) => !have.has(normQuestion(q.question_text)));
+      if (fresh.length === 0) {
+        setGenMessage({ ok: true, text: "Every question it would ask is already here." });
+        return;
+      }
+      const base = questions.length ? Math.max(...questions.map((q) => q.display_order)) + 1 : 0;
+      const { data: inserted, error } = await supabase
+        .from("mandate_screening_questions")
+        .insert(fresh.map((q, i) => ({ mandate_id: mandateId, question_text: q.question_text, answer_type: q.answer_type, is_required: q.is_required, display_order: base + i })))
+        .select("id, question_text, answer_type, is_required, display_order");
+      if (error || !inserted) throw new Error(error?.message ?? "Couldn't save the questions.");
+      // Basics go to the front, then what was already there, then the job-description ones.
+      const kindOf = new Map(fresh.map((q) => [normQuestion(q.question_text), q.kind]));
+      const added = inserted as ApplicationQuestion[];
+      const front = added.filter((q) => kindOf.get(normQuestion(q.question_text)) === "basic");
+      const back = added.filter((q) => kindOf.get(normQuestion(q.question_text)) !== "basic");
+      const ordered = [...front, ...questions, ...back].map((q, i) => ({ ...q, display_order: i }));
+      await Promise.all(ordered.map((q) => supabase.from("mandate_screening_questions").update({ display_order: q.display_order }).eq("id", q.id)));
+      setQuestions(ordered);
+      const count = (t: string) => added.filter((q) => q.answer_type === t).length;
+      setGenMessage({
+        ok: true,
+        text: `Added ${front.length} basic ${front.length === 1 ? "question" : "questions"} (shown first, required) and ${back.length} from the job description (optional). Types: ${count("yes_no")} Yes / No, ${count("numeric")} Number, ${count("short_answer")} Short answer.${data.note ? ` ${data.note}` : ""}`,
+      });
+      router.refresh();
+    } catch (e) {
+      setGenMessage({ ok: false, text: e instanceof Error ? e.message : "That did not work. Try again." });
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function addQuestion() {
     const question_text = text.trim();
@@ -140,14 +206,22 @@ export default function ApplicationQuestionsPanel({
 
   return (
     <Card className="mt-4">
-      <div className="flex items-center gap-2 mb-1">
-        <ListOrdered className="w-4 h-4 text-teal-600" />
-        <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Application Questions</p>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <div className="flex items-center gap-2">
+          <ListOrdered className="w-4 h-4 text-teal-600" />
+          <p className="text-[14px] font-semibold text-slate-900 dark:text-slate-100">Questions candidates answer when they apply</p>
+        </div>
+        {context && (
+          <button type="button" onClick={() => void generate()} disabled={generating} className="inline-flex items-center gap-1 rounded-lg border border-teal-600 px-3 py-1 text-[13px] font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50">
+            <Sparkles className="h-3.5 w-3.5" /> {generating ? "Writing the questions…" : "Generate with AI"}
+          </button>
+        )}
       </div>
+      {genMessage && <p className={`mb-3 rounded-lg px-3 py-2 text-[13px] ${genMessage.ok ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>{genMessage.text}</p>}
       <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-3">
-        Candidates answer these on jobs.staffanchor.com when applying to this mandate, before their application is
-        recorded — e.g. &quot;What is your current fixed CTC?&quot; (Numeric) or &quot;Are you comfortable with night
-        shifts?&quot; (Yes/No). Applies to new applications going forward. Answers about current or expected pay, notice period, total experience, relocation and current city are also saved on the candidate&apos;s profile, and every answer is kept for their later applications.
+        Candidates answer these on jobs.staffanchor.com when they apply, before the application is recorded. The AI asks the basics first
+        (current pay, whether the place and working days suit them, whether they are working now, how soon they can join), then at most three
+        simple ones from the job description. Each question shows its type: Yes / No, Number or Short answer. Keep it short so people finish applying. Applies to new applications going forward. Answers about current or expected pay, notice period, total experience, relocation and current city are also saved on the candidate&apos;s profile, and every answer is kept for their later applications.
       </p>
 
       {questions.length === 0 ? (
