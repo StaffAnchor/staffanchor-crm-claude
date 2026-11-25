@@ -539,6 +539,18 @@ export default async function CandidateDetailPage({
     callNoteCount: pastDebriefs.length,
   });
   const todos = next.todos;
+  // The last call on this person, so the Calls tab can show it (and let it stand) instead of an empty form.
+  const { data: lastRatingRow } = await supabase.from("candidate_call_ratings").select("communication, seriousness, stability, salary_realism, skill_match, created_at").eq("candidate_id", candidate.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const lastCallAt = callConfirmed?.at ?? null;
+  const lastCall = lastCallAt
+    ? {
+        at: lastCallAt,
+        by: callConfirmed?.by ?? null,
+        ratings: lastRatingRow ? { communication: lastRatingRow.communication, seriousness: lastRatingRow.seriousness, stability: lastRatingRow.stability, salary_realism: lastRatingRow.salary_realism, skill_match: lastRatingRow.skill_match } : null,
+        segment: Object.fromEntries(Object.entries(segment).filter(([k]) => !["call_confirmed", "call_insights", "revenue_snapshot", "offer_ctc", "offer_in_hand", "role_level", "role_type"].includes(k))),
+        memory: ((segment as { call_insights?: { summary?: string } }).call_insights?.summary as string | undefined) ?? null,
+      }
+    : null;
   const { data: topTierRow } = await supabase.from("candidate_top_tier").select("is_sales, pay_ratio, exp_ok, ratio_ok, comm, open_fresh, resting, tier").eq("candidate_id", candidate.id).maybeSingle();
   const topTier: TopTierData = {
     isSales: !!topTierRow?.is_sales,
@@ -719,6 +731,7 @@ export default async function CandidateDetailPage({
               }}
               doubts={callDoubts}
               history={pastDebriefs}
+              lastCall={lastCall}
             />
           </section>
           <CallTranscriptPanel candidateId={candidate.id} />

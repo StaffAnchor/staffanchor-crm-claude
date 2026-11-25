@@ -143,8 +143,11 @@ export default function CallRecordForm({
   mode = "desk",
   roleCluster = null,
   role = null,
+  initial = null,
 }: {
   p: CallFormPerson;
+  /** What the last call recorded (ratings and quick-tap answers), so a candidate who was already called starts from those answers, not a blank form. */
+  initial?: { ratings?: Partial<Record<JudgmentKey, string>>; segment?: Record<string, unknown> } | null;
   /** Set when the call is for one role: the role's questions (interested, each must-have) become part of this same form and are saved with it. */
   role?: { linkId: string; mandateId: string } | null;
   onDone: (r: CallResult) => void;
@@ -155,6 +158,10 @@ export default function CallRecordForm({
   /** desk: Calls today, which moves to the next person; profile: stays on this person. */
   mode?: "desk" | "profile";
 }) {
+  const seg0 = (initial?.segment ?? {}) as Record<string, unknown>;
+  const sStr = (k: string) => (typeof seg0[k] === "string" ? (seg0[k] as string) : "");
+  const sYn = (k: string) => (seg0[k] === true ? "Yes" : seg0[k] === false ? "No" : "");
+  const sArr = (k: string) => (Array.isArray(seg0[k]) ? (seg0[k] as unknown[]).filter((x): x is string => typeof x === "string") : []);
   const rf = useRoleFit(role ? { linkId: role.linkId, mandateId: role.mandateId, candidateId: p.id } : null);
   const [tier, setTier] = useState<PoolTier | null>(null);
   const [customBack, setCustomBack] = useState("");
@@ -194,28 +201,28 @@ export default function CallRecordForm({
   }, [p.id]);
   const [offer, setOffer] = useState(p.offer_in_hand === true ? "Yes" : p.offer_in_hand === false ? "No" : "");
   const [offerCtc, setOfferCtc] = useState(p.offer_ctc ? String(p.offer_ctc) : "");
-  const [ratings, setRatings] = useState<Record<JudgmentKey, string>>({ communication: "", seriousness: "", stability: "", salary_realism: "", skill_match: "" });
+  const [ratings, setRatings] = useState<Record<JudgmentKey, string>>({ communication: initial?.ratings?.communication ?? "", seriousness: initial?.ratings?.seriousness ?? "", stability: initial?.ratings?.stability ?? "", salary_realism: initial?.ratings?.salary_realism ?? "", skill_match: initial?.ratings?.skill_match ?? "" });
   const [currentVar, setCurrentVar] = useState(num(p.current_variable_ctc));
-  const [reasons, setReasons] = useState<string[]>([]);
-  const [interviewing, setInterviewing] = useState("");
-  const [noticeFlex, setNoticeFlex] = useState("");
-  const [payFlex, setPayFlex] = useState("");
-  const [carriesQuota, setCarriesQuota] = useState("");
-  const [quotaBand, setQuotaBand] = useState("");
-  const [style, setStyle] = useState("");
-  const [cycle, setCycle] = useState("");
-  const [bestTime, setBestTime] = useState("");
-  const [canRefer, setCanRefer] = useState("");
+  const [reasons, setReasons] = useState<string[]>(sArr("reason_for_change"));
+  const [interviewing, setInterviewing] = useState(sStr("interviewing_elsewhere"));
+  const [noticeFlex, setNoticeFlex] = useState(sStr("notice_flex"));
+  const [payFlex, setPayFlex] = useState(sYn("expected_ctc_negotiable"));
+  const [carriesQuota, setCarriesQuota] = useState(sYn("carries_quota"));
+  const [quotaBand, setQuotaBand] = useState(sStr("quota_last_year"));
+  const [style, setStyle] = useState(sStr("style"));
+  const [cycle, setCycle] = useState(sStr("cycle"));
+  const [bestTime, setBestTime] = useState(sStr("best_time_to_call"));
+  const [canRefer, setCanRefer] = useState(sYn("can_refer"));
   // Service and other non-sales questions.
-  const [teamHandled, setTeamHandled] = useState("");
-  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
-  const [customerKind, setCustomerKind] = useState("");
-  const [metricsOwned, setMetricsOwned] = useState<string[]>([]);
-  const [shiftPattern, setShiftPattern] = useState("");
-  const [revenueTarget, setRevenueTarget] = useState("");
-  const [workStyle, setWorkStyle] = useState("");
-  const [keyTools, setKeyTools] = useState("");
-  const [certifications, setCertifications] = useState("");
+  const [teamHandled, setTeamHandled] = useState(sStr("team_handled"));
+  const [serviceTypes, setServiceTypes] = useState<string[]>(sArr("service_type"));
+  const [customerKind, setCustomerKind] = useState(sStr("customer_kind"));
+  const [metricsOwned, setMetricsOwned] = useState<string[]>(sArr("metrics_owned"));
+  const [shiftPattern, setShiftPattern] = useState(sStr("shift_pattern"));
+  const [revenueTarget, setRevenueTarget] = useState(sYn("carries_revenue_target"));
+  const [workStyle, setWorkStyle] = useState(sStr("work_style"));
+  const [keyTools, setKeyTools] = useState(sStr("key_tools"));
+  const [certifications, setCertifications] = useState(sStr("certifications"));
   const [canMessage, setCanMessage] = useState("");
   const [openness, setOpenness] = useState("");
   const [note, setNote] = useState("");
@@ -416,7 +423,6 @@ export default function CallRecordForm({
           reading: d.reading === true,
         });
         if (mode === "profile") {
-          setRatings({ communication: "", seriousness: "", stability: "", salary_realism: "", skill_match: "" });
           setOpenness("");
           setNote("");
           setReadBack(null);
@@ -748,7 +754,7 @@ export default function CallRecordForm({
         {error && <p className="text-[13px] font-medium text-rose-600">{error}</p>}
         <div className="flex flex-wrap items-center gap-1.5">
           <button type="button" disabled={!!busy || reading} onClick={() => void saveSpoke()} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-teal-700 disabled:opacity-50">
-            <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : reading ? "Reading your note…" : readBack ? (desk ? "Looks right: save and next" : "Looks right: save the call") : desk ? "Spoke: read my note" : "Spoke to them: read my note"}
+            <Check className="h-4 w-4" /> {busy === "reached" ? "Saving…" : reading ? "Reading your note…" : readBack ? (desk ? "Looks right: save and next" : "Looks right: save the call") : desk ? "Spoke: read my note" : "Save the call: read my note"}
           </button>
           <button type="button" disabled={!!busy} onClick={() => log("no_answer")} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[14px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
             {busy === "no_answer" ? "Saving…" : "No answer"}
