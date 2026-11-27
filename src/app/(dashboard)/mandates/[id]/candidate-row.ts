@@ -55,8 +55,8 @@ export type MandateCandidateRow = {
   // a per-user read receipt.
   viewed_at: string | null;
   // The recruiter's saved answer on each must-have, and the CV check if the role has one.
-  share_review?: { requirements?: { kind?: string; requirement: string; status: "met" | "partial" | "not_met"; note?: string }[] } | null;
-  cv_checks?: { requirement: string; status: "met" | "doubt" | "missing"; evidence?: string | null }[] | null;
+  share_review: { requirements?: { kind?: string; requirement: string; status: "met" | "partial" | "not_met"; note?: string }[] } | null;
+  cv_checks: { requirement: string; status: "met" | "doubt" | "missing"; evidence?: string | null }[] | null;
   // Set by the client themselves via the no-login shortlist link (see
   // submit_client_shortlist_feedback RPC / shortlist/[token]/feedback-buttons.tsx)
   // -- "interested" and "not_interested" never touch stage, so without this
