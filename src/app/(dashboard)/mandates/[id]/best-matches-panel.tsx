@@ -55,15 +55,23 @@ export default async function BestMatchesPanel({ mandateId }: { mandateId: strin
   const inPipeline = new Set(links.map((l) => l.candidate_id));
   // A read is a snapshot. When the person's profile changed, or they were called, after it was made, it is made again.
   const linkIds = links.map((l) => l.candidate_id);
-  const [{ data: changedRows }, { data: callAfterRows }] = linkIds.length
+  const [{ data: changedRows }, { data: callAfterRows }, { data: tagRows }, { data: sellRows }] = linkIds.length
     ? await Promise.all([
         supabase.from("candidates").select("id, updated_at").in("id", linkIds),
         supabase.from("call_log").select("candidate_id, created_at").in("candidate_id", linkIds).order("created_at", { ascending: false }),
+        supabase.from("candidate_role_tags").select("candidate_id, updated_at").in("candidate_id", linkIds),
+        supabase.from("candidate_selling_profiles").select("candidate_id, generated_at").in("candidate_id", linkIds),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
   const lastChange = new Map<string, number>();
   for (const r of (changedRows ?? []) as { id: string; updated_at: string | null }[]) if (r.updated_at) lastChange.set(r.id, new Date(r.updated_at).getTime());
   for (const r of (callAfterRows ?? []) as { candidate_id: string; created_at: string }[]) lastChange.set(r.candidate_id, Math.max(lastChange.get(r.candidate_id) ?? 0, new Date(r.created_at).getTime()));
+  // Role types and "what they sell" are worked out after the first read, so they make it stale too.
+  const learned = [
+    ...((tagRows ?? []) as { candidate_id: string; updated_at: string | null }[]).map((r) => [r.candidate_id, r.updated_at] as const),
+    ...((sellRows ?? []) as { candidate_id: string; generated_at: string | null }[]).map((r) => [r.candidate_id, r.generated_at] as const),
+  ];
+  for (const [id, at] of learned) if (at) lastChange.set(id, Math.max(lastChange.get(id) ?? 0, new Date(at).getTime()));
   const stale = (l: (typeof links)[number]) => !!l.matched_at && (lastChange.get(l.candidate_id) ?? 0) > new Date(l.matched_at).getTime() + 60_000;
   // People already on the pipeline (applicants included) get scored by this same ranking in the background.
   const toScore = links.filter((l) => l.match_source !== "role_card" || l.match_score_breakdown?.ver !== ROLE_SCORE_VERSION || stale(l)).map((l) => l.candidate_id);

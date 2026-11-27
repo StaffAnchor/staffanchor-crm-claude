@@ -676,7 +676,7 @@ export default async function CandidatesPage({
     candidateIds.length > 0
       ? supabase
           .from("candidate_mandate_links")
-          .select("candidate_id, mandate_id, added_by, created_at, match_assessment, match_source, match_score_breakdown, mandates(role_title, client_name, status)")
+          .select("candidate_id, mandate_id, added_by, created_at, matched_at, match_assessment, match_source, match_score_breakdown, mandates(role_title, client_name, status)")
           .in("candidate_id", candidateIds)
       : Promise.resolve({ data: null }),
   ]);
@@ -746,8 +746,31 @@ export default async function CandidatesPage({
     }
   }
   type Assessment = { recommendation?: string; positives?: string[]; red_flags?: string[]; missing?: string[] } | null;
-  type LinkRow = { candidate_id: string; mandate_id: string; added_by: string | null; created_at: string; match_assessment: Assessment; match_source: string | null; match_score_breakdown: { ver?: number } | null; mandates: unknown };
+  type LinkRow = { candidate_id: string; mandate_id: string; added_by: string | null; created_at: string; match_assessment: Assessment; match_source: string | null; matched_at: string | null; match_score_breakdown: { ver?: number } | null; mandates: unknown };
   const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string; applied: boolean; fit: string | null; fit_reason: string | null }[]> = {};
+  // When what we know about each person last changed. Role types and "what they sell" are worked out overnight, after the
+  // first fit read, so a read older than that is out of date.
+  const knownSince = new Map<string, number>();
+  const tagged = new Set<string>();
+  const noteChange = (id: string, at: string | null | undefined) => {
+    if (at) knownSince.set(id, Math.max(knownSince.get(id) ?? 0, new Date(at).getTime()));
+  };
+  for (const c of candidates ?? []) noteChange(c.id, c.updated_at as string | null);
+  if (candidateIds.length > 0) {
+    const [{ data: tagRows }, { data: sellRows }] = await Promise.all([
+      supabase.from("candidate_role_tags").select("candidate_id, updated_at").in("candidate_id", candidateIds),
+      supabase.from("candidate_selling_profiles").select("candidate_id, generated_at").in("candidate_id", candidateIds),
+    ]);
+    for (const r of (tagRows ?? []) as { candidate_id: string; updated_at: string | null }[]) {
+      tagged.add(r.candidate_id);
+      noteChange(r.candidate_id, r.updated_at);
+    }
+    for (const r of (sellRows ?? []) as { candidate_id: string; generated_at: string | null }[]) noteChange(r.candidate_id, r.generated_at);
+  }
+  const createdAt = new Map((candidates ?? []).map((c) => [c.id, c.created_at as string]));
+  const dayAgo = new Date(daysAgoIso(1)).getTime();
+  const shortAsk = (m: string) =>
+    m.replace(" (confirm on call)", "").replace(/^What they do is not clear yet$/, "what they do").replace(/^Level not clear$/, "level").replace(/^What they sell is not known yet$/, "what they sell").replace(/^City not clear$/, "city").replace(/^Experience not known yet$/, "experience").replace(/^Pay expectation not known yet$/, "pay");
   // Applications whose fit was read under older rules (or never by the role card) are read again after the page is sent,
   // the same way a role page already does it.
   const toRescore = new Map<string, string[]>();
@@ -756,12 +779,20 @@ export default async function CandidatesPage({
     if (!mandate) return;
     const read = row.match_assessment;
     const rec = read?.recommendation ?? null;
-    const firstUnknown = read?.missing?.[0]?.replace(" (confirm on call)", "") ?? null;
-    const reason = rec === "Not a Fit" ? (read?.red_flags?.[0] ?? null) : rec === "Needs a call" ? firstUnknown : (read?.red_flags?.[0] ?? read?.positives?.[0] ?? null);
+    const ask = read?.missing?.length ? `Ask: ${read.missing.slice(0, 3).map(shortAsk).join(", ")}` : null;
+    const justArrived = !tagged.has(row.candidate_id) && new Date(createdAt.get(row.candidate_id) ?? 0).getTime() > dayAgo;
+    const reason =
+      rec === "Not a Fit"
+        ? (read?.red_flags?.[0] ?? null)
+        : rec === "Needs a call"
+          ? justArrived
+            ? "New today, role type is read overnight"
+            : [ask, read?.positives?.[0]].filter(Boolean).join(" · ") || null
+          : (read?.red_flags?.[0] ?? ask ?? read?.positives?.[0] ?? null);
     const list = mandateLinksByCandidate[row.candidate_id] ?? [];
     list.push({ mandate_id: row.mandate_id, role_title: mandate.role_title, client_name: mandate.client_name, applied: !row.added_by, fit: rec, fit_reason: reason });
     mandateLinksByCandidate[row.candidate_id] = list;
-    if (!row.added_by && mandate.status === "open" && (row.match_source !== "role_card" || row.match_score_breakdown?.ver !== ROLE_SCORE_VERSION)) {
+    if (!row.added_by && mandate.status === "open" && (row.match_source !== "role_card" || row.match_score_breakdown?.ver !== ROLE_SCORE_VERSION || (!!row.matched_at && (knownSince.get(row.candidate_id) ?? 0) > new Date(row.matched_at).getTime() + 60_000))) {
       toRescore.set(row.mandate_id, [...(toRescore.get(row.mandate_id) ?? []), row.candidate_id]);
     }
   });
