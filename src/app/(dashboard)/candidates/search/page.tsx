@@ -86,7 +86,14 @@ function PromptSearch() {
   );
 
   // Arriving from a mandate page: start the search from that mandate.
+  const startQuery = params.get("q")?.trim();
   useEffect(() => {
+    if (startQuery && !startMandate && !started.current) {
+      started.current = true;
+      setPrompt(startQuery);
+      run({ text: startQuery });
+      return;
+    }
     if (startMandate && !started.current) {
       started.current = true;
       run({ mandate: startMandate });

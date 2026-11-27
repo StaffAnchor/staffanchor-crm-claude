@@ -3,6 +3,10 @@ import type { ReactNode } from "react";
 import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { loadPaidCalls } from "@/lib/paid-calls";
+import { loadPriorityCalls } from "@/lib/priority-calls";
+import { asQueue, daysAgoIso, GAPS_FILTER } from "@/lib/people-queues";
+import QueueTabs from "./queue-tabs";
+import SavedViews from "./saved-views";
 import ReadinessStrip from "./readiness-strip";
 import TopTierCard from "./top-tier-card";
 import CandidatesFilterBar, { type HeaderCounts } from "./candidates-filter-bar";
@@ -217,6 +221,7 @@ type SearchParams = {
   /** Rows per page: 25, 50 (default) or 100. Each row carries a lot of editable cells, so 100 rows is a heavy page. */
   size?: string;
   ids?: string;
+  queue?: string;
   mandate?: string;
   mandate_stage?: string;
   employment_status?: string;
@@ -439,12 +444,24 @@ export default async function CandidatesPage({
     topPageIds = topIds.slice(rangeFrom, rangeTo + 1);
   }
 
+  // Work queues. "Call today" and "Fits an open role" keep their own order, so they page the same way as top tier.
+  const queue = asQueue(params.queue);
+  if (queue === "call") {
+    topIds = (await loadPriorityCalls(supabase, currentUser?.id)).people.map((p) => p.id);
+  } else if (queue === "fits") {
+    const { data: fitOrder } = await supabase.from("candidate_role_fit").select("candidate_id").gt("suggested_count", 0).order("strong_count", { ascending: false }).order("suggested_count", { ascending: false }).limit(1000);
+    topIds = ((fitOrder ?? []) as { candidate_id: string }[]).map((r) => r.candidate_id);
+  }
+  if (queue === "call" || queue === "fits") topPageIds = (topIds ?? []).slice(rangeFrom, rangeTo + 1);
+
   // Applies every filter to a given query builder. Shared by the data query
   // (below) and the count query so page-of-rows and total-matching-count
   // can never drift out of sync with each other.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function applyFilters(q: any): any {
     let qq = q;
+    if (queue === "new") qq = qq.gte("created_at", daysAgoIso(7));
+    if (queue === "gaps") qq = qq.gte("created_at", daysAgoIso(30)).or(GAPS_FILTER);
     if (params.q) {
       // Recruiters reference candidates by their internal candidate_number
       // (e.g. "C-000123" or just "123") when discussing them out loud or in
@@ -766,6 +783,15 @@ export default async function CandidatesPage({
   // Who on this page paid for a recruiter call, shown as a symbol by the name.
   const paidCalls = await loadPaidCalls(supabase, (candidates ?? []).map((c) => c.id as string));
 
+  // The last logged call for each person on this page.
+  const lastCalls: Record<string, { at: string; outcome: string | null }> = {};
+  if (candidateIds.length > 0) {
+    const { data: callRows } = await supabase.from("call_log").select("candidate_id, outcome, created_at").in("candidate_id", candidateIds).order("created_at", { ascending: false });
+    for (const r of (callRows ?? []) as { candidate_id: string; outcome: string | null; created_at: string }[]) {
+      if (!lastCalls[r.candidate_id]) lastCalls[r.candidate_id] = { at: r.created_at, outcome: r.outcome };
+    }
+  }
+
   // recruiterName, openMandates, and teamMembers were all already resolved
   // in the initial parallel wave above (see currentProfileRes etc.).
 
@@ -943,7 +969,9 @@ export default async function CandidatesPage({
     // Any filter change resets back to page 1 unless the override is
     // specifically a page-navigation link (which sets `page` itself) --
     // otherwise switching filters could silently land on a now out-of-range page.
-    const merged = { ...params, page: undefined, ...overrides };
+    const merged: Record<string, string | undefined> = { ...params, page: undefined, ...overrides };
+    // A work queue is its own list: choosing any other filter leaves it.
+    if (!Object.keys(overrides).every((k) => k === "page" || k === "size" || k === "queue")) merged.queue = undefined;
     const sp = new URLSearchParams();
     Object.entries(merged).forEach(([k, v]) => {
       if (v) sp.set(k, v);
@@ -1067,6 +1095,16 @@ export default async function CandidatesPage({
           is everyone in the client pipeline right now. Fixed column spans
           (not flex-wrap) so the boxes line up into a real grid instead of
           drifting to whatever width their content happens to need. */}
+      <div className="mb-3 space-y-2">
+        <QueueTabs supabase={supabase} userId={currentUser?.id} active={queue} total={totalCount} />
+        <SavedViews />
+      </div>
+
+      <details className="mb-3" open={Boolean(params.top || params.group || params.ready || params.missing)}>
+        <summary className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          <span className="font-medium text-slate-900 dark:text-slate-100">Numbers and tiles</span> · {totalCount.toLocaleString("en-IN")} people · {newWTD} new this week · {topRes.count ?? 0} top tier
+        </summary>
+        <div className="mt-3">
       <TopTierCard topCount={topRes.count ?? 0} askCount={askRes.count ?? 0} callCount={callRes.count ?? 0} noPayCount={noPayRes.count ?? 0} active={params.top} hrefFor={topHref} founderCalls={isAdmin} />
       {groupOverview && <ProfileGroupsStrip overview={groupOverview} activeGroup={params.group} activeSubgroup={params.subgroup} hrefFor={groupHref} coverage={cvCoverage} />}
       {readinessOverview && <ReadinessStrip overview={readinessOverview} activeTier={params.ready} activeMissing={params.missing} hrefFor={readinessHref} />}
@@ -1143,6 +1181,9 @@ export default async function CandidatesPage({
         </div>
       </div>
 
+        </div>
+      </details>
+
       <form className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-lg p-3 mb-3 shadow-ros-sm">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <input
@@ -1174,6 +1215,14 @@ export default async function CandidatesPage({
             className="rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[14px] font-medium px-3.5 py-1.5"
           >
             Search
+          </button>
+          <button
+            type="submit"
+            formAction="/candidates/search"
+            title="Describe who you need in your own words, for example: B2B SaaS in Delhi, under 30 lakh, can join in 30 days"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 bg-teal-50 px-3.5 py-1.5 text-[14px] font-medium text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/30 dark:text-teal-300"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Describe it
           </button>
         </div>
 
@@ -1583,6 +1632,8 @@ export default async function CandidatesPage({
         poolTiers={poolTiers}
         voiceIds={voiceIds}
         paidCalls={paidCalls}
+        lastCalls={lastCalls}
+        queue={queue}
         totalCount={totalFiltered}
         rangeStart={rangeStart}
         rangeEnd={rangeEnd}

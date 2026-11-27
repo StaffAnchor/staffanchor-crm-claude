@@ -25,6 +25,7 @@ import {
 import ResumePreview from "./[id]/resume-preview";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import PaidCallBadge from "@/components/paid-call-badge";
+import CandidateList, { type LastCall } from "./candidate-list";
 import type { PaidCall } from "@/lib/paid-calls";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 import { Button } from "@/components/ui/button";
@@ -1175,6 +1176,8 @@ export default function CandidatesTable({
   poolTiers = {},
   voiceIds = [],
   paidCalls = {},
+  lastCalls = {},
+  queue = null,
   totalCount,
   rangeStart,
   rangeEnd,
@@ -1190,6 +1193,9 @@ export default function CandidatesTable({
   /** Candidates on this page who added a voice note with an application. */
   voiceIds?: string[];
   paidCalls?: Record<string, PaidCall>;
+  lastCalls?: Record<string, LastCall>;
+  /** Set when a work queue is showing: the CSV export does not know about queues, so it is hidden. */
+  queue?: string | null;
   // When provided (server knows the real filtered total, not just this
   // page's row count), the header switches from "N candidates" to
   // "Showing A-B of N candidates" so pagination doesn't look like truncation.
@@ -1210,6 +1216,24 @@ export default function CandidatesTable({
   const [order, setOrder] = useState<string[]>(COLUMN_KEYS);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [panelOpen, setPanelOpen] = useState(false);
+  // The compact list is the default; the full spreadsheet-style table stays one click away.
+  const [layout, setLayout] = useState<"list" | "table">("list");
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem("sa_people_layout") === "table") setLayout("table");
+    } catch {
+      /* keep the list */
+    }
+  }, []);
+  function chooseLayout(next: "list" | "table") {
+    setLayout(next);
+    setPanelOpen(false);
+    try {
+      window.localStorage.setItem("sa_people_layout", next);
+    } catch {
+      /* private window */
+    }
+  }
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [waOpen, setWaOpen] = useState(false);
@@ -1686,6 +1710,7 @@ export default function CandidatesTable({
               <option value="updated">Recently updated</option>
             </select>
           </label>
+          {!queue && (
           <a
             href={`/api/export/candidates?${new URLSearchParams({
               ...(fromQS ? Object.fromEntries(new URLSearchParams(fromQS)) : {}),
@@ -1701,7 +1726,16 @@ export default function CandidatesTable({
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </a>
+          )}
+          <span className="inline-flex overflow-hidden rounded-lg border border-slate-200 text-[13px] font-medium dark:border-slate-700">
+            {(["list", "table"] as const).map((v) => (
+              <button key={v} type="button" onClick={() => chooseLayout(v)} aria-pressed={layout === v} className={`px-2.5 py-1 capitalize ${layout === v ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}>
+                {v}
+              </button>
+            ))}
+          </span>
           <button
+            hidden={layout !== "table"}
             onClick={() => setPanelOpen((v) => !v)}
             className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 py-1.5 transition-colors"
           >
@@ -2037,11 +2071,27 @@ export default function CandidatesTable({
         </div>
       )}
 
+      {layout === "list" ? (
+        <CandidateList
+          candidates={candidates}
+          selected={selected}
+          onToggle={toggleRow}
+          onToggleAll={toggleAll}
+          fromQS={fromQS}
+          openMandates={openMandates}
+          mandateLinksByCandidate={mandateLinksByCandidate}
+          sourceJobByCandidate={sourceJobByCandidate}
+          paidCalls={paidCalls}
+          voiceIds={voiceIds}
+          poolLabels={Object.fromEntries(Object.entries(poolTiers).map(([id, tier]) => [id, POOL_TIER_LABEL[tier]]))}
+          lastCalls={lastCalls}
+        />
+      ) : (
       <div className="overflow-auto max-h-[calc(100vh-13rem)]">
         <table className="w-full text-[14px]">
           <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-slate-400 text-xs font-medium uppercase tracking-wide">
             <tr>
-              <th className="px-4 py-2.5 w-8 sticky left-0 top-0 z-30 bg-slate-50 dark:bg-slate-800/50">
+              <th className="px-4 py-2.5 w-[52px] min-w-[52px] max-w-[52px] sticky left-0 top-0 z-30 bg-slate-50 dark:bg-slate-800">
                 <input
                   type="checkbox"
                   checked={selected.size > 0 && selected.size === candidates.length}
@@ -2049,8 +2099,8 @@ export default function CandidatesTable({
                   className="rounded accent-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-shadow duration-200 ease-ros"
                 />
               </th>
-              <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 w-[92px] min-w-[92px] max-w-[92px] bg-slate-50 dark:bg-slate-800/50">ID</th>
-              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[144px] top-0 z-30 bg-slate-50 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
+              <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap sticky left-[52px] top-0 z-30 w-[92px] min-w-[92px] max-w-[92px] bg-slate-50 dark:bg-slate-800">ID</th>
+              <th className="text-left px-4 py-2.5 font-semibold whitespace-nowrap sticky left-[144px] top-0 z-30 bg-slate-50 dark:bg-slate-800 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">Name</th>
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -2070,7 +2120,7 @@ export default function CandidatesTable({
                   selected.has(c.id) ? "bg-teal-50/50 ring-1 ring-inset ring-teal-500/20" : ""
                 }`}
               >
-                <td className={`px-4 py-3 sticky left-0 z-10 ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
+                <td className={`px-4 py-3 w-[52px] min-w-[52px] max-w-[52px] sticky left-0 z-10 ${selected.has(c.id) ? "bg-teal-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800"}`}>
                   <input
                     type="checkbox"
                     checked={selected.has(c.id)}
@@ -2079,14 +2129,14 @@ export default function CandidatesTable({
                   />
                 </td>
                 <td
-                  className={`px-3 py-3 sticky left-[52px] z-10 w-[92px] min-w-[92px] max-w-[92px] whitespace-nowrap text-[13px] font-mono text-slate-400 dark:text-slate-500 ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}
+                  className={`px-3 py-3 sticky left-[52px] z-10 w-[92px] min-w-[92px] max-w-[92px] whitespace-nowrap text-[13px] font-mono text-slate-400 dark:text-slate-500 ${selected.has(c.id) ? "bg-teal-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800"}`}
                   title="Candidate number — reference this in internal discussions"
                 >
                   {c.candidate_number != null ? `C-${String(c.candidate_number).padStart(6, "0")}` : "—"}
                 </td>
-                <td className={`px-4 py-3 sticky left-[144px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-teal-50/50" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/70"}`}>
+                <td className={`px-4 py-3 sticky left-[144px] ${mandatePopoverFor === c.id ? "z-40" : "z-10"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)] ${selected.has(c.id) ? "bg-teal-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800"}`}>
                   <div
-                    className="relative"
+                    className="relative flex items-center gap-1 whitespace-nowrap"
                     onMouseEnter={(e) => handleNameHover(e, c.ai_summary)}
                     onMouseLeave={handleNameLeave}
                   >
@@ -2186,6 +2236,7 @@ export default function CandidatesTable({
           </tbody>
         </table>
       </div>
+      )}
 
       {candidates.length === 0 && (
         <EmptyState
