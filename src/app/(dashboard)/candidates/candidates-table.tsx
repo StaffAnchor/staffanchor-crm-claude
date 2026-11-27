@@ -24,6 +24,8 @@ import {
 } from "@/lib/candidate-options";
 import ResumePreview from "./[id]/resume-preview";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import PaidCallBadge from "@/components/paid-call-badge";
+import type { PaidCall } from "@/lib/paid-calls";
 import { isRecruiterDrivenSource, sourceChannelLabel } from "@/lib/candidate-source-label";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -1172,6 +1174,7 @@ export default function CandidatesTable({
   sourceJobByCandidate = {},
   poolTiers = {},
   voiceIds = [],
+  paidCalls = {},
   totalCount,
   rangeStart,
   rangeEnd,
@@ -1186,6 +1189,7 @@ export default function CandidatesTable({
   poolTiers?: Record<string, "top" | "strong" | "watch">;
   /** Candidates on this page who added a voice note with an application. */
   voiceIds?: string[];
+  paidCalls?: Record<string, PaidCall>;
   // When provided (server knows the real filtered total, not just this
   // page's row count), the header switches from "N candidates" to
   // "Showing A-B of N candidates" so pagination doesn't look like truncation.
@@ -2103,6 +2107,11 @@ export default function CandidatesTable({
                       </p>
                     </Link>
                     <ProfileRatingBadge row={ratings.get(c.id)} />
+                    {paidCalls[c.id] && (
+                      <span className="ml-1 inline-flex shrink-0">
+                        <PaidCallBadge call={paidCalls[c.id]} compact />
+                      </span>
+                    )}
                     {voiceIds.includes(c.id) && (
                       <span className="ml-1 inline-flex shrink-0 text-teal-600" title="Sent a voice note (on WhatsApp or with an application)" aria-label="Has a voice note">
                         <Mic className="h-3.5 w-3.5" />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { loadPaidCalls } from "@/lib/paid-calls";
 import ReadinessStrip from "./readiness-strip";
 import TopTierCard from "./top-tier-card";
 import CandidatesFilterBar, { type HeaderCounts } from "./candidates-filter-bar";
@@ -761,6 +762,9 @@ export default async function CandidatesPage({
       }
     }
   }
+
+  // Who on this page paid for a recruiter call, shown as a symbol by the name.
+  const paidCalls = await loadPaidCalls(supabase, (candidates ?? []).map((c) => c.id as string));
 
   // recruiterName, openMandates, and teamMembers were all already resolved
   // in the initial parallel wave above (see currentProfileRes etc.).
@@ -1578,6 +1582,7 @@ export default async function CandidatesPage({
         sourceJobByCandidate={sourceJobByCandidate}
         poolTiers={poolTiers}
         voiceIds={voiceIds}
+        paidCalls={paidCalls}
         totalCount={totalFiltered}
         rangeStart={rangeStart}
         rangeEnd={rangeEnd}

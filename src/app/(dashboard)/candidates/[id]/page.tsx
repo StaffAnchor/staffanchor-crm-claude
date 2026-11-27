@@ -59,6 +59,8 @@ import ActivityLogPanel from "./activity-log-panel";
 import WhatsAppPanel from "./whatsapp-panel";
 import { formatExperience } from "@/lib/format-experience";
 import { formatDateIST } from "@/lib/format-datetime";
+import PaidCallBadge from "@/components/paid-call-badge";
+import { loadPaidCalls } from "@/lib/paid-calls";
 import { generateAiPassportForCandidate } from "@/lib/ai-passport";
 
 // ROS design language: one neutral avatar treatment for every candidate --
@@ -539,6 +541,7 @@ export default async function CandidateDetailPage({
     callNoteCount: pastDebriefs.length,
   });
   const todos = next.todos;
+  const paidCall = (await loadPaidCalls(supabase, [candidate.id]))[candidate.id] ?? null;
   // The last call on this person, so the Calls tab can show it (and let it stand) instead of an empty form.
   const { data: lastRatingRow } = await supabase.from("candidate_call_ratings").select("communication, seriousness, stability, salary_realism, skill_match, created_at").eq("candidate_id", candidate.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   const lastCallAt = callConfirmed?.at ?? null;
@@ -884,6 +887,7 @@ export default async function CandidateDetailPage({
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-[22px] leading-7 font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{candidate.full_name}</h1>
+                  {paidCall && <PaidCallBadge call={paidCall} />}
                   {((voiceNoteRows ?? []).length > 0 || (waVoiceRows ?? []).length > 0) && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[13px] font-medium text-teal-700 ring-1 ring-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:ring-teal-800" title="Sent a voice note (on WhatsApp or with an application). It plays in the Overview tab.">
                       <Mic className="h-3.5 w-3.5" /> Voice note
