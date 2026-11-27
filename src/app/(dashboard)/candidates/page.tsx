@@ -730,6 +730,38 @@ export default async function CandidatesPage({
     mandateLinksByCandidate[row.candidate_id] = list;
   });
 
+  // For quick-apply people, the job they first applied to (shown under Source). Read from the
+  // application log, which keeps it even if the person is later taken off that role.
+  const sourceJobByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string; more: number }> = {};
+  {
+    const quickIds = (candidates ?? []).filter((c) => c.created_by === "quick_apply").map((c) => c.id as string);
+    if (quickIds.length > 0) {
+      const { data: applyRows } = await supabase
+        .from("audit_log")
+        .select("entity_id, detail")
+        .eq("action", "quick_apply_submitted")
+        .in("entity_id", quickIds)
+        .order("at", { ascending: true });
+      const appliedTo = new Map<string, string[]>();
+      for (const row of (applyRows ?? []) as { entity_id: string; detail: { mandate_id?: string } | null }[]) {
+        const mandateId = row.detail?.mandate_id;
+        if (!mandateId) continue;
+        const list = appliedTo.get(row.entity_id) ?? [];
+        if (!list.includes(mandateId)) list.push(mandateId);
+        appliedTo.set(row.entity_id, list);
+      }
+      const jobIds = Array.from(new Set(Array.from(appliedTo.values()).map((list) => list[0])));
+      const { data: jobRows } = jobIds.length
+        ? await supabase.from("mandates").select("id, role_title, client_name").in("id", jobIds)
+        : { data: [] };
+      const jobById = new Map(((jobRows ?? []) as { id: string; role_title: string; client_name: string }[]).map((j) => [j.id, j]));
+      for (const [candidateId, list] of appliedTo) {
+        const job = jobById.get(list[0]);
+        if (job) sourceJobByCandidate[candidateId] = { mandate_id: job.id, role_title: job.role_title, client_name: job.client_name, more: list.length - 1 };
+      }
+    }
+  }
+
   // recruiterName, openMandates, and teamMembers were all already resolved
   // in the initial parallel wave above (see currentProfileRes etc.).
 
@@ -1543,6 +1575,7 @@ export default async function CandidatesPage({
         openMandates={openMandates ?? []}
         teamMembers={teamMembers ?? []}
         mandateLinksByCandidate={mandateLinksByCandidate}
+        sourceJobByCandidate={sourceJobByCandidate}
         poolTiers={poolTiers}
         voiceIds={voiceIds}
         totalCount={totalFiltered}

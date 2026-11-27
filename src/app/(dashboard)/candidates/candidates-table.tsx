@@ -498,6 +498,7 @@ const ROLE_TYPE_LABEL: Record<string, string> = {
 // they need updateSegmentField instead, which merges the one key into the
 // existing object rather than overwriting the whole thing.
 type RenderHelpers = {
+  sourceJobByCandidate: Record<string, SourceJob>;
   updateField: (id: string, field: string, value: unknown) => Promise<void>;
   reassignOwner: (id: string, newOwnerId: string | null) => Promise<void>;
   isAdmin: boolean;
@@ -823,7 +824,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   {
     key: "origin",
     label: "Source",
-    render: (c, { teamMembers }) => {
+    render: (c, { teamMembers, sourceJobByCandidate }) => {
       if (!c.created_by) return <span className="text-xs text-slate-300">—</span>;
       const channel = sourceChannelLabel(c.created_by, null);
       if (isRecruiterDrivenSource(c.created_by)) {
@@ -840,10 +841,29 @@ const COLUMN_DEFS: ColumnDef[] = [
           </span>
         );
       }
-      return (
-        <Badge tone={CREATED_BY_TONE[c.created_by] ?? "neutral"} size="sm" className="normal-case tracking-normal">
+      const job = c.created_by === "quick_apply" ? sourceJobByCandidate[c.id] : undefined;
+      const badge = (
+        <Badge tone={CREATED_BY_TONE[c.created_by] ?? "neutral"} size="sm" className="normal-case tracking-normal w-fit">
           {channel}
         </Badge>
+      );
+      if (!job) return badge;
+      return (
+        <span className="inline-flex flex-col gap-0.5">
+          {badge}
+          <Link
+            href={`/mandates/${job.mandate_id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[190px] hover:underline"
+            title={`${job.role_title} at ${job.client_name}${job.more > 0 ? `, and ${job.more} more applied to since` : ""}`}
+          >
+            <span className="block truncate text-xs font-medium text-slate-700 dark:text-slate-300">{job.role_title}</span>
+            <span className="block truncate text-xs text-slate-400">
+              {job.client_name}
+              {job.more > 0 ? ` · +${job.more} more` : ""}
+            </span>
+          </Link>
+        </span>
       );
     },
   },
@@ -1141,12 +1161,15 @@ function loadPrefs(): { order: string[]; hidden: string[] } {
 }
 
 export type MandateLink = { mandate_id: string; role_title: string; client_name: string };
+// The job a quick-apply person first applied to; more = other jobs they have since applied to.
+export type SourceJob = MandateLink & { more: number };
 
 export default function CandidatesTable({
   candidates,
   openMandates,
   teamMembers = [],
   mandateLinksByCandidate = {},
+  sourceJobByCandidate = {},
   poolTiers = {},
   voiceIds = [],
   totalCount,
@@ -1158,6 +1181,7 @@ export default function CandidatesTable({
   openMandates: OpenMandate[];
   teamMembers?: TeamMember[];
   mandateLinksByCandidate?: Record<string, MandateLink[]>;
+  sourceJobByCandidate?: Record<string, SourceJob>;
   /** Candidates on this page who are in the Talent Pool, with their tier. */
   poolTiers?: Record<string, "top" | "strong" | "watch">;
   /** Candidates on this page who added a voice note with an application. */
@@ -2134,6 +2158,7 @@ export default function CandidatesTable({
                       updateSegmentField,
                       updateVerification,
                       teamMembers,
+                      sourceJobByCandidate,
                       generateStabilityScore,
                       generatingStability,
                     })}
