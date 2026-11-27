@@ -25,6 +25,7 @@ import ResumePreview from "../../candidates/[id]/resume-preview";
 import { leadSourceOf } from "@/lib/lead-source";
 import { FactTile, NextStep, ScoreRing } from "@/components/pipeline-ui";
 import { readMemory } from "@/lib/call-memory";
+import { allConcerns, mustChecks, profileConcerns, type MustStatus } from "@/lib/role-checks";
 
 const STAGE_ORDER = STAGES.reduce<Record<string, number>>((acc, s, i) => ({ ...acc, [s]: i }), {});
 const DONE = ["rejected", "pulled_back"];
@@ -34,6 +35,13 @@ const GROUPS = [
   { rank: 2, key: "unread", label: "Can't tell yet: needs a call" },
   { rank: 3, key: "notfit", label: "Not a fit" },
 ];
+
+const MUST_MARK: Record<MustStatus, { mark: string; word: string; cls: string }> = {
+  met: { mark: "✓", word: "Met", cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+  partial: { mark: "~", word: "Partly", cls: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" },
+  not_met: { mark: "✕", word: "Not met", cls: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" },
+  ask: { mark: "?", word: "Not known", cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" },
+};
 
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }) : "");
 
@@ -242,7 +250,10 @@ export default function MandateCandidatesCards({
   // A call counts as logged once we remember something they said, or the details are complete.
   const callLogged = (l: MandateCandidateRow) => !!readMemory(l.candidate.segment_data) || detailsState(l).done;
 
-  // The line under the facts: what we remember from a call, else the first gap, else the first plus, else where they came from.
+  const musts = ((mandateContext.must_haves as string[] | undefined) ?? []).filter(Boolean);
+  const checksFor = (l: MandateCandidateRow) => mustChecks(musts, l.candidate, l.share_review, l.cv_checks);
+
+  // The line under the facts: what we remember from a call, else the first plus, else where they came from. Concerns have their own line of labels.
   function lineThree(l: MandateCandidateRow): { text: string; cls: string } {
     const m = readMemory(l.candidate.segment_data);
     if (m && (m.wants.length || m.dealbreakers.length || m.summary)) {
@@ -250,8 +261,7 @@ export default function MandateCandidatesCards({
       return { text: `Spoke ${m.at ? fmtDate(m.at) : "earlier"}: ${bits.length ? bits.join(" · ") : m.summary}`, cls: "text-sky-700 dark:text-sky-300" };
     }
     const a = l.match_assessment;
-    const gap = a?.red_flags[0] ?? (a?.missing[0] ? `Missing: ${a.missing[0]}` : null);
-    if (gap) return { text: gap, cls: "text-amber-700 dark:text-amber-400" };
+    if (allConcerns(a, l.candidate).length > 0) return { text: "", cls: "" };
     if (a?.positives[0]) return { text: a.positives[0], cls: "text-emerald-700 dark:text-emerald-400" };
     const src = leadSourceOf(l.candidate, l.origin, l.origin_label, l.uploader_name);
     return { text: `${src.label}${src.detail ? ` · ${src.detail}` : ""}`, cls: "text-slate-400" };
@@ -263,6 +273,10 @@ export default function MandateCandidatesCards({
     const rank = rankOf(l);
     const ds = detailsState(l);
     const l3 = lineThree(l);
+    const concerns = allConcerns(l.match_assessment, c);
+    const checks = checksFor(l);
+    const metCount = checks.filter((x) => x.status === "met").length;
+    const failCount = checks.filter((x) => x.status === "not_met").length;
     const src = leadSourceOf(c, l.origin, l.origin_label, l.uploader_name);
     const isActive = activeRowId === l.id;
     const facts = [
@@ -291,7 +305,13 @@ export default function MandateCandidatesCards({
                 <span className="min-w-0 flex-1 truncate text-[13px] text-slate-500">{[c.current_job_title, c.current_employer].filter(Boolean).join(" · ") || c.category || ""}</span>
               </span>
               <span className="mt-0.5 block truncate text-[13px] tabular-nums text-slate-500">{facts.filter(Boolean).join(" · ") || "No facts yet"}</span>
-              <span className={`mt-0.5 block truncate text-[13px] ${l3.cls}`} title={l3.text}>{l3.text}</span>
+              {l3.text && <span className={`mt-0.5 block truncate text-[13px] ${l3.cls}`} title={l3.text}>{l3.text}</span>}
+              {concerns.length > 0 && (
+                <span className="mt-1 flex flex-wrap items-center gap-1">
+                  {concerns.slice(0, 4).map((x) => (<span key={x.label} title={x.detail} className={`whitespace-nowrap rounded-md px-1.5 py-px text-[12px] font-medium ${x.tone === "warn" ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{x.label}</span>))}
+                  {concerns.length > 4 && <span className="text-[12px] text-slate-400" title={concerns.slice(4).map((x) => x.detail).join("\n")}>+{concerns.length - 4}</span>}
+                </span>
+              )}
             </span>
             <span className="flex flex-col items-end gap-1">
               {canActRow(l) && (
@@ -299,6 +319,7 @@ export default function MandateCandidatesCards({
                   {ds.done ? <Check className="h-2.5 w-2.5" /> : null}
                 </span>
               )}
+              {checks.length > 0 && <span className={`whitespace-nowrap text-[12px] font-semibold tabular-nums ${failCount ? "text-rose-600" : metCount ? "text-emerald-700" : "text-slate-400"}`} title={`Must-haves: ${metCount} of ${checks.length} met${failCount ? `, ${failCount} not met` : ""}`}>{metCount}/{checks.length}</span>}
               <span className="text-[12px] text-slate-400">{ago(l.created_at)}</span>
             </span>
           </button>
@@ -424,6 +445,27 @@ export default function MandateCandidatesCards({
                 {fact(l.origin === "applied" ? "Applied" : "Added", fmtDate(l.created_at))}
               </dl>
 
+              {musts.length > 0 && (() => {
+                const checks = checksFor(l);
+                const count = (s: MustStatus) => checks.filter((x) => x.status === s).length;
+                return (
+                  <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                    <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="text-[12px] font-medium uppercase tracking-wide text-slate-500">Must-haves for this role</p>
+                      <p className="text-[13px] text-slate-500">{(["met", "partial", "not_met", "ask"] as const).filter((s) => count(s) > 0).map((s) => `${count(s)} ${MUST_MARK[s].word.toLowerCase()}`).join(" · ")}</p>
+                    </div>
+                    <ul className="space-y-2">
+                      {checks.map((x) => (
+                        <li key={x.requirement} className="flex items-start gap-2.5">
+                          <span title={MUST_MARK[x.status].word} aria-label={MUST_MARK[x.status].word} className={`mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${MUST_MARK[x.status].cls}`}>{MUST_MARK[x.status].mark}</span>
+                          <span className="min-w-0 text-[14px]"><span className="text-slate-800 dark:text-slate-200">{x.requirement}</span> <span className="text-[13px] text-slate-400">{x.note}</span></span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
+
               <div className="rounded-2xl bg-slate-50/70 p-4 dark:bg-slate-800/40">
                 <p className="mb-2 text-[12px] font-medium uppercase tracking-wide text-slate-500">Why this fit</p>
                 {a ? (
@@ -444,8 +486,8 @@ export default function MandateCandidatesCards({
                       </div>
                       <div className="space-y-1.5">
                         <p className="text-[12px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">To check</p>
-                        {a.red_flags.length + a.missing.length === 0 && <p className="text-slate-400">Nothing to flag.</p>}
-                        {[...a.red_flags, ...a.missing.map((m) => `Missing: ${m}`)].slice(0, 6).map((x) => (<p key={x} className="flex gap-1.5 text-slate-700 dark:text-slate-300"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> {x}</p>))}
+                        {a.red_flags.length + a.missing.length + profileConcerns(c).length === 0 && <p className="text-slate-400">Nothing to flag.</p>}
+                        {[...a.red_flags, ...profileConcerns(c).map((x) => x.detail), ...a.missing.map((m) => `Missing: ${m}`)].slice(0, 8).map((x) => (<p key={x} className="flex gap-1.5 text-slate-700 dark:text-slate-300"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> {x}</p>))}
                       </div>
                     </div>
                   </div>

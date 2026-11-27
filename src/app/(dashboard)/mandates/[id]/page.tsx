@@ -18,7 +18,7 @@ import BestMatchesPanel from "./best-matches-panel";
 import { passReasonLabel } from "@/lib/pass-reasons";
 import VoiceAgentTab from "./voice-agent-tab";
 import { recordTiming } from "@/lib/page-timing";
-import NextAction, { type NextActionItem } from "@/components/next-action";
+import { type NextActionItem } from "@/components/next-action";
 import RolePlaybook from "./role-playbook";
 import { SmartSearchProvider, SmartSearchBar, SmartSearchTab, SmartBadge } from "./smart-search";
 import { type MandateCandidateRow } from "./candidate-row";
@@ -93,10 +93,11 @@ export default async function MandateDetailPage({
       supabase
         .from("candidate_mandate_links")
         .select(
-          "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, call_paid_at, call_due_at, match_score, match_score_breakdown, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, client_note, candidates(id, full_name, email, phone, current_location, expected_fixed_ctc, source_channel, acquisition_source, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
+          "id, added_by, match_source, stage, in_shortlist, stage_source, stage_updated_at, client_decision_at, rejected_from_stage, rejection_reason, rejection_category, date_of_joining, call_disposition, call_disposition_note, vendor_update_note, vendor_update_note_at, created_at, call_paid_at, call_due_at, match_score, match_score_breakdown, match_assessment, viewed_at, client_feedback, client_pass_reason, client_pass_note, client_note, share_review, candidates(id, full_name, email, phone, current_location, expected_fixed_ctc, source_channel, acquisition_source, readiness_missing, category, sub_domain, total_experience_years, current_fixed_ctc, recruiter_assessment, work_mode, open_to_relocation, notice_period, segment_data, current_employer, current_job_title, career_timeline_resume, career_timeline_profile, owner_id, resume_file_url, stability_score, talent_micro_index, ai_summary, created_by, created_by_user, source)"
         )
         .eq("mandate_id", id)
     ),
+    cvChecks: Promise.resolve(supabase.from("mandate_ai_matches").select("candidate_id, checks").eq("mandate_id", id)),
     screening: Promise.resolve(supabase.from("mandate_screening_answers").select("candidate_id").eq("mandate_id", id)),
     questions: Promise.resolve(supabase.from("mandate_screening_questions").select("id, question_text, answer_type, is_required, display_order").eq("mandate_id", id).order("display_order")),
     voices: Promise.resolve(supabase.from("application_voice_notes").select("candidate_id, audio_path, seconds, transcript_en, created_at").eq("mandate_id", id)),
@@ -121,6 +122,8 @@ export default async function MandateDetailPage({
   const viewerRole = viewerProfile?.role ?? null;
 
   const { data: links } = await q.links;
+  const { data: cvCheckRows } = await q.cvChecks;
+  const cvChecksByCandidate = new Map(((cvCheckRows ?? []) as { candidate_id: string; checks: { must?: MandateCandidateRow["cv_checks"] } | null }[]).map((r) => [r.candidate_id, r.checks?.must ?? null]));
   // Last two jobs per person, from the structured CV facts, so a recruiter can screen without opening profiles.
   const rolesByCandidate = new Map<string, unknown>();
   const educationByCandidate = new Map<string, { degree: string | null; institution: string | null; year: string | null }[]>();
@@ -405,12 +408,12 @@ export default async function MandateDetailPage({
   }
 
   return (
-    <div className="max-w-[1500px] mx-auto px-5 py-8">
+    <div className="max-w-[1500px] mx-auto px-5 py-4">
       <Link href={backHref} className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:text-slate-200">
         {backLabel}
       </Link>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-4 md:p-6 mt-3 shadow-sm flex flex-col md:flex-row items-start justify-between gap-3 md:gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-ros-xl p-4 md:px-5 md:py-3 mt-2 shadow-sm flex flex-col md:flex-row items-start justify-between gap-3 md:gap-4">
         <div className="min-w-0 w-full md:w-auto">
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-[22px] md:text-[26px] leading-7 md:leading-8 font-semibold tracking-tight text-slate-900 dark:text-slate-100">{mandate.role_title}</h1>
@@ -495,29 +498,34 @@ export default async function MandateDetailPage({
           </div>
         )}
 
-      {/* Four numbers, in plain words. Screened and the other counts live inside the tabs. */}
-      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      {/* One line: the numbers in plain words, the next thing to do, and the role guide folded away. */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl bg-slate-50 px-4 py-2 text-[14px] text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
         {[
-          { label: "In the pipeline", value: String(pipelineCount), cls: "" },
-          { label: "Shared with the client", value: String(submittedCount), cls: "" },
-          { label: mandate.headcount > 1 ? "Positions filled" : "Days open", value: mandate.headcount > 1 ? `${placedCount}/${mandate.headcount}` : String(daysOpenNum), cls: mandate.headcount <= 1 && daysOpenNum >= 21 ? "text-amber-600" : "" },
+          { label: "in the pipeline", value: String(pipelineCount), cls: "" },
+          { label: "shared with the client", value: String(submittedCount), cls: "" },
+          { label: mandate.headcount > 1 ? "positions filled" : "days open", value: mandate.headcount > 1 ? `${placedCount}/${mandate.headcount}` : String(daysOpenNum), cls: mandate.headcount <= 1 && daysOpenNum >= 21 ? "text-amber-600" : "" },
           // A percentage on a role that opened yesterday with two candidates is a guess. It shows once there is a week and a pipeline behind it.
-          ...(fillProbability && daysOpenNum >= 7 && pipelineCount >= 3 ? [{ label: "Chance of filling", value: `${fillProbability.score}%`, cls: fillProbability.bucket === "high" ? "text-emerald-600" : fillProbability.bucket === "medium" ? "text-amber-600" : "text-rose-600", title: `Main driver: ${fillProbability.driver}` }] : []),
+          ...(fillProbability && daysOpenNum >= 7 && pipelineCount >= 3 ? [{ label: "chance of filling", value: `${fillProbability.score}%`, cls: fillProbability.bucket === "high" ? "text-emerald-600" : fillProbability.bucket === "medium" ? "text-amber-600" : "text-rose-600", title: `Main driver: ${fillProbability.driver}` }] : []),
         ].map((t) => (
-          <div key={t.label} title={(t as { title?: string }).title} className="rounded-xl bg-slate-50 px-4 py-2.5 dark:bg-slate-800/60">
-            <p className={`text-[22px] font-semibold leading-7 tabular-nums text-slate-900 dark:text-slate-100 ${t.cls}`}>{t.value}</p>
-            <p className="text-[13px] text-slate-500 dark:text-slate-400">{t.label}</p>
-          </div>
+          <span key={t.label} title={(t as { title?: string }).title} className="whitespace-nowrap">
+            <span className={`mr-1 text-[16px] font-semibold tabular-nums text-slate-900 dark:text-slate-100 ${t.cls}`}>{t.value}</span>
+            {t.label}
+          </span>
         ))}
+        {nextAction && (
+          <span className="min-w-0 border-slate-300 text-slate-700 dark:border-slate-600 dark:text-slate-200 md:border-l md:pl-4">
+            <span className="mr-1.5 text-xs font-medium uppercase tracking-wide text-teal-700 dark:text-teal-300">Next</span>
+            {nextAction.text}
+            {nextAction.href && <a href={nextAction.href} className="ml-2 font-medium text-teal-700 hover:underline dark:text-teal-300">{nextAction.cta ?? "Open"} →</a>}
+          </span>
+        )}
+        {mandate.status === "open" && !mandate.is_archived && (
+          <details className="ml-auto open:basis-full">
+            <summary className="cursor-pointer text-[13px] font-medium text-teal-700 dark:text-teal-300">Where this role stands</summary>
+            <RolePlaybook mandateId={id} />
+          </details>
+        )}
       </div>
-
-      <NextAction item={nextAction} />
-      {mandate.status === "open" && !mandate.is_archived && (
-        <details className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-          <summary className="cursor-pointer text-[14px] font-medium text-slate-600 dark:text-slate-300">Where this role stands <span className="font-normal text-slate-400">(match, reach, track, call, send to client)</span></summary>
-          <RolePlaybook mandateId={id} />
-        </details>
-      )}
 
       {!nextAction && blockers.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -533,7 +541,7 @@ export default async function MandateDetailPage({
 
       <SmartSearchProvider mandateId={id} roleTitle={mandate.role_title} city={mandate.cities?.[0] ?? mandate.city ?? null}>
       <Tabs
-        className="mt-6"
+        className="mt-3"
         items={[
           {
             key: "pipeline",
@@ -575,6 +583,8 @@ export default async function MandateDetailPage({
                 match_bucket: (((l.match_score_breakdown as { bucket?: string } | null)?.bucket as MandateCandidateRow["match_bucket"]) ?? null) as MandateCandidateRow["match_bucket"],
                 match_assessment: (l.match_assessment as MandateCandidateRow["match_assessment"]) ?? null,
                 viewed_at: l.viewed_at ?? null,
+                share_review: (l.share_review as MandateCandidateRow["share_review"]) ?? null,
+                cv_checks: cvChecksByCandidate.get(cand.id) ?? null,
                 client_feedback: (l.client_feedback as MandateCandidateRow["client_feedback"]) ?? null,
                 client_pass_reason: (l.client_pass_reason as string | null) ?? null,
                 client_pass_note: (l.client_pass_note as string | null) ?? null,
