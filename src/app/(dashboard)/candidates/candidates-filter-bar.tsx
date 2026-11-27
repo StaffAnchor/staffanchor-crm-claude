@@ -103,7 +103,9 @@ export default function CandidatesFilterBar({
         </Pill>
       ))}
 
-      <span className="mx-0.5 h-4 w-px shrink-0 bg-slate-200 dark:bg-slate-700" aria-hidden />
+      <details className="group w-full" open={Boolean(ready || incomplete || rating)}>
+        <summary className="w-fit cursor-pointer text-[13px] font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">Readiness and ratings</summary>
+        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-2">
       <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-slate-400" title="How complete the profile is for a mandate: CTC, notice, CV read and so on">Readiness</span>
       <Pill href={hrefFor({ ready: ready === "ready" ? undefined : "ready", missing: undefined })} active={ready === "ready"} count={c?.ready} tone="emerald">
         Ready
@@ -125,6 +127,8 @@ export default function CandidatesFilterBar({
       <Pill href={hrefFor({ rating: rating === "weak" ? undefined : "weak" })} active={rating === "weak"} count={c?.weak} tone="rose">
         ⚑ Rated weak
       </Pill>
+        </div>
+      </details>
     </div>
   );
 }

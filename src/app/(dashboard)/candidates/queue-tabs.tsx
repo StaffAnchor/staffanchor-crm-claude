@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { loadPriorityCalls } from "@/lib/priority-calls";
+import { loadCallToday } from "@/lib/call-today";
 import { daysAgoIso, GAPS_FILTER, type Queue } from "@/lib/people-queues";
 
 const TABS: { key: Queue | null; label: string; title: string }[] = [
-  { key: "call", label: "Call today", title: "Paid calls first, then call-backs due, people who said yes to a role, and urgent roles" },
+  { key: "call", label: "Call today", title: "Paid calls, call-backs, people who said yes and urgent roles first, then strong profiles up to 15" },
   { key: "new", label: "New this week", title: "Added in the last 7 days" },
   { key: "fits", label: "Fits an open role", title: "Strong or possible for an open role and not yet on it" },
   { key: "gaps", label: "New, missing CV or pay", title: "Added in the last 30 days without a CV or current pay" },
@@ -33,7 +33,7 @@ function Row({ active, counts }: { active: Queue | null; counts: Partial<Record<
 async function Counted({ supabase, userId, active, total }: { supabase: SupabaseClient; userId: string | undefined; active: Queue | null; total: number }) {
   const head = () => supabase.from("candidates").select("id", { count: "exact", head: true });
   const [calls, fresh, fits, gaps] = await Promise.all([
-    loadPriorityCalls(supabase, userId).then((r) => r.people.length).catch(() => undefined),
+    loadCallToday(supabase, userId).then((r) => r.ids.length).catch(() => undefined),
     head().gte("created_at", daysAgoIso(7)),
     supabase.from("candidate_role_fit").select("candidate_id", { count: "exact", head: true }).gt("suggested_count", 0),
     head().gte("created_at", daysAgoIso(30)).or(GAPS_FILTER),

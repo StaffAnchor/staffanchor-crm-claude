@@ -1163,7 +1163,7 @@ function loadPrefs(): { order: string[]; hidden: string[] } {
   }
 }
 
-export type MandateLink = { mandate_id: string; role_title: string; client_name: string };
+export type MandateLink = { mandate_id: string; role_title: string; client_name: string; applied?: boolean; fit?: string | null; fit_reason?: string | null };
 // The job a quick-apply person first applied to; more = other jobs they have since applied to.
 export type SourceJob = MandateLink & { more: number };
 
@@ -1177,6 +1177,7 @@ export default function CandidatesTable({
   voiceIds = [],
   paidCalls = {},
   lastCalls = {},
+  callWhy = {},
   queue = null,
   totalCount,
   rangeStart,
@@ -1194,6 +1195,8 @@ export default function CandidatesTable({
   voiceIds?: string[];
   paidCalls?: Record<string, PaidCall>;
   lastCalls?: Record<string, LastCall>;
+  /** On the Call today queue: why each person is on it. */
+  callWhy?: Record<string, string>;
   /** Set when a work queue is showing: the CSV export does not know about queues, so it is hidden. */
   queue?: string | null;
   // When provided (server knows the real filtered total, not just this
@@ -2085,6 +2088,7 @@ export default function CandidatesTable({
           voiceIds={voiceIds}
           poolLabels={Object.fromEntries(Object.entries(poolTiers).map(([id, tier]) => [id, POOL_TIER_LABEL[tier]]))}
           lastCalls={lastCalls}
+          callWhy={callWhy}
         />
       ) : (
       <div className="overflow-auto max-h-[calc(100vh-13rem)]">

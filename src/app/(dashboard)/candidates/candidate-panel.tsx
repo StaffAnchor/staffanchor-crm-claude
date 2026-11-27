@@ -138,6 +138,7 @@ export default function CandidatePanel({
           {links.map((l) => (
             <Link key={l.mandate_id} href={`/mandates/${l.mandate_id}`} className="block text-[13px] text-slate-700 hover:underline dark:text-slate-300">
               On: {l.role_title} · {l.client_name}
+              {l.fit && <span className="text-slate-500"> · {l.fit}{l.fit_reason ? `: ${l.fit_reason}` : ""}</span>}
             </Link>
           ))}
           {suggested.map((r) => (

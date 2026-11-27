@@ -19,6 +19,19 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { timeZo
 const lakh = (n: number | null | undefined) => (n && Number(n) > 0 ? `₹${Number(Number(n).toFixed(1))}L` : null);
 const OUTCOME: Record<string, string> = { reached: "spoke", no_answer: "no answer", call_later: "call later", not_interested: "not interested", wrong_number: "wrong number" };
 
+const FIT: Record<string, { label: string; cls: string }> = {
+  "Strong Fit": { label: "Strong fit", cls: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100" },
+  "Fit with Reservations": { label: "Fit, with gaps", cls: "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200" },
+  "Needs a call": { label: "Needs a call", cls: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" },
+  "Not a Fit": { label: "Not a fit", cls: "bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200" },
+};
+
+// The verdict to show on a row: the job they applied for, otherwise any role they are on that has been read.
+function fitLink(links: MandateLink[], appliedTo?: string): MandateLink | undefined {
+  const read = links.filter((l) => l.fit && FIT[l.fit]);
+  return read.find((l) => l.mandate_id === appliedTo) ?? read.find((l) => l.applied) ?? read[0];
+}
+
 export function waHref(phone: string | null | undefined): string | null {
   const digits = (phone ?? "").replace(/\D/g, "");
   if (digits.length < 10) return null;
@@ -46,6 +59,7 @@ export default function CandidateList({
   voiceIds,
   poolLabels,
   lastCalls,
+  callWhy,
 }: {
   candidates: CandidateRow[];
   selected: Set<string>;
@@ -59,6 +73,7 @@ export default function CandidateList({
   voiceIds: string[];
   poolLabels: Record<string, string>;
   lastCalls: Record<string, LastCall>;
+  callWhy: Record<string, string>;
 }) {
   const [open, setOpen] = useState<{ id: string; focus: PanelFocus } | null>(null);
   const [cursor, setCursor] = useState(-1);
@@ -118,6 +133,7 @@ export default function CandidateList({
           const wa = waHref(c.phone);
           const links = mandateLinksByCandidate[c.id] ?? [];
           const fits = c.role_fit?.suggested_count ?? 0;
+          const verdict = fitLink(links, job?.mandate_id);
           const pay = [lakh(c.current_fixed_ctc) ?? "Pay not given", lakh(c.expected_fixed_ctc) ? `→ ${lakh(c.expected_fixed_ctc)}` : null].filter(Boolean).join(" ");
           return (
             <div
@@ -145,6 +161,7 @@ export default function CandidateList({
                       <Star className="h-3 w-3" /> {poolLabels[c.id]}
                     </span>
                   )}
+                  {callWhy[c.id] && <span className="max-w-[220px] shrink-0 truncate rounded-full bg-slate-900 px-2 text-xs font-medium text-white dark:bg-slate-100 dark:text-slate-900" title={callWhy[c.id]}>{callWhy[c.id]}</span>}
                   {!c.resume_file_url && <span className="shrink-0 rounded-full bg-slate-100 px-1.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">No CV</span>}
                 </div>
                 <p className="truncate text-[13px] text-slate-500 dark:text-slate-400">
@@ -168,9 +185,15 @@ export default function CandidateList({
                 <p className="truncate text-[13px] text-slate-700 dark:text-slate-300" title={job ? `${job.role_title} at ${job.client_name}` : undefined}>
                   {job ? `Applied: ${job.role_title}` : c.created_by ? sourceChannelLabel(c.created_by, null) : "Source unknown"}
                 </p>
+                {verdict && (
+                  <p className="my-0.5 flex min-w-0 items-center gap-1.5 text-[12px]" title={`${verdict.role_title} at ${verdict.client_name}: ${verdict.fit}${verdict.fit_reason ? `. ${verdict.fit_reason}` : ""}`}>
+                    <span className={`shrink-0 rounded-full px-2 font-semibold ${FIT[verdict.fit as string].cls}`}>{FIT[verdict.fit as string].label}</span>
+                    <span className="truncate text-slate-500">{[job?.mandate_id === verdict.mandate_id ? null : verdict.role_title, verdict.fit_reason].filter(Boolean).join(" · ")}</span>
+                  </p>
+                )}
                 <p className="truncate text-[12px] text-slate-500">
                   {day(c.created_at)}, {time(c.created_at)}
-                  {last ? ` · called ${day(last.at)}${last.outcome ? ` (${OUTCOME[last.outcome] ?? last.outcome})` : ""}` : " · not called"}
+                  {last ? ` · called ${day(last.at)}${last.outcome ? ` (${OUTCOME[last.outcome] ?? last.outcome})` : ""}` : ""}
                   {links.length ? ` · on ${links.length} role${links.length > 1 ? "s" : ""}` : fits ? ` · fits ${fits} open role${fits > 1 ? "s" : ""}` : ""}
                 </p>
               </div>

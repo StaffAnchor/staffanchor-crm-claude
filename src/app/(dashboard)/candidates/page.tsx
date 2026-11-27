@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import { SlidersHorizontal, AlertTriangle, Upload, FolderKanban, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { loadPaidCalls } from "@/lib/paid-calls";
-import { loadPriorityCalls } from "@/lib/priority-calls";
+import { loadCallToday } from "@/lib/call-today";
+import { after } from "next/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { ROLE_SCORE_VERSION, scoreLinksByRoleCard } from "@/lib/role-score";
 import { asQueue, daysAgoIso, GAPS_FILTER } from "@/lib/people-queues";
 import QueueTabs from "./queue-tabs";
 import SavedViews from "./saved-views";
@@ -446,8 +449,11 @@ export default async function CandidatesPage({
 
   // Work queues. "Call today" and "Fits an open role" keep their own order, so they page the same way as top tier.
   const queue = asQueue(params.queue);
+  let callWhy: Record<string, string> = {};
   if (queue === "call") {
-    topIds = (await loadPriorityCalls(supabase, currentUser?.id)).people.map((p) => p.id);
+    const today = await loadCallToday(supabase, currentUser?.id);
+    topIds = today.ids;
+    callWhy = today.why;
   } else if (queue === "fits") {
     const { data: fitOrder } = await supabase.from("candidate_role_fit").select("candidate_id").gt("suggested_count", 0).order("strong_count", { ascending: false }).order("suggested_count", { ascending: false }).limit(1000);
     topIds = ((fitOrder ?? []) as { candidate_id: string }[]).map((r) => r.candidate_id);
@@ -670,7 +676,7 @@ export default async function CandidatesPage({
     candidateIds.length > 0
       ? supabase
           .from("candidate_mandate_links")
-          .select("candidate_id, mandate_id, mandates(role_title, client_name)")
+          .select("candidate_id, mandate_id, added_by, created_at, match_assessment, match_source, match_score_breakdown, mandates(role_title, client_name, status)")
           .in("candidate_id", candidateIds)
       : Promise.resolve({ data: null }),
   ]);
@@ -739,14 +745,35 @@ export default async function CandidatesPage({
       voiceIds.push(...Array.from(new Set([...((voiceRows ?? []) as { candidate_id: string }[]), ...((waVoiceRows ?? []) as { candidate_id: string }[])].map((v) => v.candidate_id))));
     }
   }
-  const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string }[]> = {};
-  ((linkRowsRes.data ?? []) as { candidate_id: string; mandate_id: string; mandates: unknown }[]).forEach((row) => {
-    const mandate = row.mandates as unknown as { role_title: string; client_name: string } | null;
+  type Assessment = { recommendation?: string; positives?: string[]; red_flags?: string[]; missing?: string[] } | null;
+  type LinkRow = { candidate_id: string; mandate_id: string; added_by: string | null; created_at: string; match_assessment: Assessment; match_source: string | null; match_score_breakdown: { ver?: number } | null; mandates: unknown };
+  const mandateLinksByCandidate: Record<string, { mandate_id: string; role_title: string; client_name: string; applied: boolean; fit: string | null; fit_reason: string | null }[]> = {};
+  // Applications whose fit was read under older rules (or never by the role card) are read again after the page is sent,
+  // the same way a role page already does it.
+  const toRescore = new Map<string, string[]>();
+  ((linkRowsRes.data ?? []) as unknown as LinkRow[]).forEach((row) => {
+    const mandate = row.mandates as { role_title: string; client_name: string; status: string } | null;
     if (!mandate) return;
+    const read = row.match_assessment;
+    const rec = read?.recommendation ?? null;
+    const firstUnknown = read?.missing?.[0]?.replace(" (confirm on call)", "") ?? null;
+    const reason = rec === "Not a Fit" ? (read?.red_flags?.[0] ?? null) : rec === "Needs a call" ? firstUnknown : (read?.red_flags?.[0] ?? read?.positives?.[0] ?? null);
     const list = mandateLinksByCandidate[row.candidate_id] ?? [];
-    list.push({ mandate_id: row.mandate_id, role_title: mandate.role_title, client_name: mandate.client_name });
+    list.push({ mandate_id: row.mandate_id, role_title: mandate.role_title, client_name: mandate.client_name, applied: !row.added_by, fit: rec, fit_reason: reason });
     mandateLinksByCandidate[row.candidate_id] = list;
+    if (!row.added_by && mandate.status === "open" && (row.match_source !== "role_card" || row.match_score_breakdown?.ver !== ROLE_SCORE_VERSION)) {
+      toRescore.set(row.mandate_id, [...(toRescore.get(row.mandate_id) ?? []), row.candidate_id]);
+    }
   });
+  if (toRescore.size > 0) {
+    after(async () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !key) return;
+      const admin = createServiceClient(url, key, { auth: { persistSession: false } });
+      for (const [mandateId, ids] of Array.from(toRescore).slice(0, 10)) await scoreLinksByRoleCard(admin, mandateId, ids).catch(() => {});
+    });
+  }
 
   // For quick-apply people, the job they first applied to (shown under Source). Read from the
   // application log, which keeps it even if the person is later taken off that role.
@@ -1044,22 +1071,13 @@ export default async function CandidatesPage({
   const callRes = { count: tiers.call_n };
 
   return (
-    <div className="max-w-[1500px] mx-auto px-5 py-8">
+    <div className="max-w-[1500px] mx-auto px-5 py-4">
       <CandidatesSubNav />
-      <div className="flex items-baseline justify-between mb-5">
+      <div className="flex items-center justify-between mb-3">
         <div>
           <h1 className="ros-page-title">Candidates</h1>
-          <p className="text-[14px] text-slate-500 dark:text-slate-400 mt-1">
-            Search, assess, and shortlist your candidate database
-          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/candidates/search"
-            className="rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-all duration-200 ease-ros hover:-translate-y-px active:translate-y-0 active:scale-[0.98] text-teal-700 dark:text-teal-300 text-[14px] font-medium px-3.5 py-2 shadow-sm flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5" /> Prompt search
-          </Link>
           <TourTooltip
             tourKey="candidate_groups_v1"
             title="New: saved candidate groups"
@@ -1102,7 +1120,7 @@ export default async function CandidatesPage({
 
       <details className="mb-3" open={Boolean(params.top || params.group || params.ready || params.missing)}>
         <summary className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-          <span className="font-medium text-slate-900 dark:text-slate-100">Numbers and tiles</span> · {totalCount.toLocaleString("en-IN")} people · {newWTD} new this week · {topRes.count ?? 0} top tier
+          <span className="font-medium text-slate-900 dark:text-slate-100">Numbers and tiles</span> · {totalCount.toLocaleString("en-IN")} people · {topRes.count ?? 0} top tier
         </summary>
         <div className="mt-3">
       <TopTierCard topCount={topRes.count ?? 0} askCount={askRes.count ?? 0} callCount={callRes.count ?? 0} noPayCount={noPayRes.count ?? 0} active={params.top} hrefFor={topHref} founderCalls={isAdmin} />
@@ -1633,6 +1651,7 @@ export default async function CandidatesPage({
         voiceIds={voiceIds}
         paidCalls={paidCalls}
         lastCalls={lastCalls}
+        callWhy={callWhy}
         queue={queue}
         totalCount={totalFiltered}
         rangeStart={rangeStart}
