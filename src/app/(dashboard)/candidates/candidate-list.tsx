@@ -7,6 +7,7 @@ import PaidCallBadge from "@/components/paid-call-badge";
 import type { PaidCall } from "@/lib/paid-calls";
 import { sourceChannelLabel } from "@/lib/candidate-source-label";
 import CandidatePanel, { type PanelFocus } from "./candidate-panel";
+import LazyCvPreview from "../mandates/[id]/lazy-cv-preview";
 import type { CandidateRow, MandateLink, OpenMandate, SourceJob } from "./candidates-table";
 
 // The compact People list: who they are, whether they fit, where they came from, and one next step.
@@ -198,6 +199,8 @@ export default function CandidateList({
                 </p>
               </div>
               <div className="col-start-2 flex items-center gap-1.5 md:col-start-auto md:justify-end">
+                {/* The empty box keeps rows without a CV lined up with the rest. */}
+                {c.resume_file_url ? <LazyCvPreview candidateId={c.id} name={c.full_name} variant="row" /> : <span className="hidden w-[62px] shrink-0 md:inline-block" aria-hidden />}
                 {wa && (
                   <a href={wa} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-white dark:border-slate-700 dark:text-slate-300" title="Opens WhatsApp. You type and send it yourself." aria-label={`WhatsApp ${c.full_name}`}>
                     <MessageCircle className="h-4 w-4" />
